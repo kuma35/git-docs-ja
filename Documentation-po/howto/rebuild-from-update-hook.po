@@ -1,0 +1,184 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-02 01:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:9
+#, no-wrap
+msgid ""
+"Subject: [HOWTO] Using post-update hook\n"
+"Message-ID: <7vy86o6usx.fsf@assigned-by-dhcp.cox.net>\n"
+"From: Junio C Hamano <gitster@pobox.com>\n"
+"Date: Fri, 26 Aug 2005 18:19:10 -0700\n"
+"Abstract: In this how-to article, JC talks about how he\n"
+" uses the post-update hook to automate Git documentation page\n"
+" shown at https://www.kernel.org/pub/software/scm/git/docs/.\n"
+"Content-type: text/asciidoc\n"
+msgstr ""
+
+#. type: Title =
+#: ../Documentation/howto/rebuild-from-update-hook.txt:11
+#, no-wrap
+msgid "How to rebuild from update hook"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:19
+msgid ""
+"The pages under https://www.kernel.org/pub/software/scm/git/docs/ are built "
+"from Documentation/ directory of the git.git project and needed to be kept "
+"up-to-date.  The www.kernel.org/ servers are mirrored and I was told that "
+"the origin of the mirror is on the machine $some.kernel.org, on which I was "
+"given an account when I took over Git maintainership from Linus."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:21
+msgid "The directories relevant to this how-to are these two:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:24
+#, no-wrap
+msgid ""
+"    /pub/scm/git/git.git/\tThe public Git repository.\n"
+"    /pub/software/scm/git/docs/\tThe HTML documentation page.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:27
+msgid ""
+"So I made a repository to generate the documentation under my home directory "
+"over there."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:31
+#, no-wrap
+msgid ""
+"    $ cd\n"
+"    $ mkdir doc-git && cd doc-git\n"
+"    $ git clone /pub/scm/git/git.git/ docgen\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:36
+msgid ""
+"What needs to happen is to update the $HOME/doc-git/docgen/ working tree, "
+"build HTML docs there and install the result in /pub/software/scm/git/docs/ "
+"directory.  So I wrote a little script:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:40
+#, no-wrap
+msgid ""
+"    $ cat >dododoc.sh <<\\EOF\n"
+"    #!/bin/sh\n"
+"    cd $HOME/doc-git/docgen || exit\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:42
+#, no-wrap
+msgid "    unset GIT_DIR\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:47
+#, no-wrap
+msgid ""
+"    git pull /pub/scm/git/git.git/ master &&\n"
+"    cd Documentation &&\n"
+"    make install-webdoc\n"
+"    EOF\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:52
+msgid ""
+"Initially I used to run this by hand whenever I push into the public Git "
+"repository.  Then I did a cron job that ran twice a day.  The current round "
+"uses the post-update hook mechanism, like this:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:60
+#, no-wrap
+msgid ""
+"    $ cat >/pub/scm/git/git.git/hooks/post-update <<\\EOF\n"
+"    #!/bin/sh\n"
+"    #\n"
+"    # An example hook script to prepare a packed repository for use over\n"
+"    # dumb transports.\n"
+"    #\n"
+"    # To enable this hook, make this file executable by \"chmod +x "
+"post-update\".\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:69
+#, no-wrap
+msgid ""
+"    case \" $* \" in\n"
+"    *' refs/heads/master '*)\n"
+"            echo $HOME/doc-git/dododoc.sh | at now\n"
+"            ;;\n"
+"    esac\n"
+"    exec git-update-server-info\n"
+"    EOF\n"
+"    $ chmod +x /pub/scm/git/git.git/hooks/post-update\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:71
+msgid "There are four things worth mentioning:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:77
+msgid ""
+"The update-hook is run after the repository accepts a \"git push\", under my "
+"user privilege.  It is given the full names of refs that have been updated "
+"as arguments.  My post-update runs the dododoc.sh script only when the "
+"master head is updated."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:83
+msgid ""
+"When update-hook is run, GIT_DIR is set to '.' by the calling receive-pack.  "
+"This is inherited by the dododoc.sh run via the \"at\" command, and needs to "
+"be unset; otherwise, \"git pull\" it does into $HOME/doc-git/docgen/ "
+"repository would not work correctly."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:87
+msgid ""
+"The stdout of update hook script is not connected to git push; I run the "
+"heavy part of the command inside \"at\", to receive the execution report via "
+"e-mail."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/rebuild-from-update-hook.txt:90
+msgid ""
+"This is still crude and does not protect against simultaneous make "
+"invocations stomping on each other.  I would need to add some locking "
+"mechanism for this."
+msgstr ""

@@ -1,0 +1,1588 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-01 00:25+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Title =
+#: ../Documentation/MyFirstObjectWalk.txt:1
+#, no-wrap
+msgid "My First Object Walk"
+msgstr ""
+
+#. type: Title ==
+#: ../Documentation/MyFirstObjectWalk.txt:3
+#, no-wrap
+msgid "What's an Object Walk?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:11
+msgid ""
+"The object walk is a key concept in Git - this is the process that underpins "
+"operations like object transfer and fsck. Beginning from a given commit, the "
+"list of objects is found by walking parent relationships between commits "
+"(commit X based on commit W) and containment relationships between objects "
+"(tree Y is contained within commit X, and blob Z is located within tree Y, "
+"giving our working tree for commit X something like `y/z.txt`)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:15
+msgid ""
+"A related concept is the revision walk, which is focused on commit objects "
+"and their parent relationships and does not delve into other object "
+"types. The revision walk is used for operations like `git log`."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:16
+#, no-wrap
+msgid "Related Reading"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:20
+msgid ""
+"`Documentation/user-manual.txt` under \"Hacking Git\" contains some coverage "
+"of the revision walker in its various incarnations."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:21
+msgid "`revision.h`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:24
+msgid ""
+"https://eagain.net/articles/git-for-computer-scientists/[Git for Computer "
+"Scientists] gives a good overview of the types of objects in Git and what "
+"your object walk is really describing."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:25 ../Documentation/MyFirstObjectWalk.txt:164
+#, no-wrap
+msgid "Setting Up"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:28
+msgid "Create a new branch from `master`."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:31
+#, no-wrap
+msgid "git checkout -b revwalk origin/master\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:35
+msgid ""
+"We'll put our fiddling into a new command. For fun, let's name it `git "
+"walken`.  Open up a new file `builtin/walken.c` and set up the command "
+"handler:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:42
+#, no-wrap
+msgid ""
+"/*\n"
+" * \"git walken\"\n"
+" *\n"
+" * Part of the \"My First Object Walk\" tutorial.\n"
+" */\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:44
+#, no-wrap
+msgid "#include \"builtin.h\"\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:50
+#, no-wrap
+msgid ""
+"int cmd_walken(int argc, const char **argv, const char *prefix)\n"
+"{\n"
+"\ttrace_printf(_(\"cmd_walken incoming...\\n\"));\n"
+"\treturn 0;\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:58
+msgid ""
+"`trace_printf()` differs from `printf()` in that it can be turned on or off "
+"at runtime. For the purposes of this tutorial, we will write `walken` as "
+"though it is intended for use as a \"plumbing\" command: that is, a command "
+"which is used primarily in scripts, rather than interactively by humans (a "
+"\"porcelain\" command). So we will send our debug output to `trace_printf()` "
+"instead. When running, enable trace output by setting the environment "
+"variable `GIT_TRACE`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:61
+msgid ""
+"Add usage text and `-h` handling, like all subcommands should consistently "
+"do (our test suite will notice and complain if you fail to do so)."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:72
+#, no-wrap
+msgid ""
+"int cmd_walken(int argc, const char **argv, const char *prefix)\n"
+"{\n"
+"\tconst char * const walken_usage[] = {\n"
+"\t\tN_(\"git walken\"),\n"
+"\t\tNULL,\n"
+"\t}\n"
+"\tstruct option options[] = {\n"
+"\t\tOPT_END()\n"
+"\t};\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:74
+#, no-wrap
+msgid "\targc = parse_options(argc, argv, prefix, options, walken_usage, 0);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:77 ../Documentation/MyFirstObjectWalk.txt:222 ../Documentation/MyFirstObjectWalk.txt:245 ../Documentation/MyFirstObjectWalk.txt:295 ../Documentation/MyFirstObjectWalk.txt:399 ../Documentation/MyFirstObjectWalk.txt:437 ../Documentation/MyFirstObjectWalk.txt:460 ../Documentation/MyFirstObjectWalk.txt:490 ../Documentation/MyFirstObjectWalk.txt:811
+#, no-wrap
+msgid ""
+"\t...\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:80
+msgid "Also add the relevant line in `builtin.h` near `cmd_whatchanged()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:83
+#, no-wrap
+msgid "int cmd_walken(int argc, const char **argv, const char *prefix);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:87
+msgid ""
+"Include the command in `git.c` in `commands[]` near the entry for "
+"`whatchanged`, maintaining alphabetical ordering:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:90
+#, no-wrap
+msgid "{ \"walken\", cmd_walken, RUN_SETUP },\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:93
+msgid "Add it to the `Makefile` near the line for `builtin/worktree.o`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:96
+#, no-wrap
+msgid "BUILTIN_OBJS += builtin/walken.o\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:100
+msgid ""
+"Build and test out your command, without forgetting to ensure the "
+"`DEVELOPER` flag is set, and with `GIT_TRACE` enabled so the debug output "
+"can be seen:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:105
+#, no-wrap
+msgid ""
+"$ echo DEVELOPER=1 >>config.mak\n"
+"$ make\n"
+"$ GIT_TRACE=1 ./bin-wrappers/git walken\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:109
+msgid ""
+"For a more exhaustive overview of the new command process, take a look at "
+"`Documentation/MyFirstContribution.txt`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:112
+msgid ""
+"A reference implementation can be found at "
+"https://github.com/nasamuffin/git/tree/revwalk."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:113
+#, no-wrap
+msgid "`struct rev_cmdline_info`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:116
+msgid "The definition of `struct rev_cmdline_info` can be found in `revision.h`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:119
+msgid ""
+"This struct is contained within the `rev_info` struct and is used to reflect "
+"parameters provided by the user over the CLI."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:121
+msgid "`nr` represents the number of `rev_cmdline_entry` present in the array."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:124
+msgid ""
+"`alloc` is used by the `ALLOC_GROW` macro. Check `cache.h` - this variable "
+"is used to track the allocated size of the list."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:126
+msgid "Per entry, we find:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:129
+msgid ""
+"`item` is the object provided upon which to base the object walk. Items in "
+"Git can be blobs, trees, commits, or tags. (See "
+"`Documentation/gittutorial-2.txt`.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:134
+msgid ""
+"`name` is the object ID (OID) of the object - a hex string you may be "
+"familiar with from using Git to organize your source in the past. Check the "
+"tutorial mentioned above towards the top for a discussion of where the OID "
+"can come from."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:139
+msgid ""
+"`whence` indicates some information about what to do with the parents of the "
+"specified object. We'll explore this flag more later on; take a look at "
+"`Documentation/revisions.txt` to get an idea of what could set the `whence` "
+"value."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:144
+msgid ""
+"`flags` are used to hint the beginning of the revision walk and are the "
+"first block under the `#include`s in `revision.h`. The most likely ones to "
+"be set in the `rev_cmdline_info` are `UNINTERESTING` and `BOTTOM`, but these "
+"same flags can be used during the walk, as well."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:145
+#, no-wrap
+msgid "`struct rev_info`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:151
+msgid ""
+"This one is quite a bit longer, and many fields are only used during the "
+"walk by `revision.c` - not configuration options. Most of the configurable "
+"flags in `struct rev_info` have a mirror in "
+"`Documentation/rev-list-options.txt`. It's a good idea to take some time and "
+"read through that document."
+msgstr ""
+
+#. type: Title ==
+#: ../Documentation/MyFirstObjectWalk.txt:152
+#, no-wrap
+msgid "Basic Commit Walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:157
+msgid ""
+"First, let's see if we can replicate the output of `git log "
+"--oneline`. We'll refer back to the implementation frequently to discover "
+"norms when performing an object walk of our own."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:160
+msgid ""
+"To do so, we'll first find all the commits, in order, which preceded the "
+"current commit. We'll extract the name and subject of the commit from each."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:163
+msgid ""
+"Ideally, we will also be able to find out which ones are currently at the "
+"tip of various branches."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:167
+msgid "Preparing for your object walk has some distinct stages."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:169
+msgid "Perform default setup for this mode, and others which may be invoked."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:170
+msgid "Check configuration files for relevant settings."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:171
+msgid "Set up the `rev_info` struct."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:172
+msgid "Tweak the initialized `rev_info` to suit the current walk."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:173
+msgid "Prepare the `rev_info` for the walk."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:174
+msgid "Iterate over the objects, processing each one."
+msgstr ""
+
+#. type: Title ====
+#: ../Documentation/MyFirstObjectWalk.txt:175
+#, no-wrap
+msgid "Default Setups"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:184
+msgid ""
+"Before examining configuration files which may modify command behavior, set "
+"up default state for switches or options your command may have. If your "
+"command utilizes other Git components, ask them to set up their default "
+"states as well.  For instance, `git log` takes advantage of `grep` and "
+"`diff` functionality, so its `init_log_defaults()` sets its own state "
+"(`decoration_style`) and asks `grep` and `diff` to initialize themselves by "
+"calling each of their initialization functions."
+msgstr ""
+
+#. type: Title ====
+#: ../Documentation/MyFirstObjectWalk.txt:185
+#, no-wrap
+msgid "Configuring From `.gitconfig`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:193
+msgid ""
+"Next, we should have a look at any relevant configuration settings (i.e., "
+"settings readable and settable from `git config`). This is done by providing "
+"a callback to `git_config()`; within that callback, you can also invoke "
+"methods from other components you may need that need to intercept these "
+"options. Your callback will be invoked once per each configuration value "
+"which Git knows about (global, local, worktree, etc.)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:197
+msgid ""
+"Similarly to the default values, we don't have anything to do here yet "
+"ourselves; however, we should call `git_default_config()` if we aren't "
+"calling any other existing config callbacks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:199
+msgid "Add a new function to `builtin/walken.c`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:209
+#, no-wrap
+msgid ""
+"static int git_walken_config(const char *var, const char *value, void *cb)\n"
+"{\n"
+"\t/*\n"
+"\t * For now, we don't have any custom configuration, so fall back to\n"
+"\t * the default config.\n"
+"\t */\n"
+"\treturn git_default_config(var, value, cb);\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:212
+msgid "Make sure to invoke `git_config()` with it in your `cmd_walken()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:217 ../Documentation/MyFirstObjectWalk.txt:290
+#, no-wrap
+msgid ""
+"int cmd_walken(int argc, const char **argv, const char *prefix)\n"
+"{\n"
+"\t...\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:219
+#, no-wrap
+msgid "\tgit_config(git_walken_config, NULL);\n"
+msgstr ""
+
+#. type: Title ====
+#: ../Documentation/MyFirstObjectWalk.txt:224
+#, no-wrap
+msgid "Setting Up `rev_info`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:231
+msgid ""
+"Now that we've gathered external configuration and options, it's time to "
+"initialize the `rev_info` object which we will use to perform the walk. This "
+"is typically done by calling `repo_init_revisions()` with the repository you "
+"intend to target, as well as the `prefix` argument of `cmd_walken` and your "
+"`rev_info` struct."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:233
+msgid "Add the `struct rev_info` and the `repo_init_revisions()` call:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:239
+#, no-wrap
+msgid ""
+"int cmd_walken(int argc, const char **argv, const char *prefix)\n"
+"{\n"
+"\t/* This can go wherever you like in your declarations.*/\n"
+"\tstruct rev_info rev;\n"
+"\t...\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:242
+#, no-wrap
+msgid ""
+"\t/* This should go after the git_config() call. */\n"
+"\trepo_init_revisions(the_repository, &rev, prefix);\n"
+msgstr ""
+
+#. type: Title ====
+#: ../Documentation/MyFirstObjectWalk.txt:247
+#, no-wrap
+msgid "Tweaking `rev_info` For the Walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:252
+msgid ""
+"We're getting close, but we're still not quite ready to go. Now that `rev` "
+"is initialized, we can modify it to fit our needs. This is usually done "
+"within a helper for clarity, so let's add one:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:261
+#, no-wrap
+msgid ""
+"static void final_rev_info_setup(struct rev_info *rev)\n"
+"{\n"
+"\t/*\n"
+"\t * We want to mimic the appearance of `git log --oneline`, so let's\n"
+"\t * force oneline format.\n"
+"\t */\n"
+"\tget_commit_format(\"oneline\", rev);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:265
+#, no-wrap
+msgid ""
+"\t/* Start our object walk at HEAD. */\n"
+"\tadd_head_to_pending(rev);\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block =
+#: ../Documentation/MyFirstObjectWalk.txt:271
+msgid ""
+"Instead of using the shorthand `add_head_to_pending()`, you could do "
+"something like this:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:273
+#, no-wrap
+msgid "\tstruct setup_revision_opt opt;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:278
+#, no-wrap
+msgid ""
+"\tmemset(&opt, 0, sizeof(opt));\n"
+"\topt.def = \"HEAD\";\n"
+"\topt.revarg_opt = REVARG_COMMITTISH;\n"
+"\tsetup_revisions(argc, argv, rev, &opt);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:281
+msgid ""
+"Using a `setup_revision_opt` gives you finer control over your walk's "
+"starting point."
+msgstr ""
+
+#. type: delimited block =
+#: ../Documentation/MyFirstObjectWalk.txt:285
+msgid ""
+"Then let's invoke `final_rev_info_setup()` after the call to "
+"`repo_init_revisions()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:292
+#, no-wrap
+msgid "\tfinal_rev_info_setup(&rev);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:299
+msgid ""
+"Later, we may wish to add more arguments to `final_rev_info_setup()`. But "
+"for now, this is all we need."
+msgstr ""
+
+#. type: Title ====
+#: ../Documentation/MyFirstObjectWalk.txt:300
+#, no-wrap
+msgid "Preparing `rev_info` For the Walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:307
+msgid ""
+"Now that `rev` is all initialized and configured, we've got one more setup "
+"step before we get rolling. We can do this in a helper, which will both "
+"prepare the `rev_info` for the walk, and perform the walk itself. Let's "
+"start the helper with the call to `prepare_revision_walk()`, which can "
+"return an error without dying on its own:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:314
+#, no-wrap
+msgid ""
+"static void walken_commit_walk(struct rev_info *rev)\n"
+"{\n"
+"\tif (prepare_revision_walk(rev))\n"
+"\t\tdie(_(\"revision walk setup failed\"));\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:318
+msgid ""
+"`die()` prints to `stderr` and exits the program. Since it will print to "
+"`stderr` it's likely to be seen by a human, so we will localize it."
+msgstr ""
+
+#. type: Title ====
+#: ../Documentation/MyFirstObjectWalk.txt:319
+#, no-wrap
+msgid "Performing the Walk!"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:326
+msgid ""
+"Finally! We are ready to begin the walk itself. Now we can see that "
+"`rev_info` can also be used as an iterator; we move to the next item in the "
+"walk by using `get_revision()` repeatedly. Add the listed variable "
+"declarations at the top and the walk loop below the "
+"`prepare_revision_walk()` call within your `walken_commit_walk()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:332
+#, no-wrap
+msgid ""
+"static void walken_commit_walk(struct rev_info *rev)\n"
+"{\n"
+"\tstruct commit *commit;\n"
+"\tstruct strbuf prettybuf = STRBUF_INIT;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:334 ../Documentation/MyFirstObjectWalk.txt:703 ../Documentation/MyFirstObjectWalk.txt:758 ../Documentation/MyFirstObjectWalk.txt:765 ../Documentation/MyFirstObjectWalk.txt:770 ../Documentation/MyFirstObjectWalk.txt:836 ../Documentation/MyFirstObjectWalk.txt:844
+#, no-wrap
+msgid "\t...\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:342
+#, no-wrap
+msgid ""
+"\twhile ((commit = get_revision(rev))) {\n"
+"\t\tstrbuf_reset(&prettybuf);\n"
+"\t\tpp_commit_easy(CMIT_FMT_ONELINE, commit, &prettybuf);\n"
+"\t\tputs(prettybuf.buf);\n"
+"\t}\n"
+"\tstrbuf_release(&prettybuf);\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:346
+msgid ""
+"`puts()` prints a `char*` to `stdout`. Since this is the part of the command "
+"we expect to be machine-parsed, we're sending it directly to stdout."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:348
+msgid "Give it a shot."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:352
+#, no-wrap
+msgid ""
+"$ make\n"
+"$ ./bin-wrappers/git walken\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:360
+msgid ""
+"You should see all of the subject lines of all the commits in your tree's "
+"history, in order, ending with the initial commit, \"Initial revision of "
+"\"git\", the information manager from hell\". Congratulations! You've "
+"written your first revision walk. You can play with printing some additional "
+"fields from each commit if you're curious; have a look at the functions "
+"available in `commit.h`."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:361 ../Documentation/MyFirstObjectWalk.txt:680
+#, no-wrap
+msgid "Adding a Filter"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:366
+msgid ""
+"Next, let's try to filter the commits we see based on their author. This is "
+"equivalent to running `git log --author=<pattern>`. We can add a filter by "
+"modifying `rev_info.grep_filter`, which is a `struct grep_opt`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:368
+msgid "First some setup. Add `grep_config()` to `git_walken_config()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:375
+#, no-wrap
+msgid ""
+"static int git_walken_config(const char *var, const char *value, void *cb)\n"
+"{\n"
+"\tgrep_config(var, value, cb);\n"
+"\treturn git_default_config(var, value, cb);\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:384
+msgid ""
+"Next, we can modify the `grep_filter`. This is done with convenience "
+"functions found in `grep.h`. For fun, we're filtering to only commits from "
+"folks using a `gmail.com` email address - a not-very-precise guess at who "
+"may be working on Git as a hobby. Since we're checking the author, which is "
+"a specific line in the header, we'll use the `append_header_grep_pattern()` "
+"helper. We can use the `enum grep_header_field` to indicate which part of "
+"the commit header we want to search."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:386
+msgid "In `final_rev_info_setup()`, add your filter line:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:392 ../Documentation/MyFirstObjectWalk.txt:431 ../Documentation/MyFirstObjectWalk.txt:454
+#, no-wrap
+msgid ""
+"static void final_rev_info_setup(int argc, const char **argv,\n"
+"\t\tconst char *prefix, struct rev_info *rev)\n"
+"{\n"
+"\t...\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:396
+#, no-wrap
+msgid ""
+"\tappend_header_grep_pattern(&rev->grep_filter, GREP_HEADER_AUTHOR,\n"
+"\t\t\"gmail\");\n"
+"\tcompile_grep_patterns(&rev->grep_filter);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:403
+msgid ""
+"`append_header_grep_pattern()` adds your new \"gmail\" pattern to "
+"`rev_info`, but it won't work unless we compile it with "
+"`compile_grep_patterns()`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:407
+msgid ""
+"If you are using `setup_revisions()` (for example, if you are passing a "
+"`setup_revision_opt` instead of using `add_head_to_pending()`), you don't "
+"need to call `compile_grep_patterns()` because `setup_revisions()` calls it "
+"for you."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:411
+msgid ""
+"We could add the same filter via the `append_grep_pattern()` helper if we "
+"wanted to, but `append_header_grep_pattern()` adds the `enum grep_context` "
+"and `enum grep_pat_token` for us."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:412 ../Documentation/MyFirstObjectWalk.txt:791
+#, no-wrap
+msgid "Changing the Order"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:417
+msgid ""
+"There are a few ways that we can change the order of the commits during a "
+"revision walk. Firstly, we can use the `enum rev_sort_order` to choose from "
+"some typical orderings."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:422
+msgid ""
+"`topo_order` is the same as `git log --topo-order`: we avoid showing a "
+"parent before all of its children have been shown, and we avoid mixing "
+"commits which are in different lines of history. (`git help log`'s section "
+"on `--topo-order` has a very nice diagram to illustrate this.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:425
+msgid ""
+"Let's see what happens when we run with `REV_SORT_BY_COMMIT_DATE` as opposed "
+"to `REV_SORT_BY_AUTHOR_DATE`. Add the following:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:434
+#, no-wrap
+msgid ""
+"\trev->topo_order = 1;\n"
+"\trev->sort_order = REV_SORT_BY_COMMIT_DATE;\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:441
+msgid ""
+"Let's output this into a file so we can easily diff it with the walk sorted "
+"by author date."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:445
+#, no-wrap
+msgid ""
+"$ make\n"
+"$ ./bin-wrappers/git walken > commit-date.txt\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:448
+msgid "Then, let's sort by author date and run it again."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:457
+#, no-wrap
+msgid ""
+"\trev->topo_order = 1;\n"
+"\trev->sort_order = REV_SORT_BY_AUTHOR_DATE;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:465
+#, no-wrap
+msgid ""
+"$ make\n"
+"$ ./bin-wrappers/git walken > author-date.txt\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:469
+msgid ""
+"Finally, compare the two. This is a little less helpful without object names "
+"or dates, but hopefully we get the idea."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:472
+#, no-wrap
+msgid "$ diff -u commit-date.txt author-date.txt\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:476
+msgid ""
+"This display indicates that commits can be reordered after they're written, "
+"for example with `git rebase`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:479
+msgid ""
+"Let's try one more reordering of commits. `rev_info` exposes a `reverse` "
+"flag.  Set that flag somewhere inside of `final_rev_info_setup()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:485
+#, no-wrap
+msgid ""
+"static void final_rev_info_setup(int argc, const char **argv, const char "
+"*prefix,\n"
+"\t\tstruct rev_info *rev)\n"
+"{\n"
+"\t...\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:487
+#, no-wrap
+msgid "\trev->reverse = 1;\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:495
+msgid ""
+"Run your walk again and note the difference in order. (If you remove the "
+"grep pattern, you should see the last commit this call gives you as your "
+"current HEAD.)"
+msgstr ""
+
+#. type: Title ==
+#: ../Documentation/MyFirstObjectWalk.txt:496
+#, no-wrap
+msgid "Basic Object Walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:501
+msgid ""
+"So far we've been walking only commits. But Git has more types of objects "
+"than that! Let's see if we can walk _all_ objects, and find out some "
+"information about each one."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:511
+msgid ""
+"We can base our work on an example. `git pack-objects` prepares all kinds of "
+"objects for packing into a bitmap or packfile. The work we are interested in "
+"resides in `builtins/pack-objects.c:get_object_list()`; examination of that "
+"function shows that the all-object walk is being performed by "
+"`traverse_commit_list()` or `traverse_commit_list_filtered()`. Those two "
+"functions reside in `list-objects.c`; examining the source shows that, "
+"despite the name, these functions traverse all kinds of objects. Let's have "
+"a look at the arguments to `traverse_commit_list_filtered()`, which are a "
+"superset of the arguments to the unfiltered version."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:514
+msgid ""
+"`struct list_objects_filter_options *filter_options`: This is a struct which "
+"stores a filter-spec as outlined in `Documentation/rev-list-options.txt`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:515
+msgid "`struct rev_info *revs`: This is the `rev_info` used for the walk."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:517
+msgid ""
+"`show_commit_fn show_commit`: A callback which will be used to handle each "
+"individual commit object."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:519
+msgid ""
+"`show_object_fn show_object`: A callback which will be used to handle each "
+"non-commit object (so each blob, tree, or tag)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:521
+msgid ""
+"`void *show_data`: A context buffer which is passed in turn to `show_commit` "
+"and `show_object`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:523
+msgid ""
+"`struct oidset *omitted`: A linked-list of object IDs which the provided "
+"filter caused to be omitted."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:527
+msgid ""
+"It looks like this `traverse_commit_list_filtered()` uses callbacks we "
+"provide instead of needing us to call it repeatedly ourselves. Cool! Let's "
+"add the callbacks first."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:531
+msgid ""
+"For the sake of this tutorial, we'll simply keep track of how many of each "
+"kind of object we find. At file scope in `builtin/walken.c` add the "
+"following tracking variables:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:537
+#, no-wrap
+msgid ""
+"static int commit_count;\n"
+"static int tag_count;\n"
+"static int blob_count;\n"
+"static int tree_count;\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:541
+msgid ""
+"Commits are handled by a different callback than other objects; let's do "
+"that one first:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:547
+#, no-wrap
+msgid ""
+"static void walken_show_commit(struct commit *cmt, void *buf)\n"
+"{\n"
+"\tcommit_count++;\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:552
+msgid ""
+"The `cmt` argument is fairly self-explanatory. But it's worth mentioning "
+"that the `buf` argument is actually the context buffer that we can provide "
+"to the traversal calls - `show_data`, which we mentioned a moment ago."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:556
+msgid ""
+"Since we have the `struct commit` object, we can look at all the same parts "
+"that we looked at in our earlier commit-only walk. For the sake of this "
+"tutorial, though, we'll just increment the commit counter and move on."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:559
+msgid ""
+"The callback for non-commits is a little different, as we'll need to check "
+"which kind of object we're dealing with:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:580
+#, no-wrap
+msgid ""
+"static void walken_show_object(struct object *obj, const char *str, void "
+"*buf)\n"
+"{\n"
+"\tswitch (obj->type) {\n"
+"\tcase OBJ_TREE:\n"
+"\t\ttree_count++;\n"
+"\t\tbreak;\n"
+"\tcase OBJ_BLOB:\n"
+"\t\tblob_count++;\n"
+"\t\tbreak;\n"
+"\tcase OBJ_TAG:\n"
+"\t\ttag_count++;\n"
+"\t\tbreak;\n"
+"\tcase OBJ_COMMIT:\n"
+"\t\tBUG(\"unexpected commit object in walken_show_object\\n\");\n"
+"\tdefault:\n"
+"\t\tBUG(\"unexpected object type %s in walken_show_object\\n\",\n"
+"\t\t\ttype_name(obj->type));\n"
+"\t}\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:587
+msgid ""
+"Again, `obj` is fairly self-explanatory, and we can guess that `buf` is the "
+"same context pointer that `walken_show_commit()` receives: the `show_data` "
+"argument to `traverse_commit_list()` and "
+"`traverse_commit_list_filtered()`. Finally, `str` contains the name of the "
+"object, which ends up being something like `foo.txt` (blob), `bar/baz` "
+"(tree), or `v1.2.3` (tag)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:596
+msgid ""
+"To help assure us that we aren't double-counting commits, we'll include some "
+"complaining if a commit object is routed through our non-commit callback; "
+"we'll also complain if we see an invalid object type. Since those two cases "
+"should be unreachable, and would only change in the event of a semantic "
+"change to the Git codebase, we complain by using `BUG()` - which is a signal "
+"to a developer that the change they made caused unintended consequences, and "
+"the rest of the codebase needs to be updated to understand that "
+"change. `BUG()` is not intended to be seen by the public, so it is not "
+"localized."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:601
+msgid ""
+"Our main object walk implementation is substantially different from our "
+"commit walk implementation, so let's make a new function to perform the "
+"object walk. We can perform setup which is applicable to all objects here, "
+"too, to keep separate from setup which is applicable to commit-only walks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:608
+msgid ""
+"We'll start by enabling all types of objects in the `struct rev_info`.  "
+"We'll also turn on `tree_blobs_in_commit_order`, which means that we will "
+"walk a commit's tree and everything it points to immediately after we find "
+"each commit, as opposed to waiting for the end and walking through all trees "
+"after the commit history has been discovered. With the appropriate settings "
+"configured, we are ready to call `prepare_revision_walk()`."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:616
+#, no-wrap
+msgid ""
+"static void walken_object_walk(struct rev_info *rev)\n"
+"{\n"
+"\trev->tree_objects = 1;\n"
+"\trev->blob_objects = 1;\n"
+"\trev->tag_objects = 1;\n"
+"\trev->tree_blobs_in_commit_order = 1;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:619
+#, no-wrap
+msgid ""
+"\tif (prepare_revision_walk(rev))\n"
+"\t\tdie(_(\"revision walk setup failed\"));\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:624
+#, no-wrap
+msgid ""
+"\tcommit_count = 0;\n"
+"\ttag_count = 0;\n"
+"\tblob_count = 0;\n"
+"\ttree_count = 0;\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:628
+msgid ""
+"Let's start by calling just the unfiltered walk and reporting our counts.  "
+"Complete your implementation of `walken_object_walk()`:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:631
+#, no-wrap
+msgid "\ttraverse_commit_list(rev, walken_show_commit, walken_show_object, NULL);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:635
+#, no-wrap
+msgid ""
+"\tprintf(\"commits %d\\nblobs %d\\ntags %d\\ntrees %d\\n\", commit_count,\n"
+"\t\tblob_count, tag_count, tree_count);\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:642
+msgid ""
+"This output is intended to be machine-parsed. Therefore, we are not sending "
+"it to `trace_printf()`, and we are not localizing it - we need scripts to be "
+"able to count on the formatting to be exactly the way it is shown here.  If "
+"we were intending this output to be read by humans, we would need to "
+"localize it with `_()`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:647
+msgid ""
+"Finally, we'll ask `cmd_walken()` to use the object walk instead. Discussing "
+"command line options is out of scope for this tutorial, so we'll just "
+"hardcode a branch we can change at compile time. Where you call "
+"`final_rev_info_setup()` and `walken_commit_walk()`, instead branch like so:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:656
+#, no-wrap
+msgid ""
+"\tif (1) {\n"
+"\t\tadd_head_to_pending(&rev);\n"
+"\t\twalken_object_walk(&rev);\n"
+"\t} else {\n"
+"\t\tfinal_rev_info_setup(argc, argv, prefix, &rev);\n"
+"\t\twalken_commit_walk(&rev);\n"
+"\t}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:663
+msgid ""
+"For simplicity, we've avoided all the filters and sorts we applied in "
+"`final_rev_info_setup()` and simply added `HEAD` to our pending queue. If "
+"you want, you can certainly use the filters we added before by moving "
+"`final_rev_info_setup()` out of the conditional and removing the call to "
+"`add_head_to_pending()`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:667
+msgid ""
+"Now we can try to run our command! It should take noticeably longer than the "
+"commit walk, but an examination of the output will give you an idea "
+"why. Your output should look similar to this example, but with different "
+"counts:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:670
+#, no-wrap
+msgid ""
+"Object walk completed. Found 55733 commits, 100274 blobs, 0 tags, and 104210 "
+"trees.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:676
+msgid ""
+"This makes sense. We have more trees than commits because the Git project "
+"has lots of subdirectories which can change, plus at least one tree per "
+"commit. We have no tags because we started on a commit (`HEAD`) and while "
+"tags can point to commits, commits can't point to tags."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:679
+msgid ""
+"You will have different counts when you run this yourself! The number of "
+"objects grows along with the Git project."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:693
+msgid ""
+"There are a handful of filters that we can apply to the object walk laid out "
+"in `Documentation/rev-list-options.txt`. These filters are typically useful "
+"for operations such as creating packfiles or performing a partial "
+"clone. They are defined in `list-objects-filter-options.h`. For the purposes "
+"of this tutorial we will use the \"tree:1\" filter, which causes the walk to "
+"omit all trees and blobs which are not directly referenced by commits "
+"reachable from the commit in `pending` when the walk begins. (`pending` is "
+"the list of objects which need to be traversed during a walk; you can "
+"imagine a breadth-first tree traversal to help understand. In our case, that "
+"means we omit trees and blobs not directly referenced by `HEAD` or `HEAD`'s "
+"history, because we begin the walk with only `HEAD` in the `pending` list.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:696
+msgid ""
+"First, we'll need to `#include \"list-objects-filter-options.h\"` and set up "
+"the `struct list_objects_filter_options` at the top of the function."
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:701
+#, no-wrap
+msgid ""
+"static void walken_object_walk(struct rev_info *rev)\n"
+"{\n"
+"\tstruct list_objects_filter_options filter_options = {};\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:710
+msgid ""
+"For now, we are not going to track the omitted objects, so we'll replace "
+"those parameters with `NULL`. For the sake of simplicity, we'll add a simple "
+"build-time branch to use our filter or not. Replace the line calling "
+"`traverse_commit_list()` with the following, which will remind us which kind "
+"of walk we've just performed:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:721
+#, no-wrap
+msgid ""
+"\tif (0) {\n"
+"\t\t/* Unfiltered: */\n"
+"\t\ttrace_printf(_(\"Unfiltered object walk.\\n\"));\n"
+"\t\ttraverse_commit_list(rev, walken_show_commit,\n"
+"\t\t\t\twalken_show_object, NULL);\n"
+"\t} else {\n"
+"\t\ttrace_printf(\n"
+"\t\t\t_(\"Filtered object walk with filterspec 'tree:1'.\\n\"));\n"
+"\t\tparse_list_objects_filter(&filter_options, \"tree:1\");\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:725
+#, no-wrap
+msgid ""
+"\t\ttraverse_commit_list_filtered(&filter_options, rev,\n"
+"\t\t\twalken_show_commit, walken_show_object, NULL, NULL);\n"
+"\t}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:731
+msgid ""
+"`struct list_objects_filter_options` is usually built directly from a "
+"command line argument, so the module provides an easy way to build one from "
+"a string.  Even though we aren't taking user input right now, we can still "
+"build one with a hardcoded string using `parse_list_objects_filter()`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:736
+msgid ""
+"With the filter spec \"tree:1\", we are expecting to see _only_ the root "
+"tree for each commit; therefore, the tree object count should be less than "
+"or equal to the number of commits. (For an example of why that's true: `git "
+"commit --revert` points to the same tree object as its grandparent.)"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/MyFirstObjectWalk.txt:737
+#, no-wrap
+msgid "Counting Omitted Objects"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:744
+msgid ""
+"We also have the capability to enumerate all objects which were omitted by a "
+"filter, like with `git log --filter=<spec> --filter-print-omitted`. Asking "
+"`traverse_commit_list_filtered()` to populate the `omitted` list means that "
+"our object walk does not perform any better than an unfiltered object walk; "
+"all reachable objects are walked in order to populate the list."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:746
+msgid "First, add the `struct oidset` and related items we will use to iterate it:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:750
+#, no-wrap
+msgid ""
+"static void walken_object_walk(\n"
+"\t...\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:756
+#, no-wrap
+msgid ""
+"\tstruct oidset omitted;\n"
+"\tstruct oidset_iter oit;\n"
+"\tstruct object_id *oid = NULL;\n"
+"\tint omitted_count = 0;\n"
+"\toidset_init(&omitted, 0);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:762
+msgid ""
+"Modify the call to `traverse_commit_list_filtered()` to include your "
+"`omitted` object:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:768
+#, no-wrap
+msgid ""
+"\t\ttraverse_commit_list_filtered(&filter_options, rev,\n"
+"\t\t\twalken_show_commit, walken_show_object, NULL, &omitted);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:774
+msgid ""
+"Then, after your traversal, the `oidset` traversal is pretty "
+"straightforward.  Count all the objects within and modify the print "
+"statement:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:778
+#, no-wrap
+msgid ""
+"\t/* Count the omitted objects. */\n"
+"\toidset_iter_init(&omitted, &oit);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:781
+#, no-wrap
+msgid ""
+"\twhile ((oid = oidset_iter_next(&oit)))\n"
+"\t\tomitted_count++;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:784
+#, no-wrap
+msgid ""
+"\tprintf(\"commits %d\\nblobs %d\\ntags %d\\ntrees %d\\nomitted %d\\n\",\n"
+"\t\tcommit_count, blob_count, tag_count, tree_count, omitted_count);\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:790
+msgid ""
+"By running your walk with and without the filter, you should find that the "
+"total object count in each case is identical. You can also time each "
+"invocation of the `walken` subcommand, with and without `omitted` being "
+"passed in, to confirm to yourself the runtime impact of tracking all omitted "
+"objects."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:797
+msgid ""
+"Finally, let's demonstrate that you can also reorder walks of all objects, "
+"not just walks of commits. First, we'll make our handlers chattier - modify "
+"`walken_show_commit()` and `walken_show_object()` to print the object as "
+"they go:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:804
+#, no-wrap
+msgid ""
+"static void walken_show_commit(struct commit *cmt, void *buf)\n"
+"{\n"
+"\ttrace_printf(\"commit: %s\\n\", oid_to_hex(&cmt->object.oid));\n"
+"\tcommit_count++;\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:808
+#, no-wrap
+msgid ""
+"static void walken_show_object(struct object *obj, const char *str, void "
+"*buf)\n"
+"{\n"
+"\ttrace_printf(\"%s: %s\\n\", type_name(obj->type), "
+"oid_to_hex(&obj->oid));\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:817
+msgid ""
+"Since we will be examining this output directly as humans, we'll use "
+"`trace_printf()` here. Additionally, since this change introduces a "
+"significant number of printed lines, using `trace_printf()` will allow us to "
+"easily silence those lines without having to recompile."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:819
+msgid "(Leave the counter increment logic in place.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:821
+msgid "With only that change, run again (but save yourself some scrollback):"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:824
+#, no-wrap
+msgid "$ GIT_TRACE=1 ./bin-wrappers/git walken | head -n 10\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:828
+msgid ""
+"Take a look at the top commit with `git show` and the object ID you printed; "
+"it should be the same as the output of `git show HEAD`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:833
+msgid ""
+"Next, let's change a setting on our `struct rev_info` within "
+"`walken_object_walk()`. Find where you're changing the other settings on "
+"`rev`, such as `rev->tree_objects` and `rev->tree_blobs_in_commit_order`, "
+"and add the `reverse` setting at the bottom:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:842
+#, no-wrap
+msgid ""
+"\trev->tree_objects = 1;\n"
+"\trev->blob_objects = 1;\n"
+"\trev->tag_objects = 1;\n"
+"\trev->tree_blobs_in_commit_order = 1;\n"
+"\trev->reverse = 1;\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:848
+msgid ""
+"Now, run again, but this time, let's grab the last handful of objects "
+"instead of the first handful:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/MyFirstObjectWalk.txt:852
+#, no-wrap
+msgid ""
+"$ make\n"
+"$ GIT_TRACE=1 ./bin-wrappers git walken | tail -n 10\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:860
+msgid ""
+"The last commit object given should have the same OID as the one we saw at "
+"the top before, and running `git show <oid>` with that OID should give you "
+"again the same results as `git show HEAD`. Furthermore, if you run and "
+"examine the first ten lines again (with `head` instead of `tail` like we did "
+"before applying the `reverse` setting), you should see that now the first "
+"commit printed is the initial commit, `e83c5163`."
+msgstr ""
+
+#. type: Title ==
+#: ../Documentation/MyFirstObjectWalk.txt:861
+#, no-wrap
+msgid "Wrapping Up"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:864
+msgid "Let's review. In this tutorial, we:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:866
+msgid "Built a commit walk from the ground up"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:867
+msgid "Enabled a grep filter for that commit walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:868
+msgid "Changed the sort order of that filtered commit walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:869
+msgid "Built an object walk (tags, commits, trees, and blobs) from the ground up"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:870
+msgid "Learned how to add a filter-spec to an object walk"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/MyFirstObjectWalk.txt:870
+msgid "Changed the display order of the filtered object walk"
+msgstr ""

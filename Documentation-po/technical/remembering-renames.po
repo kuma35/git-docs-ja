@@ -1,0 +1,1297 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-02 01:06+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:10
+msgid ""
+"Rebases and cherry-picks involve a sequence of merges whose results are "
+"recorded as new single-parent commits.  The first parent side of those "
+"merges represent the \"upstream\" side, and often include a far larger set "
+"of changes than the second parent side.  Traditionally, the renames on the "
+"first-parent side of that sequence of merges were repeatedly re-detected for "
+"every merge.  This file explains why it is safe and effective during rebases "
+"and cherry-picks to remember renames on the upstream side of history as an "
+"optimization, assuming all merges are automatic and clean (i.e. no conflicts "
+"and not interrupted for user input or editing)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:12
+msgid "Outline:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:14
+msgid "Assumptions"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:16
+msgid "How rebasing and cherry-picking work"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:19
+msgid ""
+"Why the renames on MERGE_SIDE1 in any given pick are *always* a superset of "
+"the renames on MERGE_SIDE1 for the next pick."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:22
+msgid ""
+"Why any rename on MERGE_SIDE1 in any given pick is _almost_ always also a "
+"rename on MERGE_SIDE1 for the next pick"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:24
+msgid "A detailed description of the the counter-examples to #3."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:28
+msgid ""
+"Why the special cases in #4 are still fully reasonable to use to pair up "
+"files for three-way content merging in the merge machinery, and why they do "
+"not affect the correctness of the merge."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:30
+msgid "Interaction with skipping of \"irrelevant\" renames"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:32
+msgid "Additional items that need to be cached"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:36
+msgid ""
+"How directory rename detection interacts with the above and why this "
+"optimization is still safe even if merge.directoryRenames is set to "
+"\"true\"."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:38
+#, no-wrap
+msgid "0. Assumptions"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:41
+msgid "There are two assumptions that will hold throughout this document:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:44
+msgid ""
+"The upstream side where commits are transplanted to is treated as the first "
+"parent side when rebase/cherry-pick call the merge machinery"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:46
+msgid "All merges are fully automatic"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:49
+msgid ""
+"and a third that will hold in sections 2-5 for simplicity, that I'll later "
+"address in section 8:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:51
+msgid "No directory renames occur"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:54
+msgid "Let me explain more about each assumption and why I include it:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:69
+msgid ""
+"The first assumption is merely for the purposes of making this document "
+"clearer; the optimization implementation does not actually depend upon it.  "
+"However, the assumption does hold in all cases because it reflects the way "
+"that both rebase and cherry-pick were implemented; and the implementation of "
+"cherry-pick and rebase are not readily changeable for backwards "
+"compatibility reasons (see for example the discussion of the --ours and "
+"--theirs flag in the documentation of `git checkout`, particularly the "
+"comments about how they behave with rebase).  The optimization avoids "
+"checking first-parent-ness, though.  It checks the conditions that make the "
+"optimization valid instead, so it would still continue working if someone "
+"changed the parent ordering that cherry-pick and rebase use.  But making "
+"this assumption does make this document much clearer and prevents me from "
+"having to repeat every example twice."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:79
+msgid ""
+"If the second assumption is violated, then the optimization simply is turned "
+"off and thus isn't relevant to consider.  The second assumption can also be "
+"stated as \"there is no interruption for a user to resolve conflicts or to "
+"just further edit or tweak files\".  While real rebases and cherry-picks are "
+"often interrupted (either because it's an interactive rebase where the user "
+"requested to stop and edit, or because there were conflicts that the user "
+"needs to resolve), the cache of renames is not stored on disk, and thus is "
+"thrown away as soon as the rebase or cherry pick stops for the user to "
+"resolve the operation."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:92
+msgid ""
+"The third assumption makes sections 2-5 simpler, and allows people to "
+"understand the basics of why this optimization is safe and effective, and "
+"then I can go back and address the specifics in section 8.  It is probably "
+"also worth noting that if directory renames do occur, then the default of "
+"merge.directoryRenames being set to \"conflict\" means that the operation "
+"will stop for users to resolve the conflicts and the cache will be thrown "
+"away, and thus that there won't be an optimization to apply.  So, the only "
+"reason we need to address directory renames specifically, is that some users "
+"will have set merge.directoryRenames to \"true\" to allow the merges to "
+"continue to proceed automatically.  The optimization is still safe with this "
+"config setting, but we have to discuss a few more cases to show why; this "
+"discussion is deferred until section 8."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:94
+#, no-wrap
+msgid "1. How rebasing and cherry-picking work"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:97
+msgid "Consider the following setup (from the git-rebase manpage):"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:101
+#, no-wrap
+msgid ""
+"\t\t     A---B---C topic\n"
+"\t\t    /\n"
+"\t       D---E---F---G main\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:103
+msgid "After rebasing or cherry-picking topic onto main, this will appear as:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:107
+#, no-wrap
+msgid ""
+"\t\t\t     A'--B'--C' topic\n"
+"\t\t\t    /\n"
+"\t       D---E---F---G main\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:113
+msgid ""
+"The way the commits A', B', and C' are created is through a series of "
+"merges, where rebase or cherry-pick sequentially uses each of the three "
+"A-B-C commits in a special merge operation.  Let's label the three commits "
+"in the merge operation as MERGE_BASE, MERGE_SIDE1, and MERGE_SIDE2.  For "
+"this picture, the three commits for each of the three merges would be:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:118 ../Documentation/technical/remembering-renames.txt:163 ../Documentation/technical/remembering-renames.txt:193
+#, no-wrap
+msgid ""
+"To create A':\n"
+"   MERGE_BASE:   E\n"
+"   MERGE_SIDE1:  G\n"
+"   MERGE_SIDE2:  A\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:123 ../Documentation/technical/remembering-renames.txt:168 ../Documentation/technical/remembering-renames.txt:198
+#, no-wrap
+msgid ""
+"To create B':\n"
+"   MERGE_BASE:   A\n"
+"   MERGE_SIDE1:  A'\n"
+"   MERGE_SIDE2:  B\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:128
+#, no-wrap
+msgid ""
+"To create C':\n"
+"   MERGE_BASE:   B\n"
+"   MERGE_SIDE1:  B'\n"
+"   MERGE_SIDE2:  C\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:133
+msgid ""
+"Sometimes, folks are surprised that these three-way merges are done.  It can "
+"be useful in understanding these three-way merges to view them in a slightly "
+"different light.  For example, in creating C', you can view it as either:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:135
+msgid "Apply the changes between B & C to B'"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:136
+msgid "Apply the changes between B & B' to C"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:139
+msgid ""
+"Conceptually the two statements above are the same as a three-way merge of "
+"B, B', and C, at least the parts before you decide to record a commit."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:141
+#, no-wrap
+msgid "2. Why the renames on MERGE_SIDE1 in any given pick are always a"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:142
+#, no-wrap
+msgid "superset of the renames on MERGE_SIDE1 for the next pick."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:147
+msgid ""
+"The merge machinery uses the filenames it is fed from MERGE_BASE, "
+"MERGE_SIDE1, and MERGE_SIDE2.  It will only move content to a different "
+"filename under one of three conditions:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:151
+msgid ""
+"To make both pieces of a conflict available to a user during conflict "
+"resolution (examples: directory/file conflict, add/add type conflict such as "
+"symlink vs. regular file)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:153
+msgid "When MERGE_SIDE1 renames the file."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:155
+msgid "When MERGE_SIDE2 renames the file."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:158
+msgid ""
+"First, let's remember what commits are involved in the first and second "
+"picks of the cherry-pick or rebase sequence:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:171
+msgid ""
+"So, in particular, we need to show that the renames between E and G are a "
+"superset of those between A and A'."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:182
+msgid ""
+"A' is created by the first merge.  A' will only have renames for one of the "
+"three reasons listed above.  The first case, a conflict, results in a "
+"situation where the cache is dropped and thus this optimization doesn't take "
+"effect, so we need not consider that case.  The third case, a rename on "
+"MERGE_SIDE2 (i.e. from G to A), will show up in A' but it also shows up in A "
+"-- therefore when diffing A and A' that path does not show up as a rename.  "
+"The only remaining way for renames to show up in A' is for the rename to "
+"come from MERGE_SIDE1.  Therefore, all renames between A and A' are a subset "
+"of those between E and G.  Equivalently, all renames between E and G are a "
+"superset of those between A and A'."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:184
+#, no-wrap
+msgid "3. Why any rename on MERGE_SIDE1 in any given pick is _almost_"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:185
+#, no-wrap
+msgid "always also a rename on MERGE_SIDE1 for the next pick."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:188
+msgid "Let's again look at the first two picks:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:209
+#, no-wrap
+msgid ""
+"Now let's look at any given rename from MERGE_SIDE1 of the first pick, "
+"i.e.\n"
+"any given rename from E to G.  Let's use the filenames 'oldfile' and\n"
+"'newfile' for demonstration purposes.  That first pick will function as\n"
+"follows; when the rename is detected, the merge machinery will do a\n"
+"three-way content merge of the following:\n"
+"    E:oldfile\n"
+"    G:newfile\n"
+"    A:oldfile\n"
+"and produce a new result:\n"
+"    A':newfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:225
+msgid ""
+"Note above that I've assumed that E->A did not rename oldfile.  If that side "
+"did rename, then we most likely have a rename/rename(1to2) conflict that "
+"will cause the rebase or cherry-pick operation to halt and drop the "
+"in-memory cache of renames and thus doesn't need to be considered further.  "
+"In the special case that E->A does rename the file but also renames it to "
+"newfile, then there is no conflict from the renaming and the merge can "
+"succeed.  In this special case, the rename is not valid to cache because the "
+"second merge will find A:newfile in the MERGE_BASE (see also the new "
+"testcases in t6429 with \"rename same file identically\" in their "
+"description).  So a rename/rename(1to1) needs to be specially handled by "
+"pruning renames from the cache and decrementing the dir_rename_counts in the "
+"current and leading directories associated with those renames.  Or, since "
+"these are really rare, one could just take the easy way out and disable the "
+"remembering renames optimization when a rename/rename(1to1)  happens."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:228
+msgid ""
+"The previous paragraph handled the cases for E->A renaming oldfile, let's "
+"continue assuming that oldfile is not renamed in A."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:232
+msgid ""
+"As per the diagram for creating B', MERGE_SIDE1 involves the changes from A "
+"to A'.  So, we are curious whether A:oldfile and A':newfile will be viewed "
+"as renames.  Note that:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:238
+msgid ""
+"There will be no A':oldfile (because there could not have been a G:oldfile "
+"as we do not do break detection in the merge machinery and G:newfile was "
+"detected as a rename, and by the construction of the rename above that "
+"merged cleanly, the merge machinery will ensure there is no 'oldfile' in the "
+"result)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:241
+msgid ""
+"There will be no A:newfile (if there had been, we would have had a "
+"rename/add conflict)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:244
+msgid ""
+"Clearly A:oldfile and A':newfile are \"related\" (A':newfile came from a "
+"clean three-way content merge involving A:oldfile)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:250
+msgid ""
+"We can also expound on the third point above, by noting that three-way "
+"content merges can also be viewed as applying the differences between the "
+"base and one side to the other side.  Thus we can view A':newfile as having "
+"been created by taking the changes between E:oldfile and G:newfile (which "
+"were detected as being related, i.e. <50% changed) to A:oldfile."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:255
+msgid ""
+"Thus A:oldfile and A':newfile are just as related as E:oldfile and G:newfile "
+"are -- they have exactly identical differences.  Since the latter were "
+"detected as renames, A:oldfile and A':newfile should also be detectable as "
+"renames almost always."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:257
+#, no-wrap
+msgid "4. A detailed description of the counter-examples to #3."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:264
+msgid ""
+"We already noted in section 3 that rename/rename(1to1) (i.e. both sides "
+"renaming a file the same way) was one counter-example.  The more interesting "
+"bit, though, is why did we need to use the \"almost\" qualifier when stating "
+"that A:oldfile and A':newfile are \"almost\" always detectable as renames?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:266
+msgid "Let's repeat an earlier point that section 3 made:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:270
+#, no-wrap
+msgid ""
+"  A':newfile was created by applying the changes between E:oldfile and\n"
+"  G:newfile to A:oldfile.  The changes between E:oldfile and G:newfile "
+"were\n"
+"  <50% of the size of E:oldfile.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:277
+msgid ""
+"If those changes that were <50% of the size of E:oldfile are also <50% of "
+"the size of A:oldfile, then A:oldfile and A':newfile will be detectable as "
+"renames.  However, if there is a dramatic size reduction between E:oldfile "
+"and A:oldfile (but the changes between E:oldfile, G:newfile, and A:oldfile "
+"still somehow merge cleanly), then traditional rename detection would not "
+"detect A:oldfile and A':newfile as renames."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:279
+msgid "Here's an example where that can happen:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:280
+msgid "E:oldfile had 20 lines"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:281
+msgid "G:newfile added 10 new lines at the beginning of the file"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:286
+#, no-wrap
+msgid ""
+"A:oldfile kept the first 3 lines of the file, and deleted all the rest\n"
+"then\n"
+"  => A':newfile would have 13 lines, 3 of which matches those in "
+"A:oldfile.\n"
+"E:oldfile -> G:newfile would be detected as a rename, but A:oldfile and\n"
+"A':newfile would not be.\n"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:288
+#, no-wrap
+msgid "5. Why the special cases in #4 are still fully reasonable to use to"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:289
+#, no-wrap
+msgid "pair up files for three-way content merging in the merge machinery,"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:290
+#, no-wrap
+msgid "and why they do not affect the correctness of the merge."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:300
+msgid ""
+"In the rename/rename(1to1) case, A:newfile and A':newfile are not renames "
+"since they use the *same* filename.  However, files with the same filename "
+"are obviously fine to pair up for three-way content merging (the merge "
+"machinery has never employed break detection).  The interesting "
+"counter-example case is thus not the rename/rename(1to1) case, but the case "
+"where A did not rename oldfile.  That was the case that we spent most of the "
+"time discussing in sections 3 and 4.  The remainder of this section will be "
+"devoted to that case as well."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:304
+msgid ""
+"So, even if A:oldfile and A':newfile aren't detectable as renames, why is it "
+"still reasonable to pair them up for three-way content merging in the merge "
+"machinery? There are multiple reasons:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:309
+msgid ""
+"As noted in sections 3 and 4, the diff between A:oldfile and A':newfile is "
+"*exactly* the same as the diff between E:oldfile and G:newfile.  The latter "
+"pair were detected as renames, so it seems unlikely to surprise users for us "
+"to treat A:oldfile and A':newfile as renames."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:315
+msgid ""
+"In fact, \"oldfile\" and \"newfile\" were at one point detected as renames "
+"due to how they were constructed in the E..G chain.  And we used that "
+"information once already in this rebase/cherry-pick.  I think users would be "
+"unlikely to be surprised at us continuing to treat the files as renames and "
+"would quickly understand why we had done so."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:319
+msgid ""
+"Marking or declaring files as renames is *not* the end goal for merges.  "
+"Merges use renames to determine which files make sense to be paired up for "
+"three-way content merges."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:324
+msgid ""
+"A:oldfile and A':newfile were _already_ paired up in a three-way content "
+"merge; that is how A':newfile was created.  In fact, that three-way content "
+"merge was clean.  So using them again in a later three-way content merge "
+"seems very reasonable."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:330
+msgid ""
+"However, the above is focusing on the common scenarios.  Let's try to look "
+"at all possible unusual scenarios and compare without the optimization to "
+"with the optimization.  Consider the following theoretical cases; we will "
+"then dive into each to determine which of them are possible, and if so, what "
+"they mean:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:334
+msgid ""
+"Without the optimization, the second merge results in a conflict.  With the "
+"optimization, the second merge also results in a conflict.  Questions: Are "
+"the conflicts confusingly different? Better in one case?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:338
+msgid ""
+"Without the optimization, the second merge results in NO conflict.  With the "
+"optimization, the second merge also results in NO conflict.  Questions: Are "
+"the merges the same?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:342
+msgid ""
+"Without the optimization, the second merge results in a conflict.  With the "
+"optimization, the second merge results in NO conflict.  Questions: Possible? "
+"Bug, bugfix, or something else?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:346
+msgid ""
+"Without the optimization, the second merge results in NO conflict.  With the "
+"optimization, the second merge results in a conflict.  Questions: Possible? "
+"Bug, bugfix, or something else?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:348
+msgid "I'll consider all four cases, but out of order."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:355
+msgid ""
+"The fourth case is impossible.  For the code without the remembering renames "
+"optimization to not get a conflict, B:oldfile would need to exactly match "
+"A:oldfile -- if it doesn't, there would be a modify/delete conflict.  If "
+"A:oldfile matches B:oldfile exactly, then a three-way content merge between "
+"A:oldfile, A':newfile, and B:oldfile would have no conflict and just give us "
+"the version of newfile from A' as the result."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:364
+msgid ""
+"From the same logic as the above paragraph, the second case would indeed "
+"result in identical merges.  When A:oldfile exactly matches B:oldfile, an "
+"undetected rename would say, \"Oh, I see one side didn't modify 'oldfile' "
+"and the other side deleted it.  I'll delete it.  And I see you have this "
+"brand new file named 'newfile' in A', so I'll keep it.\" That gives the same "
+"results as three-way content merging A:oldfile, A':newfile, and B:oldfile -- "
+"a removal of oldfile with the version of newfile from A' showing up in the "
+"result."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:378
+msgid ""
+"The third case is interesting.  It means that A:oldfile and A':newfile were "
+"not just similar enough, but that the changes between them did not conflict "
+"with the changes between A:oldfile and B:oldfile.  This would validate our "
+"hunch that the files were similar enough to be used in a three-way content "
+"merge, and thus seems entirely correct for us to have used them that way.  "
+"(Sidenote: One particular example here may be enlightening.  Let's say that "
+"B was an immediate revert of A.  B clearly would have been a clean revert of "
+"A, since A was B's immediate parent.  One would assume that if you can pick "
+"a commit, you should also be able to cherry-pick its immediate revert.  "
+"However, this is one of those funny corner cases; without this optimization, "
+"we just successfully picked a commit cleanly, but we are unable to "
+"cherry-pick its immediate revert due to the size differences between "
+"E:oldfile and A:oldfile.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:391
+msgid ""
+"That leaves only the first case to consider -- when we get conflicts both "
+"with or without the optimization.  Without the optimization, we'll have a "
+"modify/delete conflict, where both A':newfile and B:oldfile are left in the "
+"tree for the user to deal with and no hints about the potential similarity "
+"between the two.  With the optimization, we'll have a three-way content "
+"merged A:oldfile, A':newfile, and B:oldfile with conflict markers suggesting "
+"we thought the files were related but giving the user the chance to "
+"resolve.  As noted above, I don't think users will find us treating "
+"'oldfile' and 'newfile' as related as a surprise since they were between E "
+"and G.  In any event, though, this case shouldn't be concerning since we hit "
+"a conflict in both cases, told the user what we know, and asked them to "
+"resolve it."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:395
+msgid ""
+"So, in summary, case 4 is impossible, case 2 yields the same behavior, and "
+"cases 1 and 3 seem to provide as good or better behavior with the "
+"optimization than without."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:397
+#, no-wrap
+msgid "6. Interaction with skipping of \"irrelevant\" renames"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:401
+msgid ""
+"Previous optimizations involved skipping rename detection for paths "
+"considered to be \"irrelevant\".  See for example the following commits:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:403
+msgid "32a56dfb99 (\"merge-ort: precompute subset of sources for which we"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:404
+msgid "need rename detection\", 2021-03-11)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:405
+msgid "2fd9eda462 (\"merge-ort: precompute whether directory rename"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:406
+msgid "detection is needed\", 2021-03-11)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:407
+msgid "9bd342137e (\"diffcore-rename: determine which relevant_sources are"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:408
+msgid "no longer relevant\", 2021-03-13)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:415
+msgid ""
+"Relevance is always determined by what the _other_ side of history has done, "
+"in terms of modifing a file that our side renamed, or adding a file to a "
+"directory which our side renamed.  This means that a path that is "
+"\"irrelevant\" when picking the first commit of a series in a rebase or "
+"cherry-pick, may suddenly become \"relevant\" when picking the next commit."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:422
+msgid ""
+"The upshot of this is that we can only cache rename detection results for "
+"relevant paths, and need to re-check relevance in subsequent commits.  If "
+"those subsequent commits have additional paths that are relevant for rename "
+"detection, then we will need to redo rename detection -- though we can limit "
+"it to the paths for which we have not already detected renames."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:424
+#, no-wrap
+msgid "7. Additional items that need to be cached"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:427
+msgid "It turns out we have to cache more than just renames; we also cache:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:433
+#, no-wrap
+msgid ""
+"  A) non-renames (i.e. unpaired deletes)\n"
+"  B) counts of renames within directories\n"
+"  C) sources that were marked as RELEVANT_LOCATION, but which were\n"
+"     downgraded to RELEVANT_NO_MORE\n"
+"  D) the toplevel trees involved in the merge\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:435
+msgid "These are all stored in struct rename_info, and respectively appear in"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:436
+msgid "cached_pairs (along side actual renames, just with a value of NULL)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:437
+msgid "dir_rename_counts"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:438
+msgid "cached_irrelevant"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:439
+msgid "merge_trees"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:449
+msgid ""
+"The reason for (A) comes from the irrelevant renames skipping optimization "
+"discussed in section 6.  The fact that irrelevant renames are skipped means "
+"we only get a subset of the potential renames detected and subsequent "
+"commits may need to run rename detection on the upstream side on a subset of "
+"the remaining renames (to get the renames that are relevant for that later "
+"commit).  Since unpaired deletes are involved in rename detection too, we "
+"don't want to repeatedly check that those paths remain unpaired on the "
+"upstream side with every commit we are transplanting."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:455
+msgid ""
+"The reason for (B) is that diffcore_rename_extended() is what generates the "
+"counts of renames by directory which is needed in directory rename "
+"detection, and if we don't run diffcore_rename_extended() again then we need "
+"to have the output from it, including dir_rename_counts, from the previous "
+"run."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:462
+msgid ""
+"The reason for (C) is that merge-ort's tree traversal will again think those "
+"paths are relevant (marking them as RELEVANT_LOCATION), but the fact that "
+"they were downgraded to RELEVANT_NO_MORE means that dir_rename_counts "
+"already has the information we need for directory rename detection.  (A path "
+"which becomes RELEVANT_CONTENT in a subsequent commit will be removed from "
+"cached_irrelevant.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:466
+msgid ""
+"The reason for (D) is that is how we determine whether the remember renames "
+"optimization can be used.  In particular, remembering that our sequence of "
+"merges looks like:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:472
+#, no-wrap
+msgid ""
+"   Merge 1:\n"
+"   MERGE_BASE:   E\n"
+"   MERGE_SIDE1:  G\n"
+"   MERGE_SIDE2:  A\n"
+"   => Creates    A'\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:478
+#, no-wrap
+msgid ""
+"   Merge 2:\n"
+"   MERGE_BASE:   A\n"
+"   MERGE_SIDE1:  A'\n"
+"   MERGE_SIDE2:  B\n"
+"   => Creates    B'\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:483
+msgid ""
+"It is the fact that the trees A and A' appear both in Merge 1 and in Merge "
+"2, with A as a parent of A' that allows this optimization.  So we store the "
+"trees to compare with what we are asked to merge next time."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:485
+#, no-wrap
+msgid "8. How directory rename detection interacts with the above and"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:486
+#, no-wrap
+msgid "why this optimization is still safe even if"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation/technical/remembering-renames.txt:487
+#, no-wrap
+msgid "merge.directoryRenames is set to \"true\"."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:490
+msgid "As noted in the assumptions section:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:500
+#, no-wrap
+msgid ""
+"    \"\"\"\n"
+"    ...if directory renames do occur, then the default of\n"
+"    merge.directoryRenames being set to \"conflict\" means that the "
+"operation\n"
+"    will stop for users to resolve the conflicts and the cache will be\n"
+"    thrown away, and thus that there won't be an optimization to apply.\n"
+"    So, the only reason we need to address directory renames specifically,\n"
+"    is that some users will have set merge.directoryRenames to \"true\" to\n"
+"    allow the merges to continue to proceed automatically.\n"
+"    \"\"\"\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:504
+msgid ""
+"Let's remember that we need to look at how any given pick affects the next "
+"one.  So let's again use the first two picks from the diagram in section "
+"one:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:510
+#, no-wrap
+msgid ""
+"  First pick does this three-way merge:\n"
+"    MERGE_BASE:   E\n"
+"    MERGE_SIDE1:  G\n"
+"    MERGE_SIDE2:  A\n"
+"    => creates A'\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:516
+#, no-wrap
+msgid ""
+"  Second pick does this three-way merge:\n"
+"    MERGE_BASE:   A\n"
+"    MERGE_SIDE1:  A'\n"
+"    MERGE_SIDE2:  B\n"
+"    => creates B'\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:524
+msgid ""
+"Now, directory rename detection exists so that if one side of history "
+"renames a directory, and the other side adds a new file to the old "
+"directory, then the merge (with merge.directoryRenames=true) can move the "
+"file into the new directory.  There are two qualitatively different ways to "
+"add a new file to an old directory: create a new file, or rename a file into "
+"that directory.  Also, directory renames can be done on either side of "
+"history, so there are four cases to consider:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:526
+#, no-wrap
+msgid "MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to   old dir\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:527
+#, no-wrap
+msgid "MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames  file into old dir\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:528
+#, no-wrap
+msgid "MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old dir\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:529
+#, no-wrap
+msgid "MERGE_SIDE1 renames  file into old dir, MERGE_SIDE2 renames old dir\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:534
+msgid ""
+"One last note before we consider these four cases: There are some important "
+"properties about how we implement this optimization with respect to "
+"directory rename detection that we need to bear in mind while considering "
+"all of these cases:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:536
+msgid "rename caching occurs *after* applying directory renames"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:539
+msgid ""
+"a rename created by directory rename detection is recorded for the side of "
+"history that did the directory rename."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:541
+msgid "dir_rename_counts, the nested map of"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:542
+msgid "{oldname => {newname => count}},"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:547
+#, no-wrap
+msgid ""
+"is cached between runs as well.  This basically means that directory\n"
+"rename detection is also cached, though only on the side of history\n"
+"that we cache renames for (MERGE_SIDE1 as far as this document is\n"
+"concerned; see the assumptions section).  Two interesting sub-notes\n"
+"about these counts:\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:558
+msgid ""
+"If we need to perform rename-detection again on the given side (e.g.  some "
+"paths are relevant for rename detection that weren't before), then we clear "
+"dir_rename_counts and recompute it, making use of cached_pairs.  The reason "
+"it is important to do this is optimizations around RELEVANT_LOCATION exist "
+"to prevent us from computing unnecessary renames for directory rename "
+"detection and from computing dir_rename_counts for irrelevant directories; "
+"but those same renames or directories may become necessary for subsequent "
+"merges.  The easiest way to \"fix up\" dir_rename_counts in such cases is to "
+"just recompute it."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:567
+msgid ""
+"If we prune rename/rename(1to1) entries from the cache, then we also need to "
+"update dir_rename_counts to decrement the counts for the involved directory "
+"and any relevant parent directories (to undo what update_dir_rename_counts() "
+"in diffcore-rename.c incremented when the rename was initially found).  If "
+"we instead just disable the remembering renames optimization when the "
+"exceedingly rare rename/rename(1to1) cases occur, then dir_rename_counts "
+"will get re-computed the next time rename detection occurs, as noted above."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:572
+msgid ""
+"the side with multiple commits to pick, is the side of history that we do "
+"NOT cache renames for.  Thus, there are no additional commits to change the "
+"number of renames in a directory, except for those done by directory rename "
+"detection (which always pad the majority)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:575
+msgid ""
+"the \"renames\" we cache are modified slightly by any directory rename, as "
+"noted below."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:578
+msgid ""
+"Now, with those notes out of the way, let's go through the four cases in "
+"order:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:580
+msgid "Case 1: MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to old dir"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:582 ../Documentation/technical/remembering-renames.txt:624 ../Documentation/technical/remembering-renames.txt:642
+#, no-wrap
+msgid "  This case looks like this:\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:587
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   E,   Has olddir/\n"
+"    MERGE_SIDE1:  G,   Renames olddir/ -> newdir/\n"
+"    MERGE_SIDE2:  A,   Adds olddir/newfile\n"
+"    => creates    A',  With newdir/newfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:592
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   A,   Has olddir/newfile\n"
+"    MERGE_SIDE1:  A',  Has newdir/newfile\n"
+"    MERGE_SIDE2:  B,   Modifies olddir/newfile\n"
+"    => expected   B',  with threeway-merged newdir/newfile from above\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:594 ../Documentation/technical/remembering-renames.txt:613 ../Documentation/technical/remembering-renames.txt:654
+#, no-wrap
+msgid "  In this case, with the optimization, note that after the first commit:\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:595 ../Documentation/technical/remembering-renames.txt:614
+#, no-wrap
+msgid "MERGE_SIDE1 remembers olddir/ -> newdir/\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:596 ../Documentation/technical/remembering-renames.txt:615
+#, no-wrap
+msgid "MERGE_SIDE1 has cached olddir/newfile -> newdir/newfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:598 ../Documentation/technical/remembering-renames.txt:661
+#, no-wrap
+msgid ""
+"Given the cached rename noted above, the second merge can proceed as\n"
+"expected without needing to perform rename detection from A -> A'.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:600
+msgid "Case 2: MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames file into old dir"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:606
+#, no-wrap
+msgid ""
+"  This case looks like this:\n"
+"    MERGE_BASE:   E    oldfile, olddir/\n"
+"    MERGE_SIDE1:  G    oldfile, olddir/ -> newdir/\n"
+"    MERGE_SIDE2:  A    oldfile -> olddir/newfile\n"
+"    => creates    A',  With newdir/newfile representing original oldfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:611
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   A    olddir/newfile\n"
+"    MERGE_SIDE1:  A'   newdir/newfile\n"
+"    MERGE_SIDE2:  B    modify olddir/newfile\n"
+"    => expected   B',  with threeway-merged newdir/newfile from above\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:616
+#, no-wrap
+msgid "(NOT oldfile -> newdir/newfile; compare to case with\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:617
+#, no-wrap
+msgid "(p->status == 'R' && new_path) in possibly_cache_new_pair())\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:620
+msgid ""
+"Given the cached rename noted above, the second merge can proceed as "
+"expected without needing to perform rename detection from A -> A'."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:622
+#, no-wrap
+msgid ""
+"Case 3: MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old "
+"dir\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:629
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   E,   Has olddir/\n"
+"    MERGE_SIDE1:  G,   Adds olddir/newfile\n"
+"    MERGE_SIDE2:  A,   Renames olddir/ -> newdir/\n"
+"    => creates    A',  With newdir/newfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:634
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   A,   Has newdir/, but no notion of newdir/newfile\n"
+"    MERGE_SIDE1:  A',  Has newdir/newfile\n"
+"    MERGE_SIDE2:  B,   Has newdir/, but no notion of newdir/newfile\n"
+"    => expected   B',  with newdir/newfile from A'\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:638
+#, no-wrap
+msgid ""
+"  In this case, with the optimization, note that after the first commit "
+"there\n"
+"  were no renames on MERGE_SIDE1, and any renames on MERGE_SIDE2 are "
+"tossed.\n"
+"  But the second merge didn't need any renames so this is fine.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:640
+msgid "Case 4: MERGE_SIDE1 renames file into old dir, MERGE_SIDE2 renames old dir"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:647
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   E,   Has olddir/\n"
+"    MERGE_SIDE1:  G,   Renames oldfile -> olddir/newfile\n"
+"    MERGE_SIDE2:  A,   Renames olddir/ -> newdir/\n"
+"    => creates    A',  With newdir/newfile representing original oldfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:652
+#, no-wrap
+msgid ""
+"    MERGE_BASE:   A,   Has oldfile\n"
+"    MERGE_SIDE1:  A',  Has newdir/newfile\n"
+"    MERGE_SIDE2:  B,   Modifies oldfile\n"
+"    => expected   B',  with threeway-merged newdir/newfile from above\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:655
+#, no-wrap
+msgid "MERGE_SIDE1 remembers oldfile -> newdir/newfile\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:656
+#, no-wrap
+msgid "(NOT oldfile -> olddir/newfile; compare to case of second\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:657
+#, no-wrap
+msgid "block under p->status == 'R' in possibly_cache_new_pair())\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:658
+#, no-wrap
+msgid "MERGE_SIDE2 renames are tossed because only MERGE_SIDE1 is remembered\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/remembering-renames.txt:671
+msgid ""
+"Finally, I'll just note here that interactions with the "
+"skip-irrelevant-renames optimization means we sometimes don't detect renames "
+"for any files within a directory that was renamed, in which case we will not "
+"have been able to detect any rename for the directory itself.  In such a "
+"case, we do not know whether the directory was renamed; we want to be "
+"careful to avoid cacheing some kind of \"this directory was not renamed\" "
+"statement.  If we did, then a subsequent commit being rebased could add a "
+"file to the old directory, and the user would expect it to end up in the "
+"correct directory -- something our erroneous \"this directory was not "
+"renamed\" cache would preclude."
+msgstr ""

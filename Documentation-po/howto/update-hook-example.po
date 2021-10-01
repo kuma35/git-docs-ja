@@ -1,0 +1,341 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-02 01:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:9
+#, no-wrap
+msgid ""
+"From: Junio C Hamano <gitster@pobox.com> and Carl Baldwin <cnb@fc.hp.com>\n"
+"Subject: control access to branches.\n"
+"Date: Thu, 17 Nov 2005 23:55:32 -0800\n"
+"Message-ID: <7vfypumlu3.fsf@assigned-by-dhcp.cox.net>\n"
+"Abstract: An example hooks/update script is presented to\n"
+" implement repository maintenance policies, such as who can push\n"
+" into which branch and who can make a tag.\n"
+"Content-type: text/asciidoc\n"
+msgstr ""
+
+#. type: Title =
+#: ../Documentation/howto/update-hook-example.txt:11
+#, no-wrap
+msgid "How to use the update hook"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:17
+msgid ""
+"When your developer runs git-push into the repository, git-receive-pack is "
+"run (either locally or over ssh) as that developer, so is hooks/update "
+"script.  Quoting from the relevant section of the documentation:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:20
+#, no-wrap
+msgid ""
+"    Before each ref is updated, if $GIT_DIR/hooks/update file exists\n"
+"    and executable, it is called with three parameters:\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:22
+#, no-wrap
+msgid "           $GIT_DIR/hooks/update refname sha1-old sha1-new\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:29
+#, no-wrap
+msgid ""
+"    The refname parameter is relative to $GIT_DIR; e.g. for the\n"
+"    master head this is \"refs/heads/master\".  Two sha1 are the\n"
+"    object names for the refname before and after the update.  Note\n"
+"    that the hook is called before the refname is updated, so either\n"
+"    sha1-old is 0{40} (meaning there is no such ref yet), or it\n"
+"    should match what is recorded in refname.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:35
+msgid ""
+"So if your policy is (1) always require fast-forward push (i.e. never allow "
+"\"git-push repo +branch:branch\"), (2) you have a list of users allowed to "
+"update each branch, and (3) you do not let tags to be overwritten, then you "
+"can use something like this as your hooks/update script."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:38
+msgid ""
+"[jc: editorial note.  This is a much improved version by Carl since I posted "
+"the original outline]"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:41
+#, no-wrap
+msgid "#!/bin/bash\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:43
+#, no-wrap
+msgid "umask 002\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:47
+#, no-wrap
+msgid ""
+"# If you are having trouble with this access control hook script\n"
+"# you can try setting this to true.  It will tell you exactly\n"
+"# why a user is being allowed/denied access.\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:49
+#, no-wrap
+msgid "verbose=false\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:52
+#, no-wrap
+msgid ""
+"# Default shell globbing messes things up downstream\n"
+"GLOBIGNORE=*\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:58
+#, no-wrap
+msgid ""
+"function grant {\n"
+"  $verbose && echo >&2 \"-Grant-\t\t$1\"\n"
+"  echo grant\n"
+"  exit 0\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:64
+#, no-wrap
+msgid ""
+"function deny {\n"
+"  $verbose && echo >&2 \"-Deny-\t\t$1\"\n"
+"  echo deny\n"
+"  exit 1\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:68
+#, no-wrap
+msgid ""
+"function info {\n"
+"  $verbose && echo >&2 \"-Info-\t\t$1\"\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:95
+#, no-wrap
+msgid ""
+"# Implement generic branch and tag policies.\n"
+"# - Tags should not be updated once created.\n"
+"# - Branches should only be fast-forwarded unless their pattern starts with "
+"'+'\n"
+"case \"$1\" in\n"
+"  refs/tags/*)\n"
+"    git rev-parse --verify -q \"$1\" &&\n"
+"    deny >/dev/null \"You can't overwrite an existing tag\"\n"
+"    ;;\n"
+"  refs/heads/*)\n"
+"    # No rebasing or rewinding\n"
+"    if expr \"$2\" : '0*$' >/dev/null; then\n"
+"      info \"The branch '$1' is new...\"\n"
+"    else\n"
+"      # updating -- make sure it is a fast-forward\n"
+"      mb=$(git merge-base \"$2\" \"$3\")\n"
+"      case \"$mb,$2\" in\n"
+"        \"$2,$mb\") info \"Update is fast-forward\" ;;\n"
+"\t*)\t  noff=y; info \"This is not a fast-forward update.\";;\n"
+"      esac\n"
+"    fi\n"
+"    ;;\n"
+"  *)\n"
+"    deny >/dev/null \\\n"
+"    \"Branch is not under refs/heads or refs/tags.  What are you trying to "
+"do?\"\n"
+"    ;;\n"
+"esac\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:100
+#, no-wrap
+msgid ""
+"# Implement per-branch controls based on username\n"
+"allowed_users_file=$GIT_DIR/info/allowed-users\n"
+"username=$(id -u -n)\n"
+"info \"The user is: '$username'\"\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:110
+#, no-wrap
+msgid ""
+"if test -f \"$allowed_users_file\"\n"
+"then\n"
+"  rc=$(cat $allowed_users_file | grep -v '^#' | grep -v '^$' |\n"
+"    while read heads user_patterns\n"
+"    do\n"
+"      # does this rule apply to us?\n"
+"      head_pattern=${heads#+}\n"
+"      matchlen=$(expr \"$1\" : \"${head_pattern#+}\")\n"
+"      test \"$matchlen\" = ${#1} || continue\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:114 ../Documentation/howto/update-hook-example.txt:152
+#, no-wrap
+msgid ""
+"      # if non-ff, $heads must be with the '+' prefix\n"
+"      test -n \"$noff\" &&\n"
+"      test \"$head_pattern\" = \"$heads\" && continue\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:133
+#, no-wrap
+msgid ""
+"      info \"Found matching head pattern: '$head_pattern'\"\n"
+"      for user_pattern in $user_patterns; do\n"
+"        info \"Checking user: '$username' against pattern: "
+"'$user_pattern'\"\n"
+"        matchlen=$(expr \"$username\" : \"$user_pattern\")\n"
+"        if test \"$matchlen\" = \"${#username}\"\n"
+"        then\n"
+"          grant \"Allowing user: '$username' with pattern: "
+"'$user_pattern'\"\n"
+"        fi\n"
+"      done\n"
+"      deny \"The user is not in the access list for this branch\"\n"
+"    done\n"
+"  )\n"
+"  case \"$rc\" in\n"
+"    grant) grant >/dev/null \"Granting access based on $allowed_users_file\" "
+";;\n"
+"    deny)  deny  >/dev/null \"Denying  access based on $allowed_users_file\" "
+";;\n"
+"    *) ;;\n"
+"  esac\n"
+"fi\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:138
+#, no-wrap
+msgid ""
+"allowed_groups_file=$GIT_DIR/info/allowed-groups\n"
+"groups=$(id -G -n)\n"
+"info \"The user belongs to the following groups:\"\n"
+"info \"'$groups'\"\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:148
+#, no-wrap
+msgid ""
+"if test -f \"$allowed_groups_file\"\n"
+"then\n"
+"  rc=$(cat $allowed_groups_file | grep -v '^#' | grep -v '^$' |\n"
+"    while read heads group_patterns\n"
+"    do\n"
+"      # does this rule apply to us?\n"
+"      head_pattern=${heads#+}\n"
+"      matchlen=$(expr \"$1\" : \"${head_pattern#+}\")\n"
+"      test \"$matchlen\" = ${#1} || continue\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:173
+#, no-wrap
+msgid ""
+"      info \"Found matching head pattern: '$head_pattern'\"\n"
+"      for group_pattern in $group_patterns; do\n"
+"        for groupname in $groups; do\n"
+"          info \"Checking group: '$groupname' against pattern: "
+"'$group_pattern'\"\n"
+"          matchlen=$(expr \"$groupname\" : \"$group_pattern\")\n"
+"          if test \"$matchlen\" = \"${#groupname}\"\n"
+"          then\n"
+"            grant \"Allowing group: '$groupname' with pattern: "
+"'$group_pattern'\"\n"
+"          fi\n"
+"        done\n"
+"      done\n"
+"      deny \"None of the user's groups are in the access list for this "
+"branch\"\n"
+"    done\n"
+"  )\n"
+"  case \"$rc\" in\n"
+"    grant) grant >/dev/null \"Granting access based on "
+"$allowed_groups_file\" ;;\n"
+"    deny)  deny  >/dev/null \"Denying  access based on "
+"$allowed_groups_file\" ;;\n"
+"    *) ;;\n"
+"  esac\n"
+"fi\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/update-hook-example.txt:175
+#, no-wrap
+msgid "deny >/dev/null \"There are no more rules to check.  Denying access\"\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:180
+msgid ""
+"This uses two files, $GIT_DIR/info/allowed-users and allowed-groups, to "
+"describe which heads can be pushed into by whom.  The format of each file "
+"would look like this:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:187
+#, no-wrap
+msgid ""
+"    refs/heads/master   junio\n"
+"    +refs/heads/seen    junio\n"
+"    refs/heads/cogito$  pasky\n"
+"    refs/heads/bw/.*    linus\n"
+"    refs/heads/tmp/.*   .*\n"
+"    refs/tags/v[0-9].*  junio\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/update-hook-example.txt:192
+msgid ""
+"With this, Linus can push or create \"bw/penguin\" or \"bw/zebra\" or "
+"\"bw/panda\" branches, Pasky can do only \"cogito\", and JC can do master "
+"and \"seen\" branches and make versioned tags.  And anybody can do tmp/blah "
+"branches. The '+' sign at the \"seen\" record means that JC can make "
+"non-fast-forward pushes on it."
+msgstr ""

@@ -1,0 +1,1128 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-02 01:06+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Title =
+#: ../Documentation/technical/protocol-v2.txt:2
+#, no-wrap
+msgid "Git Wire Protocol, Version 2"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:6
+msgid ""
+"This document presents a specification for a version 2 of Git's wire "
+"protocol.  Protocol v2 will improve upon v1 in the following ways:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:9
+msgid ""
+"Instead of multiple service names, multiple commands will be supported by a "
+"single service"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:12
+msgid ""
+"Easily extendable as capabilities are moved into their own section of the "
+"protocol, no longer being hidden behind a NUL byte and limited by the size "
+"of a pkt-line"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:14
+msgid ""
+"Separate out other information hidden behind NUL bytes (e.g. agent string as "
+"a capability and symrefs can be requested using 'ls-refs')"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:15
+msgid "Reference advertisement will be omitted unless explicitly requested"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:16
+msgid "ls-refs command to explicitly request some refs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:18
+msgid ""
+"Designed with http and stateless-rpc in mind.  With clear flush semantics "
+"the http remote helper can simply act as a proxy"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:24
+msgid ""
+"In protocol v2 communication is command oriented.  When first contacting a "
+"server a list of capabilities will advertised.  Some of these capabilities "
+"will be commands which a client can request be executed.  Once a command has "
+"completed, a client can reuse the connection and request that other commands "
+"be executed."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation/technical/protocol-v2.txt:26
+#, no-wrap
+msgid "Packet-Line Framing"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:31
+msgid ""
+"All communication is done using packet-line framing, just as in v1.  See "
+"`Documentation/technical/pack-protocol.txt` and "
+"`Documentation/technical/protocol-common.txt` for more information."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:33
+msgid "In protocol v2 these special packets will have the following semantics:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:35
+msgid "'0000' Flush Packet (flush-pkt) - indicates the end of a message"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:36
+msgid "'0001' Delimiter Packet (delim-pkt) - separates sections of a message"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:38
+msgid ""
+"'0002' Response End Packet (response-end-pkt) - indicates the end of a "
+"response for stateless connections"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation/technical/protocol-v2.txt:40
+#, no-wrap
+msgid "Initial Client Request"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:48
+msgid ""
+"In general a client can request to speak protocol v2 by sending `version=2` "
+"through the respective side-channel for the transport being used which "
+"inevitably sets `GIT_PROTOCOL`.  More information can be found in "
+"`pack-protocol.txt` and `http-protocol.txt`, as well as the `GIT_PROTOCOL` "
+"definition in `git.txt`. In all cases the response from the server is the "
+"capability advertisement."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:50
+#, no-wrap
+msgid "Git Transport"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:54
+msgid ""
+"When using the git:// transport, you can request to use protocol v2 by "
+"sending \"version=2\" as an extra parameter:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:56
+#, no-wrap
+msgid "   003egit-upload-pack /project.git\\0host=myserver.com\\0\\0version=2\\0\n"
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:58
+#, no-wrap
+msgid "SSH and File Transport"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:64
+msgid ""
+"When using either the ssh:// or file:// transport, the GIT_PROTOCOL "
+"environment variable must be set explicitly to include \"version=2\".  The "
+"server may need to be configured to allow this environment variable to pass."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:66
+#, no-wrap
+msgid "HTTP Transport"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:71
+msgid ""
+"When using the http:// or https:// transport a client makes a \"smart\" "
+"info/refs request as described in `http-protocol.txt` and requests that v2 "
+"be used by supplying \"version=2\" in the `Git-Protocol` header."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:74
+#, no-wrap
+msgid ""
+"   C: GET $GIT_URL/info/refs?service=git-upload-pack HTTP/1.0\n"
+"   C: Git-Protocol: version=2\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:76
+msgid "A v2 server would reply:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:83
+#, no-wrap
+msgid ""
+"   S: 200 OK\n"
+"   S: <Some headers>\n"
+"   S: ...\n"
+"   S:\n"
+"   S: 000eversion 2\\n\n"
+"   S: <capability-advertisement>\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:86
+msgid ""
+"Subsequent requests are then made directly to the service "
+"`$GIT_URL/git-upload-pack`. (This works the same for git-receive-pack)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:89
+msgid "Uses the `--http-backend-info-refs` option to linkgit:git-upload-pack[1]."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:92
+msgid ""
+"The server may need to be configured to pass this header's contents via the "
+"`GIT_PROTOCOL` variable. See the discussion in `git-http-backend.txt`."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation/technical/protocol-v2.txt:94
+#, no-wrap
+msgid "Capability Advertisement"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:103
+msgid ""
+"A server which decides to communicate (based on a request from a client)  "
+"using protocol version 2, notifies the client by sending a version string in "
+"its initial response followed by an advertisement of its capabilities.  Each "
+"capability is a key with an optional value.  Clients must ignore all unknown "
+"keys.  Semantics of unknown values are left to the definition of each key.  "
+"Some capabilities will describe commands which can be requested to be "
+"executed by the client."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:107
+#, no-wrap
+msgid ""
+"    capability-advertisement = protocol-version\n"
+"\t\t\t       capability-list\n"
+"\t\t\t       flush-pkt\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:111
+#, no-wrap
+msgid ""
+"    protocol-version = PKT-LINE(\"version 2\" LF)\n"
+"    capability-list = *capability\n"
+"    capability = PKT-LINE(key[=value] LF)\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:114
+#, no-wrap
+msgid ""
+"    key = 1*(ALPHA | DIGIT | \"-_\")\n"
+"    value = 1*(ALPHA | DIGIT | \" -_.,?\\/{}[]()<>!@#$%^&*+=:;\")\n"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation/technical/protocol-v2.txt:116
+#, no-wrap
+msgid "Command Request"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:123
+msgid ""
+"After receiving the capability advertisement, a client can then issue a "
+"request to select the command it wants with any particular capabilities or "
+"arguments.  There is then an optional section where the client can provide "
+"any command specific parameters or queries.  Only a single command can be "
+"requested at a time."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:133
+#, no-wrap
+msgid ""
+"    request = empty-request | command-request\n"
+"    empty-request = flush-pkt\n"
+"    command-request = command\n"
+"\t\t      capability-list\n"
+"\t\t      [command-args]\n"
+"\t\t      flush-pkt\n"
+"    command = PKT-LINE(\"command=\" key LF)\n"
+"    command-args = delim-pkt\n"
+"\t\t   *command-specific-arg\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:136
+#, no-wrap
+msgid ""
+"    command-specific-args are packet line framed arguments defined by\n"
+"    each individual command.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:144
+msgid ""
+"The server will then check to ensure that the client's request is comprised "
+"of a valid command as well as valid capabilities which were advertised.  If "
+"the request is valid the server will then execute the command.  A server "
+"MUST wait till it has received the client's entire request before issuing a "
+"response.  The format of the response is determined by the command being "
+"executed, but in all cases a flush-pkt indicates the end of the response."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:150
+msgid ""
+"When a command has finished, and the client has received the entire response "
+"from the server, a client can either request that another command be "
+"executed or can terminate the connection.  A client may optionally send an "
+"empty request consisting of just a flush-pkt to indicate that no more "
+"requests will be made."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation/technical/protocol-v2.txt:152
+#, no-wrap
+msgid "Capabilities"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:158
+msgid ""
+"There are two different types of capabilities: normal capabilities, which "
+"can be used to convey information or alter the behavior of a request, and "
+"commands, which are the core actions that a client wants to perform (fetch, "
+"push, etc)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:166
+msgid ""
+"Protocol version 2 is stateless by default.  This means that all commands "
+"must only last a single round and be stateless from the perspective of the "
+"server side, unless the client has requested a capability indicating that "
+"state should be maintained by the server.  Clients MUST NOT require state "
+"management on the server side in order to function correctly.  This permits "
+"simple round-robin load-balancing on the server side, without needing to "
+"worry about state management."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:168
+#, no-wrap
+msgid "agent"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:181
+msgid ""
+"The server can advertise the `agent` capability with a value `X` (in the "
+"form `agent=X`) to notify the client that the server is running version "
+"`X`.  The client may optionally send its own agent string by including the "
+"`agent` capability with a value `Y` (in the form `agent=Y`) in its request "
+"to the server (but it MUST NOT do so if the server did not advertise the "
+"agent capability). The `X` and `Y` strings may contain any printable ASCII "
+"characters except space (i.e., the byte range 32 < x < 127), and are "
+"typically of the form \"package/version\" (e.g., \"git/1.8.3.1\"). The agent "
+"strings are purely informative for statistics and debugging purposes, and "
+"MUST NOT be used to programmatically assume the presence or absence of "
+"particular features."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:183
+#, no-wrap
+msgid "ls-refs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:188
+msgid ""
+"`ls-refs` is the command used to request a reference advertisement in v2.  "
+"Unlike the current reference advertisement, ls-refs takes in arguments which "
+"can be used to limit the refs sent from the server."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:192 ../Documentation/technical/protocol-v2.txt:234
+msgid ""
+"Additional features not supported in the base command will be advertised as "
+"the value of the command in the capability advertisement in the form of a "
+"space separated list of features: \"<command>=<feature 1> <feature 2>\""
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:194
+msgid "ls-refs takes in the following arguments:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:203
+#, no-wrap
+msgid ""
+"    symrefs\n"
+"\tIn addition to the object pointed by it, show the underlying ref\n"
+"\tpointed by it when showing a symbolic ref.\n"
+"    peel\n"
+"\tShow peeled tags.\n"
+"    ref-prefix <prefix>\n"
+"\tWhen specified, only references having a prefix matching one of\n"
+"\tthe provided prefixes are displayed.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:206
+msgid ""
+"If the 'unborn' feature is advertised the following argument can be included "
+"in the client's request."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:211
+#, no-wrap
+msgid ""
+"    unborn\n"
+"\tThe server will send information about HEAD even if it is a symref\n"
+"\tpointing to an unborn branch in the form \"unborn HEAD\n"
+"\tsymref-target:<target>\".\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:213
+msgid "The output of ls-refs is as follows:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:221
+#, no-wrap
+msgid ""
+"    output = *ref\n"
+"\t     flush-pkt\n"
+"    obj-id-or-unborn = (obj-id | \"unborn\")\n"
+"    ref = PKT-LINE(obj-id-or-unborn SP refname *(SP ref-attribute) LF)\n"
+"    ref-attribute = (symref | peeled)\n"
+"    symref = \"symref-target:\" symref-target\n"
+"    peeled = \"peeled:\" obj-id\n"
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:223
+#, no-wrap
+msgid "fetch"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:230
+msgid ""
+"`fetch` is the command used to fetch a packfile in v2.  It can be looked at "
+"as a modified version of the v1 fetch where the ref-advertisement is "
+"stripped out (since the `ls-refs` command fills that role) and the message "
+"format is tweaked to eliminate redundancies and permit easy addition of "
+"future extensions."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:236
+msgid "A `fetch` request can take the following arguments:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:241
+#, no-wrap
+msgid ""
+"    want <oid>\n"
+"\tIndicates to the server an object which the client wants to\n"
+"\tretrieve.  Wants can be anything and are not limited to\n"
+"\tadvertised objects.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:247
+#, no-wrap
+msgid ""
+"    have <oid>\n"
+"\tIndicates to the server an object which the client has locally.\n"
+"\tThis allows the server to make a packfile which only contains\n"
+"\tthe objects that the client needs. Multiple 'have' lines can be\n"
+"\tsupplied.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:253
+#, no-wrap
+msgid ""
+"    done\n"
+"\tIndicates to the server that negotiation should terminate (or\n"
+"\tnot even begin if performing a clone) and that the server should\n"
+"\tuse the information supplied in the request to construct the\n"
+"\tpackfile.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:261
+#, no-wrap
+msgid ""
+"    thin-pack\n"
+"\tRequest that a thin pack be sent, which is a pack with deltas\n"
+"\twhich reference base objects not contained within the pack (but\n"
+"\tare known to exist at the receiving end). This can reduce the\n"
+"\tnetwork traffic significantly, but it requires the receiving end\n"
+"\tto know how to \"thicken\" these packs by adding the missing bases\n"
+"\tto the pack.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:267
+#, no-wrap
+msgid ""
+"    no-progress\n"
+"\tRequest that progress information that would normally be sent on\n"
+"\tside-band channel 2, during the packfile transfer, should not be\n"
+"\tsent.  However, the side-band channel 3 is still used for error\n"
+"\tresponses.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:271
+#, no-wrap
+msgid ""
+"    include-tag\n"
+"\tRequest that annotated tags should be sent if the objects they\n"
+"\tpoint to are being sent.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:276
+#, no-wrap
+msgid ""
+"    ofs-delta\n"
+"\tIndicate that the client understands PACKv2 with delta referring\n"
+"\tto its base by position in pack rather than by an oid.  That is,\n"
+"\tthey can read OBJ_OFS_DELTA (aka type 6) in a packfile.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:280
+msgid ""
+"If the 'shallow' feature is advertised the following arguments can be "
+"included in the clients request as well as the potential addition of the "
+"'shallow-info' section in the server's response as explained below."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:288
+#, no-wrap
+msgid ""
+"    shallow <oid>\n"
+"\tA client must notify the server of all commits for which it only\n"
+"\thas shallow copies (meaning that it doesn't have the parents of\n"
+"\ta commit) by supplying a 'shallow <oid>' line for each such\n"
+"\tobject so that the server is aware of the limitations of the\n"
+"\tclient's history.  This is so that the server is aware that the\n"
+"\tclient may not have all objects reachable from such commits.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:292
+#, no-wrap
+msgid ""
+"    deepen <depth>\n"
+"\tRequests that the fetch/clone should be shallow having a commit\n"
+"\tdepth of <depth> relative to the remote side.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:298
+#, no-wrap
+msgid ""
+"    deepen-relative\n"
+"\tRequests that the semantics of the \"deepen\" command be changed\n"
+"\tto indicate that the depth requested is relative to the client's\n"
+"\tcurrent shallow boundary, instead of relative to the requested\n"
+"\tcommits.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:304
+#, no-wrap
+msgid ""
+"    deepen-since <timestamp>\n"
+"\tRequests that the shallow clone/fetch should be cut at a\n"
+"\tspecific time, instead of depth.  Internally it's equivalent to\n"
+"\tdoing \"git rev-list --max-age=<timestamp>\". Cannot be used with\n"
+"\t\"deepen\".\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:311
+#, no-wrap
+msgid ""
+"    deepen-not <rev>\n"
+"\tRequests that the shallow clone/fetch should be cut at a\n"
+"\tspecific revision specified by '<rev>', instead of a depth.\n"
+"\tInternally it's equivalent of doing \"git rev-list --not <rev>\".\n"
+"\tCannot be used with \"deepen\", but can be used with\n"
+"\t\"deepen-since\".\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:314
+msgid ""
+"If the 'filter' feature is advertised, the following argument can be "
+"included in the client's request:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:326
+#, no-wrap
+msgid ""
+"    filter <filter-spec>\n"
+"\tRequest that various objects from the packfile be omitted\n"
+"\tusing one of several filtering techniques. These are intended\n"
+"\tfor use with partial clone and partial fetch operations. See\n"
+"\t`rev-list` for possible \"filter-spec\" values. When communicating\n"
+"\twith other processes, senders SHOULD translate scaled integers\n"
+"\t(e.g. \"1k\") into a fully-expanded form (e.g. \"1024\") to aid\n"
+"\tinteroperability with older receivers that may not understand\n"
+"\tnewly-invented scaling suffixes. However, receivers SHOULD\n"
+"\taccept the following suffixes: 'k', 'm', and 'g' for 1024,\n"
+"\t1048576, and 1073741824, respectively.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:330
+msgid ""
+"If the 'ref-in-want' feature is advertised, the following argument can be "
+"included in the client's request as well as the potential addition of the "
+"'wanted-refs' section in the server's response as explained below."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:335
+#, no-wrap
+msgid ""
+"    want-ref <ref>\n"
+"\tIndicates to the server that the client wants to retrieve a\n"
+"\tparticular ref, where <ref> is the full name of a ref on the\n"
+"\tserver.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:338
+msgid ""
+"If the 'sideband-all' feature is advertised, the following argument can be "
+"included in the client's request:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:345
+#, no-wrap
+msgid ""
+"    sideband-all\n"
+"\tInstruct the server to send the whole response multiplexed, not just\n"
+"\tthe packfile section. All non-flush and non-delim PKT-LINE in the\n"
+"\tresponse (not only in the packfile section) will then start with a byte\n"
+"\tindicating its sideband (1, 2, or 3), and the server may send "
+"\"0005\\2\"\n"
+"\t(a PKT-LINE of sideband 2 with no payload) as a keepalive packet.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:350
+msgid ""
+"If the 'packfile-uris' feature is advertised, the following argument can be "
+"included in the client's request as well as the potential addition of the "
+"'packfile-uris' section in the server's response as explained below."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:357
+#, no-wrap
+msgid ""
+"    packfile-uris <comma-separated list of protocols>\n"
+"\tIndicates to the server that the client is willing to receive\n"
+"\tURIs of any of the given protocols in place of objects in the\n"
+"\tsent packfile. Before performing the connectivity check, the\n"
+"\tclient should download from all given URIs. Currently, the\n"
+"\tprotocols supported are \"http\" and \"https\".\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:360
+msgid ""
+"If the 'wait-for-done' feature is advertised, the following argument can be "
+"included in the client's request."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:365
+#, no-wrap
+msgid ""
+"    wait-for-done\n"
+"\tIndicates to the server that it should never send \"ready\", but\n"
+"\tshould wait for the client to say \"done\" before sending the\n"
+"\tpackfile.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:369
+msgid ""
+"The response of `fetch` is broken into a number of sections separated by "
+"delimiter packets (0001), with each section beginning with its section "
+"header. Most sections are sent only when the packfile is sent."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:374
+#, no-wrap
+msgid ""
+"    output = acknowledgements flush-pkt |\n"
+"\t     [acknowledgments delim-pkt] [shallow-info delim-pkt]\n"
+"\t     [wanted-refs delim-pkt] [packfile-uris delim-pkt]\n"
+"\t     packfile flush-pkt\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:381
+#, no-wrap
+msgid ""
+"    acknowledgments = PKT-LINE(\"acknowledgments\" LF)\n"
+"\t\t      (nak | *ack)\n"
+"\t\t      (ready)\n"
+"    ready = PKT-LINE(\"ready\" LF)\n"
+"    nak = PKT-LINE(\"NAK\" LF)\n"
+"    ack = PKT-LINE(\"ACK\" SP obj-id LF)\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:386
+#, no-wrap
+msgid ""
+"    shallow-info = PKT-LINE(\"shallow-info\" LF)\n"
+"\t\t   *PKT-LINE((shallow | unshallow) LF)\n"
+"    shallow = \"shallow\" SP obj-id\n"
+"    unshallow = \"unshallow\" SP obj-id\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:390
+#, no-wrap
+msgid ""
+"    wanted-refs = PKT-LINE(\"wanted-refs\" LF)\n"
+"\t\t  *PKT-LINE(wanted-ref LF)\n"
+"    wanted-ref = obj-id SP refname\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:393
+#, no-wrap
+msgid ""
+"    packfile-uris = PKT-LINE(\"packfile-uris\" LF) *packfile-uri\n"
+"    packfile-uri = PKT-LINE(40*(HEXDIGIT) SP *%x20-ff LF)\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:396
+#, no-wrap
+msgid ""
+"    packfile = PKT-LINE(\"packfile\" LF)\n"
+"\t       *PKT-LINE(%x01-03 *%x00-ff)\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:398
+#, no-wrap
+msgid "    acknowledgments section\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:402
+#, no-wrap
+msgid ""
+"If the client determines that it is finished with negotiations by\n"
+"sending a \"done\" line (thus requiring the server to send a packfile),\n"
+"the acknowledgments sections MUST be omitted from the server's\n"
+"response.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:404
+msgid "Always begins with the section header \"acknowledgments\""
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:407
+msgid ""
+"The server will respond with \"NAK\" if none of the object ids sent as have "
+"lines were common."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:410
+msgid ""
+"The server will respond with \"ACK obj-id\" for all of the object ids sent "
+"as have lines which are common."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:413
+msgid "A response cannot have both \"ACK\" lines as well as a \"NAK\" line."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:418
+msgid ""
+"The server will respond with a \"ready\" line indicating that the server has "
+"found an acceptable common base and is ready to make and send a packfile "
+"(which will be found in the packfile section of the same response)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:425
+msgid ""
+"If the server has found a suitable cut point and has decided to send a "
+"\"ready\" line, then the server can decide to (as an optimization) omit any "
+"\"ACK\" lines it would have sent during its response.  This is because the "
+"server will have already determined the objects it plans to send to the "
+"client and no further negotiation is needed."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:427
+#, no-wrap
+msgid "shallow-info section\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:434
+#, no-wrap
+msgid ""
+"If the client has requested a shallow fetch/clone, a shallow\n"
+"client requests a fetch or the server is shallow then the\n"
+"server's response may include a shallow-info section.  The\n"
+"shallow-info section will be included if (due to one of the\n"
+"above conditions) the server needs to inform the client of any\n"
+"shallow boundaries or adjustments to the clients already\n"
+"existing shallow boundaries.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:436
+msgid "Always begins with the section header \"shallow-info\""
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:439
+msgid ""
+"If a positive depth is requested, the server will compute the set of commits "
+"which are no deeper than the desired depth."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:442
+msgid ""
+"The server sends a \"shallow obj-id\" line for each commit whose parents "
+"will not be sent in the following packfile."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:447
+msgid ""
+"The server sends an \"unshallow obj-id\" line for each commit which the "
+"client has indicated is shallow, but is no longer shallow as a result of the "
+"fetch (due to its parents being sent in the following packfile)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:451
+msgid ""
+"The server MUST NOT send any \"unshallow\" lines for anything which the "
+"client has not indicated was shallow as a part of its request."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:453
+#, no-wrap
+msgid "wanted-refs section\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:456
+#, no-wrap
+msgid ""
+"This section is only included if the client has requested a\n"
+"ref using a 'want-ref' line and if a packfile section is also\n"
+"included in the response.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:458
+msgid "Always begins with the section header \"wanted-refs\"."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:461
+msgid ""
+"The server will send a ref listing (\"<oid> <refname>\") for each reference "
+"requested using 'want-ref' lines."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:464
+msgid ""
+"The server MUST NOT send any refs which were not requested using 'want-ref' "
+"lines."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:466
+#, no-wrap
+msgid "packfile-uris section\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:469
+#, no-wrap
+msgid ""
+"This section is only included if the client sent\n"
+"'packfile-uris' and the server has at least one such URI to\n"
+"send.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:471
+msgid "Always begins with the section header \"packfile-uris\"."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:474
+msgid ""
+"For each URI the server sends, it sends a hash of the pack's contents (as "
+"output by git index-pack) followed by the URI."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:478
+msgid ""
+"The hashes are 40 hex characters long. When Git upgrades to a new hash "
+"algorithm, this might need to be updated. (It should match whatever "
+"index-pack outputs after \"pack\\t\" or \"keep\\t\"."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:480
+#, no-wrap
+msgid "packfile section\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:485
+#, no-wrap
+msgid ""
+"This section is only included if the client has sent 'want'\n"
+"lines in its request and either requested that no more\n"
+"negotiation be done by sending 'done' or if the server has\n"
+"decided it has found a sufficient cut point to produce a\n"
+"packfile.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:487
+msgid "Always begins with the section header \"packfile\""
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:490
+msgid "The transmission of the packfile begins immediately after the section header"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:497
+msgid ""
+"The data transfer of the packfile is always multiplexed, using the same "
+"semantics of the 'side-band-64k' capability from protocol version 1.  This "
+"means that each packet, during the packfile data stream, is made up of a "
+"leading 4-byte pkt-line length (typical of the pkt-line format), followed by "
+"a 1-byte stream code, followed by the actual data."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:499
+#, no-wrap
+msgid "The stream code can be one of:\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:502
+#, no-wrap
+msgid ""
+"1 - pack data\n"
+"2 - progress messages\n"
+"3 - fatal error message just before stream aborts\n"
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:504
+#, no-wrap
+msgid "server-option"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:510
+msgid ""
+"If advertised, indicates that any number of server specific options can be "
+"included in a request.  This is done by sending each option as a "
+"\"server-option=<option>\" capability line in the capability-list section of "
+"a request."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:512
+msgid "The provided options must not contain a NUL or LF character."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:514
+#, no-wrap
+msgid " object-format\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:528
+msgid ""
+"The server may advertise a session ID that can be used to identify this "
+"process across multiple requests. The client may advertise its own session "
+"ID back to the server as well."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:534
+msgid ""
+"Session IDs should be unique to a given process. They must fit within a "
+"packet-line, and must not contain non-printable or whitespace "
+"characters. The current implementation uses trace2 session IDs (see "
+"link:api-trace2.html[api-trace2] for details), but this may change and users "
+"of the session ID should not rely on this fact."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/protocol-v2.txt:536
+#, no-wrap
+msgid "object-info"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:542
+msgid ""
+"`object-info` is the command to retrieve information about one or more "
+"objects.  Its main purpose is to allow a client to make decisions based on "
+"this information without having to fully fetch objects. Object size is the "
+"only information that is currently supported."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:544
+msgid "An `object-info` request takes the following arguments:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:547
+#, no-wrap
+msgid ""
+"\tsize\n"
+"\tRequests size information to be returned for each listed object id.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:551
+#, no-wrap
+msgid ""
+"\toid <oid>\n"
+"\tIndicates to the server an object which the client wants to obtain\n"
+"\tinformation for.\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:554
+msgid ""
+"The response of `object-info` is a list of the requested object ids and "
+"associated requested information, each separated by a single space."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:556
+#, no-wrap
+msgid "\toutput = info flush-pkt\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:559
+#, no-wrap
+msgid ""
+"\tinfo = PKT-LINE(attrs) LF)\n"
+"\t\t*PKT-LINE(obj-info LF)\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:561
+#, no-wrap
+msgid "\tattrs = attr | attrs SP attrs\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:563
+#, no-wrap
+msgid "\tattr = \"size\"\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/protocol-v2.txt:564
+#, no-wrap
+msgid "\tobj-info = obj-id SP obj-size\n"
+msgstr ""

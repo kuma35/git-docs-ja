@@ -1,0 +1,773 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-02 01:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:6
+msgid ""
+"Date: Wed, 16 Oct 2013 04:34:01 -0400 From: Jeff King <peff@peff.net> "
+"Subject: pack corruption post-mortem Abstract: Recovering a corrupted object "
+"when no good copy is available.  Content-type: text/asciidoc"
+msgstr ""
+
+#. type: Title =
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:8
+#, no-wrap
+msgid "How to recover an object from scratch"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:15
+msgid ""
+"I was recently presented with a repository with a corrupted packfile, and "
+"was asked if the data was recoverable. This post-mortem describes the steps "
+"I took to investigate and fix the problem. I thought others might find the "
+"process interesting, and it might help somebody in the same situation."
+msgstr ""
+
+#. type: delimited block *
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:20
+msgid ""
+"Note: In this case, no good copy of the repository was available. For the "
+"much easier case where you can get the corrupted object from elsewhere, see "
+"link:recover-corrupted-blob-object.html[this howto]."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:25
+msgid ""
+"I started with an fsck, which found a problem with exactly one object (I've "
+"used $pack and $obj below to keep the output readable, and also because I'll "
+"refer to them later):"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:32
+#, no-wrap
+msgid ""
+"    $ git fsck\n"
+"    error: $pack SHA1 checksum mismatch\n"
+"    error: index CRC mismatch for object $obj from $pack at offset "
+"51653873\n"
+"    error: inflate: data stream error (incorrect data check)\n"
+"    error: cannot unpack $obj from $pack at offset 51653873\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:37
+msgid ""
+"The pack checksum failing means a byte is munged somewhere, and it is "
+"presumably in the object mentioned (since both the index checksum and zlib "
+"were failing)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:43
+msgid ""
+"Reading the zlib source code, I found that \"incorrect data check\" means "
+"that the adler-32 checksum at the end of the zlib data did not match the "
+"inflated data. So stepping the data through zlib would not help, as it did "
+"not fail until the very end, when we realize the CRC does not match.  The "
+"problematic bytes could be anywhere in the object data."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:46
+msgid ""
+"The first thing I did was pull the broken data out of the packfile. I needed "
+"to know how big the object was, which I found out with:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:51
+#, no-wrap
+msgid ""
+"    $ git show-index <$idx | cut -d' ' -f1 | sort -n | grep -A1 51653873\n"
+"    51653873\n"
+"    51664736\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:58
+msgid ""
+"Show-index gives us the list of objects and their offsets. We throw away "
+"everything but the offsets, and then sort them so that our interesting "
+"offset (which we got from the fsck output above) is followed immediately by "
+"the offset of the next object. Now we know that the object data is 10863 "
+"bytes long, and we can grab it with:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:61
+#, no-wrap
+msgid "  dd if=$pack of=object bs=1 skip=51653873 count=10863\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:66
+msgid ""
+"I inspected a hexdump of the data, looking for any obvious bogosity (e.g., a "
+"4K run of zeroes would be a good sign of filesystem corruption). But "
+"everything looked pretty reasonable."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:74
+msgid ""
+"Note that the \"object\" file isn't fit for feeding straight to zlib; it has "
+"the git packed object header, which is variable-length. We want to strip "
+"that off so we can start playing with the zlib data directly. You can either "
+"work your way through it manually (the format is described in "
+"link:../technical/pack-format.html[Documentation/technical/pack-format.txt]), "
+"or you can walk through it in a debugger. I did the latter, creating a valid "
+"pack like:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:85
+#, no-wrap
+msgid ""
+"    # pack magic and version\n"
+"    printf 'PACK\\0\\0\\0\\2' >tmp.pack\n"
+"    # pack has one object\n"
+"    printf '\\0\\0\\0\\1' >>tmp.pack\n"
+"    # now add our object data\n"
+"    cat object >>tmp.pack\n"
+"    # and then append the pack trailer\n"
+"    /path/to/git.git/t/helper/test-tool sha1 -b <tmp.pack >trailer\n"
+"    cat trailer >>tmp.pack\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:91
+msgid ""
+"and then running \"git index-pack tmp.pack\" in the debugger (stop at "
+"unpack_raw_entry). Doing this, I found that there were 3 bytes of header "
+"(and the header itself had a sane type and size). So I stripped those off "
+"with:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:94
+#, no-wrap
+msgid "    dd if=object of=zlib bs=1 skip=3\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:103
+msgid ""
+"I ran the result through zlib's inflate using a custom C program. And while "
+"it did report the error, I did get the right number of output bytes (i.e., "
+"it matched git's size header that we decoded above). But feeding the result "
+"back to \"git hash-object\" didn't produce the same sha1. So there were some "
+"wrong bytes, but I didn't know which. The file happened to be C source code, "
+"so I hoped I could notice something obviously wrong with it, but I didn't. I "
+"even got it to compile!"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:108
+msgid ""
+"I also tried comparing it to other versions of the same path in the "
+"repository, hoping that there would be some part of the diff that didn't "
+"make sense. Unfortunately, this happened to be the only revision of this "
+"particular file in the repository, so I had nothing to compare against."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:114
+msgid ""
+"So I took a different approach. Working under the guess that the corruption "
+"was limited to a single byte, I wrote a program to munge each byte "
+"individually, and try inflating the result. Since the object was only 10K "
+"compressed, that worked out to about 2.5M attempts, which took a few "
+"minutes."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:116
+msgid "The program I used is here:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:123
+#, no-wrap
+msgid ""
+"#include <stdio.h>\n"
+"#include <unistd.h>\n"
+"#include <string.h>\n"
+"#include <signal.h>\n"
+"#include <zlib.h>\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:130
+#, no-wrap
+msgid ""
+"static int try_zlib(unsigned char *buf, int len)\n"
+"{\n"
+"\t/* make this absurdly large so we don't have to loop */\n"
+"\tstatic unsigned char out[1024*1024];\n"
+"\tz_stream z;\n"
+"\tint ret;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:133
+#, no-wrap
+msgid ""
+"\tmemset(&z, 0, sizeof(z));\n"
+"\tinflateInit(&z);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:138 ../Documentation/howto/recover-corrupted-object-harder.txt:292
+#, no-wrap
+msgid ""
+"\tz.next_in = buf;\n"
+"\tz.avail_in = len;\n"
+"\tz.next_out = out;\n"
+"\tz.avail_out = sizeof(out);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:143
+#, no-wrap
+msgid ""
+"\tret = inflate(&z, 0);\n"
+"\tinflateEnd(&z);\n"
+"\treturn ret >= 0;\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:151 ../Documentation/howto/recover-corrupted-object-harder.txt:320
+#, no-wrap
+msgid ""
+"/* eye candy */\n"
+"static int counter = 0;\n"
+"static void progress(int sig)\n"
+"{\n"
+"\tfprintf(stderr, \"\\r%d\", counter);\n"
+"\talarm(1);\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:158
+#, no-wrap
+msgid ""
+"int main(void)\n"
+"{\n"
+"\t/* oversized so we can read the whole buffer in */\n"
+"\tunsigned char buf[1024*1024];\n"
+"\tint len;\n"
+"\tunsigned i, j;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:161 ../Documentation/howto/recover-corrupted-object-harder.txt:419
+#, no-wrap
+msgid ""
+"\tsignal(SIGALRM, progress);\n"
+"\talarm(1);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:167
+#, no-wrap
+msgid ""
+"\tlen = read(0, buf, sizeof(buf));\n"
+"\tfor (i = 0; i < len; i++) {\n"
+"\t\tunsigned char c = buf[i];\n"
+"\t\tfor (j = 0; j <= 0xff; j++) {\n"
+"\t\t\tbuf[i] = j;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:174
+#, no-wrap
+msgid ""
+"\t\t\tcounter++;\n"
+"\t\t\tif (try_zlib(buf, len))\n"
+"\t\t\t\tprintf(\"i=%d, j=%x\\n\", i, j);\n"
+"\t\t}\n"
+"\t\tbuf[i] = c;\n"
+"\t}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:179
+#, no-wrap
+msgid ""
+"\talarm(0);\n"
+"\tfprintf(stderr, \"\\n\");\n"
+"\treturn 0;\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:182
+msgid "I compiled and ran with:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:186
+#, no-wrap
+msgid ""
+"  gcc -Wall -Werror -O3 munge.c -o munge -lz\n"
+"  ./munge <zlib\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:192
+msgid ""
+"There were a few false positives early on (if you write \"no data\" in the "
+"zlib header, zlib thinks it's just fine :) ). But I got a hit about halfway "
+"through:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:195
+#, no-wrap
+msgid "  i=5642, j=c7\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:200
+msgid ""
+"I let it run to completion, and got a few more hits at the end (where it was "
+"munging the CRC to match our broken data). So there was a good chance this "
+"middle hit was the source of the problem."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:204
+msgid ""
+"I confirmed by tweaking the byte in a hex editor, zlib inflating the result "
+"(no errors!), and then piping the output into \"git hash-object\", which "
+"reported the sha1 of the broken object. Success!"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:206
+msgid "I fixed the packfile itself with:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:211
+#, no-wrap
+msgid ""
+"  chmod +w $pack\n"
+"  printf '\\xc7' | dd of=$pack bs=1 seek=51659518 conv=notrunc\n"
+"  chmod -w $pack\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:217
+msgid ""
+"The `\\xc7` comes from the replacement byte our \"munge\" program found.  "
+"The offset 51659518 is derived by taking the original object offset "
+"(51653873), adding the replacement offset found by \"munge\" (5642), and "
+"then adding back in the 3 bytes of git header we stripped."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:219
+msgid "After that, \"git fsck\" ran clean."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:224
+msgid ""
+"As for the corruption itself, I was lucky that it was indeed a single "
+"byte. In fact, it turned out to be a single bit. The byte 0xc7 was corrupted "
+"to 0xc5. So presumably it was caused by faulty hardware, or a cosmic ray."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:228
+msgid ""
+"And the aborted attempt to look at the inflated output to see what was "
+"wrong? I could have looked forever and never found it. Here's the diff "
+"between what the corrupted data inflates to, versus the real data:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:232
+#, no-wrap
+msgid ""
+"  -       cp = strtok (arg, \"+\");\n"
+"  +       cp = strtok (arg, \".\");\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:238
+msgid ""
+"It tweaked one byte and still ended up as valid, readable C that just "
+"happened to do something totally different! One takeaway is that on a less "
+"unlucky day, looking at the zlib output might have actually been helpful, as "
+"most random changes would actually break the C code."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:243
+msgid ""
+"But more importantly, git's hashing and checksumming noticed a problem that "
+"easily could have gone undetected in another system. The result still "
+"compiled, but would have caused an interesting bug (that would have been "
+"blamed on some random commit)."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:246
+#, no-wrap
+msgid "The adventure continues..."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:252
+msgid ""
+"I ended up doing this again! Same entity, new hardware. The assumption at "
+"this point is that the old disk corrupted the packfile, and then the "
+"corruption was migrated to the new hardware (because it was done by rsync or "
+"similar, and no fsck was done at the time of migration)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:261
+msgid ""
+"This time, the affected blob was over 20 megabytes, which was far too large "
+"to do a brute-force on. I followed the instructions above to create the "
+"`zlib` file. I then used the `inflate` program below to pull the corrupted "
+"data from that. Examining that output gave me a hint about where in the file "
+"the corruption was. But now I was working with the file itself, not the zlib "
+"contents. So knowing the sha1 of the object and the approximate area of the "
+"corruption, I used the `sha1-munge` program below to brute-force the correct "
+"byte."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:264
+msgid ""
+"Here's the inflate program (it's essentially `gunzip` but without the `.gz` "
+"header processing):"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:270
+#, no-wrap
+msgid ""
+"#include <stdio.h>\n"
+"#include <string.h>\n"
+"#include <zlib.h>\n"
+"#include <stdlib.h>\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:283
+#, no-wrap
+msgid ""
+"int main(int argc, char **argv)\n"
+"{\n"
+"\t/*\n"
+"\t * oversized so we can read the whole buffer in;\n"
+"\t * this could actually be switched to streaming\n"
+"\t * to avoid any memory limitations\n"
+"\t */\n"
+"\tstatic unsigned char buf[25 * 1024 * 1024];\n"
+"\tstatic unsigned char out[25 * 1024 * 1024];\n"
+"\tint len;\n"
+"\tz_stream z;\n"
+"\tint ret;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:287
+#, no-wrap
+msgid ""
+"\tlen = read(0, buf, sizeof(buf));\n"
+"\tmemset(&z, 0, sizeof(z));\n"
+"\tinflateInit(&z);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:296
+#, no-wrap
+msgid ""
+"\tret = inflate(&z, 0);\n"
+"\tif (ret != Z_OK && ret != Z_STREAM_END)\n"
+"\t\tfprintf(stderr, \"initial inflate failed (%d)\\n\", ret);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:301
+#, no-wrap
+msgid ""
+"\tfprintf(stderr, \"outputting %lu bytes\", z.total_out);\n"
+"\tfwrite(out, 1, z.total_out, stdout);\n"
+"\treturn 0;\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:304
+msgid "And here is the `sha1-munge` program:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:312
+#, no-wrap
+msgid ""
+"#include <stdio.h>\n"
+"#include <unistd.h>\n"
+"#include <string.h>\n"
+"#include <signal.h>\n"
+"#include <openssl/sha.h>\n"
+"#include <stdlib.h>\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:355
+#, no-wrap
+msgid ""
+"static const signed char hexval_table[256] = {\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 00-07 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 08-0f */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 10-17 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 18-1f */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 20-27 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 28-2f */\n"
+"\t  0,  1,  2,  3,  4,  5,  6,  7,\t\t/* 30-37 */\n"
+"\t  8,  9, -1, -1, -1, -1, -1, -1,\t\t/* 38-3f */\n"
+"\t -1, 10, 11, 12, 13, 14, 15, -1,\t\t/* 40-47 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 48-4f */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 50-57 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 58-5f */\n"
+"\t -1, 10, 11, 12, 13, 14, 15, -1,\t\t/* 60-67 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 68-67 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 70-77 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 78-7f */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 80-87 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 88-8f */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 90-97 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* 98-9f */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* a0-a7 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* a8-af */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* b0-b7 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* b8-bf */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* c0-c7 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* c8-cf */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* d0-d7 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* d8-df */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* e0-e7 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* e8-ef */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* f0-f7 */\n"
+"\t -1, -1, -1, -1, -1, -1, -1, -1,\t\t/* f8-ff */\n"
+"};\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:360
+#, no-wrap
+msgid ""
+"static inline unsigned int hexval(unsigned char c)\n"
+"{\n"
+"return hexval_table[c];\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:381
+#, no-wrap
+msgid ""
+"static int get_sha1_hex(const char *hex, unsigned char *sha1)\n"
+"{\n"
+"\tint i;\n"
+"\tfor (i = 0; i < 20; i++) {\n"
+"\t\tunsigned int val;\n"
+"\t\t/*\n"
+"\t\t * hex[1]=='\\0' is caught when val is checked below,\n"
+"\t\t * but if hex[0] is NUL we have to avoid reading\n"
+"\t\t * past the end of the string:\n"
+"\t\t */\n"
+"\t\tif (!hex[0])\n"
+"\t\t\treturn -1;\n"
+"\t\tval = (hexval(hex[0]) << 4) | hexval(hex[1]);\n"
+"\t\tif (val & ~0xff)\n"
+"\t\t\treturn -1;\n"
+"\t\t*sha1++ = val;\n"
+"\t\thex += 2;\n"
+"\t}\n"
+"\treturn 0;\n"
+"}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:392
+#, no-wrap
+msgid ""
+"int main(int argc, char **argv)\n"
+"{\n"
+"\t/* oversized so we can read the whole buffer in */\n"
+"\tstatic unsigned char buf[25 * 1024 * 1024];\n"
+"\tchar header[32];\n"
+"\tint header_len;\n"
+"\tunsigned char have[20], want[20];\n"
+"\tint start, len;\n"
+"\tSHA_CTX orig;\n"
+"\tunsigned i, j;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:397
+#, no-wrap
+msgid ""
+"\tif (!argv[1] || get_sha1_hex(argv[1], want)) {\n"
+"\t\tfprintf(stderr, \"usage: sha1-munge <sha1> [start] <file.in\\n\");\n"
+"\t\treturn 1;\n"
+"\t}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:402
+#, no-wrap
+msgid ""
+"\tif (argv[2])\n"
+"\t\tstart = atoi(argv[2]);\n"
+"\telse\n"
+"\t\tstart = 0;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:406
+#, no-wrap
+msgid ""
+"\tlen = read(0, buf, sizeof(buf));\n"
+"\theader_len = sprintf(header, \"blob %d\", len) + 1;\n"
+"\tfprintf(stderr, \"using header: %s\\n\", header);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:416
+#, no-wrap
+msgid ""
+"\t/*\n"
+"\t * We keep a running sha1 so that if you are munging\n"
+"\t * near the end of the file, we do not have to re-sha1\n"
+"\t * the unchanged earlier bytes\n"
+"\t */\n"
+"\tSHA1_Init(&orig);\n"
+"\tSHA1_Update(&orig, header, header_len);\n"
+"\tif (start)\n"
+"\t\tSHA1_Update(&orig, buf, start);\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:423
+#, no-wrap
+msgid ""
+"\tfor (i = start; i < len; i++) {\n"
+"\t\tunsigned char c;\n"
+"\t\tSHA_CTX x;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:439
+#, no-wrap
+msgid ""
+"#if 0\n"
+"\t\t/*\n"
+"\t\t * deletion -- this would not actually work in practice,\n"
+"\t\t * I think, because we've already committed to a\n"
+"\t\t * particular size in the header. Ditto for addition\n"
+"\t\t * below. In those cases, you'd have to do the whole\n"
+"\t\t * sha1 from scratch, or possibly keep three running\n"
+"\t\t * \"orig\" sha1 computations going.\n"
+"\t\t */\n"
+"\t\tmemcpy(&x, &orig, sizeof(x));\n"
+"\t\tSHA1_Update(&x, buf + i + 1, len - i - 1);\n"
+"\t\tSHA1_Final(have, &x);\n"
+"\t\tif (!memcmp(have, want, 20))\n"
+"\t\t\tprintf(\"i=%d, deletion\\n\", i);\n"
+"#endif\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:449
+#, no-wrap
+msgid ""
+"\t\t/*\n"
+"\t\t * replacement -- note that this tries each of the 256\n"
+"\t\t * possible bytes. If you suspect a single-bit flip,\n"
+"\t\t * it would be much shorter to just try the 8\n"
+"\t\t * bit-flipped variants.\n"
+"\t\t */\n"
+"\t\tc = buf[i];\n"
+"\t\tfor (j = 0; j <= 0xff; j++) {\n"
+"\t\t\tbuf[i] = j;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:457
+#, no-wrap
+msgid ""
+"\t\t\tmemcpy(&x, &orig, sizeof(x));\n"
+"\t\t\tSHA1_Update(&x, buf + i, len - i);\n"
+"\t\t\tSHA1_Final(have, &x);\n"
+"\t\t\tif (!memcmp(have, want, 20))\n"
+"\t\t\t\tprintf(\"i=%d, j=%02x\\n\", i, j);\n"
+"\t\t}\n"
+"\t\tbuf[i] = c;\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:470
+#, no-wrap
+msgid ""
+"#if 0\n"
+"\t\t/* addition */\n"
+"\t\tfor (j = 0; j <= 0xff; j++) {\n"
+"\t\t\tunsigned char extra = j;\n"
+"\t\t\tmemcpy(&x, &orig, sizeof(x));\n"
+"\t\t\tSHA1_Update(&x, &extra, 1);\n"
+"\t\t\tSHA1_Update(&x, buf + i, len - i);\n"
+"\t\t\tSHA1_Final(have, &x);\n"
+"\t\t\tif (!memcmp(have, want, 20))\n"
+"\t\t\t\tprintf(\"i=%d, addition=%02x\", i, j);\n"
+"\t\t}\n"
+"#endif\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:474
+#, no-wrap
+msgid ""
+"\t\tSHA1_Update(&orig, buf + i, 1);\n"
+"\t\tcounter++;\n"
+"\t}\n"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation/howto/recover-corrupted-object-harder.txt:479
+#, no-wrap
+msgid ""
+"\talarm(0);\n"
+"\tfprintf(stderr, \"\\r%d\\n\", counter);\n"
+"\treturn 0;\n"
+"}\n"
+msgstr ""

@@ -1,0 +1,2179 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2021-10-02 01:06+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Title -
+#: ../Documentation/technical/reftable.txt:2
+#, no-wrap
+msgid "reftable"
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/reftable.txt:5
+#, no-wrap
+msgid "Overview"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:8
+#, no-wrap
+msgid "Problem statement"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:14
+msgid ""
+"Some repositories contain a lot of references (e.g. android at 866k, rails "
+"at 31k). The existing packed-refs format takes up a lot of space (e.g. 62M), "
+"and does not scale with additional references. Lookup of a single reference "
+"requires linearly scanning the file."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:18
+msgid ""
+"Atomic pushes modifying multiple references require copying the entire "
+"packed-refs file, which can be a considerable amount of data moved (e.g. 62M "
+"in, 62M out) for even small transactions (2 refs modified)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:26
+msgid ""
+"Repositories with many loose references occupy a large number of disk blocks "
+"from the local file system, as each reference is its own file storing 41 "
+"bytes (and another file for the corresponding reflog). This negatively "
+"affects the number of inodes available when a large number of repositories "
+"are stored on the same filesystem. Readers can be penalized due to the "
+"larger number of syscalls required to traverse and read the `$GIT_DIR/refs` "
+"directory."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:29
+#, no-wrap
+msgid "Objectives"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:33
+msgid ""
+"Near constant time lookup for any single reference, even when the repository "
+"is cold and not in process or kernel cache."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:35
+msgid ""
+"Near constant time verification if an object name is referred to by at least "
+"one reference (for allow-tip-sha1-in-want)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:36
+msgid "Efficient enumeration of an entire namespace, such as `refs/tags/`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:37
+msgid "Support atomic push with `O(size_of_update)` operations."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:38
+msgid "Combine reflog storage with ref storage for small transactions."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:39
+msgid "Separate reflog storage for base refs and historical logs."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:41
+#, no-wrap
+msgid "Description"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:46
+msgid ""
+"A reftable file is a portable binary file format customized for reference "
+"storage. References are sorted, enabling linear scans, binary search lookup, "
+"and range scans."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:50
+msgid ""
+"Storage in the file is organized into variable sized blocks. Prefix "
+"compression is used within a single block to reduce disk space. Block size "
+"and alignment is tunable by the writer."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:52
+#, no-wrap
+msgid "Performance"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:55
+msgid "Space used, packed-refs vs. reftable:"
+msgstr ""
+
+#. type: Table
+#: ../Documentation/technical/reftable.txt:63
+#, no-wrap
+msgid ""
+"|repository |packed-refs |reftable |% original |avg ref |avg obj\n"
+"|android |62.2 M |36.1 M |58.0% |33 bytes |5 bytes\n"
+"|rails |1.8 M |1.1 M |57.7% |29 bytes |4 bytes\n"
+"|git |78.7 K |48.1 K |61.0% |50 bytes |4 bytes\n"
+"|git (heads) |332 b |269 b |81.0% |33 bytes |0 bytes\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:67
+msgid ""
+"Scan (read 866k refs), by reference name lookup (single ref from 866k refs), "
+"and by SHA-1 lookup (refs with that SHA-1, from 866k refs):"
+msgstr ""
+
+#. type: Table
+#: ../Documentation/technical/reftable.txt:75
+#, no-wrap
+msgid ""
+"|format |cache |scan |by name |by SHA-1\n"
+"|packed-refs |cold |402 ms |409,660.1 usec |412,535.8 usec\n"
+"|packed-refs |hot | |6,844.6 usec |20,110.1 usec\n"
+"|reftable |cold |112 ms |33.9 usec |323.2 usec\n"
+"|reftable |hot | |20.2 usec |320.8 usec\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:78
+msgid "Space used for 149,932 log entries for 43,061 refs, reflog vs. reftable:"
+msgstr ""
+
+#. type: Table
+#: ../Documentation/technical/reftable.txt:84
+#, no-wrap
+msgid ""
+"|format |size |avg entry\n"
+"|$GIT_DIR/logs |173 M |1209 bytes\n"
+"|reftable |5 M |37 bytes\n"
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/reftable.txt:87
+#, no-wrap
+msgid "Details"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:90
+#, no-wrap
+msgid "Peeling"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:95
+msgid ""
+"References stored in a reftable are peeled, a record for an annotated (or "
+"signed) tag records both the tag object, and the object it refers to. This "
+"is analogous to storage in the packed-refs format."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:97
+#, no-wrap
+msgid "Reference name encoding"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:101
+msgid ""
+"Reference names are an uninterpreted sequence of bytes that must pass "
+"linkgit:git-check-ref-format[1] as a valid reference name."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:103
+#, no-wrap
+msgid "Key unicity"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:106
+msgid "Each entry must have a unique key; repeated keys are disallowed."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:108
+#, no-wrap
+msgid "Network byte order"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:111
+msgid "All multi-byte, fixed width fields are in network byte order."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:113
+#, no-wrap
+msgid "Varint encoding"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:117
+msgid ""
+"Varint encoding is identical to the ofs-delta encoding method used within "
+"pack files."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:119
+msgid "Decoder works such as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:126
+#, no-wrap
+msgid ""
+"val = buf[ptr] & 0x7f\n"
+"while (buf[ptr] & 0x80) {\n"
+"  ptr++\n"
+"  val = ((val + 1) << 7) | (buf[ptr] & 0x7f)\n"
+"}\n"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:129
+#, no-wrap
+msgid "Ordering"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:132
+msgid "Blocks are lexicographically ordered by their first reference."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:134
+#, no-wrap
+msgid "Directory/file conflicts"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:138
+msgid ""
+"The reftable format accepts both `refs/heads/foo` and `refs/heads/foo/bar` "
+"as distinct references."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:143
+msgid ""
+"This property is useful for retaining log records in reftable, but may "
+"confuse versions of Git using `$GIT_DIR/refs` directory tree to maintain "
+"references. Users of reftable may choose to continue to reject `foo` and "
+"`foo/bar` type conflicts to prevent problems for peers."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/reftable.txt:145
+#, no-wrap
+msgid "File format"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:148
+#, no-wrap
+msgid "Structure"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:151
+msgid "A reftable file has the following high-level structure:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:164
+#, no-wrap
+msgid ""
+"first_block {\n"
+"  header\n"
+"  first_ref_block\n"
+"}\n"
+"ref_block*\n"
+"ref_index*\n"
+"obj_block*\n"
+"obj_index*\n"
+"log_block*\n"
+"log_index*\n"
+"footer\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:168
+msgid ""
+"A log-only file omits the `ref_block`, `ref_index`, `obj_block` and "
+"`obj_index` sections, containing only the file header and log block:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:176
+#, no-wrap
+msgid ""
+"first_block {\n"
+"  header\n"
+"}\n"
+"log_block*\n"
+"log_index*\n"
+"footer\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:180
+msgid ""
+"in a log-only file the first log block immediately follows the file header, "
+"without padding to block alignment."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:182 ../Documentation/technical/reftable.txt:816
+#, no-wrap
+msgid "Block size"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:188
+msgid ""
+"The file's block size is arbitrarily determined by the writer, and does not "
+"have to be a power of 2. The block size must be larger than the longest "
+"reference name or log entry used in the repository, as references cannot "
+"span blocks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:193
+msgid ""
+"Powers of two that are friendly to the virtual memory system or filesystem "
+"(such as 4k or 8k) are recommended. Larger sizes (64k) can yield better "
+"compression, with a possible increased cost incurred by readers during "
+"access."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:195
+msgid "The largest block size is `16777215` bytes (15.99 MiB)."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:197
+#, no-wrap
+msgid "Block alignment"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:203
+msgid ""
+"Writers may choose to align blocks at multiples of the block size by "
+"including `padding` filled with NUL bytes at the end of a block to round out "
+"to the chosen alignment. When alignment is used, writers must specify the "
+"alignment with the file header's `block_size` field."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:209
+msgid ""
+"Block alignment is not required by the file format. Unaligned files must set "
+"`block_size = 0` in the file header, and omit `padding`. Unaligned files "
+"with more than one ref block must include the link:#Ref-index[ref index] to "
+"support fast lookup. Readers must be able to read both aligned and "
+"non-aligned files."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:212
+msgid ""
+"Very small files (e.g. a single ref block) may omit `padding` and the ref "
+"index to reduce total file size."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:214
+#, no-wrap
+msgid "Header (version 1)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:217
+msgid "A 24-byte header appears at the beginning of the file:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:224
+#, no-wrap
+msgid ""
+"'REFT'\n"
+"uint8( version_number = 1 )\n"
+"uint24( block_size )\n"
+"uint64( min_update_index )\n"
+"uint64( max_update_index )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:228
+msgid ""
+"Aligned files must specify `block_size` to configure readers with the "
+"expected block alignment. Unaligned files must set `block_size = 0`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:234
+msgid ""
+"The `min_update_index` and `max_update_index` describe bounds for the "
+"`update_index` field of all log records in this file. When reftables are "
+"used in a stack for link:#Update-transactions[transactions], these fields "
+"can order the files such that the prior file's `max_update_index + 1` is the "
+"next file's `min_update_index`."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:236
+#, no-wrap
+msgid "Header (version 2)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:239
+msgid "A 28-byte header appears at the beginning of the file:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:247
+#, no-wrap
+msgid ""
+"'REFT'\n"
+"uint8( version_number = 2 )\n"
+"uint24( block_size )\n"
+"uint64( min_update_index )\n"
+"uint64( max_update_index )\n"
+"uint32( hash_id )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:251
+msgid ""
+"The header is identical to `version_number=1`, with the 4-byte hash ID "
+"(\"sha1\" for SHA1 and \"s256\" for SHA-256) append to the header."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:254
+msgid ""
+"For maximum backward compatibility, it is recommended to use version 1 when "
+"writing SHA1 reftables."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:256
+#, no-wrap
+msgid "First ref block"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:261
+msgid ""
+"The first ref block shares the same block as the file header, and is 24 "
+"bytes smaller than all other blocks in the file. The first block immediately "
+"begins after the file header, at position 24."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:264
+msgid ""
+"If the first block is a log block (a log-only file), its block header begins "
+"immediately at position 24."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:266
+#, no-wrap
+msgid "Ref block format"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:269
+msgid "A ref block is written as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:276
+#, no-wrap
+msgid ""
+"'r'\n"
+"uint24( block_len )\n"
+"ref_record+\n"
+"uint24( restart_offset )+\n"
+"uint16( restart_count )\n"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:278 ../Documentation/technical/reftable.txt:390 ../Documentation/technical/reftable.txt:467
+#, no-wrap
+msgid "padding?\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:285
+msgid ""
+"Blocks begin with `block_type = 'r'` and a 3-byte `block_len` which encodes "
+"the number of bytes in the block up to, but not including the optional "
+"`padding`. This is always less than or equal to the file's block size. In "
+"the first ref block, `block_len` includes 24 bytes for the file header."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:290
+msgid ""
+"The 2-byte `restart_count` stores the number of entries in the "
+"`restart_offset` list, which must not be empty. Readers can use "
+"`restart_count` to binary search between restarts before starting a linear "
+"scan."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:296
+msgid ""
+"Exactly `restart_count` 3-byte `restart_offset` values precedes the "
+"`restart_count`. Offsets are relative to the start of the block and refer to "
+"the first byte of any `ref_record` whose name has not been prefix "
+"compressed. Entries in the `restart_offset` list must be sorted, "
+"ascending. Readers can start linear scans from any of these records."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:299
+msgid ""
+"A variable number of `ref_record` fill the middle of the block, describing "
+"reference names and values. The format is described below."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:304
+msgid ""
+"As the first ref block shares the first file block with the file header, all "
+"`restart_offset` in the first block are relative to the start of the file "
+"(position 0), and include the file header. This forces the first "
+"`restart_offset` to be `28`."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:306
+#, no-wrap
+msgid "ref record"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:310
+msgid ""
+"A `ref_record` describes a single reference, storing both the name and its "
+"value(s). Records are formatted as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:317
+#, no-wrap
+msgid ""
+"varint( prefix_length )\n"
+"varint( (suffix_length << 3) | value_type )\n"
+"suffix\n"
+"varint( update_index_delta )\n"
+"value?\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:324
+msgid ""
+"The `prefix_length` field specifies how many leading bytes of the prior "
+"reference record's name should be copied to obtain this reference's "
+"name. This must be 0 for the first reference in any block, and also must be "
+"0 for any `ref_record` whose offset is listed in the `restart_offset` table "
+"at the end of the block."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:326
+msgid "Recovering a reference name from any `ref_record` is a simple concat:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:329
+#, no-wrap
+msgid "this_name = prior_name[0..prefix_length] + suffix\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:333
+msgid ""
+"The `suffix_length` value provides the number of bytes available in `suffix` "
+"to copy from `suffix` to complete the reference name."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:337
+msgid ""
+"The `update_index` that last modified the reference can be obtained by "
+"adding `update_index_delta` to the `min_update_index` from the file header: "
+"`min_update_index + update_index_delta`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:340
+msgid ""
+"The `value` follows. Its format is determined by `value_type`, one of the "
+"following:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:342
+msgid "`0x0`: deletion; no value data (see transactions, below)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:343
+msgid "`0x1`: one object name; value of the ref"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:344
+msgid "`0x2`: two object names; value of the ref, peeled target"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:345
+msgid "`0x3`: symbolic reference: `varint( target_len ) target`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:348
+msgid ""
+"Symbolic references use `0x3`, followed by the complete name of the "
+"reference target. No compression is applied to the target name."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:350
+msgid "Types `0x4..0x7` are reserved for future use."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:352
+#, no-wrap
+msgid "Ref index"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:358
+msgid ""
+"The ref index stores the name of the last reference from every ref block in "
+"the file, enabling reduced disk seeks for lookups. Any reference can be "
+"found by searching the index, identifying the containing block, and "
+"searching within that block."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:369
+msgid ""
+"The index may be organized into a multi-level index, where the 1st level "
+"index block points to additional ref index blocks (2nd level), which may in "
+"turn point to either additional index blocks (e.g. 3rd level) or ref blocks "
+"(leaf level). Disk reads required to access a ref go up with higher index "
+"levels. Multi-level indexes may be required to ensure no single index block "
+"exceeds the file format's max block size of `16777215` bytes (15.99 MiB). To "
+"achieve constant O(1) disk seeks for lookups the index must be a single "
+"level, which is permitted to exceed the file's configured block size, but "
+"not the format's max block size of 15.99 MiB."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:371
+msgid "If present, the ref index block(s) appears after the last ref block."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:376
+msgid ""
+"If there are at least 4 ref blocks, a ref index block should be written to "
+"improve lookup times. Cold reads using the index require 2 disk reads (read "
+"index, read block), and binary searching < 4 blocks also requires <= 2 "
+"reads. Omitting the index block from smaller files saves space."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:379
+msgid ""
+"If the file is unaligned and contains more than one ref block, the ref index "
+"must be written."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:381
+msgid "Index block format:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:388
+#, no-wrap
+msgid ""
+"'i'\n"
+"uint24( block_len )\n"
+"index_record+\n"
+"uint24( restart_offset )+\n"
+"uint16( restart_count )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:395
+msgid ""
+"The index blocks begin with `block_type = 'i'` and a 3-byte `block_len` "
+"which encodes the number of bytes in the block, up to but not including the "
+"optional `padding`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:398
+msgid ""
+"The `restart_offset` and `restart_count` fields are identical in format, "
+"meaning and usage as in ref blocks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:403
+msgid ""
+"To reduce the number of reads required for random access in very large files "
+"the index block may be larger than other blocks. However, readers must hold "
+"the entire index in memory to benefit from this, so it's a time-space "
+"tradeoff in both file size and reader memory."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:408
+msgid ""
+"Increasing the file's block size decreases the index size. Alternatively a "
+"multi-level index may be used, keeping index blocks within the file's block "
+"size, but increasing the number of blocks that need to be accessed."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:410
+#, no-wrap
+msgid "index record"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:414
+msgid ""
+"An index record describes the last entry in another block. Index records are "
+"written as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:420
+#, no-wrap
+msgid ""
+"varint( prefix_length )\n"
+"varint( (suffix_length << 3) | 0 )\n"
+"suffix\n"
+"varint( block_position )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:423
+msgid "Index records use prefix compression exactly like `ref_record`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:428
+msgid ""
+"Index records store `block_position` after the suffix, specifying the "
+"absolute position in bytes (from the start of the file) of the block that "
+"ends with this reference. Readers can seek to `block_position` to begin "
+"reading the block header."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:432
+msgid ""
+"Readers must examine the block header at `block_position` to determine if "
+"the next block is another level index block, or the leaf-level ref block."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:434 ../Documentation/technical/reftable.txt:701
+#, no-wrap
+msgid "Reading the index"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:439
+msgid ""
+"Readers loading the ref index must first read the footer (below) to obtain "
+"`ref_index_position`. If not present, the position will be 0. The "
+"`ref_index_position` is for the 1st level root of the ref index."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:441
+#, no-wrap
+msgid "Obj block format"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:445
+msgid ""
+"Object blocks are optional. Writers may choose to omit object blocks, "
+"especially if readers will not use the object name to ref mapping."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:451
+msgid ""
+"Object blocks use unique, abbreviated 2-32 object name keys, mapping to ref "
+"blocks containing references pointing to that object directly, or as the "
+"peeled value of an annotated tag. Like ref blocks, object blocks use the "
+"file's standard block size. The abbreviation length is available in the "
+"footer as `obj_id_len`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:456
+msgid ""
+"To save space in small files, object blocks may be omitted if the ref index "
+"is not present, as brute force search will only need to read a few ref "
+"blocks. When missing, readers should brute force a linear search of all "
+"references to lookup by object name."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:458
+msgid "An object block is written as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:465
+#, no-wrap
+msgid ""
+"'o'\n"
+"uint24( block_len )\n"
+"obj_record+\n"
+"uint24( restart_offset )+\n"
+"uint16( restart_count )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:471
+msgid ""
+"Fields are identical to ref block. Binary search using the restart table "
+"works the same as in reference blocks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:476
+msgid ""
+"Because object names are abbreviated by writers to the shortest unique "
+"abbreviation within the reftable, obj key lengths have a variable "
+"length. Their length must be at least 2 bytes. Readers must compare only for "
+"common prefix match within an obj block or obj index."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:478
+#, no-wrap
+msgid "obj record"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:482
+msgid ""
+"An `obj_record` describes a single object abbreviation, and the blocks "
+"containing references using that unique abbreviation:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:489
+#, no-wrap
+msgid ""
+"varint( prefix_length )\n"
+"varint( (suffix_length << 3) | cnt_3 )\n"
+"suffix\n"
+"varint( cnt_large )?\n"
+"varint( position_delta )*\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:496
+msgid ""
+"Like in reference blocks, abbreviations are prefix compressed within an obj "
+"block. On large reftables with many unique objects, higher block sizes "
+"(64k), and higher restart interval (128), a `prefix_length` of 2 or 3 and "
+"`suffix_length` of 3 may be common in obj records (unique abbreviation of "
+"5-6 raw bytes, 10-12 hex digits)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:500
+msgid ""
+"Each record contains `position_count` number of positions for matching ref "
+"blocks. For 1-7 positions the count is stored in `cnt_3`. When `cnt_3 = 0` "
+"the actual count follows in a varint, `cnt_large`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:504
+msgid ""
+"The use of `cnt_3` bets most objects are pointed to by only a single "
+"reference, some may be pointed to by a couple of references, and very few "
+"(if any) are pointed to by more than 7 references."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:512
+msgid ""
+"A special case exists when `cnt_3 = 0` and `cnt_large = 0`: there are no "
+"`position_delta`, but at least one reference starts with this "
+"abbreviation. A reader that needs exact reference names must scan all "
+"references to find which specific references have the desired object.  "
+"Writers should use this format when the `position_delta` list would have "
+"overflowed the file's block size due to a high number of references pointing "
+"to the same object."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:516
+msgid ""
+"The first `position_delta` is the position from the start of the file.  "
+"Additional `position_delta` entries are sorted ascending and relative to the "
+"prior entry, e.g. a reader would perform:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:524
+#, no-wrap
+msgid ""
+"pos = position_delta[0]\n"
+"prior = pos\n"
+"for (j = 1; j < position_count; j++) {\n"
+"  pos = prior + position_delta[j]\n"
+"  prior = pos\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:532
+msgid ""
+"With a position in hand, a reader must linearly scan the ref block, starting "
+"from the first `ref_record`, testing each reference's object names (for "
+"`value_type = 0x1` or `0x2`) for full equality. Faster searching by object "
+"name within a single ref block is not supported by the reftable format.  "
+"Smaller block sizes reduce the number of candidates this step must consider."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:534
+#, no-wrap
+msgid "Obj index"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:539
+msgid ""
+"The obj index stores the abbreviation from the last entry for every obj "
+"block in the file, enabling reduced disk seeks for all lookups. It is "
+"formatted exactly the same as the ref index, but refers to obj blocks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:542
+msgid ""
+"The obj index should be present if obj blocks are present, as obj blocks "
+"should only be written in larger files."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:545
+msgid ""
+"Readers loading the obj index must first read the footer (below) to obtain "
+"`obj_index_position`. If not present, the position will be 0."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:547
+#, no-wrap
+msgid "Log block format"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:550
+msgid "Unlike ref and obj blocks, log blocks are always unaligned."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:555
+msgid ""
+"Log blocks are variable in size, and do not match the `block_size` specified "
+"in the file header or footer. Writers should choose an appropriate buffer "
+"size to prepare a log block for deflation, such as `2 * block_size`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:557
+msgid "A log block is written as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:566
+#, no-wrap
+msgid ""
+"'g'\n"
+"uint24( block_len )\n"
+"zlib_deflate {\n"
+"  log_record+\n"
+"  uint24( restart_offset )+\n"
+"  uint16( restart_count )\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:569
+msgid "Log blocks look similar to ref blocks, except `block_type = 'g'`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:575
+msgid ""
+"The 4-byte block header is followed by the deflated block contents using "
+"zlib deflate. The `block_len` in the header is the inflated size (including "
+"4-byte block header), and should be used by readers to preallocate the "
+"inflation output buffer. A log block's `block_len` may exceed the file's "
+"block size."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:579
+msgid ""
+"Offsets within the log block (e.g. `restart_offset`) still include the "
+"4-byte header. Readers may prefer prefixing the inflation output buffer with "
+"the 4-byte header."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:584
+msgid ""
+"Within the deflate container, a variable number of `log_record` describe "
+"reference changes. The log record format is described below. See ref block "
+"format (above) for a description of `restart_offset` and `restart_count`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:588
+msgid ""
+"Because log blocks have no alignment or padding between blocks, readers must "
+"keep track of the bytes consumed by the inflater to know where the next log "
+"block begins."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:590
+#, no-wrap
+msgid "log record"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:593
+msgid "Log record keys are structured as:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:596
+#, no-wrap
+msgid "ref_name '\\0' reverse_int64( update_index )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:601
+msgid ""
+"where `update_index` is the unique transaction identifier. The "
+"`update_index` field must be unique within the scope of a `ref_name`.  See "
+"the update transactions section below for further details."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:605
+msgid ""
+"The `reverse_int64` function inverses the value so lexicographical ordering "
+"the network byte order encoding sorts the more recent records with higher "
+"`update_index` values first:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:610
+#, no-wrap
+msgid ""
+"reverse_int64(int64 t) {\n"
+"  return 0xffffffffffffffff - t;\n"
+"}\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:615
+msgid ""
+"Log records have a similar starting structure to ref and index records, "
+"utilizing the same prefix compression scheme applied to the log record key "
+"described above."
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:629
+#, no-wrap
+msgid ""
+"    varint( prefix_length )\n"
+"    varint( (suffix_length << 3) | log_type )\n"
+"    suffix\n"
+"    log_data {\n"
+"      old_id\n"
+"      new_id\n"
+"      varint( name_length    )  name\n"
+"      varint( email_length   )  email\n"
+"      varint( time_seconds )\n"
+"      sint16( tz_offset )\n"
+"      varint( message_length )  message\n"
+"    }?\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:632
+msgid "Log record entries use `log_type` to indicate what follows:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:634
+msgid "`0x0`: deletion; no log data."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:635
+msgid "`0x1`: standard git reflog data using `log_data` above."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:640
+msgid ""
+"The `log_type = 0x0` is mostly useful for `git stash drop`, removing an "
+"entry from the reflog of `refs/stash` in a transaction file (below), without "
+"needing to rewrite larger files. Readers reading a stack of reflogs must "
+"treat this as a deletion."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:643
+msgid ""
+"For `log_type = 0x1`, the `log_data` section follows "
+"linkgit:git-update-ref[1] logging and includes:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:645
+msgid "two object names (old id, new id)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:646
+msgid "varint string of committer's name"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:647
+msgid "varint string of committer's email"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:648
+msgid "varint time in seconds since epoch (Jan 1, 1970)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:649
+msgid "2-byte timezone offset in minutes (signed)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:650
+msgid "varint string of message"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:654
+msgid ""
+"`tz_offset` is the absolute number of minutes from GMT the committer was at "
+"the time of the update. For example `GMT-0800` is encoded in reftable as "
+"`sint16(-480)` and `GMT+0230` is `sint16(150)`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:657
+msgid ""
+"The committer email does not contain `<` or `>`, it's the value normally "
+"found between the `<>` in a git commit object header."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:660
+msgid ""
+"The `message_length` may be 0, in which case there was no message supplied "
+"for the update."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:664
+msgid ""
+"Contrary to traditional reflog (which is a file), renames are encoded as a "
+"combination of ref deletion and ref creation.  A deletion is a log record "
+"with a zero new_id, and a creation is a log record with a zero old_id."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:666
+#, no-wrap
+msgid "Reading the log"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:672
+msgid ""
+"Readers accessing the log must first read the footer (below) to determine "
+"the `log_position`. The first block of the log begins at `log_position` "
+"bytes since the start of the file. The `log_position` is not block aligned."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:674
+#, no-wrap
+msgid "Importing logs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:680
+msgid ""
+"When importing from `$GIT_DIR/logs` writers should globally order all log "
+"records roughly by timestamp while preserving file order, and assign unique, "
+"increasing `update_index` values for each log line. Newer log records get "
+"higher `update_index` values."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:684
+msgid ""
+"Although an import may write only a single reftable file, the reftable file "
+"must span many unique `update_index`, as each log line requires its own "
+"`update_index` to preserve semantics."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:686
+#, no-wrap
+msgid "Log index"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:691
+msgid ""
+"The log index stores the log key (`refname \\0 reverse_int64(update_index)`) "
+"for the last log record of every log block in the file, supporting "
+"bounded-time lookup."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:695
+msgid ""
+"A log index block must be written if 2 or more log blocks are written to the "
+"file. If present, the log index appears after the last log block.  There is "
+"no padding used to align the log index to block alignment."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:699
+msgid ""
+"Log index format is identical to ref index, except the keys are 9 bytes "
+"longer to include `'\\0'` and the 8-byte `reverse_int64(update_index)`.  "
+"Records use `block_position` to refer to the start of a log block."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:705
+msgid ""
+"Readers loading the log index must first read the footer (below) to obtain "
+"`log_index_position`. If not present, the position will be 0."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:707
+#, no-wrap
+msgid "Footer"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:711
+msgid ""
+"After the last block of the file, a file footer is written. It begins like "
+"the file header, but is extended with additional data."
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:714
+#, no-wrap
+msgid "    HEADER\n"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:718
+#, no-wrap
+msgid ""
+"    uint64( ref_index_position )\n"
+"    uint64( (obj_position << 5) | obj_id_len )\n"
+"    uint64( obj_index_position )\n"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:721
+#, no-wrap
+msgid ""
+"    uint64( log_position )\n"
+"    uint64( log_index_position )\n"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:723
+#, no-wrap
+msgid "    uint32( CRC-32 of above )\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:727
+msgid ""
+"If a section is missing (e.g. ref index) the corresponding position field "
+"(e.g. `ref_index_position`) will be 0."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:729
+msgid "`obj_position`: byte position for the first obj block."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:731
+msgid "`obj_id_len`: number of bytes used to abbreviate object names in obj blocks."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:732
+msgid "`log_position`: byte position for the first log block."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:733
+msgid "`ref_index_position`: byte position for the start of the ref index."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:734
+msgid "`obj_index_position`: byte position for the start of the obj index."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:735
+msgid "`log_index_position`: byte position for the start of the log index."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:738
+msgid ""
+"The size of the footer is 68 bytes for version 1, and 72 bytes for version "
+"2."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:740
+#, no-wrap
+msgid "Reading the footer"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:746
+msgid ""
+"Readers must first read the file start to determine the version number. Then "
+"they seek to `file_length - FOOTER_LENGTH` to access the footer. A trusted "
+"external source (such as `stat(2)`) is necessary to obtain "
+"`file_length`. When reading the footer, readers must verify:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:748
+msgid "4-byte magic is correct"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:749
+msgid "1-byte version number is recognized"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:751
+msgid "4-byte CRC-32 matches the other 64 bytes (including magic, and version)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:753
+msgid "Once verified, the other fields of the footer can be accessed."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:755
+#, no-wrap
+msgid "Empty tables"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:759
+msgid ""
+"A reftable may be empty. In this case, the file starts with a header and is "
+"immediately followed by a footer."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:761
+#, no-wrap
+msgid "Binary search"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:767
+msgid ""
+"Binary search within a block is supported by the `restart_offset` fields at "
+"the end of the block. Readers can binary search through the restart table to "
+"locate between which two restart points the sought reference or key should "
+"appear."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:771
+msgid ""
+"Each record identified by a `restart_offset` stores the complete key in the "
+"`suffix` field of the record, making the compare operation during binary "
+"search straightforward."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:776
+msgid ""
+"Once a restart point lexicographically before the sought reference has been "
+"identified, readers can linearly scan through the following record entries "
+"to locate the sought record, terminating if the current record sorts after "
+"(and therefore the sought key is not present)."
+msgstr ""
+
+#. type: Title +
+#: ../Documentation/technical/reftable.txt:778
+#, no-wrap
+msgid "Restart point selection"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:784
+msgid ""
+"Writers determine the restart points at file creation. The process is "
+"arbitrary, but every 16 or 64 records is recommended. Every 16 may be more "
+"suitable for smaller block sizes (4k or 8k), every 64 for larger block sizes "
+"(64k)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:787
+msgid ""
+"More frequent restart points reduces prefix compression and increases space "
+"consumed by the restart table, both of which increase file size."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:791
+msgid ""
+"Less frequent restart points makes prefix compression more effective, "
+"decreasing overall file size, with increased penalties for readers walking "
+"through more records after the binary search step."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:793
+msgid "A maximum of `65535` restart points per block is supported."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/reftable.txt:795
+#, no-wrap
+msgid "Considerations"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:798
+#, no-wrap
+msgid "Lightweight refs dominate"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:804
+msgid ""
+"The reftable format assumes the vast majority of references are single "
+"object names valued with common prefixes, such as Gerrit Code Review's "
+"`refs/changes/` namespace, GitHub's `refs/pulls/` namespace, or many "
+"lightweight tags in the `refs/tags/` namespace."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:807
+msgid ""
+"Annotated tags storing the peeled object cost an additional object name per "
+"reference."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:809
+#, no-wrap
+msgid "Low overhead"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:814
+msgid ""
+"A reftable with very few references (e.g. git.git with 5 heads) is 269 bytes "
+"for reftable, vs. 332 bytes for packed-refs. This supports reftable scaling "
+"down for transaction logs (below)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:822
+msgid ""
+"For a Gerrit Code Review type repository with many change refs, larger block "
+"sizes (64 KiB) and less frequent restart points (every 64) yield better "
+"compression due to more references within the block compressing against the "
+"prior reference."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:825
+msgid ""
+"Larger block sizes reduce the index size, as the reftable will require fewer "
+"blocks to store the same number of references."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:827
+#, no-wrap
+msgid "Minimal disk seeks"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:832
+msgid ""
+"Assuming the index block has been loaded into memory, binary searching for "
+"any single reference requires exactly 1 disk seek to load the containing "
+"block."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:834
+#, no-wrap
+msgid "Scans and lookups dominate"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:839
+msgid ""
+"Scanning all references and lookup by name (or namespace such as "
+"`refs/heads/`) are the most common activities performed on repositories.  "
+"Object names are stored directly with references to optimize this use case."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:841
+#, no-wrap
+msgid "Logs are infrequently read"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:845
+msgid ""
+"Logs are infrequently accessed, but can be large. Deflating log blocks saves "
+"disk space, with some increased penalty at read time."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:849
+msgid ""
+"Logs are stored in an isolated section from refs, reducing the burden on "
+"reference readers that want to ignore logs. Further, historical logs can be "
+"isolated into log-only files."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:851
+#, no-wrap
+msgid "Logs are read backwards"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:856
+msgid ""
+"Logs are frequently accessed backwards (most recent N records for master to "
+"answer `master@{4}`), so log records are grouped by reference, and sorted "
+"descending by update index."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/reftable.txt:858
+#, no-wrap
+msgid "Repository format"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:861
+#, no-wrap
+msgid "Version 1"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:864
+msgid "A repository must set its `$GIT_DIR/config` to configure reftable:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:870
+#, no-wrap
+msgid ""
+"[core]\n"
+"    repositoryformatversion = 1\n"
+"[extensions]\n"
+"    refStorage = reftable\n"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:873
+#, no-wrap
+msgid "Layout"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:880
+msgid ""
+"A collection of reftable files are stored in the `$GIT_DIR/reftable/` "
+"directory.  Their names should have a random element, such that each "
+"filename is globally unique; this helps avoid spurious failures on Windows, "
+"where open files cannot be removed or overwritten. It suggested to use "
+"`${min_update_index}-${max_update_index}-${random}.ref` as a naming "
+"convention."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:883
+msgid ""
+"Log-only files use the `.log` extension, while ref-only and mixed ref and "
+"log files use `.ref`. extension."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:887
+msgid ""
+"The stack ordering file is `$GIT_DIR/reftable/tables.list` and lists the "
+"current files, one per line, in order, from oldest (base) to newest (most "
+"recent):"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation/technical/reftable.txt:893
+#, no-wrap
+msgid ""
+"$ cat .git/reftable/tables.list\n"
+"00000001-00000001-RANDOM1.log\n"
+"00000002-00000002-RANDOM2.ref\n"
+"00000003-00000003-RANDOM3.ref\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:898
+msgid ""
+"Readers must read `$GIT_DIR/reftable/tables.list` to determine which files "
+"are relevant right now, and search through the stack in reverse order (last "
+"reftable is examined first)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:902
+msgid ""
+"Reftable files not listed in `tables.list` may be new (and about to be added "
+"to the stack by the active writer), or ancient and ready to be pruned."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:904
+#, no-wrap
+msgid "Backward compatibility"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:910
+msgid ""
+"Older clients should continue to recognize the directory as a git repository "
+"so they don't look for an enclosing repository in parent directories. To "
+"this end, a reftable-enabled repository must contain the following dummy "
+"files"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:912
+msgid "`.git/HEAD`, a regular file containing `ref: refs/heads/.invalid`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:913
+msgid "`.git/refs/`, a directory"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:914
+msgid "`.git/refs/heads`, a regular file"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:916
+#, no-wrap
+msgid "Readers"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:920
+msgid ""
+"Readers can obtain a consistent snapshot of the reference space by "
+"following:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:922
+msgid "Open and read the `tables.list` file."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:923
+msgid "Open each of the reftable files that it mentions."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:924
+msgid "If any of the files is missing, goto 1."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:925
+msgid "Read from the now-open files as long as necessary."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:927
+#, no-wrap
+msgid "Update transactions"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:931
+msgid ""
+"Although reftables are immutable, mutations are supported by writing a new "
+"reftable and atomically appending it to the stack:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:933
+msgid "Acquire `tables.list.lock`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:934
+msgid "Read `tables.list` to determine current reftables."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:936
+msgid "Select `update_index` to be most recent file's `max_update_index + 1`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:937
+msgid "Prepare temp reftable `tmp_XXXXXX`, including log entries."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:938
+msgid "Rename `tmp_XXXXXX` to `${update_index}-${update_index}-${random}.ref`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:939
+msgid "Copy `tables.list` to `tables.list.lock`, appending file from (5)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:940 ../Documentation/technical/reftable.txt:994
+msgid "Rename `tables.list.lock` to `tables.list`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:946
+msgid ""
+"During step 4 the new file's `min_update_index` and `max_update_index` are "
+"both set to the `update_index` selected by step 3. All log records for the "
+"transaction use the same `update_index` in their keys. This enables later "
+"correlation of which references were updated by the same transaction."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:954
+msgid ""
+"Because a single `tables.list.lock` file is used to manage locking, the "
+"repository is single-threaded for writers. Writers may have to busy-spin "
+"(with backoff) around creating `tables.list.lock`, for up to an acceptable "
+"wait period, aborting if the repository is too busy to mutate. Application "
+"servers wrapped around repositories (e.g. Gerrit Code Review) can layer "
+"their own lock/wait queue to improve fairness to writers."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:956
+#, no-wrap
+msgid "Reference deletions"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:962
+msgid ""
+"Deletion of any reference can be explicitly stored by setting the `type` to "
+"`0x0` and omitting the `value` field of the `ref_record`. This serves as a "
+"tombstone, overriding any assertions about the existence of the reference "
+"from earlier files in the stack."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:964
+#, no-wrap
+msgid "Compaction"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:970
+msgid ""
+"A partial stack of reftables can be compacted by merging references using a "
+"straightforward merge join across reftables, selecting the most recent value "
+"for output, and omitting deleted references that do not appear in remaining, "
+"lower reftables."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:974
+msgid ""
+"A compacted reftable should set its `min_update_index` to the smallest of "
+"the input files' `min_update_index`, and its `max_update_index` likewise to "
+"the largest input `max_update_index`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:978
+msgid ""
+"For sake of illustration, assume the stack currently consists of reftable "
+"files (from oldest to newest): A, B, C, and D. The compactor is going to "
+"compact B and C, leaving A and D alone."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:980
+msgid "Obtain lock `tables.list.lock` and read the `tables.list` file."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:982
+msgid ""
+"Obtain locks `B.lock` and `C.lock`. Ownership of these locks prevents other "
+"processes from trying to compact these files."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:983
+msgid "Release `tables.list.lock`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:985
+msgid ""
+"Compact `B` and `C` into a temp file "
+"`${min_update_index}-${max_update_index}_XXXXXX`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:986
+msgid "Reacquire lock `tables.list.lock`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:989
+msgid ""
+"Verify that `B` and `C` are still in the stack, in that order. This should "
+"always be the case, assuming that other processes are adhering to the "
+"locking protocol."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:991
+msgid ""
+"Rename `${min_update_index}-${max_update_index}_XXXXXX` to "
+"`${min_update_index}-${max_update_index}-${random}.ref`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:993
+msgid ""
+"Write the new stack to `tables.list.lock`, replacing `B` and `C` with the "
+"file from (4)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:996
+msgid ""
+"Delete `B` and `C`, perhaps after a short sleep to avoid forcing readers to "
+"backtrack."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:998
+msgid "This strategy permits compactions to proceed independently of updates."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1001
+msgid ""
+"Each reftable (compacted or not) is uniquely identified by its name, so open "
+"reftables can be cached by their name."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:1003
+#, no-wrap
+msgid "Windows"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1008
+msgid ""
+"On windows, and other systems that do not allow deleting or renaming to open "
+"files, compaction may succeed, but other readers may prevent obsolete tables "
+"from being deleted."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1012
+msgid ""
+"On these platforms, the following strategy can be followed: on closing a "
+"reftable stack, reload `tables.list`, and delete any tables no longer "
+"mentioned in `tables.list`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1015
+msgid ""
+"Irregular program exit may still leave about unused files. In this case, a "
+"cleanup operation should proceed as follows:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1017
+msgid "take a lock `tables.list.lock` to prevent concurrent modifications"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1018
+msgid "refresh the reftable stack, by reading `tables.list`"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1019
+msgid "for each `*.ref` file, remove it if"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1020
+msgid "it is not mentioned in `tables.list`, and"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1021
+msgid "its max update_index is not beyond the max update_index of the stack"
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation/technical/reftable.txt:1024
+#, no-wrap
+msgid "Alternatives considered"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:1027
+#, no-wrap
+msgid "bzip packed-refs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1033
+msgid ""
+"`bzip2` can significantly shrink a large packed-refs file (e.g. 62 MiB "
+"compresses to 23 MiB, 37%). However the bzip format does not support random "
+"access to a single reference. Readers must inflate and discard while "
+"performing a linear scan."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1038
+msgid ""
+"Breaking packed-refs into chunks (individually compressing each chunk)  "
+"would reduce the amount of data a reader must inflate, but still leaves the "
+"problem of indexing chunks to support readers efficiently locating the "
+"correct chunk."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1041
+msgid ""
+"Given the compression achieved by reftable's encoding, it does not seem "
+"necessary to add the complexity of bzip/gzip/zlib."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:1043
+#, no-wrap
+msgid "Michael Haggerty's alternate format"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1051
+msgid ""
+"Michael Haggerty proposed "
+"link:https://lore.kernel.org/git/CAMy9T_HCnyc1g8XWOOWhe7nN0aEFyyBskV2aOMb_fe%2BwGvEJ7A%40mail.gmail.com/[an "
+"alternate] format to reftable on the Git mailing list. This format uses "
+"smaller chunks, without the restart table, and avoids block alignment with "
+"padding. Reflog entries immediately follow each ref, and are thus "
+"interleaved between refs."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1055
+msgid ""
+"Performance testing indicates reftable is faster for lookups (51% faster, "
+"11.2 usec vs. 5.4 usec), although reftable produces a slightly larger file "
+"(+ ~3.2%, 28.3M vs 29.2M):"
+msgstr ""
+
+#. type: Table
+#: ../Documentation/technical/reftable.txt:1061
+#, no-wrap
+msgid ""
+"|format |size |seek cold |seek hot\n"
+"|mh-alt |28.3 M |23.4 usec |11.2 usec\n"
+"|reftable |29.2 M |19.9 usec |5.4 usec\n"
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:1064
+#, no-wrap
+msgid "JGit Ketch RefTree"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1071
+msgid ""
+"https://dev.eclipse.org/mhonarc/lists/jgit-dev/msg03073.html[JGit Ketch] "
+"proposed "
+"link:https://lore.kernel.org/git/CAJo%3DhJvnAPNAdDcAAwAvU9C4RVeQdoS3Ev9WTguHx4fD0V_nOg%40mail.gmail.com/[RefTree], "
+"an encoding of references inside Git tree objects stored as part of the "
+"repository's object database."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1078
+msgid ""
+"The RefTree format adds additional load on the object database storage layer "
+"(more loose objects, more objects in packs), and relies heavily on the "
+"packer's delta compression to save space. Namespaces which are flat "
+"(e.g. thousands of tags in refs/tags) initially create very large loose "
+"objects, and so RefTree does not address the problem of copying many "
+"references to modify a handful."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1083
+msgid ""
+"Flat namespaces are not efficiently searchable in RefTree, as tree objects "
+"in canonical formatting cannot be binary searched. This fails the need to "
+"handle a large number of references in a single namespace, such as GitHub's "
+"`refs/pulls`, or a project with many tags."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation/technical/reftable.txt:1085
+#, no-wrap
+msgid "LMDB"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1091
+msgid ""
+"David Turner proposed "
+"https://lore.kernel.org/git/1455772670-21142-26-git-send-email-dturner@twopensource.com/[using "
+"LMDB], as LMDB is lightweight (64k of runtime code) and GPL-compatible "
+"license."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1096
+msgid ""
+"A downside of LMDB is its reliance on a single C implementation. This makes "
+"embedding inside JGit (a popular reimplementation of Git)  difficult, and "
+"hoisting onto virtual storage (for JGit DFS) virtually impossible."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation/technical/reftable.txt:1098
+msgid ""
+"A common format that can be supported by all major Git implementations "
+"(git-core, JGit, libgit2) is strongly preferred."
+msgstr ""
