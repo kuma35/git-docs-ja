@@ -2,7 +2,7 @@
 cd ${HOME}/work/git-docs-ja/Documentation-po
 make ja
 cd ${HOME}/work/git-docs-ja/Documentation-ja
-make info html
+make info $*
 GIT_INFO="git.info"
 GITMAN_INFO="gitman.info"
 INFO_DIR="dir"
