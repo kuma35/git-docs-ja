@@ -1,4 +1,11 @@
 #!/bin/sh
+cd ${HOME}/work/git-docs-ja/Documentation-sedout
+for dst_dir in technical RelNotes config howto
+do
+    if [ ! -d ${dst_dir} ]; then
+	mkdir ${dst_dir}
+    fi
+done
 cd ${HOME}/work/git-docs-ja/Documentation-po
 make ja
 cd ${HOME}/work/git-docs-ja/Documentation-ja
