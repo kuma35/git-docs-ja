@@ -739,51 +739,45 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>Git can be run in inetd mode and in stand alone mode. But all you want is
-let a coworker pull from you, and therefore need to set up a Git server real
-quick, right?</p></div>
-<div class="paragraph"><p>Note that git-daemon is not really chatty at the moment, especially when
-things do not go according to plan (e.g. a socket could not be bound).</p></div>
-<div class="paragraph"><p>Another word of warning: if you run</p></div>
+<div class="paragraph"><p>Gitは、inetdモードとスタンドアロンモードで実行できます。
+しかし、今、あなたが望むのは同僚にあなたのからpullさせることだけなので、Gitサーバーを本当に素早くセットアップする必要がある訳ですよね？</p></div>
+<div class="paragraph"><p>注意:
+現時点では、特に物事が計画どおりに進まない場合(たとえば、ソケットをバインドできなかった場合)、git-daemonは実際にはおしゃべりではないことに注意してください。</p></div>
+<div class="paragraph"><p>この警告を言い換えると、以下を実行した場合</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git ls-remote git://127.0.0.1/rule-the-world.git</code></pre>
 </div></div>
-<div class="paragraph"><p>and you see a message like</p></div>
+<div class="paragraph"><p>あなたは以下のようなメッセージを拝む事になります</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>fatal: The remote end hung up unexpectedly</code></pre>
 </div></div>
-<div class="paragraph"><p>it only means that <em>something</em> went wrong. To find out <em>what</em> went wrong,
-you have to ask the server. (Git refuses to be more precise for your
-security only. Take off your shoes now. You have any coins in your pockets?
-Sorry, not allowed&#8201;&#8212;&#8201;who knows what you planned to do with them?)</p></div>
-<div class="paragraph"><p>With these two caveats, let&#8217;s see an example:</p></div>
+<div class="paragraph"><p>それは「何か」がうまくいかなかったことを意味するだけです。何がうまくいかなかったかを知るには、サーバーに問い合わせる必要があります。
+(Gitはセキュリティ対策のため、より正確なメッセージを出すことを拒否します。今すぐ靴を脱いでください。ポケットにコインがありますか？
+申し訳ありませんが、それは許可されていません。あなたがそれらをどうするつもりか誰か知っていますか？)(訳注：「今すぐ靴を脱いでください。ポケットにコインがありますか…」…セキュリティ要員が靴の中やポケットの中のモノを確認する時の常套句)</p></div>
+<div class="paragraph"><p>これらの2つの警告とともに、以下の例を見てみましょう:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git daemon --reuseaddr --verbose --base-path=/home/gitte/git \
   --export-all -- /home/gitte/git/rule-the-world.git</code></pre>
 </div></div>
-<div class="paragraph"><p>(Of course, unless your user name is <code>gitte</code> <em>and</em> your repository is in
-~/rule-the-world.git, you have to adjust the paths. If your repository is
-not bare, be aware that you have to type the path to the .git directory!)</p></div>
-<div class="paragraph"><p>This invocation tries to reuse the address if it is already taken (this can
-save you some debugging, because otherwise killing and restarting git-daemon
-could just silently fail to bind to a socket).</p></div>
-<div class="paragraph"><p>Also, it is (relatively) verbose when somebody actually connects to it.  It
-also sets the base path, which means that all the projects which can be
-accessed using this daemon have to reside in or under that path.</p></div>
-<div class="paragraph"><p>The option <code>--export-all</code> just means that you <em>don&#8217;t</em> have to create a file
-named <code>git-daemon-export-ok</code> in each exported repository. (Otherwise,
-git-daemon would complain loudly, and refuse to cooperate.)</p></div>
-<div class="paragraph"><p>Last of all, the repository which should be exported is specified. It is a
-good practice to put the paths after a "--" separator.</p></div>
-<div class="paragraph"><p>Now, test your daemon with</p></div>
+<div class="paragraph"><p>(もちろん、ユーザー名が <code>gitte</code> かつ あなたのリポジトリが ~/rule-the-world.git
+にない限り、パスを調整する必要があります。リポジトリがbareでない場合は、
+ .git ディレクトリへのパスを入力する必要があることに注意してください！)</p></div>
+<div class="paragraph"><p>この呼び出しは、アドレスがすでに取得されている場合、そのアドレスを再利用しようとします(これにより、デバッグを節約できます。そうしないと、git-daemon
+を強制終了して再起動すると、ソケットへのバインドにサイレントに失敗する可能性があるためです)。</p></div>
+<div class="paragraph"><p>また、誰かが実際にそれに接続するとき、それは(比較的)冗長です。また、ベースパス(base
+path)も設定します。つまり、このデーモンを使用してアクセスできるすべてのプロジェクトは、そのパス内またはその下に存在する必要があります。</p></div>
+<div class="paragraph"><p>オプション <code>--export-all</code> は、エクスポートされた各リポジトリに <code>git-daemon-export-ok</code>
+という名前のファイルを作成する必要がないことを意味します。(そうしないと、 git-daemon は大声で文句を言い、協力を拒否します。）</p></div>
+<div class="paragraph"><p>最後に、エクスポートする必要のあるリポジトリを指定します。 "--" 区切りの後にパスを配置することをお勧めします。</p></div>
+<div class="paragraph"><p>次に、デーモンをテストします</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git ls-remote git://127.0.0.1/rule-the-world.git</code></pre>
 </div></div>
-<div class="paragraph"><p>If this does not work, find out why, and submit a patch to this document.</p></div>
+<div class="paragraph"><p>これが機能しない場合は、その理由を調べて、このドキュメントにパッチを送信してください。</p></div>
 </div>
 </div>
 </div>
@@ -791,7 +785,7 @@ good practice to put the paths after a "--" separator.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-01 04:36:11 JST
+ 2021-11-02 22:05:58 JST
 </div>
 </div>
 </body>

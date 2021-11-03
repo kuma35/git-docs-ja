@@ -1,5 +1,7 @@
 
 SRC_DIR = ../Documentation
+SEDOUT_DIR = ../Documentation-sedout
+SEDOUT_EXT = .txt
 ASCIIDOC_EXT = .txt
 PO_DIR = .
 PO_EXT = .po
@@ -21,6 +23,10 @@ SRC_FILES = $(addprefix $(SRC_DIR)/,$(SRC_PACKAGE))
 
 # $(warning SRC_FILES = $(SRC_FILES))
 
+SEDOUT_FILES = $(addprefix $(SEDOUT_DIR)/,$(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(SEDOUT_EXT)))
+
+$(warning SEDOUT_FILES = $(SEDOUT_FILES))
+
 PO_FILES = $(addprefix $(PO_DIR)/,$(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(PO_EXT)))
 
 # $(warning PO_FILES = $(PO_FILES))
@@ -30,10 +36,13 @@ DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
 # $(warning DST_FILES = $(DST_FILES))
 
 
-$(PO_FILES): $(PO_DIR)/%.po : $(SRC_DIR)/%.txt
+$(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
+	sed -f ./protect-opt-dash.sed < $< > $@
+
+$(PO_FILES): $(PO_DIR)/%$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
 	po4a-updatepo -M utf8 -f asciidoc -m $< -p $@
 
-$(DST_FILES): $(DST_DIR)/%.txt : $(PO_DIR)/%.po
+$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : $(PO_DIR)/%$(PO_EXT)
 	po4a-translate -f asciidoc -keep 0 -M utf8 -m $(subst $(DST_DIR),$(SRC_DIR),$(@:$(PO_EXT)=$(ASCIIDOC_EXT))) -p $< -l $@
 
 ja: $(DST_FILES)
