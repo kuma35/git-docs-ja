@@ -12,10 +12,10 @@ CONFIG_DIR = config
 HOWTO_DIR = howto
 
 SRC_CURRENT = $(notdir $(wildcard $(SRC_DIR)/*$(ASCIIDOC_EXT)))
-SRC_TECHNICAL = $(addprefix TECHNICAL_DIR/,$(notdir $(wildcard $(SRC_DIR)/TECHNICAL_DIR/*$(ASCIIDOC_EXT))))
-SRC_RELNOTES = $(addprefix RELNOTES_DIR/,$(notdir $(wildcard $(SRC_DIR)/RELNOTES_DIR/*$(ASCIIDOC_EXT))))
-SRC_CONFIG = $(addprefix CONFIG_DIR/,$(notdir $(wildcard $(SRC_DIR)/CONFIG_DIR/*$(ASCIIDOC_EXT))))
-SRC_HOWTO = $(addprefix HOWTO_DIR/,$(notdir $(wildcard $(SRC_DIR)/HOWTO_DIR/*$(ASCIIDOC_EXT))))
+SRC_TECHNICAL = $(addprefix $(TECHNICAL_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(TECHNICAL_DIR)/*$(ASCIIDOC_EXT))))
+SRC_RELNOTES = $(addprefix $(RELNOTES_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(RELNOTES_DIR)/*$(ASCIIDOC_EXT))))
+SRC_CONFIG = $(addprefix $(CONFIG_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(CONFIG_DIR)/*$(ASCIIDOC_EXT))))
+SRC_HOWTO = $(addprefix $(HOWTO_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(HOWTO_DIR)/*$(ASCIIDOC_EXT))))
 
 SRC_PACKAGE = $(SRC_CURRENT)
 SRC_PACKAGE += $(SRC_TECHNICAL)
@@ -38,7 +38,6 @@ PO_FILES = $(addprefix $(PO_DIR)/,$(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(PO_EXT)))
 DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
 
 # $(warning DST_FILES = $(DST_FILES))
-
 
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
