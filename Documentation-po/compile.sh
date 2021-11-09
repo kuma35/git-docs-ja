@@ -8,8 +8,16 @@ do
 done
 cd ${HOME}/work/git-docs-ja/Documentation-po
 make ja
+exitcode=$?
+if [ ${exitcode} -ne 0 ]; then
+    exit ${exitcode}
+fi
 cd ${HOME}/work/git-docs-ja/Documentation-ja
 make info $*
+exitcode=$?
+if [ ${exitcode} -ne 0 ]; then
+    exit ${exitcode}
+fi
 GIT_INFO="git.info"
 GITMAN_INFO="gitman.info"
 INFO_DIR="dir"
