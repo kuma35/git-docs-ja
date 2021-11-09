@@ -11,7 +11,23 @@ RELNOTES_DIR = RelNotes
 CONFIG_DIR = config
 HOWTO_DIR = howto
 
-SRC_CURRENT = $(notdir $(wildcard $(SRC_DIR)/*$(ASCIIDOC_EXT)))
+# cmds_txt and mergetools_txt from Documentation/Makefile there are templates. not need translation.
+cmds_txt = cmds-ancillaryinterrogators.txt \
+	cmds-ancillarymanipulators.txt \
+	cmds-mainporcelain.txt \
+	cmds-plumbinginterrogators.txt \
+	cmds-plumbingmanipulators.txt \
+	cmds-synchingrepositories.txt \
+	cmds-synchelpers.txt \
+	cmds-guide.txt \
+	cmds-purehelpers.txt \
+	cmds-foreignscminterface.txt
+
+mergetools_txt = mergetools-diff.txt mergetools-merge.txt
+
+EXCLUDE_TXT = $(cmds_txt) $(mergetools_txt)
+
+SRC_CURRENT = $(filter-out $(EXCLUDE_TXT),$(notdir $(wildcard $(SRC_DIR)/*$(ASCIIDOC_EXT))))
 SRC_TECHNICAL = $(addprefix $(TECHNICAL_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(TECHNICAL_DIR)/*$(ASCIIDOC_EXT))))
 SRC_RELNOTES = $(addprefix $(RELNOTES_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(RELNOTES_DIR)/*$(ASCIIDOC_EXT))))
 SRC_CONFIG = $(addprefix $(CONFIG_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(CONFIG_DIR)/*$(ASCIIDOC_EXT))))
@@ -50,10 +66,12 @@ $(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : $(PO_DIR)/%$(PO_EXT)
 
 ja: $(DST_FILES)
 
-# rsyncの $(SRC_DIR)の直後の / 重要。超重用
+# rsyncの $(SRC_DIR)の直後の / 重要。超重要
+# cmds-*.txt are templates. not need translation. copy from $(SRC_DIR) to $(DST_DIR)
+# rsync -av --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
 clean:
 	find $(DST_DIR) -type f | xargs rm -f
 	find $(DST_DIR) -empty | xargs rmdir
-	rsync -av --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
+	rsync -av --include "cmds-*.txt" --include "mergetools-*.txt" --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
 
 .PHONEY: ja clean
