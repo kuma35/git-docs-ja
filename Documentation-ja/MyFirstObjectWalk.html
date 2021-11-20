@@ -740,22 +740,16 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="_what_8217_s_an_object_walk">What&#8217;s an Object Walk?</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The object walk is a key concept in Git - this is the process that underpins
-operations like object transfer and fsck. Beginning from a given commit, the
-list of objects is found by walking parent relationships between commits
-(commit X based on commit W) and containment relationships between objects
-(tree Y is contained within commit X, and blob Z is located within tree Y,
-giving our working tree for commit X something like <code>y/z.txt</code>).</p></div>
-<div class="paragraph"><p>A related concept is the revision walk, which is focused on commit objects
-and their parent relationships and does not delve into other object
-types. The revision walk is used for operations like <code>git log</code>.</p></div>
+<div class="paragraph"><p>オブジェクトウォークはGitの重要な概念です。これは、オブジェクト転送やfsckなどの操作を支えるプロセスです。特定のコミットから開始して、オブジェクト間のリストは、コミット間の親関係(コミットWに基づくコミットX)とオブジェクト間の包含関係(ツリーYはコミットX内に含まれ、ブロブZはツリーY内にある)をたどることによって検出されます。コミットXの作業ツリーは
+<code>y/z.txt</code> のようなものです)。</p></div>
+<div class="paragraph"><p>関連する概念はリビジョンウォークです。これは、コミットオブジェクトとその親の関係に焦点を当てており、他のオブジェクトタイプについては詳しく説明していません。リビジョンウォークは、
+<code>git log</code> などの操作に使用されます。</p></div>
 <div class="sect2">
 <h3 id="_related_reading">Related Reading</h3>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>Documentation/user-manual.txt</code> under "Hacking Git" contains some coverage
-  of the revision walker in its various incarnations.
+<code>Documentation/user-manual.txt</code> 「HackingGit」では、リビジョンウォーカーの具現化をいくつか網羅しています。
 </p>
 </li>
 <li>
@@ -766,8 +760,7 @@ types. The revision walk is used for operations like <code>git log</code>.</p></
 <li>
 <p>
 <a href="https://eagain.net/articles/git-for-computer-scientists/">Git for Computer
-  Scientists</a> gives a good overview of the types of objects in Git and what
-  your object walk is really describing.
+  Scientists</a> Git内のオブジェクトの種類と、オブジェクトウォークが実際に何を記述しているのかについての概要を説明します。
 </p>
 </li>
 </ul></div>
@@ -777,14 +770,13 @@ types. The revision walk is used for operations like <code>git log</code>.</p></
 <div class="sect1">
 <h2 id="_setting_up">Setting Up</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Create a new branch from <code>master</code>.</p></div>
+<div class="paragraph"><p>`master`から新しいブランチを作成します。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>git checkout -b revwalk origin/master</code></pre>
 </div></div>
-<div class="paragraph"><p>We&#8217;ll put our fiddling into a new command. For fun, let&#8217;s name it <code>git
-walken</code>.  Open up a new file <code>builtin/walken.c</code> and set up the command
-handler:</p></div>
+<div class="paragraph"><p>我々のささやかなモノを新コマンドにします。そう、名前は <code>git walken</code> にするとしましょう。新しいファイル
+<code>builtin/walken.c</code> を開き、コマンドハンドラーを設定します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>/*
@@ -806,17 +798,13 @@ int cmd_walken(int argc, const char **argv, const char *prefix)
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content"><code>trace_printf()</code> differs from <code>printf()</code> in that it can be turned on or off
-at runtime. For the purposes of this tutorial, we will write <code>walken</code> as
-though it is intended for use as a "plumbing" command: that is, a command
-which is used primarily in scripts, rather than interactively by humans (a
-"porcelain" command). So we will send our debug output to <code>trace_printf()</code>
-instead. When running, enable trace output by setting the environment
-variable <code>GIT_TRACE</code>.</td>
+<td class="content"><code>trace_printf()</code> は、実行時にオンまたはオフにできるという点で <code>printf()</code>
+とは異なります。このチュートリアルでは、「配管」コマンドとして使用することを目的としているかのように「walken」を記述します。つまり人間が対話的に使用する(「磁器」)コマンドではなく、主にスクリプトで使用されるコマンドとして使用します。そのため、代わりにデバッグ出力を
+<code>trace_printf()</code> に送信します。実行時に、環境変数 <code>GIT_TRACE</code> を設定して、トレース出力を有効にします。</td>
 </tr></table>
 </div>
-<div class="paragraph"><p>Add usage text and <code>-h</code> handling, like all subcommands should consistently
-do (our test suite will notice and complain if you fail to do so).</p></div>
+<div class="paragraph"><p>すべてのサブコマンドで一貫して行う必要があるように、使用法テキストと <code>-h</code>
+処理を追加します(そうしないと、テストスイートが気づいて文句を言います)。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>int cmd_walken(int argc, const char **argv, const char *prefix)
@@ -834,25 +822,23 @@ do (our test suite will notice and complain if you fail to do so).</p></div>
         ...
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>Also add the relevant line in <code>builtin.h</code> near <code>cmd_whatchanged()</code>:</p></div>
+<div class="paragraph"><p>また、 <code>builtin.h</code> の <code>cmd_whatchanged()</code> の近くに関連する行を追加します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>int cmd_walken(int argc, const char **argv, const char *prefix);</code></pre>
 </div></div>
-<div class="paragraph"><p>Include the command in <code>git.c</code> in <code>commands[]</code> near the entry for
-<code>whatchanged</code>, maintaining alphabetical ordering:</p></div>
+<div class="paragraph"><p><code>git.c</code> の <code>commands[]</code> にルファベット順を維持しながら、 <code>whatchanged</code> のエントリの近くにコマンドを含めます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>{ "walken", cmd_walken, RUN_SETUP },</code></pre>
 </div></div>
-<div class="paragraph"><p>Add it to the <code>Makefile</code> near the line for <code>builtin/worktree.o</code>:</p></div>
+<div class="paragraph"><p><code>Makefile</code> の <code>builtin/worktree.o</code> の近くに行を追加します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>BUILTIN_OBJS += builtin/walken.o</code></pre>
 </div></div>
-<div class="paragraph"><p>Build and test out your command, without forgetting to ensure the
-<code>DEVELOPER</code> flag is set, and with <code>GIT_TRACE</code> enabled so the debug output
-can be seen:</p></div>
+<div class="paragraph"><p><code>DEVELOPER</code> フラグが設定されていることを確認することを忘れないようにして、コマンドをビルドしてテストし、 <code>GIT_TRACE</code>
+を有効にして、デバッグ出力を確認します。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ echo DEVELOPER=1 &gt;&gt;config.mak
@@ -864,8 +850,7 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken</code></pre>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">For a more exhaustive overview of the new command process, take a look at
-<code>Documentation/MyFirstContribution.txt</code>.</td>
+<td class="content">新しいコマンドプロセスのより完全な概要については、 <code>Documentation/MyFirstContribution.txt</code> をご覧ください。</td>
 </tr></table>
 </div>
 <div class="admonitionblock">
@@ -873,8 +858,7 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken</code></pre>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">A reference implementation can be found at
-<a href="https://github.com/nasamuffin/git/tree/revwalk">https://github.com/nasamuffin/git/tree/revwalk</a>.</td>
+<td class="content">リファレンス実装は <a href="https://github.com/nasamuffin/git/tree/revwalk">https://github.com/nasamuffin/git/tree/revwalk</a> にあります。</td>
 </tr></table>
 </div>
 <div class="sect2">
@@ -1728,7 +1712,7 @@ Changed the display order of the filtered object walk
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:01 JST
+ 2021-11-18 08:16:58 JST
 </div>
 </div>
 </body>
