@@ -10,12 +10,14 @@ cd ${HOME}/work/git-docs-ja/Documentation-po
 make ja
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then
+    notify-send -u critical git-docs-ja "Documentation-po/Makefile エラー"
     exit ${exitcode}
 fi
 cd ${HOME}/work/git-docs-ja/Documentation-ja
 make info $*
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then
+    notify-send -u critical git-docs-ja "Documentation-ja/Makefile エラー"
     exit ${exitcode}
 fi
 GIT_INFO="git.info"
@@ -27,3 +29,5 @@ fi
 if [ -e ${GITMAN_INFO} ]; then
     install-info ${GITMAN_INFO} ${INFO_DIR}
 fi
+notify-send -u normal git-docs-ja "compile完了。"
+
