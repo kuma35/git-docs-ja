@@ -13,7 +13,7 @@ BEGIN {
     untranslated = 0
     # print $0
     # msgfmt -v --statistics to stderr !! 
-    "LANG=C msgfmt -v --statistics " $0 " 2>&1" | getline line
+    "LANG=C msgfmt -v --statistics --output-file=/dev/null " $0 " 2>&1" | getline line
     # print "line=" line
     if (match(line, /([0-9]+)[ ]translated/, a)) {
 	translated = a[1]
