@@ -4,6 +4,7 @@ BEGIN {
     SUM_FUZZY = 0
     SUM_UNTRANSLATED = 0
     FILE_COUNT=0
+    FILE_TRANSLATED=0
 }
 {
     # 21 translated messages, 1 fuzzy translation, 16 untranslated messages.
@@ -28,6 +29,10 @@ BEGIN {
     }
     if (translated == 0 && fuzzy == 0 && untranslated == 0 ) {
 	print $0 ": NOT MATCH"
+	next
+    }
+    if (translated > 0 && fuzzy == 0 && untranslated == 0 ) {
+	FILE_TRANSLATED++
     }
     FILE_COUNT++
 }
@@ -37,8 +42,9 @@ END {
     # print SUM_TRANS
     # print SUM_FUZZY
     # print SUM_UNTRANS
-    print "files: " FILE_COUNT
     # printf("total: %d translated messages, %d fuzzy translation, %d untranslated messages.\n", SUM_TRANSLATED, SUM_FUZZY, SUM_UNTRANSLATED)
-    printf("total: %d+%df+%du\n", SUM_TRANSLATED, SUM_FUZZY, SUM_UNTRANSLATED)
-    printf("progress: %3.2f%%\n", (SUM_TRANSLATED / (SUM_FUZZY + SUM_UNTRANSLATED))*100)
+    printf("status by sentence: %d+%df+%du\n", SUM_TRANSLATED, SUM_FUZZY, SUM_UNTRANSLATED)
+    sum_total = SUM_TRANSLATED + SUM_FUZZY + SUM_UNTRANSLATED
+    printf("progress by sentence:%d/%d(%3.2f%%)\n", SUM_TRANSLATED, sum_total, (SUM_TRANSLATED / sum_total)*100)
+    printf("progress by files: %d/%d\n", FILE_TRANSLATED, FILE_COUNT)
 }
