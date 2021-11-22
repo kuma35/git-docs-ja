@@ -21,20 +21,15 @@ if [ ${exitcode} -ne 0 ]; then
     notify-send -u critical git-docs-ja "Documentation-ja/Makefile エラー"
     exit ${exitcode}
 fi
-#
-GIT_INFO="git.info"
-GITMAN_INFO="gitman.info"
-INFO_DIR="dir"
-if [ -e ${GIT_INFO} ]; then
-    install-info ${GIT_INFO} ${INFO_DIR}
-fi
-if [ -e ${GITMAN_INFO} ]; then
-    install-info ${GITMAN_INFO} ${INFO_DIR}
+# gen file "dir" for info. and publish to docs/info/
+make -f ${PROJ}/Documentation-po/publish-info.mak
+exitcode=$?
+if [ ${exitcode} -ne 0 ]; then
+    notify-send -u critical git-docs-ja "publish-info.mak エラー"
+    exit ${exitcode}
 fi
 # for github pages
-cp -v *.info ${PROJ}/docs/info
-cp -v dir ${PROJ}/docs/info
-DIFF=diff ${PROJ}/Documentation-ja/install-webdoc.sh ${PROJ}/docs/htmldocs
+DIFF=diff ${PROJ}/Documentation-po/install-webdoc-only-html.sh ${PROJ}/docs/htmldocs
 #
 notify-send -u normal git-docs-ja "compile完了。"
 
