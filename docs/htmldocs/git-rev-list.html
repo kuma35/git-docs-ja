@@ -1,0 +1,3279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 9.1.1" />
+<title>git-rev-list(1)</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="manpage">
+<div id="header">
+<h1>
+git-rev-list(1) Manual Page
+</h1>
+<h2>NAME</h2>
+<div class="sectionbody">
+<p>git-rev-list -
+   コミットオブジェクトを新しい順に一覧表示します
+</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="verseblock">
+<pre class="content"><em>git rev-list</em> [&lt;options&gt;] &lt;commit&gt;&#8230; [[--] &lt;path&gt;&#8230;]</pre>
+<div class="attribution">
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>指定されたコミットから「親」リンクをたどることによって到達可能なコミットをリストしますが、その前に <em>&#94;</em>
+が付いているコミットから到達可能なコミットは除外します。デフォルトでは、出力は時系列の逆順で表示されます。</p></div>
+<div class="paragraph"><p>これは集合演算と考えることができます。 コマンドラインで指定されたコミットのいずれかから到達可能なコミットのセットを形成し、 <em>&#94;</em>
+が前に付いたコミットのいずれかから到達可能なコミットがそのセットから差し引かれます。差し引かれた残りのコミットは、コマンドの出力に出力されるものです。他のさまざまなオプションとパスパラメータ(pats
+parameters)を使用して、結果をさらに制限できます。</p></div>
+<div class="paragraph"><p>したがって、以下のコマンド:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git rev-list foo bar ^baz</code></pre>
+</div></div>
+<div class="paragraph"><p>は、「 <em>foo</em> または <em>bar</em> から到達可能であるが、 <em>baz</em> からは到達できないすべてのコミットをリストする」を意味します。</p></div>
+<div class="paragraph"><p>特別な表記 "<em>&lt;commit1&gt;</em>..<em>&lt;commit2&gt;</em>" は、 "^<em>&lt;commit1&gt;</em> <em>&lt;commit2&gt;</em>"
+の省略形として使用できます。たとえば、以下のどちらかを同じ意味で使用できます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git rev-list origin..HEAD
+$ git rev-list HEAD ^origin</code></pre>
+</div></div>
+<div class="paragraph"><p>もう1つの特別な表記法は、マージに役立つ "<em>&lt;commit1&gt;</em>&#8230;<em>&lt;commit2&gt;</em>"
+です。結果として得られるコミットのセットは、2つのオペランド間の対称差(symmetric difference)です。以下の2つのコマンドは同等です:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git rev-list A B --not $(git merge-base --all A B)
+$ git rev-list A...B</code></pre>
+</div></div>
+<div class="paragraph"><p>'rev-list&#8217;は、コミットの祖先グラフ作成およびトラバースする機能を提供するため、非常に重要なGitコマンドです。 このため、'git
+bisect&#8217;や'git repack&#8217;などのさまざまなコマンドで使用できるようにするさまざまなオプションがあります。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_commit_limiting">Commit Limiting</h3>
+<div class="paragraph"><p>ここで説明されている特別な表記法を使用してリストする必要があるコミットの範囲を指定することに加えて、追加のコミット制限が適用される場合があります。</p></div>
+<div class="paragraph"><p>より多くのオプションを使用すると、通常、出力がさらに制限されます(たとえば、<code>--since=&lt;date1&gt;`は</code>&lt;date1&gt;<code>より新しいコミットに制限され、</code>--grep=&lt;pattern&gt;<code>と一緒に使用すると、ログメッセージに</code>&lt;pattern&gt;`と一致する行があるコミットにさらに制限されます)。</p></div>
+<div class="paragraph"><p>注意: これらは、`--reverse`などのコミット順序およびフォーマットオプションの前に適用されることに注意してください。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-&lt;number&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>-n &lt;number&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--max-count=&lt;number&gt;</code>
+</dt>
+<dd>
+<p>
+        出力するコミットの数を制限します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--skip=&lt;number&gt;</code>
+</dt>
+<dd>
+<p>
+        コミット出力の表示を開始する前に、'number&#8217;個のコミットをスキップします。
+</p>
+</dd>
+<dt class="hdlist1">
+--since=&lt;date&gt;
+</dt>
+<dt class="hdlist1">
+<code>--after=&lt;date&gt;</code>
+</dt>
+<dd>
+<p>
+        指定の日付よりも新しいコミットを表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--until=&lt;date&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--before=&lt;date&gt;</code>
+</dt>
+<dd>
+<p>
+        指定の日付より古いコミットを表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--max-age=&lt;timestamp&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--min-age=&lt;timestamp&gt;</code>
+</dt>
+<dd>
+<p>
+        コミット出力を指定された時間範囲に制限します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--author=&lt;pattern&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--committer=&lt;pattern&gt;</code>
+</dt>
+<dd>
+<p>
+        コミット出力を、指定されたパターン(正規表現)に一致する作者(author)/コミッター(committer)ヘッダー行を持つものに制限します。複数の
+        <code>--author=&lt;pattern&gt;</code> がある場合、作者が指定されたパターンのいずれかに一致するコミットが選択されます(複数の
+        <code>--committer=&lt;pattern&gt;</code> の場合も同様)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--grep-reflog=&lt;pattern&gt;</code>
+</dt>
+<dd>
+<p>
+        コミット出力を、指定されたパターン(正規表現)に一致するreflogエントリを持つものに制限します。複数の`--grep-reflog`を使用すると、指定されたパターンのいずれかに一致するreflogメッセージを持つコミットが選択されます。`--walk-reflogs`が使用されていない限り、このオプションを使用するとエラーになります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--grep=&lt;pattern&gt;</code>
+</dt>
+<dd>
+<p>
+        コミット出力を、指定されたパターン(正規表現)に一致するログメッセージを持つものに制限します。複数の`--grep=&lt;pattern&gt;<code>を使用すると、指定されたパターンのいずれかにメッセージが一致するコミットが選択されます(全てに一致するコミットだけを選択したい場合、</code>--all-match`を参照してください)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--all-match</code>
+</dt>
+<dd>
+<p>
+        コミット出力を、少なくとも1つに一致するものではなく、指定されたすべての`--grep`に一致するものに制限します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--invert-grep</code>
+</dt>
+<dd>
+<p>
+        コミット出力を、`--grep=&lt;pattern&gt;`で指定されたパターンと一致しないログメッセージを持つものに制限します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-i</code>
+</dt>
+<dt class="hdlist1">
+<code>--regexp-ignore-case</code>
+</dt>
+<dd>
+<p>
+        大文字小文字に関係なく、正規表現の制限パターンに一致します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--basic-regexp</code>
+</dt>
+<dd>
+<p>
+        制限パターンを基本正規表現として扱います。これがデフォルトです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-E</code>
+</dt>
+<dt class="hdlist1">
+<code>--extended-regexp</code>
+</dt>
+<dd>
+<p>
+        制限パターンを、デフォルトの基本正規表現の代わりに拡張正規表現として扱います。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-F</code>
+</dt>
+<dt class="hdlist1">
+<code>--fixed-strings</code>
+</dt>
+<dd>
+<p>
+        制限パターンを固定文字列として扱います(パターンを正規表現として解釈しないでください)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-P</code>
+</dt>
+<dt class="hdlist1">
+<code>--perl-regexp</code>
+</dt>
+<dd>
+<p>
+        制限パターンをPerl互換の正規表現として扱います。
+</p>
+<div class="paragraph"><p>これらのタイプの正規表現のサポートは、コンパイル時オプションに依存します。Gitが当該のサポート付きでコンパイルされていない場合、このオプションを提供すると、Gitが死にます(die)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--remove-empty</code>
+</dt>
+<dd>
+<p>
+        指定されたパスがツリーから見えなくなったら停止(stop)します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--merges</code>
+</dt>
+<dd>
+<p>
+        マージコミットのみを印刷します。これは`--min-parents=2`とまったく同じです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-merges</code>
+</dt>
+<dd>
+<p>
+        複数の親を持つコミットを出力しない。これは`--max-parents=1`とまったく同じです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--min-parents=&lt;number&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--max-parents=&lt;number&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-min-parents</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-max-parents</code>
+</dt>
+<dd>
+<p>
+        量の多少に関わらず、とにかく複数の親コミットがあるコミットのみを表示します。特に、<code>--max-parents=1`は</code>--no-merges`と同じであり、<code>--min-parents=2`は</code>--merges`と同じです。<code>--max-parents=0`はすべてのルートコミットを提供し、</code>--min-parents=3`はすべてのタコ足マージ(octopus
+        merges)を示します。
+</p>
+<div class="paragraph"><p><code>--no-min-parents`と</code>--no-max-parents`は、これらの制限を(制限なしに)再度リセットします。同等の形式は、<code>--min-parents=0</code>(すべてのコミットに0個以上の親があります)および`--max-parents=-1`(マイナスの数は上限がないことを示します)です。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--first-parent</code>
+</dt>
+<dd>
+<p>
+        マージコミットを確認したら、最初の親コミットのみを探索します。このオプションは、特定のトピックブランチの進化を表示するときに、より良い概要を提供できます。トピックブランチへのマージは、時々更新されるアップストリームに調整することだけである傾向があり、このオプションを使用すると、そのようなマージによって履歴に取り込まれた個々のコミットを無視できます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--not</code>
+</dt>
+<dd>
+<p>
+        次に現れる`--not`までの間、後続のすべてのリビジョン指定子の'&#94;'プレフィックス(またはその欠如)の意味を逆にします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--all</code>
+</dt>
+<dd>
+<p>
+        &#8216;refs/`内のすべての参照が`HEAD`とともに、コマンドラインに&#8217;&lt;commit&gt;'としてリストされているかのように見せかけます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--branches[=&lt;pattern&gt;]</code>
+</dt>
+<dd>
+<p>
+        &#8216;refs/heads`内のすべての参照がコマンドラインに&#8217;&lt;commit&gt;'としてリストされているかのように見せかけます。<em>&lt;pattern&gt;'が指定されている場合、ブランチを指定されたシェルグロブ(shell
+        glob)に一致するものに制限します。パターンに</em>?<em>または</em>&#42;'または'[<em>がない場合、最後に</em>/&#42;'が含まれます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--tags[=&lt;pattern&gt;]</code>
+</dt>
+<dd>
+<p>
+        &#8216;refs/tags`内のすべての参照がコマンドラインに&#8217;&lt;commit&gt;'としてリストされているかのように見せかけます。<em>&lt;pattern&gt;'が指定されている場合は、指定されたシェルグロブ(shell
+        glob)に一致するタグにタグを制限します。パターンに</em>?<em>または</em>&#42;'または'[<em>がない場合、最後に</em>/&#42;'が含まれます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--remotes[=&lt;pattern&gt;]</code>
+</dt>
+<dd>
+<p>
+        &#8216;refs/remotes`内のすべての参照がコマンドラインに&#8217;&lt;commit&gt;'としてリストされているかのように見せかけます。<em>&lt;pattern&gt;'が指定されている場合、リモート追跡ブランチを指定されたシェルグロブ(shell
+        glob)に一致するものに制限します。パターンに</em>?<em>または</em>&#42;'または'[<em>がない場合、最後に</em>/&#42;'が含まれます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--glob=&lt;glob-pattern&gt;</code>
+</dt>
+<dd>
+<p>
+        シェルグロブ'&lt;glob-pattern&gt;'に一致するすべての参照がコマンドラインに'&lt;commit&gt;'としてリストされているかのように見せかけます。先頭の&#8217;refs/<em>は、欠落している場合は自動的に先頭に追加されます。パターンに</em>?<em>または</em>&#42;'または'[<em>がない場合、最後に</em>/&#42;'が含まれます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--exclude=&lt;glob-pattern&gt;</code>
+</dt>
+<dd>
+<p>
+        次の`--all`または`--branches`または`--tags`または`--remotes`または`--glob`が別の方法で考慮する'&lt;glob-pattern&gt;'に一致する参照を含めないでください。このオプションを繰り返すと、次の`--all`または`--branches`または`--tags`または`--remotes`または`--glob`オプションまで除外パターンが蓄積されます(他のオプションまたは引数は、蓄積されたパターンをクリアしません)。
+</p>
+<div class="paragraph"><p>与えられたパターンは、それぞれ`--branches`または`
+--tags`または`--remotes`に適用される場合、&#8216;refs/heads`または`refs/tags`または`refs/remotes`で始まるべきではありません。<code>--glob`または</code>--all`に適用する場合は、`refs/`で始める必要があります。末尾の&#8217;/&#42;'を意図している場合は、明示的に指定する必要があります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--reflog</code>
+</dt>
+<dd>
+<p>
+        reflogsで言及されているすべてのオブジェクトがコマンドラインに`&lt;commit&gt;`としてリストされているかのように見せかけます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--alternate-refs</code>
+</dt>
+<dd>
+<p>
+        代替リポジトリの参照ヒントとして言及されているすべてのオブジェクトがコマンドラインにリストされているかのように見せかけます。代替リポジトリは、オブジェクトディレクトリが`objects/info/alternates`で指定されているリポジトリです。インクルードされたオブジェクトのセットは、`core.alternateRefsCommand`などによって変更できます。<a href="git-config.html">git-config(1)</a>を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--single-worktree</code>
+</dt>
+<dd>
+<p>
+        デフォルトでは、作業ツリーが複数ある場合、<code>--all`と</code>-reflog`と`--indexed-objects`では、すべての作業ツリーが検査されます(<a href="git-worktree.html">git-worktree(1)</a>を参照)。このオプションは、現在の作業ツリーのみを調べるように強制します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ignore-missing</code>
+</dt>
+<dd>
+<p>
+        入力に無効なオブジェクト名が含まれている場合、そもそもその不正な入力が行われていないかのように見せかけます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--stdin</code>
+</dt>
+<dd>
+<p>
+        コマンドラインにリストされている'&lt;commit&gt;'に加えて、標準入力からそれらを読み取ります。`--`区切り文字が表示された場合は、コミットの読み取りを停止し、パスの読み取りを開始して結果を制限します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--quiet</code>
+</dt>
+<dd>
+<p>
+        標準出力には何も出力しないでください。この形式は主に、呼び出し元が終了ステータスをテストして、オブジェクトの範囲が完全に接続されているかどうかを確認できるようにすることを目的としています。出力をフォーマットする必要がないため、stdoutを`/dev/null`にリダイレクトするよりも高速です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--disk-usage</code>
+</dt>
+<dd>
+<p>
+        通常の出力を抑制します。代わりに、選択したコミットまたはオブジェクトによってディスク上のストレージに使用されたバイトの合計を出力します。これは、出力が(特に`--use-bitmap-index`を伴った場合)はるかに高速に実行されることを除いて、出力を`git
+        cat-file --batch-check=<em>%(objectsize:disk)</em>`にパイプすることと同じです。"on-disk
+        storage"の意味する制限については、<a href="git-cat-file.html">git-cat-file(1)</a>の`CAVEATS`節を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--cherry-mark</code>
+</dt>
+<dd>
+<p>
+        <code>--cherry-pick</code>（以下を参照）と同様ですが、同等のコミットを省略せずに`=<code>と印し、同等でないコミットを</code>+`と印します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--cherry-pick</code>
+</dt>
+<dd>
+<p>
+        コミットの組を対称差(symmetric difference)に制限する場合、「反対側」の別のコミットと同じ変更を導入するコミットを省略します。
+</p>
+<div class="paragraph"><p>たとえば、<code>A`と`B`の2つのブランチがある場合、それらの片側だけですべてのコミットを一覧表示する通常の方法は、</code>--left-right`を使用することです(`--left-right`オプションの説明の以下の例を参照してください)。ただし、他のブランチからは(ブランチAと重複しない)厳選されたコミットが表示されます(たとえば、「3rd
+onb」はブランチAからチェリーピックされる可能性があります)。このオプションを使用すると、そのようなコミットのペアは出力から除外されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--left-only</code>
+</dt>
+<dt class="hdlist1">
+<code>--right-only</code>
+</dt>
+<dd>
+<p>
+        リストは、対称差のそれぞれの側でのみコミットします。つまり、<code>--left-right`で `&lt;</code>
+        と印されるのだけか、あるいは`--left-right`で`&gt;`と印されるものだけです。
+</p>
+<div class="paragraph"><p>たとえば、<code>--cherry-pick --right-only
+A...B`は、`A`にある、または`A`のコミットとパッチと同等のコミットを`B`から省略します。つまり、これは`git cherry A
+B`からの</code>+<code>コミットをリストします。より正確に書くと、</code>--cherry-pick --right-only
+--no-merges`により正確なリストを提供します。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--cherry</code>
+</dt>
+<dd>
+<p>
+        `--right-only --cherry-mark
+        --no-merges`の同義語です。出力を私たちの側のコミットに制限し、フォークされた履歴の反対の側に適用されたものを、`git cherry
+        upstream mybranch`と同様に`git log --cherry upstream&#8230;mybranch`で印するのに役立ちます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-g</code>
+</dt>
+<dt class="hdlist1">
+<code>--walk-reflogs</code>
+</dt>
+<dd>
+<p>
+        コミットの祖先チェーンをたどる代わりに、reflogエントリを最新のものから古いものに移動します。このオプションを使用する場合、除外するコミットを指定することはできません(つまり、'&#94;commit&#8217;や'commit1..commit2&#8217;や'commit1...commit2&#8217;表記は使用できません)。
+</p>
+<div class="paragraph"><p>(明らかな理由で、)<code>oneline`と`reference`以外の</code>--pretty`形式では、これにより、出力にreflogから取得された2行の追加情報が含まれます。出力のreflog指定子は、<code>ref@{Nth}</code>(<code>Nth`はreflogの逆時系列インデックス(reverse-chronological
+index))または`ref@{timestamp}</code>(そのエントリのタイムスタンプ付き)として表示されます。表示は下記のいくつかのルールに依存します:</p></div>
+<div class="openblock">
+<div class="content">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+開始点が <code>ref@{Nth}</code> として指定されている場合は、インデックス形式を表示します。
+</p>
+</li>
+<li>
+<p>
+開始点が <code>ref@{now}</code> として指定されている場合は、タイムスタンプ形式を表示します。
+</p>
+</li>
+<li>
+<p>
+上記のどちらも使用されていないが、コマンドラインで`--date`が指定されている場合は、`--date`で要求された形式でタイムスタンプを表示します。
+</p>
+</li>
+<li>
+<p>
+それ以外の場合は、インデックス形式を表示します。
+</p>
+</li>
+</ol></div>
+</div></div>
+<div class="paragraph"><p><code>--pretty =
+oneline`では、コミットメッセージの前にこの情報が同じ行に付けられます。このオプションを</code>--reverse`と組み合わせることはできません。<a href="git-reflog.html">git-reflog(1)</a>も参照してください。</p></div>
+<div class="paragraph"><p>`--pretty=reference`では、この情報はまったく表示されません。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--merge</code>
+</dt>
+<dd>
+<p>
+        マージが失敗した後、競合があり、マージするすべてのheadに存在しないファイルに関連(touch)する参照を表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--boundary</code>
+</dt>
+<dd>
+<p>
+        除外された境界コミットを出力します。 境界コミットの前には `-`が付いています。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--use-bitmap-index</code>
+</dt>
+<dd>
+<p>
+        (使用可能な場合は、)パックビットマップインデックスを使用して、トラバーサルを高速化しようと試みます。`--objects`でトラバースする場合、ツリーとブロブには関連するパスが出力されないことに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--progress=&lt;header&gt;</code>
+</dt>
+<dd>
+<p>
+        オブジェクトが対称になるときに、stderrに進捗レポートを表示します。`&lt;header&gt;`テキストは、進行状況が更新されるたびに印刷されます。
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_history_simplification">History Simplification</h3>
+<div class="paragraph"><p>特定の&lt;path&gt;を変更するコミットなど、履歴の一部のみに関心がある場合があります。ただし、「履歴の簡略化」(History
+Simplification)は2つの部分から成ります。履歴を簡略化するためにはさまざまな戦略があるためです。その1つはコミットの選択であり、もう1つはそれを行う方法です。</p></div>
+<div class="paragraph"><p>以下のオプションは、表示するコミットを選択します:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+&lt;paths&gt;
+</dt>
+<dd>
+<p>
+        指定された&lt;パス&gt;を変更するコミットが選択されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--simplify-by-decoration</code>
+</dt>
+<dd>
+<p>
+        いくつかのブランチまたはタグによって参照されるコミットが選択されます。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>注意: 意味のある重要な履歴のために、追加のコミットを表示できることに注意してください。</p></div>
+<div class="paragraph"><p>以下のオプションは、簡略化の実行方法に影響します。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Default mode
+</dt>
+<dd>
+<p>
+        履歴を、ツリーの最終状態を説明する最も単純な履歴に単純化します。最終結果が同じである場合(つまり、同じコンテンツのブランチをマージする場合)、いくつかの傍流ブランチ(side
+        branches)を削除するため、最も単純です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--show-pulls</code>
+</dt>
+<dd>
+<p>
+        デフォルトモードからのすべてのコミットを含めますが、最初の親へのTREESAMEではなく、後の親へのTREESAMEであるマージコミットも含めます。このモードは、ブランチに変更を「最初に導入した」マージコミットを表示するのに役立ちます。(訳注:TREESAME=pathspecが全く同一であるツリー)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--full-history</code>
+</dt>
+<dd>
+<p>
+        デフォルトモードと同じですが、一部の履歴を削除しません。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--dense</code>
+</dt>
+<dd>
+<p>
+        選択したコミットのみが表示され、重大で意味のある履歴を持つコミットもいくつか表示されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--sparse</code>
+</dt>
+<dd>
+<p>
+        簡略化された履歴内のすべてのコミットが表示されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--simplify-merges</code>
+</dt>
+<dd>
+<p>
+        このマージに寄与する選択されたコミットがないため、結果の履歴からいくつかの不要なマージを削除するための`--full-history`への追加オプション。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ancestry-path</code>
+</dt>
+<dd>
+<p>
+        表示するコミットの範囲が指定されている場合(たとえば、<em>commit1..commit2&#8217;または&#8217;commit2 &#94;commit1</em>)、
+        <em>commit1</em> と <em>commit2</em> の間の祖先チェーンに直接存在するコミットのみ、つまり、 <em>commit1</em> の子孫であり、
+        <em>commit2</em> の祖先であるコミットを表示します。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>より詳細な説明は以下のとおりです。</p></div>
+<div class="paragraph"><p>&lt;paths&gt; として <code>foo</code> を指定したとします。 <code>foo</code> !TREESAME
+を変更するコミットを呼び出し、残りをTREESAMEと呼びます。( <code>foo</code>
+のためにフィルタリングされた差分では、それぞれ異なって見えたりたり等しく見えたりします。）</p></div>
+<div class="paragraph"><p>以下、簡略化設定の違いを説明するために、同じ履歴例を使います。このコミットグラフでは、ファイル <code>foo</code> をフィルタリングしていると想定しています:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M---N---O---P---Q
+         /     /   /   /   /   /
+        I     B   C   D   E   Y
+         \   /   /   /   /   /
+          `-------------'   X</code></pre>
+</div></div>
+<div class="paragraph"><p>履歴 A---Q の水平線は、各マージの最初の親と見なされます。その各コミットは以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>I</code> は最初のコミットであり、ファイル <code>foo</code> が内容 &#8220;asdf&#8221; で存在し、ファイル <code>quux</code> は内容 &#8220;quux&#8221;
+  で存在します。最初のコミットは空のツリーと比較されるため、<code>I</code> は !TREESAME です。
+</p>
+</li>
+<li>
+<p>
+<code>A</code> では、 <code>foo</code> には &#8220;foo&#8221; だけが含まれています。
+</p>
+</li>
+<li>
+<p>
+<code>B</code> には <code>A</code> と同じ変更が含まれています。そのマージ <code>M</code> は些細なことであり、したがってすべての親にとって TREESAME です。
+</p>
+</li>
+<li>
+<p>
+<code>C</code> は <code>foo</code> を変更しませんが、そのマージ <code>N</code> はそれを &#8220;foobar&#8221; に変更するので、どの親にとっても TREESAME
+  ではありません。
+</p>
+</li>
+<li>
+<p>
+<code>D</code> は <code>foo</code> を &#8220;baz&#8221; に設定します。そのマージ <code>O</code> は、 <code>N</code> と <code>D</code> から &#8220;foobarbaz&#8221;
+  への文字列を結合します。つまり、どの親にとっても TREESAME ではありません。
+</p>
+</li>
+<li>
+<p>
+<code>E</code> は <code>quux</code> を &#8220;xyzzy&#8221; に変更し、そのマージ <code>P</code> は文字列を &#8220;quuxxyzzy&#8221; に結合します。 <code>P</code> は
+  <code>O</code> に対して TREESAME ですが、 <code>E</code> に対してはそうではありません。
+</p>
+</li>
+<li>
+<p>
+<code>X</code> は、新ファイル <code>side</code> を追加し、 <code>Y</code> がそれを変更した独立したルートコミットです。 <code>Y</code> は <code>X</code>
+  へのTREESAMEです。そのマージ <code>Q</code> は <code>P</code> に <code>side</code> を追加し、 <code>Q</code> は <code>P</code> にはTREESAMEですが、<code>Y</code>
+  に対してはそうではありません。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>rev-list</code> は、 <code>--full-history</code> および/または、( <code>--parents</code> または <code>--children</code>
+を介して)親の書き換えが使用されているかどうかに基づいて、コミットを含めたり除外したりして、履歴を逆方向にウォークスルーします。以下の設定が可能です。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Default mode
+</dt>
+<dd>
+<p>
+        コミットは、どの親に対してもTREESAMEでない場合に含まれます(これは変更できますが、以下の <code>--sparse</code>
+        を参照してください)。コミットがマージであり、一方の親に対するTREESAMEであった場合は、その親のみをフォローします。(TREESAMEの親が複数ある場合でも、そのうちの1つだけをフォローします)。それ以外の場合は、すべての親をフォローします。
+</p>
+<div class="paragraph"><p>これにより、以下のようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---N---O
+         /     /   /
+        I---------D</code></pre>
+</div></div>
+<div class="paragraph"><p>TREESAMEの親のみに従うルールが利用可能な場合は、 <code>B</code> を検討対象から完全に削除したことに注意してください。 <code>C</code> は <code>N</code>
+を介して考慮されましたが、しかしそれはTREESAMEです。ルートコミットは空のツリーと比較されるため、 <code>I</code> は !TREESAME です。</p></div>
+<div class="paragraph"><p>親子関係は <code>--parents</code> でのみ表示されますが、デフォルトモードで選択されたコミットには影響しないため、親の行を示しました。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--full-history without parent rewriting</code>
+</dt>
+<dd>
+<p>
+        このモードは、デフォルトとはある一点で異なります。つまり、いずれかの親に対してTREESAMEであっても、常にマージのすべての親に従います。マージの複数の側にコミットが含まれている場合でも、これはマージ自体が含まれていることを意味するものではありません！
+        例では以下のようになります。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>        I  A  B  N  D  O  P  Q</code></pre>
+</div></div>
+<div class="paragraph"><p><code>M</code> は、両方の親にとってTREESAMEであるため、除外されました。 <code>E</code> と <code>C</code> と <code>B</code> をすべて巡りましたが、 <code>B</code> だけが
+!TREESAME だったので、他は表示されません。</p></div>
+<div class="paragraph"><p>注意:
+親の書き換え(rewrite)がないと、コミット間の親子関係について話す(talk)ことは実際には不可能であるため、それらが切断されている(disconnected)ことを示していることに注意してください。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--full-history with parent rewriting</code>
+</dt>
+<dd>
+<p>
+        通常のコミットは !TREESAME の場合にのみ含まれます(これは変更できますが、以下の <code>--sparse</code> を参照してください)。
+</p>
+<div class="paragraph"><p>マージは常に含まれます。ただし、親リストは書き直されます。各親に沿って、自分自身に含まれていないコミットを削除します。 これにより以下のようになります。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M---N---O---P---Q
+         /     /   /   /   /
+        I     B   /   D   /
+         \   /   /   /   /
+          `-------------'</code></pre>
+</div></div>
+<div class="paragraph"><p>上記を書き直さずに <code>--full-history</code> と比較してください。 <code>E</code> はTREESAMEであるため削除されましたが、Pの親リストは <code>E</code>
+の親 <code>I</code> を含むように書き直されていることに注意してください。 <code>C</code> と <code>N</code> および <code>X</code> と <code>Y</code> と <code>Q</code>
+についても同じことが起こりました。</p></div>
+</dd>
+</dl></div>
+<div class="paragraph"><p>上記の設定に加えて、あなたはTREESAMEが包含に影響を与えるかどうかを変更できます:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--dense</code>
+</dt>
+<dd>
+<p>
+        巡ったコミットは、親にとってTREESAMEでない場合に含まれます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--sparse</code>
+</dt>
+<dd>
+<p>
+        巡ったすべてのコミットが含まれます。
+</p>
+<div class="paragraph"><p><code>--full-history</code>
+がなくても、これによりマージが単純化されることに注意してください。親の1つがTREESAMEの場合、その1つだけに従うため、マージの反対側を巡ることはありません。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--simplify-merges</code>
+</dt>
+<dd>
+<p>
+        最初に、親を書き換えた <code>--full-history</code> と同じ方法で履歴グラフを作成します(上記を参照)。
+</p>
+<div class="paragraph"><p>それから、以下のルールに従って、各コミット <code>C</code> を最終履歴内の置換 <code>C'</code> に単純化します:</p></div>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>C'</code> を <code>C</code> にセットします。
+</p>
+</li>
+<li>
+<p>
+<code>C'</code> の各親 <code>P</code> をその簡略化された <code>P'</code>
+  に置き換えます。その過程で、他の親の祖先であるか、ルートである親を削除すると、TREESAMEが空のツリーにコミットされ、重複が削除されますが、TREESAMEであるすべての親を削除しないように注意してください。
+</p>
+</li>
+<li>
+<p>
+この親の書き換え後、 <code>C'</code> がルートまたはマージコミット(0または &gt;1 の親を持つ)、境界コミット、または
+  !TREESAMEである場合、それは残ります。それ以外の場合は、唯一の親に置き換えられます。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="paragraph"><p>この効果は、親の書き換えを使用した <code>--full-history</code> と比較することで最もよく示されます。例は以下のようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M---N---O
+         /     /       /
+        I     B       D
+         \   /       /
+          `---------'</code></pre>
+</div></div>
+<div class="paragraph"><p>注意: <code>--full-history</code> に対する <code>N</code> と <code>P</code> と <code>Q</code> の主な違いに注意してください:</p></div>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>N</code> の親リストは、他の親 <code>M</code> の祖先であるため、 <code>I</code> が削除されました。それでも、 !TREESAME なので <code>N</code> が残りました。
+</p>
+</li>
+<li>
+<p>
+<code>P</code> の親リストも同様に <code>I</code> が削除されました。 <code>P</code> は、親が1つで TREESAMEであるため、完全に削除されました。
+</p>
+</li>
+<li>
+<p>
+<code>Q</code> の親リストでは、 <code>Y</code> が <code>X</code> に簡略化されていました。その後、 <code>X</code> はTREESAMEルートであったため、削除されました。 <code>Q</code>
+  は、親が1つで TREESAMEであるため、完全に削除されました。
+</p>
+</li>
+</ul></div>
+</div></div>
+</dd>
+</dl></div>
+<div class="paragraph"><p>利用可能な別の簡略化モードがあります:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--ancestry-path</code>
+</dt>
+<dd>
+<p>
+        表示されるコミットを、指定されたコミット範囲内の &#8220;from&#8221; コミットと &#8220;to&#8221;
+        コミットの間の祖先チェーンに直接あるコミットに制限します。つまり、 &#8220;to&#8221; コミットの祖先であるコミットと &#8220;from&#8221;
+        コミットの子孫であるコミットのみを表示します。
+</p>
+<div class="paragraph"><p>ユースケースの例として、以下のコミット履歴について考えます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>            D---E-------F
+           /     \       \
+          B---C---G---H---I---J
+         /                     \
+        A-------K---------------L--M</code></pre>
+</div></div>
+<div class="paragraph"><p>通常の <em>D..M</em> は、 <code>M</code> の祖先であるコミットのセットを計算しますが、 <code>D</code> の祖先であるコミットは除外します。 これは、「 <code>M</code> には
+<code>D</code> には存在しなかったものがある」という意味で、 <code>D</code> 以降の <code>M`に至るまでの歴史に何が起こったのかを知るのに役立ちます。この例の結果は、
+`A</code> と <code>B</code> (そしてもちろん <code>D</code> 自体)を除くすべてのコミットになります。</p></div>
+<div class="paragraph"><p>ただし、 <code>M</code> のコミットが <code>D</code> で入ったバグで汚染されており、修正が必要な場合は、実際には <code>D</code> の子孫である <em>D..M</em>
+のサブセットのみを表示する必要があります。つまり、 <code>C</code> と <code>K</code> を除外します。これはまさに <code>--ancestry-path</code>
+オプションが行うことです。これを <em>D..M</em> 範囲に適用すると、以下のようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>                E-------F
+                 \       \
+                  G---H---I---J
+                               \
+                                L--M</code></pre>
+</div></div>
+</dd>
+</dl></div>
+<div class="paragraph"><p>別のオプション <code>--show-pulls</code> について説明する前に、新しいサンプル履歴を作成する必要があります。</p></div>
+<div class="paragraph"><p>簡略化された履歴を見るときにユーザーが直面する一般的な問題は、ファイルを変更したことがわかっているコミットが、ファイルの簡略化された履歴に表示されないことです。そこで、新しい例を示し、その場合に
+<code>--full-history</code> や <code>--simplify-merges</code> などのオプションがどのように機能するかを示しましょう。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M-----C--N---O---P
+         /     / \  \  \/   /   /
+        I     B   \  R-'`-Z'   /
+         \   /     \/         /
+          \ /      /\        /
+           `---X--'  `---Y--'</code></pre>
+</div></div>
+<div class="paragraph"><p>この例では、 <code>I</code> が <code>file.txt</code> を作成し、それが <code>A</code> と`B` と <code>X</code>
+にてさまざまな方法で変更されたとします。ひとり親のコミット <code>C</code> と <code>Z</code> と <code>Y</code> は <code>file.txt</code> を変更していません。マージコミット
+<code>M</code> は、マージの競合を解決して、 <code>A</code> と <code>B</code>
+の両方の変更を含めることによって作成されたため、どちらにもTREESAMEではありません。ただし、マージコミット <code>R</code> は、 <code>M</code> の
+<code>file.txt`の内容を無視し、 `X</code> の <code>file.txt</code> の内容のみを取得することによって作成されました。 したがって、 <code>R</code> は
+<code>X</code> へのTREESAMEですが、 <code>M</code> はそうではありません。最後に、 <code>N</code> を作成するための自然なマージ解決は、 <code>R</code> で
+<code>file.txt</code> の内容を取得することです。したがって、 <code>N</code> は <code>C</code> ではなく <code>R</code> へのTREESAMEです。マージコミット <code>O</code> と
+<code>P</code> は、最初の親にはTREESAMEですが、2番目の親である <code>Z</code> と <code>Y</code> にはついてはそうではありません。</p></div>
+<div class="paragraph"><p>デフォルトモードを使用する場合、 <code>N</code> と <code>R</code>
+は両方ともTREESAMEの親を持っているため、これらのエッジはウォークされ、他のエッジは無視されます。結果の履歴グラフは以下のとおりです:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>        I---X</code></pre>
+</div></div>
+<div class="paragraph"><p><code>--full-history</code> を使用する場合、Gitはすべてのエッジを巡ります。これにより、コミット <code>A</code> と <code>B</code> と マージ <code>M</code>
+が検出されますが、マージコミット <code>O</code> と <code>P</code> も明らかになります。 親を書き換えると、結果のグラフは以下のようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M--------N---O---P
+         /     / \  \  \/   /   /
+        I     B   \  R-'`--'   /
+         \   /     \/         /
+          \ /      /\        /
+           `---X--'  `------'</code></pre>
+</div></div>
+<div class="paragraph"><p>ここで、マージコミット <code>O</code> と <code>P</code> は、実際には <code>file.txt</code> への変更を提供しなかったため、余分なノイズを提供します。古いバージョンの
+<code>file.txt</code>
+に基づいたトピックのみをマージしました。これは、多くの寄稿者が並行して作業し、トピックブランチを単一のトランクに沿ってマージするワークフローを使用するリポジトリの一般的な問題です。開発に関係のないマージが
+<code>--full-history</code> の結果に表示されます。</p></div>
+<div class="paragraph"><p><code>--simplify-merges</code> オプションを使用すると、コミット <code>O</code> と <code>P</code> が結果から消えます。 これは、 <code>O</code> と <code>P</code>
+の書き直された2番目の親が、最初の親から到達可能であるためです。これらのエッジが削除されると、コミットは、親にとってTREESAMEである単一の親のコミットのように見えます。これはコミット
+<code>N</code> にも発生し、以下のような履歴ビューが表示されます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M--.
+         /     /    \
+        I     B      R
+         \   /      /
+          \ /      /
+           `---X--'</code></pre>
+</div></div>
+<div class="paragraph"><p>このビューでは、 <code>A</code> と <code>B</code> と <code>X</code> からの重要なひとり親の変更がすべて表示されます。また、慎重に解決されたマージ <code>M</code>
+とそれほど慎重に解決されていないマージ <code>R</code> も表示されます。これは通常、コミット <code>A</code> と <code>B</code>
+がデフォルトのビューの履歴から「消えた」理由を判断するのに十分な情報です。ただし、このアプローチにはいくつかの問題があります。</p></div>
+<div class="paragraph"><p>最初の問題はパフォーマンスです。以前のオプションとは異なり、 <code>--simplify-merges</code>
+オプションでは、単一の結果を返す前にコミット履歴全体をウォークする必要があります。これにより、非常に大規模なリポジトリでこのオプションを使用するのが難しくなる可能性があります。</p></div>
+<div class="paragraph"><p>2番目の問題は監査の1つです。多くの寄稿者が同じリポジトリで作業している場合、どのマージコミットが重要なブランチに変更を導入したかが重要です。上記の問題のあるマージ
+<code>R</code> は、重要なブランチにマージするために使用されたマージコミットではない可能性があります。 代わりに、マージ <code>N</code> を使用して <code>R</code> と <code>X</code>
+を重要なブランチにマージしました。このコミットには、変更 <code>X</code> がコミットメッセージの <code>A</code> と <code>B</code>
+からの変更を上書きするようになった理由に関する情報が含まれている可能性があります。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--show-pulls</code>
+</dt>
+<dd>
+<p>
+        デフォルトの履歴に表示されるコミットに加えて、最初の親にはTREESAMEではなく、後の親にはTREESAMEである各マージコミットを表示します。
+</p>
+<div class="paragraph"><p>マージコミットが <code>--show-pulls</code> に含まれている場合、マージは別のブランチから変更を「プル」したかのように扱われます。この例で
+<code>--show-pulls</code> を使用すると(他のオプションは使用しない場合、)結果のグラフは行かのようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>        I---X---R---N</code></pre>
+</div></div>
+<div class="paragraph"><p>ここで、コミット <code>X</code> と <code>R</code> をそれぞれベースブランチにプルしたため、マージコミット <code>R</code> と <code>N</code>
+が含まれています。これらのマージは、コミット <code>A</code> と <code>B</code> がデフォルトの履歴に表示されない理由です。</p></div>
+<div class="paragraph"><p><code>--show-pulls</code> が <code>--simplify-merges</code> とペアになっている場合、グラフには必要なすべての情報が含まれます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>          .-A---M--.   N
+         /     /    \ /
+        I     B      R
+         \   /      /
+          \ /      /
+           `---X--'</code></pre>
+</div></div>
+<div class="paragraph"><p><code>M</code> は <code>R</code> から到達可能であるため、 <code>N</code> から <code>M</code> へのエッジが単純化されていることに注意してください。ただし、 <code>N</code> は、変更
+<code>R</code> をメインブランチに「プル」したため、重要なコミットとして履歴に表示されます。</p></div>
+</dd>
+</dl></div>
+<div class="paragraph"><p><code>--simplify-by-decoration</code>
+オプションを使用すると、タグで参照されていないコミットを省略して、履歴のトポロジの全体像のみを表示できます。コミットは、(1)タグによって参照されている場合、または
+(2)コマンドラインで指定されたパスの内容を変更した場合に、!TREESAMEとしてマークされます(つまり、上記の履歴簡略化ルールの後に保持されます)。他のすべてのコミットはTREESAMEとしてマークされます(簡略化される可能性があります)。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_bisection_helpers">Bisection Helpers</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--bisect</code>
+</dt>
+<dd>
+<p>
+        含まれるコミットと除外されるコミットのほぼ中間にある1つのコミットオブジェクトに出力を制限します。(存在する場合)悪い二等分参照(bad
+        bisection) <code>refs/bisect/bad</code> が含まれるコミットに追加され、（存在する場合)良い二等分参照(good bisection)
+        <code>refs/bisect/good-*</code> が除外されるコミットに追加されることに注意してください。したがって、 <code>refs/ bisect/</code>
+        にrefsがないと仮定すると、
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>        $ git rev-list --bisect foo ^bar ^baz</code></pre>
+</div></div>
+<div class="paragraph"><p>は、2つのコマンドの出力である中間点(midpoint)を出力します</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>        $ git rev-list foo ^midpoint
+        $ git rev-list midpoint ^bar ^baz</code></pre>
+</div></div>
+<div class="paragraph"><p>上記は、ほぼ同じ長さになります。 したがって、回帰を導入する変更を見つけることは、バイナリ検索(binary
+search)に還元されます。コミットチェーンの長さが1になるまで、新しい中間点(midpoint)を繰り返し生成してテストします。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--bisect-vars</code>
+</dt>
+<dd>
+<p>
+        これは、 <code>refs/bisect/</code> 内のrefが使用されないこと、およびシェルによって評価される準備ができているテキストを出力することを除いて、
+        <code>--bisect</code> と同じように計算されます。これらの行は、中間点リビジョンの名前を変数 <code>bisect_rev</code> に割り当て、
+        <code>bisect_rev</code> が <code>bisect_nr</code> にテストされた後にテストされるコミットの予想数、 <code>bisect_rev</code> が
+        <code>bisect_good`に適していることが判明した場合にテストされるコミットの予想数、 `bisect_rev</code> が <code>bisect_bad</code>
+        に不適切であることが判明した場合にテストされるコミットの予想数、および現在 <code>bisect_all</code> に二等分しているコミットの数です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--bisect-all</code>
+</dt>
+<dd>
+<p>
+        これにより、含まれるコミットと除外されるコミットの間のすべてのコミットオブジェクトが、含まれるコミットと除外されるコミットまでの距離順に出力されます。
+        <code>refs/bisect/</code> のrefは使用されません。それらから最も遠いものが最初に表示されます。(これは <code>--bisect</code>
+        によって表示される唯一のものです。)
+</p>
+<div class="paragraph"><p>これは、何らかの理由(たとえば、コンパイルできない場合など)でそれらの一部をテストすることを避けたい場合に、テストするための適切なコミットを簡単に選択できるため便利です。</p></div>
+<div class="paragraph"><p>このオプションは <code>--bisect-vars</code> と一緒に使用できます。この場合、ソートされたすべてのコミットオブジェクトの後に、
+<code>--bisect-vars</code> が単独で使用された場合と同じテキストが表示されます。</p></div>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_commit_ordering">Commit Ordering</h3>
+<div class="paragraph"><p>デフォルトでは、コミットは新しい順に表示されます。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--date-order</code>
+</dt>
+<dd>
+<p>
+        すべての子が表示されるまで親を表示しませんが、それ以外の場合はコミットタイムスタンプの順序でコミットを表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--author-date-order</code>
+</dt>
+<dd>
+<p>
+        すべての子が表示されるまで親を表示しませんが、それ以外の場合は、作者(author)のタイムスタンプ順にコミットを表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--topo-order</code>
+</dt>
+<dd>
+<p>
+        すべての子が表示されるまで親を表示せず、複数の履歴行が混在するコミットを表示しないようにします。
+</p>
+<div class="paragraph"><p>たとえば、以下のようなコミット履歴があります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>    ---1----2----4----7
+        \              \
+         3----5----6----8---</code></pre>
+</div></div>
+<div class="paragraph"><p>ここで、数字はコミットタイムスタンプの順序を示し、 <code>gitrev-list</code> と <code>--date-order</code>
+のある友達は、タイムスタンプの順序でコミットを示します。つまり、8 7 6 5 4 3 2 1</p></div>
+<div class="paragraph"><p><code>--topo-order</code> を使用すると、8 6 5 3 7 4 2 1（または8 7 4 2 6 5 3
+1）が表示されます。2つの並列開発トラックからのコミットが混在して表示されないようにするために、いくつかの古いコミットが新しいコミットの前に表示されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--reverse</code>
+</dt>
+<dd>
+<p>
+        表示するように選択したコミットを逆の順序で出力します(上記の Commit Limiting 節を参照)。 <code>--walk-reflogs</code>
+        と組み合わせることはできません。
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_object_traversal">Object Traversal</h3>
+<div class="paragraph"><p>これらのオプションは、主にGitリポジトリのパッキングを対象としています。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--objects</code>
+</dt>
+<dd>
+<p>
+        リストされたコミットによって参照されるオブジェクトのオブジェクトIDを出力します。 したがって、 <code>--objects foo ^bar</code>
+        「コミットオブジェクトが <em>bar</em> であるが <em>foo</em>
+        でない場合にダウンロードする必要があるすべてのオブジェクトIDを送ってください」という意味です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--in-commit-order</code>
+</dt>
+<dd>
+<p>
+        ツリーIDとブロブのIDをコミット順に出力します。 ツリーIDとブロブのIDは、コミットによって最初に参照された後に出力されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--objects-edge</code>
+</dt>
+<dd>
+<p>
+        <code>--objects</code> に似ていますが、接頭辞 &#8220;-&#8221; 文字が付いた除外されたコミットのIDも出力します。これは
+        <a href="git-pack-objects.html">git-pack-objects(1)</a>
+        によって使用され、ネットワークトラフィックを削減するために、これらの除外されたコミットに含まれるオブジェクトに基づいてオブジェクトを削除された形式で記録する「薄い」パック(thin
+        pack)を構築します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--objects-edge-aggressive</code>
+</dt>
+<dd>
+<p>
+        <code>--objects-edge</code>
+        に似ていますが、時間がかかるという犠牲を払って、除外されたコミットを見つけためにもっともっと頑張ります。これは、<code>--objects-edge</code>
+        の代わりに使用されて浅いリポジトリ(shallow repositories)用の「薄い」パック(thin pack)を構築します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--indexed-objects</code>
+</dt>
+<dd>
+<p>
+        インデックスで使用されるすべてのツリーとブロブがコマンドラインにリストされているかのように見せかけます。 注意: たぶんあなたは一緒に
+        <code>--objects</code> も使用したいと思うでしょう。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--unpacked</code>
+</dt>
+<dd>
+<p>
+        <code>--objects</code> と一緒の時のみ役立ちます。パックに含まれていないオブジェクトIDを出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--object-names</code>
+</dt>
+<dd>
+<p>
+        <code>--objects</code> と一緒の時のみ役立ちます。見つかったオブジェクトIDの名前を出力します。これがデフォルトの動作です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-object-names</code>
+</dt>
+<dd>
+<p>
+        <code>--objects</code> と一緒の時のみ役立ちます。見つかったオブジェクトIDの名前は出力されません。これにより、 <code>--object-names</code>
+        が反転します。 このフラグを使用すると、 <a href="git-cat-file.html">git-cat-file(1)</a> などのコマンドで出力をより簡単に解析できます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--filter=&lt;filter-spec&gt;</code>
+</dt>
+<dd>
+<p>
+        <code>--objectsほげほげ</code>
+        のどれかと一緒の時のみ役立ちます。印刷されたオブジェクトのリストからオブジェクト(通常はブロブ)を省略します。<em>&lt;filter-spec&gt;</em>
+        は、以下のいずれかになります:
+</p>
+<div class="paragraph"><p><em>--filter=blob:none</em> の形式では、すべてのブロブが省略されます。</p></div>
+<div class="paragraph"><p><em>--filter=blob:limit=&lt;n&gt;[kmg]</em>
+の形式では、nバイトまたは指定の単位より大きいブロブが省略されます。nはゼロの場合があります。
+接尾辞kとmとgを使用して、KiBまたはMiBまたはGiBの単位にすることができます。 たとえば、 <em>blob:limit=1k</em> は
+<em>blob:limit=1024</em> と同じです。</p></div>
+<div class="paragraph"><p><em>--filter=object:type=(tag|commit|tree|blob)</em>
+の形式では、要求されたタイプではないすべてのオブジェクトが省略されます。</p></div>
+<div class="paragraph"><p><em>--filter=sparse:oid=&lt;blob-ish&gt;</em> の形式は、ブロブ(またはブロブ式) <em>&lt;blob-ish&gt;</em>
+に含まれるsparse-checkout仕様を使用して、 要求された参照でsparse checkoutに必要のないブロブを省略します。</p></div>
+<div class="paragraph"><p><em>--filter=tree:&lt;depth&gt;</em> の形式は、ルートツリーからの深さが &gt;= &lt;depth&gt;
+(オブジェクトがトラバースされたコミットの複数の深さにある場合の最小深さ)であるすべてのブロブとツリーを省略します。 &lt;depth&gt;=0
+は、コマンドライン(または --stdin が使用されている場合は標準入力)に明示的に含まれていない限り、ツリーやブロブを含みません。
+&lt;depth&gt;=1 は、 &lt;commit&gt;
+から到達可能なコミットまたは明示的に指定されたオブジェクトによって直接参照されるツリーとブロブのみが含まれます。 &lt;depth&gt;=2 は
+&lt;depth&gt;=1 に似ていますが、明示的に指定されたコミットまたはツリーから削除されたもう1つのレベルのツリーとブロブも含まれます。</p></div>
+<div class="paragraph"><p>注意: ファイルシステム上の任意のパスから読み取れる形式である <em>--filter=sparse:path=&lt;path&gt;</em>
+は、セキュリティ上の理由から削除されたことに注意してください。</p></div>
+<div class="paragraph"><p>複数の <em>--filter=</em>
+フラグを指定して、フィルターを組み合わせることができます。指定の全てのフィルターで受け入れられるオブジェクトのみが含まれます。</p></div>
+<div class="paragraph"><p><em>--filter=combine:&lt;filter1&gt;+&lt;filter2&gt;+&#8230;&lt;filterN&gt;</em>
+の形式を使用して、複数のフィルターを組み合わせることができますが、これは <em>--filter</em>
+フラグを繰り返すよりもずっとずっと難しく、通常は必要はありません。フィルタは <em>&#43;</em> で結合され、個々のフィルタは %
+エンコードされます(つまり、URLエンコードされます)。 <em>&#43;</em> と <em>%</em>
+文字に加えて、次の文字は予約されており、エンコードする必要があります: <code>~!@#$^&amp;*()[]{}\;",&lt;&gt;?</code><code>&#39;&#96;</code>
+およびASCIコード <code>0x20</code> 以下の全ての文字(空白(space)と改行(newline)を含む)。</p></div>
+<div class="paragraph"><p>他の任意の文字もエンコードできます。 たとえば、 <em>combine:tree:3+blob:none</em> と
+<em>combine:tree%3A3+blob%3Anone</em> は同等です。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--no-filter</code>
+</dt>
+<dd>
+<p>
+        以前の <code>--filter=</code> 引数をすべてオフにします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--filter-provided-objects</code>
+</dt>
+<dd>
+<p>
+        明示的に提供されたオブジェクトのリストをフィルタリングします。そうしないと、どのフィルターとも一致しなくても常に出力されます。 <code>--filter=</code>
+        と一緒に使った時のみ役に立ちます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--filter-print-omitted</code>
+</dt>
+<dd>
+<p>
+        <code>--filter=</code> と一緒の時のみ役立ちます。フィルタによって省略されたオブジェクトのリストを出力します。オブジェクトIDの前には &#8220;~&#8221;
+        文字が付いています。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--missing=&lt;missing-action&gt;</code>
+</dt>
+<dd>
+<p>
+        将来の「部分クローン」(partial clone)開発に役立つデバッグオプション。このオプションは、欠落しているオブジェクトの処理方法を指定します。
+</p>
+<div class="paragraph"><p><em>--missing=error</em> の形式は、欠落しているオブジェクトが検出された場合に、rev-list
+がエラーで停止することを要求します。これがデフォルトのアクションです。</p></div>
+<div class="paragraph"><p><em>--missing=allow-any</em>
+の形式を使用すると、欠落しているオブジェクトが検出された場合でも、オブジェクトの走査を続行できます。欠落しているオブジェクトは、結果から黙って省略されます。</p></div>
+<div class="paragraph"><p><em>--missing=allow-promisor</em> の形式は <em>allow-any</em> に似ていますが、オブジェクトのトラバーサルは、 EXPECTED
+promisor が欠落しているオブジェクトに対してのみ続行できます。予期しない欠落したオブジェクトはエラーを発生させます。</p></div>
+<div class="paragraph"><p><em>--missing=print</em> の形式は <em>allow-any</em>
+に似ていますが、欠落しているオブジェクトのリストも出力します。オブジェクトIDの前には &#8220;?&#8221; 文字が付いています。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--exclude-promisor-objects</code>
+</dt>
+<dd>
+<p>
+        (内部使用のみ。) promisor境界でのオブジェクトトラバーサルをプレフィルターします。これは部分クローン(partial
+        clone)で使用されます。これは、欠落しているオブジェクトに関するエラーを単に黙らせるのではなく、トラバーサルを制限するため、
+        <code>--missing=allow-promisor</code> よりも強力です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--unsorted-input</code>
+</dt>
+<dd>
+<p>
+        コミット時間で時系列の逆順に並べ替えるのではなく、コマンドラインで指定された順序でコミットを表示します。<code>--no-walk</code> または
+        <code>--no-walk=sorted</code> と組み合わせることはできません。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-walk[=(sorted|unsorted)]</code>
+</dt>
+<dd>
+<p>
+        指定されたコミットのみを表示し、祖先をトラバースしない。範囲が指定されている場合、これは効果がありません。引数 <code>unsorted</code>
+        が指定されている場合、コミットはコマンドラインで指定された順序で表示されます。それ以外の場合( <code>sorted</code>
+        または引数が指定されていない場合)、コミットはコミット時間の逆順に表示されます。 <code>--graph</code> と組み合わせることはできません。 <code>sorted</code>
+        または引数が指定されていない場合、 <code>--unsorted-input</code> と組み合わせることはできません。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--do-walk</code>
+</dt>
+<dd>
+<p>
+        以前の <code>--no-walk</code> を上書きします。
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_commit_formatting">Commit Formatting</h3>
+<div class="paragraph"><p>これらのオプションを使用すると、 <a href="git-rev-list.html">git-rev-list(1)</a> より専門的なコミットログツールのファミリーである
+<a href="git-log.html">git-log(1)</a> や <a href="git-show.html">git-show(1)</a> や  <a href="git-whatchanged.html">git-whatchanged(1)</a>
+と同様に機能します。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--pretty[=&lt;format&gt;]</code>
+</dt>
+<dt class="hdlist1">
+<code>--format=&lt;format&gt;</code>
+</dt>
+<dd>
+<p>
+        コミットログの内容を指定された形式できれいに印刷(pretty-print)します。 <em>&lt;format&gt;</em> は
+        oneline・short・medium・full・fuller・reference・email・raw・format:&lt;string&gt;・tformat:&lt;string&gt;
+        のいずれかになります。 <em>&lt;format&gt;</em> が上記のいずれでもなく、 <em>%placeholder</em> が含まれている場合、
+        <em>--pretty=tformat:&lt;format&gt;</em> が指定されたかのように動作します。
+</p>
+<div class="paragraph"><p>各フォーマットの詳細については、 "PRETTY FORMATS" セクションを参照してください。 <em>=&lt;format&gt;</em>
+の部分を省略すると、デフォルトで <em>medium</em> になります。</p></div>
+<div class="paragraph"><p>注意: リポジトリー構成でデフォルトのpretty formatを指定できます(<a href="git-config.html">git-config(1)</a> 参照)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--abbrev-commit</code>
+</dt>
+<dd>
+<p>
+        40バイトの16進コミットオブジェクト名全体を表示する代わりに、オブジェクトに一意の名前を付けるプレフィックスを表示します。
+        "--abbrev=&lt;n&gt;" (表示されている場合はdiff出力も変更します)オプションを使用して、プレフィックスの最小長を指定できます。
+</p>
+<div class="paragraph"><p>これにより、80桁幅の端末を使用している人にとって "--pretty=oneline" がずっと読みやすくなるはずです。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--no-abbrev-commit</code>
+</dt>
+<dd>
+<p>
+        完全な40バイトの16進コミットオブジェクト名を表示します。 これにより、明示的または "--oneline"
+        などの他のオプションによって暗黙的に示される <code>--abbrev-commit</code> が無効になります。また、 <code>log.abbrevCommit</code>
+        変数をオーバーライドします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--oneline</code>
+</dt>
+<dd>
+<p>
+        これは、 "--pretty=oneline --abbrev-commit" を一緒に使用するための省略形です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--encoding=&lt;encoding&gt;</code>
+</dt>
+<dd>
+<p>
+        コミットオブジェクトは、ログメッセージに使用される文字エンコードをエンコードヘッダーに記録します。このオプションを使用して、ユーザーが好むエンコーディングでコミットログメッセージを再コーディングするようにコマンドに指示できます。配管以外のコマンドの場合、これはデフォルトでUTF-8になります。オブジェクトが
+        <code>X</code> でエンコードされていると主張し、 <code>X</code>
+        で出力している場合、オブジェクトをそのまま出力することに注意してください。これは、元のコミットの無効なシーケンスが出力にコピーされる可能性があることを意味します。同様に、
+        iconv(3) コミットの変換に失敗した場合、警告とともに元のオブジェクトをそのまま出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--expand-tabs=&lt;n&gt;</code>
+</dt>
+<dt class="hdlist1">
+<code>--expand-tabs</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-expand-tabs</code>
+</dt>
+<dd>
+<p>
+        出力に表示する前に、ログメッセージでタブ展開を実行します(タブ幅を &lt;n&gt; とみなして &lt;n&gt; 境界に揃うように空白で調整する)。
+        <code>--expand-tabs</code> は <code>--expand-tabs=8</code> の省略形であり、 <code>--no-expand-tabs</code> は
+        <code>--expand-tabs=0</code> の省略形です。タブの展開を無効にします。
+</p>
+<div class="paragraph"><p>デフォルトでは、タブはログメッセージを4つのスペースでインデントするきれいな形式(pretty formats)で展開されます(つまり、デフォルトの
+<em>medium</em> と&#8217;full' と <em>fuller</em>)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--show-signature</code>
+</dt>
+<dd>
+<p>
+        署名を <code>gpg --verify</code> に渡して、署名されたコミットオブジェクトの有効性を確認し、出力を表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--relative-date</code>
+</dt>
+<dd>
+<p>
+        <code>--date=relative</code> と同じ。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--date=&lt;format&gt;</code>
+</dt>
+<dd>
+<p>
+        <code>--pretty</code> を使用する場合など、人間が読める形式で表示される日付に対してのみ有効になります。 <code>log.date</code> 構成変数(config
+        variable)は、logコマンドの <code>--date</code>
+        オプションのデフォルト値を設定します。デフォルトでは、日付は元のタイムゾーン(コミッターの、または作者のいずれか)で表示されます。フォーマットに
+        <code>-local</code> が追加されている場合(例: <code>iso-local</code> )、代わりにユーザーのローカルタイムゾーンが使用されます。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p><code>--date=relative</code> は、現在の時刻を基準にした日付を示します。例: &#8220;2 hours ago&#8221; 。 <code>-local</code> オプションは
+<code>--date = relative</code> には効果がありません。</p></div>
+<div class="paragraph"><p><code>--date=local</code> は <code>--date=default-local</code> のエイリアスです。</p></div>
+<div class="paragraph"><p><code>--date=iso</code> (または <code>--date=iso8601</code> )は、タイムスタンプをISO 8601のような形式で表示します。厳密なISO
+8601形式との違いは以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>T</code> 日付/時刻区切り文字の代わりにスペース
+</p>
+</li>
+<li>
+<p>
+時間とタイムゾーンの間のスペース
+</p>
+</li>
+<li>
+<p>
+タイムゾーンの時間と分の間にコロンがありません
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>--date=iso-strict</code> (または <code>--date=iso8601-strict</code> )は、タイムスタンプを厳密なISO
+8601形式で表示します。</p></div>
+<div class="paragraph"><p><code>--date=rfc</code> (または <code>--date=rfc2822</code> )は、RFC
+2822形式のタイムスタンプを示します。これは、電子メールメッセージでよく見られます。</p></div>
+<div class="paragraph"><p><code>--date=short</code> は、日付のみを表示し、時刻は表示せず、 <code>YYYY-MM-DD</code> 形式で表示します。</p></div>
+<div class="paragraph"><p><code>--date=raw</code> は、エポック(1970-01-01 00:00:00 UTC)からの秒数、スペース、UTCからのオフセット(<code>+</code> または
+<code>-</code> の付いた4桁数字で、最初の2つは時間、次の2つは分です)。つまり、タイムスタンプが <code>strftime("%s %z")</code>
+でフォーマットされているかのようになります。 <code>-local</code>
+オプションは、seconds-since-epoch値(常にUTCで測定されます)には影響しませんが、付随するタイムゾーン値を切り替えることに注意してください。</p></div>
+<div class="paragraph"><p><code>--date=human</code>
+は、タイムゾーンが現在のタイムゾーンと一致しない場合はタイムゾーンを表示し、一致する場合は日付全体を印刷しません(つまり、「今年」の日付の場合は年の印刷をスキップしますが、何があったか覚えてるような過去数日については日付自体もスキップします)。
+古い日付の場合、時と分も省略されます。</p></div>
+<div class="paragraph"><p><code>--date=unix</code> は、日付をUnixエポックタイムスタンプ(1970年からの秒数)として表示します。 <code>--raw</code>
+と同様に、これは常にUTCであるため、 ` -local` は効果がありません。</p></div>
+<div class="paragraph"><p><code>--date=format:...</code> は、内部で処理される%zと%Zを除いて、フォーマット <code>...</code> をあなたのシステムの <code>strftime</code>
+に送ります。 <code>--date=format:%c</code>
+を使用して、システムロケールの推奨形式で日付を表示します。フォーマットプレースホルダーの完全なリストについては、 <code>strftime</code>
+マニュアルを参照してください。 <code>-local</code> を使用する場合、正しい構文は <code>--date=format-local:...</code> です。</p></div>
+<div class="paragraph"><p><code>--date=default</code> はデフォルトの形式であり、いくつかの例外を除いて <code>--date=rfc2822</code> に似ています:</p></div>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+曜日の後にコンマはありません
+</p>
+</li>
+<li>
+<p>
+ローカルタイムゾーンを使用する場合、タイムゾーンは省略されます
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+<code>--header</code>
+</dt>
+<dd>
+<p>
+        コミットの内容をraw形式で出力します。各レコードはNUL文字で区切られます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-commit-header</code>
+</dt>
+<dd>
+<p>
+        "commit" を含むヘッダー行と、指定された形式の前に出力されたオブジェクトIDを抑制します。これは組み込みフォーマットには影響しません。
+        カスタムフォーマットのみが影響を受けます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--commit-header</code>
+</dt>
+<dd>
+<p>
+        以前の <code>--no-commit-header</code> を上書きします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--parents</code>
+</dt>
+<dd>
+<p>
+        コミットの親も出力します( "commit parent&#8230;" の形式で)。親の書き換えも可能にします。上記の <em>History
+        Simplification</em> 参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--children</code>
+</dt>
+<dd>
+<p>
+        コミットの子も出力します( "commit child&#8230;" の形式で)。親の書き換えも可能にします。上記の <em>History
+        Simplification</em> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--timestamp</code>
+</dt>
+<dd>
+<p>
+        生のコミットタイムスタンプを出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--left-right</code>
+</dt>
+<dd>
+<p>
+        対称差のどちら側からコミットに到達できるかをマークします。左側からのコミットには`&lt;<code>が付けられ、右側からのコミットには
+        `&gt;`が付けられます。</code>--boundary`と組み合わせると、それらのコミットの前に`-`が付きます。
+</p>
+<div class="paragraph"><p>たとえば、以下のトポロジーの場合:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>             y---b---b  branch B
+            / \ /
+           /   .
+          /   / \
+         o---x---a---a  branch A</code></pre>
+</div></div>
+<div class="paragraph"><p>以下のような出力が得られます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>        $ git rev-list --left-right --boundary --pretty=oneline A...B
+
+        &gt;bbbbbbb... 3rd on b
+        &gt;bbbbbbb... 2nd on b
+        &lt;aaaaaaa... 3rd on a
+        &lt;aaaaaaa... 2nd on a
+        -yyyyyyy... 1st on b
+        -xxxxxxx... 1st on a</code></pre>
+</div></div>
+</dd>
+<dt class="hdlist1">
+<code>--graph</code>
+</dt>
+<dd>
+<p>
+        出力の左側に、コミット履歴のテキストベースのグラフィック表現を描画します。グラフ履歴を適切に描画するために、コミットの間に余分な行が出力される可能性があります。
+        <code>--no-walk</code> と組み合わせることはできません。
+</p>
+<div class="paragraph"><p>これにより、親の書き換えが可能になります。上記の <em>History Simplification</em> を参照してください。</p></div>
+<div class="paragraph"><p>これは、デフォルトで <code>--topo-order</code> オプションを意味しますが、 <code>--date-order</code> オプションも指定できます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--show-linear-break[=&lt;barrier&gt;]</code>
+</dt>
+<dd>
+<p>
+        --graph
+        を使用しない場合、すべての履歴ブランチがフラット化されるため、2つの連続するコミットが線形ブランチに属していないことがわかりにくくなる可能性があります。このオプションは、その場合、それらの間に障壁を置きます。
+        <code>&lt;barrier&gt;</code> が指定されている場合、デフォルトの障壁文字列の代わりに <code>&lt;barrier&gt;</code> が表示されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--count</code>
+</dt>
+<dd>
+<p>
+        リストされたコミットの数を示す数値を出力し、他のすべての出力を抑制します。 <code>--left-right</code>
+        と一緒に使用する場合は、代わりに、タブで区切って、左右のコミットのカウントを出力します。 <code>--cherry-mark</code>
+        と一緒に使用する場合は、これらのカウントからパッチの同等のコミットを省略し、タブで区切られた同等のコミットのカウントを出力します。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pretty_formats">PRETTY FORMATS</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>コミットがマージであり、 pretty-format が <em>oneline</em> または <em>email</em> または <em>raw</em> でない場合、
+<em>Author:</em> 行の前に追加の行が挿入されます。この行は "Merge: "
+で始まり、先祖のコミットのハッシュがスペースで区切られて出力されます。履歴の表示を制限している場合、たとえば、特定のディレクトリまたはファイルに関連する変更のみに関心がある場合、リストされたコミットは必ずしも
+<strong>直接</strong> の親コミットのリストではない可能性があることに注意してください。</p></div>
+<div class="paragraph"><p>いくつかの組み込みフォーマットがあります。そして以下で説明するように、 pretty.&lt;name&gt; 構成オプション(config
+option)を別のフォーマット名または <em>format:</em>
+文字列に設定することで、追加のフォーマットを定義できます(<a href="git-config.html">git-config(1)</a>
+参照)。組み込みフォーマットの詳細は以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>oneline</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;hash&gt; &lt;title line&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、可能な限りコンパクトになるように設計されています。</p></div>
+</li>
+<li>
+<p>
+<em>short</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>commit &lt;hash&gt;
+Author: &lt;author&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;title line&gt;</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<em>medium</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>commit &lt;hash&gt;
+Author: &lt;author&gt;
+Date:   &lt;author date&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;title line&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;full commit message&gt;</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<em>full</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>commit &lt;hash&gt;
+Author: &lt;author&gt;
+Commit: &lt;committer&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;title line&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;full commit message&gt;</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<em>fuller</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>commit &lt;hash&gt;
+Author:     &lt;author&gt;
+AuthorDate: &lt;author date&gt;
+Commit:     &lt;committer&gt;
+CommitDate: &lt;committer date&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;title line&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;full commit message&gt;</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<em>reference</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;abbrev hash&gt; (&lt;title line&gt;, &lt;short author date&gt;)</code></pre>
+</div></div>
+<div class="paragraph"><p>この形式は、コミットメッセージ内の別のコミットを参照するために使用され、 <code>--pretty='format:%C(auto)%h (%s,
+%ad)'</code> と同じです。 デフォルトでは、別の <code>--date</code> オプションが明示的に指定されていない限り、日付は <code>--date=short</code>
+でフォーマットされます。formatプレースホルダーを使用する他の <code>format:</code> と同様に、その出力は、 <code>--decorate</code> や
+<code>--walk-reflogs</code> などの他のオプションの影響を受けません。</p></div>
+</li>
+<li>
+<p>
+<em>email</em>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>From &lt;hash&gt; &lt;date&gt;
+From: &lt;author&gt;
+Date: &lt;author date&gt;
+Subject: [PATCH] &lt;title line&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;full commit message&gt;</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<em>mboxrd</em>
+</p>
+<div class="paragraph"><p><em>email</em> と同様ですが、コミットメッセージの "From " で始まる行(前に0個以上の "&gt;" が付いている)は "&gt;"
+でクォートされているため、新しいコミットの開始と混同されることはありません。</p></div>
+</li>
+<li>
+<p>
+<em>raw</em>
+</p>
+<div class="paragraph"><p><em>raw</em> 形式は、コミットオブジェクトに格納されているとおりにコミット全体を正確に表示します。とりわけ --abbrev または
+--no-abbrev
+のどちらが使用されているかに関係なく、ハッシュは完全に表示され、「親」(parents)情報は、移植や履歴の単純化を考慮せずに、真の親のコミットを示します。この形式は、コミットの表示方法に影響しますが、いわゆる
+<code>git log --raw</code> の差分の表示方法ではありません。生のdiff形式で完全なオブジェクト名を取得するには、 <code>--no-abbrev</code>
+を使用します。</p></div>
+</li>
+<li>
+<p>
+<em>format:&lt;string&gt;</em>
+</p>
+<div class="paragraph"><p><em>format:&lt;string&gt;</em> 形式を使用すると、表示する情報を指定できます。注意: これはprintf書式に少し似ていますが、 <em>\n</em>
+の代わりに <em>%n</em> を使用して改行を取得するという例外に注意してください。</p></div>
+<div class="paragraph"><p>例:  <em>format:"The author of %h was %an, %ar%nThe title was &gt;&gt;%s&lt;&lt;%n"</em>
+は以下のように表示されます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>The author of fe6e0ee was Junio C Hamano, 23 hours ago
+The title was &gt;&gt;t4119: test autocomputing -p&lt;n&gt; for traditional diff input.&lt;&lt;</code></pre>
+</div></div>
+<div class="paragraph"><p>さて、以下がプレースホルダー達です:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+単一のリテラル文字に展開されるプレースホルダー:
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<em>%n</em>
+</dt>
+<dd>
+<p>
+改行(newline)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%%</em>
+</dt>
+<dd>
+<p>
+'%'そのもの
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%x00</em>
+</dt>
+<dd>
+<p>
+16進数のバイト値を出力
+</p>
+</dd>
+</dl></div>
+</li>
+<li>
+<p>
+うしろのプレースホルダーのフォーマッティングに影響するプレースホルダー:
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<em>%Cred</em>
+</dt>
+<dd>
+<p>
+赤色に切り替える
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%Cgreen</em>
+</dt>
+<dd>
+<p>
+緑色に切り替える
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%Cblue</em>
+</dt>
+<dd>
+<p>
+青色に切り替える。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%Creset</em>
+</dt>
+<dd>
+<p>
+色をリセットする
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%C(&#8230;)</em>
+</dt>
+<dd>
+<p>
+<a href="git-config.html">git-config(1)</a> の "CONFIGURATION FILE" 節の Values で説明されている色の指定。
+            デフォルトでは、色はログ出力が有効になっている場合にのみ表示されます（ <code>color.diff</code> または ` color.ui` または
+            <code>--color`によって、ターミナルに行く場合は前者の `auto</code> 設定を尊重します)。 <code>%C(auto,...)</code> は、 default
+            の歴史的同義語として受け入れられます(例: <code>%C(auto,red)</code>)。 <code>%C(always,...)</code>
+            を指定すると、色が有効になっていない場合でも色が表示されます(この形式やgitが色付けする可能性のある他のすべてのものを含め、出力全体の色を有効にするために
+            <code>--color = always</code> の使用を検討してください)。 <code>auto</code> のみ(つまり、 <code>%C(auto)</code>
+            )は、色が再び切り替わるまで、続くプレースホルダーで自動色付けをオンにします。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%m</em>
+</dt>
+<dd>
+<p>
+左(<code>&lt;</code>) または 右(<code>&gt;</code>) または 境界 (<code>-</code>) の印
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%w([&lt;w&gt;[,&lt;i1&gt;[,&lt;i2&gt;]]])</em>
+</dt>
+<dd>
+<p>
+<a href="git-shortlog.html">git-shortlog(1)</a> の -w オプションのように、
+                            行の折り返しを切り替えます。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%&lt;(&lt;N&gt;[,trunc|ltrunc|mtrunc])</em>
+</dt>
+<dd>
+<p>
+次のプレースホルダーに少なくともN列を使用させ、
+                                  必要に応じて右側にスペースを埋め込みます。オプションで、出力がN列より長い場合は、先頭(ltrunc)または中間(mtrunc)または末尾(trunc)で切り捨てます。注意:
+                                  切り捨ては、 N &gt;= 2 でのみ正しく機能することに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%&lt;|(&lt;N&gt;)</em>
+</dt>
+<dd>
+<p>
+次のプレースホルダーを少なくともN番目の列まで取得し、
+             必要に応じて右側にスペースを埋め込みます
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%&gt;(&lt;N&gt;)</em>, <em>%&gt;|(&lt;N&gt;)</em>
+</dt>
+<dd>
+<p>
+それぞれ <em>%&lt;(&lt;N&gt;)</em> 、 <em>%&lt;|(&lt;N&gt;)</em> に似ていますが、
+                        左側にスペースが埋め込まれています
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%&gt;&gt;(&lt;N&gt;)</em>, <em>%&gt;&gt;|(&lt;N&gt;)</em>
+</dt>
+<dd>
+<p>
+<em>%&gt;(&lt;N&gt;)</em> 、 <em>%&gt;|(&lt;N&gt;)</em> とそれぞれ似ていますが、
+                          次のプレースホルダーが指定されたよりも多くのスペースを取り、その左側にスペースがある場合は、それらのスペースを使用します。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%&gt;&lt;(&lt;N&gt;)</em>, <em>%&gt;&lt;|(&lt;N&gt;)</em>
+</dt>
+<dd>
+<p>
+それぞれ <em>%&lt;(&lt;N&gt;)</em> 、 <em>%&lt;|(&lt;N&gt;)</em> に似ていますが、
+                          両側にパディングがあります(つまり、テキストが中央に配置されます)
+</p>
+</dd>
+</dl></div>
+</li>
+<li>
+<p>
+コミットから抽出された情報に展開するプレースホルダー:
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<em>%H</em>
+</dt>
+<dd>
+<p>
+コミットハッシュ
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%h</em>
+</dt>
+<dd>
+<p>
+省略されたコミットハッシュ
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%T</em>
+</dt>
+<dd>
+<p>
+ツリーハッシュ
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%t</em>
+</dt>
+<dd>
+<p>
+省略されたツリーハッシュ
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%P</em>
+</dt>
+<dd>
+<p>
+親のハッシュ達
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%p</em>
+</dt>
+<dd>
+<p>
+省略された親のハッシュ達
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%an</em>
+</dt>
+<dd>
+<p>
+作者名
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%aN</em>
+</dt>
+<dd>
+<p>
+作者名( .mailmap に関しては、<a href="git-shortlog.html">git-shortlog(1)</a> または
+        <a href="git-blame.html">git-blame(1)</a> を参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ae</em>
+</dt>
+<dd>
+<p>
+作者電子メールアドレス
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%aE</em>
+</dt>
+<dd>
+<p>
+作者電子メールアドレス(.mailmap に関しては <a href="git-shortlog.html">git-shortlog(1)</a> または
+        <a href="git-blame.html">git-blame(1)</a> を参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%al</em>
+</dt>
+<dd>
+<p>
+作者電子メールアドレスアカウント名(local-part)( <em>@</em> の前の部分)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%aL</em>
+</dt>
+<dd>
+<p>
+作者電子メールアドレスアカウント名(local-part)(<em>%al</em> 参照) .mailmap に関しては
+        <a href="git-shortlog.html">git-shortlog(1)</a> または <a href="git-blame.html">git-blame(1)</a> 参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ad</em>
+</dt>
+<dd>
+<p>
+作成日(フォーマットに関しては --date= オプション参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%aD</em>
+</dt>
+<dd>
+<p>
+作成日 RFC2822形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ar</em>
+</dt>
+<dd>
+<p>
+作成日 相対(relative)形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%at</em>
+</dt>
+<dd>
+<p>
+作成日 UNIXタイムスタンプ形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ai</em>
+</dt>
+<dd>
+<p>
+作成日 ISO 8601風形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%aI</em>
+</dt>
+<dd>
+<p>
+作成日 厳密なISO 8601形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%as</em>
+</dt>
+<dd>
+<p>
+作成日 短い形式(<code>YYYY-MM-DD</code>)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ah</em>
+</dt>
+<dd>
+<p>
+作成日 human形式( <a href="git-rev-list.html">git-rev-list(1)</a> の <code>--date=human</code>
+        オプションのようなかんじ)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cn</em>
+</dt>
+<dd>
+<p>
+コミッター名
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cN</em>
+</dt>
+<dd>
+<p>
+コミッター名( .mailmap に関しては
+        <a href="git-shortlog.html">git-shortlog(1)</a> または <a href="git-blame.html">git-blame(1)</a> 参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ce</em>
+</dt>
+<dd>
+<p>
+コミッター電子メールアドレス
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cE</em>
+</dt>
+<dd>
+<p>
+コミッター電子メールアドレス(.mailmap に関しては
+        <a href="git-shortlog.html">git-shortlog(1)</a> または <a href="git-blame.html">git-blame(1)</a> 参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cl</em>
+</dt>
+<dd>
+<p>
+コミッター電子メールアドレスアカウント名(local-part)( <em>@</em> の前の部分)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cL</em>
+</dt>
+<dd>
+<p>
+コミッター電子メールアドレスアカウント名(local-part)( <em>%cl</em> 参照) .mailmap に関しては
+        <a href="git-shortlog.html">git-shortlog(1)</a> または <a href="git-blame.html">git-blame(1)</a> 参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cd</em>
+</dt>
+<dd>
+<p>
+コミッター日付(フォーマットに関しては --date= オプション参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cD</em>
+</dt>
+<dd>
+<p>
+コミッター日付 RFC2822形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cr</em>
+</dt>
+<dd>
+<p>
+コミッター日付 相対(relative)形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ct</em>
+</dt>
+<dd>
+<p>
+コミッター日付 UNIXタイムスタンプ形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ci</em>
+</dt>
+<dd>
+<p>
+コミッター日付 ISO 8601風形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cI</em>
+</dt>
+<dd>
+<p>
+コミッター日付 厳密なISO 8601形式
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%cs</em>
+</dt>
+<dd>
+<p>
+コミッター日付 短い形式(<code>YYYY-MM-DD</code>)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ch</em>
+</dt>
+<dd>
+<p>
+コミッター日付 human形式(<a href="git-rev-list.html">git-rev-list(1)</a> の <code>--date=human</code>
+        オプションのようなかんじ)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%d</em>
+</dt>
+<dd>
+<p>
+ref名 <a href="git-log.html">git-log(1)</a> の --decorate オプションみたいなの
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%D</em>
+</dt>
+<dd>
+<p>
+" (", ")" で囲ってないref名
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%(describe[:options])</em>
+</dt>
+<dd>
+<p>
+<a href="git-describe.html">git-describe(1)</a> のような人間が読める名前。
+                          説明できないコミットの場合は空の文字列。 <code>describe</code>
+                          文字列の後には、コロンと0個以上のカンマ区切りオプションを続けることができます。タグが同時に追加または削除されると、説明に一貫性がなくなる可能性があります。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>match=&lt;pattern&gt;</em>:  "refs/tags/" プレフィックスを除いて、指定された <code>glob(7)</code>
+   パターンに一致するタグのみを考慮します。
+</p>
+</li>
+<li>
+<p>
+<em>exclude=&lt;pattern&gt;</em>: "refs/tags/" プレフィックスを除いて、指定された <code>glob(7)</code>
+   パターンに一致するタグを考慮しないでください。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+<em>%S</em>
+</dt>
+<dd>
+<p>
+コミットに到達したコマンドラインで指定されたref名
+       ( <code>git log --source</code> など)は、 <code>git log</code> でのみ機能します
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%e</em>
+</dt>
+<dd>
+<p>
+エンコーディング
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%s</em>
+</dt>
+<dd>
+<p>
+件名(subject)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%f</em>
+</dt>
+<dd>
+<p>
+ファイル名に適した、サニタイズされた件名
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%b</em>
+</dt>
+<dd>
+<p>
+本文(body)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%B</em>
+</dt>
+<dd>
+<p>
+生本文(raw body)(ラップされてない件名と本文)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%GG</em>
+</dt>
+<dd>
+<p>
+署名されたコミットの為のGPSからの生の検証メッセージ
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%G?</em>
+</dt>
+<dd>
+<p>
+良い(good)な(有効な)署名の場合は "G" 、
+        悪い(bad)な署名の場合は "B" 、有効性が不明(unknown)な良い署名の場合は "U" 、期限切れ(eXpired)の良い署名の場合は "X"
+        、期限切れのキーで作成された良い署名の場合は "Y" 、取り消されたキーによって作成された良い署名の場合は "R"
+        、署名を確認できない場合(キーの欠落など)は "E" 、署名がない場合は "N" を表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%GS</em>
+</dt>
+<dd>
+<p>
+署名されたコミットの署名者の名前を表示する
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%GK</em>
+</dt>
+<dd>
+<p>
+署名されたコミットに署名するために使用されるキーを表示する
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%GF</em>
+</dt>
+<dd>
+<p>
+署名されたコミットに署名するために使用されるキーのフィンガープリントを表示する
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%GP</em>
+</dt>
+<dd>
+<p>
+署名されたコミットに署名するためにサブキーが使用された
+        主キーのフィンガープリントを表示します
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%GT</em>
+</dt>
+<dd>
+<p>
+署名されたコミットに署名するために使用されるキーの信頼レベル(trust level)を表示します
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%gD</em>
+</dt>
+<dd>
+<p>
+reflogセレクター(例:<code>refs/stash@{1}</code> or <code>refs/stash@{2 minutes ago}</code>)
+        この形式は、 <code>-g</code> オプションで説明されている規則に従います。 <code>@</code> の前の部分は、コマンドラインで指定されたrefnameです(したがって、
+        <code>git log -g refs/heads/master</code> は <code>refs/heads/master@{0}</code> を生成します)。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%gd</em>
+</dt>
+<dd>
+<p>
+短縮されたreflogセレクター。 <code>%gD</code> と同じですが、
+        人間が読みやすいようにrefname部分が短縮されています(したがって、 <code>refs/heads/master</code> は単に <code>master</code>
+        になります)。
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%gn</em>
+</dt>
+<dd>
+<p>
+reflog ID名
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%gN</em>
+</dt>
+<dd>
+<p>
+reflog ID名( .mailmap に関しては
+        <a href="git-shortlog.html">git-shortlog(1)</a> または <a href="git-blame.html">git-blame(1)</a> 参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%ge</em>
+</dt>
+<dd>
+<p>
+reflog ID 電子メールアドレス
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%gE</em>
+</dt>
+<dd>
+<p>
+reflog ID 電子メールアドレス( .mailmap に関しては
+        <a href="git-shortlog.html">git-shortlog(1)</a> または <a href="git-blame.html">git-blame(1)</a> 参照)
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%gs</em>
+</dt>
+<dd>
+<p>
+reflog 件名
+</p>
+</dd>
+<dt class="hdlist1">
+<em>%(trailers[:options])</em>
+</dt>
+<dd>
+<p>
+<a href="git-interpret-trailers.html">git-interpret-trailers(1)</a> によって解釈されるようにボディのトレーラーを表示します。
+                          <code>trailers</code>
+                          文字列の後には、コロンと0個以上のカンマ区切りオプションを続けることができます。いずれかのオプションが複数回提供された場合、それぞれ最後のものが優先されます。
+</p>
+<div class="paragraph"><p>ブール値オプションは、オプションの値 <code>[=&lt;BOOL&gt;]</code> を受け入れます。 値 <code>true</code> 、<code>false</code> 、 <code>on</code> 、<code>off</code>
+などはすべて受け入れられます。 <a href="git-config.html">git-config(1)</a> の "EXAMPLES" の "boolean"
+サブセクションを参照してください。ブール値オプションが値なしで指定された場合、それは有効を指定した事になります。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>key=&lt;K&gt;</em>
+   は指定されたキーを持つトレーラーのみを表示します。マッチングは大文字と小文字を区別せずに行われ、末尾のコロンはオプションです。オプションが複数回指定されている場合、いずれかのキーに一致するトレーラー行が表示されます。このオプションは自動的に
+   <code>only</code> オプションを有効にして、トレーラーブロック内の非トレーラー行が非表示になるようにします。それが望ましくない場合は、
+   <code>only=false</code> で無効にすることができます。 たとえば、 <code>%(trailers:key=Reviewed-by)</code> は、キーが
+   `Reviewed-by`のトレーラー行を表示します。
+</p>
+</li>
+<li>
+<p>
+<em>only[=&lt;BOOL&gt;]</em> はトレーラーブロックに非トレーラー行を含めるかどうかを選択します。
+</p>
+</li>
+<li>
+<p>
+<em>separator=&lt;SEP&gt;</em>
+   はトレーラー行の間に挿入される区切り文字を指定します。このオプションが指定されていない場合、各トレーラー行は改行文字で終了します。文字列SEPには、上記のリテラルフォーマットコードが含まれる場合があります。区切り文字としてコンマを使用するには、次のオプションとして解析されないよう
+   <code>%x2C</code> を使用する必要があります。 たとえば、 %(trailers:key=Ticket,separator=%x2C )` は、キーが
+   "Ticket" であるすべてのトレーラー行をカンマとスペースで区切って表示します。
+</p>
+</li>
+<li>
+<p>
+<em>unfold[=&lt;BOOL&gt;]</em> は interpret-trailer の <code>--unfold</code>
+   オプションが指定されたかのように動作させます。たとえば、 <code>%(trailers:only,unfold=true)</code>
+   が展開され、すべてのトレーラー行が表示されます。
+</p>
+</li>
+<li>
+<p>
+<em>keyonly[=&lt;BOOL&gt;]</em> トレーラーのキー部分のみを表示。
+</p>
+</li>
+<li>
+<p>
+<em>valueonly[=&lt;BOOL&gt;]</em> トレーラーの値部分のみ表示。
+</p>
+</li>
+<li>
+<p>
+<em>key_value_separator=&lt;SEP&gt;</em>
+   トレーラー行の間に挿入される区切り文字を指定します。このオプションが指定されていない場合、各トレーラーのキーと値のペアは ": " で区切られます。
+   それ以外の場合は、上記の <em>separator=&lt;SEP&gt;</em> と同じセマンティクスを共有します。
+</p>
+</li>
+</ul></div>
+</dd>
+</dl></div>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">一部のプレースホルダーは、リビジョントラバーサルエンジンに指定された他のオプションに依存する場合があります。 たとえば、 <code>%g*</code>
+reflogオプションは、reflogエントリをトラバースしない限り(たとえば、 <code>git log
+-g`によって)空の文字列を挿入します。コマンドラインで `--decorate</code> がまだ指定されていない場合、 <code>%d</code> と <code>%D</code>
+プレースホルダーは「短い」(short)装飾形式を使用します。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>プレースホルダーの <em>%</em> の後に <code>+</code>
+(プラス記号)を追加すると、プレースホルダーが空でない文字列に展開される場合に限り、展開の直前に改行が挿入されます。</p></div>
+<div class="paragraph"><p>プレースホルダーの <em>%</em> の後に <code>-</code>
+(マイナス記号)を追加すると、プレースホルダーが空の文字列に展開された場合にのみ、展開の直前の連続するすべての改行が削除されます。</p></div>
+<div class="paragraph"><p>プレースホルダーの <em>%</em> の後に ` `
+(スペース)を追加すると、プレースホルダーが空でない文字列に展開される場合に限り、展開の直前にスペースが挿入されます。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>tformat:</em>
+</p>
+<div class="paragraph"><p><em>tformat:</em> 形式は、 "separator" セマンティクスの代わりに "terminator" セマンティクスを提供することを除いて、
+<em>format:</em> とまったく同じように機能します。
+つまり、各コミットには、エントリ間に区切り文字を配置するのではなく、メッセージターミネータ文字(通常は改行)が追加されます。
+これは、「1行」形式と同様に、1行形式の最終エントリが新しい行で適切に終了することを意味します。 例えば:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git log -2 --pretty=format:%h 4da45bef \
+  | perl -pe '$_ .= " -- NO NEWLINE\n" unless /\n/'
+4da45be
+7134973 -- NO NEWLINE
+
+$ git log -2 --pretty=tformat:%h 4da45bef \
+  | perl -pe '$_ .= " -- NO NEWLINE\n" unless /\n/'
+4da45be
+7134973</code></pre>
+</div></div>
+<div class="paragraph"><p>加えて、 <code>%</code> が含まれている認識されない文字列は、その前に <code>tformat:</code> があるかのように解釈(interpret)されます。
+たとえば、以下の2つは同等です:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git log -2 --pretty=tformat:%h 4da45bef
+$ git log -2 --pretty=%h 4da45bef</code></pre>
+</div></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+現在のブランチから到達可能なコミットのリストを出力します。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list HEAD</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+このブランチのコミットのリストを出力しますが、アップストリームブランチのは表示しません。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list @{upstream}..HEAD</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+作者(author)とコミットメッセージを使用してコミットをフォーマットします(磁器コマンドの<a href="git-log.html">git-log(1)</a>も参照)。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list --format=medium HEAD</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+コミットとその差分をフォーマットします(これを単一のプロセスで実行できる磁器コマンドの<a href="git-log.html">git-log(1)</a>も参照してください)。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list HEAD |
+git diff-tree --stdin --format=medium -p</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+現在のブランチで、`Documentation`ディレクトリ内のファイルに関連(touch)したコミットのリストを出力します。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list HEAD -- Documentation/</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+任意のブランチ・タグ・<a href="mailto:その他の参照より過去1年間に作者you@example.comが作成したコミットのリストを出力します">その他の参照より過去1年間に作者you@example.comが作成したコミットのリストを出力します</a>。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list --author=you@example.com --since=1.year.ago --all</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+現在のブランチから到達可能なオブジェクトのリストを出力します(つまり、すべてのコミットと、それらに含まれるブロブとツリー)。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list --objects HEAD</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+到達可能なすべてのオブジェクトのディスクサイズ、reflogから到達可能なオブジェクト、およびパックされた合計サイズを比較します。これにより、`git
+  repack
+  -ad`を実行すると(到達不能なオブジェクトを削除することで)リポジトリのサイズが減少するかどうか、およびreflogの有効期限が切れる(expire)ことによってリポジトリのサイズ減少に役立つかどうかがわかります。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code># reachable objects
+git rev-list --disk-usage --objects --all
+# plus reflogs
+git rev-list --disk-usage --objects --all --reflog
+# total disk size used
+du -c .git/objects/pack/*.pack .git/objects/??/*
+# alternative to du: add up "size" and "size-pack" fields
+git count-objects -v</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+現在のブランチで使用されているオブジェクトを除いて、各ブランチのディスクサイズを報告します。
+  これにより、リポジトリサイズの肥大化の原因となっているイレギュラー値を見つけることができます(たとえば、誰かが誤って大きなビルドアーティファクトをコミットしたためとか)。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git for-each-ref --format='%(refname)' |
+while read branch
+do
+        size=$(git rev-list --disk-usage --objects HEAD..$branch)
+        echo "$size $branch"
+done |
+sort -n</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+(別のグループを除いた)参照の単一のグループのブランチのディスク上のサイズを比較します。1つのリポジトリに複数のリモートからのオブジェクトを混在させる場合、これにより、リポジトリ内で、どのリモートがどれだけ占めているかを示すことができます(`origin`のサイズを基準値として使用)。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>git rev-list --disk-usage --objects --remotes=$suspect --not --remotes=origin</code></pre>
+</div></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_git">GIT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2021-11-05 04:03:24 JST
+</div>
+</div>
+</body>
+</html>
