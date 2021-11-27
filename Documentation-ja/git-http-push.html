@@ -772,7 +772,7 @@ git-http-push(1) Manual Page
 </dt>
 <dd>
 <p>
-        リモートリポジトリが現在の状態で完全であると想定しません。また、ローカル参照の履歴全体のすべてのオブジェクトがリモートリポジトリに存在することを確認します。
+        リモートリポジトリが現在の状態で完全であると想定しません。また、ローカルrefの履歴全体のすべてのオブジェクトがリモートリポジトリに存在することを確認します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -780,7 +780,7 @@ git-http-push(1) Manual Page
 </dt>
 <dd>
 <p>
-        通常、コマンドは、上書きに使用されたローカル参照の祖先ではないリモート参照の更新を拒否します。このフラグはこのチェックを無効にします。これが意味するのは、リモートリポジトリがコミットを失う可能性があるということです。注意して使用してください。
+        通常、コマンドは、上書きに使用されたローカルrefの祖先ではないリモートrefの更新を拒否します。このフラグはこのチェックを無効にします。これが意味するのは、リモートリポジトリがコミットを失う可能性があるということです。注意して使用してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -796,8 +796,7 @@ git-http-push(1) Manual Page
 </dt>
 <dd>
 <p>
-        Report the list of objects being walked locally and the list of objects
-        successfully sent to the remote repository.
+        ローカルでウォークされているオブジェクトのリストと、リモートリポジトリに正常に送信されたオブジェクトのリストを報告します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -808,24 +807,23 @@ git-http-push(1) Manual Page
 </dt>
 <dd>
 <p>
-        Remove &lt;ref&gt; from remote repository.  The specified branch cannot be the
-        remote HEAD.  If -d is specified the following other conditions must also be
-        met:
+        リモートリポジトリから &lt;ref&gt; を削除します。指定のブランチをリモートHEADにすることはできません。 <code>-d</code>
+        を指定する場合は、以下の他の条件も満たす必要があります:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-Remote HEAD must resolve to an object that exists locally
+リモートHEADは、ローカルに存在するオブジェクトに名前解決(resolve)できなければなりません。
 </p>
 </li>
 <li>
 <p>
-Specified branch resolves to an object that exists locally
+指定のブランチは、ローカルに存在するオブジェクトに名前解決(resolve)します。
 </p>
 </li>
 <li>
 <p>
-Specified branch is an ancestor of the remote HEAD
+指定のブランチは、リモートHEADの祖先です。
 </p>
 </li>
 </ul></div>
@@ -835,7 +833,7 @@ Specified branch is an ancestor of the remote HEAD
 </dt>
 <dd>
 <p>
-        The remote refs to update.
+        更新したいリモートrefs
 </p>
 </dd>
 </dl></div>
@@ -844,49 +842,40 @@ Specified branch is an ancestor of the remote HEAD
 <div class="sect1">
 <h2 id="_specifying_the_refs">SPECIFYING THE REFS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>A <em>&lt;ref&gt;</em> specification can be either a single pattern, or a pair of such
-patterns separated by a colon ":" (this means that a ref name cannot have a
-colon in it).  A single pattern <em>&lt;name&gt;</em> is just a shorthand for
-<em>&lt;name&gt;:&lt;name&gt;</em>.</p></div>
-<div class="paragraph"><p>Each pattern pair consists of the source side (before the colon)  and the
-destination side (after the colon).  The ref to be pushed is determined by
-finding a match that matches the source side, and where it is pushed is
-determined by using the destination side.</p></div>
+<div class="paragraph"><p><em>&lt;ref&gt;</em> 指定は、単一のパターン、またはコロン ":"
+で区切られた、そのようなパターンのペアのいずれかです(これは、ref名にコロンを含めることができないことを意味します)。 単一のパターン
+<em>&lt;name&gt;</em> は、 <em>&lt;name&gt;:&lt;name&gt;</em> の短縮形です。</p></div>
+<div class="paragraph"><p>各パターンペアは、送信元側(コロンの前)と宛先側(コロンの後)で構成されます。プッシュされるrefは、ソース側に一致する一致を見つけることによって決定され、プッシュされる場所は、宛先側を使用して決定されます。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-It is an error if &lt;src&gt; does not match exactly one of the local refs.
+&lt;src&gt; がローカルrefの1つと正確に一致しない場合は、エラーになります。
 </p>
 </li>
 <li>
 <p>
-If &lt;dst&gt; does not match any remote ref, either
+&lt;dst&gt; がどのリモートrefとも一致しない場合、以下のどちらかです
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-it has to start with "refs/"; &lt;dst&gt; is used as the destination literally in
-     this case.
+"refs/" で始まる必要があります。この場合、文字通り &lt;dst&gt; が宛先として使用されます。
 </p>
 </li>
 <li>
 <p>
-&lt;src&gt; == &lt;dst&gt; and the ref that matched the &lt;src&gt; must not exist in the set
-     of remote refs; the ref matched &lt;src&gt; locally is used as the name of the
-     destination.
+&lt;src&gt; == &lt;dst&gt; かつ &lt;src&gt; に一致するrefは、リモートrefのセットに存在してはなりません。ローカルで一致するref &lt;src&gt;
+     は、宛先の名前として使用されます。
 </p>
 </li>
 </ul></div>
 </li>
 </ul></div>
-<div class="paragraph"><p>Without &#8216;--force`, the &lt;src&gt; ref is stored at the remote only if &lt;dst&gt; does
-not exist, or &lt;dst&gt; is a proper subset (i.e. an ancestor) of &lt;src&gt;.  This
-check, known as "fast-forward check", is performed in order to avoid
-accidentally overwriting the remote ref and lose other peoples&#8217; commits from
-there.</p></div>
-<div class="paragraph"><p>With <code>--force</code>, the fast-forward check is disabled for all refs.</p></div>
-<div class="paragraph"><p>Optionally, a &lt;ref&gt; parameter can be prefixed with a plus <em>+</em> sign to
-disable the fast-forward check only on that ref.</p></div>
+<div class="paragraph"><p><code>--force</code> の指定が無く、&lt;dst&gt; が存在しない場合または &lt;dst&gt; が &lt;src&gt;
+の適切なサブセット(つまり、祖先)である場合のみリモートに保存されます。 "fast-forward check"
+(早送りチェック)と呼ばれるこのチェックは、リモートrefを誤って上書きして、そこから他の人のコミットを失うことを回避するために実行されます。</p></div>
+<div class="paragraph"><p><code>--force</code> を使用すると、すべてのrefに対して fast-forward check が無効になります。</p></div>
+<div class="paragraph"><p>オプションで、&lt;ref&gt; パラメーターの前に「+」記号を付けて、そのrefでのみ fast-forward check を無効にすることができます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -900,7 +889,7 @@ disable the fast-forward check only on that ref.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-22 01:16:34 JST
+ 2021-11-27 07:14:51 JST
 </div>
 </div>
 </body>
