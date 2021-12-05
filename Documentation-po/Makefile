@@ -10,6 +10,11 @@ TECHNICAL_DIR = technical
 RELNOTES_DIR = RelNotes
 CONFIG_DIR = config
 HOWTO_DIR = howto
+SRC_INSTALL_TEXT = ../INSTALL
+PO_INSTALL_TEXT = $(addprefix $(PO_DIR)/,INSTALL.po)
+DST_INSTALL_TEXT = ../docs/INSTALL
+
+$(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
 
 # cmds_txt and mergetools_txt from Documentation/Makefile there are templates. not need translation.
 cmds_txt = cmds-ancillaryinterrogators.txt \
@@ -61,10 +66,17 @@ $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 $(PO_FILES): $(PO_DIR)/%$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
 	po4a-updatepo -M utf8 -f asciidoc -m $< -p $@
 
+$(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
+	po4a-updatepo -M utf8 -f text -m $< -p $@
+
 $(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : $(PO_DIR)/%$(PO_EXT)
 	po4a-translate -f asciidoc -keep 0 -M utf8 -m $(subst $(DST_DIR),$(SEDOUT_DIR),$(@:$(PO_EXT)=$(ASCIIDOC_EXT))) -p $< -l $@
 
-ja: $(DST_FILES)
+$(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
+	po4a-translate -f text -keep 0 -M utf8 -m $(SRC_INSTALL_TEXT) -p $< -l $@
+
+
+ja: $(DST_FILES) $(DST_INSTALL_TEXT)
 
 # rsyncの $(SRC_DIR)の直後の / 重要。超重要
 # cmds-*.txt are templates. not need translation. copy from $(SRC_DIR) to $(DST_DIR)
