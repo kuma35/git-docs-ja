@@ -30,6 +30,12 @@ if [ ${exitcode} -ne 0 ]; then
 fi
 # for github pages
 DIFF=diff ${PROJ}/Documentation-po/install-webdoc-only-html.sh ${PROJ}/docs/htmldocs
+gawk -f ${PROJ}/Documentation-po/publish-index.awk TEMPLATE=${PROJ}/Documentation-po/index.html.template OUTPUT=${PROJ}/docs/inex.html < ${PROJ}/GIT-VERSION-FILE
+exitcode=$?
+if [ ${exitcode} -ne 0 ]; then
+    notify-send -u critical git-docs-ja "publish-index.awk エラー"
+    exit ${exitcode}
+fi
 #
 notify-send -u normal git-docs-ja "compile完了。"
 

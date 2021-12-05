@@ -14,7 +14,7 @@ SRC_INSTALL_TEXT = ../INSTALL
 PO_INSTALL_TEXT = $(addprefix $(PO_DIR)/,INSTALL.po)
 DST_INSTALL_TEXT = ../docs/INSTALL
 
-$(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
+# $(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
 
 # cmds_txt and mergetools_txt from Documentation/Makefile there are templates. not need translation.
 cmds_txt = cmds-ancillaryinterrogators.txt \
