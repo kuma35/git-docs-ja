@@ -54,30 +54,15 @@ index 65898fa..b002dc6 100644
 
         if (mkdir(".git", 0755) &lt; 0) {</pre><p>ご覧のとおり、コミットは、誰が最新の変更を行ったか、何をしたか、そしてその理由を示しています。</p><p>すべてのコミットには16進40桁のIDがあります。それは「オブジェクト名」または「SHA-1 ID」と呼ばれることもあり、「git
 show」出力の最初の行に表示されます。通常、タグやブランチ名などの短い名前でコミットを参照できますが、この長い名前も役立ちます。最も重要なことは、これはこのコミットにとってグローバルに一意の名前です。したがって、他の誰かにオブジェクト名を(たとえば電子メールで)伝えると、その名前が自分のリポジトリで行うのと同じコミットを参照することが保証されます(彼らのリポジトリにそのコミットがあると仮定します)。オブジェクト名はコミットの内容に対するハッシュとして計算されるため、名前が変更されてなければコミットも変更されてない事が保証されます。</p><p>実際、 <a class="xref" href="#git-concepts" title="Chapter 7. Git concepts">Chapter 7, <i>Git concepts</i></a>
-では、ファイルデータやディレクトリの内容など、Gitの履歴に保存されているすべてのものが、その内容のハッシュである名前が付いたオブジェクトに保存されていることがわかります。</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="understanding-reachability"></a>Understanding history: commits, parents, and reachability</h3></div></div></div><p>Every commit (except the very first commit in a project) also has a parent
-commit which shows what happened before this commit.  Following the chain of
-parents will eventually take you back to the beginning of the project.</p><p>However, the commits do not form a simple list; Git allows lines of
-development to diverge and then reconverge, and the point where two lines of
-development reconverge is called a "merge".  The commit representing a merge
-can therefore have more than one parent, with each parent representing the
-most recent commit on one of the lines of development leading to that point.</p><p>The best way to see how this works is using the <a class="ulink" href="gitk.html" target="_top">gitk(1)</a> command;
-running gitk now on a Git repository and looking for merge commits will help
-understand how Git organizes history.</p><p>In the following, we say that commit X is "reachable" from commit Y if
-commit X is an ancestor of commit Y.  Equivalently, you could say that Y is
-a descendant of X, or that there is a chain of parents leading from commit Y
-to commit X.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="history-diagrams"></a>Understanding history: History diagrams</h3></div></div></div><p>We will sometimes represent Git history using diagrams like the one below.
-Commits are shown as "o", and the links between them with lines drawn with -
-/ and \.  Time goes left to right:</p><pre class="literallayout">         o--o--o &lt;-- Branch A
+では、ファイルデータやディレクトリの内容など、Gitの履歴に保存されているすべてのものが、その内容のハッシュである名前が付いたオブジェクトに保存されていることがわかります。</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="understanding-reachability"></a>Understanding history: commits, parents, and reachability</h3></div></div></div><p>(プロジェクトの最初のコミットを除く)すべてのコミットには、このコミットの前に何が起こったかを示す親コミットもあります。親の連鎖をたどると、最終的にはプロジェクトの最初に戻ります。</p><p>ただし、コミットは単純なリストを形成しません。
+Gitを使用すると、開発ラインが分岐してから再収束します。2つの開発ラインが再収束するポイントは「マージ」と呼ばれます。したがって、マージを表すコミットは1つ以上の親を持つことができ、各親はそれぞれがそのポイントにつながる開発ラインの1つで最も最近のコミットを表します。</p><p>これがどのように働くを確認する最良の方法は、 <a class="ulink" href="gitk.html" target="_top">gitk(1)</a>
+コマンドを使用することです。現在Gitリポジトリでgitkを実行し、マージコミットを探すと、Gitが履歴を整理する方法を理解するのに役立ちます。</p><p>以下、コミットXがコミットYの祖先である場合、コミットXはコミットYから「到達可能」(reachable)であると言います。同様に、YはXの子孫である、コミットYからコミットXにつながる親のチェーンがあると言えます。</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="history-diagrams"></a>Understanding history: History diagrams</h3></div></div></div><p>以下のような図を使用して、Gitの履歴を表す場合があります。コミットは「o」として表示され、コミット間の繋がりは、 <code class="literal">-</code> および <code class="literal">/</code> および
+<code class="literal">\</code> で描かれた線で示されます。時間は左から右に進みます:</p><pre class="literallayout">         o--o--o &lt;-- Branch A
         /
  o--o--o &lt;-- master
         \
-         o--o--o &lt;-- Branch B</pre><p>If we need to talk about a particular commit, the character "o" may be
-replaced with another letter or number.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="what-is-a-branch"></a>Understanding history: What is a branch?</h3></div></div></div><p>When we need to be precise, we will use the word "branch" to mean a line of
-development, and "branch head" (or just "head") to mean a reference to the
-most recent commit on a branch.  In the example above, the branch head named
-"A" is a pointer to one particular commit, but we refer to the line of three
-commits leading up to that point as all being part of "branch A".</p><p>However, when no confusion will result, we often just use the term "branch"
-both for branches and for branch heads.</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="manipulating-branches"></a>Manipulating branches</h2></div></div></div><p>ブランチの作成、削除、および変更は、素早く・簡単です。コマンドの概要は以下のとおりです:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+         o--o--o &lt;-- Branch B</pre><p>特定のコミットについて話す必要がある場合は、文字「o」を別の文字または数字に置き換えることができます。</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="what-is-a-branch"></a>Understanding history: What is a branch?</h3></div></div></div><p>正確にする必要がある場合は、「ブランチ」という言葉を使用して開発ラインを意味し、「ブランチヘッド」(branch
+head)(または単に「ヘッド」(head))という言葉を使用して、ブランチでの最新のコミットへの参照を意味します。上記の例では、「A」という名前のブランチヘッドは、1つの特定のコミットへのポインターですが、その時点までの3つのコミットの連なった線をすべて「ブランチA」の一部として参照します。</p><p>ただし、混乱が生じない場合は、ブランチとブランチヘッドの両方に「ブランチ」という用語を使用することがよくあります。</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="manipulating-branches"></a>Manipulating branches</h2></div></div></div><p>ブランチの作成、削除、および変更は、素早く・簡単です。コマンドの概要は以下のとおりです:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <code class="literal">git branch</code>
 </span></dt><dd>
         全てのブランチを一覧表示します。
@@ -88,14 +73,13 @@ both for branches and for branch heads.</p></div></div><div class="section"><div
 </dd><dt><span class="term">
 <code class="literal">git branch &lt;branch&gt; &lt;start-point&gt;</code>
 </span></dt><dd>
-        create a new branch named <code class="literal">&lt;branch&gt;</code>, referencing <code class="literal">&lt;start-point&gt;</code>, which may
-        be specified any way you like, including using a branch name or a tag name.
+        <code class="literal">&lt;start-point&gt;</code> を参照して、 <code class="literal">&lt;branch&gt;</code>
+        という名前の新しいブランチを作成します。これは、ブランチ名やタグ名を使用するなど、任意の方法で指定できます。
 </dd><dt><span class="term">
 <code class="literal">git branch -d &lt;branch&gt;</code>
 </span></dt><dd>
-        delete the branch <code class="literal">&lt;branch&gt;</code>; if the branch is not fully merged in its
-        upstream branch or contained in the current branch, this command will fail
-        with a warning.
+        ブランチ
+        `&lt;branch&gt;`を削除します。ブランチがそのアップストリームブランチに完全にマージされていないか、現在のブランチに含まれていない場合、このコマンドは警告とともに失敗します。
 </dd><dt><span class="term">
 <code class="literal">git branch -D &lt;branch&gt;</code>
 </span></dt><dd>
@@ -103,41 +87,40 @@ both for branches and for branch heads.</p></div></div><div class="section"><div
 </dd><dt><span class="term">
 <code class="literal">git switch &lt;branch&gt;</code>
 </span></dt><dd>
-        make the current branch <code class="literal">&lt;branch&gt;</code>, updating the working directory to
-        reflect the version referenced by <code class="literal">&lt;branch&gt;</code>.
+        現在のブランチを <code class="literal">&lt;branch&gt;</code> にし、 <code class="literal">&lt;branch&gt;</code> によって参照されるバージョンを反映するように作業ディレクトリを更新します。
 </dd><dt><span class="term">
 <code class="literal">git switch -c &lt;new&gt; &lt;start-point&gt;</code>
 </span></dt><dd>
         <code class="literal">&lt;start-point&gt;</code> を参照する新しいブランチ <code class="literal">&lt;new&gt;</code> を作成し、それをチェックアウトします。
-</dd></dl></div><p>The special symbol "HEAD" can always be used to refer to the current
-branch.  In fact, Git uses a file named <code class="literal">HEAD</code> in the <code class="literal">.git</code> directory to
-remember which branch is current:</p><pre class="screen">$ cat .git/HEAD
-ref: refs/heads/master</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="detached-head"></a>Examining an old version without creating a new branch</h2></div></div></div><p>The <code class="literal">git switch</code> command normally expects a branch head, but will also
-accept an arbitrary commit when invoked with --detach; for example, you can
-check out the commit referenced by a tag:</p><pre class="screen">$ git switch --detach v2.6.17
+</dd></dl></div><p>特殊シンボル記号「HEAD」は、常に現在のブランチを参照するために使用できます。実際、Gitは <code class="literal">.git</code> ディレクトリにある <code class="literal">HEAD</code>
+という名前のファイルを使用して、現在のブランチを記憶しています。</p><pre class="screen">$ cat .git/HEAD
+ref: refs/heads/master</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="detached-head"></a>Examining an old version without creating a new branch</h2></div></div></div><p><code class="literal">git switch</code> コマンドは通常、ブランチヘッドを想定していますが、 <code class="literal">--detach</code>
+を伴って呼び出されると任意のコミットも受け入れます。たとえば、タグによって参照されるコミットをチェックアウトできます:</p><pre class="screen">$ git switch --detach v2.6.17
 Note: checking out 'v2.6.17'.
 
 You are in 'detached HEAD' state. You can look around, make experimental
 changes and commit them, and you can discard any commits you make in this
 state without impacting any branches by performing another switch.
+(あなたは「切り離されたHEAD」状態にあります。あなたは周りを見回し、
+実験的な変更を加えてコミットすることができます。また、別のswitchを実行することで、
+他のブランチに影響を与えることなく、この状態で行ったコミットを破棄できます。)
 
 If you want to create a new branch to retain commits you create, you may
 do so (now or later) by using -c with the switch command again. Example:
+(作成したコミットを保持するために新しいブランチを作成する場合は、
+switchコマンドで `-c` を再度使用して、(現在または後で)作成できます。例:)
 
   git switch -c new_branch_name
 
-HEAD is now at 427abfa Linux v2.6.17</pre><p>The HEAD then refers to the SHA-1 of the commit instead of to a branch, and
-git branch shows that you are no longer on a branch:</p><pre class="screen">$ cat .git/HEAD
+HEAD is now at 427abfa Linux v2.6.17</pre><p>次に、HEADはブランチではなくコミットのSHA-1を参照し、 <code class="literal">git branch</code> は、あなたがもはやブランチ上にいないことを示します:</p><pre class="screen">$ cat .git/HEAD
 427abfa28afedffadfca9dd8b067eb6d36bac53f
 $ git branch
 * (detached from v2.6.17)
-  master</pre><p>この場合、HEADは「切り離されている」(detached)と言います。</p><p>This is an easy way to check out a particular version without having to
-make up a name for the new branch.   You can still create a new branch
-(or tag) for this version later if you decide to.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="examining-remote-branches"></a>Examining branches from a remote repository</h2></div></div></div><p>The "master" branch that was created at the time you cloned is a copy of the
-HEAD in the repository that you cloned from.  That repository may also have
-had other branches, though, and your local repository keeps branches which
-track each of those remote branches, called remote-tracking branches, which
-you can view using the <code class="literal">-r</code> option to <a class="ulink" href="git-branch.html" target="_top">git-branch(1)</a>:</p><pre class="screen">$ git branch -r
+  master</pre><p>この場合、HEADは「切り離されている」(detached)と言います。</p><p>これは、新しいブランチの名前を作成しなくても、
+特定のバージョンをチェックアウトする簡単な方法です。
+必要に応じて、後でこのバージョンの新しいブランチ(またはタグ)を作成することもできます。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="examining-remote-branches"></a>Examining branches from a remote repository</h2></div></div></div><p>クローン作成時に作成された「master」ブランチは、クローン作成元のリポジトリにあるHEADのコピーです。ただし、そのリポジトリには他のブランチも含まれている可能性があり、ローカルリポジトリには、リモート追跡ブランチ(remote-tracking
+branch)と呼ばれる、これらのリモートブランチのそれぞれを追跡するブランチが保持されます。これは、 <a class="ulink" href="git-branch.html" target="_top">git-branch(1)</a> の
+<code class="literal">-r</code> オプションを使用して表示できます:</p><pre class="screen">$ git branch -r
   origin/HEAD
   origin/html
   origin/maint
@@ -145,120 +128,79 @@ you can view using the <code class="literal">-r</code> option to <a class="ulink
   origin/master
   origin/next
   origin/seen
-  origin/todo</pre><p>In this example, "origin" is called a remote repository, or "remote" for
-short. The branches of this repository are called "remote branches" from our
-point of view. The remote-tracking branches listed above were created based
-on the remote branches at clone time and will be updated by <code class="literal">git fetch</code>
-(hence <code class="literal">git pull</code>) and <code class="literal">git push</code>. See
-<a class="xref" href="#Updating-a-repository-With-git-fetch" title="Updating a repository with git fetch">the section called “Updating a repository with git fetch”</a> for details.</p><p>You might want to build on one of these remote-tracking branches on a branch
-of your own, just as you would for a tag:</p><pre class="screen">$ git switch -c my-todo-copy origin/todo</pre><p>You can also check out <code class="literal">origin/todo</code> directly to examine it or write a
-one-off patch.  See <a class="link" href="#detached-head" title="Examining an old version without creating a new branch">detached head</a>.</p><p>Note that the name "origin" is just the name that Git uses by default to
-refer to the repository that you cloned from.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="how-git-stores-references"></a>Naming branches, tags, and other references</h2></div></div></div><p>Branches, remote-tracking branches, and tags are all references to commits.
-All references are named with a slash-separated path name starting with
-<code class="literal">refs</code>; the names we’ve been using so far are actually shorthand:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
+  origin/todo</pre><p>この例では、「origin」はリモートリポジトリ、または略して「リモート」(remote)と呼ばれます。このリポジトリのブランチは、私たちの観点からは「リモートブランチ」と呼ばれます。上記のリモート追跡ブランチは、クローン時にリモートブランチに基づいて作成され、
+<code class="literal">git fetch</code> (つまり <code class="literal">git pull</code> でも)と <code class="literal">git push</code> によって更新されます。 詳細については、
+<a class="xref" href="#Updating-a-repository-With-git-fetch" title="Updating a repository with git fetch">the section called “Updating a repository with git fetch”</a> を参照してください。</p><p>タグの場合と同じように、これらのリモート追跡ブランチの1つをあなた独自のブランチに構築することをお勧めします:</p><pre class="screen">$ git switch -c my-todo-copy origin/todo</pre><p><code class="literal">origin/todo</code> を直接チェックアウトして調べたり、1回限りのパッチを作成したりすることもできます。
+<a class="link" href="#detached-head" title="Examining an old version without creating a new branch">detached head</a> を参照してください。</p><p>注意: 「origin」という名前は、clone元のリポジトリを参照するためにGitがデフォルトで使用する名前にすぎないことに注意してください。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="how-git-stores-references"></a>Naming branches, tags, and other references</h2></div></div></div><p>ブランチやリモート追跡ブランチやタグはすべてコミットへの参照です。すべての参照は、 <code class="literal">refs</code>
+で始まるスラッシュ(<code class="literal">/</code>)で区切られたパス名で名前が付けられます。これまで使用してきた名前は、実際には省略形です:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
 ブランチ <code class="literal">test</code> は <code class="literal">refs/heads/test</code> の略です。
 </li><li class="listitem">
 タグ <code class="literal">v2.6.18</code> は <code class="literal">refs/tags/v2.6.18</code> の略です。
 </li><li class="listitem">
 <code class="literal">origin/master</code> は <code class="literal">refs/remotes/origin/master</code> の略です。
-</li></ul></div><p>The full name is occasionally useful if, for example, there ever exists a
-tag and a branch with the same name.</p><p>(Newly created refs are actually stored in the <code class="literal">.git/refs</code> directory, under
-the path given by their name.  However, for efficiency reasons they may also
-be packed together in a single file; see <a class="ulink" href="git-pack-refs.html" target="_top">git-pack-refs(1)</a>).</p><p>As another useful shortcut, the "HEAD" of a repository can be referred to
-just using the name of that repository.  So, for example, "origin" is
-usually a shortcut for the HEAD branch in the repository "origin".</p><p>For the complete list of paths which Git checks for references, and the
-order it uses to decide which to choose when there are multiple references
-with the same shorthand name, see the "SPECIFYING REVISIONS" section of
-<a class="ulink" href="gitrevisions.html" target="_top">gitrevisions(7)</a>.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="Updating-a-repository-With-git-fetch"></a>Updating a repository with git fetch</h2></div></div></div><p>After you clone a repository and commit a few changes of your own, you may
-wish to check the original repository for updates.</p><p>The <code class="literal">git-fetch</code> command, with no arguments, will update all of the
-remote-tracking branches to the latest version found in the original
-repository.  It will not touch any of your own branches—not even the
-"master" branch that was created for you on clone.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="fetching-branches"></a>Fetching branches from other repositories</h2></div></div></div><p>You can also track branches from repositories other than the one you cloned
-from, using <a class="ulink" href="git-remote.html" target="_top">git-remote(1)</a>:</p><pre class="screen">$ git remote add staging git://git.kernel.org/.../gregkh/staging.git
+</li></ul></div><p>フルネームでの指定は、たとえば、同じ名前のタグとブランチが存在する場合に役立つことがあります。</p><p>(新しく作成されたrefは、実際にはその名前で指定されたパスで <code class="literal">.git/refs</code>
+ディレクトリに保存されます。ただし、効率上の理由から、単一のファイルにまとめてパックすることもできます。
+<a class="ulink" href="git-pack-refs.html" target="_top">git-pack-refs(1)</a> を参照してください。)</p><p>もう1つの便利な短縮形として、リポジトリの「HEAD」は、そのリポジトリの名前を使用するだけで参照できます。したがって、たとえば、「origin」は通常、「リポジトリ
+origin のHEADブランチ」の短縮形です。</p><p>Gitが参照を調べるするパスの完全なリスト、および同じ省略名を持つ複数の参照がある場合に選択するために使用する順序については、
+<a class="ulink" href="gitrevisions.html" target="_top">gitrevisions(7)</a> の「SPECIFYING REVISIONS」セクションを参照してください。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="Updating-a-repository-With-git-fetch"></a>Updating a repository with git fetch</h2></div></div></div><p>リポジトリのクローンを作成し、独自の変更をいくつかコミットした後、あなたは元のリポジトリで更新を確認することをお勧めします。</p><p>引数を指定しない <code class="literal">git-fetch</code>
+コマンドは、あなたのリポジトリにある全てのリモート追跡ブランチを元のリポジトリにある最新バージョンに更新します。それはあなた自身のどのブランチにも影響しません。それはあなたクローンで作成した「master」ブランチでさえ影響しません。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="fetching-branches"></a>Fetching branches from other repositories</h2></div></div></div><p>あなたは <a class="ulink" href="git-remote.html" target="_top">git-remote(1)</a> を使用して、クローン元以外のリポジトリからブランチを追跡することもできます。</p><pre class="screen">$ git remote add staging git://git.kernel.org/.../gregkh/staging.git
 $ git fetch staging
 ...
 From git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging
  * [new branch]      master     -&gt; staging/master
  * [new branch]      staging-linus -&gt; staging/staging-linus
- * [new branch]      staging-next -&gt; staging/staging-next</pre><p>New remote-tracking branches will be stored under the shorthand name that
-you gave <code class="literal">git remote add</code>, in this case <code class="literal">staging</code>:</p><pre class="screen">$ git branch -r
+ * [new branch]      staging-next -&gt; staging/staging-next</pre><p>新しいリモート追跡ブランチは、 <code class="literal">git remote add</code> にて、今回は <code class="literal">staging</code> と名付けた省略名で保存されます:</p><pre class="screen">$ git branch -r
   origin/HEAD -&gt; origin/master
   origin/master
   staging/master
   staging/staging-linus
-  staging/staging-next</pre><p>If you run <code class="literal">git fetch &lt;remote&gt;</code> later, the remote-tracking branches for the
-named <code class="literal">&lt;remote&gt;</code> will be updated.</p><p>ファイル <code class="literal">.git/config</code> を調べると、Gitが新しい一節を追加したことがわかります:</p><pre class="screen">$ cat .git/config
+  staging/staging-next</pre><p>後で <code class="literal">git fetch &lt;remote&gt;</code> を実行すると、 <code class="literal">&lt;remote&gt;</code> という名前のリモート追跡ブランチが更新されます。</p><p>ファイル <code class="literal">.git/config</code> を調べると、Gitが新しい一節を追加したことがわかります:</p><pre class="screen">$ cat .git/config
 ...
 [remote "staging"]
         url = git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git
         fetch = +refs/heads/*:refs/remotes/staging/*
-...</pre><p>This is what causes Git to track the remote’s branches; you may modify or
-delete these configuration options by editing <code class="literal">.git/config</code> with a text
-editor.  (See the "CONFIGURATION FILE" section of <a class="ulink" href="git-config.html" target="_top">git-config(1)</a> for
-details.)</p></div></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="exploring-git-history"></a>Chapter 2. Exploring Git history</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#using-bisect">How to use bisect to find a regression</a></span></dt><dt><span class="section"><a href="#naming-commits">Naming commits</a></span></dt><dt><span class="section"><a href="#creating-tags">Creating tags</a></span></dt><dt><span class="section"><a href="#browsing-revisions">Browsing revisions</a></span></dt><dt><span class="section"><a href="#generating-diffs">Generating diffs</a></span></dt><dt><span class="section"><a href="#viewing-old-file-versions">Viewing old file versions</a></span></dt><dt><span class="section"><a href="#history-examples">Examples</a></span></dt><dd><dl><dt><span class="section"><a href="#counting-commits-on-a-branch">Counting the number of commits on a branch</a></span></dt><dt><span class="section"><a href="#checking-for-equal-branches">Check whether two branches point at the same history</a></span></dt><dt><span class="section"><a href="#finding-tagged-descendants">Find first tagged version including a given fix</a></span></dt><dt><span class="section"><a href="#showing-commits-unique-to-a-branch">Showing commits unique to a given branch</a></span></dt><dt><span class="section"><a href="#making-a-release">Creating a changelog and tarball for a software release</a></span></dt><dt><span class="section"><a href="#Finding-commits-With-given-Content">Finding commits referencing a file with given content</a></span></dt></dl></dd></dl></div><p>Git is best thought of as a tool for storing the history of a collection of
-files.  It does this by storing compressed snapshots of the contents of a
-file hierarchy, together with "commits" which show the relationships between
-these snapshots.</p><p>Gitは、プロジェクトの履歴を探索するための非常に柔軟で高速なツールを提供します。</p><p>We start with one specialized tool that is useful for finding the commit
-that introduced a bug into a project.</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="using-bisect"></a>How to use bisect to find a regression</h2></div></div></div><p>Suppose version 2.6.18 of your project worked, but the version at "master"
-crashes.  Sometimes the best way to find the cause of such a regression is
-to perform a brute-force search through the project’s history to find the
-particular commit that caused the problem.  The <a class="ulink" href="git-bisect.html" target="_top">git-bisect(1)</a>
-command can help you do this:</p><pre class="screen">$ git bisect start
+...</pre><p>これが、Gitがリモートのブランチを追跡できる理由です。 テキストエディタで <code class="literal">.git/config</code>
+を編集することにより、これらの設定オプションを変更または削除できます。 (詳細については、 <a class="ulink" href="git-config.html" target="_top">git-config(1)</a>
+の「CONFIGURATION FILE」セクションを参照してください。)</p></div></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="exploring-git-history"></a>Chapter 2. Exploring Git history</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#using-bisect">How to use bisect to find a regression</a></span></dt><dt><span class="section"><a href="#naming-commits">Naming commits</a></span></dt><dt><span class="section"><a href="#creating-tags">Creating tags</a></span></dt><dt><span class="section"><a href="#browsing-revisions">Browsing revisions</a></span></dt><dt><span class="section"><a href="#generating-diffs">Generating diffs</a></span></dt><dt><span class="section"><a href="#viewing-old-file-versions">Viewing old file versions</a></span></dt><dt><span class="section"><a href="#history-examples">Examples</a></span></dt><dd><dl><dt><span class="section"><a href="#counting-commits-on-a-branch">Counting the number of commits on a branch</a></span></dt><dt><span class="section"><a href="#checking-for-equal-branches">Check whether two branches point at the same history</a></span></dt><dt><span class="section"><a href="#finding-tagged-descendants">Find first tagged version including a given fix</a></span></dt><dt><span class="section"><a href="#showing-commits-unique-to-a-branch">Showing commits unique to a given branch</a></span></dt><dt><span class="section"><a href="#making-a-release">Creating a changelog and tarball for a software release</a></span></dt><dt><span class="section"><a href="#Finding-commits-With-given-Content">Finding commits referencing a file with given content</a></span></dt></dl></dd></dl></div><p>Gitは、ファイルのコレクションの履歴を保存するためのツールとして最もよく考えられています。これは、ファイル階層のコンテンツの圧縮されたスナップショットを、これらのスナップショット間の関係を示す「コミット」とともに保存することによって行われます。</p><p>Gitは、プロジェクトの履歴を探索するための非常に柔軟で高速なツールを提供します。</p><p>私達は、プロジェクトにバグを導入したコミットを見つけるのに役立つ、ある専用ツールから始めることにします。</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="using-bisect"></a>How to use bisect to find a regression</h2></div></div></div><p>あなたのプロジェクトのバージョン2.6.18は機能していしたが、「master」のバージョンがクラッシュしたとします。このようなデグレの原因を見つける最良の方法は、プロジェクトの履歴を総当たりで検索して、問題の原因となった特定のコミットを見つけることです。
+<a class="ulink" href="git-bisect.html" target="_top">git-bisect(1)</a> コマンドは、あなたがこれを行う助けとなります:</p><pre class="screen">$ git bisect start
 $ git bisect good v2.6.18
 $ git bisect bad master
 Bisecting: 3537 revisions left to test after this
-[65934a9a028b88e83e2b0f8b36618fe503349f8e] BLOCK: Make USB storage depend on SCSI rather than selecting it [try #6]</pre><p>If you run <code class="literal">git branch</code> at this point, you’ll see that Git has temporarily
-moved you in "(no branch)". HEAD is now detached from any branch and points
-directly to a commit (with commit id 65934) that is reachable from "master"
-but not from v2.6.18. Compile and test it, and see whether it
-crashes. Assume it does crash. Then:</p><pre class="screen">$ git bisect bad
+[65934a9a028b88e83e2b0f8b36618fe503349f8e] BLOCK: Make USB storage depend on SCSI rather than selecting it [try #6]</pre><p>この時点で <code class="literal">git branch</code> を実行すると、Gitが一時的に あなたを "(no branch)"
+に移動させたことがわかります。HEADはブランチから切り離され、「master」からは到達可能であるが v2.6.18
+からは到達できないコミット(コミットID
+65934)を直接指します。コンパイルしてテストし、クラッシュするかどうかを確認します。クラッシュするとします。ならばあなたは以下のようにします:</p><pre class="screen">$ git bisect bad
 Bisecting: 1769 revisions left to test after this
-[7eff82c8b1511017ae605f0c99ac275a7e21b867] i2c-core: Drop useless bitmaskings</pre><p>checks out an older version.  Continue like this, telling Git at each stage
-whether the version it gives you is good or bad, and notice that the number
-of revisions left to test is cut approximately in half each time.</p><p>After about 13 tests (in this case), it will output the commit id of the
-guilty commit.  You can then examine the commit with <a class="ulink" href="git-show.html" target="_top">git-show(1)</a>,
-find out who wrote it, and mail them your bug report with the commit id.
-Finally, run</p><pre class="screen">$ git bisect reset</pre><p>あなたが以前にいたブランチに戻ります。</p><p>Note that the version which <code class="literal">git bisect</code> checks out for you at each point is
-just a suggestion, and you’re free to try a different version if you think
-it would be a good idea.  For example, occasionally you may land on a commit
-that broke something unrelated; run</p><pre class="screen">$ git bisect visualize</pre><p>which will run gitk and label the commit it chose with a marker that says
-"bisect".  Choose a safe-looking commit nearby, note its commit id, and
-check it out with:</p><pre class="screen">$ git reset --hard fb47ddb2db</pre><p>then test, run <code class="literal">bisect good</code> or <code class="literal">bisect bad</code> as appropriate, and continue.</p><p>Instead of <code class="literal">git bisect visualize</code> and then <code class="literal">git reset --hard fb47ddb2db</code>,
-you might just want to tell Git that you want to skip the current commit:</p><pre class="screen">$ git bisect skip</pre><p>In this case, though, Git may not eventually be able to tell the first bad
-one between some first skipped commits and a later bad commit.</p><p>There are also ways to automate the bisecting process if you have a test
-script that can tell a good from a bad commit. See <a class="ulink" href="git-bisect.html" target="_top">git-bisect(1)</a> for
-more information about this and other <code class="literal">git bisect</code> features.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="naming-commits"></a>Naming commits</h2></div></div></div><p>コミットに名前を付けるいくつかの方法をすでに見てきました:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
+[7eff82c8b1511017ae605f0c99ac275a7e21b867] i2c-core: Drop useless bitmaskings</pre><p>より古いバージョンをチェックアウトします。このように作業を続けて、各ステップで提供されるバージョンが良いか悪いかをGitに伝え、テストするために残されたリビジョンの数が毎回約半分に削減されることに注目してください。</p><p>(今回は)約13回のテストの後、有罪コミット(guilty commit)のコミットIDが出力されました。あなたは、次に、
+<a class="ulink" href="git-show.html" target="_top">git-show(1)</a>
+を使用してコミットを調べ、誰がコミットを作成したかを調べ、コミットIDを使用してバグレポートをメールで送信できます。そして最後に、あなたは以下を実行します:</p><pre class="screen">$ git bisect reset</pre><p>そうすると、あなたが以前にいたブランチに戻ります。</p><p>注意: <code class="literal">git bisect</code>
+が各時点でチェックアウトするバージョンは単なる提案であり、そっちの方が良い考えであると思った場合は、別のバージョンを自由に試すことができることに注意してください。
+たとえば、関係のない何かを壊したコミットにたどり着くことがあったりします。このようにしたいときは、以下のようにします。</p><pre class="screen">$ git bisect visualize</pre><p>これはgitkを実行し、選択したコミットに「bisect」というマーカーでラベルを付けます。近くで安全に見えるコミットを選択し、そのコミットIDをメモして、以下のコマンドでチェックアウトします:</p><pre class="screen">$ git reset --hard fb47ddb2db</pre><p>そしてテストし、必要に応じて「bisect good」または「bisect bad」を実行して続行します。</p><p><code class="literal">git bisect visualize</code> と <code class="literal">git reset --hard fb47ddb2db</code>
+を行う代わりに、現在のコミットをスキップすることをGitに伝えたい場合があります:</p><pre class="screen">$ git bisect skip</pre><p>ただし、この場合、Gitは、最初にスキップされたコミットとその後の不正なコミットの間で、最初の不正なコミットを最終的に判断できない可能性があります。</p><p>良いコミットと悪いコミットを区別できるテストスクリプトがある場合は、bisecするプロセスを自動化する方法もあります。この機能およびその他の <code class="literal">git
+bisect</code> 機能の詳細については、 <a class="ulink" href="git-bisect.html" target="_top">git-bisect(1)</a> を参照してください。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="naming-commits"></a>Naming commits</h2></div></div></div><p>コミットに名前を付けるいくつかの方法をすでに見てきました:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
 16進40桁のオブジェクト名
 </li><li class="listitem">
 ブランチ名: 指定のブランチの先頭のコミットを参照します
 </li><li class="listitem">
-tag name: refers to the commit pointed to by the given tag (we’ve seen
-          branches and tags are special cases of
-          <a class="link" href="#how-git-stores-references" title="Naming branches, tags, and other references">references</a>).
+タグ名: 指定のタグが指すコミットを参照します(ブランチとタグは <a class="link" href="#how-git-stores-references" title="Naming branches, tags, and other references">参照</a>
+          の特殊なケースです)。
 </li><li class="listitem">
 HEAD: 現在のブランチのheadを参照します
-</li></ul></div><p>There are many more; see the "SPECIFYING REVISIONS" section of the
-<a class="ulink" href="gitrevisions.html" target="_top">gitrevisions(7)</a> man page for the complete list of ways to name
-revisions.  Some examples:</p><pre class="screen">$ git show fb47ddb2 # the first few characters of the object name
+</li></ul></div><p>その他いろいろ: リビジョンに名前を付ける方法の完全なリストについては、 <a class="ulink" href="gitrevisions.html" target="_top">gitrevisions(7)</a>
+のマニュアルページの「SPECIFYING REVISIONS」セクションを参照してください。 例をいくつか:</p><pre class="screen">$ git show fb47ddb2 # the first few characters of the object name
                     # are usually enough to specify it uniquely
 $ git show HEAD^    # the parent of the HEAD commit
 $ git show HEAD^^   # the grandparent
-$ git show HEAD~4   # the great-great-grandparent</pre><p>Recall that merge commits may have more than one parent; by default, <code class="literal">^</code> and
-<code class="literal">~</code> follow the first parent listed in the commit, but you can also choose:</p><pre class="screen">$ git show HEAD^1   # show the first parent of HEAD
-$ git show HEAD^2   # show the second parent of HEAD</pre><p>In addition to HEAD, there are several other special names for commits:</p><p>Merges (to be discussed later), as well as operations such as <code class="literal">git reset</code>,
-which change the currently checked-out commit, generally set ORIG_HEAD to
-the value HEAD had before the current operation.</p><p>The <code class="literal">git fetch</code> operation always stores the head of the last fetched branch
-in FETCH_HEAD.  For example, if you run <code class="literal">git fetch</code> without specifying a
-local branch as the target of the operation</p><pre class="screen">$ git fetch git://example.com/proj.git theirbranch</pre><p>the fetched commits will still be available from FETCH_HEAD.</p><p>When we discuss merges we’ll also see the special name MERGE_HEAD, which
-refers to the other branch that we’re merging in to the current branch.</p><p>The <a class="ulink" href="git-rev-parse.html" target="_top">git-rev-parse(1)</a> command is a low-level command that is
-occasionally useful for translating some name for a commit to the object
-name for that commit:</p><pre class="screen">$ git rev-parse origin
-e05db0fd4f31dde7005f075a84f96b360d05984b</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="creating-tags"></a>Creating tags</h2></div></div></div><p>We can also create a tag to refer to a particular commit; after running</p><pre class="screen">$ git tag stable-1 1b2e1d63ff</pre><p>You can use <code class="literal">stable-1</code> to refer to the commit 1b2e1d63ff.</p><p>This creates a "lightweight" tag.  If you would also like to include a
-comment with the tag, and possibly sign it cryptographically, then you
-should create a tag object instead; see the <a class="ulink" href="git-tag.html" target="_top">git-tag(1)</a> man page for
-details.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="browsing-revisions"></a>Browsing revisions</h2></div></div></div><p>The <a class="ulink" href="git-log.html" target="_top">git-log(1)</a> command can show lists of commits.  On its own, it
-shows all commits reachable from the parent commit; but you can also make
-more specific requests:</p><pre class="screen">$ git log v2.5..        # commits since (not reachable from) v2.5
+$ git show HEAD~4   # the great-great-grandparent</pre><p>マージコミットには複数の親が存在する可能性があることを思い出してください。 デフォルトでは、 <code class="literal">^</code> と <code class="literal">~</code>
+はそのコミットにリストされている最初の親を辿りますが、以下のように選択することもできます:</p><pre class="screen">$ git show HEAD^1   # show the first parent of HEAD
+$ git show HEAD^2   # show the second parent of HEAD</pre><p>HEADに加えて、コミットには他にもいくつかの特別な名前があります:</p><p>マージ(後で説明します)、および現在チェックアウトされているコミットを変更する <code class="literal">git reset</code> などの操作では、通常、 ORIG_HEAD
+を、「現在の操作の前にHEADが持っていた値」に設定します。</p><p><code class="literal">git fetch</code> 操作は、常に、最後にフェッチされたブランチのヘッドをFETCH_HEADに格納します。
+たとえば、以下のように、操作のターゲットとしてローカルブランチを指定せずに <code class="literal">git fetch</code> を実行した場合</p><pre class="screen">$ git fetch git://example.com/proj.git theirbranch</pre><p>フェッチされたコミットは、引き続きFETCH_HEADから利用できます。</p><p>マージについて説明すると、現在のブランチにマージしている他のブランチを指す特別な名前MERGE_HEADもあります。</p><p><a class="ulink" href="git-rev-parse.html" target="_top">git-rev-parse(1)</a>
+コマンドは、コミットの名前をそのコミットのオブジェクト名に変換するのに役立つことがある低レベルのコマンドです。</p><pre class="screen">$ git rev-parse origin
+e05db0fd4f31dde7005f075a84f96b360d05984b</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="creating-tags"></a>Creating tags</h2></div></div></div><p>特定のコミットを参照するタグを作成することもできます。以下を実行すると</p><pre class="screen">$ git tag stable-1 1b2e1d63ff</pre><p>あなたは <code class="literal">stable-1</code> を使用して、コミット <code class="literal">1b2e1d63ff</code> を参照できます。</p><p>これにより、「軽量」タグ(lightweight
+tag)が作成されます。タグにコメントを含め、場合によっては暗号で署名する場合は、代わりにタグオブジェクトを作成する必要があります。詳細については、
+<a class="ulink" href="git-tag.html" target="_top">git-tag(1)</a> のマニュアルページを参照してください。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="browsing-revisions"></a>Browsing revisions</h2></div></div></div><p><a class="ulink" href="git-log.html" target="_top">git-log(1)</a>
+コマンドは、コミットのリストを表示できます。それ自体で、親コミットから到達可能なすべてのコミットが表示されますが、より具体的なリクエストを行うこともできます。</p><pre class="screen">$ git log v2.5..        # commits since (not reachable from) v2.5
 $ git log test..master  # commits reachable from master but not test
 $ git log master..test  # ...reachable from test but not master
 $ git log master...test # ...reachable from either test or master,
@@ -267,16 +209,10 @@ $ git log --since="2 weeks ago" # commits from the last 2 weeks
 $ git log Makefile      # commits which modify Makefile
 $ git log fs/           # ... which modify any file under fs/
 $ git log -S'foo()'     # commits which add or remove any file data
-                        # matching the string 'foo()'</pre><p>And of course you can combine all of these; the following finds commits
-since v2.5 which touch the <code class="literal">Makefile</code> or any file under <code class="literal">fs</code>:</p><pre class="screen">$ git log v2.5.. Makefile fs/</pre><p>You can also ask git log to show patches:</p><pre class="screen">$ git log -p</pre><p>See the <code class="literal">--pretty</code> option in the <a class="ulink" href="git-log.html" target="_top">git-log(1)</a> man page for more
-display options.</p><p>Note that git log starts with the most recent commit and works backwards
-through the parents; however, since Git history can contain multiple
-independent lines of development, the particular order that commits are
-listed in may be somewhat arbitrary.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="generating-diffs"></a>Generating diffs</h2></div></div></div><p>You can generate diffs between any two versions using <a class="ulink" href="git-diff.html" target="_top">git-diff(1)</a>:</p><pre class="screen">$ git diff master..test</pre><p>That will produce the diff between the tips of the two branches.  If you’d
-prefer to find the diff from their common ancestor to test, you can use
-three dots instead of two:</p><pre class="screen">$ git diff master...test</pre><p>Sometimes what you want instead is a set of patches; for this you can use
-<a class="ulink" href="git-format-patch.html" target="_top">git-format-patch(1)</a>:</p><pre class="screen">$ git format-patch master..test</pre><p>will generate a file with a patch for each commit reachable from test but
-not from master.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="viewing-old-file-versions"></a>Viewing old file versions</h2></div></div></div><p>You can always view an old version of a file by just checking out the
+                        # matching the string 'foo()'</pre><p>そしてもちろん、これらすべてを組み合わせることができます。 以下は、 <code class="literal">Makefile</code> または <code class="literal">fs</code>
+ディレクトリより下の任意のファイル、を触った v2.5 以降のコミットを検索します:</p><pre class="screen">$ git log v2.5.. Makefile fs/</pre><p>パッチを表示するようにgit logに依頼することもできます:</p><pre class="screen">$ git log -p</pre><p>その他の表示オプションについては、 <a class="ulink" href="git-log.html" target="_top">git-log(1)</a> のマニュアルページの <code class="literal">--pretty</code> オプションを参照してください。</p><p>git log は最新のコミットから始まり、親を介して逆方向に機能することに注意してください。
+ただし、Gitの履歴には複数の独立した開発ラインが含まれる可能性があるため、コミットがリストされる順序は多少前後する可能性があります。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="generating-diffs"></a>Generating diffs</h2></div></div></div><p><a class="ulink" href="git-diff.html" target="_top">git-diff(1)</a> を使用して、任意の2つのバージョン間の差分(diff)を生成できます。</p><pre class="screen">$ git diff master..test</pre><p>これにより、2つのブランチの先端の間にdiffが生じます。共通の祖先からのdiffを見つけてテストしたい場合は、2つではなく3つのドットを使用できます:</p><pre class="screen">$ git diff master...test</pre><p>しばしば、あなたが必要なのは差分の代わりにパッチのセットである場合があります。これには、 <a class="ulink" href="git-format-patch.html" target="_top">git-format-patch(1)</a>
+を使用できます。</p><pre class="screen">$ git format-patch master..test</pre><p>これは、masterからではなく、testから到達可能な各コミットのパッチを含むファイルを生成します。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="viewing-old-file-versions"></a>Viewing old file versions</h2></div></div></div><p>You can always view an old version of a file by just checking out the
 correct revision first.  But sometimes it is more convenient to be able to
 view an old version of a single file without checking anything out; this
 command does that:</p><pre class="screen">$ git show v2.5:fs/locks.c</pre><p>Before the colon may be anything that names a commit, and after it may be
@@ -1624,25 +1560,17 @@ v1.3.0~155^2~4</code> を呼び出し、その関数までスクロールダウ�
 をオブジェクト名として解釈しようとし、現在のリポジトリに存在するオブジェクトを参照している場合は、結果のSHA-1を変数 <code class="literal">sha1</code> に書き込みます。</p><p>ここで興味深いのは以下の2つです:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
 `get_sha1()`は成功で0を返します。これは一部の新しいGitハッカーを驚かせるかもしれませんが、UNIXには、さまざまなエラーの場合にさまざまな負の数を返し、成功した場合は0を返すという長い伝統があります。
 </li><li class="listitem">
-the variable <code class="literal">sha1</code> in the function signature of <code class="literal">get_sha1()</code> is <code class="literal">unsigned
-  char *</code>, but is actually expected to be a pointer to <code class="literal">unsigned char[20]</code>.
-  This variable will contain the 160-bit SHA-1 of the given commit.  Note that
-  whenever a SHA-1 is passed as <code class="literal">unsigned char *</code>, it is the binary
-  representation, as opposed to the ASCII representation in hex characters,
-  which is passed as <code class="literal">char *</code>.
-</li></ul></div><p>You will see both of these things throughout the code.</p><p>Now, for the meat:</p><pre class="screen">        case 0:
-                buf = read_object_with_reference(sha1, argv[1], &amp;size, NULL);</pre><p>This is how you read a blob (actually, not only a blob, but any type of
-object).  To know how the function <code class="literal">read_object_with_reference()</code> actually
-works, find the source code for it (something like <code class="literal">git grep
-read_object_with | grep ":[a-z]"</code> in the Git repository), and read the
-source.</p><p>To find out how the result can be used, just read on in <code class="literal">cmd_cat_file()</code>:</p><pre class="screen">        write_or_die(1, buf, size);</pre><p>Sometimes, you do not know where to look for a feature.  In many such cases,
-it helps to search through the output of <code class="literal">git log</code>, and then <code class="literal">git show</code> the
-corresponding commit.</p><p>Example: If you know that there was some test case for <code class="literal">git bundle</code>, but do
-not remember where it was (yes, you <span class="emphasis"><em>could</em></span> <code class="literal">git grep bundle t/</code>, but that
-does not illustrate the point!):</p><pre class="screen">$ git log --no-merges t/</pre><p>In the pager (<code class="literal">less</code>), just search for "bundle", go a few lines back, and
-see that it is in commit 18449ab0.  Now just copy this object name, and
-paste it into the command line</p><pre class="screen">$ git show 18449ab0</pre><p>Voila.</p><p>Another example: Find out what to do in order to make some script a builtin:</p><pre class="screen">$ git log --no-merges --diff-filter=A builtin/*.c</pre><p>You see, Git is actually the best tool to find out about the source of Git
-itself!</p></div></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="glossary"></a>Chapter 11. Git Glossary</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#git-explained">Git explained</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="git-explained"></a>Git explained</h2></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<code class="literal">get_sha1()</code> の関数シグネチャの変数 <code class="literal">sha1</code> は <code class="literal">unsigned char *</code> ですが、実際には <code class="literal">unsigned
+  char[20]</code> へのポインタであることが期待されています。この変数には、指定されたコミットの160ビットのSHA-1が含まれます。SHA-1が
+  <code class="literal">unsigned char *</code> として渡される場合は常に、 <code class="literal">char *</code>
+  として渡される16進文字のASCII表現とは対照的に、バイナリ表現であることに注意してください。
+</li></ul></div><p>コード全体でこれらの両方が表示されます。</p><p>さて、肝心の部分は:</p><pre class="screen">        case 0:
+                buf = read_object_with_reference(sha1, argv[1], &amp;size, NULL);</pre><p>これはブロブ(実際にはブロブだけでなくあらゆるタイプのオブジェクト)を読み取る方法です。 関数
+<code class="literal">read_object_with_reference()</code> が実際にどのように機能するかを知るには、(Gitのリポジトリで <code class="literal">git grep
+read_object_with | grep ":[a-z]"</code> などして)そのソースコードを探して拝んでください。</p><p>結果の使用方法を確認するには、 <code class="literal">cmd_cat_file()</code> を読んでください:</p><pre class="screen">        write_or_die(1, buf, size);</pre><p>機能を探す場所がわからない場合があります。このような多くの場合、 <code class="literal">git log</code> の出力を検索してから、対応するコミットを <code class="literal">git show</code>
+すると役に立ちます。</p><p>例: <code class="literal">git bundle</code> のテストケースがあったことはわかっているが、それがどこにあったか覚えていない場合(はいもちろん、あなたは <code class="literal">git
+grep bundle t/</code> できますが、そーゆー事を言いたい訳じゃない):</p><pre class="screen">$ git log --no-merges t/</pre><p>ページャー(<code class="literal">less</code>)の中で、 "bundle" を検索し、数行前に戻って、それがコミット 18449ab0
+にあることを確認します。このオブジェクト名をコピーして、コマンドラインに貼り付けます。</p><pre class="screen">$ git show 18449ab0</pre><p>できた！</p><p>別の例: スクリプトを組み込みにするために何をすべきかを調べます:</p><pre class="screen">$ git log --no-merges --diff-filter=A builtin/*.c</pre><p>ほらこのとおり。Gitは実際、Git自体のソースを見つけるのに最適なツールです！</p></div></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="glossary"></a>Chapter 11. Git Glossary</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#git-explained">Git explained</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="git-explained"></a>Git explained</h2></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <a name="def_alternate_object_database"></a>alternate object database
 </span></dt><dd>
         代役(alternate)メカニズムを介して、 <a class="link" href="#def_repository">リポジトリ</a> は
@@ -1742,10 +1670,9 @@ commit.</p></dd><dt><span class="term">
 </dd><dt><span class="term">
 <a name="def_DAG"></a>DAG
 </span></dt><dd>
-        Directed acyclic graph. The <a class="link" href="#def_commit_object">commit objects</a> form a
-        directed acyclic graph, because they have parents (directed), and the graph
-        of commit objects is acyclic (there is no <a class="link" href="#def_chain">chain</a> which begins
-        and ends with the same <a class="link" href="#def_object">object</a>).
+        有向非巡回グラフ(Directed acyclic graph)。 <a class="link" href="#def_commit_object">コミットオブジェクト</a>
+        は、(有向の)親を持ち、コミットオブジェクトのグラフが非巡回(同じ <a class="link" href="#def_object">オブジェクト</a> で開始・終了する
+        <a class="link" href="#def_chain">チェイン</a> はありません)であるため有向非巡回グラフを形成します。
 </dd><dt><span class="term">
 <a name="def_dangling_object"></a>dangling object
 </span></dt><dd>
@@ -2254,28 +2181,26 @@ exclude
         The tree of actual checked out files.  The working tree normally contains
         the contents of the <a class="link" href="#def_HEAD">HEAD</a> commit’s tree, plus any local changes
         that you have made but not yet committed.
-</dd></dl></div></div></div><div class="appendix"><div class="titlepage"><div><div><h1 class="title"><a name="git-quick-start"></a>Appendix A. Git Quick Reference</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#quick-creating-a-new-repository">Creating a new repository</a></span></dt><dt><span class="section"><a href="#managing-branches">Managing branches</a></span></dt><dt><span class="section"><a href="#exploring-history">Exploring history</a></span></dt><dt><span class="section"><a href="#making-changes">Making changes</a></span></dt><dt><span class="section"><a href="#merging">Merging</a></span></dt><dt><span class="section"><a href="#sharing-your-changes">Sharing your changes</a></span></dt><dt><span class="section"><a href="#repository-maintenance">Repository maintenance</a></span></dt></dl></div><p>This is a quick summary of the major commands; the previous chapters explain
-how these work in more detail.</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="quick-creating-a-new-repository"></a>Creating a new repository</h2></div></div></div><p>From a tarball:</p><pre class="screen">$ tar xzf project.tar.gz
+</dd></dl></div></div></div><div class="appendix"><div class="titlepage"><div><div><h1 class="title"><a name="git-quick-start"></a>Appendix A. Git Quick Reference</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#quick-creating-a-new-repository">Creating a new repository</a></span></dt><dt><span class="section"><a href="#managing-branches">Managing branches</a></span></dt><dt><span class="section"><a href="#exploring-history">Exploring history</a></span></dt><dt><span class="section"><a href="#making-changes">Making changes</a></span></dt><dt><span class="section"><a href="#merging">Merging</a></span></dt><dt><span class="section"><a href="#sharing-your-changes">Sharing your changes</a></span></dt><dt><span class="section"><a href="#repository-maintenance">Repository maintenance</a></span></dt></dl></div><p>これは主要なコマンドの簡単な要約です。ここまでの章を読めば、これらがどのように機能するか、より詳細に説明してあります。</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="quick-creating-a-new-repository"></a>Creating a new repository</h2></div></div></div><p>tarballから持ってくる:</p><pre class="screen">$ tar xzf project.tar.gz
 $ cd project
 $ git init
 Initialized empty Git repository in .git/
 $ git add .
-$ git commit</pre><p>From a remote repository:</p><pre class="screen">$ git clone git://example.com/pub/project.git
+$ git commit</pre><p>リモートのリポジトリから持ってくる:</p><pre class="screen">$ git clone git://example.com/pub/project.git
 $ cd project</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="managing-branches"></a>Managing branches</h2></div></div></div><pre class="screen">$ git branch                    # list all local branches in this repo
 $ git switch test               # switch working directory to branch "test"
 $ git branch new                # create branch "new" starting at current HEAD
-$ git branch -d new             # delete branch "new"</pre><p>Instead of basing a new branch on current HEAD (the default), use:</p><pre class="screen">$ git branch new test    # branch named "test"
+$ git branch -d new             # delete branch "new"</pre><p>現在のHEAD(デフォルト)に基づいて新しいブランチを作成する代わりに、以下を使用します:</p><pre class="screen">$ git branch new test    # branch named "test"
 $ git branch new v2.6.15 # tag named v2.6.15
 $ git branch new HEAD^   # commit before the most recent
 $ git branch new HEAD^^  # commit before that
-$ git branch new test~10 # ten commits before tip of branch "test"</pre><p>Create and switch to a new branch at the same time:</p><pre class="screen">$ git switch -c new v2.6.15</pre><p>Update and examine branches from the repository you cloned from:</p><pre class="screen">$ git fetch             # update
+$ git branch new test~10 # ten commits before tip of branch "test"</pre><p>新しいブランチを作成と同時にその新しいブランチに切り替えます:</p><pre class="screen">$ git switch -c new v2.6.15</pre><p>あなたがクローンを作成した元のリポジトリから持ってきてブランチを更新・調査します:</p><pre class="screen">$ git fetch             # update
 $ git branch -r         # list
   origin/master
   origin/next
   ...
-$ git switch -c masterwork origin/master</pre><p>Fetch a branch from a different repository, and give it a new name in your
-repository:</p><pre class="screen">$ git fetch git://example.com/project.git theirbranch:mybranch
-$ git fetch git://example.com/project.git v2.6.15:mybranch</pre><p>Keep a list of repositories you work with regularly:</p><pre class="screen">$ git remote add example git://example.com/project.git
+$ git switch -c masterwork origin/master</pre><p>別のリポジトリからブランチを取得し、あなたのリポジトリで新しい名前を付けます:</p><pre class="screen">$ git fetch git://example.com/project.git theirbranch:mybranch
+$ git fetch git://example.com/project.git v2.6.15:mybranch</pre><p>定期的に使用するリポジトリのリストを保持します:</p><pre class="screen">$ git remote add example git://example.com/project.git
 $ git remote                    # list remote repositories
 example
 origin
@@ -2302,54 +2227,44 @@ $ git diff v2.6.15..v2.6.16 # diff between two tagged versions
 $ git diff v2.6.15..HEAD    # diff with current head
 $ git grep "foo()"          # search working directory for "foo()"
 $ git grep v2.6.15 "foo()"  # search old tree for "foo()"
-$ git show v2.6.15:a.txt    # look at old version of a.txt</pre><p>Search for regressions:</p><pre class="screen">$ git bisect start
+$ git show v2.6.15:a.txt    # look at old version of a.txt</pre><p>デグレ(regression)を探します:</p><pre class="screen">$ git bisect start
 $ git bisect bad                # current version is bad
 $ git bisect good v2.6.13-rc2   # last known good revision
 Bisecting: 675 revisions left to test after this
                                 # test here, then:
 $ git bisect good               # if this revision is good, or
 $ git bisect bad                # if this revision is bad.
-                                # repeat until done.</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="making-changes"></a>Making changes</h2></div></div></div><p>Make sure Git knows who to blame:</p><pre class="screen">$ cat &gt;&gt;~/.gitconfig &lt;&lt;\EOF
+                                # repeat until done.</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="making-changes"></a>Making changes</h2></div></div></div><p>Gitにあなたが誰なのか教えてやってください:</p><pre class="screen">$ cat &gt;&gt;~/.gitconfig &lt;&lt;\EOF
 [user]
         name = Your Name Comes Here
         email = you@yourdomain.example.com
-EOF</pre><p>Select file contents to include in the next commit, then make the commit:</p><pre class="screen">$ git add a.txt    # updated file
+EOF</pre><p>次のコミットに含めるファイルの内容を選択してから、コミットします:</p><pre class="screen">$ git add a.txt    # updated file
 $ git add b.txt    # new file
 $ git rm c.txt     # old file
-$ git commit</pre><p>Or, prepare and create the commit in one step:</p><pre class="screen">$ git commit d.txt # use latest content only of d.txt
+$ git commit</pre><p>または、ワンステップでコミットを準備・作成します:</p><pre class="screen">$ git commit d.txt # use latest content only of d.txt
 $ git commit -a    # use latest content of all tracked files</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="merging"></a>Merging</h2></div></div></div><pre class="screen">$ git merge test   # merge branch "test" into the current branch
 $ git pull git://example.com/project.git master
                    # fetch and merge in remote branch
-$ git pull . test  # equivalent to git merge test</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="sharing-your-changes"></a>Sharing your changes</h2></div></div></div><p>Importing or exporting patches:</p><pre class="screen">$ git format-patch origin..HEAD # format a patch for each commit
+$ git pull . test  # equivalent to git merge test</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="sharing-your-changes"></a>Sharing your changes</h2></div></div></div><p>パッチの輸出入(inport/export):</p><pre class="screen">$ git format-patch origin..HEAD # format a patch for each commit
                                 # in HEAD but not in origin
-$ git am mbox # import patches from the mailbox "mbox"</pre><p>Fetch a branch in a different Git repository, then merge into the current
-branch:</p><pre class="screen">$ git pull git://example.com/project.git theirbranch</pre><p>Store the fetched branch into a local branch before merging into the current
-branch:</p><pre class="screen">$ git pull git://example.com/project.git theirbranch:mybranch</pre><p>After creating commits on a local branch, update the remote branch with your
-commits:</p><pre class="screen">$ git push ssh://example.com/project.git mybranch:theirbranch</pre><p>When remote and local branch are both named "test":</p><pre class="screen">$ git push ssh://example.com/project.git test</pre><p>Shortcut version for a frequently used remote repository:</p><pre class="screen">$ git remote add example ssh://example.com/project.git
-$ git push example test</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="repository-maintenance"></a>Repository maintenance</h2></div></div></div><p>Check for corruption:</p><pre class="screen">$ git fsck</pre><p>Recompress, remove unused cruft:</p><pre class="screen">$ git gc</pre></div></div><div class="appendix"><div class="titlepage"><div><div><h1 class="title"><a name="todo"></a>Appendix B. Notes and todo list for this manual</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#todo-list">Todo list</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="todo-list"></a>Todo list</h2></div></div></div><p>This is a work in progress.</p><p>The basic requirements:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
-It must be readable in order, from beginning to end, by someone intelligent
-  with a basic grasp of the UNIX command line, but without any special
-  knowledge of Git.  If necessary, any other prerequisites should be
-  specifically mentioned as they arise.
+$ git am mbox # import patches from the mailbox "mbox"</pre><p>別のGitリポジトリからブランチをフェッチしてから、現在のブランチにマージします:</p><pre class="screen">$ git pull git://example.com/project.git theirbranch</pre><p>現在のブランチにマージする前に、フェッチしたブランチをローカルブランチに保存します:</p><pre class="screen">$ git pull git://example.com/project.git theirbranch:mybranch</pre><p>ローカルブランチでコミットを作成した後、あなたのコミットでリモートブランチを更新します:</p><pre class="screen">$ git push ssh://example.com/project.git mybranch:theirbranch</pre><p>リモートブランチとローカルブランチの両方に "test" という名前が付けられている場合:</p><pre class="screen">$ git push ssh://example.com/project.git test</pre><p>頻繁に使用されるリモートリポジトリのショートカットバージョン:</p><pre class="screen">$ git remote add example ssh://example.com/project.git
+$ git push example test</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="repository-maintenance"></a>Repository maintenance</h2></div></div></div><p>破損(corruption)を確認します:</p><pre class="screen">$ git fsck</pre><p>再圧縮し、未使用の残骸を取り除きます:</p><pre class="screen">$ git gc</pre></div></div><div class="appendix"><div class="titlepage"><div><div><h1 class="title"><a name="todo"></a>Appendix B. Notes and todo list for this manual</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="#todo-list">Todo list</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="todo-list"></a>Todo list</h2></div></div></div><p>これらは未だ作業中です。</p><p>基本的な要件:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
+Gitの特別な知識がなくても、UNIXコマンドラインの基本を理解していれば、インテリジェントな人であれば最初から最後まで読みやすくする必要があります。必要に応じて、その他の前提条件が発生したときに具体的に言及する必要があります。
 </li><li class="listitem">
-Whenever possible, section headings should clearly describe the task they
-  explain how to do, in language that requires no more knowledge than
-  necessary: for example, "importing patches into a project" rather than "the
-  <code class="literal">git am</code> command"
-</li></ul></div><p>Think about how to create a clear chapter dependency graph that will allow
-people to get to important topics without necessarily reading everything in
-between.</p><p>Scan <code class="literal">Documentation/</code> for other stuff left out; in particular:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
-howto’s
+可能な場合は常に、セクションの見出しで、実行方法を説明するタスクを、必要以上の知識を必要としない言語で明確に説明する必要があります。たとえば、 "the
+  <code class="literal">git am</code> command" ではなく "importing patches into a project" です。
+</li></ul></div><p>明確な章の依存関係グラフを作成する方法を考えてください。これにより、人々は必ずしもその間のすべてを読むことなく、重要なトピックにたどり着くことができます。</p><p>省略されている他のものについては、 <code class="literal">Documentation/</code> を浚ってください。特に:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
+howtoと
 </li><li class="listitem">
-some of <code class="literal">technical/</code>?
+<code class="literal">technical/</code> のいくつかと
 </li><li class="listitem">
-hooks
+フック
 </li><li class="listitem">
-list of commands in <a class="ulink" href="git.html" target="_top">git(1)</a>
+<a class="ulink" href="git.html" target="_top">git(1)</a> のコマンドの一覧
 </li></ul></div><p>Scan email archives for other stuff left out</p><p>Scan man pages to see if any assume more background than this manual
 provides.</p><p>Add more good examples.  Entire sections of just cookbook examples might be
 a good idea; maybe make an "advanced examples" section a standard
 end-of-chapter section?</p><p>Include cross-references to the glossary, where appropriate.</p><p>Add a section on working with other version control systems, including CVS,
-Subversion, and just imports of series of release tarballs.</p><p>Write a chapter on using plumbing and writing scripts.</p><p>Alternates, clone -reference, etc.</p><p>More on recovery from repository corruption.  See:
+Subversion, and just imports of series of release tarballs.</p><p>Write a chapter on using plumbing and writing scripts.</p><p>Alternates, clone -reference, etc.</p><p>リポジトリの破損からの回復の詳細は、以下:
         <a class="ulink" href="https://lore.kernel.org/git/Pine.LNX.4.64.0702272039540.12485@woody.linux-foundation.org/" target="_top">https://lore.kernel.org/git/Pine.LNX.4.64.0702272039540.12485@woody.linux-foundation.org/</a>
         <a class="ulink" href="https://lore.kernel.org/git/Pine.LNX.4.64.0702141033400.3604@woody.linux-foundation.org/" target="_top">https://lore.kernel.org/git/Pine.LNX.4.64.0702141033400.3604@woody.linux-foundation.org/</a></p></div></div></div></body></html>
