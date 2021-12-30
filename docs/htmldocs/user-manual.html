@@ -187,13 +187,13 @@ bisect</code> 機能の詳細については、 <a class="ulink" href="git-bisec
 </li><li class="listitem">
 HEAD: 現在のブランチのheadを参照します
 </li></ul></div><p>その他いろいろ: リビジョンに名前を付ける方法の完全なリストについては、 <a class="ulink" href="gitrevisions.html" target="_top">gitrevisions(7)</a>
-のマニュアルページの「SPECIFYING REVISIONS」セクションを参照してください。 例をいくつか:</p><pre class="screen">$ git show fb47ddb2 # the first few characters of the object name
-                    # are usually enough to specify it uniquely
-$ git show HEAD^    # the parent of the HEAD commit
-$ git show HEAD^^   # the grandparent
-$ git show HEAD~4   # the great-great-grandparent</pre><p>マージコミットには複数の親が存在する可能性があることを思い出してください。 デフォルトでは、 <code class="literal">^</code> と <code class="literal">~</code>
-はそのコミットにリストされている最初の親を辿りますが、以下のように選択することもできます:</p><pre class="screen">$ git show HEAD^1   # show the first parent of HEAD
-$ git show HEAD^2   # show the second parent of HEAD</pre><p>HEADに加えて、コミットには他にもいくつかの特別な名前があります:</p><p>マージ(後で説明します)、および現在チェックアウトされているコミットを変更する <code class="literal">git reset</code> などの操作では、通常、 ORIG_HEAD
+のマニュアルページの「SPECIFYING REVISIONS」セクションを参照してください。 例をいくつか:</p><pre class="screen">$ git show fb47ddb2 # オブジェクト名の最初の数文字は、
+                    # 通常、一意に指定するのに十分です。
+$ git show HEAD^    # HEADコミットの親
+$ git show HEAD^^   # 祖父母(grandparent;親の親)
+$ git show HEAD~4   # 曽祖父母(great-great-grandparent)</pre><p>マージコミットには複数の親が存在する可能性があることを思い出してください。 デフォルトでは、 <code class="literal">^</code> と <code class="literal">~</code>
+はそのコミットにリストされている最初の親を辿りますが、以下のように選択することもできます:</p><pre class="screen">$ git show HEAD^1   # HEADの(複数ある)親のうち1番目の親
+$ git show HEAD^2   # HEADの複数ある親のうち2番目の親</pre><p>HEADに加えて、コミットには他にもいくつかの特別な名前があります:</p><p>マージ(後で説明します)、および現在チェックアウトされているコミットを変更する <code class="literal">git reset</code> などの操作では、通常、 ORIG_HEAD
 を、「現在の操作の前にHEADが持っていた値」に設定します。</p><p><code class="literal">git fetch</code> 操作は、常に、最後にフェッチされたブランチのヘッドをFETCH_HEADに格納します。
 たとえば、以下のように、操作のターゲットとしてローカルブランチを指定せずに <code class="literal">git fetch</code> を実行した場合</p><pre class="screen">$ git fetch git://example.com/proj.git theirbranch</pre><p>フェッチされたコミットは、引き続きFETCH_HEADから利用できます。</p><p>マージについて説明すると、現在のブランチにマージしている他のブランチを指す特別な名前MERGE_HEADもあります。</p><p><a class="ulink" href="git-rev-parse.html" target="_top">git-rev-parse(1)</a>
 コマンドは、コミットの名前をそのコミットのオブジェクト名に変換するのに役立つことがある低レベルのコマンドです。</p><pre class="screen">$ git rev-parse origin
@@ -212,30 +212,17 @@ $ git log -S'foo()'     # commits which add or remove any file data
                         # matching the string 'foo()'</pre><p>そしてもちろん、これらすべてを組み合わせることができます。 以下は、 <code class="literal">Makefile</code> または <code class="literal">fs</code>
 ディレクトリより下の任意のファイル、を触った v2.5 以降のコミットを検索します:</p><pre class="screen">$ git log v2.5.. Makefile fs/</pre><p>パッチを表示するようにgit logに依頼することもできます:</p><pre class="screen">$ git log -p</pre><p>その他の表示オプションについては、 <a class="ulink" href="git-log.html" target="_top">git-log(1)</a> のマニュアルページの <code class="literal">--pretty</code> オプションを参照してください。</p><p>git log は最新のコミットから始まり、親を介して逆方向に機能することに注意してください。
 ただし、Gitの履歴には複数の独立した開発ラインが含まれる可能性があるため、コミットがリストされる順序は多少前後する可能性があります。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="generating-diffs"></a>Generating diffs</h2></div></div></div><p><a class="ulink" href="git-diff.html" target="_top">git-diff(1)</a> を使用して、任意の2つのバージョン間の差分(diff)を生成できます。</p><pre class="screen">$ git diff master..test</pre><p>これにより、2つのブランチの先端の間にdiffが生じます。共通の祖先からのdiffを見つけてテストしたい場合は、2つではなく3つのドットを使用できます:</p><pre class="screen">$ git diff master...test</pre><p>しばしば、あなたが必要なのは差分の代わりにパッチのセットである場合があります。これには、 <a class="ulink" href="git-format-patch.html" target="_top">git-format-patch(1)</a>
-を使用できます。</p><pre class="screen">$ git format-patch master..test</pre><p>これは、masterからではなく、testから到達可能な各コミットのパッチを含むファイルを生成します。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="viewing-old-file-versions"></a>Viewing old file versions</h2></div></div></div><p>You can always view an old version of a file by just checking out the
-correct revision first.  But sometimes it is more convenient to be able to
-view an old version of a single file without checking anything out; this
-command does that:</p><pre class="screen">$ git show v2.5:fs/locks.c</pre><p>Before the colon may be anything that names a commit, and after it may be
-any path to a file tracked by Git.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="history-examples"></a>Examples</h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="counting-commits-on-a-branch"></a>Counting the number of commits on a branch</h3></div></div></div><p>Suppose you want to know how many commits you’ve made on <code class="literal">mybranch</code> since it
-diverged from <code class="literal">origin</code>:</p><pre class="screen">$ git log --pretty=oneline origin..mybranch | wc -l</pre><p>Alternatively, you may often see this sort of thing done with the
-lower-level command <a class="ulink" href="git-rev-list.html" target="_top">git-rev-list(1)</a>, which just lists the SHA-1’s of
-all the given commits:</p><pre class="screen">$ git rev-list origin..mybranch | wc -l</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="checking-for-equal-branches"></a>Check whether two branches point at the same history</h3></div></div></div><p>Suppose you want to check whether two branches point at the same point in
-history.</p><pre class="screen">$ git diff origin..master</pre><p>will tell you whether the contents of the project are the same at the two
-branches; in theory, however, it’s possible that the same project contents
-could have been arrived at by two different historical routes.  You could
-compare the object names:</p><pre class="screen">$ git rev-list origin
+を使用できます。</p><pre class="screen">$ git format-patch master..test</pre><p>これは、masterからではなく、testから到達可能な各コミットのパッチを含むファイルを生成します。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="viewing-old-file-versions"></a>Viewing old file versions</h2></div></div></div><p>あなたは、最初に正しいリビジョンをチェックアウトするだけで、いつでも古いバージョンのファイルを表示できます。ただし、何もチェックアウトせずに古いバージョンの単一ファイルを表示できる方が便利な場合もあります。以下のコマンドはそれを行います:</p><pre class="screen">$ git show v2.5:fs/locks.c</pre><p>コロン(<code class="literal">:</code>)の前にはコミットを指定するものがあり、その後にはGitによって追跡されているファイルへのパスがあります。</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="history-examples"></a>Examples</h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="counting-commits-on-a-branch"></a>Counting the number of commits on a branch</h3></div></div></div><p>あなたが <code class="literal">origin`から分岐して以来、 `mybranch</code> に対して行ったコミットの数を知りたいとします:</p><pre class="screen">$ git log --pretty=oneline origin..mybranch | wc -l</pre><p>あるいは、この種のことは、指定されたすべてのコミットのSHA-1を一覧表示するだけの低レベルのコマンド <a class="ulink" href="git-rev-list.html" target="_top">git-rev-list(1)</a>
+で行われることがよくあります:</p><pre class="screen">$ git rev-list origin..mybranch | wc -l</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="checking-for-equal-branches"></a>Check whether two branches point at the same history</h3></div></div></div><p>あなたが、2つのブランチが履歴の同じポイントを指しているかどうかを確認したいとします。</p><pre class="screen">$ git diff origin..master</pre><p>プロジェクトの内容が2つのブランチで同じであるかどうかがわかります。ただし、理論的には、同じプロジェクトの内容が2つの異なる履歴ルートによって到達された可能性があります。あなたはオブジェクト名を比較できます:</p><pre class="screen">$ git rev-list origin
 e05db0fd4f31dde7005f075a84f96b360d05984b
 $ git rev-list master
-e05db0fd4f31dde7005f075a84f96b360d05984b</pre><p>Or you could recall that the <code class="literal">...</code> operator selects all commits reachable
-from either one reference or the other but not both; so</p><pre class="screen">$ git log origin...master</pre><p>will return no commits when the two branches are equal.</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="finding-tagged-descendants"></a>Find first tagged version including a given fix</h3></div></div></div><p>Suppose you know that the commit e05db0fd fixed a certain problem.  You’d
-like to find the earliest tagged release that contains that fix.</p><p>Of course, there may be more than one answer—if the history branched after
-commit e05db0fd, then there could be multiple "earliest" tagged releases.</p><p>You could just visually inspect the commits since e05db0fd:</p><pre class="screen">$ gitk e05db0fd..</pre><p>or you can use <a class="ulink" href="git-name-rev.html" target="_top">git-name-rev(1)</a>, which will give the commit a name
+e05db0fd4f31dde7005f075a84f96b360d05984b</pre><p>または、 <code class="literal">...</code>
+演算子は、一方の参照または他方の参照から到達可能なすべてのコミットを選択しますが、両方は選択しないことを思い出してください。ということで以下を実行すると</p><pre class="screen">$ git log origin...master</pre><p>この2つのブランチが等しい場合、コミットは返されません。</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="finding-tagged-descendants"></a>Find first tagged version including a given fix</h3></div></div></div><p>コミット e05db0fd が特定の問題を修正したことを知っているとします。その修正を含む最も古いタグ付きリリースを見つけたいと思います。</p><p>ええ、もちろん、複数の答えがあるかもしれません。コミット e05db0fd
+の後に履歴が分岐した場合、複数の「最も早い」タグ付きリリースが存在する可能性があります。</p><p>あなたは e05db0fd 以降のコミットを視覚的に検査できます:</p><pre class="screen">$ gitk e05db0fd..</pre><p>or you can use <a class="ulink" href="git-name-rev.html" target="_top">git-name-rev(1)</a>, which will give the commit a name
 based on any tag it finds pointing to one of the commit’s descendants:</p><pre class="screen">$ git name-rev --tags e05db0fd
-e05db0fd tags/v1.5.0-rc1^0~23</pre><p>The <a class="ulink" href="git-describe.html" target="_top">git-describe(1)</a> command does the opposite, naming the revision
-using a tag on which the given commit is based:</p><pre class="screen">$ git describe e05db0fd
-v1.5.0-rc0-260-ge05db0f</pre><p>but that may sometimes help you guess which tags might come after the given
-commit.</p><p>If you just want to verify whether a given tagged version contains a given
-commit, you could use <a class="ulink" href="git-merge-base.html" target="_top">git-merge-base(1)</a>:</p><pre class="screen">$ git merge-base e05db0fd v1.5.0-rc1
+e05db0fd tags/v1.5.0-rc1^0~23</pre><p><a class="ulink" href="git-describe.html" target="_top">git-describe(1)</a> コマンドは逆のことを行い、指定されたコミットの基になっているタグを使用してリビジョンに名前を付けます:</p><pre class="screen">$ git describe e05db0fd
+v1.5.0-rc0-260-ge05db0f</pre><p>これは、特定のコミット後にどのタグが来るかを推測するのに役立つ場合があります。</p><p>あなたが特定のタグ付きバージョンに特定のコミットが含まれているかどうかを確認したいだけの場合は、 <a class="ulink" href="git-merge-base.html" target="_top">git-merge-base(1)</a>
+を使用できます:</p><pre class="screen">$ git merge-base e05db0fd v1.5.0-rc1
 e05db0fd4f31dde7005f075a84f96b360d05984b</pre><p>The merge-base command finds a common ancestor of the given commits, and
 always returns one or the other in the case where one is a descendant of the
 other; so the above output shows that e05db0fd actually is an ancestor of
