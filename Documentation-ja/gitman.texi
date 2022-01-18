@@ -3992,7 +3992,7 @@ Part of the git(1) suite
 @node git-check-ignore,,,Top
 @chapheading Name
 
-git-check-ignore — Debug gitignore / exclude files
+git-check-ignore — gitignoreや除外ファイルのデバッグ
 
 @noindent
 
@@ -4008,12 +4008,11 @@ git check-ignore [<options>] --stdin
 
 @chapheading DESCRIPTION
 
-For each pathname given via the command-line or from a file via @samp{--stdin},
-check whether the file is excluded by .gitignore (or other input files to
-the exclude mechanism) and output the path if it is excluded.
+コマンドラインまたは @samp{--stdin} を介してファイルから指定されたパス名ごとに、ファイルが @samp{.gitignore}
+(またはexcludeメカニズムへの他の入力ファイル)によって除外されているかどうかを確認し、除外されている場合はそのパスを出力します。
 
-By default, tracked files are not shown at all since they are not subject to
-exclude rules; but see ‘--no-index’.
+デフォルトでは、追跡中のファイル(tracked files)は除外ルールの対象ではないため、まったく表示されません。但し、 ‘--no-index’
+もご覧下さい。
 
 @noindent
 
@@ -4022,79 +4021,58 @@ exclude rules; but see ‘--no-index’.
 @table @asis
 
 @item  @samp{-q, --quiet} 
-Don’t output anything, just set exit status.  This is only valid with a
-single pathname.
+何も出力せず、終了ステータスを設定するだけです。 これは、単一のパス名でのみ有効です。
 
 @item  @samp{-v, --verbose} 
-Instead of printing the paths that are excluded, for each path that matches
-an exclude pattern, print the exclude pattern together with the path.
-(Matching an exclude pattern usually means the path is excluded, but if the
-pattern begins with @emph{!} then it is a negated pattern and matching it means
-the path is NOT excluded.)
+除外されたパスを出力する代わりに、除外パターンに一致するパスごとに、パスと一緒に除外パターンを出力します。(通常、除外パターンに一致することはパスが除外されることを意味しますが、パターンが
+@samp{!} で始まる場合、それは否定パターンであり、一致することはパスが除外されないことを意味します。)
 
-For precedence rules within and between exclude sources, see
-gitignore(5).
+除外ソース内および除外ソース間の優先ルールについては、 gitignore(5) を参照してください。
 
 @item  @samp{--stdin} 
-Read pathnames from the standard input, one per line, instead of from the
-command-line.
+コマンドラインからではなく、標準入力から1行に1つずつパス名を読み取ります。
 
 @item  @samp{-z} 
-The output format is modified to be machine-parsable (see below).  If
-@samp{--stdin} is also given, input paths are separated with a NUL character
-instead of a linefeed character.
+出力フォーマットは、マシン解析可能になるように変更されます(以下を参照)。 @samp{--stdin}
+も指定されている場合、入力パスは改行文字ではなくNUL文字で区切られます。
 
 @item  @samp{-n, --non-matching} 
-Show given paths which don’t match any pattern.  This only makes sense when
-@samp{--verbose} is enabled, otherwise it would not be possible to distinguish
-between paths which match a pattern and those which don’t.
+どのパターンにも一致しないパスを表示します。これは、 @samp{--verbose}
+が有効になっている場合にのみ意味があります。有効になっていないと、パターンに一致するパスと一致しないパスを区別できません。
 
 @item  @samp{--no-index} 
-Don’t look in the index when undertaking the checks. This can be used to
-debug why a path became tracked by e.g. @samp{git add .} and was not ignored by
-the rules as expected by the user or when developing patterns including
-negation to match a path previously added with @samp{git add -f}.
+チェックを行うときにインデックスを調べません。これは、例えば @samp{git add .}
+で追跡されたパスが、ユーザーの期待通りにルールで無視されなかった場合のデバッグに使用できます。また、以前に @samp{git add -f}
+で追加したパスにマッチするように、否定を含むパターンを開発するときにも使用できます。
 @end table
 
 @noindent
 
 @chapheading OUTPUT
 
-By default, any of the given pathnames which match an ignore pattern will be
-output, one per line.  If no pattern matches a given path, nothing will be
-output for that path; this means that path will not be ignored.
+デフォルトでは、指定されたパス名のうち無視パターンに一致するパスが1行に1つずつ出力されます。特定のパスに一致する無視パターンがない場合、そのパスについては何も出力されません。これは、そのパスが無視されないことを意味します。
 
-If @samp{--verbose} is specified, the output is a series of lines of the form:
+@samp{--verbose} が指定されている場合、出力の各行は以下の形式になります:
 
 <source> <COLON> <linenum> <COLON> <pattern> <HT> <pathname>
 
-<pathname> is the path of a file being queried, <pattern> is the matching
-pattern, <source> is the pattern’s source file, and <linenum> is the line
-number of the pattern within that source.  If the pattern contained a @samp{!}
-prefix or @samp{/} suffix, it will be preserved in the output.  <source> will be
-an absolute path when referring to the file configured by
-@samp{core.excludesFile}, or relative to the repository root when referring to
-@samp{.git/info/exclude} or a per-directory exclude file.
+<pathname> はクエリ対象のファイルのパス、 <pattern> は一致するパターン、 <source> はパターンのソースファイル、
+<linenum> はそのソース内のパターンの行番号です。 パターンに @samp{!} 接頭辞または @samp{/}
+接尾辞が含まれている場合、それは出力でも保持されます。 <source> は、 @samp{core.excludesFile}
+で構成されたファイルを参照する場合は絶対パス、 @samp{.git/info/exclude}
+またはディレクトリごとの除外ファイルを参照する場合はリポジトリルートを基準とします。
 
-If @samp{-z} is specified, the pathnames in the output are delimited by the null
-character; if @samp{--verbose} is also specified then null characters are also
-used instead of colons and hard tabs:
+@samp{-z} が指定されている場合、出力のパス名はヌル文字で区切られます。 @samp{--verbose}
+も指定されている場合、コロンとハードタブの代わりにヌル文字も使用されます:
 
 <source> <NULL> <linenum> <NULL> <pattern> <NULL> <pathname> <NULL>
 
-If @samp{-n} or @samp{--non-matching} are specified, non-matching pathnames will also
-be output, in which case all fields in each output record except for
-<pathname> will be empty.  This can be useful when running
-non-interactively, so that files can be incrementally streamed to STDIN of a
-long-running check-ignore process, and for each of these files, STDOUT will
-indicate whether that file matched a pattern or not.  (Without this option,
-it would be impossible to tell whether the absence of output for a given
-file meant that it didn’t match any pattern, or that the output hadn’t been
-generated yet.)
+@samp{-n} または @samp{--non-matching} が指定されている場合、一致しないパス名も出力されます。その場合、 <pathname>
+を除く各出力レコードのすべてのフィールドが空になります。これは、非対話的に実行する場合に役立ちます。これにより、ファイル達を長時間実行されるチェック無視プロセスのSTDINに段階的にストリーミングでき、これらのファイルごとに、STDOUTはそのファイルがパターンに一致するかどうかを示します。
+(このオプションがないと、特定のファイルの出力がないということは、どのパターンとも一致しなかったのか、出力がまだ生成されていないのかを判断することはできません。)
 
-Buffering happens as documented under the @samp{GIT_FLUSH} option in
-git(1).  The caller is responsible for avoiding deadlocks caused by
-overfilling an input buffer or reading from an empty output buffer.
+バッファリングは、 git(1) の @samp{GIT_FLUSH}
+オプションに記載されているように行われます。呼び出し元は、入力バッファーのオーバーフィルまたは空の出力バッファーからの読み取りによって引き起こされるデッドロックを回避する責任があります。
 
 @noindent
 
@@ -4103,13 +4081,13 @@ overfilling an input buffer or reading from an empty output buffer.
 @table @asis
 
 @item  0 
-One or more of the provided paths is ignored.
+提供されたパスの1つ以上が無視されます。
 
 @item  1 
-None of the provided paths are ignored.
+提供されたパスはどれも無視されません。
 
 @item  128 
-A fatal error was encountered.
+致命的なエラーが発生しました。
 @end table
 
 @noindent
@@ -8340,130 +8318,88 @@ trueに設定されている場合、NTFSファイルシステムで問題を引
 githooks(5) の「fsmonitor-watchman」セクションを参照してください。
 
 @item  core.fsmonitorHookVersion 
-Sets the version of hook that is to be used when calling fsmonitor.  There
-are currently versions 1 and 2. When this is not set, version 2 will be
-tried first and if it fails then version 1 will be tried. Version 1 uses a
-timestamp as input to determine which files have changes since that time but
-some monitors like watchman have race conditions when used with a
-timestamp.  Version 2 uses an opaque string so that the monitor can return
-something that can be used to determine what files have changed without race
-conditions.
+fsmonitorを呼び出すときに使用されるフックのバージョンを設定します。現在、バージョン1と2があります。これが設定されていない場合、バージョン2が最初に試行され、失敗した場合はバージョン1が試行されます。
+バージョン1は、入力としてtimpstampを使用して、それ以降に変更があったファイルを判別しますが、watchmanなどの一部のモニターでは、timestampを使用すると競合状態になります。バージョン2はopaque
+stringを使用しているため、モニターは競合状態なしで変更されたファイルを判別するために使用できるものを返すことができます。
 
 @item  core.trustctime 
-If false, the ctime differences between the index and the working tree are
-ignored; useful when the inode change time is regularly modified by
-something outside Git (file system crawlers and some backup systems).  See
-git-update-index(1). True by default.
+falseの場合、インデックスと作業ツリー間のctimeの違いは無視されます。iノードの変更時刻がGitの外部の何か(ファイルシステムクローラーおよび一部のバックアップシステム)によって定期的に変更される場合に役立ちます。
+git-update-index(1) を参照してください。デフォルトではtrueです。
 
 @item  core.splitIndex 
 trueの場合、インデックスの分割インデックス機能が使用されます。 git-update-index(1) を参照してください。
 デフォルトではfalseです。
 
 @item  core.untrackedCache 
-Determines what to do about the untracked cache feature of the index. It
-will be kept, if this variable is unset or set to @samp{keep}. It will
-automatically be added if set to @samp{true}. And it will automatically be
-removed, if set to @samp{false}. Before setting it to @samp{true}, you should check
-that mtime is working properly on your system.  See
-git-update-index(1). @samp{keep} by default, unless @samp{feature.manyFiles}
-is enabled which sets this setting to @samp{true} by default.
+インデックスの追跡されていないモノのキャッシュ機能をどうするかを決定します。この変数が設定されていない(unset)か、 @samp{keep}
+に設定されている場合、キャッシュが保持されます。 @samp{true`に設定すると、自動的に追加されます。 また、 `false}
+に設定すると、自動的に削除されます。 @samp{true} に設定する前に、mtimeがシステムで正しく機能していることを確認する必要があります。
+git-update-index(1) を参照してください。 この設定をデフォルトで @samp{true} に設定する
+@samp{feature.manyFiles} が有効になっていない限り、デフォルトは @samp{keep} です。
 
 @item  core.checkStat 
-When missing or is set to @samp{default}, many fields in the stat structure are
-checked to detect if a file has been modified since Git looked at it.  When
-this configuration variable is set to @samp{minimal}, sub-second part of mtime
-and ctime, the uid and gid of the owner of the file, the inode number (and
-the device number, if Git was compiled to use it), are excluded from the
-check among these fields, leaving only the whole-second part of mtime (and
-ctime, if @samp{core.trustCtime} is set) and the filesize to be checked.
+core.checkStat が設定されていないか @samp{default}
+に設定されている場合、Gitがファイルを調べてからファイルが変更されたかどうかを検出するために、stat構造体の多くのフィールドがチェックされます。この構成変数が
+@samp{minimal}
+に設定されている場合、mtimeとctimeの1秒未満の部分、ファイルの所有者のuidとgid、iノード番号(およびGitがそれを使用するようにコンパイルされている場合はデバイス番号も)はチェック対象から除外され、mtimeの2分の1の部分(および
+@samp{core.trustCtime} が設定されている場合はctime)とファイルサイズチェックのみがチェック対象として残ります。
 
-There are implementations of Git that do not leave usable values in some
-fields (e.g. JGit); by excluding these fields from the comparison, the
-@samp{minimal} mode may help interoperability when the same repository is used by
-these other systems at the same time.
+(JGitなど)一部のフィールドに使用可能な値を残さないGitの実装があります。これらのフィールドを比較から除外することにより、 @samp{minimal}
+モードは、同じリポジトリがこれらの他のシステムによって同時に使用される場合の相互運用性に役立つ可能性があります。
 
 @item  core.quotePath 
-Commands that output paths (e.g. @emph{ls-files}, @emph{diff}), will quote "unusual"
-characters in the pathname by enclosing the pathname in double-quotes and
-escaping those characters with backslashes in the same way C escapes control
-characters (e.g.  @samp{\t} for TAB, @samp{\n} for LF, @samp{\\} for backslash) or bytes
-with values larger than 0x80 (e.g. octal @samp{\302\265} for "micro" in UTF-8).
-If this variable is set to false, bytes higher than 0x80 are not considered
-"unusual" any more. Double-quotes, backslash and control characters are
-always escaped regardless of the setting of this variable.  A simple space
-character is not considered "unusual".  Many commands can output pathnames
-completely verbatim using the @samp{-z} option. The default value is true.
+パスを出力するコマンド(例: @emph{ls-files} 、
+@emph{diff})は、パス名を二重引用符で囲み(@samp{"..."})、Cが制御文字をエスケープするのと同じ方法でそれらの文字をバックスラッシュ(@samp{\})でエスケープすることにより、パス名の「異常な」文字をクォートします(例:
+TABの場合は @samp{\t} 、LFの場合は @samp{\n} 、バックスラッシュの場合は @samp{\\} )、または0x80より大きい値のバイト(たとえば、UTF-8の
+"micro" の場合は8進数
+@samp{\302\265})。この変数がfalseに設定されている場合、0x80を超えるバイトは「異常」とは見なされなくなります。この変数の設定に関係なく、二重引用符(@samp{"})、バックスラッシュ(@samp{\})、および制御文字は常にエスケープされます。単純なスペース文字は「異常」とは見なされません。多くのコマンドは、
+@samp{-z} オプションを使用してパス名を完全にそのままで出力できます。デフォルト値はtrueです。
 
 @item  core.eol 
-Sets the line ending type to use in the working directory for files that are
-marked as text (either by having the @samp{text} attribute set, or by having
-@samp{text=auto} and Git auto-detecting the contents as text).  Alternatives are
-@emph{lf}, @emph{crlf} and @emph{native}, which uses the platform’s native line ending.
-The default value is @samp{native}.  See gitattributes(5) for more
-information on end-of-line conversion. Note that this value is ignored if
-@samp{core.autocrlf} is set to @samp{true} or @samp{input}.
+作業ディレクトリ内で、( @samp{text} 属性を設定するか、@samp{text=auto}
+とGitがコンテンツをテキストとして自動検出することにより)テキストとしてマークされたファイルが使用する行末タイプを設定します。 代替手段は、 @samp{lf}
+と  @samp{crlf} と プラットフォームの生来の行末を使用する @samp{native} があります。デフォルト値は @samp{native}
+です。行末変換の詳細については、 gitattributes(5) を参照してください。注意: @samp{core.autocrlf} が
+@samp{true} または @samp{input} に設定されている場合、この値は無視されることに注意してください。
 
 @item  core.safecrlf 
-If true, makes Git check if converting @samp{CRLF} is reversible when end-of-line
-conversion is active.  Git will verify if a command modifies a file in the
-work tree either directly or indirectly.  For example, committing a file
-followed by checking out the same file should yield the original file in the
-work tree.  If this is not the case for the current setting of
-@samp{core.autocrlf}, Git will reject the file.  The variable can be set to
-"warn", in which case Git will only warn about an irreversible conversion
-but continue the operation.
+trueの場合、行末変換がアクティブなときに @samp{CRLF} の変換が可逆的かどうかをGitにチェックさせます。
+Gitは、コマンドが作業ツリー内のファイルを直接または間接的に変更するかどうかを確認します。たとえば、あるファイルをコミットしてから同じファイルをチェックアウトすると、作業ツリーに元のファイルが生成されます。この操作が
+@samp{core.autocrlf} の現在の設定に当てはまらない場合、Gitはそのファイルを拒否します。変数を @samp{warn}
+に設定でき、その場合、Gitは不可逆的な変換についてのみ警告はしますが、操作を続行します。
 
-CRLF conversion bears a slight chance of corrupting data.  When it is
-enabled, Git will convert CRLF to LF during commit and LF to CRLF during
-checkout.  A file that contains a mixture of LF and CRLF before the commit
-cannot be recreated by Git.  For text files this is the right thing to do:
-it corrects line endings such that we have only LF line endings in the
-repository.  But for binary files that are accidentally classified as text
-the conversion can corrupt data.
+CRLF変換には、データが破損する可能性がわずかにあります。有効にすると、Gitはコミット時にCRLFをLFに変換し、チェックアウト時にLFをCRLFに変換します。コミット前にLFとCRLFが混在しているファイルは、Gitでは復元できません。リポジトリにLF行末のみが含まれるように行末を修正するのは、テキストファイルの場合は正しい操作です。しかし、誤ってテキストとして分類されたバイナリファイルの場合、変換によってデータが破損する可能性があります。
 
-If you recognize such corruption early you can easily fix it by setting the
-conversion type explicitly in .gitattributes.  Right after committing you
-still have the original file in your work tree and this file is not yet
-corrupted.  You can explicitly tell Git that this file is binary and Git
-will handle the file appropriately.
+あなたがこのような破損を早期に認識した場合は、 .gitattributes
+で変換タイプを明示的に設定することで簡単に修正できます。コミットした直後は、作業ツリーに元のファイルが残っており、このファイルはまだ破損していません。
+このファイルはバイナリファイルなのだからと、Gitがファイルを適切に処理することをGitに明示的に伝えることができます。
 
-Unfortunately, the desired effect of cleaning up text files with mixed line
-endings and the undesired effect of corrupting binary files cannot be
-distinguished.  In both cases CRLFs are removed in an irreversible way.  For
-text files this is the right thing to do because CRLFs are line endings,
-while for binary files converting CRLFs corrupts data.
+残念ながら、行末が混在するテキストファイルをクリーンアップするという望ましい効果と、バイナリファイルを破損するという望ましくない効果を区別することはできません。どちらの場合も、CRLFは元に戻せない方法で削除されます。テキストファイルの場合、CRLFは行末であるため、これは正しいことですが、バイナリファイルの場合、CRLFを変換するとデータが破損します。
 
-Note, this safety check does not mean that a checkout will generate a file
-identical to the original file for a different setting of @samp{core.eol} and
-@samp{core.autocrlf}, but only for the current one.  For example, a text file
-with @samp{LF} would be accepted with @samp{core.eol=lf} and could later be checked
-out with @samp{core.eol=crlf}, in which case the resulting file would contain
-@samp{CRLF}, although the original file contained @samp{LF}.  However, in both work
-trees the line endings would be consistent, that is either all @samp{LF} or all
-@samp{CRLF}, but never mixed.  A file with mixed line endings would be reported
-by the @samp{core.safecrlf} mechanism.
+注意: この安全性チェックは、チェックアウトによって、 @samp{core.eol} と @samp{core.autocrlf}
+の異なる設定に対して元のファイルと同じファイルが生成されることを意味するのではなく、現在のファイルに対してのみ生成されることに注意してください。
+たとえば、 @samp{LF} を含むテキストファイルは @samp{core.eol=lf} で受け入れられ、後で ` core.eol=crlf`
+でチェックアウトできます。この場合、結果のファイルには @samp{CRLF} が含まれますが、 元のファイルには @samp{LF`が含まれていました。
+ただし、両方の作業ツリーで、行末は一貫しています。つまり、すべて `LF} または、 すべて @samp{CRLF}
+のいずれかですが、混合されることはありません。行末が混在するファイルは、 @samp{core.safecrlf} メカニズムによって報告されます。
 
 @item  core.autocrlf 
-Setting this variable to "true" is the same as setting the @samp{text} attribute
-to "auto" on all files and core.eol to "crlf".  Set to true if you want to
-have @samp{CRLF} line endings in your working directory and the repository has LF
-line endings.  This variable can be set to @emph{input}, in which case no output
-conversion is performed.
+この変数を「true」に設定することは、すべてのファイルで「text」属性を「auto」に設定し、core.eolを「crlf」に設定することと同じです。
+作業ディレクトリに @samp{CRLF} 行末があり、リポジトリにLF行末がある場合は、trueに設定します。
+この変数は「input」に設定できます。この場合、出力変換は実行されません。
 
 @item  core.checkRoundtripEncoding 
-A comma and/or whitespace separated list of encodings that Git performs
-UTF-8 round trip checks on if they are used in an @samp{working-tree-encoding}
-attribute (see gitattributes(5)).  The default value is @samp{SHIFT-JIS}.
+@samp{working-tree-encoding} 属性で使用された場合に Git が UTF-8
+のラウンドトリップチェックを行うエンコーディングの、カンマや空白で区切られたリスト(gitattributes(5)
+を参照)。デフォルト値は @samp{SHIFT-JIS} です。
 
 @item  core.symlinks 
-If false, symbolic links are checked out as small plain files that contain
-the link text. git-update-index(1) and git-add(1) will not
-change the recorded type to regular file. Useful on filesystems like FAT
-that do not support symbolic links.
+falseの場合、シンボリックリンクは、リンクテキストを含む小さなプレーンファイルとしてチェックアウトされます。
+git-update-index(1) と git-add(1)
+は、記録されたタイプを通常のファイルに変更しません。シンボリックリンクをサポートしないFATのようなファイルシステムで役立ちます。
 
-The default is true, except git-clone(1) or git-init(1) will
-probe and set core.symlinks false if appropriate when the repository is
-created.
+デフォルトは true ですが、git-clone(1) や git-init(1) はリポジトリの作成時に
+core.symlinks を調査して必要に応じて core.symlinks を false に設定します。
 
 @item  core.gitProxy 
 フェッチにGitプロトコルを使用する場合、リモートサーバーへの直接接続を確立する代わりに(「コマンドホストポート」として)実行する「プロキシコマンド」。変数値が「COMMAND
@@ -8472,66 +8408,52 @@ DOMAIN」形式の場合、コマンドは、指定されたドメイン文字�
 
 @samp{GIT_PROXY_COMMAND} 環境変数(特別な「for」処理なしで常に普遍的に適用されます)によってオーバーライドできます。
 
-The special string @samp{none} can be used as the proxy command to specify that
-no proxy be used for a given domain pattern.  This is useful for excluding
-servers inside a firewall from proxy use, while defaulting to a common proxy
-for external domains.
+特別な文字列 @samp{none}
+をプロキシコマンドとして使用して、特定のドメインパターンにプロキシを使用しないように指定できます。これは、ファイアウォール内のサーバをプロキシの使用から除外する一方で、外部ドメインには共通のプロキシをデフォルトで使用する場合に便利です。
 
 @item  core.sshCommand 
-If this variable is set, @samp{git fetch} and @samp{git push} will use the specified
-command instead of @samp{ssh} when they need to connect to a remote system. The
-command is in the same form as the @samp{GIT_SSH_COMMAND} environment variable
-and is overridden when the environment variable is set.
+この変数が設定されている場合、 @samp{git fetch} と @samp{git push} は、リモートシステムに接続する必要があるときに、 @samp{ssh}
+の代わりに指定したコマンドを使用します。このコマンドは @samp{GIT_SSH_COMMAND}
+環境変数と同じ形式であり、環境変数が設定されると上書きされます。
 
 @item  core.ignoreStat 
-If true, Git will avoid using lstat() calls to detect if files have changed
-by setting the "assume-unchanged" bit for those tracked files which it has
-updated identically in both the index and working tree.
+trueの場合、Gitは lstat()
+呼び出しを使用して、インデックスと作業ツリーの両方で同じように更新された追跡ファイルの「assume-unchanged」ビットを設定することにより、ファイルが変更されたかどうかを検出することを回避します。
 
-When files are modified outside of Git, the user will need to stage the
-modified files explicitly (e.g. see @emph{Examples} section in
-git-update-index(1)).  Git will not normally detect changes to those
-files.
+ファイルがGitの外部で変更される場合、ユーザーは変更されたファイルを明示的にステージングする必要があります(たとえば、
+git-update-index(1) の「Examples」セクションを参照)。
+Gitは通常、これらのファイルへの変更を検出しません。
 
-This is useful on systems where lstat() calls are very slow, such as
-CIFS/Microsoft Windows.
+これは、 CIFS/Microsoft Windows など、 lstat() 呼び出しが非常に遅いシステムで役立ちます。
 
-False by default.
+false がデフォルトです。
 
 @item  core.preferSymlinkRefs 
-Instead of the default "symref" format for HEAD and other symbolic reference
-files, use symbolic links.  This is sometimes needed to work with old
-scripts that expect HEAD to be a symbolic link.
+HEADおよびその他のシンボリック参照ファイルのデフォルトの「symref」形式の代わりに、シンボリックリンクを使用します。これは、HEADがシンボリックリンクであることを期待する古いスクリプトを操作するために必要になる場合があります。
 
 @item  core.alternateRefsCommand 
-When advertising tips of available history from an alternate, use the shell
-to execute the specified command instead of git-for-each-ref(1). The
-first argument is the absolute path of the alternate. Output must contain
-one hex object id per line (i.e., the same as produced by @samp{git for-each-ref
---format='%(objectname)'}).
+alternateから利用可能な履歴のヒントをアドバタイズする場合は、 git-for-each-ref(1)
+の代わりに、シェルを使用して指定されたコマンドを実行します。最初の引数は、alternateの絶対パスです。出力には、1行に1つの16進オブジェクトIDが含まれている必要があります(つまり、
+@samp{git for-each-ref --format='%(objectname)'} によって生成されたものと同じある必要があります)。
 
-Note that you cannot generally put @samp{git for-each-ref} directly into the
-config value, as it does not take a repository path as an argument (but you
-can wrap the command above in a shell script).
+注意: 通常、 あなたは @samp{git for-each-ref}
+をconfig値に直接入れることはできません。これは、リポジトリパスを引数として受け取らないためです(ただし、あなたは上記のコマンドをシェルスクリプトでラップすることはできます)。
 
 @item  core.alternateRefsPrefixes 
-When listing references from an alternate, list only references that begin
-with the given prefix. Prefixes match as if they were given as arguments to
-git-for-each-ref(1). To list multiple prefixes, separate them with
-whitespace. If @samp{core.alternateRefsCommand} is set, setting
-@samp{core.alternateRefsPrefixes} has no effect.
+alternateからの参照を一覧表示する場合は、指定のプレフィックスで始まる参照のみを一覧表示します。プレフィックスは
+git-for-each-ref(1)
+への引数として指定されたかのようにマッチングします。複数のプレフィックスを一覧表示するには、それらを空白で区切ります。
+@samp{core.alternateRefsCommand} が設定されている場合、 @samp{core.alternateRefsPrefixes}
+を設定しても効果ありません。
 
 @item  core.bare 
-If true this repository is assumed to be @emph{bare} and has no working directory
-associated with it.  If this is the case a number of commands that require a
-working directory will be disabled, such as git-add(1) or
-git-merge(1).
+trueの場合、このリポジトリは「ベア」(bare;ベアリポジトリ)であると見なされ、作業ディレクトリは関連付けられていません。この場合、
+git-add(1) や git-merge(1) など、作業ディレクトリを必要とする多くのコマンドが無効になります。
 
-This setting is automatically guessed by git-clone(1) or
-git-init(1) when the repository was created.  By default a
-repository that ends in "/.git" is assumed to be not bare (bare = false),
-while all other repositories are assumed to be bare (bare
-= true).
+この設定は、リポジトリの作成時に git-clone(1) または git-init(1)
+によって自動的に推測されます。 デフォルトでは、 @samp{/.git} で終わるリポジトリはベアではないと見なされ(bare =
+false)、他のすべてのリポジトリはベアであると見なされます(bare
+= true)。
 
 @item  core.worktree 
 作業ツリーのルートへのパスを設定します。 @samp{GIT_COMMON_DIR} 環境変数が設定されている場合、 core.worktree
@@ -8541,121 +8463,83 @@ while all other repositories are assumed to be bare (bare
 や GIT_DIR 環境変数の指定が無い場合は自動的に検出されます。@samp{--work-tree} と GIT_WORK_TREE と
 core.worktree のいずれも指定されていない場合、現在の作業ディレクトリが作業ツリーの最上位と見なされます。
 
-Note that this variable is honored even when set in a configuration file in
-a ".git" subdirectory of a directory and its value differs from the latter
-directory (e.g. "/path/to/.git/config" has core.worktree set to
-"/different/path"), which is most likely a misconfiguration.  Running Git
-commands in the "/path/to" directory will still use "/different/path" as the
-root of the work tree and can cause confusion unless you know what you are
-doing (e.g. you are creating a read-only snapshot of the same index to a
-location different from the repository’s usual working tree).
+注意: この変数は、ディレクトリの @samp{.git｀
+サブディレクトリ内の構成ファイルに設定されている場合でも適用され、その値は前者のディレクトリとは異なることに注意してください(たとえば、
+`/path/to/} ディレクトリの @samp{.git} サブディレクトリ内の構成ファイル @samp{/path/to/.git/config} 内の
+core.worktree が @samp{/different/path} に設定されていたとする)、これはおそらく設定ミスです。あなたが @samp{/path/to}
+ディレクトリでGitコマンドを実行すると、引き続き @samp{/different/path}
+が作業ツリーのルートとして使用され、あなたが何をしているのか分かっている(たとえば、リポジトリの通常の作業ツリーとは異なる場所に同じインデックスの読み取り専用スナップショットを作成している)のでない限り混乱を招く可能性があります。
 
 @item  core.logAllRefUpdates 
-Enable the reflog. Updates to a ref <ref> is logged to the file
-"@samp{$GIT_DIR/logs/<ref>}", by appending the new and old SHA-1, the date/time
-and the reason of the update, but only when the file exists.  If this
-configuration variable is set to @samp{true}, missing "@samp{$GIT_DIR/logs/<ref>}"
-file is automatically created for branch heads (i.e. under @samp{refs/heads/}),
-remote refs (i.e. under @samp{refs/remotes/}), note refs (i.e. under
-@samp{refs/notes/}), and the symbolic ref @samp{HEAD}.  If it is set to @samp{always}, then
-a missing reflog is automatically created for any ref under @samp{refs/}.
+reflogを有効にします。新旧のSHA-1の追加や、日付/時刻・理由の更新による、refである <ref> の更新は、ファイル
+@samp{$GIT_DIR/logs/<ref>} が存在する場合のみ、そのファイルにロギングされます。この構成変数が @samp{true}
+に設定されている場合、欠落している @samp{$GIT_DIR/logs/<ref>} ファイルがブランチヘッド(つまり、 @samp{refs/heads/}
+下)、リモートref(つまり、 refs/ 下)、note refs(つまり、 @samp{refs/notes/} 下)、およびシンボリックref @samp{HEAD}
+。 @samp{always`に設定されている場合、欠落しているreflogは、 `refs/} 下のすべてのrefに対して自動的に作成されます。
 
-This information can be used to determine what commit was the tip of a
-branch "2 days ago".
+この情報を使用して、「2日前」(2 days ago)にブランチの先端であったコミットを判別できます。
 
-This value is true by default in a repository that has a working directory
-associated with it, and false by default in a bare repository.
+この値は、作業ディレクトリが関連付けられているリポジトリではデフォルトでtrueになり、ベアリポジトリではデフォルトでfalseになります。
 
 @item  core.repositoryFormatVersion 
-Internal variable identifying the repository format and layout version.
+リポジトリの形式とレイアウトのバージョンを識別する内部変数。
 
 @item  core.sharedRepository 
-When @emph{group} (or @emph{true}), the repository is made shareable between several
-users in a group (making sure all the files and objects are
-group-writable). When @emph{all} (or @emph{world} or @emph{everybody}), the repository will
-be readable by all users, additionally to being group-shareable. When
-@emph{umask} (or @emph{false}), Git will use permissions reported by umask(2). When
-@emph{0xxx}, where @emph{0xxx} is an octal number, files in the repository will have
-this mode value. @emph{0xxx} will override user’s umask value (whereas the other
-options will only override requested parts of the user’s umask
-value). Examples: @emph{0660} will make the repo read/write-able for the owner
-and group, but inaccessible to others (equivalent to @emph{group} unless umask is
-e.g. @emph{0022}). @emph{0640} is a repository that is group-readable but not
-group-writable.  See git-init(1). False by default.
+@emph{group} (または @emph{true}
+)の場合、リポジトリはグループ内の複数のユーザー間で共有可能になります(すべてのファイルとオブジェクトがグループ書き込み可能であることを確認してください)。
+@emph{all} (または @emph{world} または
+@emph{everybody})の場合、リポジトリはグループ共有可能であることに加えて、すべてのユーザーが読み取り可能になります。 @emph{umask} (または
+@emph{false} )の場合、Gitは umask(2)
+によって報告された権限を使用します。「0xxx」(「0xxx」は8進数)の場合、リポジトリ内のファイルはこのモード値になります。「0xxx」はユーザーのumask値をオーバーライドします(他のオプションはユーザーのumask値の要求された部分のみをオーバーライドします)。例:「0660」は、所有者とグループがリポジトリを読み取り/書き込み可能にしますが、他のユーザーはアクセスできません(umaskが「0022」などでない限り、「group」と同等です)。
+「0640」は、グループで読み取り可能ですが、グループで書き込み可能ではないリポジトリです。 git-init(1)
+を参照してください。 デフォルトではFalseです。
 
 @item  core.warnAmbiguousRefs 
-If true, Git will warn you if the ref name you passed it is ambiguous and
-might match multiple refs in the repository. True by default.
+trueの場合、渡したref名があいまいでリポジトリ内の複数のrefと一致する可能性がある場合、Gitは警告を表示します。 デフォルトではtrue。
 
 @item  core.compression 
-An integer -1..9, indicating a default compression level.  -1 is the zlib
-default. 0 means no compression, and 1..9 are various speed/size tradeoffs,
-9 being slowest.  If set, this provides a default to other compression
-variables, such as @samp{core.looseCompression} and @samp{pack.compression}.
+デフォルトの圧縮レベルを示す整数 -1〜9。
+-1はzlibのデフォルトです。0は圧縮がないことを意味し、1〜9はさまざまな速度とサイズのトレードオフであり、9が最も低速です。設定されている場合、これは
+@samp{core.looseCompression} や @samp{pack.compression} などの他の圧縮変数のデフォルトを提供します。
 
 @item  core.looseCompression 
-An integer -1..9, indicating the compression level for objects that are not
-in a pack file. -1 is the zlib default. 0 means no compression, and 1..9 are
-various speed/size tradeoffs, 9 being slowest.  If not set, defaults to
-core.compression.  If that is not set, defaults to 1 (best speed).
+整数
+-1〜9は、パックファイルにないオブジェクトの圧縮レベルを示します。-1はzlibのデフォルトです。0は圧縮がないことを意味し、1〜9はさまざまな速度とサイズのトレードオフであり、9が最も低速です。設定されていない場合、デフォルトは
+core.compression です。 これが設定されていない場合、デフォルトは1(最高速度)になります。
 
 @item  core.packedGitWindowSize 
-Number of bytes of a pack file to map into memory in a single mapping
-operation.  Larger window sizes may allow your system to process a smaller
-number of large pack files more quickly.  Smaller window sizes will
-negatively affect performance due to increased calls to the operating
-system’s memory manager, but may improve performance when accessing a large
-number of large pack files.
+1回のマッピング操作でメモリにマップするパックファイルのバイト数。ウィンドウサイズを大きくすると、システムが少数の大きなパックファイルをより迅速に処理できるようになる場合があります。ウィンドウサイズを小さくすると、オペレーティングシステムのメモリマネージャへの呼び出しが増えるため、パフォーマンスに悪影響を及ぼしますが、多数の大きなパックファイルにアクセスする場合のパフォーマンスが向上する可能性があります。
 
-Default is 1 MiB if NO_MMAP was set at compile time, otherwise 32 MiB on 32
-bit platforms and 1 GiB on 64 bit platforms.  This should be reasonable for
-all users/operating systems.  You probably do not need to adjust this value.
+コンパイル時にNO_MMAPが設定されている場合、デフォルトは1Mバイトです。それ以外の場合、32ビットプラットフォームでは32Mバイト、64ビットプラットフォームでは1Gバイトです。これは、すべてのユーザー/オペレーティングシステムにとって妥当なはずです。おそらくあなたはこの値を調整する必要はありません。
 
-Common unit suffixes of @emph{k}, @emph{m}, or @emph{g} are supported.
+@emph{k} または @emph{m} または @emph{g} の一般的な単位接尾辞がサポートされています。
 
 @item  core.packedGitLimit 
-Maximum number of bytes to map simultaneously into memory from pack files.
-If Git needs to access more than this many bytes at once to complete an
-operation it will unmap existing regions to reclaim virtual address space
-within the process.
+パックファイルからメモリに同時にマップする最大バイト数。Gitが操作を完了するために一度にこれ以上のバイトにアクセスする必要がある場合、Gitは既存の領域のマップを解除して、プロセス内の仮想アドレス空間を再利用します。
 
-Default is 256 MiB on 32 bit platforms and 32 TiB (effectively unlimited) on
-64 bit platforms.  This should be reasonable for all users/operating
-systems, except on the largest projects.  You probably do not need to adjust
-this value.
+デフォルトは、32ビットプラットフォームでは256Mバイト、64ビットプラットフォームでは32Tバイト(事実上無制限)です。これは、超巨大プロジェクトを除いて、すべてのユーザー/オペレーティングシステムにとって妥当なはずです。あなたは、おそらくこの値を調整する必要はありません。
 
-Common unit suffixes of @emph{k}, @emph{m}, or @emph{g} are supported.
+@emph{k} または @emph{m} または @emph{g} の一般的な単位接尾辞がサポートされています。
 
 @item  core.deltaBaseCacheLimit 
-Maximum number of bytes per thread to reserve for caching base objects that
-may be referenced by multiple deltified objects.  By storing the entire
-decompressed base objects in a cache Git is able to avoid unpacking and
-decompressing frequently used base objects multiple times.
+複数の削除されたオブジェクトによって参照される可能性のあるベースオブジェクトをキャッシュするために予約するスレッドあたりの最大バイト数。解凍(decompress)されたベースオブジェクト全体をキャッシュに保存することで、Gitは頻繁に使用されるベースオブジェクトを何度もアンパックおよび解凍することを回避できます。
 
-Default is 96 MiB on all platforms.  This should be reasonable for all
-users/operating systems, except on the largest projects.  You probably do
-not need to adjust this value.
+デフォルトは、すべてのプラットフォームで96Mバイトです。これは、超巨大プロジェクトを除いて、すべてのユーザー/オペレーティングシステムにとって妥当なはずです。あなたは、おそらくこの値を調整する必要はありません。
 
-Common unit suffixes of @emph{k}, @emph{m}, or @emph{g} are supported.
+@emph{k} または @emph{m} または @emph{g} の一般的な単位接尾辞がサポートされています。
 
 @item  core.bigFileThreshold 
-Files larger than this size are stored deflated, without attempting delta
-compression.  Storing large files without delta compression avoids excessive
-memory usage, at the slight expense of increased disk usage. Additionally
-files larger than this size are always treated as binary.
+このサイズより大きいファイルは、デルタ圧縮を試行せずに、デフレートして保存されます。デルタ圧縮なしで大きなファイルを保存すると、ディスク使用量が増えるというわずかな犠牲を払って、過度のメモリ使用量を回避できます。加えて、このサイズより大きいファイルは常にバイナリとして扱われます。
 
-Default is 512 MiB on all platforms.  This should be reasonable for most
-projects as source code and other text files can still be delta compressed,
-but larger binary media files won’t be.
+デフォルトは、すべてのプラットフォームで512Mバイトです。ソースコードやその他のテキストファイルは依然としてデルタ圧縮できるため、これはほとんどのプロジェクトにとって合理的ですが、より大きなバイナリメディアファイルにとっては合理的ではありません。
 
-Common unit suffixes of @emph{k}, @emph{m}, or @emph{g} are supported.
+@emph{k} または @emph{m} または @emph{g} の一般的な単位接尾辞がサポートされています。
 
 @item  core.excludesFile 
-Specifies the pathname to the file that contains patterns to describe paths
-that are not meant to be tracked, in addition to @samp{.gitignore}
-(per-directory) and @samp{.git/info/exclude}.  Defaults to
-@samp{$XDG_CONFIG_HOME/git/ignore}.  If @samp{$XDG_CONFIG_HOME} is either not set or
-empty, @samp{$HOME/.config/git/ignore} is used instead. See gitignore(5).
+@samp{.gitignore} (ディレクトリごと)と @samp{.git/info/exclude}
+に加えて、追跡されることを意図されていないパスを記述するパターンを含むファイルへのパス名を指定します。 デフォルトは
+@samp{$XDG_CONFIG_HOME/git/ignore} です。 @samp{$XDG_CONFIG_HOME} が設定されていないか空の場合、代わりに
+@samp{$HOME/.config/git/ignore} が使用されます。 gitignore(5) を参照してください。
 
 @item  core.askPass 
 パスワードを対話的に要求する一部のコマンド(svnやhttpインターフェイスなど)は、この変数の値を介して指定された外部プログラムを使用するように指示できます。
@@ -8663,194 +8547,155 @@ empty, @samp{$HOME/.config/git/ignore} is used instead. See gitignore(5).
 環境変数の値にフォールバックするか、それが失敗した場合は、単純なパスワードプロンプトにフォールバックします。外部プログラムには、コマンドライン引数として適切なプロンプトが与えられ、その標準出力にパスワードを書き出す事になっています。
 
 @item  core.attributesFile 
-In addition to @samp{.gitattributes} (per-directory) and @samp{.git/info/attributes},
-Git looks into this file for attributes (see gitattributes(5)). Path
-expansions are made the same way as for @samp{core.excludesFile}. Its default
-value is @samp{$XDG_CONFIG_HOME/git/attributes}. If @samp{$XDG_CONFIG_HOME} is either
-not set or empty, @samp{$HOME/.config/git/attributes} is used instead.
+@samp{.gitattributes} (ディレクトリごと) と @samp{.git/info/attributes}
+に加えて、Gitはこのファイルで属性を調べます(gitattributes(5) を参照)。パスの拡張は、
+@samp{core.excludesFile} の場合と同じ方法で行われます。デフォルト値は @samp{$XDG_CONFIG_HOME/git/attributes}
+です。 @samp{$XDG_CONFIG_HOME} が設定されていないか空の場合、代わりに @samp{$HOME/.config/git/attributes}
+が使用されます。
 
 @item  core.hooksPath 
-By default Git will look for your hooks in the @samp{$GIT_DIR/hooks}
-directory. Set this to different path, e.g. @samp{/etc/git/hooks}, and Git will
-try to find your hooks in that directory, e.g. @samp{/etc/git/hooks/pre-receive}
-instead of in @samp{$GIT_DIR/hooks/pre-receive}.
+デフォルトでは、Gitは @samp{$GIT_DIR/hooks} ディレクトリでフックを探します。これを別のパスに設定します。例えば
+@samp{/etc/git/hooks} です。そしてGitはそのディレクトリであなたのフックを見つけようとします。例えば
+@samp{$GIT_DIR/hooks/pre-receive} の代わりに @samp{/etc/git/hooks/pre-receive} です。
 
-The path can be either absolute or relative. A relative path is taken as
-relative to the directory where the hooks are run (see the "DESCRIPTION"
-section of githooks(5)).
+パスは絶対パスでも相対パスでもかまいません。相対パスは、フックが実行されているディレクトリを基準にしたものと見なされます(githooks(5)
+の「DESCRIPTION」セクションを参照)。
 
-This configuration variable is useful in cases where you’d like to centrally
-configure your Git hooks instead of configuring them on a per-repository
-basis, or as a more flexible and centralized alternative to having an
-@samp{init.templateDir} where you’ve changed default hooks.
+この設定変数は、あなたのGitフックをリポジトリごとに設定するのではなく一元的に設定したい場合や、デフォルトのフックを変更した
+@samp{init.templateDir} に代わるより柔軟で一元的な設定として有用です。
 
 @item  core.editor 
-Commands such as @samp{commit} and @samp{tag} that let you edit messages by launching
-an editor use the value of this variable when it is set, and the environment
-variable @samp{GIT_EDITOR} is not set.  See git-var(1).
+エディタを起動してメッセージを編集できる @samp{commit} や @samp{tag}
+などのコマンドは、この変数が設定されているときにこの変数の値を使用し、環境変数 @samp{GIT_EDITOR} は設定されていません。
+git-var(1) を参照してください。
 
 @item  core.commentChar 
-Commands such as @samp{commit} and @samp{tag} that let you edit messages consider a
-line that begins with this character commented, and removes them after the
-editor returns (default @emph{#}).
+メッセージを編集できる @samp{commit} や @samp{tag}
+などのコマンドは、この文字で始まるコメント行を考慮し、エディタから戻った後にそれらを削除します(デフォルトは @samp{#})。
 
-If set to "auto", @samp{git-commit} would select a character that is not the
-beginning character of any line in existing commit messages.
+@samp{auto} に設定すると、 @samp{git-commit} は、既存のコミットメッセージのどの行の先頭文字でもない文字を選択します。
 
 @item  core.filesRefLockTimeout 
-The length of time, in milliseconds, to retry when trying to lock an
-individual reference. Value 0 means not to retry at all; -1 means to try
-indefinitely. Default is 100 (i.e., retry for 100ms).
+個々の参照をロックしようとしたときに再試行する時間の長さ(ミリ秒単位)。値0は、まったく再試行しないことを意味します。 -1
+は無期限に試すことを意味します。 デフォルトは100です(つまり、100ミリ秒再試行します)。
 
 @item  core.packedRefsTimeout 
-The length of time, in milliseconds, to retry when trying to lock the
-@samp{packed-refs} file. Value 0 means not to retry at all; -1 means to try
-indefinitely. Default is 1000 (i.e., retry for 1 second).
+@samp{packed-refs}
+ファイルをロックしようとしたときに再試行する時間の長さ(ミリ秒単位)。値0は、まったく再試行しないことを意味します。-1は無期限に試すことを意味します。デフォルトは1000です(つまり、1秒間再試行します)。
 
 @item  core.pager 
-Text viewer for use by Git commands (e.g., @emph{less}).  The value is meant to
-be interpreted by the shell.  The order of preference is the @samp{$GIT_PAGER}
-environment variable, then @samp{core.pager} configuration, then @samp{$PAGER}, and
-then the default chosen at compile time (usually @emph{less}).
+Gitコマンドで使用するテキストビューア(「less」など)。値はシェルによって解釈されることを意図しています。 優先順位は、 @samp{$GIT_PAGER}
+環境変数、 @samp{core.pager} 構成、 @samp{$PAGER} 、そしてコンパイル時に選択されたデフォルト(通常は @emph{less})です。
 
-When the @samp{LESS} environment variable is unset, Git sets it to @samp{FRX} (if
-@samp{LESS} environment variable is set, Git does not change it at all).  If you
-want to selectively override Git’s default setting for @samp{LESS}, you can set
-@samp{core.pager} to e.g. @samp{less -S}.  This will be passed to the shell by Git,
-which will translate the final command to @samp{LESS=FRX less -S}. The
-environment does not set the @samp{S} option but the command line does,
-instructing less to truncate long lines. Similarly, setting @samp{core.pager} to
-@samp{less -+F} will deactivate the @samp{F} option specified by the environment from
-the command-line, deactivating the "quit if one screen" behavior of @samp{less}.
-One can specifically activate some flags for particular commands: for
-example, setting @samp{pager.blame} to @samp{less -S} enables line truncation only for
-@samp{git blame}.
+@samp{LESS} 環境変数が設定されていない(unset)場合、Gitはそれを @samp{FRX} に設定(set)します(@samp{LESS}
+環境変数が設定されている場合は、Gitはそれをまったく変更しません)。Gitのデフォルト設定である @samp{LESS} を選択的にオーバーライドする場合は、
+@samp{core.pager} を、例えば @samp{less -S} と設定できます。これはGitによってシェルに渡され、Gitは最後のコマンドを
+@samp{LESS=FRX less -S} に変換します。環境変数では @samp{S}
+オプションを設定しませんが、コマンドラインでは設定し、長い行を切り捨てるように指示します。同様に、 @samp{core.pager} を @samp{less -+F}
+に設定すると、環境変数によって指定された @samp{F`オプションがコマンドラインによって非アクティブになり、 `less}
+の「1画面の場合は終了」動作が非アクティブになります。特定のGitコマンドに対していくつかのフラグを特に指定してアクティブにすることができます。たとえば、
+@samp{pager.blame} を @samp{less -S} に設定すると、 @samp{git blame} でのみページャーで行の切り捨てが有効になります。
 
-Likewise, when the @samp{LV} environment variable is unset, Git sets it to @samp{-c}.
-You can override this setting by exporting @samp{LV} with another value or
-setting @samp{core.pager} to @samp{lv +c}.
+同様に、 @samp{LV} 環境変数が設定されていない場合、Gitはそれを @samp{-c} に設定します。この設定を上書きするには、 @samp{LV}
+を別の値でエクスポートするか、 @samp{core.pager} を @samp{lv +c} に設定します。
 
 @item  core.whitespace 
-A comma separated list of common whitespace problems to notice.  @emph{git diff}
-will use @samp{color.diff.whitespace} to highlight them, and @emph{git apply
---whitespace=error} will consider them as errors.  You can prefix @samp{-} to
-disable any of them (e.g. @samp{-trailing-space}):
+注意すべき一般的な空白(whitespace)の問題のコンマ(@samp{,})区切りのリスト。 @emph{gitd iff} は
+@samp{color.diff.whitespace} を使用してそれらを強調表示し、 @samp{git apply --whitespace = error}
+はそれらをエラーと見なします。 接頭辞 @samp{-} を付けて、それらのいずれかを無効にすることができます(例: @samp{-trailing-space}):
 
 @itemize 
 
 @item
-@samp{blank-at-eol} treats trailing whitespaces at the end of the line as an
-error (enabled by default).
+@samp{blank-at-eol} は、行末の末尾の空白をエラーとして扱います(デフォルトで有効になっています)。
 
 @item
-@samp{space-before-tab} treats a space character that appears immediately before
-a tab character in the initial indent part of the line as an error (enabled
-by default).
+@samp{space-before-tab}
+は、行の最初のインデント部分のタブ文字の直前に表示されるスペース文字をエラーとして扱います(デフォルトで有効になっています)。
 
 @item
-@samp{indent-with-non-tab} treats a line that is indented with space characters
-instead of the equivalent tabs as an error (not enabled by default).
+@samp{indent-with-non-tab}
+は、同等のタブではなくスペース文字でインデントされた行をエラーとして扱います(デフォルトでは有効になっていません)。
 
 @item
-@samp{tab-in-indent} treats a tab character in the initial indent part of the
-line as an error (not enabled by default).
+@samp{tab-in-indent} は、行の最初のインデント部分にあるタブ文字をエラーとして扱います(デフォルトでは有効になっていません)。
 
 @item
-@samp{blank-at-eof} treats blank lines added at the end of file as an error
-(enabled by default).
+@samp{blank-at-eof} は、ファイルの最後に追加された空白行をエラーとして扱います(デフォルトで有効になっています)。
 
 @item
-@samp{trailing-space} is a short-hand to cover both @samp{blank-at-eol} and
-@samp{blank-at-eof}.
+@samp{trailing-space} は、` blank-at-eol` と @samp{blank-at-eof} の両方をカバーする省略形です。
 
 @item
-@samp{cr-at-eol} treats a carriage-return at the end of line as part of the line
-terminator, i.e. with it, @samp{trailing-space} does not trigger if the character
-before such a carriage-return is not a whitespace (not enabled by default).
+@samp{cr-at-eol} は、行末のキャリッジリターンをラインターミネータの一部として扱います。つまり、そのようなキャリッジリターンの前の文字が空白(a
+whitespace)でない場合、 @samp{trailing-space} はトリガーされません(デフォルトでは有効になっていません)。
 
 @item
-@samp{tabwidth=<n>} tells how many character positions a tab occupies; this is
-relevant for @samp{indent-with-non-tab} and when Git fixes @samp{tab-in-indent}
-errors. The default tab width is 8. Allowed values are 1 to 63.
+@samp{tabwidth=<n>} は、タブが占める文字数を示します。 これは、 @samp{indent-with-non-tab} と、 Gitが
+@samp{tab-in-indent} エラーを修正する場合に関連します。デフォルトのタブ幅は8です。許可される値は1〜63です。
 @end itemize
 
 @item  core.fsyncObjectFiles 
-This boolean will enable @emph{fsync()} when writing object files.
+このブール値は、オブジェクトファイルを書き込むときに @emph{fsync()} を有効にします。
 
-This is a total waste of time and effort on a filesystem that orders data
-writes properly, but can be useful for filesystems that do not use
-journalling (traditional UNIX filesystems) or that only journal metadata and
-not file contents (OS X’s HFS+, or Linux ext3 with "data=writeback").
+これは、データの書き込みを適切に順序付けるファイルシステムでは時間と労力の無駄ですが、ジャーナル処理を使用しないファイルシステム(伝統的なUNIXファイルシステム)や、ファイルの内容ではなくメタデータのみをジャーナル処理するファイルシステム(OS
+XのHFS+や、@samp{data=writeback} な Linux ext3)で役立ちます。
 
 @item  core.preloadIndex 
-Enable parallel index preload for operations like @emph{git diff}
+@emph{git diff} などの操作のために並列インデックスプリロードを有効にする
 
-This can speed up operations like @emph{git diff} and @emph{git status} especially on
-filesystems like NFS that have weak caching semantics and thus relatively
-high IO latencies.  When enabled, Git will do the index comparison to the
-filesystem data in parallel, allowing overlapping IO’s.  Defaults to true.
+これにより、特にキャッシュセマンティクスが弱く、IOレイテンシが比較的高いNFSなどのファイルシステムで、「git diff」や「git
+status」などの操作を高速化できます。有効にすると、Gitはファイルシステムデータとのインデックス比較を並行して実行し、重複する入出力を許可します。デフォルトはtrueです。
 
 @item  core.unsetenvvars 
-Windows-only: comma-separated list of environment variables' names that need
-to be unset before spawning any other process.  Defaults to @samp{PERL5LIB} to
-account for the fact that Git for Windows insists on using its own Perl
-interpreter.
+Windowsのみ: 他のプロセスを生成する前に設定を解除する必要がある環境変数の名前のコンマ(@samp{,})区切りのリスト。Git for
+Windowsが独自のPerlインタープリターの使用を主張しているという事実を説明するために、デフォルトは @samp{PERL5LIB} です。
 
 @item  core.restrictinheritedhandles 
-Windows-only: override whether spawned processes inherit only standard file
-handles (@samp{stdin}, @samp{stdout} and @samp{stderr}) or all handles. Can be @samp{auto},
-@samp{true} or @samp{false}. Defaults to @samp{auto}, which means @samp{true} on Windows 7 and
-later, and @samp{false} on older Windows versions.
+Windowsのみ: 生成されたプロセスが標準のファイルハンドル( @samp{stdin} と @samp{stdout} と
+@samp{stderr})のみを継承するか、すべてのハンドルを継承するかをオーバーライドします。 @samp{auto} または @samp{true} または @samp{false}
+にすることができます。デフォルトは @samp{auto} で、これはWindows7以降では @samp{true} を意味し、古いバージョンのWindowsでは
+@samp{false} を意味します。
 
 @item  core.createObject 
-You can set this to @emph{link}, in which case a hardlink followed by a delete of
-the source are used to make sure that object creation will not overwrite
-existing objects.
+これを @emph{link}
+に設定できます。この場合、ハードリンク後のソース削除を、オブジェクトの作成が既存のオブジェクトが上書しないことをチェックするために使用します。
 
-On some file system/operating system combinations, this is unreliable.  Set
-this config setting to @emph{rename} there; However, This will remove the check
-that makes sure that existing object files will not get overwritten.
+一部のファイルシステム/オペレーティングシステムの組み合わせでは、これは信頼できませんので、この構成設定を @emph{rename}
+に設定します。ただし、これにより、既存のオブジェクトファイルが上書きされないようにするチェックが削除されます。
 
 @item  core.notesRef 
-When showing commit messages, also show notes which are stored in the given
-ref.  The ref must be fully qualified.  If the given ref does not exist, it
-is not an error but means that no notes should be printed.
+コミットメッセージを表示するときは、指定されたrefに保存されている note
+も表示します。refは完全に修飾されている必要があります。指定されたrefが存在しない場合、それはエラーではありませんが、noteを印刷してはならないことを意味します。
 
-This setting defaults to "refs/notes/commits", and it can be overridden by
-the @samp{GIT_NOTES_REF} environment variable.  See git-notes(1).
+この設定のデフォルトは「refs/notes/commits」であり、 @samp{GIT_NOTES_REF} 環境変数でオーバーライドできます。
+git-notes(1) を参照してください。
 
 @item  core.commitGraph 
-If true, then git will read the commit-graph file (if it exists)  to parse
-the graph structure of commits. Defaults to true. See
-git-commit-graph(1) for more information.
+trueの場合、gitはcommit-graphファイル(存在する場合)を読み取り、コミットのグラフ構造をパースします。デフォルトはtrueです。詳細については、
+git-commit-graph(1) を参照してください。
 
 @item  core.useReplaceRefs 
-If set to @samp{false}, behave as if the @samp{--no-replace-objects} option was given
-on the command line. See git(1) and git-replace(1) for more
-information.
+@samp{false} に設定すると、コマンドラインで @samp{--no-replace-objects}
+オプションが指定されたかのように振る舞います。詳細については git(1) と git-replace(1)
+を参照してください。
 
 @item  core.multiPackIndex 
-Use the multi-pack-index file to track multiple packfiles using a single
-index. See git-multi-pack-index(1) for more information. Defaults to
-true.
+multi-pack-index ファイルを使用して、単一のインデックスを使用して複数のパックファイルを追跡します。詳細については
+git-multi-pack-index(1) を参照してください。デフォルトはtrueです。
 
 @item  core.sparseCheckout 
-Enable "sparse checkout" feature. See git-sparse-checkout(1) for
-more information.
+「スパースチェックアウト」(sparse checkout)機能を有効にします。 詳細については、
+git-sparse-checkout(1) を参照してください。
 
 @item  core.sparseCheckoutCone 
-Enables the "cone mode" of the sparse checkout feature. When the
-sparse-checkout file contains a limited set of patterns, then this mode
-provides significant performance advantages. See
-git-sparse-checkout(1) for more information.
+スパースチェックアウト機能の「コーンモード」(cone
+mode)を有効にします。スパースチェックアウトファイルに含まれるパターンのセットが限られている場合、このモードはパフォーマンスに大きな利点をもたらします。詳細については
+git-sparse-checkout(1) を参照してください。
 
 @item  core.abbrev 
-Set the length object names are abbreviated to.  If unspecified or set to
-"auto", an appropriate value is computed based on the approximate number of
-packed objects in your repository, which hopefully is enough for abbreviated
-object names to stay unique for some time.  If set to "no", no abbreviation
-is made and the object names are shown in their full length.  The minimum
-length is 4.
+オブジェクト名の省略形の長さを設定します。指定されていないか「auto」に設定されている場合、リポジトリ内のパックされたオブジェクトのおおよその数に基づいて適切な値が計算されます。それは、省略されたオブジェクト名がしばらくの間(some
+time)一意であるのに十分な長さです。「no」に設定すると、省略形は作成されず、オブジェクト名は完全な長さで表示されます。 最小の長さは4です。
 
 @item  add.ignoreErrors 
 @itemx  add.ignore-errors (deprecated) 
@@ -11023,10 +10868,10 @@ example), since the administrator could configure "allow", then after a
 delay, configure "advertise".
 
 @item  mailinfo.scissors 
-If true, makes git-mailinfo(1) (and therefore git-am(1)) act
-by default as if the --scissors option was provided on the
-command-line. When active, this features removes everything from the message
-body before a scissors line (i.e. consisting mainly of ">8", "8<" and "-").
+trueの場合、 git-mailinfo(1) (それゆえ git-am(1) も)は、コマンドラインで
+@samp{--scissors}
+オプションが指定されているかのようにデフォルトで動作します。この機能がアクティブな場合、メッセージ本文から切り取り線(つまり、主に ">8" や
+"8<" や "-" で構成される)行とそれより前のすべてを削除します。
 
 @item  mailmap.file 
 拡張メールマップファイルの場所。リポジトリのルートにあるデフォルトのメールマップが最初にロードされ、次にこの変数が指すメールマップファイルがロードされます。メールマップファイルの場所は、リポジトリサブディレクトリ内、またはリポジトリの外部のどこかにあります。
@@ -24113,7 +23958,7 @@ Part of the git(1) suite
 @node git-for-each-ref,,,Top
 @chapheading Name
 
-git-for-each-ref — Output information on each ref
+git-for-each-ref — 各refに関する情報を出力します
 
 @noindent
 
@@ -24132,11 +23977,9 @@ git for-each-ref [--count=<count>] [--shell|--perl|--python|--tcl]
 
 @chapheading DESCRIPTION
 
-Iterate over all refs that match @samp{<pattern>} and show them according to the
-given @samp{<format>}, after sorting them according to the given set of @samp{<key>}.
-If @samp{<count>} is given, stop after showing that many refs.  The interpolated
-values in @samp{<format>} can optionally be quoted as string literals in the
-specified host language allowing their direct evaluation in that language.
+@samp{<pattern>} に一致するすべてのrefを繰り返し、指定された @samp{<key>} の組に従って並べ替えた後、指定の @samp{<format>}
+に従って表示します。 @samp{<count>} が指定されている場合は、その数のrefを表示した後で停止します。 @samp{<format>}
+のプレースホルダで差し込みされる値は、オプションで、指定のホストプログラム言語の文字列リテラルとなるようクォートでき、そのホストプログラム言語で直接評価できます。
 
 @noindent
 
@@ -24145,265 +23988,223 @@ specified host language allowing their direct evaluation in that language.
 @table @asis
 
 @item  <pattern>… 
-If one or more patterns are given, only refs are shown that match against at
-least one pattern, either using fnmatch(3) or literally, in the latter case
-matching completely or from the beginning up to a slash.
+1つ以上のパターンが指定されている場合、少なくとも1つのパターンに一致する参照のみが表示されます。fnmatch(3)
+を使用するか、文字通り(lietrally)に書くかです。文字通りに書いた場合場合、完全に一致するか、最初からスラッシュ(@samp{/})まで一致するかです。
 
 @item  @samp{--count=<count>} 
-By default the command shows all refs that match @samp{<pattern>}.  This option
-makes it stop after showing that many refs.
+デフォルトでは、コマンドは @samp{<pattern>} に一致するすべてのrefを表示します。このオプションは、指定の数のrefを表示した後に停止します。
 
 @item  @samp{--sort=<key>} 
-A field name to sort on.  Prefix @samp{-} to sort in descending order of the
-value.  When unspecified, @samp{refname} is used.  You may use the --sort=<key>
-option multiple times, in which case the last key becomes the primary key.
+並べ替えるフィールド名。 プレフィックス @samp{-`を使用して、値の降順で並べ替えます。 並べ替えるフィールド名を指定しない場合 `refname}
+が使用されます。 @samp{--sort=<key>} オプションは複数回使用できます。その場合、最後のキーが主キー(primary key)になります。
 
 @item  @samp{--format=<format>} 
-A string that interpolates @samp{%(fieldname)} from a ref being shown and the
-object it points at.  If @samp{fieldname} is prefixed with an asterisk (@samp{*}) and
-the ref points at a tag object, use the value for the field in the object
-which the tag object refers to (instead of the field in the tag object).
-When unspecified, @samp{<format>} defaults to @samp{%(objectname) SPC %(objecttype)
-TAB %(refname)}.  It also interpolates @samp{%%} to @samp{%}, and @samp{%xx} where @samp{xx} are
-hex digits interpolates to character with hex code @samp{xx}; for example @samp{%00}
-interpolates to @samp{\0} (NUL), @samp{%09} to @samp{\t} (TAB) and @samp{%0a} to @samp{\n} (LF).
+表示されているrefとそれが指すオブジェクトを @samp{%(fieldname)} によってを差し込みする書式文字列。 @samp{fieldname}
+の前にアスタリスク(@samp{*})が付いていて、refがタグオブジェクトを指している場合は、(タグオブジェクトのフィールドではなく)タグオブジェクトが参照するオブジェクトのフィールドの値を使用します。このオプションを指定しない場合、
+@samp{<format>} はデフォルトで @samp{%(objectname) SPC %(objecttype) TAB %(refname)} です。また
+@samp{%%} は @samp{%} を差し込み、 @samp{%xx} (@samp{xx} は16進数)は16進コード @samp{xx} の文字を差し込みます。 たとえば、@samp{%00} は
+@samp{\0} (NUL) を、 @samp{%09} は @samp{\t} (TAB) を、 @samp{%0a}  は @samp{\n} (LF) を、それぞれ差し込みます。
 
 @item  @samp{--color[=<when>]} 
-Respect any colors specified in the @samp{--format} option. The @samp{<when>} field
-must be one of @samp{always}, @samp{never}, or @samp{auto} (if @samp{<when>} is absent, behave
-as if @samp{always} was given).
+@samp{--format} オプションで指定された色を尊重します。 @samp{<when>} フィールドは @samp{always} または @samp{never} または
+@samp{auto} のいずれかでなければなりません(@samp{<when>} がない場合は、 @samp{always} が指定されたかのように動作します)。
 
 @item  @samp{--shell} 
 @itemx  @samp{--perl} 
 @itemx  @samp{--python} 
 @itemx  @samp{--tcl} 
-If given, strings that substitute @samp{%(fieldname)} placeholders are quoted as
-string literals suitable for the specified host language.  This is meant to
-produce a scriptlet that can directly be `eval`ed.
+指定した場合、  @samp{%(fieldname)}
+プレースホルダーを置き換える文字列は、指定のホストプログラム言語に適した文字列リテラルとしてクォートします。これは、直接「評価」(eval)できるスクリプトレットを作成することを目的としています。
 
 @item  @samp{--points-at=<object>} 
-Only list refs which points at the given object.
+指定のオブジェクトを指すrefのみをリストします。
 
 @item  @samp{--merged[=<object>]} 
-Only list refs whose tips are reachable from the specified commit (HEAD if
-not specified).
+指定のコミット(指定されていない場合はHEAD)から先端に到達できるrefのみをリストします。
 
 @item  @samp{--no-merged[=<object>]} 
-Only list refs whose tips are not reachable from the specified commit (HEAD
-if not specified).
+指定のコミット(指定されていない場合はHEAD)から先端に到達できないrefのみをリストします。
 
 @item  @samp{--contains[=<object>]} 
-Only list refs which contain the specified commit (HEAD if not specified).
+指定のコミット(指定されていない場合はHEAD)を含むrefのみをリストします。
 
 @item  @samp{--no-contains[=<object>]} 
-Only list refs which don’t contain the specified commit (HEAD if not
-specified).
+指定のコミット(指定されていない場合はHEAD)を含まないrefのみをリストします。
 
 @item  @samp{--ignore-case} 
-Sorting and filtering refs are case insensitive.
+refの並べ替え(sort)とフィルタリングでは英大文字小文字を区別しません。
 @end table
 
 @noindent
 
 @chapheading FIELD NAMES
 
-Various values from structured fields in referenced objects can be used to
-interpolate into the resulting output, or as sort keys.
+参照オブジェクトの構造化フィールドのさまざまな値を使用して、結果の出力に差し込みしたり、ソートキーとして使用したりできます。
 
-For all objects, the following names can be used:
+すべてのオブジェクトで、以下の名前を使用できます:
 
 @table @asis
 
 @item  refname 
-The name of the ref (the part after $GIT_DIR/).  For a non-ambiguous short
-name of the ref append @samp{:short}.  The option core.warnAmbiguousRefs is used
-to select the strict abbreviation mode. If @samp{lstrip=<N>} (@samp{rstrip=<N>}) is
-appended, strips @samp{<N>} slash-separated path components from the front (back)
-of the refname (e.g. @samp{%(refname:lstrip=2)} turns @samp{refs/tags/foo} into @samp{foo}
-and @samp{%(refname:rstrip=2)} turns @samp{refs/tags/foo} into @samp{refs}).  If @samp{<N>} is a
-negative number, strip as many path components as necessary from the
-specified end to leave @samp{-<N>} path components (e.g. @samp{%(refname:lstrip=-2)}
-turns @samp{refs/tags/foo} into @samp{tags/foo} and @samp{%(refname:rstrip=-1)} turns
-@samp{refs/tags/foo} into @samp{refs}). When the ref does not have enough components,
-the result becomes an empty string if stripping with positive <N>, or it
-becomes the full refname if stripping with negative <N>.  Neither is an
-error.
+refの名前( $GIT_DIR/ の後の部分)。refのあいまいでない短い名前の場合は、 @samp{:short} を追加します。オプション
+core.warnAmbiguousRefs は、厳密な省略形モードを選択するために使用されます。 @samp{lstrip=<N>}
+(@samp{rstrip=<N>}) が追加された場合、refnameの前(後ろ)からスラッシュ(@samp{/})で区切られたパスの部分を`<N>` 個削除します(例:
+@samp{%(refname:lstrip=2)} は @samp{refs/tags/foo} を @samp{foo} に変換し、 @samp{%(refname:rstrip=2)}
+は @samp{refs/tags/foo} を @samp{refs} に変換します。 @samp{<N>}
+が負の数の場合、指定された端から必要な数のパスコンポーネントを削除して、 @samp{-<N>} パス部分を残します(たとえば、
+@samp{%(refname:lstrip=-2)} は @samp{refs/tags/foo} を @samp{tags/foo} に変換し、
+@samp{%(refname:rstrip=-1)} は @samp{refs/tags/foo} を @samp{refs}
+に変換します)。refに十分な数のパス部品がない場合、正の <N>
+でストリッピングすると結果は空の文字列になり、負の<N>でストリッピングすると完全なrefnameになります。どちらもエラーではありません。
 
-@samp{strip} can be used as a synonym to @samp{lstrip}.
+@samp{strip} は @samp{lstrip} の同義語として使用できます。
 
 @item  objecttype 
-The type of the object (@samp{blob}, @samp{tree}, @samp{commit}, @samp{tag}).
+オブジェクトのタイプ( @samp{blob} 、@samp{tree} 、 @samp{commit} 、@samp{tag} )。
 
 @item  objectsize 
-The size of the object (the same as @emph{git cat-file -s} reports).  Append
-@samp{:disk} to get the size, in bytes, that the object takes up on disk. See the
-note about on-disk sizes in the @samp{CAVEATS} section below.
+オブジェクトのサイズ(@samp{git cat-file -s} がレポートするものと同じです)。 @samp{:disk}
+を追加して、オブジェクトがディスク上で占めるサイズをバイト単位で取得できます。以下の「CAVEATS」(注意事項)セクションのディスク上のサイズに関する注記を参照してください。
 
 @item  objectname 
-The object name (aka SHA-1).  For a non-ambiguous abbreviation of the object
-name append @samp{:short}.  For an abbreviation of the object name with desired
-length append @samp{:short=<length>}, where the minimum length is
-MINIMUM_ABBREV. The length may be exceeded to ensure unique object names.
+オブジェクト名(別名SHA-1)。オブジェクト名のあいまいでない省略形については、 @samp{:short}
+を追加してください。目的の長さのオブジェクト名の省略形については、  @samp{:short=<length>} を追加します。ここで、最小の長さは
+MINIMUM_ABBREV です。一意のオブジェクト名を確保するために、指定の長さを超える場合があります。
 
 @item  deltabase 
-This expands to the object name of the delta base for the given object, if
-it is stored as a delta.  Otherwise it expands to the null object name (all
-zeroes).
+デルタとして保存されている場合、これは指定されたオブジェクトのデルタベースのオブジェクト名に展開されます。それ以外の場合は、ヌルオブジェクト名(すべてゼロ)に展開されます。
 
 @item  upstream 
-The name of a local ref which can be considered “upstream” from the
-displayed ref. Respects @samp{:short}, @samp{:lstrip} and @samp{:rstrip} in the same way as
-@samp{refname} above.  Additionally respects @samp{:track} to show "[ahead N, behind
-M]" and @samp{:trackshort} to show the terse version: ">" (ahead), "<" (behind),
-"<>" (ahead and behind), or "=" (in sync). @samp{:track} also prints "[gone]"
-whenever unknown upstream ref is encountered. Append @samp{:track,nobracket} to
-show tracking information without brackets (i.e "ahead N, behind M").
+表示されたrefから「上流」(upstream)と見なすことができるローカル参照の名前。 上記の @samp{refname} と同じように、 @samp{:short}
+や @samp{:lstrip} や @samp{:rstrip} を尊重します。さらに、 @samp{:track} は @samp{[ahead N, behind M]} を表示し、
+@samp{:trackshort} は @samp{>} (ahead) または @samp{<} (behind) または "<>" (ahead and behind) または
+"=" (in sync) という簡潔なバージョンを表示します。 @samp{:track} は不明なアップストリーム参照が検出されるたびに @samp{[gone]}
+も出力します。 @samp{:track,nobracket} を追加すると角かっこ(@samp{[} と @samp{]} )無しで追跡情報を表示します（つまり、 @samp{ahead
+N, behind M} )。
 
-For any remote-tracking branch @samp{%(upstream)}, @samp{%(upstream:remotename)} and
-@samp{%(upstream:remoteref)} refer to the name of the remote and the name of the
-tracked remote ref, respectively. In other words, the remote-tracking branch
-can be updated explicitly and individually by using the refspec
-@samp{%(upstream:remoteref):%(upstream)} to fetch from @samp{%(upstream:remotename)}.
+リモート追跡ブランチの @samp{%(upstream)} と @samp{%(upstream:remotename)} と
+@samp{%(upstream:remoteref)`は、それぞれリモートの名前と追跡されたリモートrefの名前を参照します。つまり、 refspec
+`%(upstream:remoteref):%(upstream)} を使用して @samp{%(upstream:remotename)}
+からフェッチすることにより、リモートト追跡ブランチを明示的かつ個別に更新できます。
 
-Has no effect if the ref does not have tracking information associated with
-it.  All the options apart from @samp{nobracket} are mutually exclusive, but if
-used together the last option is selected.
+refに追跡情報が関連付けられていない場合、効果はありません。 @samp{nobracket}
+以外のすべてのオプションは相互に排他的ですが、一緒に使用する場合は最後のオプションが選択されます。
 
 @item  push 
-The name of a local ref which represents the @samp{@@@{push@}} location for the
-displayed ref. Respects @samp{:short}, @samp{:lstrip}, @samp{:rstrip}, @samp{:track},
-@samp{:trackshort}, @samp{:remotename}, and @samp{:remoteref} options as @samp{upstream}
-does. Produces an empty string if no @samp{@@@{push@}} ref is configured.
+表示されたrefの @samp{@@@{push@}} の場所を表すローカルrefの名前。 @samp{upstream} と同様に @samp{:short} ・ @samp{:lstrip} ・
+@samp{:rstrip} ・ @samp{:track} ・ @samp{:trackshort} ・ @samp{:remotename} ・ @samp{:remoteref}
+オプションを尊重します。 @samp{@@@{push@}} refが設定されていない場合、空の文字列を生成します。
 
 @item  HEAD 
-@emph{*} if HEAD matches current ref (the checked out branch), ' ' otherwise.
+HEADが現在のref (チェックアウトされたブランチ)と一致する場合は @samp{*} 、それ以外の場合は ' ' 。
 
 @item  color 
-Change output color. Followed by @samp{:<colorname>}, where color names are
-described under Values in the "CONFIGURATION FILE" section of
-git-config(1).  For example, @samp{%(color:bold red)}.
+出力色を変更します。 その後に @samp{:<colorname>} が続きます。色の名前は、 git-config(1)
+の「CONFIGURATION FILE」セクションの「Values」で説明されています。 たとえば、 @samp{%(color:bold red)} です。
 
 @item  align 
-Left-, middle-, or right-align the content between %(align:…) and
-%(end). The "align:" is followed by @samp{width=<width>} and
-@samp{position=<position>} in any order separated by a comma, where the
-@samp{<position>} is either left, right or middle, default being left and
-@samp{<width>} is the total length of the content with alignment. For brevity,
-the "width=" and/or "position=" prefixes may be omitted, and bare <width>
-and <position> used instead.  For instance,
-@samp{%(align:<width>,<position>)}. If the contents length is more than the width
-then no alignment is performed. If used with @samp{--quote} everything in between
-%(align:…) and %(end) is quoted, but if nested then only the topmost level
-performs quoting.
+コンテンツを %(align:…) から %(end) の間で左揃え、中央揃え、または右揃えにします。 @samp{align:} の後には、
+@samp{width=<width>} と @samp{position=<position>} がコンマ(@samp{,})で区切られた任意の順序で続きます。ここで、
+@samp{<position>} は left または right または middle のいずれかで、@samp{<position>} の デフォルトは left で
+@samp{<width>} のデフォルトは配置されたコンテンツの全長です。 簡潔にするために、 @samp{width=} および/または @samp{position=}
+プレフィックスを省略して、代わりに裸の <width> および <position> を使用することができます。 たとえば、
+@samp{%(align:<width>,<position>)} です。 コンテンツの長さがwidthよりも大きい場合、位置合わせは実行されません。
+@samp{--quote} とともに使用すると、 %(align:…) から %(end)
+の間のすべてがクォートされまれますが、ネストされている場合は、最上位レベルのみがクォートされます。
 
 @item  if 
-Used as %(if)…%(then)…%(end) or %(if)…%(then)…%(else)…%(end).  If
-there is an atom with value or string literal after the %(if) then
-everything after the %(then) is printed, else if the %(else) atom is used,
-then everything after %(else) is printed. We ignore space when evaluating
-the string before %(then), this is useful when we use the %(HEAD) atom which
-prints either "*" or " " and we want to apply the @emph{if} condition only on the
-@emph{HEAD} ref.  Append ":equals=<string>" or ":notequals=<string>" to compare
-the value between the %(if:…) and %(then) atoms with the given string.
+%(if) … %(then) … %(end) または %(if) … %(then) … %(else) … %(end) として使用されます。
+%(if) の後に値または文字列リテラルを持つアトムがある場合は、 %(then) の後のすべてが出力されます。そうでない場合、 %(else)
+アトムが使用されている場合は、 %(else) の後のすべてが出力されます。 %(then) の前の文字列を評価するときはスペースを無視します。これは、
+@samp{*} または ` ` のいずれかを出力する %(HEAD) アトムを使用し、 HEAD ref にのみ if 条件を適用する場合に役立ちます。
+@samp{:equals=<string>} または @samp{:notequals=<string>} を追加して、 %(if:…) アトムと %(then)
+アトムの間の値を指定された文字列と比較します。(訳注:つまり、 %(if) から %(then) の間がconditionである)
 
 @item  symref 
-The ref which the given symbolic ref refers to. If not a symbolic ref,
-nothing is printed. Respects the @samp{:short}, @samp{:lstrip} and @samp{:rstrip} options
-in the same way as @samp{refname} above.
+与えられたシンボリックrefが参照するref。シンボリックrefでない場合、何も出力されません。上記の @samp{refname} と同じ方法で、
+@samp{:short} と @samp{:lstrip} と @samp{:rstrip} オプションを尊重します。
 
 @item  worktreepath 
-The absolute path to the worktree in which the ref is checked out, if it is
-checked out in any linked worktree. Empty string otherwise.
+リンクされたワークツリー(linked
+worktree)でチェックアウトされている場合、refがチェックアウトされているワークツリーへの絶対パス。それ以外の場合は空文字列です。
 @end table
 
-In addition to the above, for commit and tag objects, the header field names
-(@samp{tree}, @samp{parent}, @samp{object}, @samp{type}, and @samp{tag}) can be used to specify the
-value in the header field.  Fields @samp{tree} and @samp{parent} can also be used with
-modifier @samp{:short} and @samp{:short=<length>} just like @samp{objectname}.
+上記に加えて、commitとtagオブジェクトの場合、ヘッダーフィールド名(@samp{tree} と @samp{parent} と @samp{object} と @samp{type}
+と @samp{tag})を使用して、ヘッダーフィールドの値を指定できます。 フィールド @samp{tree} と @samp{parent} は、 @samp{objectname}
+と同じように、修飾子 @samp{:short} や @samp{:short=<length>} とともに使用することもできます。
 
-For commit and tag objects, the special @samp{creatordate} and @samp{creator} fields
-will correspond to the appropriate date or name-email-date tuple from the
-@samp{committer} or @samp{tagger} fields depending on the object type.  These are
-intended for working on a mix of annotated and lightweight tags.
+commitオブジェクトとtagオブジェクトの場合、特別な @samp{creatordate} フィールドと @samp{creator}
+フィールドは、オブジェクトタイプに応じて、 @samp{committer} または @samp{tagger}
+フィールドの適切な日付またはname-email-dateタプルに対応します。これらは、注釈付きタグと軽量タグの組み合わせでの作業を目的としています。
 
-Fields that have name-email-date tuple as its value (@samp{author}, @samp{committer},
-and @samp{tagger}) can be suffixed with @samp{name}, @samp{email}, and @samp{date} to extract
-the named component.  For email fields (@samp{authoremail}, @samp{committeremail} and
-@samp{taggeremail}), @samp{:trim} can be appended to get the email without angle
-brackets, and @samp{:localpart} to get the part before the @samp{@@} symbol out of the
-trimmed email.
+name-email-dateタプルを値として持つフィールド(@samp{author} と @samp{committer} と
+@samp{tagger})には、名前付きコンポーネントを抽出するために @samp{name} と @samp{email} と @samp{date}
+の接尾辞を付けることができます。メールフィールド(@samp{authoremail} と @samp{committeremail} と
+@samp{taggeremail})の場合、 @samp{:trim} を追加すると山かっこ(@samp{<}, @samp{>})なしでメールを取得し、 @samp{:localpart}
+を追加すると電子メールアドレスをトリミングして @samp{@@} 記号の前の部分を取得できます。
 
-The raw data in an object is @samp{raw}.
+オブジェクトの生データは @samp{raw} です。
 
 @table @asis
 
 @item  raw:size 
-The raw data size of the object.
+オブジェクトの生データサイズ。
 @end table
 
-Note that @samp{--format=%(raw)} can not be used with @samp{--python}, @samp{--shell},
-@samp{--tcl}, because such language may not support arbitrary binary data in
-their string variable type.
+注意: @samp{--format=%(raw)} は、 @samp{--python} や @samp{--shell} や @samp{--tcl}
+と一緒に使用できないことに注意してください。これらのプログラム言語は、文字列変数タイプで任意のバイナリデータをサポートしていない可能性があるためです。
 
-The message in a commit or a tag object is @samp{contents}, from which
-@samp{contents:<part>} can be used to extract various parts out of:
+コミットまたはタグオブジェクト内のメッセージは @samp{contents} であり、そこから @samp{contents:<part>}
+を使用して以下によりさまざまな部分を抽出できます:
 
 @table @asis
 
 @item  contents:size 
-The size in bytes of the commit or tag message.
+コミットメッセージまたはタグメッセージのバイト単位のサイズ。
 
 @item  contents:subject 
-The first paragraph of the message, which typically is a single line, is
-taken as the "subject" of the commit or the tag message.  Instead of
-@samp{contents:subject}, field @samp{subject} can also be used to obtain same
-results. @samp{:sanitize} can be appended to @samp{subject} for subject line suitable
-for filename.
+メッセージの最初の段落(通常は1行)は、コミットまたはタグメッセージの「件名」(subject)と見なされます。 @samp{contents：subject}
+の代わりに、フィールド @samp{subject} を使用して同じ結果を取得することもできます。 @samp{subject} に追加できる @samp{:sanitize}
+は、件名行をファイル名に適した形にします。
 
 @item  contents:body 
-The remainder of the commit or the tag message that follows the "subject".
+コミットメッセージまたはタグメッセージの「件名」に続く残りの部分。
 
 @item  contents:signature 
-The optional GPG signature of the tag.
+タグのオプションのGPG署名。
 
 @item  contents:lines=N 
-The first @samp{N} lines of the message.
+メッセージの最初の N行。
 @end table
 
-Additionally, the trailers as interpreted by
-git-interpret-trailers(1) are obtained as @samp{trailers[:options]} (or
-by using the historical alias @samp{contents:trailers[:options]}). For valid
-[:option] values see @samp{trailers} section of git-log(1).
+加えて、 git-interpret-trailers(1) によって解釈されるトレーラーは、 @samp{trailers[:options]}
+として(または履歴エイリアス @samp{contents:trailers[:options]} を使用して)取得されます。有効な [:option]
+値については、 git-log(1) の @samp{trailers} セクションを参照してください。
 
-For sorting purposes, fields with numeric values sort in numeric order
-(@samp{objectsize}, @samp{authordate}, @samp{committerdate}, @samp{creatordate}, @samp{taggerdate}).
-All other fields are used to sort in their byte-value order.
+並べ替えの目的のため、数値のフィールドは数値順で並べ替えられます(@samp{objectsize} 、@samp{authordate} 、
+@samp{committerdate} 、@samp{creatordate} 、
+@samp{taggerdate})。他のすべてのフィールドは、バイト値の順序で並べ替えられます。
 
-There is also an option to sort by versions, this can be done by using the
-fieldname @samp{version:refname} or its alias @samp{v:refname}.
+バージョンで並べ替えるオプションもあります。これは、フィールド名 @samp{version:refname} またはそのエイリアス @samp{v:refname}
+を使用して行うことができます。
 
-In any case, a field name that refers to a field inapplicable to the object
-referred by the ref does not cause an error.  It returns an empty string
-instead.
+いずれの場合も、refによって参照されるオブジェクトに適用できないフィールドを参照するフィールド名はエラーを引き起こしません。代わりに空文字列を返します。
 
-As a special case for the date-type fields, you may specify a format for the
-date by adding @samp{:} followed by date format name (see the values the @samp{--date}
-option to git-rev-list(1) takes).
+日付タイプフィールドの特殊なケースとして、 @samp{:}
+の後に日付フォーマット名を追加して日付のフォーマットを指定できます(git-rev-list(1) の @samp{--date}
+オプションのが取る値を参照してください)。
 
-Some atoms like %(align) and %(if) always require a matching %(end).  We
-call them "opening atoms" and sometimes denote them as %($open).
+%(align) や %(if) などの一部のアトムには、常に対応する %(end) が必要です。 %(align) や %(if)
+などの一部のアトムを「開始アトム」(opening atoms)と呼び、 %($open) と表記することもあります。
 
-When a scripting language specific quoting is in effect, everything between
-a top-level opening atom and its matching %(end) is evaluated according to
-the semantics of the opening atom and only its result from the top-level is
-quoted.
+スクリプト言語固有のクォートが有効な場合、トップレベルの開始アトムとそれに対応する %(end)
+の間のすべてが、トップレベル開始アトムのセマンティクスに従って評価され、そのトップレベルからの結果のみがクォートされます。
 
 @noindent
 
 @chapheading EXAMPLES
 
-An example directly producing formatted text.  Show the most recent 3 tagged
-commits:
+フォーマットされたテキストを直接生成する例。 直近の3つのタグ付きコミットを表示します:
 
 @example
 #!/bin/sh
@@ -24419,8 +24220,7 @@ Ref: %(*refname)
 @end example
 
 
-A simple example showing the use of shell eval on the output, demonstrating
-the use of --shell.  List the prefixes of all heads:
+出力でのshell evalの使用を示す簡単な例で、@samp{--shell} の使用を示しています。 すべてのheadのプレフィックスを一覧表示します:
 
 @example
 #!/bin/sh
@@ -24434,8 +24234,7 @@ done
 @end example
 
 
-A bit more elaborate report on tags, demonstrating that the format may be an
-entire script:
+タグに関するもう少し手の込んだレポートで、スクリプト全体のフォーマットである可能性があることを示しています:
 
 @example
 #!/bin/sh
@@ -24488,16 +24287,14 @@ eval "$eval"
 @end example
 
 
-An example to show the usage of %(if)…%(then)…%(else)…%(end).  This
-prefixes the current branch with a star.
+%(if) … %(then) … %(else) … %(end) の使用法を示す例。 これにより、現在のブランチの前にアスタリスクが付けられます。
 
 @example
 git for-each-ref --format="%(if)%(HEAD)%(then)* %(else)  %(end)%(refname:short)" refs/heads/
 @end example
 
 
-An example to show the usage of %(if)…%(then)…%(end).  This prints the
-authorname, if present.
+%(if) … %(then) … %(end) の使用法を示す例。 存在する場合、これは作者名を出力します。
 
 @example
 git for-each-ref --format="%(refname)%(if)%(authorname)%(then) Authored by: %(authorname)%(end)"
@@ -24508,16 +24305,11 @@ git for-each-ref --format="%(refname)%(if)%(authorname)%(then) Authored by: %(au
 
 @chapheading CAVEATS
 
-Note that the sizes of objects on disk are reported accurately, but care
-should be taken in drawing conclusions about which refs or objects are
-responsible for disk usage. The size of a packed non-delta object may be
-much larger than the size of objects which delta against it, but the choice
-of which object is the base and which is the delta is arbitrary and is
-subject to change during a repack.
+注意:
+ディスク上のオブジェクトのサイズは正確に報告されますが、どのrefまたはオブジェクトがディスクの使用に関与しているかについて結論を出す際には注意が必要です。パックされた非デルタオブジェクトのサイズは、それに対してデルタするオブジェクトのサイズよりもはるかに大きい場合がありますが、ベースとデルタのオブジェクトの選択は任意であり、再パック中に変更される可能性があります。
 
-Note also that multiple copies of an object may be present in the object
-database; in this case, it is undefined which copy’s size or delta base will
-be reported.
+注意:
+オブジェクトの複数のコピーがオブジェクトデータベースに存在する可能性があることにも注意してください。この場合、どのコピーのサイズまたはデルタベースが報告されるかは未定義です。
 
 @noindent
 
@@ -31385,7 +31177,7 @@ Part of the git(1) suite
 @node git-ls-remote,,,Top
 @chapheading Name
 
-git-ls-remote — List references in a remote repository
+git-ls-remote — リモートリポジトリの参照を一覧表示する
 
 @noindent
 
@@ -31402,8 +31194,7 @@ git ls-remote [--heads] [--tags] [--refs] [--upload-pack=<exec>]
 
 @chapheading DESCRIPTION
 
-Displays references available in a remote repository along with the
-associated commit IDs.
+リモートリポジトリで有効な参照を、関連するコミットIDとともに表示します。
 
 @noindent
 
@@ -31415,66 +31206,51 @@ associated commit IDs.
 @itemx  @samp{--heads} 
 @itemx  @samp{-t} 
 @itemx  @samp{--tags} 
-Limit to only refs/heads and refs/tags, respectively.  These options are
-@emph{not} mutually exclusive; when given both, references stored in refs/heads
-and refs/tags are displayed.  Note that @samp{git ls-remote -h} used without
-anything else on the command line gives help, consistent with other git
-subcommands.
+それぞれ、refs/heads と refs/tags のみに制限します。これらのオプションは相互に排他的ではありません。両方を指定すると、
+refs/heads と refs/tags に保存されている参照が表示されます。コマンドラインで他に何も指定せずに使用された @samp{git
+ls-remote -h} は、他のgitサブコマンドと同じようにヘルプを提供することに注意してください。
 
 @item  @samp{--refs} 
-Do not show peeled tags or pseudorefs like @samp{HEAD} in the output.
+ピーリングされたタグ(peeled tag)や @samp{HEAD} のような疑似参照(pseudoref)を出力に表示しないでください。
 
 @item  @samp{-q} 
 @itemx  @samp{--quiet} 
-Do not print remote URL to stderr.
+stderrにリモートURLを出力しないでください。
 
 @item  @samp{--upload-pack=<exec>} 
-Specify the full path of @emph{git-upload-pack} on the remote host. This allows
-listing references from repositories accessed via SSH and where the SSH
-daemon does not use the PATH configured by the user.
+リモートホストの「git-upload-pack」のフルパスを指定します。これにより、SSH経由でアクセスされ、SSHデーモンがユーザーによって構成されたPATHを使用しないリポジトリからの参照を一覧表示できます。
 
 @item  @samp{--exit-code} 
-Exit with status "2" when no matching refs are found in the remote
-repository. Usually the command exits with status "0" to indicate it
-successfully talked with the remote repository, whether it found any
-matching refs.
+リモートリポジトリに一致する参照が見つからない場合は、ステータス「2」で終了します。通常、コマンドはステータス「0」で終了し、一致する参照が見つかったかどうかに関係なく、リモートリポジトリと正常に通信したことを示します。
 
 @item  @samp{--get-url} 
-Expand the URL of the given remote repository taking into account any
-"url.<base>.insteadOf" config setting (See git-config(1)) and exit
-without talking to the remote.
+@samp{url.<base>.insteadOf}
+構成設定(git-config(1)を参照)を考慮して、指定されたリモートリポジトリのURLを展開し、リモートと通信せずに終了します。
 
 @item  @samp{--symref} 
-In addition to the object pointed by it, show the underlying ref pointed by
-it when showing a symbolic ref.  Currently, upload-pack only shows the
-symref HEAD, so it will be the only one shown by ls-remote.
+それが指すオブジェクトに加えて、シンボリックrefを表示するときに、それが指す基になるrefを表示します。 現在、upload-packはsymref
+HEADのみを表示するため、ls-remoteによって表示されるのはこれだけです。
 
 @item  @samp{--sort=<key>} 
-Sort based on the key given. Prefix @samp{-} to sort in descending order of the
-value. Supports "version:refname" or "v:refname" (tag names are treated as
-versions). The "version:refname" sort order can also be affected by the
-"versionsort.suffix" configuration variable.  See
-git-for-each-ref(1) for more sort options, but be aware keys like
-@samp{committerdate} that require access to the objects themselves will not work
-for refs whose objects have not yet been fetched from the remote, and will
-give a @samp{missing object} error.
+指定されたキーに基づいて並べ替えます。接頭辞 @samp{-} を使用して、値の降順で並べ替えます。 @samp{version:refname} または
+@samp{v:refname} をサポートします(タグ名はバージョンとして扱われます)。 @samp{version:refname} のソート順は、
+@samp{versionsort.suffix} 構成変数の影響も受ける可能性があります。 その他の並べ替えオプションについては
+git-for-each-ref(1) を参照してください。ただし、オブジェクト自体へのアクセスを必要とする
+@samp{committerdate} のようなキーは、オブジェクトがまだリモートからフェッチされていないrefに対しては機能せず、 @samp{missing
+object} エラーが発生することに注意してください。
 
 @item  @samp{-o <option>} 
 @itemx  @samp{--server-option=<option>} 
-Transmit the given string to the server when communicating using protocol
-version 2.  The given string must not contain a NUL or LF character.  When
-multiple @samp{--server-option=<option>} are given, they are all sent to the
-other side in the order listed on the command line.
+プロトコルバージョン2を使用して通信する場合は、指定された文字列をサーバーに送信します。指定された文字列には、NULまたはLF文字を含めることはできません。
+複数の @samp{--server-option=<option>} が指定されている場合、それらはコマンドラインにリストされている順序で送信されます。
 
 @item  <repository> 
-The "remote" repository to query.  This parameter can be either a URL or the
-name of a remote (see the GIT URLS and REMOTES sections of
-git-fetch(1)).
+クエリする「リモート」リポジトリ。 このパラメーターは、URLまたはリモートの名前のいずれかです(git-fetch(1) の「GIT
+URLS」と「REMOTES」セクションを参照してください)。
 
 @item  <refs>… 
-When unspecified, all references, after filtering done with --heads and
---tags, are shown.  When <refs>… are specified, only references matching
-the given patterns are displayed.
+指定しない場合、 @samp{--heads} と @samp{--tags} でフィルタリングを行った後のすべての参照が表示されます。 <refs>…
+を指定すると、指定したパターンに一致する参照のみが表示されます。
 @end table
 
 @noindent
@@ -31630,7 +31406,7 @@ Part of the git(1) suite
 @node git-mailinfo,,,Top
 @chapheading Name
 
-git-mailinfo — Extracts patch and authorship from a single e-mail message
+git-mailinfo — 単一の電子メールメッセージからパッチと作成者を抽出します
 
 @noindent
 
@@ -31647,11 +31423,10 @@ git mailinfo [-k|-b] [-u | --encoding=<encoding> | -n]
 
 @chapheading DESCRIPTION
 
-Reads a single e-mail message from the standard input, and writes the commit
-log message in <msg> file, and the patches in <patch> file.  The author
-name, e-mail and e-mail subject are written out to the standard output to be
-used by @emph{git am} to create a commit.  It is usually not necessary to use
-this command directly.  See git-am(1) instead.
+標準入力から単一の電子メールメッセージを読み取り、コミットログメッセージを <msg> ファイルに書き込み、パッチを <patch>
+ファイルに書き込みます。作者名と電子メールアドレスと電子メールの件名は、コミットを作成する @samp{git am}
+で使用するために標準出力に書き出されます。通常、このコマンドをユーザーが直接使用する必要はありません。代わりに git-am(1)
+を参照してください。
 
 @noindent
 
@@ -31660,102 +31435,88 @@ this command directly.  See git-am(1) instead.
 @table @asis
 
 @item  @samp{-k} 
-Usually the program removes email cruft from the Subject: header line to
-extract the title line for the commit log message.  This option prevents
-this munging, and is most useful when used to read back @emph{git format-patch
--k} output.
+通常、プログラムは、 @samp{Subject:}
+ヘッダー行から電子メール特有の断片文字列を取り除き、コミットログメッセージのタイトル行を取り出します。このオプションは、この変更をある程度防ぎ、
+@samp{git format-patch -k} 出力を読み返すために使用する場合に最も役立つようにします。
 
-Specifically, the following are removed until none of them remain:
+具体的には、以下のものがなくなるまでは削除を行います:
 
 @itemize 
 
 @item
-Leading and trailing whitespace.
+先頭と末尾の空白(whitespace)を削除。
 
 @item
-Leading @samp{Re:}, @samp{re:}, and @samp{:}.
+先頭の @samp{Re:} や @samp{re:} や @samp{:} を削除。
 
 @item
-Leading bracketed strings (between @samp{[} and @samp{]}, usually
-@samp{[PATCH]}).
+先頭のブラケットで囲まれた文字列( @samp{[} 〜 @samp{]} 、
+通常は @samp{[PATCH]} ) 。
 @end itemize
 
-Finally, runs of whitespace are normalized to a single ASCII space
-character.
+最後に、空白類(whitespace)は単一のASCIIスペース文字(\x20)に正規化されます。
 
 @item  @samp{-b} 
-When -k is not in effect, all leading strings bracketed with @emph{[} and @emph{]}
-pairs are stripped.  This option limits the stripping to only the pairs
-whose bracketed string contains the word "PATCH".
+@samp{-k} が有効でない場合、 先頭のブラケット @samp{[} と @samp{]}
+のペアで囲まれたすべての文字列が削除されます。このオプションは、括弧で囲まれた文字列に @samp{PATCH}
+という単語が含まれているペアのみに削除を制限します。
 
 @item  @samp{-u} 
-The commit log message, author name and author email are taken from the
-e-mail, and after minimally decoding MIME transfer encoding, re-coded in the
-charset specified by @samp{i18n.commitEncoding} (defaulting to UTF-8) by
-transliterating them.  This used to be optional but now it is the default.
+コミットログメッセージ、作者名、作者の電子メールアドレスは電子メールから取得され、MIME転送エンコーディングを最小限にデコードした後、それらを変換することにより、
+@samp{i18n.commitEncoding} (デフォルトはUTF-8)
+で指定された文字セットに再コーディングされます。これは以前はオプションでしたが、現在はデフォルトです。
 
-Note that the patch is always used as-is without charset conversion, even
-with this flag.
+注意: このフラグがあっても、パッチは常に文字セット変換なしでそのまま使用されることに注意してください。
 
 @item  @samp{--encoding=<encoding>} 
-Similar to -u.  But when re-coding, the charset specified here is used
-instead of the one specified by @samp{i18n.commitEncoding} or UTF-8.
+@samp{-u} に似ています。 ただし、再コーディング時には、 @samp{i18n.commitEncoding}
+で指定された文字セットまたはUTF-8の代わりに、ここで指定した文字セットが使用されます。
 
 @item  @samp{-n} 
-Disable all charset re-coding of the metadata.
+メタデータのすべての文字セットの再コーディングを無効にします。
 
 @item  @samp{-m} 
 @itemx  @samp{--message-id} 
-Copy the Message-ID header at the end of the commit message.  This is useful
-in order to associate commits with mailing list discussions.
+コミットメッセージの最後にあるMessage-IDヘッダーをコピーします。これは、コミットをメーリングリストのディスカッションに関連付けるのに役立ちます。
 
 @item  @samp{--scissors} 
-Remove everything in body before a scissors line (e.g. "-- >8 --").  The
-line represents scissors and perforation marks, and is used to request the
-reader to cut the message at that line.  If that line appears in the body of
-the message before the patch, everything before it (including the scissors
-line itself) is ignored when this option is used.
+本文で切り取り線(例えば @samp{-- >8 --} )の前にあるすべてを取り除きます。
+この線は、はさみ(scissors)とミシン目マークを表しており、その行でメッセージをカットするように読者に要求するために使用されます。パッチの前のメッセージの本文にその行が表示されている場合、このオプションを使用すると、その行の前のすべて(切り取り線の行自体を含む)が無視されます(訳注:
+@samp{>8} や @samp{8<} は「ハサミ」を示す絵文字)。
 
-This is useful if you want to begin your message in a discussion thread with
-comments and suggestions on the message you are responding to, and to
-conclude it with a patch submission, separating the discussion and the
-beginning of the proposed commit log message with a scissors line.
+これは、返信するメッセージに関するコメントと提案を含むディスカッションスレッドでメッセージを開始し、パッチの送信でメッセージを終了し、ディスカッションと提案されたコミットログメッセージの開始を切り取り線で区切る場合に役立ちます。
 
-This can be enabled by default with the configuration option
-mailinfo.scissors.
+これは、構成オプション mailinfo.scissors を使用してデフォルトで有効にできます。
 
 @item  @samp{--no-scissors} 
-Ignore scissors lines. Useful for overriding mailinfo.scissors settings.
+切り取り線を無視します。 mailinfo.scissors 設定を上書きするのに便利です。
 
 @item  @samp{--quoted-cr=<action>} 
-Action when processes email messages sent with base64 or quoted-printable
-encoding, and the decoded lines end with a CRLF instead of a simple LF.
+base64またはquoted-printableエンコーディングで送信された電子メールメッセージを処理し、デコードされた行が単純なLFではなくCRLFで終了する場合の操作(action)を指定。
 
-The valid actions are:
+有効な操作(action)は:
 
 @itemize 
 
 @item
-@samp{nowarn}: Git will do nothing when such a CRLF is found.
+@samp{nowarn}: そのようなCRLFが見つかった場合、Gitは何もしません。
 
 @item
-@samp{warn}: Git will issue a warning for each message if such a CRLF is
-found.
+@samp{warn}: そのようなCRLFが見つかった場合、
+Gitはメッセージごとに警告を発行します。
 
 @item
-@samp{strip}: Git will convert those CRLF to LF.
+@samp{strip}: GitはそれらのCRLFをLFに変換します。
 @end itemize
 
-The default action could be set by configuration option
-@samp{mailinfo.quotedCR}.  If no such configuration option has been set, @samp{warn}
-will be used.
+デフォルトの操作(action)は、構成オプション @samp{mailinfo.quotedCR}
+で設定できます。そのような構成オプションが設定されていない場合、 @samp{warn} が使用されます。
 
 @item  <msg> 
-The commit log message extracted from e-mail, usually except the title line
-which comes from e-mail Subject.
+電子メールから抽出されたコミットログメッセージ。通常、電子メールの件名から抽出したタイトル行は除きます。
 
 @item  <patch> 
-The patch extracted from e-mail.
+電子メールから抽出されたパッチ。
 @end table
 
 @noindent
@@ -47080,7 +46841,7 @@ Part of the git(1) suite
 @node git-shortlog,,,Top
 @chapheading Name
 
-git-shortlog — Summarize 'git log' output
+git-shortlog — 'git log' の出力を要約します。
 
 @noindent
 
@@ -47096,15 +46857,12 @@ git log --pretty=short | git shortlog [<options>]
 
 @chapheading DESCRIPTION
 
-Summarizes @emph{git log} output in a format suitable for inclusion in release
-announcements. Each commit will be grouped by author and title.
+'git log’の出力を、リリースアナウンスに含めるのに適した形式で要約します。各コミットは、作者とタイトルごとにグループ化されます。
 
-Additionally, "[PATCH]" will be stripped from the commit description.
+加えて、「[PATCH]」はコミットの説明から削除されます。
 
-If no revisions are passed on the command line and either standard input is
-not a terminal or there is no current branch, @emph{git shortlog} will output a
-summary of the log read from standard input, without reference to the
-current repository.
+コマンドラインでリビジョンが渡されず、かつ、標準入力が端末ではないかまたは現在のブランチがない場合、「git
+shortlog」は、現在のリポジトリを参照せずに、標準入力から読み取られたログの概要を出力します。
 
 @noindent
 
@@ -47114,88 +46872,76 @@ current repository.
 
 @item  @samp{-n} 
 @itemx  @samp{--numbered} 
-Sort output according to the number of commits per author instead of author
-alphabetic order.
+作者のアルファベット順ではなく、作者のコミット数に従って出力を並べ替えます。
 
 @item  @samp{-s} 
 @itemx  @samp{--summary} 
-Suppress commit description and provide a commit count summary only.
+コミットの説明を抑制し、コミット数の要約のみを提供します。
 
 @item  @samp{-e} 
 @itemx  @samp{--email} 
-Show the email address of each author.
+各作者のメールアドレスを表示します。
 
 @item  @samp{--format[=<format>]} 
-Instead of the commit subject, use some other information to describe each
-commit.  @emph{<format>} can be any string accepted by the @samp{--format} option of
-@emph{git log}, such as @emph{* [%h] %s}.  (See the "PRETTY FORMATS" section of
-git-log(1).)
+コミットの件名の代わりに、他の情報を使用して各コミットを説明します。 @samp{<format>} は、 @samp{* [%h] %s} など 、 @samp{git log}
+の @samp{--format} オプションで受け入れられる任意の文字列にすることができます。 (git-log(1) の「PRETTY
+FORMATS」セクションを参照してください。)
 
 @example
-Each pretty-printed commit will be rewrapped before it is shown.
+pretty-printされた各コミットは、表示される前に再ラップ(rewrapp)されます。
 @end example
 
 @item  @samp{--group=<type>} 
-Group commits based on @samp{<type>}. If no @samp{--group} option is specified, the
-default is @samp{author}. @samp{<type>} is one of:
+グループは @samp{<type>} に基づいてコミットします。 @samp{--group} オプションが指定されていない場合、デフォルトは @samp{author} です。
+@samp{<type>} は以下のいずれかです:
 
 @itemize 
 
 @item
-@samp{author}, commits are grouped by author
+@samp{author} : コミットは作成者ごとにグループ化されます
 
 @item
-@samp{committer}, commits are grouped by committer (the same as @samp{-c})
+@samp{committer} : コミットはコミッターによってグループ化されます( @samp{-c} と同じ)
 
 @item
-@samp{trailer:<field>}, the @samp{<field>} is interpreted as a case-insensitive commit
-message trailer (see git-interpret-trailers(1)). For example, if
-your project uses @samp{Reviewed-by} trailers, you might want to see who has been
-reviewing with @samp{git shortlog -ns --group=trailer:reviewed-by}.
+@samp{trailer:<field>} : @samp{<field>}
+は大文字と小文字を区別しないコミットメッセージトレーラーとして解釈されます(git-interpret-trailers(1)
+参照)。たとえば、プロジェクトで @samp{Reviewed-by} のトレーラーを使用している場合、 @samp{git shortlog -ns
+--group=trailer:reviewed-by} を使用して誰がレビューしているかを確認できます。
 
-Note that commits that do not include the trailer will not be counted.
-Likewise, commits with multiple trailers (e.g., multiple signoffs) may be
-counted more than once (but only once per unique trailer value in that
-commit).
+注意:
+トレーラーを含まないコミットはカウントされないことに注意してください。同様に、複数のトレーラーを使用したコミット(複数のサインオフなど)は、複数回カウントされる場合があります(ただし、そのコミットの一意のトレーラー値ごとに1回のみです)。
 
-Shortlog will attempt to parse each trailer value as a @samp{name <email>}
-identity. If successful, the mailmap is applied and the email is omitted
-unless the @samp{--email} option is specified. If the value cannot be parsed as
-an identity, it will be taken literally and completely.
+shortlog は、各トレーラー値を @samp{name <email>} ID としてパースしようとします。成功すると、mailmapが適用され、
+@samp{--email} オプションが指定されていない限りemailは省略されます。値をIDとして解析できない場合は、その文言通りに取得されます。
 @end itemize
 
-If @samp{--group} is specified multiple times, commits are counted under each
-value (but again, only once per unique value in that commit). For example,
-@samp{git shortlog --group=author --group=trailer:co-authored-by} counts both
-authors and co-authors.
+@samp{--group} が複数回指定されている場合、コミットは各値でカウントされます(ただし、そのコミットの一意の値ごとに1回だけカウントされます)。
+たとえば、 @samp{git shortlog --group=author --group=trailer:co-authored-by}
+は、authorとco-authorの両方をカウントします。
 
 @item  @samp{-c} 
 @itemx  @samp{--committer} 
-This is an alias for @samp{--group=committer}.
+@samp{--group=committer} のエイリアスです。
 
 @item  @samp{-w[<width>[,<indent1>[,<indent2>]]]} 
-Linewrap the output by wrapping each line at @samp{width}.  The first line of
-each entry is indented by @samp{indent1} spaces, and the second and subsequent
-lines are indented by @samp{indent2} spaces. @samp{width}, @samp{indent1}, and @samp{indent2}
-default to 76, 6 and 9 respectively.
+各行を @samp{width} で折り返すことにより、出力を行折り返します。各エントリの最初の行は @samp{indent1} スペースでインデントされ、2行目以降は
+@samp{indent2} スペースでインデントされます。 @samp{width} と @samp{indent1} と @samp{indent2}
+のデフォルトは、それぞれ76と6と9です。
 
-If width is @samp{0} (zero) then indent the lines of the output without wrapping
-them.
+widthが @samp{0} (ゼロ)の場合、出力の行を折り返すことなくインデントします。
 
 @item  <revision range> 
-Show only commits in the specified revision range.  When no <revision range>
-is specified, it defaults to @samp{HEAD} (i.e. the whole history leading to the
-current commit).  @samp{origin..HEAD} specifies all the commits reachable from
-the current commit (i.e. @samp{HEAD}), but not from @samp{origin}. For a complete list
-of ways to spell <revision range>, see the "Specifying Ranges" section of
-gitrevisions(7).
+指定のリビジョン範囲のコミットのみを表示します。 <revision range> が指定されていない場合、デフォルトで @samp{HEAD}
+(つまり、現在のコミットにつながる履歴全体)になります。 @samp{origin..HEAD} は、現在のコミット(つまり、 @samp{HEAD}
+)から到達可能なすべてのコミットを指定しますが、 @samp{origin} からは指定しません。 <revision range>
+のスペルの完全なリストについては、 gitrevisions(7) の「Specifying
+Ranges」セクションを参照してください。
 
 @item  [--] <path>… 
-Consider only commits that are enough to explain how the files that match
-the specified paths came to be.
+指定されたパスに一致するファイルがどのように作成されたかを説明するのに十分なコミットのみを検討してください。
 
-Paths may need to be prefixed with @samp{--} to separate them from options or the
-revision range, when confusion arises.
+混乱が生じた場合、パスをオプションまたはリビジョン範囲から分離するために、パスの前に @samp{--} を付ける必要がある場合があります。
 @end table
 
 @noindent
@@ -47762,9 +47508,8 @@ TREESAMEの親のみに従うルールが利用可能な場合は、 @samp{B} �
 
 See gitmailmap(5).
 
-Note that if @samp{git shortlog} is run outside of a repository (to process log
-contents on standard input), it will look for a @samp{.mailmap} file in the
-current directory.
+注意: (標準入力でログの内容を処理するため) @samp{git shortlog} がリポジトリの外部で実行される場合、現在のディレクトリで
+@samp{.mailmap} ファイルが検索されることに注意してください。
 
 @noindent
 
@@ -55950,7 +55695,7 @@ Revert some existing commits.
 Remove files from the working tree and from the index.
 
 @item  git-shortlog(1) 
-Summarize @emph{git log} output.
+@emph{git log} の出力を要約します。.
 
 @item  git-show(1) 
 さまざまなタイプのオブジェクトを表示.
@@ -56231,7 +55976,7 @@ Compare a tree to the working tree or index.
 Compares the content and mode of blobs found via two tree.
 
 @item  git-for-each-ref(1) 
-Output information on each ref.
+各refに関する情報を出力します.
 
 @item  git-for-each-repo(1) 
 リポジトリのリストでGitコマンドを実行します.
@@ -56243,7 +55988,7 @@ git-archiveを使用して作成されたアーカイブからコミットIDを�
 インデックスと作業ツリーのファイルに関する情報を表示する.
 
 @item  git-ls-remote(1) 
-List references in a remote repository.
+リモートリポジトリの参照を一覧表示する.
 
 @item  git-ls-tree(1) 
 ツリーオブジェクトの内容を一覧表示します.
@@ -56338,7 +56083,7 @@ GitのみのSSHアクセス用の制限付きログインシェル.
 gitattributes情報を表示.
 
 @item  git-check-ignore(1) 
-Debug gitignore / exclude files.
+gitignoreや除外ファイルのデバッグ.
 
 @item  git-check-mailmap(1) 
 連絡先(contacts)の、正式な名前と電子メールアドレスを表示.
@@ -56365,7 +56110,7 @@ git-fmt-merge-msg-マージコミットメッセージを生成します.
 コミットメッセージの構造化情報を追加またはパースします.
 
 @item  git-mailinfo(1) 
-Extracts patch and authorship from a single e-mail message.
+単一の電子メールメッセージからパッチと作成者を抽出します.
 
 @item  git-mailsplit(1) 
 簡易 UNIX mbox 分割プログラム.
@@ -62267,31 +62012,24 @@ gitglossary — Git用語集
 オブジェクトデータベース (@pxref{[def_object_database]}) の一部を "alternate" (代役)
 呼ばれる別のオブジェクトデータベースから継承できます。
 
-@item  bare repository(ベアリポジトリ) 
-A bare repository is normally an appropriately named
-directory (@pxref{[def_directory]}) with a @samp{.git} suffix that does not have a
-locally checked-out copy of any of the files under revision control. That
-is, all of the Git administrative and control files that would normally be
-present in the hidden @samp{.git} sub-directory are directly present in the
-@samp{repository.git} directory instead, and no other files are present and
-checked out. Usually publishers of public repositories make bare
-repositories available.
+@item  bare repository 
+ベアリポジトリは通常、適切な名前のディレクトリ (@pxref{[def_directory]})で、接尾辞は @samp{.git}
+で、リビジョン管理下にあるファイルのローカルでチェックアウトされたコピーはありません。つまり、通常は非表示の @samp{.git}
+サブディレクトリに存在するすべてのGit管理ファイルと制御ファイルは、代わりに @samp{repository.git}
+ディレクトリに直接存在し、他のファイルは存在せず、チェックアウトされません。通常、公開リポジトリの発行者は、ベアリポジトリを利用可能にします。
 
 @item  blob object(ブロブオブジェクト) 
 型の無いオブジェクト (@pxref{[def_object]})。例:ファイルの中身。
 
 @item  branch 
-A "branch" is a line of development.  The most recent commit (@pxref{[def_commit]})
-on a branch is referred to as the tip of that branch.  The tip of the branch
-is referenced by a branch head (@pxref{[def_head]}), which moves forward as
-additional development is done on the branch.  A single Git
-repository (@pxref{[def_repository]}) can track an arbitrary number of branches, but
-your working tree (@pxref{[def_working_tree]}) is associated with just one of them
-(the "current" or "checked out" branch), and HEAD (@pxref{[def_HEAD]}) points to
-that branch.
+「ブランチ」は開発ラインです。ブランチの最新のコミット (@pxref{[def_commit]})は、そのブランチの先端(the tip of that
+branch)と呼ばれます。ブランチの先端はブランチhead (@pxref{[def_head]})によって参照され、ブランチで追加の開発が行われると前進します。単一のGit
+リポジトリ (@pxref{[def_repository]})は任意の数のブランチを追跡できますが、あなたの作業ツリー (@pxref{[def_working_tree]})はそのうちの1つ(「current
+branch」(現在のブランチ)または「checked out branch」(チェックアウトされたブランチ))に関連付けられ、
+HEAD (@pxref{[def_HEAD]}) はそのブランチを指します。
 
 @item  cache 
-Obsolete for: index (@pxref{[def_index]}).
+廃止。 index (@pxref{[def_index]}) を使ってください。
 
 @item  chain(チェーン,チェイン) 
 オブジェクトのリスト。リスト内の各 オブジェクト (@pxref{[def_object]}) には、その後ろへの参照が含まれます(たとえば、
@@ -62302,11 +62040,7 @@ Obsolete for: index (@pxref{[def_index]}).
 での言い方です。Gitで変更を保存せず状態を保存するため、Gitでコミットを「changeset」と呼ぶのはナンセンスです。
 
 @item  checkout 
-The action of updating all or part of the working tree (@pxref{[def_working_tree]})
-with a tree object (@pxref{[def_tree_object]}) or blob (@pxref{[def_blob_object]}) from the
-object database (@pxref{[def_object_database]}), and updating the
-index (@pxref{[def_index]}) and HEAD (@pxref{[def_HEAD]}) if the whole working tree has been
-pointed at a new branch (@pxref{[def_branch]}).
+作業ツリー (@pxref{[def_working_tree]})の全部または一部をオブジェクトデータベース (@pxref{[def_object_database]})のツリーオブジェクト (@pxref{[def_tree_object]})またはブロブ (@pxref{[def_blob_object]})で更新し、作業ツリー全体が新しいブランチ (@pxref{[def_branch]})を指している場合は、インデックス (@pxref{[def_index]})とHEAD (@pxref{[def_HEAD]})を更新する操作。
 
 @item  cherry-picking(チェリーピック,チェリーピッキング) 
 SCM (@pxref{[def_SCM]}) の専門用語では、 "cherry pick"
@@ -62315,34 +62049,22 @@ SCM (@pxref{[def_SCM]}) の専門用語では、 "cherry pick"
 コマンドによって実行され、既存のコミット (@pxref{[def_commit]})によって導入された変更を抽出し、現在のブランチ (@pxref{[def_branch]})の先端に基づいてそれを新しいコミットとして記録します。
 
 @item  clean 
-A working tree (@pxref{[def_working_tree]}) is clean, if it corresponds to the
-revision (@pxref{[def_revision]}) referenced by the current head (@pxref{[def_head]}). Also
-see "dirty (@pxref{[def_dirty]})".
+現在のhead (@pxref{[def_head]})が参照するリビジョン>と<<def_working_tree (@pxref{[def_revision]})が完全に一致(correspond)しているのであれば、その作業ツリー (@pxref{[def_working_tree]})はクリーンです。「dirty (@pxref{[def_dirty]})」も参照下さい。
 
 @item  commit 
-As a noun: A single point in the Git history; the entire history of a
-project is represented as a set of interrelated commits.  The word "commit"
-is often used by Git in the same places other revision control systems use
-the words "revision" or "version".  Also used as a short hand for
-commit object (@pxref{[def_commit_object]}).
+名詞として:
+Gitの履歴における一つのポイント。プロジェクトの履歴全体は、相互に関連する一連のコミットとして表されます。「コミット」という言葉は、他のリビジョン管理システムが「リビジョン」または「バージョン」という言葉を使用するのと同じ場所で、Gitによってよく使用されます。
+コミットオブジェクト (@pxref{[def_commit_object]}) の省略形としても使用されます。
 
-As a verb: The action of storing a new snapshot of the project’s state in
-the Git history, by creating a new commit representing the current state of
-the index (@pxref{[def_index]}) and advancing HEAD (@pxref{[def_HEAD]}) to point at the new
-commit.
+動詞として(コミットする):
+インデックス (@pxref{[def_index]})の現在の状態を表す新しいコミットを作成し、その新しいコミットをポイントするようにHEAD (@pxref{[def_HEAD]})を進めることにより、プロジェクトの状態の新しいスナップショットをGit履歴に保存する操作。
 
 @item  commit object 
-An object (@pxref{[def_object]}) which contains the information about a particular
-revision (@pxref{[def_revision]}), such as parents (@pxref{[def_parent]}), committer,
-author, date and the tree object (@pxref{[def_tree_object]}) which corresponds to
-the top directory (@pxref{[def_directory]}) of the stored revision.
+親 (@pxref{[def_parent]})、コミッター、作者、日付、保存されたリビジョンの最上位ディレクトリ (@pxref{[def_directory]})に対応するツリーオブジェクト (@pxref{[def_tree_object]})など、特定のリビジョン (@pxref{[def_revision]})に関する情報を含むオブジェクト (@pxref{[def_object]})。
 
-@item  commit-ish (also committish) 
-A commit object (@pxref{[def_commit_object]}) or an object (@pxref{[def_object]}) that can
-be recursively dereferenced to a commit object.  The following are all
-commit-ishes: a commit object, a tag object (@pxref{[def_tag_object]}) that points
-to a commit object, a tag object that points to a tag object that points to
-a commit object, etc.
+@item  commit-ish (also committish)(コミットっぽい;コミット風) 
+コミットオブジェクト (@pxref{[def_commit_object]})または、コミットオブジェクト (@pxref{[def_commit_object]})に再帰的に逆参照可能なオブジェクト (@pxref{[def_object]})。
+コミットオブジェクト (@pxref{[def_commit_object]})や、コミットオブジェクト (@pxref{[def_commit_object]})を指すタグオブジェクト (@pxref{[def_tag_object]})や、コミットオブジェクト (@pxref{[def_commit_object]})を指すタグオブジェクト (@pxref{[def_tag_object]})を指すタグオブジェクト (@pxref{[def_tag_object]})などは全てcommit-ish(commit-ishes)です。
 
 @item  core Git 
 Gitの基本的なデータ構造とユーティリティ。これは、限定的なソースコード管理ツールのみです。
@@ -62353,10 +62075,8 @@ Gitの基本的なデータ構造とユーティリティ。これは、限定�
 チェイン (@pxref{[def_chain]}) はありません)であるため有向非巡回グラフを形成します。
 
 @item  dangling object 
-An unreachable object (@pxref{[def_unreachable_object]}) which is not
-reachable (@pxref{[def_reachable]}) even from other unreachable objects; a dangling
-object has no references to it from any reference or object (@pxref{[def_object]})
-in the repository (@pxref{[def_repository]}).
+(ぶらぶら揺れるオブジェクト)他の到達不能オブジェクト (@pxref{[def_unreachable_object]})からでも到達できない到達不能オブジェクト (@pxref{[def_unreachable_object]})。
+danglingオブジェクトには、リポジトリ (@pxref{[def_repository]})内の任意のrefまたはオブジェクト (@pxref{[def_object]})からの参照はありません。
 
 @item  detached HEAD 
 Normally the HEAD (@pxref{[def_HEAD]}) stores the name of a branch (@pxref{[def_branch]}),
@@ -62379,14 +62099,12 @@ this state.
 あなたが "ls" で得られる一覧の事 :-)
 
 @item  dirty 
-A working tree (@pxref{[def_working_tree]}) is said to be "dirty" if it contains
-modifications which have not been committed (@pxref{[def_commit]}) to the current
-branch (@pxref{[def_branch]}).
+作業ツリー (@pxref{[def_working_tree]})で、現在のブランチ (@pxref{[def_branch]})に対してコミット (@pxref{[def_commit]})されてない変更が含まれている場合、「作業ツリー (@pxref{[def_working_tree]})はダーティーである」と言われます。
 
 @item  evil merge 
 邪悪なマージとは、どの 親 (@pxref{[def_parent]}) にも表示されない変更を導入する マージ (@pxref{[def_merge]}) です。
 
-@item  fast-forward 
+@item  fast-forward(早送り) 
 A fast-forward is a special type of merge (@pxref{[def_merge]}) where you have a
 revision (@pxref{[def_revision]}) and you are "merging" another
 branch (@pxref{[def_branch]})'s changes that happen to be a descendant of what you
@@ -62703,10 +62421,9 @@ ref名前空間は階層的です。さまざまなサブ階層がさまざま�
 @samp{refs/} で始まらない特別な目的のrefがいくつかあります。最も注目すべき例は @samp{HEAD} です。
 
 @item  reflog 
-A reflog shows the local "history" of a ref.  In other words, it can tell
-you what the 3rd last revision in @emph{this} repository was, and what was the
-current state in @emph{this} repository, yesterday 9:14pm.  See
-git-reflog(1) for details.
+reflogは、refのローカルの「履歴」を示します。
+つまり、このリポジトリの最後の3番目のリビジョンが何であったか、およびこのリポジトリの昨日の午後9時14分時点での「現在の状態」が何であったかを知ることができます。詳細については
+git-reflog(1) を参照してください。
 
 @item  refspec 
 A "refspec" is used by fetch (@pxref{[def_fetch]}) and push (@pxref{[def_push]}) to describe
@@ -62734,15 +62451,13 @@ object database with other repositories via
 alternates mechanism (@pxref{[def_alternate_object_database]}).
 
 @item  resolve 
-The action of fixing up manually what a failed automatic merge (@pxref{[def_merge]})
-left behind.
+失敗した自動 マージ (@pxref{[def_merge]}) が残したものを手動で修正する操作。
 
 @item  revision 
-Synonym for commit (@pxref{[def_commit]}) (the noun).
+コミット (@pxref{[def_commit]}) (名詞) の同義語
 
-@item  rewind 
-To throw away part of the development, i.e. to assign the head (@pxref{[def_head]})
-to an earlier revision (@pxref{[def_revision]}).
+@item  rewind(巻き戻し) 
+開発の一部を破棄する、つまり、 head (@pxref{[def_head]}) を以前の リビジョン (@pxref{[def_revision]}) に割り当てる。
 
 @item  SCM 
 Source code management (tool).
@@ -62752,9 +62467,8 @@ Source code management (tool).
 Git used as a synonym for object name (@pxref{[def_object_name]}).
 
 @item  shallow clone 
-Mostly a synonym to shallow repository (@pxref{[def_shallow_repository]}) but the
-phrase makes it more explicit that it was created by running @samp{git clone
---depth=...} command.
+ほとんどの場合 shallowリポジトリ (@pxref{[def_shallow_repository]}) の同義語ですが、この言い方は、 @samp{git clone
+--depth=...} コマンドを実行して作成されたこと明言したものです。
 
 @item  shallow repository 
 A shallow repository (@pxref{[def_repository]}) has an incomplete history some of
@@ -62767,8 +62481,8 @@ upstream is much larger. A shallow repository is created by giving the
 deepened with git-fetch(1).
 
 @item  stash entry 
-An object (@pxref{[def_object]}) used to temporarily store the contents of a
-dirty (@pxref{[def_dirty]}) working directory and the index for future reuse.
+ダーティ (@pxref{[def_dirty]}) な作業ディレクトリの内容とインデックスを、将来の再利用のために一時的に保存するのに使用される
+オブジェクト (@pxref{[def_object]}) 。
 
 @item  submodule 
 とあるリポジトリの内部で、それとは別個のプロジェクトの履歴を保持する リポジトリ (@pxref{[def_repository]})
@@ -62823,8 +62537,8 @@ equivalent to a directory (@pxref{[def_directory]}).
 An index (@pxref{[def_index]}) which contains unmerged index         entries (@pxref{[def_index_entry]}).
 
 @item  unreachable object 
-An object (@pxref{[def_object]}) which is not reachable (@pxref{[def_reachable]}) from a
-branch (@pxref{[def_branch]}), tag (@pxref{[def_tag]}), or any other reference.
+ブランチ (@pxref{[def_branch]}) または タグ (@pxref{[def_tag]}) またはその他の参照から 到達可能 (@pxref{[def_reachable]})
+ではない(辿れない、ポイントされてない) オブジェクト (@pxref{[def_object]}) 。
 
 @item  upstream branch 
 The default branch (@pxref{[def_branch]}) that is merged into the branch in question
@@ -62833,9 +62547,8 @@ branch.<name>.remote and branch.<name>.merge. If the upstream branch of @emph{A}
 is @emph{origin/B} sometimes we say "@emph{A} is tracking @emph{origin/B}".
 
 @item  working tree 
-The tree of actual checked out files.  The working tree normally contains
-the contents of the HEAD (@pxref{[def_HEAD]}) commit’s tree, plus any local changes
-that you have made but not yet committed.
+実際にチェックアウトされたファイル群のツリー。 作業ツリーには通常、 HEAD (@pxref{[def_HEAD]})
+コミットのツリーの内容に加えて、任意の、まだコミットされていないローカルの変更が含まれています。
 @end table
 
 @noindent
@@ -66627,56 +66340,49 @@ $ git commit
 @end example
 
 
-This will again prompt you for a message describing the change, and then
-record a new version of the project.
+これにより、変更を説明するメッセージの入力を再度求められ、プロジェクトの新しいバージョンが記録されます。
 
-Alternatively, instead of running @emph{git add} beforehand, you can use
+または、事前に「git add」を実行する代わりに、あなたは以下を使用できます。
 
 @example
 $ git commit -a
 @end example
 
 
-which will automatically notice any modified (but not new) files, add them
-to the index, and commit, all in one step.
+これにより、変更された(ただし新規ではない)ファイルが自動的に認識され、それらがインデックスに追加され、コミットされます。それらがすべて1つのステップで実行されます。
 
-A note on commit messages: Though not required, it’s a good idea to begin
-the commit message with a single short (less than 50 character)  line
-summarizing the change, followed by a blank line and then a more thorough
-description. The text up to the first blank line in a commit message is
-treated as the commit title, and that title is used throughout Git.  For
-example, git-format-patch(1) turns a commit into email, and it uses
-the title on the Subject line and the rest of the commit in the body.
+コミットメッセージに関する注意:
+必須ではありませんが、コミットメッセージは、変更を要約した1行の短い(50文字未満)行で始まり、空行が1行あり、その後にさらに詳細な説明が続くようにすることをお勧めします。コミットメッセージの最初の空白行までのテキストはコミットタイトルとして扱われ、そのタイトルはGit全体で使用されます。たとえば、
+git-format-patch(1)
+はコミットを電子メールに変換し、件名としてコミットタイトル、本文として残りのコミットメッセージを使用します。
 
 @noindent
 
 @chapheading Git tracks content not files
 
-Many revision control systems provide an @samp{add} command that tells the system
-to start tracking changes to a new file.  Git’s @samp{add} command does something
-simpler and more powerful: @emph{git add} is used both for new and newly modified
-files, and in both cases it takes a snapshot of the given files and stages
-that content in the index, ready for inclusion in the next commit.
+【Gitはファイルではなくコンテンツを追跡する】多くのリビジョン管理システムは、新しいファイルへの変更の追跡を開始するようにシステムに指示する
+@samp{add} コマンドを提供します。 Gitの @samp{add} コマンドは、よりシンプルで強力な機能を実行します。 @samp{git add}
+'は、新しいファイルと新しく変更されたファイルの両方に使用されます。どちらの場合も、指定されたファイルのスナップショットを取得し、そのコンテンツをインデックスにステージングして、次のコミットにすぐに含めることができます。
 
 @noindent
 
 @chapheading Viewing project history
 
-At any point you can view the history of your changes using
+あなたはいつでも、以下を使用して変更の履歴を表示できます
 
 @example
 $ git log
 @end example
 
 
-If you also want to see complete diffs at each step, use
+あなたが各ステップで完全な差分も表示したい場合は、以下を使用してください
 
 @example
 $ git log -p
 @end example
 
 
-Often the overview of the change is useful to get a feel of each step
+多くの場合、以下のような変更の概要は、各ステップの感触をつかむのに役立ちます
 
 @example
 $ git log --stat --summary
@@ -66687,22 +66393,21 @@ $ git log --stat --summary
 
 @chapheading Managing branches
 
-A single Git repository can maintain multiple branches of development.  To
-create a new branch named "experimental", use
+単一のGitリポジトリで、開発の複数のブランチを維持できます。「experimental」という名前の新しいブランチを作成するには、以下のようにします。
 
 @example
 $ git branch experimental
 @end example
 
 
-If you now run
+そして、以下のようにすることができます
 
 @example
 $ git branch
 @end example
 
 
-you’ll get a list of all existing branches:
+そうすると、既存のすべてのブランチのリストが表示されます。
 
 @example
   experimental
@@ -66710,17 +66415,14 @@ you’ll get a list of all existing branches:
 @end example
 
 
-The "experimental" branch is the one you just created, and the "master"
-branch is a default branch that was created for you automatically.  The
-asterisk marks the branch you are currently on; type
+「experimental」ブランチは作成したばかりのブランチであり、「master」ブランチは自動的に作成されたデフォルトのブランチです。アスタリスク(@samp{*})は、現在使用しているブランチを示します。そして以下のようにタイプします。
 
 @example
 $ git switch experimental
 @end example
 
 
-to switch to the experimental branch.  Now edit a file, commit the change,
-and switch back to the master branch:
+するとexperimentalブランチに切り替えます。次に、ファイルを編集し、変更をコミットして、masterブランチに戻ります:
 
 @example
 (edit file)
@@ -66729,10 +66431,9 @@ $ git switch master
 @end example
 
 
-Check that the change you made is no longer visible, since it was made on
-the experimental branch and you’re back on the master branch.
+その変更はexperimentalブランチで行われ、masterブランチに戻ったため、その変更が表示されなくなったことを確認します。
 
-You can make a different change on the master branch:
+masterブランチで別の変更を加えることができます:
 
 @example
 (edit file)
@@ -66740,78 +66441,71 @@ $ git commit -a
 @end example
 
 
-at this point the two branches have diverged, with different changes made in
-each.  To merge the changes made in experimental into master, run
+この時点で、2つのブランチは分岐しており、それぞれに異なる変更が加えられています。experimentalで行った変更をmasterにマージするには、以下を実行します
 
 @example
 $ git merge experimental
 @end example
 
 
-If the changes don’t conflict, you’re done.  If there are conflicts, markers
-will be left in the problematic files showing the conflict;
+変更が競合しない場合は、これで完了です。 競合がある場合、競合を示すマーカーが問題のあるファイルに残されます。
 
 @example
 $ git diff
 @end example
 
 
-will show this.  Once you’ve edited the files to resolve the conflicts,
+とすると、これを表示します。あなたが競合を解決するためにファイルを編集したら
 
 @example
 $ git commit -a
 @end example
 
 
-will commit the result of the merge. Finally,
+とすると、マージの結果をコミットします。そして最後に、
 
 @example
 $ gitk
 @end example
 
 
-will show a nice graphical representation of the resulting history.
+とすると、結果の履歴の優れたグラフィック表現が表示されます。
 
-At this point you could delete the experimental branch with
+この時点で、以下のコマンドでexperimentalブランチを削除できます
 
 @example
 $ git branch -d experimental
 @end example
 
 
-This command ensures that the changes in the experimental branch are already
-in the current branch.
+このコマンドは、experimentalブランチでの変更がすでに現在のブランチにあることを確認します。
 
-If you develop on a branch crazy-idea, then regret it, you can always delete
-the branch with
+あなたがブランチクレイジーアイデアで開発し、それを後悔しているなら、あなたはいつでもブランチを(マージせずに)削除することができます
 
 @example
 $ git branch -D crazy-idea
 @end example
 
 
-Branches are cheap and easy, so this is a good way to try something out.
+ブランチのコストは安くて、かつ操作は簡単なので、これは何かを一時的に試す良い方法です。
 
 @noindent
 
 @chapheading Using Git for collaboration
 
-Suppose that Alice has started a new project with a Git repository in
-/home/alice/project, and that Bob, who has a home directory on the same
-machine, wants to contribute.
+アリス(Alice)が /home/alice/project
+にGitリポジトリを使用して新しいプロジェクトを開始し、同じマシンにホームディレクトリを持っているボブ(Bob)が貢献したいとします。
 
-Bob begins with:
+ボブは以下のように始めます:
 
 @example
 bob$ git clone /home/alice/project myrepo
 @end example
 
 
-This creates a new directory "myrepo" containing a clone of Alice’s
-repository.  The clone is on an equal footing with the original project,
-possessing its own copy of the original project’s history.
+これにより、アリスのリポジトリのクローンを含む新しいディレクトリ「myrepo」が作成されます。クローンは元のプロジェクトと同等の立場にあり、元のプロジェクトの履歴の独自のコピーを所有しています。
 
-Bob then makes some changes and commits them:
+次に、ボブはいくつかの変更を加えてコミットします:
 
 @example
 (edit files)
@@ -66820,8 +66514,7 @@ bob$ git commit -a
 @end example
 
 
-When he’s ready, he tells Alice to pull changes from the repository at
-/home/bob/myrepo.  She does this with:
+準備ができたら、ボブはアリスに /home/bob/myrepo のリポジトリから変更をプルするように指示します。アリスはこれを以下のように行います:
 
 @example
 alice$ cd /home/alice/project
@@ -66829,25 +66522,14 @@ alice$ git pull /home/bob/myrepo master
 @end example
 
 
-This merges the changes from Bob’s "master" branch into Alice’s current
-branch.  If Alice has made her own changes in the meantime, then she may
-need to manually fix any conflicts.
+これにより、ボブの「master」ブランチからの変更がアリスの現在のブランチにマージされます。その間にアリスが自分で変更を加えた場合は、競合を手動で修正する必要があります。
 
-The "pull" command thus performs two operations: it fetches changes from a
-remote branch, then merges them into the current branch.
+つまり「pull」コマンドは2つの操作を実行します。リモートブランチから変更をフェッチしてから、それらを現在のブランチにマージします。
 
-Note that in general, Alice would want her local changes committed before
-initiating this "pull".  If Bob’s work conflicts with what Alice did since
-their histories forked, Alice will use her working tree and the index to
-resolve conflicts, and existing local changes will interfere with the
-conflict resolution process (Git will still perform the fetch but will
-refuse to merge — Alice will have to get rid of her local changes in some
-way and pull again when this happens).
+一般に、アリスが「プル」を開始する前に、アリス自身のローカルの変更をコミットすることを望んでいることに注意してください。ボブの作業が、履歴が分岐してからアリスが行ったことと競合する場合、アリスは作業ツリーとインデックスを使用して競合を解決し、既存のアリス自身のローカル変更は競合解決プロセスの障害となります(Gitは引き続きフェッチを実行しますが、マージを拒否します。アリスは、何らかの方法でアリス自身のローカルの変更を取り除き、再度プルする必要があります)。
 
-Alice can peek at what Bob did without merging first, using the "fetch"
-command; this allows Alice to inspect what Bob did, using a special symbol
-"FETCH_HEAD", in order to determine if he has anything worth pulling, like
-this:
+アリスは、「fetch」コマンドを使用して、マージせずにボブが行ったことを確認できます。
+これにより、アリスはボブが何をしたかを特別な記号「FETCH_HEAD」を使用して検査し、プルする価値があるかどうかを判断できます。
 
 @example
 alice$ git fetch /home/bob/myrepo master
@@ -66855,102 +66537,83 @@ alice$ git log -p HEAD..FETCH_HEAD
 @end example
 
 
-This operation is safe even if Alice has uncommitted local changes.  The
-range notation "HEAD..FETCH_HEAD" means "show everything that is reachable
-from the FETCH_HEAD but exclude anything that is reachable from HEAD".
-Alice already knows everything that leads to her current state (HEAD), and
-reviews what Bob has in his state (FETCH_HEAD) that she has not seen with
-this command.
+この操作は、アリスがアリス自身のローカルの変更をコミットしていない場合でも安全です。 範囲表記 @samp{HEAD..FETCH_HEAD}
+は、「FETCH_HEADから到達可能なすべてのものを表示し、HEADから到達可能なものはすべて除外する」ことを意味します。
+このコマンドで、アリスは、現在の状態（HEAD）につながるすべてのことをすでに知っているとして、ボブが持っている状態（FETCH_HEAD）で、かつ、アリスが持っていないモノを確認します。
 
-If Alice wants to visualize what Bob did since their histories forked she
-can issue the following command:
+アリスが、ボブとの履歴が分岐してから何をしたかを視覚化したい場合は、以下のコマンドを実行できます:
 
 @example
 $ gitk HEAD..FETCH_HEAD
 @end example
 
 
-This uses the same two-dot range notation we saw earlier with @emph{git log}.
+これは、前に「git log」で見たのと同じ2ドットの範囲表記を使用します。
 
-Alice may want to view what both of them did since they forked.  She can use
-three-dot form instead of the two-dot form:
+アリスは、フォークして以来、アリスとボブの両方が何をしたかを見たいと思うかもしれません。その場合、アリスはは2ドット形式の代わりに3ドット形式を使用できます:
 
 @example
 $ gitk HEAD...FETCH_HEAD
 @end example
 
 
-This means "show everything that is reachable from either one, but exclude
-anything that is reachable from both of them".
+これは、「どちらか一方から到達可能なものはすべて表示し、両方から到達可能なものはすべて除外する」ことを意味します。
 
-Please note that these range notation can be used with both gitk and "git
-log".
+これらの範囲表記は、gitkと「git log」の両方で使用できることに注意してください。
 
-After inspecting what Bob did, if there is nothing urgent, Alice may decide
-to continue working without pulling from Bob.  If Bob’s history does have
-something Alice would immediately need, Alice may choose to stash her
-work-in-progress first, do a "pull", and then finally unstash her
-work-in-progress on top of the resulting history.
+ボブが何をしたかを調べた後、緊急のことがなければ、アリスはボブからプルせずに作業を続けることを決定するかもしれません。ボブの履歴にアリスがすぐに必要とするものがある場合、アリスは最初に進行中の作業をstashし、「プル」を実行し、最後に結果の履歴に加えて進行中の作業をunstashすることを選択できます。
 
-When you are working in a small closely knit group, it is not unusual to
-interact with the same repository over and over again.  By defining @emph{remote}
-repository shorthand, you can make it easier:
+小さな緊密なグループで作業している場合、同じリポジトリを何度も操作することは珍しくありません。リモートリポジトリの省略形を定義すると、作業は以下のように簡単になります:
 
 @example
 alice$ git remote add bob /home/bob/myrepo
 @end example
 
 
-With this, Alice can perform the first part of the "pull" operation alone
-using the @emph{git fetch} command without merging them with her own branch,
-using:
+これにより、アリスは「git
+fetch」コマンドを使用して、「pull」操作の最初の部分を自分のブランチとマージせずに、以下のコマンドを使用して単独で実行できます:
 
 @example
 alice$ git fetch bob
 @end example
 
 
-Unlike the longhand form, when Alice fetches from Bob using a remote
-repository shorthand set up with @emph{git remote}, what was fetched is stored in
-a remote-tracking branch, in this case @samp{bob/master}.  So after this:
+直接書いた形式とは異なり、アリスが「git
+remote」で設定したリモートリポジト省略形を使用してボブからフェッチする場合、フェッチされたものはリモート追跡ブランチ(この場合は「bob/master」）に保存されます。
+したがって、以下のようにすると:
 
 @example
 alice$ git log -p master..bob/master
 @end example
 
 
-shows a list of all the changes that Bob made since he branched from Alice’s
-master branch.
+ボブがアリスのmasterブランチから分岐してから行ったすべての変更のリストを示します。
 
-After examining those changes, Alice could merge the changes into her master
-branch:
+これらの変更を調べた後、アリスは変更をアリス自身のmasterブランチにマージできます。
 
 @example
 alice$ git merge bob/master
 @end example
 
 
-This @samp{merge} can also be done by @emph{pulling from her own remote-tracking
-branch}, like this:
+この「マージ」は、以下のように「アリス自身のリモート追跡ブランチからプルする」ことによっても実行できます:
 
 @example
 alice$ git pull . remotes/bob/master
 @end example
 
 
-Note that git pull always merges into the current branch, regardless of what
-else is given on the command line.
+注意: コマンドラインで他に何が指定されているかに関係なく、 @samp{git pull} は常に現在のブランチにマージされることに注意してください。
 
-Later, Bob can update his repo with Alice’s latest changes using
+その後、ボブは以下を使用してアリスの最新の変更でボブのリポジトリを更新できます
 
 @example
 bob$ git pull
 @end example
 
 
-Note that he doesn’t need to give the path to Alice’s repository; when Bob
-cloned Alice’s repository, Git stored the location of her repository in the
-repository configuration, and that location is used for pulls:
+注意:
+ボブはアリスのリポジトリへのパスを指定する必要がないことに注意してください。ボブがアリスのリポジトリのクローンを作成したとき、Gitはアリスのリポジトリの場所をリポジトリ構成に保存し、その場所がプルに使用されます。
 
 @example
 bob$ git config --get remote.origin.url
@@ -66958,12 +66621,10 @@ bob$ git config --get remote.origin.url
 @end example
 
 
-(The complete configuration created by @emph{git clone} is visible using @samp{git
-config -l}, and the git-config(1) man page explains the meaning of
-each option.)
+( @emph{git clone} によって作成される完全な構成は、 @samp{git config -l} を使用して表示でき、
+git-config(1) のマニュアルページで各オプションの意味を説明しています。)
 
-Git also keeps a pristine copy of Alice’s master branch under the name
-"origin/master":
+Gitは、「origin/master」という名前でアリスのmasterブランチの当初の綺麗なコピー(pristine copy)も保持しています。
 
 @example
 bob$ git branch -r
@@ -66971,20 +66632,17 @@ bob$ git branch -r
 @end example
 
 
-If Bob later decides to work from a different host, he can still perform
-clones and pulls using the ssh protocol:
+ボブが後で別のホストから作業することを決定した場合でも、sshプロトコルを使用してクローンとプルを実行できます:
 
 @example
 bob$ git clone alice.org:/home/alice/project myrepo
 @end example
 
 
-Alternatively, Git has a native protocol, or can use http; see
-git-pull(1) for details.
+代わりに、Gitのネイティブプロトコルや、httpを使用できます。詳細については、 git-pull(1) を参照してください。
 
-Git can also be used in a CVS-like mode, with a central repository that
-various users push changes to; see git-push(1) and
-gitcvs-migration(7).
+Gitは、さまざまなユーザーが変更をプッシュする中央リポジトリを使用して、CVSのようなモードで使用することもできます。
+git-push(1) と gitcvs-migration(7) を参照してください。
 
 @noindent
 
