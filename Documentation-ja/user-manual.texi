@@ -855,8 +855,9 @@ $ git log origin...master
 $ gitk e05db0fd..
 @end example
 
-or you can use @uref{git-name-rev.html,git-name-rev(1)}, which will give the commit a name
-based on any tag it finds pointing to one of the commit’s descendants:
+または、あなたは @uref{git-name-rev.html,git-name-rev(1)}
+を使用できます。これにより、コミットの子孫の1つを指すタグが見つかった場合は、そのコミットに名前が与えられます(訳注:コミットの子孫の1つを指すタグが
+tags/v1.5.0-rc1 であったのでそこから辿って e05db0fd は tags/v1.5.0-rc1^0~23 という「名前」になった):
 
 @example
 $ git name-rev --tags e05db0fd
@@ -4396,21 +4397,12 @@ Gitの基本的なデータ構造とユーティリティ。これは、限定�
 danglingオブジェクトには、リポジトリ (@pxref{[def_repository]})内の任意のrefまたはオブジェクト (@pxref{[def_object]})からの参照はありません。
 
 @item  @anchor{[def_detached_HEAD]}detached HEAD 
-Normally the HEAD (@pxref{[def_HEAD]}) stores the name of a branch (@pxref{[def_branch]}),
-and commands that operate on the history HEAD represents operate on the
-history leading to the tip of the branch the HEAD points at.  However, Git
-also allows you to check out (@pxref{[def_checkout]}) an arbitrary
-commit (@pxref{[def_commit]}) that isn’t necessarily the tip of any particular
-branch.  The HEAD in such a state is called "detached".
+通常、HEAD (@pxref{[def_HEAD]})はブランチ (@pxref{[def_branch]})の名前を格納し、HEADが示す履歴を操作するコマンドは、HEADが指すブランチの先端につながる履歴を操作します。
+ただし、Gitでは、必ずしも特定のブランチの先端ではない任意のコミット (@pxref{[def_commit]})をチェックアウト (@pxref{[def_checkout]})することもできます。このような状態のHEADを「detached」(切り離されている、デタッチされている)と呼びます。
 
-Note that commands that operate on the history of the current branch
-(e.g. @samp{git commit} to build a new history on top of it) still work while the
-HEAD is detached. They update the HEAD to point at the tip of the updated
-history without affecting any branch.  Commands that update or inquire
-information @emph{about} the current branch (e.g. @samp{git branch --set-upstream-to}
-that sets what remote-tracking branch the current branch integrates with)
-obviously do not work, as there is no (real) current branch to ask about in
-this state.
+注意: 現在のブランチの履歴を操作するコマンド(たとえば、その上に新しい履歴を構築するための @samp{git
+commit})は、HEADがデタッチされている間も機能することに注意してください。それらは、ブランチに影響を与えることなく、更新された履歴の先端を指すようにHEADを更新します。現在のブランチに関する情報を更新または照会するコマンド(たとえば、現在のブランチが統合するリモートトラッキングブランチを設定する
+@samp{git branch --set-upstream-to})は、この状態で問い合わせる(実際の)現在のブランチがないため、明らかに機能しません。
 
 @item  @anchor{[def_directory]}directory 
 あなたが "ls" で得られる一覧の事 :-)
@@ -4421,22 +4413,12 @@ this state.
 @item  @anchor{[def_evil_merge]}evil merge 
 邪悪なマージとは、どの 親 (@pxref{[def_parent]}) にも表示されない変更を導入する マージ (@pxref{[def_merge]}) です。
 
-@item  @anchor{[def_fast_forward]}fast-forward(早送り) 
-A fast-forward is a special type of merge (@pxref{[def_merge]}) where you have a
-revision (@pxref{[def_revision]}) and you are "merging" another
-branch (@pxref{[def_branch]})'s changes that happen to be a descendant of what you
-have. In such a case, you do not make a new merge (@pxref{[def_merge]})
-commit (@pxref{[def_commit]}) but instead just update your branch to point at the
-same revision as the branch you are merging. This will happen frequently on
-a remote-tracking branch (@pxref{[def_remote_tracking_branch]}) of a remote
-repository (@pxref{[def_repository]}).
+@item  @anchor{[def_fast_forward]}fast-forward 
+fast-forward(早送り)は、とあるリビジョン (@pxref{[def_revision]})に、その子孫である別のブランチ (@pxref{[def_branch]})の変更をマージする特殊なタイプのマージ (@pxref{[def_merge]})です。このような場合、新しいマージ (@pxref{[def_merge]})コミット (@pxref{[def_commit]})を行うのではなく、マージするブランチと同じリビジョンを指すようにブランチを更新するだけです。これは、リモートリポジトリ (@pxref{[def_repository]})のリモート追跡ブランチ (@pxref{[def_remote_tracking_branch]})で頻繁に発生します。
 
 @item  @anchor{[def_fetch]}fetch 
-Fetching a branch (@pxref{[def_branch]}) means to get the branch’s
-head ref (@pxref{[def_head_ref]}) from a remote repository (@pxref{[def_repository]}), to
-find out which objects are missing from the local
-object database (@pxref{[def_object_database]}), and to get them, too.  See also
-@uref{git-fetch.html,git-fetch(1)}.
+ブランチ (@pxref{[def_branch]})をフェッチするということは、リモートリポジトリ (@pxref{[def_repository]})からブランチのhead         ref (@pxref{[def_head_ref]})を取得して、ローカルのオブジェクトデータベース (@pxref{[def_object_database]})に欠落しているオブジェクトを見つけ、そして欠落したオブジェクトを取得することを意味します。
+@uref{git-fetch.html,git-fetch(1)} も参照してください。
 
 @item  @anchor{[def_file_system]}file system 
 リーナス・トーバルズは当初、Gitをユーザー空間ファイルシステム、つまりファイルとディレクトリを保持するインフラストラクチャとして設計しました。これにより、Gitの効率と速度が保証されました。
@@ -4448,15 +4430,11 @@ object database (@pxref{[def_object_database]}), and to get them, too.  See also
 実際のリポジトリであるディレクトリを指す、作業ツリーのルートにあるプレーンファイル @samp{.git}
 
 @item  @anchor{[def_grafts]}grafts 
-Grafts enables two otherwise different lines of development to be joined
-together by recording fake ancestry information for commits. This way you
-can make Git pretend the set of parents (@pxref{[def_parent]}) a
-commit (@pxref{[def_commit]}) has is different from what was recorded when the
-commit was created. Configured via the @samp{.git/info/grafts} file.
+graftsは、コミットの偽の祖先情報を記録することで、他の点では異なる2つの開発ラインを結合できます。こうすることで、あるコミット (@pxref{[def_commit]})が持つ親 (@pxref{[def_parent]})の組を、コミット作成時に記録されたものとは異なるものとして
+Git に見せかけることができるのです。これは @samp{.git/info/grafts} ファイルを介して構成されます。
 
-Note that the grafts mechanism is outdated and can lead to problems
-transferring objects between repositories; see @uref{git-replace.html,git-replace(1)} for a
-more flexible and robust system to do the same thing.
+注意: graftsメカニズムは時代遅れであり、リポジトリ間でオブジェクトを転送する際に問題が発生する可能性があることに注意してください。
+同じことを行うためのより柔軟で堅牢なシステムについては、 @uref{git-replace.html,git-replace(1)} を参照してください。
 
 @item  @anchor{[def_hash]}hash 
 Gitの文脈では オブジェクト名 (@pxref{[def_object_name]}) と同義語。
@@ -4467,33 +4445,22 @@ Gitの文脈では オブジェクト名 (@pxref{[def_object_name]}) と同義�
 (linkgit: git-pack-refs[1] を参照してください。)
 
 @item  @anchor{[def_HEAD]}HEAD 
-The current branch (@pxref{[def_branch]}).  In more detail: Your working tree (@pxref{[def_working_tree]}) is normally derived from the state of the tree referred to by
-HEAD.  HEAD is a reference to one of the heads (@pxref{[def_head]}) in your
-repository, except when using a detached HEAD (@pxref{[def_detached_HEAD]}), in
-which case it directly references an arbitrary commit.
+現在のブランチ (@pxref{[def_branch]})。
+より詳細に言うと、あなたの作業ツリー (@pxref{[def_working_tree]})は通常、HEADによって参照されるツリーの状態から派生します。HEADは、リポジトリ内のhead (@pxref{[def_head]})達のうちの一つへの参照です。ただし、detached         HEAD (@pxref{[def_detached_HEAD]})をの場合は、任意のコミットを直接参照しています。
 
 @item  @anchor{[def_head_ref]}head ref 
 head (@pxref{[def_head]}) の同義語。
 
 @item  @anchor{[def_hook]}hook 
-During the normal execution of several Git commands, call-outs are made to
-optional scripts that allow a developer to add functionality or
-checking. Typically, the hooks allow for a command to be pre-verified and
-potentially aborted, and allow for a post-notification after the operation
-is done. The hook scripts are found in the @samp{$GIT_DIR/hooks/} directory, and
-are enabled by simply removing the @samp{.sample} suffix from the filename. In
-earlier versions of Git you had to make them executable.
+いくつかのGitコマンドの通常の実行中に、開発者が機能を追加したりチェックしたりできるようにするオプションのスクリプトを呼び出します。通常、フックを使用すると、コマンドを事前に確認して中止することができ、そしてまた、操作の完了後に事後通知を行うことができます。フックスクリプトは
+@samp{$GIT_DIR/hooks/} ディレクトリにあり、ファイル名から @samp{.sample}
+サフィックスを削除するだけで有効になります。以前のバージョンのGitでは、それらを実行可能にする必要がありました。
 
 @item  @anchor{[def_index]}index 
-A collection of files with stat information, whose contents are stored as
-objects. The index is a stored version of your working         tree (@pxref{[def_working_tree]}). Truth be told, it can also contain a second, and even a third
-version of a working tree, which are used when merging (@pxref{[def_merge]}).
+状態情報を含むファイルのコレクションで、その内容はオブジェクトとして保存されます。インデックスは、あなたの作業ツリー (@pxref{[def_working_tree]})の保存バージョンです。正直なところ、これには、マージ (@pxref{[def_merge]})のときに使用される、作業ツリーの2番目および3番目のバージョンを含めることもできます。
 
 @item  @anchor{[def_index_entry]}index entry 
-The information regarding a particular file, stored in the
-index (@pxref{[def_index]}). An index entry can be unmerged, if a
-merge (@pxref{[def_merge]}) was started, but not yet finished (i.e. if the index
-contains multiple versions of that file).
+インデックス (@pxref{[def_index]})に保存されている特定のファイルに関する情報。マージ (@pxref{[def_merge]})が開始されたが、まだ終了していない場合(つまり、インデックスにそのファイルの複数のバージョンが含まれている場合)、インデックスエントリをマージ解除(unmerge)できます。
 
 @item  @anchor{[def_master]}master 
 デフォルトの開発 ブランチ (@pxref{[def_branch]}) 。 Git リポジトリ (@pxref{[def_repository]})
@@ -4501,30 +4468,19 @@ contains multiple versions of that file).
 ほとんどのローカル開発に含まれていますが、これは純粋に慣例によるものであり、必須ではありません。
 
 @item  @anchor{[def_merge]}merge 
-As a verb: To bring the contents of another branch (@pxref{[def_branch]}) (possibly
-from an external repository (@pxref{[def_repository]})) into the current branch.  In
-the case where the merged-in branch is from a different repository, this is
-done by first fetching (@pxref{[def_fetch]}) the remote branch and then merging the
-result into the current branch.  This combination of fetch and merge
-operations is called a pull (@pxref{[def_pull]}).  Merging is performed by an
-automatic process that identifies changes made since the branches diverged,
-and then applies all those changes together.  In cases where changes
-conflict, manual intervention may be required to complete the merge.
+動詞として:
+別のブランチ (@pxref{[def_branch]})(あるいは外部のリポジトリ (@pxref{[def_repository]})から)の内容を現在のブランチに取り込むこと。マージされたブランチが別のリポジトリからのものである場合、これは最初にリモートブランチをフェッチ (@pxref{[def_fetch]})し、次に結果を現在のブランチにマージすることによって行われます。このフェッチ操作とマージ操作の組み合わせは、プル(pull) (@pxref{[def_pull]})と呼ばれます。マージは、ブランチが分岐してから行われた変更を識別し、それらすべての変更を一緒に適用する自動プロセスによって実行されます。変更が競合する場合は、マージを完了するために手動による介入が必要になる場合があります。
 
-As a noun: unless it is a fast-forward (@pxref{[def_fast_forward]}), a successful
-merge results in the creation of a new commit (@pxref{[def_commit]}) representing
-the result of the merge, and having as parents (@pxref{[def_parent]}) the tips of
-the merged branches (@pxref{[def_branch]}).  This commit is referred to as a "merge
-commit", or sometimes just a "merge".
+名詞として:
+fast-forward (@pxref{[def_fast_forward]})でない限り、マージ成功の結果として、マージされたブランチ (@pxref{[def_branch]})の先端を親 (@pxref{[def_parent]})に持つ新しいコミット (@pxref{[def_commit]})が作成されます。このコミットは「マージコミット」と呼ばれます。または単に「マージ」と呼ばれることもあります。
 
 @item  @anchor{[def_object]}object(オブジェクト) 
 Gitの保管ユニット(unit of storage)。その内容による SHA-1 (@pxref{[def_SHA1]})
 によって一意に識別されます。したがって、オブジェクトを変更することはできません。
 
 @item  @anchor{[def_object_database]}object database 
-Stores a set of "objects", and an individual object (@pxref{[def_object]}) is
-identified by its object name (@pxref{[def_object_name]}). The objects usually live
-in @samp{$GIT_DIR/objects/}.
+「オブジェクト」の組を格納し、個々のオブジェクト (@pxref{[def_object]})はそのオブジェクト名 (@pxref{[def_object_name]})によって識別されます。オブジェクトは通常、
+@samp{$GIT_DIR/objects/} にあります。
 
 @item  @anchor{[def_object_identifier]}object identifier(オブジェクトID) 
 object name (@pxref{[def_object_name]}) (オブジェクト名)の同義語
@@ -4541,28 +4497,21 @@ object name (@pxref{[def_object_name]}) (オブジェクト名)の同義語
 3つ以上(more than two)のブランチをマージします
 
 @item  @anchor{[def_origin]}origin 
-The default upstream repository (@pxref{[def_repository]}). Most projects have at
-least one upstream project which they track. By default @emph{origin} is used for
-that purpose. New upstream updates will be fetched into
-remote-tracking branches (@pxref{[def_remote_tracking_branch]}) named
-origin/name-of-upstream-branch, which you can see using @samp{git branch -r}.
+デフォルトの上流(upstream)リポジトリ (@pxref{[def_repository]})。ほとんどのプロジェクトには、追跡する上流プロジェクトが少なくとも1つあります。デフォルトでは、「origin」がその目的で使用されます。新しい上流更新分は、
+origin/name-of-upstream-branch という名前の
+リモート追跡ブランチ (@pxref{[def_remote_tracking_branch]})にフェッチされます。これは、 @samp{git branch-r}
+を使用して確認できます。
 
 @item  @anchor{[def_overlay]}overlay 
-Only update and add files to the working directory, but don’t delete them,
-similar to how @emph{cp -R} would update the contents in the destination
-directory.  This is the default mode in a checkout (@pxref{[def_checkout]}) when
-checking out files from the index (@pxref{[def_index]}) or a
-tree-ish (@pxref{[def_tree-ish]}).  In contrast, no-overlay mode also deletes
-tracked files not present in the source, similar to @emph{rsync --delete}.
+@samp{cp -R}
+が宛先ディレクトリの内容を更新するのと同様に、ファイルを更新して作業ディレクトリに追加するのみで削除を行いません。これは、インデックス (@pxref{[def_index]})またはツリー風の何か(tree-ish) (@pxref{[def_tree-ish]})からファイルをチェックアウトするときのcheckout (@pxref{[def_checkout]})のデフォルトモードです。対照的に、オーバーレイなしモード(no-overlay
+mode)では、 @samp{rsync --delete} と同様に、ソース側に存在しない追跡ファイルは削除されます。
 
 @item  @anchor{[def_pack]}pack 
-A set of objects which have been compressed into one file (to save space or
-to transmit them efficiently).
+1つのファイルに圧縮されたオブジェクトの組(スペースを節約するため、またはそれらを効率的に送信するため)。
 
 @item  @anchor{[def_pack_index]}pack index 
-The list of identifiers, and other information, of the objects in a
-pack (@pxref{[def_pack]}), to assist in efficiently accessing the contents of a
-pack.
+パックの内容に効率的にアクセスするのに役立つ、パック (@pxref{[def_pack]})内のオブジェクトの識別子とその他の情報のリスト。
 
 @item  @anchor{[def_pathspec]}pathspec 
 Gitコマンドでパスを制限するために使用されるパターン。
@@ -4664,67 +4613,43 @@ requirements)のリストがあります。パスが一致すると見なされ�
 @end table
 
 @item  @anchor{[def_parent]}parent(親) 
-A commit object (@pxref{[def_commit_object]}) contains a (possibly empty) list of
-the logical predecessor(s) in the line of development, i.e. its parents.
+コミットオブジェクト (@pxref{[def_commit_object]})には、開発ラインで論理的に前にあったもののリスト、つまり親が含まれています(あるいは、前・親が無い場合は空です)。
 
 @item  @anchor{[def_pickaxe]}pickaxe 
-The term pickaxe (@pxref{[def_pickaxe]}) refers to an option to the diffcore
-routines that help select changes that add or delete a given text
-string. With the @samp{--pickaxe-all} option, it can be used to view the full
-changeset (@pxref{[def_changeset]}) that introduced or removed, say, a particular
-line of text. See @uref{git-diff.html,git-diff(1)}.
+pickaxe (@pxref{[def_pickaxe]})(ピカクス;十字鋤;鶴嘴;つるはし)という用語は、特定のテキスト文字列を追加または削除する変更を選択するのに役立つdiffcoreルーチンのオプションを指します。
+@samp{--pickaxe-all}
+オプションを使用すると、特定のテキスト行などを導入または削除した完全なチェンジセット (@pxref{[def_changeset]})を表示するために使用できます。
+@uref{git-diff.html,git-diff(1)} を参照してください。
 
 @item  @anchor{[def_plumbing]}plumbing(配管) 
 core Git (@pxref{[def_core_git]}) のキュートな呼び方。
 
 @item  @anchor{[def_porcelain]}porcelain(磁器) 
-Cute name for programs and program suites depending on core         Git (@pxref{[def_core_git]}), presenting a high level access to core Git. Porcelains expose more of
-a SCM (@pxref{[def_SCM]}) interface than the plumbing (@pxref{[def_plumbing]}).
+core         Git (@pxref{[def_core_git]})に依存するプログラムとプログラムスイートのキュートな名前で、コアGitへの高レベルのアクセスを示します。磁器(porcelain)は、配管(plumbing) (@pxref{[def_plumbing]})よりも多くのSCM (@pxref{[def_SCM]})インターフェースを公開します。
 
 @item  @anchor{[def_per_worktree_ref]}per-worktree ref 
-Refs that are per-worktree (@pxref{[def_working_tree]}), rather than global.  This
-is presently only HEAD (@pxref{[def_HEAD]}) and any refs that start with
-@samp{refs/bisect/}, but might later include other unusual refs.
+グローバルではなく、ワークツリー (@pxref{[def_working_tree]})ごとのref。これは現在、HEAD (@pxref{[def_HEAD]})と
+@samp{refs/bisect/} で始まるすべての参照のみですが、のちには普通でない他の参照が含まれる可能性があります。
 
 @item  @anchor{[def_pseudoref]}pseudoref 
-Pseudorefs are a class of files under @samp{$GIT_DIR} which behave like refs for
-the purposes of rev-parse, but which are treated specially by git.
-Pseudorefs both have names that are all-caps, and always start with a line
-consisting of a SHA-1 (@pxref{[def_SHA1]}) followed by whitespace.  So, HEAD is not
-a pseudoref, because it is sometimes a symbolic ref.  They might optionally
-contain some additional data.  @samp{MERGE_HEAD} and @samp{CHERRY_PICK_HEAD} are
-examples.  Unlike per-worktree refs (@pxref{[def_per_worktree_ref]}), these files
-cannot be symbolic refs, and never have reflogs.  They also cannot be
-updated through the normal ref update machinery.  Instead, they are updated
-by directly writing to the files.  However, they can be read as if they were
-refs, so @samp{git rev-parse MERGE_HEAD} will work.
+疑似参照(pseudoref)は @samp{$GIT_DIR}
+の下にあるファイルのクラスであり、rev-parseしたときrefのように動作しますが、それはgitによって特別扱されます。疑似参照はすべて大文字の名前を持ち、かつ、常にSHA-1 (@pxref{[def_SHA1]})とそれに続く空白(whitespace)で構成される行で始まります。したがって、HEADは疑似参照ではありません。なぜならHEADはシンボリック参照である場合があるためです。オプションで、いくつかの追加データが含まれる場合があります。例としては
+@samp{MERGE_HEAD} と @samp{CHERRY_PICK_HEAD} があります。 per-worktree         refs (@pxref{[def_per_worktree_ref]}) とは異なり、これらのファイルはシンボリックrefにすることはできず、reflogを含めることはできません。
+また、通常のref更新機構を使用して更新することもできません。代わりに、ファイルに直接書き込むことによって更新されます。ただし、それらはrefであるかのように読み取ることができるため、
+@samp{git rev-parse MERGE_HEAD} は機能します。
 
 @item  @anchor{[def_pull]}pull 
-Pulling a branch (@pxref{[def_branch]}) means to fetch (@pxref{[def_fetch]}) it and
-merge (@pxref{[def_merge]}) it.  See also @uref{git-pull.html,git-pull(1)}.
+ブランチ (@pxref{[def_branch]})をプルするとは、それをフェッチ (@pxref{[def_fetch]})しマージ (@pxref{[def_merge]})することを意味します。
+@uref{git-pull.html,git-pull(1)} も参照してください。
 
 @item  @anchor{[def_push]}push 
-Pushing a branch (@pxref{[def_branch]}) means to get the branch’s
-head ref (@pxref{[def_head_ref]}) from a remote repository (@pxref{[def_repository]}), find
-out if it is an ancestor to the branch’s local head ref, and in that case,
-putting all objects, which are reachable (@pxref{[def_reachable]}) from the local
-head ref, and which are missing from the remote repository, into the remote
-object database (@pxref{[def_object_database]}), and updating the remote head
-ref. If the remote head (@pxref{[def_head]}) is not an ancestor to the local head,
-the push fails.
+ブランチ (@pxref{[def_branch]})をプッシュするとは、リモートリポジトリ (@pxref{[def_repository]})からブランチのヘッド参照 (@pxref{[def_head_ref]})を取得し、それがブランチのローカルヘッド参照の祖先であるかどうかを確認し、そしてその場合ローカルヘッド参照から到達可能 (@pxref{[def_reachable]})であり、かつ、リモートリポジトリに欠落しているすべてのオブジェクトを、リモートオブジェクトデータベース (@pxref{[def_object_database]})に持っていき、リモートヘッド参照を更新します。リモートヘッド (@pxref{[def_head]})がローカルヘッドの祖先でない場合、プッシュは失敗します。
 
 @item  @anchor{[def_reachable]}reachable(到達可能) 
-All of the ancestors of a given commit (@pxref{[def_commit]}) are said to be
-"reachable" from that commit. More generally, one object (@pxref{[def_object]}) is
-reachable from another if we can reach the one from the other by a
-chain (@pxref{[def_chain]}) that follows tags (@pxref{[def_tag]}) to whatever they tag,
-commits (@pxref{[def_commit_object]}) to their parents or trees, and
-trees (@pxref{[def_tree_object]}) to the trees or blobs (@pxref{[def_blob_object]}) that
-they contain.
+特定のコミット (@pxref{[def_commit]})のすべての祖先は、その特定のコミットから到達可能(reachable)であると言われます。より一般的には、タグ (@pxref{[def_tag]})付けしたものだったり、親またはツリーへのコミットオブジェクト (@pxref{[def_commit_object]})だったり、ツリー (@pxref{[def_tree_object]})に含まれるツリーやブロブだったり、をたどるチェーン (@pxref{[def_chain]})によって、あるオブジェクト (@pxref{[def_object]})から別のオブジェクト (@pxref{[def_object]})に到達できる場合に到達が可能です。
 
 @item  @anchor{[def_rebase]}rebase 
-To reapply a series of changes from a branch (@pxref{[def_branch]}) to a different
-base, and reset the head (@pxref{[def_head]}) of that branch to the result.
+一連の変更をブランチ (@pxref{[def_branch]})から別のベースに再適用し、そのブランチのヘッド (@pxref{[def_head]})を再適用した結果にリセットします。
 
 @item  @anchor{[def_ref]}ref 
 オブジェクト名または別のrefを指す @samp{refs/} で始まる名前(例: @samp{refs/heads/master};別のrefを指すrefは
@@ -4743,29 +4668,19 @@ reflogは、refのローカルの「履歴」を示します。
 @uref{git-reflog.html,git-reflog(1)} を参照してください。
 
 @item  @anchor{[def_refspec]}refspec 
-A "refspec" is used by fetch (@pxref{[def_fetch]}) and push (@pxref{[def_push]}) to describe
-the mapping between remote ref (@pxref{[def_ref]}) and local ref.
+「refspec」は、フェッチ (@pxref{[def_fetch]})やプッシュ (@pxref{[def_push]})によって使用され、リモートref (@pxref{[def_ref]})とローカルrefの間のマッピングを記述します。
 
 @item  @anchor{[def_remote]}remote repository 
-A repository (@pxref{[def_repository]}) which is used to track the same project but
-resides somewhere else. To communicate with remotes, see fetch (@pxref{[def_fetch]})
-or push (@pxref{[def_push]}).
+同じプロジェクトを追跡するために使用されるが、別の場所にあるリポジトリ (@pxref{[def_repository]})。リモートと通信するには、フェッチ (@pxref{[def_fetch]})またはプッシュ (@pxref{[def_push]})を参照してください。
 
 @item  @anchor{[def_remote_tracking_branch]}remote-tracking branch 
-A ref (@pxref{[def_ref]}) that is used to follow changes from another
-repository (@pxref{[def_repository]}). It typically looks like
-@emph{refs/remotes/foo/bar} (indicating that it tracks a branch named @emph{bar} in a
-remote named @emph{foo}), and matches the right-hand-side of a configured fetch
-refspec (@pxref{[def_refspec]}). A remote-tracking branch should not contain direct
-modifications or have local commits made to it.
+別のリポジトリ (@pxref{[def_repository]})からの変更を追跡するために使用されるref (@pxref{[def_ref]})。 これは通常、
+@samp{refs/remotes/foo/bar}
+のように見え(「foo」という名前のリモートで「bar」という名前のブランチを追跡することを示します)、構成されたフェッチrefspec (@pxref{[def_refspec]})の右側(right-hand-side)に一致します。リモート追跡ブランチには、直接の変更を含めたり、ローカルコミットを行ったりしないでください。
 
 @item  @anchor{[def_repository]}repository 
-A collection of refs (@pxref{[def_ref]}) together with an
-object database (@pxref{[def_object_database]}) containing all objects which are
-reachable (@pxref{[def_reachable]}) from the refs, possibly accompanied by meta data
-from one or more porcelains (@pxref{[def_porcelain]}). A repository can share an
-object database with other repositories via
-alternates mechanism (@pxref{[def_alternate_object_database]}).
+<<
+def_ref,refs>>のコレクションと、refから到達可能 (@pxref{[def_reachable]})なすべてのオブジェクトを含むオブジェクトデータベース (@pxref{[def_object_database]})。1つまたは複数の磁器 (@pxref{[def_porcelain]})コマンドからのメタデータが付随している可能性があります。リポジトリは、代替メカニズム (@pxref{[def_alternate_object_database]})を介してオブジェクトデータベースを他のリポジトリと共有できます。
 
 @item  @anchor{[def_resolve]}resolve 
 失敗した自動 マージ (@pxref{[def_merge]}) が残したものを手動で修正する操作。
@@ -4780,22 +4695,18 @@ alternates mechanism (@pxref{[def_alternate_object_database]}).
 Source code management (tool).
 
 @item  @anchor{[def_SHA1]}SHA-1 
-"Secure Hash Algorithm 1"; a cryptographic hash function.  In the context of
-Git used as a synonym for object name (@pxref{[def_object_name]}).
+セキュアハッシュアルゴリズム1(Secure Hash Algorithm 1);暗号化ハッシュ関数。
+Git界隈ではオブジェクト名 (@pxref{[def_object_name]})の同義語として使用されます。
 
 @item  @anchor{[def_shallow_clone]}shallow clone 
 ほとんどの場合 shallowリポジトリ (@pxref{[def_shallow_repository]}) の同義語ですが、この言い方は、 @samp{git clone
 --depth=...} コマンドを実行して作成されたこと明言したものです。
 
 @item  @anchor{[def_shallow_repository]}shallow repository 
-A shallow repository (@pxref{[def_repository]}) has an incomplete history some of
-whose commits (@pxref{[def_commit]}) have parents (@pxref{[def_parent]}) cauterized away (in
-other words, Git is told to pretend that these commits do not have the
-parents, even though they are recorded in the commit         object (@pxref{[def_commit_object]})). This is sometimes useful when you are interested only in the
-recent history of a project even though the real history recorded in the
-upstream is much larger. A shallow repository is created by giving the
-@samp{--depth} option to @uref{git-clone.html,git-clone(1)}, and its history can be later
-deepened with @uref{git-fetch.html,git-fetch(1)}.
+浅いリポジトリ(shallow repository)には不完全な履歴があり、そのコミットの一部では親が削除されて(cauterized
+away)います(言い換えると、Gitは、コミットオブジェクトに記録があっても、これらのコミットには親がないふりをするように指示されます)。これは、アップストリームで記録された実際の履歴がはるかに大きい場合でも、プロジェクトの最近の履歴のみに関心がある場合に役立つことがあります。浅いリポジトリは、
+@uref{git-clone.html,git-clone(1)} に @samp{--depth} オプションを指定することで作成され、その履歴は後で
+@uref{git-fetch.html,git-fetch(1)} で深めることができます。
 
 @item  @anchor{[def_stash]}stash entry 
 ダーティ (@pxref{[def_dirty]}) な作業ディレクトリの内容とインデックスを、将来の再利用のために一時的に保存するのに使用される
@@ -4816,33 +4727,24 @@ refs/some/thing」の形式であり、参照されると、この参照を再�
 はsymrefの代表的な例です。シンボリックrefは @uref{git-symbolic-ref.html,git-symbolic-ref(1)} コマンドで操作されます。
 
 @item  @anchor{[def_tag]}tag 
-A ref (@pxref{[def_ref]}) under @samp{refs/tags/} namespace that points to an object of
-an arbitrary type (typically a tag points to either a tag (@pxref{[def_tag_object]})
-or a commit object (@pxref{[def_commit_object]})).  In contrast to a
-head (@pxref{[def_head]}), a tag is not updated by the @samp{commit} command. A Git tag
-has nothing to do with a Lisp tag (which would be called an
-object type (@pxref{[def_object_type]}) in Git’s context). A tag is most typically
-used to mark a particular point in the commit ancestry chain (@pxref{[def_chain]}).
+任意のタイプのオブジェクトを指す @samp{refs/tags/} 名前空間の下のref (@pxref{[def_ref]})(通常、タグは
+タグ (@pxref{[def_tag_object]}) または コミットオブジェクト (@pxref{[def_commit_object]})
+のいずれかを指します)。head (@pxref{[def_head]})とは対照的に、タグは @samp{commit}
+コマンドによって更新されません。Gitタグは、Lispタグとは何の関係もありません(Git界隈では、それはオブジェクトタイプ (@pxref{[def_object_type]})と呼ばれます)。タグは通常、コミットの祖先チェーン (@pxref{[def_chain]})の特定のポイントをマークするために使用されます。
 
 @item  @anchor{[def_tag_object]}tag object 
-An object (@pxref{[def_object]}) containing a ref (@pxref{[def_ref]}) pointing to another
-object, which can contain a message just like a commit         object (@pxref{[def_commit_object]}). It can also contain a (PGP)  signature, in which case it is called
-a "signed tag object".
+別のオブジェクトを指すref (@pxref{[def_ref]})を含むオブジェクト (@pxref{[def_object]})。これには、コミットオブジェクト (@pxref{[def_commit_object]})のようにメッセージを含めることができます。またPGP署名を含めることもでき、その場合、「署名付きタグオブジェクト」(signed
+tag object)と呼ばれます。
 
 @item  @anchor{[def_topic_branch]}topic branch 
-A regular Git branch (@pxref{[def_branch]}) that is used by a developer to identify
-a conceptual line of development. Since branches are very easy and
-inexpensive, it is often desirable to have several small branches that each
-contain very well defined concepts or small incremental yet related changes.
+開発者が概念的な開発ラインを識別するために使用する通常のGitブランチ (@pxref{[def_branch]})。(従来のSCMに比べて)ブランチは非常に簡単で処理コストが掛からないため、それぞれが非常に明確に定義された概念または小さな増分であるが関連する変更を含む、いくつかの小さなブランチを持つことが望ましい場合がよくあります。
 
 @item  @anchor{[def_tree]}tree 
-Either a working tree (@pxref{[def_working_tree]}), or a tree         object (@pxref{[def_tree_object]}) together with the dependent blob (@pxref{[def_blob_object]}) and tree
-objects (i.e. a stored representation of a working tree).
+作業ツリー (@pxref{[def_working_tree]})、または、ツリーオブジェクト (@pxref{[def_tree_object]})とそれに依存するブロブ (@pxref{[def_blob_object]})やツリーオブジェクト(つまり、作業ツリーの保存された表現)、のいずれか。
 
 @item  @anchor{[def_tree_object]}tree object 
-An object (@pxref{[def_object]}) containing a list of file names and modes along
-with refs to the associated blob and/or tree objects. A tree (@pxref{[def_tree]}) is
-equivalent to a directory (@pxref{[def_directory]}).
+ファイル名とモードのリスト、および関連するブロブやツリーオブジェクトへのrefを含むオブジェクト (@pxref{[def_object]})。<<
+def_tree,ツリー>>とディレクトリ (@pxref{[def_directory]})は同じ意味です。
 
 @item  @anchor{[def_tree-ish]}tree-ish (also treeish) 
 ツリーっぽい何か。ツリーオブジェクトに再帰的に逆参照できる ツリーオブジェクト (@pxref{[def_tree_object]}) または
@@ -4851,17 +4753,16 @@ equivalent to a directory (@pxref{[def_directory]}).
 タグオブジェクト (@pxref{[def_tag_object]}) 、タグオブジェクトを指すタグオブジェクト
 
 @item  @anchor{[def_unmerged_index]}unmerged index 
-An index (@pxref{[def_index]}) which contains unmerged index         entries (@pxref{[def_index_entry]}).
+マージされていないインデックスエントリ (@pxref{[def_index_entry]})を含むインデックス (@pxref{[def_index]})。
 
 @item  @anchor{[def_unreachable_object]}unreachable object 
 ブランチ (@pxref{[def_branch]}) または タグ (@pxref{[def_tag]}) またはその他の参照から 到達可能 (@pxref{[def_reachable]})
 ではない(辿れない、ポイントされてない) オブジェクト (@pxref{[def_object]}) 。
 
 @item  @anchor{[def_upstream_branch]}upstream branch 
-The default branch (@pxref{[def_branch]}) that is merged into the branch in question
-(or the branch in question is rebased onto). It is configured via
-branch.<name>.remote and branch.<name>.merge. If the upstream branch of @emph{A}
-is @emph{origin/B} sometimes we say "@emph{A} is tracking @emph{origin/B}".
+当該のブランチからマージされる(または当該のブランチがリベースされる)デフォルトのブランチ (@pxref{[def_branch]})。これは、
+@samp{branch.<name>.remote} や @samp{branch.<name>.merge} を介して構成されます。Aのアップストリームブランチが
+@samp{origin/B} の場合、「Aは @samp{origin/B} を追跡しています」と言うことがあります。
 
 @item  @anchor{[def_working_tree]}working tree 
 実際にチェックアウトされたファイル群のツリー。 作業ツリーには通常、 HEAD (@pxref{[def_HEAD]})
