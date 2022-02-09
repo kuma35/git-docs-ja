@@ -19,6 +19,9 @@
 	untranslated = c[1]
     }
     if ((translated > 0) && (fuzzy != 0 || untranslated > 0 )) {
-	print $0
+	# print $0
+	# progress = (translated / (translated+fuzzy+untranslated)) * 100
+	# printf("%d+%df+%du(%3.2f%%)\t%s\n", translated, fuzzy, untranslated, progress, $0)
+	printf("%d+%df+%du\t%s\n", translated, fuzzy, untranslated, $0)
     }
 }
