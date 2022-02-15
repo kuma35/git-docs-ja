@@ -14045,20 +14045,17 @@ git daemon [--verbose] [--syslog] [--export-all]
 通常はポート「DEFAULT_GIT_PORT」(9418)でリッスンする非常に単純なTCP
 Gitデーモン。サービスを要求する接続を待機し、有効になっている場合はそのサービスを提供します。
 
-It verifies that the directory has the magic file "git-daemon-export-ok",
-and it will refuse to export any Git directory that hasn’t explicitly been
-marked for export this way (unless the @samp{--export-all} parameter is
-specified). If you pass some directory paths as @emph{git daemon} arguments, you
-can further restrict the offers to a whitelist comprising of those.
+ディレクトリにマジックファイル "git-daemon-export-ok"
+があることを確認し、この方法でエクスポートのマークが明示されていないGitディレクトリのエクスポートを拒否します(@samp{--export-all}
+パラメーターが指定されていない場合)。 いくつかのディレクトリパスを @samp{git daemon}
+の引数として渡すと、あなたは提供するモノをそれらで構成されるホワイトリストにさらに制限できます。
 
-By default, only @samp{upload-pack} service is enabled, which serves @emph{git
-fetch-pack} and @emph{git ls-remote} clients, which are invoked from @emph{git fetch},
-@emph{git pull}, and @emph{git clone}.
+デフォルトでは、 @samp{upload-pack} サービスのみが有効になっており、 @emph{git fetch} や @emph{git pull} や @emph{git
+clone} から呼び出される @emph{git fetch-pack} と @emph{git ls-remote} クライアントにサービスを提供します。
 
-This is ideally suited for read-only updates, i.e., pulling from Git
-repositories.
+これは、読み取り専用の更新、つまりGitリポジトリからのプルに最適です。
 
-An @samp{upload-archive} also exists to serve @emph{git archive}.
+@emph{git archive} を提供するための @samp{upload-archive} もあります。
 
 @noindent
 
@@ -14067,162 +14064,133 @@ An @samp{upload-archive} also exists to serve @emph{git archive}.
 @table @asis
 
 @item  @samp{--strict-paths} 
-Match paths exactly (i.e. don’t allow "/foo/repo" when the real path is
-"/foo/repo.git" or "/foo/repo/.git") and don’t do user-relative paths.  @emph{git
-daemon} will refuse to start when this option is enabled and no whitelist is
-specified.
+パスを正確に一致させ(つまり、実際のパスが "/foo/repo.git" または "/foo/repo/.git" の場合は "/foo/repo"
+を許可しないでください)、そしてユーザー相対パスを許可しないでください。このオプションが有効で、かつ、ホワイトリストが指定されていない場合、 @samp{git
+daemon} は起動を拒否します。
 
 @item  @samp{--base-path=<path>} 
-Remap all the path requests as relative to the given path.  This is sort of
-"Git root" - if you run @emph{git daemon} with @emph{--base-path=/srv/git} on
-example.com, then if you later try to pull @emph{git://example.com/hello.git},
-@emph{git daemon} will interpret the path as @samp{/srv/git/hello.git}.
+指定されたパスを基準にして、すべてのパス要求を再マップします。これは一種の "Git root" です。example.comで
+@samp{--base-path=/srv/git} を伴って @samp{git daemon} を実行し、後で
+@samp{git://example.com/hello.git} をプルしようと試みると、 @samp{git daemon} はパスを
+@samp{/srv/git/hello.git} として解釈します。
 
 @item  @samp{--base-path-relaxed} 
-If --base-path is enabled and repo lookup fails, with this option @emph{git
-daemon} will attempt to lookup without prefixing the base path.  This is
-useful for switching to --base-path usage, while still allowing the old
-paths.
+@samp{--base-path} が有効になっていて、リポジトリを探すのに失敗した場合、このオプションを使用すると、 @samp{git daemon}
+はベースパスを前に付けずに探索を試みます。 これは、古いパスを許可したまま、 @samp{--base-path} 使用に切り替える場合に便利です。
 
 @item  @samp{--interpolated-path=<pathtemplate>} 
-To support virtual hosting, an interpolated path template can be used to
-dynamically construct alternate paths.  The template supports %H for the
-target hostname as supplied by the client but converted to all lowercase,
-%CH for the canonical hostname, %IP for the server’s IP address, %P for the
-port number, and %D for the absolute path of the named repository.  After
-interpolation, the path is validated against the directory whitelist.
+仮想ホスティングをサポートするために、補完されたパステンプレートを使用して、代替パスを動的に構築できます。テンプレートは、クライアントから提供されたターゲットホスト名の
+%H をサポートしますが、すべて小文字に変換されます。正規ホスト名の場合は %CH、サーバーのIPアドレスの場合は %IP、ポート番号の場合は
+%P、名前付きリポジトリの絶対パスの場合は %D です。補完後、パスはディレクトリホワイトリストに対して検証されます。
 
 @item  @samp{--export-all} 
-Allow pulling from all directories that look like Git repositories (have the
-@emph{objects} and @emph{refs} subdirectories), even if they do not have the
-@emph{git-daemon-export-ok} file.
+@emph{git-daemon-export-ok} ファイルがない場合でも、Gitリポジトリのように見えるすべてのディレクトリ(@emph{objects} と
+@emph{refs} サブディレクトリがある)からのプルを許可します。
 
 @item  @samp{--inetd} 
-Have the server run as an inetd service. Implies --syslog (may be overridden
-with @samp{--log-destination=}).  Incompatible with --detach, --port, --listen,
---user and --group options.
+サーバーをinetdサービスとして実行します。@samp{--syslog} の指定を含んでいます(@samp{--log-destination=}
+でオーバーライドされる場合があります)。 @samp{--detach} 、 @samp{--port} 、 @samp{--listen} 、 @samp{--user} 、
+@samp{--group} オプションとは互換性がありません。
 
 @item  @samp{--listen=<host_or_ipaddr>} 
-Listen on a specific IP address or hostname.  IP addresses can be either an
-IPv4 address or an IPv6 address if supported.  If IPv6 is not supported,
-then --listen=hostname is also not supported and --listen must be given an
-IPv4 address.  Can be given more than once.  Incompatible with @samp{--inetd}
-option.
+特定のIPアドレスまたはホスト名でリッスンします。IPアドレスは、IPv4アドレス、またはサポートされている場合はIPv6アドレスのいずれかになります。IPv6がサポートされていない場合、
+@samp{--listen=hostname} もサポートされていないため、 @samp{--listen}
+にはIPv4アドレスを指定する必要があります。このオプションは複数回与えることができます。 @samp{--inetd} オプションと互換性がありません。
 
 @item  @samp{--port=<n>} 
-Listen on an alternative port.  Incompatible with @samp{--inetd} option.
+代わりのポートでリッスンします。 @samp{--inetd} オプションと互換性がありません。
 
 @item  @samp{--init-timeout=<n>} 
-Timeout (in seconds) between the moment the connection is established and
-the client request is received (typically a rather low value, since that
-should be basically immediate).
+接続が確立されてからクライアント要求が受信されるまでのタイムアウト(秒単位)(基本的には即時である必要があるため、通常はかなり低い値)。
 
 @item  @samp{--timeout=<n>} 
-Timeout (in seconds) for specific client sub-requests. This includes the
-time it takes for the server to process the sub-request and the time spent
-waiting for the next client’s request.
+特定のクライアントサブリクエスト(client
+sub-requests)のタイムアウト(秒単位)。これには、サーバーがサブリクエストを処理するのにかかる時間と、次のクライアントのリクエストを待つために費やされる時間が含まれます。
 
 @item  @samp{--max-connections=<n>} 
-Maximum number of concurrent clients, defaults to 32.  Set it to zero for no
-limit.
+同時クライアントの最大数。デフォルトは32です。制限しない場合はゼロに設定します。
 
 @item  @samp{--syslog} 
-Short for @samp{--log-destination=syslog}.
+@samp{--log-destination=syslog} の短縮形。
 
 @item  @samp{--log-destination=<destination>} 
-Send log messages to the specified destination.  Note that this option does
-not imply --verbose, thus by default only error conditions will be logged.
-The <destination> must be one of:
+指定した宛先にログメッセージを送信します。 このオプションは @samp{--verbose}
+を意味しないため、デフォルトではエラー状態のみがログに記録されることに注意してください。 <destination>
+は以下のいずれかである必要があります:
 
 @table @asis
 
 @item  stderr 
-Write to standard error.  Note that if @samp{--detach} is specified, the process
-disconnects from the real standard error, making this destination
-effectively equivalent to @samp{none}.
+標準エラーに書き込みます。 @samp{--detach} が指定されている場合、プロセスは実際の標準エラーから切断され、この宛先は実質的に @samp{none}
+と同等になることに注意してください。
 
 @item  syslog 
-Write to syslog, using the @samp{git-daemon} identifier.
+@samp{git-daemon} 識別子を使用してsyslogに書き込みます。
 
 @item  none 
-Disable all logging.
+すべてのログを無効にします。
 @end table
 
-The default destination is @samp{syslog} if @samp{--inetd} or @samp{--detach} is specified,
-otherwise @samp{stderr}.
+デフォルトの宛先は、 @samp{--inetd} または @samp{--detach} が指定されている場合、は @samp{syslog} であり、それ以外の場合は
+@samp{stderr} です。
 
 @item  @samp{--user-path} 
 @itemx  @samp{--user-path=<path>} 
-Allow ~user notation to be used in requests.  When specified with no
-parameter, requests to git://host/~alice/foo is taken as a request to
-access @emph{foo} repository in the home directory of user @samp{alice}.  If
-@samp{--user-path=path} is specified, the same request is taken as a request to
-access @samp{path/foo} repository in the home directory of user @samp{alice}.
+~user 表記をリクエストで使用できるようにします。パラメータなしで指定した場合、 git://host/~alice/foo
+git：// host / ~ alice / fooへのリクエストは、ユーザー @samp{alice} のホームディレクトリにある @emph{foo}
+リポジトリへのアクセスリクエストと見なされます。 @samp{--user-path=path} が指定されている場合、同じリクエストが、ユーザー @samp{alice}
+のホームディレクトリにある @samp{path/foo} リポジトリにアクセスするリクエストと見なされます。
 
 @item  @samp{--verbose} 
-Log details about the incoming connections and requested files.
+着信接続と要求されたファイルに関する詳細をログに記録します。
 
 @item  @samp{--reuseaddr} 
-Use SO_REUSEADDR when binding the listening socket.  This allows the server
-to restart without waiting for old connections to time out.
+リスニングソケットをバインドするときは SO_REUSEADDR を使用します。
+これにより、古い接続がタイムアウトするのを待たずにサーバーを再起動できます。
 
 @item  @samp{--detach} 
-Detach from the shell. Implies --syslog.
+シェルからデタッチします。 @samp{--syslog} オプションの指定を含んでいます。
 
 @item  @samp{--pid-file=<file>} 
-Save the process id in @emph{file}.  Ignored when the daemon is run under
-@samp{--inetd}.
+プロセスIDを <file> に保存します。デーモンが @samp{--inetd} で実行されている場合は無視されます。
 
 @item  @samp{--user=<user>} 
 @itemx  @samp{--group=<group>} 
-Change daemon’s uid and gid before entering the service loop.  When only
-@samp{--user} is given without @samp{--group}, the primary group ID for the user is
-used.  The values of the option are given to @samp{getpwnam(3)} and @samp{getgrnam(3)}
-and numeric IDs are not supported.
+サービスループに入る前に、デーモンのuidとgidを変更します。 @samp{--group} なしで @samp{--user}
+のみが指定された場合、ユーザーのプライマリグループIDが使用されます。オプションの値は @samp{getpwnam(3)} と @samp{getgrnam(3)}
+に与えられ、数値IDはサポートされていません。
 
-Giving these options is an error when used with @samp{--inetd}; use the facility
-of inet daemon to achieve the same before spawning @emph{git daemon} if needed.
+これらのオプションを指定すると、 @samp{--inetd} と一緒に使用するとエラーになります。 同じことを実現するには、必要に応じて、 @emph{git
+daemon} を生成する前に、inetデーモンの機能を使用します。
 
-Like many programs that switch user id, the daemon does not reset
-environment variables such as @samp{$HOME} when it runs git programs,
-e.g. @samp{upload-pack} and @samp{receive-pack}. When using this option, you may also
-want to set and export @samp{HOME} to point at the home directory of @samp{<user>}
-before starting the daemon, and make sure any Git configuration files in
-that directory are readable by @samp{<user>}.
+ユーザーIDを切り替える多くのプログラムと同様に、デーモンは、(例えば、@samp{upload-pack} や`receive-pack` の)
+gitプログラムを実行するときに @samp{$HOME} などの環境変数をリセットしません。このオプションを使用する場合は、デーモンを起動する前に、
+@samp{HOME} を @samp{<user>} のホームディレクトリを指すように設定、およびエクスポートし、そのディレクトリ内のGit構成ファイルが
+@samp{<user>} によって読み取り可能であることを確認してください。
 
 @item  @samp{--enable=<service>} 
 @itemx  @samp{--disable=<service>} 
-Enable/disable the service site-wide per default.  Note that a service
-disabled site-wide can still be enabled per repository if it is marked
-overridable and the repository enables the service with a configuration
-item.
+デフォルトでサイト全体のサービスを 有効/無効
+にします。サイト全体で無効にされたサービスは、オーバーライド可能とマークされていて、リポジトリが構成アイテムでサービスを有効にしている場合でも、リポジトリごとに有効にできることに注意してください。
 
 @item  @samp{--allow-override=<service>} 
 @itemx  @samp{--forbid-override=<service>} 
-Allow/forbid overriding the site-wide default with per repository
-configuration.  By default, all the services may be overridden.
+リポジトリごとの構成でサイト全体のデフォルトをオーバーライドすることを 許可/禁止
+します。デフォルトでは、すべてのサービスがオーバーライドされる場合があります。
 
 @item  @samp{--[no-]informative-errors} 
-When informative errors are turned on, git-daemon will report more verbose
-errors to the client, differentiating conditions like "no such repository"
-from "repository not exported". This is more convenient for clients, but may
-leak information about the existence of unexported repositories.  When
-informative errors are not enabled, all errors report "access denied" to the
-client. The default is --no-informative-errors.
+informative-errorsがオンになっている場合、git-daemonはより詳細なエラーをクライアントに報告し、「no such
+repository」(そのようなリポジトリがない)と「repository not
+exported」(リポジトリがエクスポートされていない)などの条件を区別します。これはクライアントにとってより便利ですが、エクスポートされていないリポジトリの存在に関する情報が漏洩する可能性があります。informative-errorsが有効になっていない場合、すべてのエラーは「access
+denied」とクライアントに報告します。 デフォルトは @samp{--no-informative-errors} です。
 
 @item  @samp{--access-hook=<path>} 
-Every time a client connects, first run an external command specified by the
-<path> with service name (e.g. "upload-pack"), path to the repository,
-hostname (%H), canonical hostname (%CH), IP address (%IP), and TCP port (%P)
-as its command-line arguments. The external command can decide to decline
-the service by exiting with a non-zero status (or to allow it by exiting
-with a zero status).  It can also look at the $REMOTE_ADDR and
-@samp{$REMOTE_PORT} environment variables to learn about the requestor when
-making this decision.
+クライアントが接続するたびに、最初に、<path>
+で指定された外部コマンドを実行します。コマンドライン引数として、サービス名("upload-pack"など)や、リポジトリへのパスや、ホスト名(%H)や、正規のホスト名(%CH)や、IPアドレス(%IP)や、TCPポート(%P)を、指定します。外部コマンドは、ゼロ以外のステータスで終了することによってサービスを拒否する(またはゼロ・ステータスで終了することによってサービスを許可する)ことを決定できます。また
+$REMOTE_ADDR や @samp{$REMOTE_PORT}
+環境変数を調べて、この決定を行うときにリクエスト側(requestor)ついて調べることもできます。
 
-The external command can optionally write a single line to its standard
-output to be sent to the requestor as an error message when it declines the
-service.
+外部コマンドはオプションで、サービスを拒否したときにエラーメッセージとしてリクエスト側(requestor)に送信される1行を標準出力に書き込むことができます。
 
 @item  <directory> 
 許可するディレクトリを列挙するホワイトリストに追加するディレクトリ。 @samp{--strict-paths}
@@ -14233,31 +14201,25 @@ service.
 
 @chapheading SERVICES
 
-These services can be globally enabled/disabled using the command-line
-options of this command.  If finer-grained control is desired (e.g. to allow
-@emph{git archive} to be run against only in a few selected repositories the
-daemon serves), the per-repository configuration file can be used to enable
-or disable them.
+これらのサービスは、このコマンドのコマンドラインオプションを使用してグローバルに 有効/無効
+にできます。よりきめ細かい制御が必要な場合(たとえば、デーモンがサービスを提供するいくつかの選択されたリポジトリでのみ @samp{git archive}
+を実行できるようしたい時)、リポジトリごとの構成ファイルを使用して、それらを有効または無効にできます。
 
 @table @asis
 
 @item  upload-pack 
-This serves @emph{git fetch-pack} and @emph{git ls-remote} clients.  It is enabled by
-default, but a repository can disable it by setting @samp{daemon.uploadpack}
-configuration item to @samp{false}.
+これは、 @samp{git fetch-pack} と @samp{git ls-remote}
+クライアントにサービスを提供します。デフォルトで有効になっていますが、リポジトリでは @samp{daemon.uploadpack `構成アイテムを
+`false} に設定することで無効にできます。
 
 @item  upload-archive 
-This serves @emph{git archive --remote}.  It is disabled by default, but a
-repository can enable it by setting @samp{daemon.uploadarch} configuration item
-to @samp{true}.
+これは @samp{git archive --remote} を提供します。 デフォルトでは無効になっていますが、リポジトリでは、
+@samp{daemon.uploadarch} 構成アイテムを @samp{true} に設定することで有効にできます。
 
 @item  receive-pack 
-This serves @emph{git send-pack} clients, allowing anonymous push.  It is
-disabled by default, as there is @emph{no} authentication in the protocol (in
-other words, anybody can push anything into the repository, including
-removal of refs).  This is solely meant for a closed LAN setting where
-everybody is friendly.  This service can be enabled by setting
-@samp{daemon.receivepack} configuration item to @samp{true}.
+これは @samp{git send-pack}
+クライアントにサービスを提供し、匿名プッシュを可能にします。プロトコルに認証が「ない」ため、デフォルトでは無効になっています(つまり、参照の削除を含め、誰でもリポジトリに何でもプッシュできます)。これは、誰もが友好的であるクローズドLAN設定のみを対象としています。このサービスは、
+@samp{daemon.receivepack} 構成アイテムを @samp{true} に設定することで有効にできます。
 @end table
 
 @noindent
@@ -57915,7 +57877,7 @@ Part of the git(1) suite
 @node gitcli,,,Top
 @chapheading Name
 
-gitcli — Git command-line interface and conventions
+gitcli — Gitコマンドラインのインターフェイスと規則
 
 @noindent
 
@@ -57927,47 +57889,39 @@ gitcli
 
 @chapheading DESCRIPTION
 
-This manual describes the convention used throughout Git CLI.
+このマニュアルでは Git CLI 全体で使用される規則について説明します。
 
-Many commands take revisions (most often "commits", but sometimes
-"tree-ish", depending on the context and command) and paths as their
-arguments.  Here are the rules:
+多くのコマンドは、引数としてリビジョン(revisions)(それはほとんどの場合「コミット」(commits)ですが、文脈とコマンドによっては「ツリーっぽい」(tree-ish)場合もあります)と、パス(paths)を取ります。ルールは以下のとおりです:
 
 @itemize 
 
 @item
-Revisions come first and then paths.  E.g. in @samp{git diff v1.0 v2.0 arch/x86
-include/asm-x86}, @samp{v1.0} and @samp{v2.0} are revisions and @samp{arch/x86} and
-@samp{include/asm-x86} are paths.
+リビジョン達が最初に来て、その次にパス達が来ます。 例えば、 @samp{git diff v1.0 v2.0 arch/x86 include/asm-x86}
+では @samp{v1.0} と @samp{v2.0} はリビジョン達であり、 @samp{arch/x86} と @samp{include/asm-x86} はパス達です。
 
 @item
-When an argument can be misunderstood as either a revision or a path, they
-can be disambiguated by placing @samp{--} between them.  E.g. @samp{git diff -- HEAD}
-is, "I have a file called HEAD in my work tree.  Please show changes between
-the version I staged in the index and what I have in the work tree for that
-file", not "show difference between the HEAD commit and the work tree as a
-whole".  You can say @samp{git diff HEAD --} to ask for the latter.
+引数がリビジョンまたはパスのいずれかと誤解される可能性がある場合は、それらの間に @samp{--} を配置することで曖昧さを解消できます。例えば、 @samp{git
+diff -- HEAD}
+は、「作業ツリーにHEADというファイルがあります。インデックスにステージングしたバージョンと、そのファイルの作業ツリーにあるバージョンとの変更を表示してください」であり、「HEADコミットとワークツリー全体の違いを表示する」ではありません。後者を求めるには
+@samp{git diff HEAD --} とします。
 
 @item
-Without disambiguating @samp{--}, Git makes a reasonable guess, but errors out
-and asking you to disambiguate when ambiguous.  E.g. if you have a file
-called HEAD in your work tree, @samp{git diff HEAD} is ambiguous, and you have to
-say either @samp{git diff HEAD --} or @samp{git diff -- HEAD} to disambiguate.
+@samp{--}
+を明示しなくても、Gitは合理的な推測を行いますが、あいまいな場合はエラーが発生し、あなたに明確にするように求めます。例えば、作業ツリーにHEADというファイルがある場合、
+@samp{git diff HEAD} はあいまいであり、曖昧さを解消するには、 @samp{git diff HEAD --} または  @samp{git diff --
+HEAD} のいずれかを指定する必要があります。
 
 @item
-Because @samp{--} disambiguates revisions and paths in some commands, it cannot
-be used for those commands to separate options and revisions.  You can use
-@samp{--end-of-options} for this (it also works for commands that do not
-distinguish between revisions in paths, in which case it is simply an alias
-for @samp{--}).
+一部のコマンドでは、 @samp{--}
+はリビジョンとパスを明確に区別するために使われるため、これら一部のコマンドでオプションとリビジョンを分離するために使用することはできません。これら一部のコマンドではオプションとリビジョンを分離するために
+@samp{--end-of-options} を使用できます(これら以外のパスのリビジョンを区別しないコマンドでも機能します。その場合、
+@samp{--end-of-options} は単に @samp{--} のエイリアスです)。
 
-When writing a script that is expected to handle random user-input, it is a
-good practice to make it explicit which arguments are which by placing
-disambiguating @samp{--} at appropriate places.
+ランダムなユーザー入力を処理することが期待されるスクリプトを作成するときは、適切な場所に曖昧さ回避の @samp{--}
+を配置することにより、どの引数がどれであるかを明示することをお勧めします。
 
 @item
-Many commands allow wildcards in paths, but you need to protect them from
-getting globbed by the shell.  These two mean different things:
+多くのコマンドではパスにワイルドカードを使用できますが、シェルによってワイルドカードが取得されないように保護する必要があります。以下の2つの意味は異なります:
 
 @example
 $ git restore *.c
@@ -57975,75 +57929,64 @@ $ git restore \*.c
 @end example
 
 
-The former lets your shell expand the fileglob, and you are asking the dot-C
-files in your working tree to be overwritten with the version in the index.
-The latter passes the @samp{*.c} to Git, and you are asking the paths in the
-index that match the pattern to be checked out to your working tree.  After
-running @samp{git add hello.c; rm hello.c}, you will @emph{not} see @samp{hello.c} in your
-working tree with the former, but with the latter you will.
+前者を使用すると、シェルでfileglobを展開でき、作業ツリー内の
+C言語ソースファイル(dot-C)をインデックス内のバージョンで上書きするように要求されます。後者は @samp{*.c}
+をGitに渡し、作業ツリーにチェックアウトするパターンに一致するインデックス内のパスを要求しています。@samp{git add hello.c; rm
+hello.c} を実行後、前者では作業ツリーに @samp{hello.c} は表示されませんが、後者では表示されます。
 
 @item
-Just as the filesystem @emph{.} (period) refers to the current directory, using a
-@emph{.} as a repository name in Git (a dot-repository) is a relative path and
-means your current repository.
+ファイルシステムの @samp{.} (ピリオド)が現在のディレクトリを参照するのと同じように、Gitでリポジトリ名として @samp{.} を使用すること(a
+dot-repository)は相対パスであり、あなたの現在のリポジトリを意味します。
 @end itemize
 
-Here are the rules regarding the "flags" that you should follow when you are
-scripting Git:
+Gitのスクリプトを作成するときに従う必要のある「フラグ」(flag)に関するルールは以下のとおりです:
 
 @itemize 
 
 @item
-it’s preferred to use the non-dashed form of Git commands, which means that
-you should prefer @samp{git foo} to @samp{git-foo}.
+ダッシュで繋がない形式(non-dashed form)のGitコマンドを使用することをお勧めします。つまり、 @samp{git-foo} よりは @samp{git
+foo} を使用すべきです。
 
 @item
-splitting short options to separate words (prefer @samp{git foo -a -b} to @samp{git
-foo -ab}, the latter may not even work).
+短いオプションは分割して単語に区切ります( @samp{git foo -ab} よりも @samp{git foo -a -b}
+を優先します。前者は機能しない事があります)。
 
 @item
-when a command-line option takes an argument, use the @emph{stuck} form.  In
-other words, write @samp{git foo -oArg} instead of @samp{git foo -o Arg} for short
-options, and @samp{git foo --long-opt=Arg} instead of @samp{git foo --long-opt Arg}
-for long options.  An option that takes optional option-argument must be
-written in the @emph{stuck} form.
+コマンドラインオプションが引数を取る場合は、串刺し形式(stuck' form) を使用します。つまり、短いオプションの場合は @samp{git foo -o
+Arg} の代わりに @samp{git foo -oArg} を記述し、長いオプションの場合は @samp{git foo --long-opt Arg} の代わりに
+@samp{git foo --long-opt=Arg} を記述します。オプションのオプション引数をとるオプションは、串刺し形式で記述する必要があります。
 
 @item
-when you give a revision parameter to a command, make sure the parameter is
-not ambiguous with a name of a file in the work tree.  E.g. do not write
-@samp{git log -1 HEAD} but write @samp{git log -1 HEAD --}; the former will not work
-if you happen to have a file called @samp{HEAD} in the work tree.
+コマンドにリビジョンパラメータを指定するときは、そのパラメータが作業ツリー内のファイルの名前と混同されないことを確認してください。例えば、 @samp{git
+log -1 HEAD} とは記述せず、@samp{git log -1 HEAD --} と記述します。作業ツリーに @samp{HEAD}
+というファイルがある場合、前者は機能しません。
 
 @item
-many commands allow a long option @samp{--option} to be abbreviated only to their
-unique prefix (e.g. if there is no other option whose name begins with
-@samp{opt}, you may be able to spell @samp{--opt} to invoke the @samp{--option} flag), but
-you should fully spell them out when writing your scripts; later versions of
-Git may introduce a new option whose name shares the same prefix,
-e.g. @samp{--optimize}, to make a short prefix that used to be unique no longer
-unique.
+多くのコマンドでは、長いオプション @samp{--option} を一意であるかぎり短いプレフィックスのみに省略できます(たとえば、名前が @samp{opt}
+で始まるオプションが他にない場合は、 @samp{--opt} と入力して @samp{--option}
+フラグを呼び出すことができます)。ただし、スクリプトを作成するときは、省略してはいけません。なぜならGitのより新しいバージョンで、名前が同じプレフィックスを共有する新しいオプションが導入される可能性があるからです。例えば
+@samp{--optimize} が導入されると、以前は一意であった短いプレフィックス(@samp{--option} , @samp{--opt})を一意では無くしてしまいます。
 @end itemize
 
 @noindent
 
 @chapheading ENHANCED OPTION PARSER
 
-From the Git 1.5.4 series and further, many Git commands (not all of them at
-the time of the writing though) come with an enhanced option parser.
+Git 1.5.4シリーズ以降、多くのGitコマンド(この文書の執筆時点ではすべてではありませんが)は、拡張オプションパーサーを備えています。
 
-Here is a list of the facilities provided by this option parser.
+以下は、この拡張オプションパーサーによって提供される機能のリストです。
 
 @noindent
 
 @heading Magic Options
 
-Commands which have the enhanced option parser activated all understand a
-couple of magic command-line options:
+拡張オプションパーサーがアクティブになっているコマンドはすべて、いくつかの魔法のコマンドラインオプション(magic command-line
+options)を理解します:
 
 @table @asis
 
 @item  @samp{-h} 
-gives a pretty printed usage of the command.
+コマンドの、かなり整った使用法を提供します。
 
 @example
 $ git describe -h
@@ -58059,50 +58002,44 @@ usage: git describe [<options>] <commit-ish>*
 @end example
 
 
-Note that some subcommand (e.g. @samp{git grep}) may behave differently when
-there are things on the command line other than @samp{-h}, but @samp{git subcmd -h}
-without anything else on the command line is meant to consistently give the
-usage.
+注意: 一部のサブコマンド(例: @samp{git grep} )は、コマンドラインに @samp{-h}
+以外のものがある場合、動作が異なる場合がありますが、コマンドラインに何も含まれていない @samp{git subcmd -h}
+は、一貫して使用法を提供することを目的としています。
 
 @item  @samp{--help-all} 
-Some Git commands take options that are only used for plumbing or that are
-deprecated, and such options are hidden from the default usage. This option
-gives the full list of options.
+一部のGitコマンドは、配管コマンドにのみ使用されるオプションまたは非推奨のオプションを取り、そのようなオプションはデフォルトの使用法から隠されています。
+このオプションはオプションの完全なリストを提供します。
 @end table
 
 @noindent
 
-@heading Negating options
+@heading 否定オプション
 
-Options with long option names can be negated by prefixing @samp{--no-}. For
-example, @samp{git branch} has the option @samp{--track} which is @emph{on} by default. You
-can use @samp{--no-track} to override that behaviour. The same goes for @samp{--color}
-and @samp{--no-color}.
-
-@noindent
-
-@heading Aggregating short options
-
-Commands that support the enhanced option parser allow you to aggregate
-short options. This means that you can for example use @samp{git rm -rf} or @samp{git
-clean -fdx}.
+長いオプションは、接頭辞 @samp{--no-} を付けることで無効にできます。 たとえば、 @samp{git branch} にはオプション @samp{--track}
+があります。これはデフォルトで @emph{on} です。 @samp{--no-track} を使用して、その動作をオーバーライドできます。 @samp{--color} と
+@samp{--no-color} についても同じことが言えます。
 
 @noindent
 
-@heading Abbreviating long options
+@heading 短いオプションのおまとめ
 
-Commands that support the enhanced option parser accepts unique prefix of a
-long option as if it is fully spelled out, but use this with a caution.  For
-example, @samp{git commit --amen} behaves as if you typed @samp{git commit --amend},
-but that is true only until a later version of Git introduces another option
-that shares the same prefix, e.g. @samp{git commit --amenity} option.
+拡張オプションパーサーをサポートするコマンドを使用すると、短いオプションをおまとめできます。これは、たとえば、 @samp{git rm -rf} や @samp{git
+clean -fdx} を使用できることを意味します。
+
+@noindent
+
+@heading 長いオプションの省略
+
+拡張オプションパーサーをサポートするコマンドは、クソ詳しく長いオプションの一意なプレフィックスを受け入れますが、これは注意して使用してください。
+たとえば、 @samp{git commit --amen} は @samp{git commit --amend}
+と入力したかのように動作しますが、これは、後のバージョンのGitが同じプレフィックスを共有する別のオプションを導入するまでのみ当てはまります。例えば
+@samp{git commit --amenity} オプションが導入されたら一意で無くなります。
 
 @noindent
 
 @heading Separating argument from the option
 
-You can write the mandatory option parameter to an option as a separate word
-on the command line.  That means that all the following uses work:
+コマンドラインで、オプションの必須パラメータを単に区切られた単語として記述することができます。これは、以下のすべての使い方が機能することを意味します:
 
 @example
 $ git foo --long-opt=Arg
@@ -58112,8 +58049,7 @@ $ git foo -o Arg
 @end example
 
 
-However, this is @strong{NOT} allowed for switches with an optional value, where
-the @emph{stuck} form must be used:
+ただし、これは必須ではないオプションの値を持つスイッチでは許可されていません。その場合は串刺し形式を使用する必要があります:
 
 @example
 $ git describe --abbrev HEAD     # correct
@@ -58124,55 +58060,47 @@ $ git describe --abbrev 10 HEAD  # NOT WHAT YOU MEANT
 
 @noindent
 
-@chapheading NOTES ON FREQUENTLY CONFUSED OPTIONS
+@chapheading 注意：よく混同されるオプションに関する注記
 
-Many commands that can work on files in the working tree and/or in the index
-can take @samp{--cached} and/or @samp{--index} options.  Sometimes people incorrectly
-think that, because the index was originally called cache, these two are
-synonyms.  They are @strong{not} — these two options mean very different things.
+作業ツリーおよび/またはインデックス内のファイルを処理できる多くのコマンドは、 @samp{--cached} および/または @samp{--index}
+オプションを使用できます。インデックスは元々キャッシュと呼ばれていたため、これら2つは同義語であると誤解されることがあります。ちゃいます。これらの2つのオプションは非常に異なることを意味します。
 
 @itemize 
 
 @item
-The @samp{--cached} option is used to ask a command that usually works on files
-in the working tree to @strong{only} work with the index.  For example, @samp{git grep},
-when used without a commit to specify from which commit to look for strings
-in, usually works on files in the working tree, but with the @samp{--cached}
-option, it looks for strings in the index.
+@samp{--cached} オプションは、通常は作業ツリー内のファイルで機能するコマンドに、「インデックスのみで」機能するように要求するために使用されます。
+たとえば、 @samp{git grep} をコミットせずに使用して、どのコミットから文字列を検索するかを指定すると、通常は作業ツリー内のファイルで機能しますが、
+@samp{--cached} オプションを使用するとインデックス内の文字列を検索します。
 
 @item
-The @samp{--index} option is used to ask a command that usually works on files in
-the working tree to @strong{also} affect the index.  For example, @samp{git stash apply}
-usually merges changes recorded in a stash entry to the working tree, but
-with the @samp{--index} option, it also merges changes to the index as well.
+@samp{--index}
+オプションは、通常は作業ツリー内のファイルで機能するコマンドに、「インデックスにも」影響を与えるように要求するために使用されます。たとえば、 @samp{git
+stash apply} は通常、stashエントリに記録された変更を作業ツリーにマージしますが、 @samp{--index}
+オプションを使用すると、インデックスへの変更もマージします。
 @end itemize
 
-@samp{git apply} command can be used with @samp{--cached} and @samp{--index} (but not at
-the same time).  Usually the command only affects the files in the working
-tree, but with @samp{--index}, it patches both the files and their index entries,
-and with @samp{--cached}, it modifies only the index entries.
+@samp{git apply`コマンドは、 `--cached} または @samp{--index}
+のいずれかを伴って使用できます(同時に使用することはできません。通常、このコマンドは作業ツリー内のファイルにのみ影響しますが、 @samp{--index}
+を使用すると、ファイルとそのインデックスエントリの両方にパッチが適用され、 @samp{--cached} を使用すると、インデックスエントリのみが変更されます。
 
-See also
-@uref{https://lore.kernel.org/git/7v64clg5u9.fsf@@assigned-by-dhcp.cox.net/,https://lore.kernel.org/git/7v64clg5u9.fsf@@assigned-by-dhcp.cox.net/} and
-@uref{https://lore.kernel.org/git/7vy7ej9g38.fsf@@gitster.siamese.dyndns.org/,https://lore.kernel.org/git/7vy7ej9g38.fsf@@gitster.siamese.dyndns.org/} for
-further information.
+詳細については @uref{https://lore.kernel.org/git/7v64clg5u9.fsf@@assigned-by-dhcp.cox.net/,https://lore.kernel.org/git/7v64clg5u9.fsf@@assigned-by-dhcp.cox.net/}
+と @uref{https://lore.kernel.org/git/7vy7ej9g38.fsf@@gitster.siamese.dyndns.org/,https://lore.kernel.org/git/7vy7ej9g38.fsf@@gitster.siamese.dyndns.org/}
+も参照してください。
 
-Some other commands that also work on files in the working tree and/or in
-the index can take @samp{--staged} and/or @samp{--worktree}.
+作業ツリー および/または インデックス内のファイルに対しても機能する他のいくつかのコマンドは、 @samp{--staged} および/または
+@samp{--worktree} を取ることができます。
 
 @itemize 
 
 @item
-@samp{--staged} is exactly like @samp{--cached}, which is used to ask a command to
-only work on the index, not the working tree.
+@samp{--staged} は @samp{--cached}
+とまったく同じです。これは、作業ツリーではなく、インデックスでのみ機能するようにコマンドに要求するために使用されます。
 
 @item
-@samp{--worktree} is the opposite, to ask a command to work on the working tree
-only, not the index.
+@samp{--worktree} は反対に、インデックスではなく、作業ツリーのみで作業するようにコマンドに要求します。
 
 @item
-The two options can be specified together to ask a command to work on both
-the index and the working tree.
+2つのオプションを一緒に指定して、インデックスと作業ツリーの両方で作業するようにコマンドに要求することができます。
 @end itemize
 
 @noindent

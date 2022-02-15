@@ -14101,189 +14101,195 @@ DESCRIPTION
 ーモン。サービスを要求する接続を待機し、有効になっている場合はそのサービ
 スを提供します。
 
-   It verifies that the directory has the magic file
-"git-daemon-export-ok", and it will refuse to export any Git directory
-that hasn’t explicitly been marked for export this way (unless the
-‘--export-all’ parameter is specified).  If you pass some directory
-paths as _git daemon_ arguments, you can further restrict the offers to
-a whitelist comprising of those.
+   ディレクトリにマジックファイル "git-daemon-export-ok" があることを確
+認し、この方法でエクスポートのマークが明示されていないGitディレクトリの
+エクスポートを拒否します(‘--export-all’ パラメーターが指定されていない場
+合)。 いくつかのディレクトリパスを ‘git daemon’ の引数として渡すと、あな
+たは提供するモノをそれらで構成されるホワイトリストにさらに制限できます。
 
-   By default, only ‘upload-pack’ service is enabled, which serves _git
-fetch-pack_ and _git ls-remote_ clients, which are invoked from _git
-fetch_, _git pull_, and _git clone_.
+   デフォルトでは、 ‘upload-pack’ サービスのみが有効になっており、 _git
+fetch_ や _git pull_ や _git clone_ から呼び出される _git fetch-pack_ と
+_git ls-remote_ クライアントにサービスを提供します。
 
-   This is ideally suited for read-only updates, i.e., pulling from Git
-repositories.
+   これは、読み取り専用の更新、つまりGitリポジトリからのプルに最適です。
 
-   An ‘upload-archive’ also exists to serve _git archive_.
+   _git archive_ を提供するための ‘upload-archive’ もあります。
 
 
 OPTIONS
 *******
 
 ‘--strict-paths’
-     Match paths exactly (i.e.  don’t allow "/foo/repo" when the real
-     path is "/foo/repo.git" or "/foo/repo/.git") and don’t do
-     user-relative paths.  _git daemon_ will refuse to start when this
-     option is enabled and no whitelist is specified.
+     パスを正確に一致させ(つまり、実際のパスが "/foo/repo.git" または
+     "/foo/repo/.git" の場合は "/foo/repo" を許可しないでください)、そし
+     てユーザー相対パスを許可しないでください。このオプションが有効で、
+     かつ、ホワイトリストが指定されていない場合、 ‘git daemon’ は起動を
+     拒否します。
 
 ‘--base-path=<path>’
-     Remap all the path requests as relative to the given path.  This is
-     sort of "Git root" - if you run _git daemon_ with
-     _–base-path=/srv/git_ on example.com, then if you later try to pull
-     _git://example.com/hello.git_, _git daemon_ will interpret the path
-     as ‘/srv/git/hello.git’.
+     指定されたパスを基準にして、すべてのパス要求を再マップします。これ
+     は一種の "Git root" です。example.comで ‘--base-path=/srv/git’ を伴
+     って ‘git daemon’ を実行し、後で ‘git://example.com/hello.git’ をプ
+     ルしようと試みると、 ‘git daemon’ はパスを ‘/srv/git/hello.git’ と
+     して解釈します。
 
 ‘--base-path-relaxed’
-     If –base-path is enabled and repo lookup fails, with this option
-     _git daemon_ will attempt to lookup without prefixing the base
-     path.  This is useful for switching to –base-path usage, while
-     still allowing the old paths.
+     ‘--base-path’ が有効になっていて、リポジトリを探すのに失敗した場合
+     、このオプションを使用すると、 ‘git daemon’ はベースパスを前に付け
+     ずに探索を試みます。 これは、古いパスを許可したまま、 ‘--base-path’
+     使用に切り替える場合に便利です。
 
 ‘--interpolated-path=<pathtemplate>’
-     To support virtual hosting, an interpolated path template can be
-     used to dynamically construct alternate paths.  The template
-     supports %H for the target hostname as supplied by the client but
-     converted to all lowercase, %CH for the canonical hostname, %IP for
-     the server’s IP address, %P for the port number, and %D for the
-     absolute path of the named repository.  After interpolation, the
-     path is validated against the directory whitelist.
+     仮想ホスティングをサポートするために、補完されたパステンプレートを
+     使用して、代替パスを動的に構築できます。テンプレートは、クライアン
+     トから提供されたターゲットホスト名の %H をサポートしますが、すべて
+     小文字に変換されます。正規ホスト名の場合は %CH、サーバーのIPアドレ
+     スの場合は %IP、ポート番号の場合は %P、名前付きリポジトリの絶対パス
+     の場合は %D です。補完後、パスはディレクトリホワイトリストに対して
+     検証されます。
 
 ‘--export-all’
-     Allow pulling from all directories that look like Git repositories
-     (have the _objects_ and _refs_ subdirectories), even if they do not
-     have the _git-daemon-export-ok_ file.
+     _git-daemon-export-ok_ ファイルがない場合でも、Gitリポジトリのよう
+     に見えるすべてのディレクトリ(_objects_ と _refs_ サブディレクトリが
+     ある)からのプルを許可します。
 
 ‘--inetd’
-     Have the server run as an inetd service.  Implies –syslog (may be
-     overridden with ‘--log-destination=’).  Incompatible with –detach,
-     –port, –listen, –user and –group options.
+     サーバーをinetdサービスとして実行します。‘--syslog’ の指定を含んで
+     います(‘--log-destination=’ でオーバーライドされる場合があります)。
+     ‘--detach’ 、 ‘--port’ 、 ‘--listen’ 、 ‘--user’ 、 ‘--group’ オプ
+     ションとは互換性がありません。
 
 ‘--listen=<host_or_ipaddr>’
-     Listen on a specific IP address or hostname.  IP addresses can be
-     either an IPv4 address or an IPv6 address if supported.  If IPv6 is
-     not supported, then –listen=hostname is also not supported and
-     –listen must be given an IPv4 address.  Can be given more than
-     once.  Incompatible with ‘--inetd’ option.
+     特定のIPアドレスまたはホスト名でリッスンします。IPアドレスは、
+     IPv4アドレス、またはサポートされている場合はIPv6アドレスのいずれか
+     になります。IPv6がサポートされていない場合、 ‘--listen=hostname’ も
+     サポートされていないため、 ‘--listen’ にはIPv4アドレスを指定する必
+     要があります。このオプションは複数回与えることができます。
+     ‘--inetd’ オプションと互換性がありません。
 
 ‘--port=<n>’
-     Listen on an alternative port.  Incompatible with ‘--inetd’ option.
+     代わりのポートでリッスンします。 ‘--inetd’ オプションと互換性があり
+     ません。
 
 ‘--init-timeout=<n>’
-     Timeout (in seconds) between the moment the connection is
-     established and the client request is received (typically a rather
-     low value, since that should be basically immediate).
+     接続が確立されてからクライアント要求が受信されるまでのタイムアウト
+     (秒単位)(基本的には即時である必要があるため、通常はかなり低い値)。
 
 ‘--timeout=<n>’
-     Timeout (in seconds) for specific client sub-requests.  This
-     includes the time it takes for the server to process the
-     sub-request and the time spent waiting for the next client’s
-     request.
+     特定のクライアントサブリクエスト(client sub-requests)のタイムアウト
+     (秒単位)。これには、サーバーがサブリクエストを処理するのにかかる時
+     間と、次のクライアントのリクエストを待つために費やされる時間が含ま
+     れます。
 
 ‘--max-connections=<n>’
-     Maximum number of concurrent clients, defaults to 32.  Set it to
-     zero for no limit.
+     同時クライアントの最大数。デフォルトは32です。制限しない場合はゼロ
+     に設定します。
 
 ‘--syslog’
-     Short for ‘--log-destination=syslog’.
+     ‘--log-destination=syslog’ の短縮形。
 
 ‘--log-destination=<destination>’
-     Send log messages to the specified destination.  Note that this
-     option does not imply –verbose, thus by default only error
-     conditions will be logged.  The <destination> must be one of:
+     指定した宛先にログメッセージを送信します。 このオプションは
+     ‘--verbose’ を意味しないため、デフォルトではエラー状態のみがログに
+     記録されることに注意してください。 <destination> は以下のいずれかで
+     ある必要があります:
 
      stderr
-          Write to standard error.  Note that if ‘--detach’ is
-          specified, the process disconnects from the real standard
-          error, making this destination effectively equivalent to
-          ‘none’.
+          標準エラーに書き込みます。 ‘--detach’ が指定されている場合、プ
+          ロセスは実際の標準エラーから切断され、この宛先は実質的に
+          ‘none’ と同等になることに注意してください。
 
      syslog
-          Write to syslog, using the ‘git-daemon’ identifier.
+          ‘git-daemon’ 識別子を使用してsyslogに書き込みます。
 
      none
-          Disable all logging.
+          すべてのログを無効にします。
 
-     The default destination is ‘syslog’ if ‘--inetd’ or ‘--detach’ is
-     specified, otherwise ‘stderr’.
+     デフォルトの宛先は、 ‘--inetd’ または ‘--detach’ が指定されている場
+     合、は ‘syslog’ であり、それ以外の場合は ‘stderr’ です。
 
 ‘--user-path’
 ‘--user-path=<path>’
-     Allow ~user notation to be used in requests.  When specified with
-     no parameter, requests to git://host/~alice/foo is taken as a
-     request to access _foo_ repository in the home directory of user
-     ‘alice’.  If ‘--user-path=path’ is specified, the same request is
-     taken as a request to access ‘path/foo’ repository in the home
-     directory of user ‘alice’.
+     ~user 表記をリクエストで使用できるようにします。パラメータなしで指
+     定した場合、 git://host/~alice/foo git：// host / ~ alice / fooへの
+     リクエストは、ユーザー ‘alice’ のホームディレクトリにある _foo_ リ
+     ポジトリへのアクセスリクエストと見なされます。 ‘--user-path=path’ が
+     指定されている場合、同じリクエストが、ユーザー ‘alice’ のホームディ
+     レクトリにある ‘path/foo’ リポジトリにアクセスするリクエストと見な
+     されます。
 
 ‘--verbose’
-     Log details about the incoming connections and requested files.
+     着信接続と要求されたファイルに関する詳細をログに記録します。
 
 ‘--reuseaddr’
-     Use SO_REUSEADDR when binding the listening socket.  This allows
-     the server to restart without waiting for old connections to time
-     out.
+     リスニングソケットをバインドするときは SO_REUSEADDR を使用します。
+     これにより、古い接続がタイムアウトするのを待たずにサーバーを再起動
+     できます。
 
 ‘--detach’
-     Detach from the shell.  Implies –syslog.
+     シェルからデタッチします。 ‘--syslog’ オプションの指定を含んでいま
+     す。
 
 ‘--pid-file=<file>’
-     Save the process id in _file_.  Ignored when the daemon is run
-     under ‘--inetd’.
+     プロセスIDを <file> に保存します。デーモンが ‘--inetd’ で実行されて
+     いる場合は無視されます。
 
 ‘--user=<user>’
 ‘--group=<group>’
-     Change daemon’s uid and gid before entering the service loop.  When
-     only ‘--user’ is given without ‘--group’, the primary group ID for
-     the user is used.  The values of the option are given to
-     ‘getpwnam(3)’ and ‘getgrnam(3)’ and numeric IDs are not supported.
+     サービスループに入る前に、デーモンのuidとgidを変更します。
+     ‘--group’ なしで ‘--user’ のみが指定された場合、ユーザーのプライマ
+     リグループIDが使用されます。オプションの値は ‘getpwnam(3)’ と
+     ‘getgrnam(3)’ に与えられ、数値IDはサポートされていません。
 
-     Giving these options is an error when used with ‘--inetd’; use the
-     facility of inet daemon to achieve the same before spawning _git
-     daemon_ if needed.
+     これらのオプションを指定すると、 ‘--inetd’ と一緒に使用するとエラー
+     になります。 同じことを実現するには、必要に応じて、 _git daemon_ を
+     生成する前に、inetデーモンの機能を使用します。
 
-     Like many programs that switch user id, the daemon does not reset
-     environment variables such as ‘$HOME’ when it runs git programs,
-     e.g.  ‘upload-pack’ and ‘receive-pack’.  When using this option,
-     you may also want to set and export ‘HOME’ to point at the home
-     directory of ‘<user>’ before starting the daemon, and make sure any
-     Git configuration files in that directory are readable by ‘<user>’.
+     ユーザーIDを切り替える多くのプログラムと同様に、デーモンは、(例えば
+     、‘upload-pack’ や‘receive-pack‘ の) gitプログラムを実行するときに
+     ‘$HOME’ などの環境変数をリセットしません。このオプションを使用する
+     場合は、デーモンを起動する前に、 ‘HOME’ を ‘<user>’ のホームディレ
+     クトリを指すように設定、およびエクスポートし、そのディレクトリ内の
+     Git構成ファイルが ‘<user>’ によって読み取り可能であることを確認して
+     ください。
 
 ‘--enable=<service>’
 ‘--disable=<service>’
-     Enable/disable the service site-wide per default.  Note that a
-     service disabled site-wide can still be enabled per repository if
-     it is marked overridable and the repository enables the service
-     with a configuration item.
+     デフォルトでサイト全体のサービスを 有効/無効 にします。サイト全体で
+     無効にされたサービスは、オーバーライド可能とマークされていて、リポ
+     ジトリが構成アイテムでサービスを有効にしている場合でも、リポジトリ
+     ごとに有効にできることに注意してください。
 
 ‘--allow-override=<service>’
 ‘--forbid-override=<service>’
-     Allow/forbid overriding the site-wide default with per repository
-     configuration.  By default, all the services may be overridden.
+     リポジトリごとの構成でサイト全体のデフォルトをオーバーライドするこ
+     とを 許可/禁止 します。デフォルトでは、すべてのサービスがオーバーラ
+     イドされる場合があります。
 
 ‘--[no-]informative-errors’
-     When informative errors are turned on, git-daemon will report more
-     verbose errors to the client, differentiating conditions like "no
-     such repository" from "repository not exported".  This is more
-     convenient for clients, but may leak information about the
-     existence of unexported repositories.  When informative errors are
-     not enabled, all errors report "access denied" to the client.  The
-     default is –no-informative-errors.
+     informative-errorsがオンになっている場合、git-daemonはより詳細なエ
+     ラーをクライアントに報告し、「no such repository」(そのようなリポジ
+     トリがない)と「repository not exported」(リポジトリがエクスポートさ
+     れていない)などの条件を区別します。これはクライアントにとってより便
+     利ですが、エクスポートされていないリポジトリの存在に関する情報が漏
+     洩する可能性があります。informative-errorsが有効になっていない場合
+     、すべてのエラーは「access denied」とクライアントに報告します。 デ
+     フォルトは ‘--no-informative-errors’ です。
 
 ‘--access-hook=<path>’
-     Every time a client connects, first run an external command
-     specified by the <path> with service name (e.g.  "upload-pack"),
-     path to the repository, hostname (%H), canonical hostname (%CH), IP
-     address (%IP), and TCP port (%P) as its command-line arguments.
-     The external command can decide to decline the service by exiting
-     with a non-zero status (or to allow it by exiting with a zero
-     status).  It can also look at the $REMOTE_ADDR and ‘$REMOTE_PORT’
-     environment variables to learn about the requestor when making this
-     decision.
+     クライアントが接続するたびに、最初に、<path> で指定された外部コマン
+     ドを実行します。コマンドライン引数として、サービス名
+     ("upload-pack"など)や、リポジトリへのパスや、ホスト名(%H)や、正規の
+     ホスト名(%CH)や、IPアドレス(%IP)や、TCPポート(%P)を、指定します。外
+     部コマンドは、ゼロ以外のステータスで終了することによってサービスを
+     拒否する(またはゼロ・ステータスで終了することによってサービスを許可
+     する)ことを決定できます。また $REMOTE_ADDR や ‘$REMOTE_PORT’ 環境変
+     数を調べて、この決定を行うときにリクエスト側(requestor)ついて調べる
+     こともできます。
 
-     The external command can optionally write a single line to its
-     standard output to be sent to the requestor as an error message
-     when it declines the service.
+     外部コマンドはオプションで、サービスを拒否したときにエラーメッセー
+     ジとしてリクエスト側(requestor)に送信される1行を標準出力に書き込む
+     ことができます。
 
 <directory>
      許可するディレクトリを列挙するホワイトリストに追加するディレクトリ
@@ -14294,30 +14300,30 @@ OPTIONS
 SERVICES
 ********
 
-These services can be globally enabled/disabled using the command-line
-options of this command.  If finer-grained control is desired (e.g.  to
-allow _git archive_ to be run against only in a few selected
-repositories the daemon serves), the per-repository configuration file
-can be used to enable or disable them.
+これらのサービスは、このコマンドのコマンドラインオプションを使用してグロ
+ーバルに 有効/無効 にできます。よりきめ細かい制御が必要な場合(たとえば、
+デーモンがサービスを提供するいくつかの選択されたリポジトリでのみ ‘git
+archive’ を実行できるようしたい時)、リポジトリごとの構成ファイルを使用し
+て、それらを有効または無効にできます。
 
 upload-pack
-     This serves _git fetch-pack_ and _git ls-remote_ clients.  It is
-     enabled by default, but a repository can disable it by setting
-     ‘daemon.uploadpack’ configuration item to ‘false’.
+     これは、 ‘git fetch-pack’ と ‘git ls-remote’ クライアントにサービス
+     を提供します。デフォルトで有効になっていますが、リポジトリでは
+     ‘daemon.uploadpack `構成アイテムを `false’ に設定することで無効にで
+     きます。
 
 upload-archive
-     This serves _git archive –remote_.  It is disabled by default, but
-     a repository can enable it by setting ‘daemon.uploadarch’
-     configuration item to ‘true’.
+     これは ‘git archive --remote’ を提供します。 デフォルトでは無効にな
+     っていますが、リポジトリでは、 ‘daemon.uploadarch’ 構成アイテムを
+     ‘true’ に設定することで有効にできます。
 
 receive-pack
-     This serves _git send-pack_ clients, allowing anonymous push.  It
-     is disabled by default, as there is _no_ authentication in the
-     protocol (in other words, anybody can push anything into the
-     repository, including removal of refs).  This is solely meant for a
-     closed LAN setting where everybody is friendly.  This service can
-     be enabled by setting ‘daemon.receivepack’ configuration item to
-     ‘true’.
+     これは ‘git send-pack’ クライアントにサービスを提供し、匿名プッシュ
+     を可能にします。プロトコルに認証が「ない」ため、デフォルトでは無効
+     になっています(つまり、参照の削除を含め、誰でもリポジトリに何でもプ
+     ッシュできます)。これは、誰もが友好的であるクローズドLAN設定のみを
+     対象としています。このサービスは、 ‘daemon.receivepack’ 構成アイテ
+     ムを ‘true’ に設定することで有効にできます。
 
 
 EXAMPLES
@@ -58690,7 +58696,7 @@ File: gitman.info,  Node: gitcli,  Up: Top
 Name
 ****
 
-gitcli — Git command-line interface and conventions
+gitcli — Gitコマンドラインのインターフェイスと規則
 
 
 Synopsis
@@ -58702,108 +58708,113 @@ gitcli
 DESCRIPTION
 ***********
 
-This manual describes the convention used throughout Git CLI.
+このマニュアルでは Git CLI 全体で使用される規則について説明します。
 
-   Many commands take revisions (most often "commits", but sometimes
-"tree-ish", depending on the context and command) and paths as their
-arguments.  Here are the rules:
+   多くのコマンドは、引数としてリビジョン(revisions)(それはほとんどの場
+合「コミット」(commits)ですが、文脈とコマンドによっては「ツリーっぽい」
+(tree-ish)場合もあります)と、パス(paths)を取ります。ルールは以下のとおり
+です:
 
-   • Revisions come first and then paths.  E.g.  in ‘git diff v1.0 v2.0
-     arch/x86 include/asm-x86’, ‘v1.0’ and ‘v2.0’ are revisions and
-     ‘arch/x86’ and ‘include/asm-x86’ are paths.
+   • リビジョン達が最初に来て、その次にパス達が来ます。 例えば、 ‘git
+     diff v1.0 v2.0 arch/x86 include/asm-x86’ では ‘v1.0’ と ‘v2.0’ はリ
+     ビジョン達であり、 ‘arch/x86’ と ‘include/asm-x86’ はパス達です。
 
-   • When an argument can be misunderstood as either a revision or a
-     path, they can be disambiguated by placing ‘--’ between them.  E.g.
-     ‘git diff -- HEAD’ is, "I have a file called HEAD in my work tree.
-     Please show changes between the version I staged in the index and
-     what I have in the work tree for that file", not "show difference
-     between the HEAD commit and the work tree as a whole".  You can say
-     ‘git diff HEAD --’ to ask for the latter.
+   • 引数がリビジョンまたはパスのいずれかと誤解される可能性がある場合は
+     、それらの間に ‘--’ を配置することで曖昧さを解消できます。例えば、
+     ‘git diff -- HEAD’ は、「作業ツリーにHEADというファイルがあります。
+     インデックスにステージングしたバージョンと、そのファイルの作業ツリ
+     ーにあるバージョンとの変更を表示してください」であり、「HEADコミッ
+     トとワークツリー全体の違いを表示する」ではありません。後者を求める
+     には ‘git diff HEAD --’ とします。
 
-   • Without disambiguating ‘--’, Git makes a reasonable guess, but
-     errors out and asking you to disambiguate when ambiguous.  E.g.  if
-     you have a file called HEAD in your work tree, ‘git diff HEAD’ is
-     ambiguous, and you have to say either ‘git diff HEAD --’ or ‘git
-     diff -- HEAD’ to disambiguate.
+   • ‘--’ を明示しなくても、Gitは合理的な推測を行いますが、あいまいな場
+     合はエラーが発生し、あなたに明確にするように求めます。例えば、作業
+     ツリーにHEADというファイルがある場合、 ‘git diff HEAD’ はあいまいで
+     あり、曖昧さを解消するには、 ‘git diff HEAD --’ または ‘git diff --
+     HEAD’ のいずれかを指定する必要があります。
 
-   • Because ‘--’ disambiguates revisions and paths in some commands, it
-     cannot be used for those commands to separate options and
-     revisions.  You can use ‘--end-of-options’ for this (it also works
-     for commands that do not distinguish between revisions in paths, in
-     which case it is simply an alias for ‘--’).
+   • 一部のコマンドでは、 ‘--’ はリビジョンとパスを明確に区別するために
+     使われるため、これら一部のコマンドでオプションとリビジョンを分離す
+     るために使用することはできません。これら一部のコマンドではオプショ
+     ンとリビジョンを分離するために ‘--end-of-options’ を使用できます(こ
+     れら以外のパスのリビジョンを区別しないコマンドでも機能します。その
+     場合、 ‘--end-of-options’ は単に ‘--’ のエイリアスです)。
 
-     When writing a script that is expected to handle random user-input,
-     it is a good practice to make it explicit which arguments are which
-     by placing disambiguating ‘--’ at appropriate places.
+     ランダムなユーザー入力を処理することが期待されるスクリプトを作成す
+     るときは、適切な場所に曖昧さ回避の ‘--’ を配置することにより、どの
+     引数がどれであるかを明示することをお勧めします。
 
-   • Many commands allow wildcards in paths, but you need to protect
-     them from getting globbed by the shell.  These two mean different
-     things:
+   • 多くのコマンドではパスにワイルドカードを使用できますが、シェルによ
+     ってワイルドカードが取得されないように保護する必要があります。以下
+     の2つの意味は異なります:
 
           $ git restore *.c
           $ git restore \*.c
 
-     The former lets your shell expand the fileglob, and you are asking
-     the dot-C files in your working tree to be overwritten with the
-     version in the index.  The latter passes the ‘*.c’ to Git, and you
-     are asking the paths in the index that match the pattern to be
-     checked out to your working tree.  After running ‘git add hello.c;
-     rm hello.c’, you will _not_ see ‘hello.c’ in your working tree with
-     the former, but with the latter you will.
+     前者を使用すると、シェルでfileglobを展開でき、作業ツリー内の C言語
+     ソースファイル(dot-C)をインデックス内のバージョンで上書きするように
+     要求されます。後者は ‘*.c’ をGitに渡し、作業ツリーにチェックアウト
+     するパターンに一致するインデックス内のパスを要求しています。‘git
+     add hello.c; rm hello.c’ を実行後、前者では作業ツリーに ‘hello.c’ は
+     表示されませんが、後者では表示されます。
 
-   • Just as the filesystem _._  (period) refers to the current
-     directory, using a _._  as a repository name in Git (a
-     dot-repository) is a relative path and means your current
-     repository.
+   • ファイルシステムの ‘.’ (ピリオド)が現在のディレクトリを参照するのと
+     同じように、Gitでリポジトリ名として ‘.’ を使用すること(a
+     dot-repository)は相対パスであり、あなたの現在のリポジトリを意味しま
+     す。
 
-   Here are the rules regarding the "flags" that you should follow when
-you are scripting Git:
+   Gitのスクリプトを作成するときに従う必要のある「フラグ」(flag)に関する
+ルールは以下のとおりです:
 
-   • it’s preferred to use the non-dashed form of Git commands, which
-     means that you should prefer ‘git foo’ to ‘git-foo’.
+   • ダッシュで繋がない形式(non-dashed form)のGitコマンドを使用すること
+     をお勧めします。つまり、 ‘git-foo’ よりは ‘git foo’ を使用すべきで
+     す。
 
-   • splitting short options to separate words (prefer ‘git foo -a -b’
-     to ‘git foo -ab’, the latter may not even work).
+   • 短いオプションは分割して単語に区切ります( ‘git foo -ab’ よりも ‘git
+     foo -a -b’ を優先します。前者は機能しない事があります)。
 
-   • when a command-line option takes an argument, use the _stuck_ form.
-     In other words, write ‘git foo -oArg’ instead of ‘git foo -o Arg’
-     for short options, and ‘git foo --long-opt=Arg’ instead of ‘git foo
-     --long-opt Arg’ for long options.  An option that takes optional
-     option-argument must be written in the _stuck_ form.
+   • コマンドラインオプションが引数を取る場合は、串刺し形式(stuck’ form)
+     を使用します。つまり、短いオプションの場合は ‘git foo -o Arg’ の代
+     わりに ‘git foo -oArg’ を記述し、長いオプションの場合は ‘git foo
+     --long-opt Arg’ の代わりに ‘git foo --long-opt=Arg’ を記述します。
+     オプションのオプション引数をとるオプションは、串刺し形式で記述する
+     必要があります。
 
-   • when you give a revision parameter to a command, make sure the
-     parameter is not ambiguous with a name of a file in the work tree.
-     E.g.  do not write ‘git log -1 HEAD’ but write ‘git log -1 HEAD
-     --’; the former will not work if you happen to have a file called
-     ‘HEAD’ in the work tree.
+   • コマンドにリビジョンパラメータを指定するときは、そのパラメータが作
+     業ツリー内のファイルの名前と混同されないことを確認してください。例
+     えば、 ‘git log -1 HEAD’ とは記述せず、‘git log -1 HEAD --’ と記述
+     します。作業ツリーに ‘HEAD’ というファイルがある場合、前者は機能し
+     ません。
 
-   • many commands allow a long option ‘--option’ to be abbreviated only
-     to their unique prefix (e.g.  if there is no other option whose
-     name begins with ‘opt’, you may be able to spell ‘--opt’ to invoke
-     the ‘--option’ flag), but you should fully spell them out when
-     writing your scripts; later versions of Git may introduce a new
-     option whose name shares the same prefix, e.g.  ‘--optimize’, to
-     make a short prefix that used to be unique no longer unique.
+   • 多くのコマンドでは、長いオプション ‘--option’ を一意であるかぎり短
+     いプレフィックスのみに省略できます(たとえば、名前が ‘opt’ で始まる
+     オプションが他にない場合は、 ‘--opt’ と入力して ‘--option’ フラグを
+     呼び出すことができます)。ただし、スクリプトを作成するときは、省略し
+     てはいけません。なぜならGitのより新しいバージョンで、名前が同じプレ
+     フィックスを共有する新しいオプションが導入される可能性があるからで
+     す。例えば ‘--optimize’ が導入されると、以前は一意であった短いプレ
+     フィックス(‘--option’ , ‘--opt’)を一意では無くしてしまいます。
 
 
 ENHANCED OPTION PARSER
 **********************
 
-From the Git 1.5.4 series and further, many Git commands (not all of
-them at the time of the writing though) come with an enhanced option
-parser.
+Git 1.5.4シリーズ以降、多くのGitコマンド(この文書の執筆時点ではすべてで
+はありませんが)は、拡張オプションパーサーを備えています。
 
-   Here is a list of the facilities provided by this option parser.
+   以下は、この拡張オプションパーサーによって提供される機能のリストです
+。
 
 
 Magic Options
 =============
 
-Commands which have the enhanced option parser activated all understand
-a couple of magic command-line options:
+拡張オプションパーサーがアクティブになっているコマンドはすべて、いくつか
+の魔法のコマンドラインオプション(magic command-line options)を理解します
+:
 
 ‘-h’
-     gives a pretty printed usage of the command.
+     コマンドの、かなり整った使用法を提供します。
 
           $ git describe -h
           usage: git describe [<options>] <commit-ish>*
@@ -58816,111 +58827,114 @@ a couple of magic command-line options:
               --long                always use long format
               --abbrev[=<n>]        use <n> digits to display SHA-1s
 
-     Note that some subcommand (e.g.  ‘git grep’) may behave differently
-     when there are things on the command line other than ‘-h’, but ‘git
-     subcmd -h’ without anything else on the command line is meant to
-     consistently give the usage.
+     注意: 一部のサブコマンド(例: ‘git grep’ )は、コマンドラインに ‘-h’
+     以外のものがある場合、動作が異なる場合がありますが、コマンドライン
+     に何も含まれていない ‘git subcmd -h’ は、一貫して使用法を提供するこ
+     とを目的としています。
 
 ‘--help-all’
-     Some Git commands take options that are only used for plumbing or
-     that are deprecated, and such options are hidden from the default
-     usage.  This option gives the full list of options.
+     一部のGitコマンドは、配管コマンドにのみ使用されるオプションまたは非
+     推奨のオプションを取り、そのようなオプションはデフォルトの使用法か
+     ら隠されています。 このオプションはオプションの完全なリストを提供し
+     ます。
 
 
-Negating options
-================
+否定オプション
+==============
 
-Options with long option names can be negated by prefixing ‘--no-’.  For
-example, ‘git branch’ has the option ‘--track’ which is _on_ by default.
-You can use ‘--no-track’ to override that behaviour.  The same goes for
-‘--color’ and ‘--no-color’.
-
-
-Aggregating short options
-=========================
-
-Commands that support the enhanced option parser allow you to aggregate
-short options.  This means that you can for example use ‘git rm -rf’ or
-‘git clean -fdx’.
+長いオプションは、接頭辞 ‘--no-’ を付けることで無効にできます。 たとえば
+、 ‘git branch’ にはオプション ‘--track’ があります。これはデフォルトで
+_on_ です。 ‘--no-track’ を使用して、その動作をオーバーライドできます。
+‘--color’ と ‘--no-color’ についても同じことが言えます。
 
 
-Abbreviating long options
-=========================
+短いオプションのおまとめ
+========================
 
-Commands that support the enhanced option parser accepts unique prefix
-of a long option as if it is fully spelled out, but use this with a
-caution.  For example, ‘git commit --amen’ behaves as if you typed ‘git
-commit --amend’, but that is true only until a later version of Git
-introduces another option that shares the same prefix, e.g.  ‘git commit
---amenity’ option.
+拡張オプションパーサーをサポートするコマンドを使用すると、短いオプション
+をおまとめできます。これは、たとえば、 ‘git rm -rf’ や ‘git clean -fdx’
+を使用できることを意味します。
+
+
+長いオプションの省略
+====================
+
+拡張オプションパーサーをサポートするコマンドは、クソ詳しく長いオプション
+の一意なプレフィックスを受け入れますが、これは注意して使用してください。
+たとえば、 ‘git commit --amen’ は ‘git commit --amend’ と入力したかのよ
+うに動作しますが、これは、後のバージョンのGitが同じプレフィックスを共有
+する別のオプションを導入するまでのみ当てはまります。例えば ‘git commit
+--amenity’ オプションが導入されたら一意で無くなります。
 
 
 Separating argument from the option
 ===================================
 
-You can write the mandatory option parameter to an option as a separate
-word on the command line.  That means that all the following uses work:
+コマンドラインで、オプションの必須パラメータを単に区切られた単語として記
+述することができます。これは、以下のすべての使い方が機能することを意味し
+ます:
 
      $ git foo --long-opt=Arg
      $ git foo --long-opt Arg
      $ git foo -oArg
      $ git foo -o Arg
 
-   However, this is *NOT* allowed for switches with an optional value,
-where the _stuck_ form must be used:
+   ただし、これは必須ではないオプションの値を持つスイッチでは許可されて
+いません。その場合は串刺し形式を使用する必要があります:
 
      $ git describe --abbrev HEAD     # correct
      $ git describe --abbrev=10 HEAD  # correct
      $ git describe --abbrev 10 HEAD  # NOT WHAT YOU MEANT
 
 
-NOTES ON FREQUENTLY CONFUSED OPTIONS
-************************************
+注意：よく混同されるオプションに関する注記
+******************************************
 
-Many commands that can work on files in the working tree and/or in the
-index can take ‘--cached’ and/or ‘--index’ options.  Sometimes people
-incorrectly think that, because the index was originally called cache,
-these two are synonyms.  They are *not* — these two options mean very
-different things.
+作業ツリーおよび/またはインデックス内のファイルを処理できる多くのコマン
+ドは、 ‘--cached’ および/または ‘--index’ オプションを使用できます。イン
+デックスは元々キャッシュと呼ばれていたため、これら2つは同義語であると誤
+解されることがあります。ちゃいます。これらの2つのオプションは非常に異な
+ることを意味します。
 
-   • The ‘--cached’ option is used to ask a command that usually works
-     on files in the working tree to *only* work with the index.  For
-     example, ‘git grep’, when used without a commit to specify from
-     which commit to look for strings in, usually works on files in the
-     working tree, but with the ‘--cached’ option, it looks for strings
-     in the index.
+   • ‘--cached’ オプションは、通常は作業ツリー内のファイルで機能するコマ
+     ンドに、「インデックスのみで」機能するように要求するために使用され
+     ます。 たとえば、 ‘git grep’ をコミットせずに使用して、どのコミット
+     から文字列を検索するかを指定すると、通常は作業ツリー内のファイルで
+     機能しますが、 ‘--cached’ オプションを使用するとインデックス内の文
+     字列を検索します。
 
-   • The ‘--index’ option is used to ask a command that usually works on
-     files in the working tree to *also* affect the index.  For example,
-     ‘git stash apply’ usually merges changes recorded in a stash entry
-     to the working tree, but with the ‘--index’ option, it also merges
-     changes to the index as well.
+   • ‘--index’ オプションは、通常は作業ツリー内のファイルで機能するコマ
+     ンドに、「インデックスにも」影響を与えるように要求するために使用さ
+     れます。たとえば、 ‘git stash apply’ は通常、stashエントリに記録さ
+     れた変更を作業ツリーにマージしますが、 ‘--index’ オプションを使用す
+     ると、インデックスへの変更もマージします。
 
-   ‘git apply’ command can be used with ‘--cached’ and ‘--index’ (but
-not at the same time).  Usually the command only affects the files in
-the working tree, but with ‘--index’, it patches both the files and
-their index entries, and with ‘--cached’, it modifies only the index
-entries.
+   ‘git apply`コマンドは、 `--cached’ または ‘--index’ のいずれかを伴っ
+て使用できます(同時に使用することはできません。通常、このコマンドは作業
+ツリー内のファイルにのみ影響しますが、 ‘--index’ を使用すると、ファイル
+とそのインデックスエントリの両方にパッチが適用され、 ‘--cached’ を使用す
+ると、インデックスエントリのみが変更されます。
 
-   See also
+   詳細については
 https://lore.kernel.org/git/7v64clg5u9.fsf@assigned-by-dhcp.cox.net/
-(https://lore.kernel.org/git/7v64clg5u9.fsf@assigned-by-dhcp.cox.net/)
-and
+(https://lore.kernel.org/git/7v64clg5u9.fsf@assigned-by-dhcp.cox.net/) と
 https://lore.kernel.org/git/7vy7ej9g38.fsf@gitster.siamese.dyndns.org/
 (https://lore.kernel.org/git/7vy7ej9g38.fsf@gitster.siamese.dyndns.org/)
-for further information.
+も参照してください。
 
-   Some other commands that also work on files in the working tree
-and/or in the index can take ‘--staged’ and/or ‘--worktree’.
+   作業ツリー および/または インデックス内のファイルに対しても機能する他
+のいくつかのコマンドは、 ‘--staged’ および/または ‘--worktree’ を取るこ
+とができます。
 
-   • ‘--staged’ is exactly like ‘--cached’, which is used to ask a
-     command to only work on the index, not the working tree.
+   • ‘--staged’ は ‘--cached’ とまったく同じです。これは、作業ツリーでは
+     なく、インデックスでのみ機能するようにコマンドに要求するために使用
+     されます。
 
-   • ‘--worktree’ is the opposite, to ask a command to work on the
-     working tree only, not the index.
+   • ‘--worktree’ は反対に、インデックスではなく、作業ツリーのみで作業す
+     るようにコマンドに要求します。
 
-   • The two options can be specified together to ask a command to work
-     on both the index and the working tree.
+   • 2つのオプションを一緒に指定して、インデックスと作業ツリーの両方で作
+     業するようにコマンドに要求することができます。
 
 
 GIT
@@ -69380,150 +69394,150 @@ Node: git-cvsexportcommit588142
 Node: git-cvsimport592665
 Node: git-cvsserver601010
 Node: git-daemon617384
-Node: git-describe631576
-Node: git-diff-files640382
-Node: git-diff-index700063
-Node: git-diff-tree763029
-Node: git-diff854836
-Node: git-difftool921415
-Node: git-fast-export926944
-Node: git-fast-import938185
-Node: git-fetch-pack1001741
-Node: git-fetch1006207
-Node: git-filter-branch1045356
-Node: git-fmt-merge-msg1076938
-Node: git-for-each-ref1080316
-Node: git-for-each-repo1101946
-Node: git-format-patch1104048
-Node: git-fsck-objects1158182
-Node: git-fsck1158595
-Node: git-gc1171959
-Node: git-get-tar-commit-id1188681
-Node: git-grep1190009
-Node: git-gui1202747
-Node: git-hash-object1207612
-Node: git-help1210489
-Node: git-http-backend1217255
-Node: git-http-fetch1228899
-Node: git-http-push1231338
-Node: git-imap-send1235681
-Node: git-index-pack1242991
-Node: git-init-db1248640
-Node: git-init1249084
-Node: git-instaweb1255850
-Node: git-interpret-trailers1258847
-Node: git-log1280412
-Node: git-ls-files1428488
-Node: git-ls-remote1440841
-Node: git-ls-tree1446336
-Node: git-mailinfo1451511
-Node: git-mailsplit1457293
-Node: git-maintenance1459161
-Node: git-merge-base1478370
-Node: git-merge-file1486634
-Node: git-merge-index1490352
-Node: git-merge-one-file1493697
-Node: git-merge-tree1494156
-Node: git-merge1495138
-Node: git-mergetool--lib1531784
-Node: git-mergetool1533853
-Node: git-mktag1543684
-Node: git-mktree1546235
-Node: git-multi-pack-index1547856
-Node: git-mv1553065
-Node: git-name-rev1556058
-Node: git-notes1559633
-Ref: git-notes-Footnote-11574894
-Node: git-p41575110
-Node: git-pack-objects1604299
-Node: git-pack-redundant1624120
-Node: git-pack-refs1625666
-Node: git-patch-id1628718
-Node: git-prune-packed1631830
-Node: git-prune1633151
-Node: git-pull1636096
-Node: git-push1685108
-Node: git-quiltimport1725251
-Node: git-range-diff1727420
-Node: git-read-tree1738430
-Node: git-rebase1756386
-Node: git-receive-pack1818578
-Node: git-reflog1828644
-Node: git-remote-ext1833626
-Node: git-remote-fd1837743
-Node: git-remote1840078
-Node: git-repack1849779
-Node: git-replace1862715
-Node: git-request-pull1869678
-Node: git-rerere1872313
-Node: git-reset1882906
-Node: git-restore1905510
-Node: git-rev-list1915683
-Node: git-rev-parse2008536
-Node: git-revert2054039
-Node: git-rm2059723
-Node: git-send-email2067021
-Node: git-send-pack2090209
-Node: git-sh-i18n--envsubst2095728
-Node: git-sh-i18n2097089
-Node: git-sh-setup2098733
-Node: git-shell2103026
-Node: git-shortlog2106891
-Node: git-show-branch2150013
-Node: git-show-index2158959
-Node: git-show-ref2161566
-Node: git-show2168470
-Node: git-sparse-checkout2255969
-Node: git-stage2266909
-Node: git-stash2267243
-Node: git-status2281287
-Node: git-stripspace2299437
-Node: git-submodule2301932
-Node: git-svn2324360
-Node: git-switch2373595
-Node: git-symbolic-ref2385483
-Node: git-tag2388276
-Node: git-unpack-file2403787
-Node: git-unpack-objects2404312
-Node: git-update-index2406152
-Node: git-update-ref2429529
-Node: git-update-server-info2436101
-Node: git-upload-archive2437124
-Node: git-upload-pack2440011
-Node: git-var2442428
-Node: git-verify-commit2444196
-Node: git-verify-pack2444877
-Node: git-verify-tag2446453
-Node: git-version2447110
-Node: git-web--browse2447792
-Node: git-whatchanged2451424
-Node: git-worktree2452800
-Node: git-write-tree2474655
-Node: git2476164
-Node: gitattributes2547805
-Node: gitcli2595866
-Node: gitcore-tutorial2605666
-Node: gitcredentials2668328
-Node: gitcvs-migration2682311
-Node: gitdiffcore2689489
-Node: giteveryday2702865
-Node: gitfaq2724366
-Node: gitglossary2754386
-Node: githooks2796077
-Node: gitignore2823848
-Node: gitk2836307
-Node: gitmailmap2844601
-Node: gitmodules2849382
-Node: gitnamespaces2854578
-Node: gitremote-helpers2860302
-Node: gitrepository-layout2882875
-Node: gitrevisions2906486
-Node: gitsubmodules2930471
-Node: gittutorial-22941543
-Node: gittutorial2958863
-Node: gitweb.conf2984490
-Node: gitweb3026726
-Node: gitworkflows3052890
+Node: git-describe635453
+Node: git-diff-files644259
+Node: git-diff-index703940
+Node: git-diff-tree766906
+Node: git-diff858713
+Node: git-difftool925292
+Node: git-fast-export930821
+Node: git-fast-import942062
+Node: git-fetch-pack1005618
+Node: git-fetch1010084
+Node: git-filter-branch1049233
+Node: git-fmt-merge-msg1080815
+Node: git-for-each-ref1084193
+Node: git-for-each-repo1105823
+Node: git-format-patch1107925
+Node: git-fsck-objects1162059
+Node: git-fsck1162472
+Node: git-gc1175836
+Node: git-get-tar-commit-id1192558
+Node: git-grep1193886
+Node: git-gui1206624
+Node: git-hash-object1211489
+Node: git-help1214366
+Node: git-http-backend1221132
+Node: git-http-fetch1232776
+Node: git-http-push1235215
+Node: git-imap-send1239558
+Node: git-index-pack1246868
+Node: git-init-db1252517
+Node: git-init1252961
+Node: git-instaweb1259727
+Node: git-interpret-trailers1262724
+Node: git-log1284289
+Node: git-ls-files1432365
+Node: git-ls-remote1444718
+Node: git-ls-tree1450213
+Node: git-mailinfo1455388
+Node: git-mailsplit1461170
+Node: git-maintenance1463038
+Node: git-merge-base1482247
+Node: git-merge-file1490511
+Node: git-merge-index1494229
+Node: git-merge-one-file1497574
+Node: git-merge-tree1498033
+Node: git-merge1499015
+Node: git-mergetool--lib1535661
+Node: git-mergetool1537730
+Node: git-mktag1547561
+Node: git-mktree1550112
+Node: git-multi-pack-index1551733
+Node: git-mv1556942
+Node: git-name-rev1559935
+Node: git-notes1563510
+Ref: git-notes-Footnote-11578771
+Node: git-p41578987
+Node: git-pack-objects1608176
+Node: git-pack-redundant1627997
+Node: git-pack-refs1629543
+Node: git-patch-id1632595
+Node: git-prune-packed1635707
+Node: git-prune1637028
+Node: git-pull1639973
+Node: git-push1688985
+Node: git-quiltimport1729128
+Node: git-range-diff1731297
+Node: git-read-tree1742307
+Node: git-rebase1760263
+Node: git-receive-pack1822455
+Node: git-reflog1832521
+Node: git-remote-ext1837503
+Node: git-remote-fd1841620
+Node: git-remote1843955
+Node: git-repack1853656
+Node: git-replace1866592
+Node: git-request-pull1873555
+Node: git-rerere1876190
+Node: git-reset1886783
+Node: git-restore1909387
+Node: git-rev-list1919560
+Node: git-rev-parse2012413
+Node: git-revert2057916
+Node: git-rm2063600
+Node: git-send-email2070898
+Node: git-send-pack2094086
+Node: git-sh-i18n--envsubst2099605
+Node: git-sh-i18n2100966
+Node: git-sh-setup2102610
+Node: git-shell2106903
+Node: git-shortlog2110768
+Node: git-show-branch2153890
+Node: git-show-index2162836
+Node: git-show-ref2165443
+Node: git-show2172347
+Node: git-sparse-checkout2259846
+Node: git-stage2270786
+Node: git-stash2271120
+Node: git-status2285164
+Node: git-stripspace2303314
+Node: git-submodule2305809
+Node: git-svn2328237
+Node: git-switch2377472
+Node: git-symbolic-ref2389360
+Node: git-tag2392153
+Node: git-unpack-file2407664
+Node: git-unpack-objects2408189
+Node: git-update-index2410029
+Node: git-update-ref2433406
+Node: git-update-server-info2439978
+Node: git-upload-archive2441001
+Node: git-upload-pack2443888
+Node: git-var2446305
+Node: git-verify-commit2448073
+Node: git-verify-pack2448754
+Node: git-verify-tag2450330
+Node: git-version2450987
+Node: git-web--browse2451669
+Node: git-whatchanged2455301
+Node: git-worktree2456677
+Node: git-write-tree2478532
+Node: git2480041
+Node: gitattributes2551682
+Node: gitcli2599743
+Node: gitcore-tutorial2613530
+Node: gitcredentials2676192
+Node: gitcvs-migration2690175
+Node: gitdiffcore2697353
+Node: giteveryday2710729
+Node: gitfaq2732230
+Node: gitglossary2762250
+Node: githooks2803941
+Node: gitignore2831712
+Node: gitk2844171
+Node: gitmailmap2852465
+Node: gitmodules2857246
+Node: gitnamespaces2862442
+Node: gitremote-helpers2868166
+Node: gitrepository-layout2890739
+Node: gitrevisions2914350
+Node: gitsubmodules2938335
+Node: gittutorial-22949407
+Node: gittutorial2966727
+Node: gitweb.conf2992354
+Node: gitweb3034590
+Node: gitworkflows3060754
 
 End Tag Table
 
