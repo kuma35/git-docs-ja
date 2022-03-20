@@ -774,31 +774,30 @@ http と stateless-rpc を念頭に置いて設計されています。明確な
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>プロトコルv2では、通信はコマンド指向です。サーバーに最初に接続するときに、機能のリストがアドバタイズされます。これらの機能の一部は、クライアントが実行を要求できるコマンドになります。コマンドが完了すると、クライアントは接続を再利用して、他のコマンドの実行を要求できます。</p></div>
+<div class="paragraph"><p>プロトコルv2では、通信はコマンド指向です。サーバーに最初に接続するときに、機能のリストが広告されます。これらの機能の一部は、クライアントが実行を要求できるコマンドになります。コマンドが完了すると、クライアントは接続を再利用して、他のコマンドの実行を要求できます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_packet_line_framing">Packet-Line Framing</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>All communication is done using packet-line framing, just as in v1.  See
-<code>Documentation/technical/pack-protocol.txt</code> and
-<code>Documentation/technical/protocol-common.txt</code> for more information.</p></div>
-<div class="paragraph"><p>In protocol v2 these special packets will have the following semantics:</p></div>
+<div class="paragraph"><p>すべての通信は、v1と同様に、パケットラインフレーミングを使用して行われます。 詳細については、
+<code>Documentation/technical/pack-protocol.txt</code> と
+<code>Documentation/technical/protocol-common.txt</code> を参照してください。</p></div>
+<div class="paragraph"><p>プロトコルv2では、これらの特別なパケットの意味は以下のとおりです:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<em>0000</em> Flush Packet (flush-pkt) - indicates the end of a message
+<em>0000</em> フラッシュパケット (flush-pkt) - メッセージの終わりを示します
 </p>
 </li>
 <li>
 <p>
-<em>0001</em> Delimiter Packet (delim-pkt) - separates sections of a message
+<em>0001</em> 区切りパケット (delim-pkt) - メッセージのセクションを区切ります
 </p>
 </li>
 <li>
 <p>
-<em>0002</em> Response End Packet (response-end-pkt) - indicates the end of a
-    response for stateless connections
+<em>0002</em> 応答終了パケット (response-end-pkt) - ステートレス接続の応答の終了を示します
 </p>
 </li>
 </ul></div>
@@ -807,16 +806,13 @@ http と stateless-rpc を念頭に置いて設計されています。明確な
 <div class="sect1">
 <h2 id="_initial_client_request">Initial Client Request</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>In general a client can request to speak protocol v2 by sending <code>version=2</code>
-through the respective side-channel for the transport being used which
-inevitably sets <code>GIT_PROTOCOL</code>.  More information can be found in
-<code>pack-protocol.txt</code> and <code>http-protocol.txt</code>, as well as the <code>GIT_PROTOCOL</code>
-definition in <code>git.txt</code>. In all cases the response from the server is the
-capability advertisement.</p></div>
+<div class="paragraph"><p>一般に、クライアントは、使用されているトランスポートのそれぞれのサイドチャネルを介して <code>version=2</code>
+を送信することにより、プロトコルv2を話すように要求できます。これにより、必然的に <code>GIT_PROTOCOL</code> が定されます。詳細については
+<code>pack-protocol.txt</code> や <code>http-protocol.txt</code> と、 <code>git.txt</code> の <code>GIT_PROTOCOL</code>
+定義を参照してください。すべての場合において、サーバーからの応答は機能広告(capability advertisement)です。</p></div>
 <div class="sect2">
 <h3 id="_git_transport">Git Transport</h3>
-<div class="paragraph"><p>When using the git:// transport, you can request to use protocol v2 by
-sending "version=2" as an extra parameter:</p></div>
+<div class="paragraph"><p>git:// 輸送を使用する場合、追加のパラメーターとして "version=2" を送信することにより、プロトコルv2の使用を要求できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>003egit-upload-pack /project.git\0host=myserver.com\0\0version=2\0</code></pre>
@@ -824,21 +820,20 @@ sending "version=2" as an extra parameter:</p></div>
 </div>
 <div class="sect2">
 <h3 id="_ssh_and_file_transport">SSH and File Transport</h3>
-<div class="paragraph"><p>When using either the ssh:// or file:// transport, the GIT_PROTOCOL
-environment variable must be set explicitly to include "version=2".  The
-server may need to be configured to allow this environment variable to pass.</p></div>
+<div class="paragraph"><p>ssh:// 輸送 または file:// 輸送
+のどちらかを使用する場合、GIT_PROTOCOL環境変数を明示的に設定して「version=2」を含める必要があります。この環境変数が渡されるようにサーバーを構成する必要がある場合があります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_http_transport">HTTP Transport</h3>
-<div class="paragraph"><p>When using the http:// or https:// transport a client makes a "smart"
-info/refs request as described in <code>http-protocol.txt</code> and requests that v2
-be used by supplying "version=2" in the <code>Git-Protocol</code> header.</p></div>
+<div class="paragraph"><p>http:// 輸送 または https:// 輸送
+を使用する場合、クライアントは「http-protocol.txt」で説明されているように「smart」なinfo/refsリクエストを作成し、
+<code>Git-Protocol</code> ヘッダー内で「version=2」を指定してv2を使用するように要求します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>C: GET $GIT_URL/info/refs?service=git-upload-pack HTTP/1.0
 C: Git-Protocol: version=2</code></pre>
 </div></div>
-<div class="paragraph"><p>A v2 server would reply:</p></div>
+<div class="paragraph"><p>v2サーバーは以下のように応答します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>S: 200 OK
@@ -848,24 +843,18 @@ S:
 S: 000eversion 2\n
 S: &lt;capability-advertisement&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>Subsequent requests are then made directly to the service
-<code>$GIT_URL/git-upload-pack</code>. (This works the same for git-receive-pack).</p></div>
-<div class="paragraph"><p>Uses the <code>--http-backend-info-refs</code> option to <a href="../git-upload-pack.html">git-upload-pack(1)</a>.</p></div>
-<div class="paragraph"><p>The server may need to be configured to pass this header&#8217;s contents via the
-<code>GIT_PROTOCOL</code> variable. See the discussion in <code>git-http-backend.txt</code>.</p></div>
+<div class="paragraph"><p>その後の要求は、サービス <code>$GIT_URL/git-upload-pack</code>
+に対して直接行われます。(これはgit-receive-packでも同じように機能します)。</p></div>
+<div class="paragraph"><p><code>--http-backend-info-refs</code> オプションを使用して <a href="../git-upload-pack.html">git-upload-pack(1)</a> を実行します。</p></div>
+<div class="paragraph"><p>サーバーは、 <code>GIT_PROTOCOL</code> 変数を介してこのヘッダーの内容を渡すように構成する必要がある場合があります。
+<code>git-http-backend.txt</code> の説明を参照してください。</p></div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_capability_advertisement">Capability Advertisement</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>A server which decides to communicate (based on a request from a client)
-using protocol version 2, notifies the client by sending a version string in
-its initial response followed by an advertisement of its capabilities.  Each
-capability is a key with an optional value.  Clients must ignore all unknown
-keys.  Semantics of unknown values are left to the definition of each key.
-Some capabilities will describe commands which can be requested to be
-executed by the client.</p></div>
+<div class="paragraph"><p>(クライアントからの要求に基づいて)プロトコルバージョン2を使用して通信することを決定したサーバーは、初期応答でバージョン文字列を送信し、続いてその機能を広告することによってクライアントに通知します。各機能は、オプションの値を持つキーです。クライアントは、不明なキーをすべて無視する必要があります。未知の値の意味は、各キーの定義に任されています。一部の機能では、クライアントによる実行を要求できるコマンドについて説明します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>capability-advertisement = protocol-version
@@ -1451,7 +1440,7 @@ associated requested information, each separated by a single space.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-12-14 02:34:28 JST
+ 2022-02-22 09:23:27 JST
 </div>
 </div>
 </body>

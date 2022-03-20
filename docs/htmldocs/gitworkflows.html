@@ -818,154 +818,109 @@ cherry-pickingまだ時々役に立ちます。例については、以下の「
 </div>
 <div class="sect2">
 <h3 id="_merging_upwards">Merging upwards</h3>
-<div class="paragraph"><p>The "downwards graduation" discussed above cannot be done by actually
-merging downwards, however, since that would merge <em>all</em> changes on the
-unstable branch into the stable one.  Hence the following:</p></div>
+<div class="paragraph"><p>上記の「downwards
+graduation」(下向きの卒業)は、実際に下向きにマージすることによって実行することはできません。なぜなら、不安定なブランチの「すべての」変更が安定したブランチにマージされるためです。
+したがって、以下のようになります:</p></div>
 <div class="exampleblock">
 <div class="title">Rule: Merge upwards</div>
 <div class="content">
-<div class="paragraph"><p>Always commit your fixes to the oldest supported branch that requires them.
-Then (periodically) merge the integration branches upwards into each other.</p></div>
+<div class="paragraph"><p>修正を必要とするサポートされている最も古いブランチに常に修正をコミットします。 次に、 (定期的に)統合ブランチを互いに上向きにマージします。</p></div>
 </div></div>
-<div class="paragraph"><p>This gives a very controlled flow of fixes.  If you notice that you have
-applied a fix to e.g. <em>master</em> that is also required in <em>maint</em>, you will
-need to cherry-pick it (using <a href="git-cherry-pick.html">git-cherry-pick(1)</a>)  downwards.  This
-will happen a few times and is nothing to worry about unless you do it very
-frequently.</p></div>
+<div class="paragraph"><p>これにより、修正のフローが非常によく制御されます。たとえば、修正を適用したことに気付いた場合。 <em>maint</em> でも必要な <em>master</em>
+は、(<a href="git-cherry-pick.html">git-cherry-pick(1)</a>
+を使用して)下向きにチェリーピックする必要があります。これは数回発生しますが、頻繁に実行しない限り心配する必要はありません。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_topic_branches">Topic branches</h3>
-<div class="paragraph"><p>Any nontrivial feature will require several patches to implement, and may
-get extra bugfixes or improvements during its lifetime.</p></div>
-<div class="paragraph"><p>Committing everything directly on the integration branches leads to many
-problems: Bad commits cannot be undone, so they must be reverted one by one,
-which creates confusing histories and further error potential when you
-forget to revert part of a group of changes.  Working in parallel mixes up
-the changes, creating further confusion.</p></div>
-<div class="paragraph"><p>Use of "topic branches" solves these problems.  The name is pretty self
-explanatory, with a caveat that comes from the "merge upwards" rule above:</p></div>
+<div class="paragraph"><p>重要な機能を実装するにはいくつかのパッチが必要であり、その存続期間中に追加のバグ修正または改善が行われる可能性があります。</p></div>
+<div class="paragraph"><p>統合ブランチですべてを直接コミットすると、多くの問題が発生します。不正なコミットは元に戻せないため、1つずつ元に戻す必要があります。これにより、変更のグループの一部を元に戻すのを忘れると、混乱した履歴とエラーが発生する可能性があります。並行して作業すると、変更がごちゃまぜになり、さらに混乱が生じます。</p></div>
+<div class="paragraph"><p>「topic branches」(トピックブランチ)を使用すると、これらの問題が解決されます。名前はかなり自明ですが、上記の「merge
+upwards」(上向きにマージ)ルールに由来する警告があります:</p></div>
 <div class="exampleblock">
 <div class="title">Rule: Topic branches</div>
 <div class="content">
-<div class="paragraph"><p>Make a side branch for every topic (feature, bugfix, &#8230;). Fork it off at
-the oldest integration branch that you will eventually want to merge it
-into.</p></div>
+<div class="paragraph"><p>すべてのトピック(機能、バグ修正など)のサイドブランチを作成します。最終的にマージする最も古い統合ブランチでフォークします。</p></div>
 </div></div>
-<div class="paragraph"><p>Many things can then be done very naturally:</p></div>
+<div class="paragraph"><p>そうすれば、以下のように多くのことが非常に自然に実行できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-To get the feature/bugfix into an integration branch, simply merge it.  If
-  the topic has evolved further in the meantime, merge again.  (Note that you
-  do not necessarily have to merge it to the oldest integration branch first.
-  For example, you can first merge a bugfix to <em>next</em>, give it some testing
-  time, and merge to <em>maint</em> when you know it is stable.)
+機能/バグ修正を統合ブランチに取り込むには、それをマージするだけです。その間にトピックがさらに進化した場合は、再度マージしてください。
+  (必ずしも最初に最も古い統合ブランチにマージする必要はないことに注意してください。たとえば、最初にバグ修正を next
+  にマージし、テスト時間を与え、安定していることがわかったら maint にマージできます。)
 </p>
 </li>
 <li>
 <p>
-If you find you need new features from the branch <em>other</em> to continue
-  working on your topic, merge <em>other</em> to <em>topic</em>.  (However, do not do this
-  "just habitually", see below.)
+トピックの作業を続行するためにブランチ other の新機能が必要な場合は、 other を topic にマージします。
+  (ただし、これを「習慣的に」行わないでください。以下を参照してください。)
 </p>
 </li>
 <li>
 <p>
-If you find you forked off the wrong branch and want to move it "back in
-  time", use <a href="git-rebase.html">git-rebase(1)</a>.
+分岐したブランチが間違っていることに気づき、それを「過去にさかのぼって」移動したい場合は、 <a href="git-rebase.html">git-rebase(1)</a>
+  を使用してください。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Note that the last point clashes with the other two: a topic that has been
-merged elsewhere should not be rebased.  See the section on RECOVERING FROM
-UPSTREAM REBASE in <a href="git-rebase.html">git-rebase(1)</a>.</p></div>
-<div class="paragraph"><p>We should point out that "habitually" (regularly for no real reason)
-merging an integration branch into your topics&#8201;&#8212;&#8201;and by extension, merging
-anything upstream into anything downstream on a regular basis&#8201;&#8212;&#8201;is frowned upon:</p></div>
+<div class="paragraph"><p>注意: 最後の項目が他の2つと衝突することに注意してください。他の場所でマージされたトピックは、リベースしないでください。
+<a href="git-rebase.html">git-rebase(1)</a> の「RECOVERING FROM UPSTREAM REBASE」に関するセクションを参照してください。</p></div>
+<div class="paragraph"><p>(通常は理由もなく)「習慣的に」統合ブランチをあなたのトピックにマージすること(つまり、トピックを拡張し、定期的に上流からマージし続けること)は眉をひそめられる行為であることを指摘しておく必要があります。</p></div>
 <div class="exampleblock">
-<div class="title">Rule: Merge to downstream only at well-defined points</div>
+<div class="title">Rule: 明確に定義されたポイントでのみ下流にマージします</div>
 <div class="content">
-<div class="paragraph"><p>Do not merge to downstream except with a good reason: upstream API changes
-affect your branch; your branch no longer merges to upstream cleanly; etc.</p></div>
+<div class="paragraph"><p>正当な理由がある場合を除いて、ダウンストリームにマージしないでください。正当な理由とは、例えば、アップストリームAPIの変更がブランチに影響する、ブランチがアップストリームにきれいにマージされなくなりました、等です。</p></div>
 </div></div>
-<div class="paragraph"><p>Otherwise, the topic that was merged to suddenly contains more than a single
-(well-separated) change.  The many resulting small merges will greatly
-clutter up history.  Anyone who later investigates the history of a file
-will have to find out whether that merge affected the topic in development.
-An upstream might even inadvertently be merged into a "more stable" branch.
-And so on.</p></div>
+<div class="paragraph"><p>正当な理由以外の場合、マージされたトピックには、(激しくバラバラの)突然の複数の変更が含まれます。結果として生じる多くの小さなマージは、履歴を大幅に混乱させます。後でファイルの履歴を調査する人は、そのマージが開発中のトピックに影響を与えたかどうかを確認する必要があります。アップストリームは、誤って「より安定した」ブランチにマージされることさえあるかも等々。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_throw_away_integration">Throw-away integration</h3>
-<div class="paragraph"><p>If you followed the last paragraph, you will now have many small topic
-branches, and occasionally wonder how they interact.  Perhaps the result of
-merging them does not even work? But on the other hand, we want to avoid
-merging them anywhere "stable" because such merges cannot easily be undone.</p></div>
-<div class="paragraph"><p>The solution, of course, is to make a merge that we can undo: merge into a
-throw-away branch.</p></div>
+<h3 id="_使い捨て統合">使い捨て統合</h3>
+<div class="paragraph"><p>先程の話題についていうと、多くの小さなトピックブランチがあり、あなたはそれらがどのように相互作用するのかワケワカメに思うことがあるでしょう。それらをマージしたらちゃんと機能しないかも？
+そして、このようなマージは簡単に元に戻せないため、我々はこれらに対して「安定した」場所でのマージは避けたいと考えています。</p></div>
+<div class="paragraph"><p>もちろん、解決策は、元に戻すことができるマージを作成することです。つまり、使い捨てブランチ(throw-away branch)にマージします。</p></div>
 <div class="exampleblock">
 <div class="title">Rule: Throw-away integration branches</div>
 <div class="content">
-<div class="paragraph"><p>To test the interaction of several topics, merge them into a throw-away
-branch.  You must never base any work on such a branch!</p></div>
+<div class="paragraph"><p>いくつかのトピックの相互作用をテストするには、それらを使い捨てのブランチにマージします。あなたは決してそのようなブランチに基づいて作業を行ってはいけません！</p></div>
 </div></div>
-<div class="paragraph"><p>If you make it (very) clear that this branch is going to be deleted right
-after the testing, you can even publish this branch, for example to give the
-testers a chance to work with it, or other developers a chance to see if
-their in-progress work will be compatible.  <code>git.git</code> has such an official
-throw-away integration branch called <em>seen</em>.</p></div>
+<div class="paragraph"><p>テストの直後にこのブランチが削除されることを(非常に)明確にすると、このブランチを公開して、たとえば、テスターがこのブランチを操作できるようにしたり、他の開発者が進行中の作業に互換性があるかどうかを確認したりすることもできます。
+<code>git.git</code> には、「seen」と呼ばれるそのような公式の使い捨て統合ブランチがあります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_branch_management_for_a_release">Branch management for a release</h3>
-<div class="paragraph"><p>Assuming you are using the merge approach discussed above, when you are
-releasing your project you will need to do some additional branch management
-work.</p></div>
-<div class="paragraph"><p>A feature release is created from the <em>master</em> branch, since <em>master</em> tracks
-the commits that should go into the next feature release.</p></div>
-<div class="paragraph"><p>The <em>master</em> branch is supposed to be a superset of <em>maint</em>. If this
-condition does not hold, then <em>maint</em> contains some commits that are not
-included on <em>master</em>. The fixes represented by those commits will therefore
-not be included in your feature release.</p></div>
-<div class="paragraph"><p>To verify that <em>master</em> is indeed a superset of <em>maint</em>, use git log:</p></div>
+<div class="paragraph"><p>上記のマージアプローチを使用していると仮定すると、プロジェクトをリリースするときに、追加のブランチ管理作業を行う必要があります。</p></div>
+<div class="paragraph"><p>「master」は次の機能(feature)リリースに入るコミットを追跡するため、機能(feature)リリースは「master」ブランチから作成されます。</p></div>
+<div class="paragraph"><p><em>master</em> ブランチは、 <em>maint</em>
+のスーパーセットであると想定されています。この条件が満たされない場合、「maint」には「master」に含まれていないコミットが含まれています。したがって、「maint」のコミットによって表される修正は、機能(feature)リリースには含まれません。</p></div>
+<div class="paragraph"><p><em>master</em> が実際に <em>maint</em> のスーパーセットであることを確認するには、 <code>git log</code> を使用します:</p></div>
 <div class="exampleblock">
-<div class="title">Recipe: Verify <em>master</em> is a superset of <em>maint</em></div>
+<div class="title">Recipe: 「master」が「maint」のスーパーセットであることを確認(verify)します:</div>
 <div class="content">
 <div class="paragraph"><p><code>git log master..maint</code></p></div>
 </div></div>
-<div class="paragraph"><p>This command should not list any commits.  Otherwise, check out <em>master</em> and
-merge <em>maint</em> into it.</p></div>
-<div class="paragraph"><p>Now you can proceed with the creation of the feature release. Apply a tag to
-the tip of <em>master</em> indicating the release version:</p></div>
+<div class="paragraph"><p>このコマンドは、コミットを一切リストしないはずです。そうでない場合は、「master」をチェックアウトし、「maint」をマージします。</p></div>
+<div class="paragraph"><p>これで、あなたは機能(feature)リリースの作成に進むことができます。リリースバージョンを示すタグを「master」の先端に適用します:</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: Release tagging</div>
 <div class="content">
 <div class="paragraph"><p><code>git tag -s -m "Git X.Y.Z" vX.Y.Z master</code></p></div>
 </div></div>
-<div class="paragraph"><p>You need to push the new tag to a public Git server (see "DISTRIBUTED
-WORKFLOWS" below). This makes the tag available to others tracking your
-project. The push could also trigger a post-update hook to perform
-release-related items such as building release tarballs and preformatted
-documentation pages.</p></div>
-<div class="paragraph"><p>Similarly, for a maintenance release, <em>maint</em> is tracking the commits to be
-released. Therefore, in the steps above simply tag and push <em>maint</em> rather
-than <em>master</em>.</p></div>
+<div class="paragraph"><p>あなたは新しいタグをパブリックGitサーバーにプッシュする必要があります(以下の「DISTRIBUTED
+WORKFLOWS」参照)。これにより、プロジェクトを追跡している他のユーザーがタグを利用できるようになります。プッシュでは、更新後のフックをトリガーして、リリースtarballの作成や事前にフォーマットされたドキュメントページなどのリリース関連の項目を実行することもできます。</p></div>
+<div class="paragraph"><p>同様に、メンテナンスリリースの場合、「maint」はリリースされるコミットを追跡します。ゆえに、タグのリリース手順では、「master」ではなく「maint」にタグを付けてプッシュするだけです。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_maintenance_branch_management_after_a_feature_release">Maintenance branch management after a feature release</h3>
-<div class="paragraph"><p>After a feature release, you need to manage your maintenance branches.</p></div>
-<div class="paragraph"><p>First, if you wish to continue to release maintenance fixes for the feature
-release made before the recent one, then you must create another branch to
-track commits for that previous release.</p></div>
-<div class="paragraph"><p>To do this, the current maintenance branch is copied to another branch named
-with the previous release version number (e.g. maint-X.Y.(Z-1)  where X.Y.Z
-is the current release).</p></div>
+<h3 id="_機能リリース後のメンテナンスブランチ管理">機能リリース後のメンテナンスブランチ管理</h3>
+<div class="paragraph"><p>機能(feature)リリース後、あなたはメンテナンスブランチを管理する必要があります。</p></div>
+<div class="paragraph"><p>まず、直近のリリースより前に行われた機能リリースのメンテナンス修正を引き続きリリースする場合は、その前のリリースのコミットを追跡するために別のブランチを作成する必要があります。</p></div>
+<div class="paragraph"><p>これを行うために、現在のメンテナンスブランチは、以前のリリースバージョン番号で名前が付けられた別のブランチにコピーされます(例:
+maint-X.Y.(Z-1) ここでX.Y.Zは現在のリリースとする)。</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: Copy maint</div>
 <div class="content">
 <div class="paragraph"><p><code>git branch maint-X.Y.(Z-1) maint</code></p></div>
 </div></div>
-<div class="paragraph"><p>The <em>maint</em> branch should now be fast-forwarded to the newly released code
-so that maintenance fixes can be tracked for the current release:</p></div>
+<div class="paragraph"><p>'maint&#8217;ブランチは、新しくリリースされたコードに早送り(fast-forwarded)され、現在のリリースのメンテナンス修正を追跡できるようになります:</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: Update maint to new release</div>
 <div class="content">
@@ -982,18 +937,14 @@ so that maintenance fixes can be tracked for the current release:</p></div>
 </li>
 </ul></div>
 </div></div>
-<div class="paragraph"><p>If the merge fails because it is not a fast-forward, then it is possible
-some fixes on <em>maint</em> were missed in the feature release.  This will not
-happen if the content of the branches was verified as described in the
-previous section.</p></div>
+<div class="paragraph"><p>早送り(fast-forwarded)ではないためにマージが失敗した場合は、機能リリースで「maint」のいくつかの修正が欠落している可能性があります。前のセクションで説明したようにブランチのコンテンツを検証(verify)した場合、これは発生しません。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_branch_management_for_next_and_seen_after_a_feature_release">Branch management for next and seen after a feature release</h3>
-<div class="paragraph"><p>After a feature release, the integration branch <em>next</em> may optionally be
-rewound and rebuilt from the tip of <em>master</em> using the surviving topics on
-<em>next</em>:</p></div>
+<h3 id="_機能リリース後の_next_と_seen_のブランチ管理">機能リリース後の「next」と「seen」のブランチ管理</h3>
+<div class="paragraph"><p>機能のリリース後、統合ブランチ <em>next</em> は、オプションで、 <em>next</em> の残りのトピックを使用して、 <em>master</em>
+の先端から巻き戻されて再構築される場合があります:</p></div>
 <div class="exampleblock">
-<div class="title">Recipe: Rewind and rebuild next</div>
+<div class="title">Recipe: Rewind and rebuild <em>next</em></div>
 <div class="content">
 <div class="ulist"><ul>
 <li>
@@ -1018,114 +969,86 @@ rewound and rebuilt from the tip of <em>master</em> using the surviving topics o
 </li>
 </ul></div>
 </div></div>
-<div class="paragraph"><p>The advantage of doing this is that the history of <em>next</em> will be clean. For
-example, some topics merged into <em>next</em> may have initially looked promising,
-but were later found to be undesirable or premature.  In such a case, the
-topic is reverted out of <em>next</em> but the fact remains in the history that it
-was once merged and reverted. By recreating <em>next</em>, you give another
-incarnation of such topics a clean slate to retry, and a feature release is
-a good point in history to do so.</p></div>
-<div class="paragraph"><p>If you do this, then you should make a public announcement indicating that
-<em>next</em> was rewound and rebuilt.</p></div>
-<div class="paragraph"><p>The same rewind and rebuild process may be followed for <em>seen</em>. A public
-announcement is not necessary since <em>seen</em> is a throw-away branch, as
-described above.</p></div>
+<div class="paragraph"><p>これを行うことの利点は、「next」の履歴がクリーンになることです。
+たとえば、「next」にマージされた一部のトピックは、最初は有望に見えたかもしれませんが、後で望ましくないか時期尚早であることがわかりました。このような場合、トピックは「next」から元に戻され(revert)ますが、一度マージされて元に戻されたという事実は履歴に残ります。「next」を再作成することで、そのようなトピックの別の化身に再試行するためのきれいな状態を与えることができます。機能のリリースは、これを行うための履歴上の良い地点です。</p></div>
+<div class="paragraph"><p>これを行う場合は、「next」が巻き戻されて再構築されたことを示す公開アナウンスを行う必要があります。</p></div>
+<div class="paragraph"><p>「seen」についても、同じの巻き戻しと再構築のプロセスを行います。なお、上記のとおり「seen」は使い捨てのブランチであるため、公の発表は必要ありません。</p></div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_distributed_workflows">DISTRIBUTED WORKFLOWS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After the last section, you should know how to manage topics.  In general,
-you will not be the only person working on the project, so you will have to
-share your work.</p></div>
-<div class="paragraph"><p>Roughly speaking, there are two important workflows: merge and patch.  The
-important difference is that the merge workflow can propagate full history,
-including merges, while patches cannot.  Both workflows can be used in
-parallel: in <code>git.git</code>, only subsystem maintainers use the merge workflow,
-while everyone else sends patches.</p></div>
-<div class="paragraph"><p>Note that the maintainer(s) may impose restrictions, such as "Signed-off-by"
-requirements, that all commits/patches submitted for inclusion must adhere
-to.  Consult your project&#8217;s documentation for more information.</p></div>
+<div class="paragraph"><p>前セクションを読んだ今となっては、あなたはトピックを管理する方法を知っておくべきです。
+一般的に、プロジェクトに取り組んでいるのはあなただけではないので、あなたの仕事は共有しなければなりません。</p></div>
+<div class="paragraph"><p>大まかに言えば、マージとパッチという2つの重要な作業フローがあります。重要な違いは、マージ作業フローはマージを含む完全な履歴を伝播できますが、パッチは伝播できないことです。両方の作業フローを並行して使用できます。<code>git.git</code>
+では、サブシステムメンテナのみがマージ作業フローを使用し、他のすべての作業フローはパッチを送信します。</p></div>
+<div class="paragraph"><p>注意:
+メンテナは、インクルードするために提出されたすべてのコミット/パッチが遵守しなければならない「Signed-off-by」要件などの制限を課すことができることに注意してください。より詳細な情報については、プロジェクトのドキュメントを参照してください。</p></div>
 <div class="sect2">
 <h3 id="_merge_workflow">Merge workflow</h3>
-<div class="paragraph"><p>The merge workflow works by copying branches between upstream and
-downstream.  Upstream can merge contributions into the official history;
-downstream base their work on the official history.</p></div>
-<div class="paragraph"><p>There are three main tools that can be used for this:</p></div>
+<div class="paragraph"><p>マージ作業フローは、上流(upstream)と下流(downstream)の間でブランチをコピーすることによって機能します。上流では、貢献の結果を公式の履歴に統合することができます。下流では、公式の履歴に基づいて作業します。</p></div>
+<div class="paragraph"><p>これに使用できる主なツールは3つあります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="git-push.html">git-push(1)</a> copies your branches to a remote repository, usually to
-  one that can be read by all involved parties;
+<a href="git-push.html">git-push(1)</a> は、ブランチをリモートリポジトリにコピーします。通常は、関係者全員が読み取れるリポジトリにコピーします。
 </p>
 </li>
 <li>
 <p>
-<a href="git-fetch.html">git-fetch(1)</a> that copies remote branches to your repository; and
+<a href="git-fetch.html">git-fetch(1)</a> は、リモートブランチをあなたのリポジトリにコピーします。
 </p>
 </li>
 <li>
 <p>
-<a href="git-pull.html">git-pull(1)</a> that does fetch and merge in one go.
+<a href="git-pull.html">git-pull(1)</a> は、フェッチしてマージするのを一度に行います。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Note the last point.  Do <em>not</em> use <em>git pull</em> unless you actually want to
-merge the remote branch.</p></div>
-<div class="paragraph"><p>Getting changes out is easy:</p></div>
+<div class="paragraph"><p>注意: 最後の点に注意してください。 実際にリモートブランチをマージする場合を除いて <code>git pull</code> を使用しないでください。</p></div>
+<div class="paragraph"><p>変更を取得するのは簡単です:</p></div>
 <div class="exampleblock">
-<div class="title">Recipe: Push/pull: Publishing branches/topics</div>
+<div class="title">Recipe: push/pull: branches/topics の公開</div>
 <div class="content">
-<div class="paragraph"><p><code>git push &lt;remote&gt; &lt;branch&gt;</code> and tell everyone where they can fetch from.</p></div>
+<div class="paragraph"><p><code>git push &lt;remote&gt; &lt;branch&gt;</code> を実行、そして、どこからフェッチできるかをみんなに伝えます。</p></div>
 </div></div>
-<div class="paragraph"><p>You will still have to tell people by other means, such as mail.  (Git
-provides the <a href="git-request-pull.html">git-request-pull(1)</a> to send preformatted pull requests
-to upstream maintainers to simplify this task.)</p></div>
-<div class="paragraph"><p>If you just want to get the newest copies of the integration branches,
-staying up to date is easy too:</p></div>
+<div class="paragraph"><p>あなたは今の所メールなどの他の手段で人々に伝えなければなりません。 (Gitは <a href="git-request-pull.html">git-request-pull(1)</a>
+を提供して、このタスクを簡素化するために、事前にフォーマットされたプルリクエストをアップストリームのメンテナーに送信します。 )</p></div>
+<div class="paragraph"><p>統合ブランチの最新のコピーを取得したいだけの場合は、最新の状態に保つのも簡単です:</p></div>
 <div class="exampleblock">
-<div class="title">Recipe: Push/pull: Staying up to date</div>
+<div class="title">Recipe: push/pull: 最新の状態に保つ</div>
 <div class="content">
-<div class="paragraph"><p>Use <code>git fetch &lt;remote&gt;</code> or <code>git remote update</code> to stay up to date.</p></div>
+<div class="paragraph"><p>最新の状態に保つには <code>git fetch &lt;remote&gt;</code> または <code>git remote update</code> を使います。</p></div>
 </div></div>
-<div class="paragraph"><p>Then simply fork your topic branches from the stable remotes as explained
-earlier.</p></div>
-<div class="paragraph"><p>If you are a maintainer and would like to merge other people&#8217;s topic
-branches to the integration branches, they will typically send a request to
-do so by mail.  Such a request looks like</p></div>
+<div class="paragraph"><p>次に、以前に説明したように、安定したリモートからトピックブランチをフォークするだけです。</p></div>
+<div class="paragraph"><p>あなたがメンテナであり、他の人のトピックブランチを統合ブランチにマージしたい場合、他の人々は通常、メールでそうするようにリクエストを送信してきます。そのようなリクエストは以下のようになります</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>Please pull from
     &lt;url&gt; &lt;branch&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>In that case, <em>git pull</em> can do the fetch and merge in one go, as follows.</p></div>
+<div class="paragraph"><p>その場合、 <code>git pull</code> は、以下のように、フェッチとマージを一度に実行できます。</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: Push/pull: Merging remote topics</div>
 <div class="content">
 <div class="paragraph"><p><code>git pull &lt;url&gt; &lt;branch&gt;</code></p></div>
 </div></div>
-<div class="paragraph"><p>Occasionally, the maintainer may get merge conflicts when they try to pull
-changes from downstream.  In this case, they can ask downstream to do the
-merge and resolve the conflicts themselves (perhaps they will know better
-how to resolve them).  It is one of the rare cases where downstream <em>should</em>
-merge from upstream.</p></div>
+<div class="paragraph"><p>場合によっては、メンテナが下流(downstream)から変更をプルしようとすると、マージの競合が発生することがあります。
+この場合、下流にマージを実行して競合を彼ら自身で解決するように依頼できます(おそらく、彼らは競合を解決する方法をよりよく知っているでしょう)。これは、下流が上流(upsteram)からマージする必要があるまれなケースの1つです。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_patch_workflow">Patch workflow</h3>
-<div class="paragraph"><p>If you are a contributor that sends changes upstream in the form of emails,
-you should use topic branches as usual (see above).  Then use
-<a href="git-format-patch.html">git-format-patch(1)</a> to generate the corresponding emails (highly
-recommended over manually formatting them because it makes the maintainer&#8217;s
-life easier).</p></div>
+<div class="paragraph"><p>あなたが変更を電子メールの形式でアップストリームに送信する貢献者の場合は、通常どおりトピックブランチを使用する必要があります(上記参照)。 次に、
+<a href="git-format-patch.html">git-format-patch(1)</a>
+を使用して、対応する電子メールを生成します(メンテナの作業が楽になるため、手動でフォーマットするよりもこれを使うのを強く推奨します)。</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: format-patch/am: Publishing branches/topics</div>
 <div class="content">
 <div class="ulist"><ul>
 <li>
 <p>
-<code>git format-patch -M upstream..topic</code> to turn them into preformatted patch
-  files
+<code>git format-patch -M upstream..topic</code> を使用して、事前に形式が決まっているパッチファイルに変換します
 </p>
 </li>
 <li>
@@ -1135,29 +1058,26 @@ life easier).</p></div>
 </li>
 </ul></div>
 </div></div>
-<div class="paragraph"><p>See the <a href="git-format-patch.html">git-format-patch(1)</a> and <a href="git-send-email.html">git-send-email(1)</a> manpages
-for further usage notes.</p></div>
-<div class="paragraph"><p>If the maintainer tells you that your patch no longer applies to the current
-upstream, you will have to rebase your topic (you cannot use a merge because
-you cannot format-patch merges):</p></div>
+<div class="paragraph"><p>使用上の注意については、 <a href="git-format-patch.html">git-format-patch(1)</a> と <a href="git-send-email.html">git-send-email(1)</a>
+のmanpageを参照してください。</p></div>
+<div class="paragraph"><p>あなたのパッチがもはや現在の上流(upstream)に適用されなくなったとメンテナが告げた場合は、トピックをリベースする必要があります(format-patch
+マージができないため、マージを使用できません):</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: format-patch/am: Keeping topics up to date</div>
 <div class="content">
 <div class="paragraph"><p><code>git pull --rebase &lt;url&gt; &lt;branch&gt;</code></p></div>
 </div></div>
-<div class="paragraph"><p>You can then fix the conflicts during the rebase.  Presumably you have not
-published your topic other than by mail, so rebasing it is not a problem.</p></div>
-<div class="paragraph"><p>If you receive such a patch series (as maintainer, or perhaps as a reader of
-the mailing list it was sent to), save the mails to files, create a new
-topic branch and use <em>git am</em> to import the commits:</p></div>
+<div class="paragraph"><p>あなたはその後、リベース中に競合を修正できます。おそらくあなたはメール以外であなたのトピックを公開していないので、それをリベースすることは問題ではありません。</p></div>
+<div class="paragraph"><p>あなたがこのようなパッチシリーズを受け取った場合(メンテナとして、または送信先のメーリングリストの読者として)、メールをファイルに保存し、新しいトピックブランチを作成し、
+<code>git am</code> を使用してコミットをインポートします:</p></div>
 <div class="exampleblock">
 <div class="title">Recipe: format-patch/am: Importing patches</div>
 <div class="content">
 <div class="paragraph"><p><code>git am &lt; patch</code></p></div>
 </div></div>
-<div class="paragraph"><p>One feature worth pointing out is the three-way merge, which can help if you
-get conflicts: <code>git am -3</code> will use index information contained in patches
-to figure out the merge base.  See <a href="git-am.html">git-am(1)</a> for other options.</p></div>
+<div class="paragraph"><p>指摘する価値のある機能の1つは、競合が発生した場合に役立つ3方向マージです。 <code>git am -3</code>
+は、パッチに含まれるインデックス情報を使用して、マージベースを把握します。他のオプションについては <a href="git-am.html">git-am(1)</a>
+を参照してください。</p></div>
 </div>
 </div>
 </div>
@@ -1180,7 +1100,7 @@ to figure out the merge base.  See <a href="git-am.html">git-am(1)</a> for other
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-02-02 19:58:23 JST
+ 2022-03-13 18:07:59 JST
 </div>
 </div>
 </body>

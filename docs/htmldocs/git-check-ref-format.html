@@ -740,7 +740,7 @@ git-check-ref-format(1) Manual Page
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>git-check-ref-format -
-   Ensures that a reference name is well formed
+   参照名が整形式であることを確認します
 </p>
 </div>
 </div>
@@ -760,121 +760,107 @@ git-check-ref-format(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Checks if a given <em>refname</em> is acceptable, and exits with a non-zero status
-if it is not.</p></div>
-<div class="paragraph"><p>A reference is used in Git to specify branches and tags.  A branch head is
-stored in the <code>refs/heads</code> hierarchy, while a tag is stored in the
-<code>refs/tags</code> hierarchy of the ref namespace (typically in
-<code>$GIT_DIR/refs/heads</code> and <code>$GIT_DIR/refs/tags</code> directories or, as entries in
-file <code>$GIT_DIR/packed-refs</code> if refs are packed by <code>git gc</code>).</p></div>
-<div class="paragraph"><p>Git imposes the following rules on how references are named:</p></div>
+<div class="paragraph"><p>指定の refname が受け入れ可能かどうかを確認し、受け入れられない場合はゼロ以外のステータスで終了します。</p></div>
+<div class="paragraph"><p>参照はGitでブランチとタグを指定するために使用されます。ブランチヘッドは <code>refs/heads</code> 階層に格納され、タグはref名前空間の
+<code>refs/tags</code> 階層に格納されます(通常は <code>$GIT_DIR/refs/heads</code> ディレクトリと <code>$GIT_DIR/refs/tags</code>
+ディレクトリに、または refが <code>git gc</code> によってパックされている場合はファイル <code>$GIT_DIR/packed-refs</code>
+のエントリとしてあります)。</p></div>
+<div class="paragraph"><p>Gitは、参照の命名方法に以下のルールを課しています:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-They can include slash <code>/</code> for hierarchical (directory)  grouping, but no
-  slash-separated component can begin with a dot <code>.</code> or end with the sequence
-  <code>.lock</code>.
+階層(ディレクトリ)グループ化のためにスラッシュ(<code>/</code>)を含めることができますが、スラッシュで区切られたコンポーネントは、ドット(<code>.</code>)で開始したり、シーケンス
+  <code>.lock</code> で終了したりすることはできません。
 </p>
 </li>
 <li>
 <p>
-They must contain at least one <code>/</code>. This enforces the presence of a category
-  like <code>heads/</code>, <code>tags/</code> etc. but the actual names are not restricted.  If the
-  <code>--allow-onelevel</code> option is used, this rule is waived.
+少なくとも1つのスラッシュ(<code>/</code>)が含まれている必要があります。これにより、 <code>heads/</code> 、 <code>tags/</code>
+  などのカテゴリの存在が強制されますが、実際の名前は制限されません。 <code>--allow-onelevel</code>
+  オプションが使用されている場合、このルールは放棄されます。
 </p>
 </li>
 <li>
 <p>
-They cannot have two consecutive dots <code>..</code> anywhere.
+どこにも2つの連続したドット(<code>..</code>)を含めることはできません。
 </p>
 </li>
 <li>
 <p>
-They cannot have ASCII control characters (i.e. bytes whose values are lower
-  than \040, or \177 <code>DEL</code>), space, tilde <code>~</code>, caret <code>^</code>, or colon <code>:</code>
-  anywhere.
+ASCII制御文字(つまり、値が \040 未満のバイト または
+  \177(<code>DEL</code>))、スペース、チルダ(<code>~</code>)、キャレット(<code>^</code>)、コロン(<code>:</code>)はどこにでも含めることはできません。
 </p>
 </li>
 <li>
 <p>
-They cannot have question-mark <code>?</code>, asterisk <code>*</code>, or open bracket <code>[</code>
-  anywhere.  See the <code>--refspec-pattern</code> option below for an exception to this
-  rule.
+疑問符(<code>？</code>)、アスタリスク(<code>*</code>)、角かっこ(<code>[</code>)がどこにあってもいけません。この規則の例外については、以下の
+  <code>--refspec-pattern</code> オプションを参照してください。
 </p>
 </li>
 <li>
 <p>
-They cannot begin or end with a slash <code>/</code> or contain multiple consecutive
-  slashes (see the <code>--normalize</code> option below for an exception to this rule)
+スラッシュ(<code>/</code>)で開始または終了したり、複数の連続したスラッシュを含めることはできません(この規則の例外については、以下の
+  <code>--normalize</code> オプションを参照してください)。
 </p>
 </li>
 <li>
 <p>
-They cannot end with a dot <code>.</code>.
+ドット(<code>.</code>)で終わらせることはできません。
 </p>
 </li>
 <li>
 <p>
-They cannot contain a sequence <code>@{</code>.
+シーケンス <code>@{</code> を含めることはできません。
 </p>
 </li>
 <li>
 <p>
-They cannot be the single character <code>@</code>.
+単一の文字 <code>@</code> にすることはできません。
 </p>
 </li>
 <li>
 <p>
-They cannot contain a <code>\</code>.
+<code>\</code> を含めることはできません。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>These rules make it easy for shell script based tools to parse reference
-names, pathname expansion by the shell when a reference name is used
-unquoted (by mistake), and also avoid ambiguities in certain reference name
-expressions (see <a href="gitrevisions.html">gitrevisions(7)</a>):</p></div>
+<div class="paragraph"><p>これらのルールにより、シェルスクリプトをベースにしたツールで参照名を簡単にパースできるようになり、参照名が(誤って)引用符なしで使われたときにシェルでパス名を展開したり、特定の参照名表現におけるあいまいさを回避することができます(<a href="gitrevisions.html">gitrevisions(7)</a>
+を参照)。</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-A double-dot <code>..</code> is often used as in <code>ref1..ref2</code>, and in some contexts
-  this notation means <code>^ref1 ref2</code> (i.e. not in <code>ref1</code> and in <code>ref2</code>).
+二重ドット(<code>..</code>)は、 <code>ref1..ref2</code> などとよく使用されます。一部のコンテキストでは、この表記は <code>^ref1 ref2</code>
+  を意味します(つまり、<code>ref1</code> に無く かつ <code>ref2</code> にある)。
 </p>
 </li>
 <li>
 <p>
-A tilde <code>~</code> and caret <code>^</code> are used to introduce the postfix <em>nth parent</em> and
-  <em>peel onion</em> operation.
+チルダ(<code>~</code>)とキャレット(<code>^</code>)は、接尾辞 <em>nth parent</em> (n番目の親)と <em>peel onion</em>
+  (玉ねぎ剥き)操作を導入するために使用されます。
 </p>
 </li>
 <li>
 <p>
-A colon <code>:</code> is used as in <code>srcref:dstref</code> to mean "use srcref&#8217;s value and
-  store it in dstref" in fetch and push operations.  It may also be used to
-  select a specific object such as with <em>git cat-file</em>: "git cat-file blob
-  v1.3.3:refs.c".
+コロン(<code>：</code>)は、 <code>srcref:dstref</code>
+  のように、フェッチおよびプッシュ操作で「srcrefの値を使用してdstrefに格納する」ことを意味するために使用されます。 <code>git cat-file
+  blob v1.3.3:refs.c</code> のようにして <code>git cat-file</code> などで特定のオブジェクトを選択するためにも使用できます。
 </p>
 </li>
 <li>
 <p>
-at-open-brace <code>@{</code> is used as a notation to access a reflog entry.
+at-open-brace(<code>@{</code>)は、reflogエントリにアクセスするための表記法として使用されます。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>With the <code>--branch</code> option, the command takes a name and checks if it can be
-used as a valid branch name (e.g. when creating a new branch). But be
-cautious when using the previous checkout syntax that may refer to a
-detached HEAD state.  The rule <code>git check-ref-format --branch $name</code>
-implements may be stricter than what <code>git check-ref-format refs/heads/$name</code>
-says (e.g. a dash may appear at the beginning of a ref component, but it is
-explicitly forbidden at the beginning of a branch name).  When run with
-<code>--branch</code> option in a repository, the input is first expanded for the
-&#8220;previous checkout syntax&#8221; <code>@{-n}</code>.  For example, <code>@{-1}</code> is a way to
-refer the last thing that was checked out using "git switch" or "git
-checkout" operation.  This option should be used by porcelains to accept
-this syntax anywhere a branch name is expected, so they can act as if you
-typed the branch name. As an exception note that, the &#8220;previous checkout
-operation&#8221; might result in a commit object name when the N-th last thing
-checked out was not a branch.</p></div>
+<div class="paragraph"><p><code>--branch</code>
+オプションを使用すると、コマンドは名前を取得し、それが有効なブランチ名として使用できるかどうかを確認します(たとえば、新しいブランチを作成するとき)。ただし、切り離された(detached)HEAD状態を参照する可能性のある、遡及チェックアウト構文(previous
+checkout syntax)を使用する場合は注意が必要です。 <code>git check-ref-format --branch $name</code>
+が実装するルールは、 <code>git check-ref-format refs/heads/$name</code>
+が言うことよりも厳しい場合があります(たとえば、参照コンポーネントの先頭にダッシュが表示される場合がありますが、ブランチ名の先頭では明示的に禁止されています)。リポジトリで
+<code>--branch</code> オプションを指定して実行すると、入力は最初に「遡及チェックアウト構文」 <code>@{-n}</code> 用に展開されます。たとえば、
+<code>@{-1}</code> は、 <code>git switch</code> または <code>git checkout</code>
+操作を使用して最後にチェックアウトされたものを参照する方法です。磁器コマンドでは、ブランチ名が必要な場所でこの構文を受け入れるために、このオプションを使用する必要があります。これにより、あなたがブランチ名を入力したかのように機能できます。注意:
+「遡及チェックアウト操作」では、例外として、チェックアウトされたN番目の最後のものがブランチではなかった場合にコミットオブジェクト名が生成される可能性があることに注意してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -886,9 +872,8 @@ checked out was not a branch.</p></div>
 </dt>
 <dd>
 <p>
-        Controls whether one-level refnames are accepted (i.e., refnames that do not
-        contain multiple <code>/</code>-separated components).  The default is
-        <code>--no-allow-onelevel</code>.
+        1レベルのrefnameを受け入れるかどうかを制御します(つまり、複数の <code>/</code> で区切られたコンポーネントを含まないrefname)。 デフォルトは
+        <code>--no-allow-onelevel</code> です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -896,10 +881,9 @@ checked out was not a branch.</p></div>
 </dt>
 <dd>
 <p>
-        Interpret &lt;refname&gt; as a reference name pattern for a refspec (as used with
-        remote repositories).  If this option is enabled, &lt;refname&gt; is allowed to
-        contain a single <code>*</code> in the refspec (e.g., <code>foo/bar*/baz</code> or <code>foo/bar*baz/</code>
-        but not <code>foo/bar*/baz*</code>).
+        &lt;refname&gt;を(リモートリポジトリで使用される)refspecの参照名パターンとして解釈します。このオプションを有効にすると、&lt;refname&gt;はrefspecに単一の
+        <code>*</code> を含めることができます(例: <code>foo/bar*/baz</code> または <code>foo/bar*baz/</code> はOKですが、 <code>foo/bar*/baz*</code>
+        はダメです)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -907,11 +891,9 @@ checked out was not a branch.</p></div>
 </dt>
 <dd>
 <p>
-        Normalize <em>refname</em> by removing any leading slash (<code>/</code>)  characters and
-        collapsing runs of adjacent slashes between name components into a single
-        slash.  If the normalized refname is valid then print it to standard output
-        and exit with a status of 0, otherwise exit with a non-zero status.
-        (<code>--print</code> is a deprecated way to spell <code>--normalize</code>.)
+        先行スラッシュ(<code>/</code>)文字を削除し、名前コンポーネント間の隣接するスラッシュを1つのスラッシュに折りたたむことにより、 <em>refname</em>
+        を正規化します。正規化されたrefnameが有効な場合は、それを標準出力に出力し、ステータス0で終了します。それ以外の場合は、ゼロ以外のステータスで終了します。
+        ( <code>--print</code> は <code>--normalize</code> を綴る非推奨の方法です。)
 </p>
 </dd>
 </dl></div>
@@ -923,7 +905,7 @@ checked out was not a branch.</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Print the name of the previous thing checked out:
+チェックアウトしたのモノの一つ前のものの名前を印刷します:
 </p>
 <div class="listingblock">
 <div class="content">
@@ -932,7 +914,7 @@ Print the name of the previous thing checked out:
 </li>
 <li>
 <p>
-Determine the reference name to use for a new branch:
+新しいブランチに使用する参照名を決定します:
 </p>
 <div class="listingblock">
 <div class="content">
@@ -954,7 +936,7 @@ Determine the reference name to use for a new branch:
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:34:48 JST
+ 2022-03-03 02:45:47 JST
 </div>
 </div>
 </body>

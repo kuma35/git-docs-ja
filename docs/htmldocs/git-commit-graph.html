@@ -740,7 +740,7 @@ git-commit-graph(1) Manual Page
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>git-commit-graph -
-   Write and verify Git commit-graph files
+   Gitコミットグラフファイル(commit-graph file)の書き出しと検証(verify)
 </p>
 </div>
 </div>
@@ -758,7 +758,7 @@ git-commit-graph(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Manage the serialized commit-graph file.</p></div>
+<div class="paragraph"><p>シリアル化されたコミットグラフファイルを管理します。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -770,13 +770,11 @@ git-commit-graph(1) Manual Page
 </dt>
 <dd>
 <p>
-        Use given directory for the location of packfiles and commit-graph
-        file. This parameter exists to specify the location of an alternate that
-        only has the objects directory, not a full <code>.git</code> directory. The
-        commit-graph file is expected to be in the <code>&lt;dir&gt;/info</code> directory and the
-        packfiles are expected to be in <code>&lt;dir&gt;/pack</code>. If the directory could not be
-        made into an absolute path, or does not match any known object directory,
-        <code>git commit-graph ...</code> will exit with non-zero status.
+        パックファイルとコミットグラフファイルの場所として、指定のディレクトリを使用します。このパラメータは、完全な <code>.git</code>
+        ディレクトリではなく、objectsディレクトリのみを持つ代替の場所を指定するために存在します。コミットグラフファイルは <code>&lt;dir&gt;/info</code>
+        ディレクトリにあり、パックファイルは <code>&lt;dir&gt;/pack</code>
+        にあるものと期待されます。ディレクトリを絶対パスにすることができなかった場合、または既知のオブジェクトディレクトリと一致しない場合、 <code>git
+        commit-graph ...</code> はゼロ以外のステータスで終了します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -784,8 +782,7 @@ git-commit-graph(1) Manual Page
 </dt>
 <dd>
 <p>
-        Turn progress on/off explicitly. If neither is specified, progress is shown
-        if standard error is connected to a terminal.
+        進行状況を明示的にオン/オフにします。どちらも指定されていない場合、標準エラーが端末に接続されていれば進行状況が表示されます。
 </p>
 </dd>
 </dl></div>
@@ -800,71 +797,53 @@ git-commit-graph(1) Manual Page
 </dt>
 <dd>
 <p>
-Write a commit-graph file based on the commits found in packfiles. If the
-config option <code>core.commitGraph</code> is disabled, then this command will output
-a warning, then return success without writing a commit-graph file.
+パックファイルで見つかったコミットに基づいてコミットグラフファイルを書き出します。構成オプション <code>core.commitGraph</code>
+が無効になっている場合、このコマンドは警告を出力し、コミットグラフファイルを書き込まずに成功を返します。
 </p>
-<div class="paragraph"><p>With the <code>--stdin-packs</code> option, generate the new commit graph by walking
-objects only in the specified pack-indexes. (Cannot be combined with
-<code>--stdin-commits</code> or <code>--reachable</code>.)</p></div>
-<div class="paragraph"><p>With the <code>--stdin-commits</code> option, generate the new commit graph by walking
-commits starting at the commits specified in stdin as a list of OIDs in hex,
-one OID per line. OIDs that resolve to non-commits (either directly, or by
-peeling tags) are silently ignored. OIDs that are malformed, or do not exist
-generate an error. (Cannot be combined with <code>--stdin-packs</code> or
-<code>--reachable</code>.)</p></div>
-<div class="paragraph"><p>With the <code>--reachable</code> option, generate the new commit graph by walking
-commits starting at all refs. (Cannot be combined with <code>--stdin-commits</code> or
-<code>--stdin-packs</code>.)</p></div>
-<div class="paragraph"><p>With the <code>--append</code> option, include all commits that are present in the
-existing commit-graph file.</p></div>
-<div class="paragraph"><p>With the <code>--changed-paths</code> option, compute and write information about the
-paths changed between a commit and its first parent. This operation can take
-a while on large repositories. It provides significant performance gains for
-getting history of a directory or a file with <code>git log -- &lt;path&gt;</code>. If this
-option is given, future commit-graph writes will automatically assume that
-this option was intended. Use <code>--no-changed-paths</code> to stop storing this
-data.</p></div>
-<div class="paragraph"><p>With the <code>--max-new-filters=&lt;n&gt;</code> option, generate at most <code>n</code> new Bloom
-filters (if <code>--changed-paths</code> is specified). If <code>n</code> is <code>-1</code>, no limit is
-enforced. Only commits present in the new layer count against this limit. To
-retroactively compute Bloom filters over earlier layers, it is advised to
-use <code>--split=replace</code>.  Overrides the <code>commitGraph.maxNewFilters</code>
-configuration.</p></div>
-<div class="paragraph"><p>With the <code>--split[=&lt;strategy&gt;]</code> option, write the commit-graph as a chain of
-multiple commit-graph files stored in
-<code>&lt;dir&gt;/info/commit-graphs</code>. Commit-graph layers are merged based on the
-strategy and other splitting options. The new commits not already in the
-commit-graph are added in a new "tip" file. This file is merged with the
-existing file if the following merge conditions are met:</p></div>
+<div class="paragraph"><p><code>--stdin-packs</code>
+オプションを使用して、指定のパックインデックス内のオブジェクトのみをウォークすることにより、新しいコミットグラフを生成します。
+(<code>--stdin-commits</code> または <code>--reachable</code> と組み合わせることはできません。)</p></div>
+<div class="paragraph"><p><code>--stdin-commits</code>
+オプションと使用して、16進数のOIDのリストとしてstdinで指定されたコミットから始まるコミットを1行に1つずつウォークして、新しいコミットグラフを生成します。(直接に、またはタグの皮むきによって、)非コミットに解決されるOIDは黙って無視されます。不正な形式のOID、または存在しないOIDは、エラーを生成します。
+(<code>--stdin-packs</code> または <code>--reachable</code> と組み合わせることはできません。)</p></div>
+<div class="paragraph"><p><code>--reachable</code> オプションと使用して、すべての参照で開始するコミットをウォークして、新しいコミットグラフを生成します。
+(<code>--stdin-commits</code> または <code>--stdin-packs</code> と組み合わせることはできません。)</p></div>
+<div class="paragraph"><p><code>--append</code> オプションと使用して、既存のコミットグラフファイルに存在するすべてのコミットを含めます。</p></div>
+<div class="paragraph"><p><code>--changed-paths</code> オプションと使用すると、コミットとその最初の親(first
+parent)の間で変更されたパスに関する情報を計算して書き込みます。この操作は、大規模なリポジトリでは時間がかかる場合があります。 <code>git log
+-- &lt;path&gt;</code>
+を使用すると、ディレクトリまたはファイルの履歴を取得するためのパフォーマンスが大幅に向上します。このオプションが指定されている場合、その後のコミットグラフ書き込みでは、このオプションが指定されたものであると自動的に想定されます。このデータの保存を停止するには、
+<code>--no-changed-paths</code> を使用します。</p></div>
+<div class="paragraph"><p><code>--max-new-filters=&lt;n&gt;</code> オプションと使用して、(<code>--changed-paths</code> が指定されている場合、)最大で <code>n</code>
+の新しいブルームフィルター(Bloom filters)を生成します。 <code>n</code> が <code>-1</code>
+の場合、制限は適用されません。この制限に対しては、新しいレイヤーに存在するコミットのみがカウントされます。以前のレイヤーでブルームフィルターをさかのぼって計算するには、
+<code>--split=replace</code> を使用することをお勧めします。 <code>commitGraph.maxNewFilters</code> 構成をオーバーライドします。</p></div>
+<div class="paragraph"><p><code>--split[=&lt;strategy&gt;]</code> オプションと使用して、 <code>&lt;dir&gt;/info/commit-graphs</code>
+に格納されている複数のコミットグラフファイルのチェーンとしてコミットグラフを記述します。コミットグラフレイヤーは、戦略およびその他の分割オプションに基づいてマージされます。コミットグラフにまだ含まれていない新しいコミットは、新しい先端ファイル(tip
+file)に追加されます。以下のマージ条件が満たされた場合、このファイルは既存のファイルとマージされます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-If <code>--split=no-merge</code> is specified, a merge is never performed, and the
-  remaining options are ignored. <code>--split=replace</code> overwrites the existing
-  chain with a new one. A bare <code>--split</code> defers to the remaining
-  options. (Note that merging a chain of commit graphs replaces the existing
-  chain with a length-1 chain where the first and only incremental holds the
-  entire graph).
+<code>--split=no-merge</code> が指定されている場合、マージは実行されず、残りのオプションは無視されます。 <code>--split=replace</code>
+  は、既存のチェーンを新しいチェーンで上書きします。裸の <code>--split</code> は後続のオプションに従います。 (注意:
+  コミットグラフのチェーンをマージすると、既存のチェーンが長さ1のチェーンに置き換えられ、最初で唯一の増分がグラフ全体を保持することに注意してください)。
 </p>
 </li>
 <li>
 <p>
-If <code>--size-multiple=&lt;X&gt;</code> is not specified, let <code>X</code> equal 2. If the new tip
-  file would have <code>N</code> commits and the previous tip has <code>M</code> commits and <code>X</code>
-  times <code>N</code> is greater than <code>M</code>, instead merge the two files into a single
-  file.
+<code>--size-multiple=&lt;X&gt;</code> が指定されていない場合は、 Xを2に等しくします。新しい先端ファイル(tip
+  file)にN個のコミットがあり、以前の先端にM個のコミットがあり、「X 掛ける N」が M
+  より大きい場合は、代わりに2つのファイルを1つのファイルにマージします。
 </p>
 </li>
 <li>
 <p>
-If <code>--max-commits=&lt;M&gt;</code> is specified with <code>M</code> a positive integer, and the new
-  tip file would have more than <code>M</code> commits, then instead merge the new tip
-  with the previous tip.
+<code>--max-commits=&lt;M&gt;</code> オプションの M が正の整数で指定され、新しい先端ファイル(tip file) に M
+  以上のコミットがある場合は、代わりに新しい先端を以前の先端とマージします。
 </p>
-<div class="paragraph"><p>Finally, if <code>--expire-time=&lt;datetime&gt;</code> is not specified, let <code>datetime</code> be
-the current time. After writing the split commit-graph, delete all unused
-commit-graph whose modified times are older than <code>datetime</code>.</p></div>
+<div class="paragraph"><p>最後に、 <code>--expire-time=&lt;datetime&gt;</code> が指定されていない場合は、
+datetimeを現在の時刻とします。分割コミットグラフ(split
+commit-graph)を書き込んだ後、変更時刻がdatetimeより古い未使用のコミットグラフをすべて削除します。</p></div>
 </li>
 </ul></div>
 </dd>
@@ -873,11 +852,10 @@ commit-graph whose modified times are older than <code>datetime</code>.</p></div
 </dt>
 <dd>
 <p>
-Read the commit-graph file and verify its contents against the object
-database. Used to check for corrupted data.
+コミットグラフファイルを読み取り、その内容をオブジェクトデータベースと照合して確認(verify)します。破損したデータをチェックするために使用されます。
 </p>
-<div class="paragraph"><p>With the <code>--shallow</code> option, only check the tip commit-graph file in a chain
-of split commit-graphs.</p></div>
+<div class="paragraph"><p><code>--shallow</code> オプションと使用すると、分割コミットグラフ(split
+commit-graphs)のチェーン内の先端コミットグラフファイルのみをチェックします。</p></div>
 </dd>
 </dl></div>
 </div>
@@ -888,8 +866,7 @@ of split commit-graphs.</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Write a commit-graph file for the packed commits in your local <code>.git</code>
-  directory.
+パックされたコミットのコミットグラフファイルをローカルの <code>.git</code> ディレクトリに書き込みます。
 </p>
 <div class="listingblock">
 <div class="content">
@@ -898,8 +875,7 @@ Write a commit-graph file for the packed commits in your local <code>.git</code>
 </li>
 <li>
 <p>
-Write a commit-graph file, extending the current commit-graph file using
-  commits in <code>&lt;pack-index&gt;</code>.
+<code>&lt;pack-index&gt;</code> のコミットを使用して、現在のコミットグラフファイルを拡張するコミットグラフファイルを書き出します。
 </p>
 <div class="listingblock">
 <div class="content">
@@ -908,7 +884,7 @@ Write a commit-graph file, extending the current commit-graph file using
 </li>
 <li>
 <p>
-Write a commit-graph file containing all reachable commits.
+到達可能なすべてのコミットを含むコミットグラフファイルを作成します。
 </p>
 <div class="listingblock">
 <div class="content">
@@ -917,8 +893,7 @@ Write a commit-graph file containing all reachable commits.
 </li>
 <li>
 <p>
-Write a commit-graph file containing all commits in the current commit-graph
-  file along with those reachable from <code>HEAD</code>.
+現在のコミットグラフファイル内のすべてのコミットと <code>HEAD</code> から到達可能なコミットを含むコミットグラフファイルを書き出します。
 </p>
 <div class="listingblock">
 <div class="content">
@@ -939,7 +914,7 @@ Write a commit-graph file containing all commits in the current commit-graph
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:00 JST
+ 2022-03-14 06:00:04 JST
 </div>
 </div>
 </body>

@@ -766,27 +766,19 @@ git-rebase(1) Manual Page
 <div class="paragraph"><p>&lt;upstream&gt; が指定されていない場合、 branch.&lt;name&gt;.remote と branch.&lt;name&gt;.merge
 オプションで構成されたアップストリーム(詳細は <a href="git-config.html">git-config(1)</a> を参照)および <code>--fork-point</code>
 オプションが想定されています。現在のブランチを使用していない場合、または現在のブランチにアップストリームが構成されていない場合、リベースは中止されます。</p></div>
-<div class="paragraph"><p>All changes made by commits in the current branch but that are not in
-&lt;upstream&gt; are saved to a temporary area.  This is the same set of commits
-that would be shown by <code>git log &lt;upstream&gt;..HEAD</code>; or by <code>git log
-'fork_point'..HEAD</code>, if <code>--fork-point</code> is active (see the description on
-<code>--fork-point</code> below); or by <code>git log HEAD</code>, if the <code>--root</code> option is
-specified.</p></div>
-<div class="paragraph"><p>The current branch is reset to &lt;upstream&gt;, or &lt;newbase&gt; if the --onto option
-was supplied.  This has the exact same effect as <code>git reset --hard
-&lt;upstream&gt;</code> (or &lt;newbase&gt;).  ORIG_HEAD is set to point at the tip of the
-branch before the reset.</p></div>
-<div class="paragraph"><p>The commits that were previously saved into the temporary area are then
-reapplied to the current branch, one by one, in order. Note that any commits
-in HEAD which introduce the same textual changes as a commit in
-HEAD..&lt;upstream&gt; are omitted (i.e., a patch already accepted upstream with a
-different commit message or timestamp will be skipped).</p></div>
-<div class="paragraph"><p>It is possible that a merge failure will prevent this process from being
-completely automatic.  You will have to resolve any such merge failure and
-run <code>git rebase --continue</code>.  Another option is to bypass the commit that
-caused the merge failure with <code>git rebase --skip</code>.  To check out the
-original &lt;branch&gt; and remove the .git/rebase-apply working files, use the
-command <code>git rebase --abort</code> instead.</p></div>
+<div class="paragraph"><p>現在のブランチでコミットによって行われたが、&lt;upstream&gt;にないすべての変更は、一時領域に保存されます。 これは <code>git log
+&lt;upstream&gt;..HEAD</code> で表示されるのと同じコミットのセットで、または <code>--fork-point</code> がアクティブな場合 <code>git log
+'fork_point'..HEAD</code> で表示されるのと同じコミットのセットで、または <code>--root</code> オプションが指定されている場合 <code>git
+log HEAD</code> で表示されるのと同じコミットのセットです。</p></div>
+<div class="paragraph"><p>現在のブランチは&lt;upstream&gt;にリセットされ、または <code>--onto</code>
+オプションが指定されている場合は&lt;newbase&gt;にリセットされます。これは、 <code>git reset --hard &lt;upstream&gt;</code>
+(または&lt;newbase&gt;)とまったく同じ効果があります。 ORIG_HEADは、リセット前にブランチの先端を指すように設定されています。</p></div>
+<div class="paragraph"><p>以前に一時領域に保存されたコミットは、現在のブランチに1つずつ順番に再適用されます。注意: <code>HEAD..&lt;upstream&gt;</code>
+でのコミットと同一のテキスト変更を導入するHEADでのコミットは省略されることに注意してください(つまり、異なるコミットメッセージまたはタイムスタンプで、アップストリームで既に受け入れ済のパッチはスキップされます)。</p></div>
+<div class="paragraph"><p>マージに失敗すると、このプロセスが完全には自動で行われなくなる事があります。あなたは、このようなマージの失敗を解決し、そして <code>git rebase
+--continue</code> を実行する必要があります。 別のオプションとしては、 <code>git rebase --skip</code>
+でマージの失敗を引き起こしたコミットをバイパスすることです。そして、元の&lt;branch&gt;をチェックアウトし、<code>.git/rebase-apply</code>
+作業ファイルを削除するには、代わりにコマンド <code>git rebase --abort</code> を使用します。</p></div>
 <div class="paragraph"><p>以下の履歴が存在し、現在のブランチが「topic」であると想定します:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -807,34 +799,29 @@ git rebase master topic</code></pre>
                  /
     D---E---F---G master</code></pre>
 </div></div>
-<div class="paragraph"><p><strong>NOTE:</strong> The latter form is just a short-hand of <code>git checkout topic</code>
-followed by <code>git rebase master</code>. When rebase exits <code>topic</code> will
-remain the checked-out branch.</p></div>
-<div class="paragraph"><p>If the upstream branch already contains a change you have made (e.g.,
-because you mailed a patch which was applied upstream), then that commit
-will be skipped and warnings will be issued (if the <code>merge</code> backend is
-used).  For example, running <code>git rebase master</code> on the following history
-(in which <code>A'</code> and <code>A</code> introduce the same set of changes, but have different
-committer information):</p></div>
+<div class="paragraph"><p><strong>注意:</strong> 後者の形式は、<code>git checkout topic</code> の後に <code>git rebase master</code> が続く省略形です。
+リベースが終了すると、
+<code>topic</code> はチェックアウトされたブランチのままになります。</p></div>
+<div class="paragraph"><p>(たとえば、アップストリームに適用されたパッチをメールで送信したため)アップストリームブランチにすでに行った変更が含まれている場合、そのコミットはスキップされ、警告が発行されます(<code>merge</code>
+バックエンドが使用されている場合)。たとえば、以下の履歴で <code>git rebase master</code> を実行します(<code>A'</code> と <code>A</code>
+は同じ変更セットを導入しますが、コミッター情報は異なります):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>          A---B---C topic
          /
     D---E---A'---F master</code></pre>
 </div></div>
-<div class="paragraph"><p>will result in:</p></div>
+<div class="paragraph"><p>その結果は</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                   B'---C' topic
                   /
     D---E---A'---F master</code></pre>
 </div></div>
-<div class="paragraph"><p>Here is how you would transplant a topic branch based on one branch to
-another, to pretend that you forked the topic branch from the latter branch,
-using <code>rebase --onto</code>.</p></div>
-<div class="paragraph"><p>First let&#8217;s assume your <em>topic</em> is based on branch <em>next</em>.  For example, a
-feature developed in <em>topic</em> depends on some functionality which is found in
-<em>next</em>.</p></div>
+<div class="paragraph"><p>これは、あるブランチに基づいてトピックブランチを別のブランチに移植し、 <code>rebase --onto</code>
+を使用して、トピックブランチを後者のブランチからフォークしたふりをする方法です。</p></div>
+<div class="paragraph"><p>まず、「topic」がブランチ「next」に基づいているとしましょう。
+たとえば「topic」で開発された機能は、「next」にあるいくつかの機能に依存しています。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o  master
@@ -843,9 +830,9 @@ feature developed in <em>topic</em> depends on some functionality which is found
                            \
                             o---o---o  topic</code></pre>
 </div></div>
-<div class="paragraph"><p>We want to make <em>topic</em> forked from branch <em>master</em>; for example, because
-the functionality on which <em>topic</em> depends was merged into the more stable
-<em>master</em> branch. We want our tree to look like this:</p></div>
+<div class="paragraph"><p>我々は <em>topic</em> をブランチ <em>master</em>
+からフォークさせたいのです。たとえば「topic」が依存する機能が、より安定した「master」ブランチにマージされたためです。
+ツリーを以下のようにしたいわけです:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o  master
@@ -854,13 +841,12 @@ the functionality on which <em>topic</em> depends was merged into the more stabl
          \
           o---o---o---o---o  next</code></pre>
 </div></div>
-<div class="paragraph"><p>We can get this using the following command:</p></div>
+<div class="paragraph"><p>これは、以下のコマンドを使用して取得できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git rebase --onto master next topic</code></pre>
 </div></div>
-<div class="paragraph"><p>Another example of --onto option is to rebase part of a branch.  If we have
-the following situation:</p></div>
+<div class="paragraph"><p><code>--onto</code> オプションの別の例は、ブランチの一部をリベースすることです。 以下のような状況の場合:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                            H---I---J topicB
@@ -899,25 +885,20 @@ the following situation:</p></div>
 <div class="content">
 <pre><code>    E---H'---I'---J'  topicA</code></pre>
 </div></div>
-<div class="paragraph"><p>This is useful if F and G were flawed in some way, or should not be part of
-topicA.  Note that the argument to --onto and the &lt;upstream&gt; parameter can
-be any valid commit-ish.</p></div>
-<div class="paragraph"><p>In case of conflict, <em>git rebase</em> will stop at the first problematic commit
-and leave conflict markers in the tree.  You can use <em>git diff</em> to locate
-the markers (&lt;&lt;&lt;&lt;&lt;&lt;) and make edits to resolve the conflict.  For each file
-you edit, you need to tell Git that the conflict has been resolved,
-typically this would be done with</p></div>
+<div class="paragraph"><p>これは、FとGに何らかの欠陥がある場合、または、topicAの一部であってはならない場合に役立ちます。注意: <code>--onto</code>
+と&lt;upstream&gt;パラメーターの引数は、任意の有効なコミットっぽい何か(commit-ish)にすることができることに注意してください。</p></div>
+<div class="paragraph"><p>競合が発生した場合、「git rebase」は最初の問題のあるコミットで停止し、ツリーに競合マーカーを残します。 <em>git diff</em>
+を使用して、マーカー(&lt;&lt;&lt;&lt;&lt;&lt;)を見つけ、編集して競合を解決できます。編集するファイルごとに、競合が解決されたことをGitに通知する必要があります。通常、これは以下の方法で行います。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git add &lt;filename&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>After resolving the conflict manually and updating the index with the
-desired resolution, you can continue the rebasing process with</p></div>
+<div class="paragraph"><p>競合を手動で解決し、あなたが欲する解決策でインデックスを更新した後、以下のコマンドでリベースプロセスを続行できます。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git rebase --continue</code></pre>
 </div></div>
-<div class="paragraph"><p>Alternatively, you can undo the <em>git rebase</em> with</p></div>
+<div class="paragraph"><p>あるいは、「git rebase」を元に戻す(undo)こともできます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git rebase --abort</code></pre>
@@ -933,31 +914,25 @@ desired resolution, you can continue the rebasing process with</p></div>
 </dt>
 <dd>
 <p>
-        Starting point at which to create the new commits. If the --onto option is
-        not specified, the starting point is &lt;upstream&gt;.  May be any valid commit,
-        and not just an existing branch name.
+        新しいコミットを作成する開始点。 <code>--onto</code>
+        オプションが指定されていない場合、開始点は&lt;upstream&gt;です。これは、既存のブランチ名だけでなく、任意の有効なコミットである可能性があります。
 </p>
-<div class="paragraph"><p>As a special case, you may use "A...B" as a shortcut for the merge base of
-A and B if there is exactly one merge base. You can leave out at most one of
-A and B, in which case it defaults to HEAD.</p></div>
+<div class="paragraph"><p>特別な場合として、マージベースが1つしかない場合は、AとBのマージベースのショートカットとして "A...B"
+を使用できます。最大でAとBのいずれかを省略できます。その場合、デフォルトでHEADになります。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--keep-base</code>
 </dt>
 <dd>
 <p>
-        Set the starting point at which to create the new commits to the merge base
-        of &lt;upstream&gt; &lt;branch&gt;. Running <em>git rebase --keep-base &lt;upstream&gt; &lt;branch&gt;</em>
-        is equivalent to running <em>git rebase --onto &lt;upstream&gt;&#8230; &lt;upstream&gt;</em>.
+        &lt;upstream&gt; &lt;branch&gt; のマージベースへの新しいコミットを作成する開始点を設定します。 <code>git rebase --keep-base
+        &lt;upstream&gt; &lt;branch&gt;</code> を実行することは <code>git rebase --onto &lt;upstream&gt;... &lt;upstream&gt;</code>
+        を実行することと同じです。
 </p>
-<div class="paragraph"><p>This option is useful in the case where one is developing a feature on top
-of an upstream branch. While the feature is being worked on, the upstream
-branch may advance and it may not be the best idea to keep rebasing on top
-of the upstream but to keep the base commit as-is.</p></div>
-<div class="paragraph"><p>Although both this option and --fork-point find the merge base between
-&lt;upstream&gt; and &lt;branch&gt;, this option uses the merge base as the <em>starting
-point</em> on which new commits will be created, whereas --fork-point uses the
-merge base to determine the <em>set of commits</em> which will be rebased.</p></div>
+<div class="paragraph"><p>このオプションは、アップストリームブランチの先頭で機能を開発している場合に役立ちます。この機能が働いている間に、アップストリームのブランチが進むことがあり、アップストリームの先頭にリベースを続けるのは得策ではなく、ベースのコミットをそのままにしておくことがあります。</p></div>
+<div class="paragraph"><p>このオプションと <code>--fork-point</code>
+はどちらも&lt;upstream&gt;と&lt;branch&gt;の間のマージベースを検索します。しかし、このオプションは新しいコミットが作成される「開始点」としてマージベースを使用します。一方
+<code>--fork-point</code> はマージベースを使用して、リベースされる「コミットのセット」を決定します。</p></div>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -965,9 +940,7 @@ merge base to determine the <em>set of commits</em> which will be rebased.</p></
 </dt>
 <dd>
 <p>
-        Upstream branch to compare against.  May be any valid commit, not just an
-        existing branch name. Defaults to the configured upstream for the current
-        branch.
+        比較するアップストリームブランチ。既存のブランチ名だけでなく、任意の有効なコミットである可能性があります。デフォルトは、現在のブランチ用に構成されたアップストリームです。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -991,10 +964,7 @@ merge base to determine the <em>set of commits</em> which will be rebased.</p></
 </dt>
 <dd>
 <p>
-        Abort the rebase operation and reset HEAD to the original branch. If
-        &lt;branch&gt; was provided when the rebase operation was started, then HEAD will
-        be reset to &lt;branch&gt;. Otherwise HEAD will be reset to where it was when the
-        rebase operation was started.
+        リベース操作を中止(abort)し、HEADを元のブランチにリセットします。リベース操作の開始時に&lt;branch&gt;が指定された場合、HEADは&lt;branch&gt;にリセットされます。それ以外の場合、HEADはリベース操作が開始されたときの位置にリセットされます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1002,10 +972,8 @@ merge base to determine the <em>set of commits</em> which will be rebased.</p></
 </dt>
 <dd>
 <p>
-        Abort the rebase operation but HEAD is not reset back to the original
-        branch. The index and working tree are also left unchanged as a result. If a
-        temporary stash entry was created using --autostash, it will be saved to the
-        stash list.
+        リベース操作を中止(abort)しますが、HEADは元のブランチにリセットされません。その結果、インデックスと作業ツリーも変更されません。
+        <code>--autostash</code> を使用して一時的なstashエントリが作成された場合、それはstashリストに保存されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1013,9 +981,8 @@ merge base to determine the <em>set of commits</em> which will be rebased.</p></
 </dt>
 <dd>
 <p>
-        Use applying strategies to rebase (calling <code>git-am</code> internally).  This
-        option may become a no-op in the future once the merge backend handles
-        everything the apply one does.
+        適用戦略(applying strategies)を使用してリベースします(内部で <code>git-am</code>
+        を呼び出します)。このオプションは、マージバックエンドがapplyのすべてを処理すると、将来的には動作しなくなる可能性があります。
 </p>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
@@ -1024,20 +991,15 @@ merge base to determine the <em>set of commits</em> which will be rebased.</p></
 </dt>
 <dd>
 <p>
-        How to handle commits that are not empty to start and are not clean
-        cherry-picks of any upstream commit, but which become empty after rebasing
-        (because they contain a subset of already upstream changes).  With drop (the
-        default), commits that become empty are dropped.  With keep, such commits
-        are kept.  With ask (implied by --interactive), the rebase will halt when an
-        empty commit is applied allowing you to choose whether to drop it, edit
-        files more, or just commit the empty changes.  Other options, like --exec,
-        will use the default of drop unless -i/--interactive is explicitly
-        specified.
+        任意のアップストリームコミットの、開始時は空ではなく、かつ、クリーンでは無いチェリーピックであるが、(すでにアップストリームの変更のサブセットが含まれているため、)リベース後に空になるコミットを処理する方法。dropを使用すると、空になるコミットはドロップされます(これがデフォルトです)。keepを使用すると、そのようなコミットは保持されます。
+        ask
+        を使用すると、空のコミットが適用されるとリベースが停止し、ドロップするか、ファイルをさらに編集するか、空の変更をコミットするかを選択できます(<code>--interactive</code>
+        の指定を含んでいます)。<code>--exec</code> などの他のオプションでは、-i /
+        -interactiveが明示的に指定されていない限り、デフォルトのドロップが使用されます。
 </p>
-<div class="paragraph"><p>Note that commits which start empty are kept (unless --no-keep-empty is
-specified), and commits which are clean cherry-picks (as determined by <code>git
-log --cherry-mark ...</code>) are detected and dropped as a preliminary step
-(unless --reapply-cherry-picks is passed).</p></div>
+<div class="paragraph"><p>注意: (<code>--no-keep-empty</code>
+が指定されていない場合、)空で開始するコミットは保持され、(<code>--reapply-cherry-picks</code> が渡されない限り)準備ステップとして、(
+<code>git log --cherry-mark ...</code> によって決定される)クリーンなチェリーピックであるコミットが検出・ドロップされます。</p></div>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1059,8 +1021,7 @@ that start empty by just firing up an interactive rebase and removing the
 lines corresponding to the commits you don&#8217;t want.  This flag exists as a
 convenient shortcut, such as for cases where external tools generate many
 empty commits and you want them all removed.</p></div>
-<div class="paragraph"><p>For commits which do not start empty but become empty after rebasing, see
-the --empty flag.</p></div>
+<div class="paragraph"><p>空では開始されないが、リベース後に空になるコミットについては、 <code>--empty</code> フラグを参照してください。</p></div>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1083,8 +1044,8 @@ commits that need to be read.  When using the <code>merge</code> backend, warnin
 be issued for each dropped commit (unless <code>--quiet</code> is given). Advice will
 also be issued unless <code>advice.skippedCherryPicks</code> is set to false (see
 <a href="git-config.html">git-config(1)</a>).</p></div>
-<div class="paragraph"><p><code>--reapply-cherry-picks</code> allows rebase to forgo reading all upstream
-commits, potentially improving performance.</p></div>
+<div class="paragraph"><p><code>--reapply-cherry-picks</code>
+を使用すると、リベースはすべてのアップストリームコミットの読み取りを放棄できるため、パフォーマンスが向上する可能性があります。</p></div>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1119,8 +1080,8 @@ commits, potentially improving performance.</p></div>
 </dt>
 <dd>
 <p>
-        Show the current patch in an interactive rebase or when rebase is stopped
-        because of conflicts. This is the equivalent of <code>git show REBASE_HEAD</code>.
+        対話的なリベース、または、競合のためにリベースが停止されたときに、現在のパッチを表示します。 これは <code>git show REBASE_HEAD</code>
+        と同等です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1177,8 +1138,7 @@ simply empties all patches from the &lt;branch&gt;, which makes little sense.</p
 </dt>
 <dd>
 <p>
-        Allow the rerere mechanism to update the index with the result of
-        auto-conflict resolution if possible.
+        可能であれば、rerereメカニズムが自動競合解決の結果でインデックスを更新できるようにします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1225,8 +1185,8 @@ simply empties all patches from the &lt;branch&gt;, which makes little sense.</p
 </dt>
 <dd>
 <p>
-        Show a diffstat of what changed upstream since the last rebase. The diffstat
-        is also controlled by the configuration option rebase.stat.
+        最後のリベース以降にアップストリームで変更されたもののdiffstatを表示します。 diffstatは、構成オプション rebase.stat
+        によっても制御されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1253,8 +1213,8 @@ simply empties all patches from the &lt;branch&gt;, which makes little sense.</p
 </dt>
 <dd>
 <p>
-        Allows the pre-rebase hook to run, which is the default.  This option can be
-        used to override --no-verify.  See also <a href="githooks.html">githooks(5)</a>.
+        プリリベースフック(pre-rebase hook)の実行を許可します。これがデフォルトです。このオプションは、 <code>--no-verify</code>
+        をオーバーライドするために使用できます。 <a href="githooks.html">githooks(5)</a> も参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1297,16 +1257,15 @@ details).</p></div>
 </dt>
 <dd>
 <p>
-        Use reflog to find a better common ancestor between &lt;upstream&gt; and &lt;branch&gt;
-        when calculating which commits have been introduced by &lt;branch&gt;.
+        &lt;branch&gt;によって導入されたコミットを計算するときに、reflogを使用して、&lt;upstream&gt;と&lt;branch&gt;の間の、より一般的な祖先を見つけます。
 </p>
 <div class="paragraph"><p>When --fork-point is active, <em>fork_point</em> will be used instead of &lt;upstream&gt;
 to calculate the set of commits to rebase, where <em>fork_point</em> is the result
 of <code>git merge-base --fork-point &lt;upstream&gt; &lt;branch&gt;</code> command (see
 <a href="git-merge-base.html">git-merge-base(1)</a>).  If <em>fork_point</em> ends up being empty, the
 &lt;upstream&gt; will be used as a fallback.</p></div>
-<div class="paragraph"><p>If &lt;upstream&gt; is given on the command line, then the default is
-<code>--no-fork-point</code>, otherwise the default is <code>--fork-point</code>.</p></div>
+<div class="paragraph"><p>コマンドラインで&lt;upstream&gt;が指定されている場合、デフォルトは <code>--no-fork-point</code> です。それ以外の場合、デフォルトは
+<code>--fork-point</code> です。</p></div>
 <div class="paragraph"><p>If your branch was based on &lt;upstream&gt; but &lt;upstream&gt; was rewound and your
 branch contains commits which were dropped, this option can be used with
 <code>--keep-base</code> in order to drop those commits from your branch.</p></div>
@@ -1317,9 +1276,7 @@ branch contains commits which were dropped, this option can be used with
 </dt>
 <dd>
 <p>
-Ignore whitespace differences when trying to reconcile
-differences. Currently, each backend implements an approximation of this
-behavior:
+差分を調整しようとするときは、空白の違いを無視してください。現在、各バックエンドはこの振る舞いの近似を実装しています:
 </p>
 <div class="paragraph"><p>apply backend: When applying a patch, ignore changes in whitespace in
 context lines. Unfortunately, this means that if the "old" lines being
@@ -1335,8 +1292,8 @@ side had no changes that conflicted.</p></div>
 </dt>
 <dd>
 <p>
-        This flag is passed to the <em>git apply</em> program (see <a href="git-apply.html">git-apply(1)</a>)
-        that applies the patch.  Implies --apply.
+        このフラグは、パッチを適用する「git apply」プログラム(<a href="git-apply.html">git-apply(1)</a> を参照)に渡されます。 <code>--apply</code>
+        の意味を含んでいます。
 </p>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
@@ -1419,7 +1376,8 @@ reordered, inserted and dropped at will.</p></div>
 <div class="paragraph"><p>It is currently only possible to recreate the merge commits using the <code>ort</code>
 merge strategy; different merge strategies can be used only via explicit
 <code>exec git merge -s &lt;strategy&gt; [...]</code> commands.</p></div>
-<div class="paragraph"><p>See also REBASING MERGES and INCOMPATIBLE OPTIONS below.</p></div>
+<div class="paragraph"><p>以下の「REBASING MERGES」(マージのリベース)および「INCOMPATIBLE
+OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>-p</code>
@@ -1451,22 +1409,18 @@ you know what you are doing (see BUGS below).</p></div>
         history. &lt;cmd&gt; will be interpreted as one or more shell commands. Any
         command that fails will interrupt the rebase, with exit code 1.
 </p>
-<div class="paragraph"><p>You may execute several commands by either using one instance of <code>--exec</code>
-with several commands:</p></div>
+<div class="paragraph"><p><code>--exec</code> の1つのインスタンスを複数のコマンドで使用することにより、複数のコマンドを実行できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git rebase -i --exec "cmd1 &amp;&amp; cmd2 &amp;&amp; ..."</code></pre>
 </div></div>
-<div class="paragraph"><p>or by giving more than one <code>--exec</code>:</p></div>
+<div class="paragraph"><p>または、複数の <code>--exec</code> を指定します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git rebase -i --exec "cmd1" --exec "cmd2" --exec ...</code></pre>
 </div></div>
-<div class="paragraph"><p>If <code>--autosquash</code> is used, "exec" lines will not be appended for the
-intermediate commits, and will only appear at the end of each squash/fixup
-series.</p></div>
-<div class="paragraph"><p>This uses the <code>--interactive</code> machinery internally, but it can be run
-without an explicit <code>--interactive</code>.</p></div>
+<div class="paragraph"><p><code>--autosquash</code> が使用されている場合、「exec」行は中間コミットに追加されず、各スカッシュ/修正シリーズの最後にのみ現れます。</p></div>
+<div class="paragraph"><p>これは内部で <code>--interactive</code> 機構を使用しますが、明示的な <code>--interactive</code> の指定なしで実行できます。</p></div>
 <div class="paragraph"><p>以下の「INCOMPATIBLE OPTIONS」セクションもご覧下さい。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1530,8 +1484,8 @@ disable this setting.</p></div>
 </dt>
 <dd>
 <p>
-        Automatically reschedule <code>exec</code> commands that failed. This only makes sense
-        in interactive mode (or when an <code>--exec</code> option was provided).
+        失敗した <code>exec</code> コマンドを自動的に再スケジュールします。 これは、対話モード(または <code>--exec</code>
+        オプションが提供された場合)でのみ意味があります。
 </p>
 <div class="paragraph"><p>Even though this option applies once a rebase is started, it&#8217;s set for the
 whole rebase at the start based on either the <code>rebase.rescheduleFailedExec</code>
@@ -1693,7 +1647,7 @@ presence of <code>rebase.rescheduleFailedExec=true</code> configuration.</p></di
 </div>
 </div>
 <div class="sect1">
-<h2 id="_behavioral_differences">BEHAVIORAL DIFFERENCES</h2>
+<h2 id="_振る舞いの違い">振る舞いの違い</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>git rebase has two primary backends: apply and merge.  (The apply backend
 used to be known as the <em>am</em> backend, but the name led to confusion as it
@@ -1703,7 +1657,7 @@ cases as well.  Both were renamed based on lower-level functionality that
 underpinned each.) There are some subtle differences in how these two
 backends behave:</p></div>
 <div class="sect2">
-<h3 id="_empty_commits">Empty commits</h3>
+<h3 id="_空のコミット">空のコミット</h3>
 <div class="paragraph"><p>The apply backend unfortunately drops intentionally empty commits, i.e.
 commits that started empty, though these are rare in practice.  It also
 drops commits that become empty and has no option for controlling this
@@ -1718,7 +1672,7 @@ stops and asks the user what to do).  The merge backend also has an
 that become empty.</p></div>
 </div>
 <div class="sect2">
-<h3 id="_directory_rename_detection">Directory rename detection</h3>
+<h3 id="_ディレクトリ名変更の検知">ディレクトリ名変更の検知</h3>
 <div class="paragraph"><p>Due to the lack of accurate tree information (arising from constructing fake
 ancestors with the limited information available in patches), directory
 rename detection is disabled in the apply backend.  Disabled directory
@@ -1726,8 +1680,7 @@ rename detection means that if one side of history renames a directory and
 the other adds new files to the old directory, then the new files will be
 left behind in the old directory without any warning at the time of rebasing
 that you may want to move these files into the new directory.</p></div>
-<div class="paragraph"><p>Directory rename detection works with the merge backend to provide you
-warnings in such cases.</p></div>
+<div class="paragraph"><p>ディレクトリ名変更の検出は、マージバックエンドと連携して、このような場合に警告を提供します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_context">Context</h3>
@@ -1744,8 +1697,7 @@ real-world cases where this has caused commits to be reapplied incorrectly
 with no conflicts reported.  Setting diff.context to a larger value may
 prevent such types of problems, but increases the chance of spurious
 conflicts (since it will require more lines of matching context to apply).</p></div>
-<div class="paragraph"><p>The merge backend works with a full copy of each relevant file, insulating
-it from these types of problems.</p></div>
+<div class="paragraph"><p>マージバックエンドは、関連する各ファイルの完全なコピーを使って動作し、これらの種類の問題からファイルを保護します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_labelling_of_conflicts_markers">Labelling of conflicts markers</h3>
@@ -1758,11 +1710,10 @@ instead it has to fall back to a commit summary.  Also, when
 merge.conflictStyle is set to diff3, the apply backend will use "constructed
 merge base" to label the content from the merge base, and thus provide no
 information about the merge base commit whatsoever.</p></div>
-<div class="paragraph"><p>The merge backend works with the full commits on both sides of history and
-thus has no such limitations.</p></div>
+<div class="paragraph"><p>マージバックエンドは、履歴の両側で完全なコミットで動作するため、そのような制限はありません。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_hooks">Hooks</h3>
+<h3 id="_フック">フック</h3>
 <div class="paragraph"><p>The apply backend has not traditionally called the post-commit hook, while
 the merge backend has.  Both have called the post-checkout hook, though the
 merge backend has squelched its output.  Further, both backends only call
@@ -1795,13 +1746,11 @@ blindly applies the original commit message.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_miscellaneous_differences">Miscellaneous differences</h3>
-<div class="paragraph"><p>There are a few more behavioral differences that most folks would probably
-consider inconsequential but which are mentioned for completeness:</p></div>
+<div class="paragraph"><p>ほとんどの人がおそらく取るに足らないと考えるであろうが、完全性のためにいくつかの振る舞いの違いについて言及します:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Reflog: The two backends will use different wording when describing the
-  changes made in the reflog, though both will make use of the word "rebase".
+Reflog: 2つのバックエンドは、reflogで行われた変更を説明するときに異なる表現を使用しますが、どちらも「リベース」という単語を使用します。
 </p>
 </li>
 <li>
@@ -1814,8 +1763,7 @@ Progress, informational, and error messages: The two backends provide
 </li>
 <li>
 <p>
-State directories: The two backends keep their state in different
-  directories under .git/
+状態ディレクトリ: 2つのバックエンドは、.git/ の下の異なるディレクトリに状態を保持します
 </p>
 </li>
 </ul></div>
@@ -2071,73 +2019,71 @@ all, and substitutes the changed version instead.</p></div>
 <div class="sect1">
 <h2 id="_notes">NOTES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>You should understand the implications of using <em>git rebase</em> on a repository
-that you share.  See also RECOVERING FROM UPSTREAM REBASE below.</p></div>
+<div class="paragraph"><p>共有リポジトリで「git rebase」を使用することの意味を理解する必要があります。 下記の「RECOVERING FROM UPSTREAM
+REBASE」も参照してください。</p></div>
 <div class="paragraph"><p>When the git-rebase command is run, it will first execute a "pre-rebase"
 hook if one exists.  You can use this hook to do sanity checks and reject
 the rebase if it isn&#8217;t appropriate.  Please see the template pre-rebase hook
 script for an example.</p></div>
-<div class="paragraph"><p>Upon completion, &lt;branch&gt; will be the current branch.</p></div>
+<div class="paragraph"><p>完了すると、&lt;branch&gt;が現在のブランチになります。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_interactive_mode">INTERACTIVE MODE</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Rebasing interactively means that you have a chance to edit the commits
-which are rebased.  You can reorder the commits, and you can remove them
-(weeding out bad or otherwise unwanted patches).</p></div>
-<div class="paragraph"><p>The interactive mode is meant for this type of workflow:</p></div>
+<div class="paragraph"><p>対話的にリベースするということは、リベースされるコミットを編集する機会があることを意味します。コミットを並べ替えたり、削除したりできます(不良パッチやその他の不要なパッチを削除します)。</p></div>
+<div class="paragraph"><p>対話的モードは、以下の種類の作業の流れを対象としています:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-have a wonderful idea
+素晴らしいアイデアを思いついた
 </p>
 </li>
 <li>
 <p>
-hack on the code
+コードをハックハック
 </p>
 </li>
 <li>
 <p>
-prepare a series for submission
+提出用のシリーズを準備する
 </p>
 </li>
 <li>
 <p>
-submit
+送信
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>where point 2. consists of several instances of</p></div>
-<div class="paragraph"><p>a) regular use</p></div>
+<div class="paragraph"><p>ここで、(2)は、以下のいくつかの内容で構成されています</p></div>
+<div class="paragraph"><p>a) 通常</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-finish something worthy of a commit
+コミットに値する何かを終える
 </p>
 </li>
 <li>
 <p>
-commit
+コミット
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>b) independent fixup</p></div>
+<div class="paragraph"><p>b) 独立した修正</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-realize that something does not work
+何かが機能しないことに気付く
 </p>
 </li>
 <li>
 <p>
-fix that
+そいつを修正する
 </p>
 </li>
 <li>
 <p>
-commit it
+それをコミット
 </p>
 </li>
 </ol></div>
@@ -2146,7 +2092,7 @@ commit it fixes, because that commit is buried deeply in a patch series.
 That is exactly what interactive rebase is for: use it after plenty of "a"s
 and "b"s, by rearranging and editing commits, and squashing multiple commits
 into one.</p></div>
-<div class="paragraph"><p>Start it with the last commit you want to retain as-is:</p></div>
+<div class="paragraph"><p>あなたがそのまま保持したい最後のコミットから開始します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git rebase -i &lt;after-this-commit&gt;</code></pre>
@@ -2167,12 +2113,9 @@ example), so do not delete or edit the names.</p></div>
 <div class="paragraph"><p>By replacing the command "pick" with the command "edit", you can tell <em>git
 rebase</em> to stop after applying that commit, so that you can edit the files
 and/or the commit message, amend the commit, and continue rebasing.</p></div>
-<div class="paragraph"><p>To interrupt the rebase (just like an "edit" command would do, but without
-cherry-picking any commit first), use the "break" command.</p></div>
-<div class="paragraph"><p>If you just want to edit the commit message for a commit, replace the
-command "pick" with the command "reword".</p></div>
-<div class="paragraph"><p>To drop a commit, replace the command "pick" with "drop", or just delete the
-matching line.</p></div>
+<div class="paragraph"><p>リベースを中断するには(「edit」コマンドと同じように、ただし最初にコミットを選択せずに)、「break」コマンドを使用します。</p></div>
+<div class="paragraph"><p>コミットのコミットメッセージを編集するだけの場合は、コマンド「pick」をコマンド「reword」に置き換えます。</p></div>
+<div class="paragraph"><p>コミットを削除するには、コマンド「pick」を「drop」に置き換えるか、マッチする行を削除します。</p></div>
 <div class="paragraph"><p>If you want to fold two or more commits into one, replace the command "pick"
 for the second and subsequent commits with "squash" or "fixup".  If the
 commits had different authors, the folded commit will be attributed to the
@@ -2196,9 +2139,8 @@ like this:</p></div>
 <div class="content">
 <pre><code>$ git rebase -i HEAD~5</code></pre>
 </div></div>
-<div class="paragraph"><p>And move the first patch to the end of the list.</p></div>
-<div class="paragraph"><p>You might want to recreate merge commits, e.g. if you have a history like
-this:</p></div>
+<div class="paragraph"><p>そして、最初のパッチをリストの最後に移動します。</p></div>
+<div class="paragraph"><p>たとえば、あなたが以下のような歴史を持っているなら、マージコミットを再作成することをお勧めします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>           X
@@ -2207,8 +2149,7 @@ this:</p></div>
         /
 ---o---O---P---Q</code></pre>
 </div></div>
-<div class="paragraph"><p>Suppose you want to rebase the side branch starting at "A" to "Q". Make sure
-that the current HEAD is "B", and call</p></div>
+<div class="paragraph"><p>あなたは「A」から「Q」までのサイドブランチをリベースしたいとします。 現在のHEADが「B」であることを確認して</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git rebase -i -r --onto Q O</code></pre>
@@ -2254,7 +2195,7 @@ exec make test</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_splitting_commits">SPLITTING COMMITS</h2>
+<h2 id="_コミットの分割">コミットの分割</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>In interactive mode, you can mark commits with the action "edit".  However,
 this does not necessarily mean that <em>git rebase</em> expects the result of this
@@ -2270,7 +2211,7 @@ Start an interactive rebase with <code>git rebase -i &lt;commit&gt;^</code>, whe
 </li>
 <li>
 <p>
-Mark the commit you want to split with the action "edit".
+分割するコミットを、アクション「edit」でマークします。
 </p>
 </li>
 <li>
@@ -2289,18 +2230,17 @@ Now add the changes to the index that you want to have in the first commit.
 </li>
 <li>
 <p>
-Commit the now-current index with whatever commit message is appropriate
-  now.
+最新の適切なコミットメッセージを使用して、最新の「現在のインデックス」をコミットします。
 </p>
 </li>
 <li>
 <p>
-Repeat the last two steps until your working tree is clean.
+作業ツリーがクリーンになるまで、最後の2つの手順を繰り返します。
 </p>
 </li>
 <li>
 <p>
-Continue the rebase with <code>git rebase --continue</code>.
+<code>git rebase --continue</code> でリベースを続行します。
 </p>
 </li>
 </ul></div>
@@ -2329,7 +2269,7 @@ this <em>subsystem</em>.  You might end up with a history like the following:</p
                            \
                             *---*---*  topic</code></pre>
 </div></div>
-<div class="paragraph"><p>If <em>subsystem</em> is rebased against <em>master</em>, the following happens:</p></div>
+<div class="paragraph"><p><em>subsystem</em> が <em>master</em> に対してリベースされる場合、以下が発生します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o---o---o---o  master
@@ -2338,8 +2278,7 @@ this <em>subsystem</em>.  You might end up with a history like the following:</p
                            \
                             *---*---*  topic</code></pre>
 </div></div>
-<div class="paragraph"><p>If you now continue development as usual, and eventually merge <em>topic</em> to
-<em>subsystem</em>, the commits from <em>subsystem</em> will remain duplicated forever:</p></div>
+<div class="paragraph"><p>これで通常どおり開発を続行し、最終的に「topic」を「subsystem」にマージすると、「subsystem」からのコミットは永久に複製されたままになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o---o---o---o  master
@@ -2353,19 +2292,18 @@ making it harder to follow.  To clean things up, you need to transplant the
 commits on <em>topic</em> to the new <em>subsystem</em> tip, i.e., rebase <em>topic</em>.  This
 becomes a ripple effect: anyone downstream from <em>topic</em> is forced to rebase
 too, and so on!</p></div>
-<div class="paragraph"><p>There are two kinds of fixes, discussed in the following subsections:</p></div>
+<div class="paragraph"><p>以下のサブセクションで議論する2種類の修正があります:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-Easy case: The changes are literally the same.
+簡単な場合: 変更は文字通り同じ(same)
 </dt>
 <dd>
 <p>
-        This happens if the <em>subsystem</em> rebase was a simple rebase and had no
-        conflicts.
+        これは、 <em>subsystem</em> のリベースが単純なリベースであり、競合がなかった場合に発生します。
 </p>
 </dd>
 <dt class="hdlist1">
-Hard case: The changes are not the same.
+難しい場合: 変更は同じではありません
 </dt>
 <dd>
 <p>
@@ -2377,7 +2315,7 @@ Hard case: The changes are not the same.
 </dd>
 </dl></div>
 <div class="sect2">
-<h3 id="_the_easy_case">The easy case</h3>
+<h3 id="_簡単な場合">簡単な場合</h3>
 <div class="paragraph"><p>Only works if the changes (patch IDs based on the diff contents) on
 <em>subsystem</em> are literally the same before and after the rebase <em>subsystem</em>
 did.</p></div>
@@ -2389,7 +2327,7 @@ that are already present in the new upstream (unless
 <div class="content">
 <pre><code>    $ git rebase subsystem</code></pre>
 </div></div>
-<div class="paragraph"><p>you will end up with the fixed history</p></div>
+<div class="paragraph"><p>あなたは修正された履歴で終わります。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o---o---o---o  master
@@ -2400,9 +2338,8 @@ that are already present in the new upstream (unless
 </div></div>
 </div>
 <div class="sect2">
-<h3 id="_the_hard_case">The hard case</h3>
-<div class="paragraph"><p>Things get more complicated if the <em>subsystem</em> changes do not exactly
-correspond to the ones before the rebase.</p></div>
+<h3 id="_難しい場合">難しい場合</h3>
+<div class="paragraph"><p><em>subsystem</em> の変更がリベース前の変更に正確に対応していない場合、事態はさらに複雑になります。</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
@@ -2428,13 +2365,13 @@ With the <em>subsystem</em> reflog: after <em>git fetch</em>, the old tip of <em
 </li>
 <li>
 <p>
-Relative to the tip of <em>topic</em>: knowing that your <em>topic</em> has three commits,
-  the old tip of <em>subsystem</em> must be <code>topic~3</code>.
+<em>topic&#8217;の先端に関連して: 'topic</em> に3つのコミットがあることを知っているので、 <em>subsystem</em> の古い先端は <code>topic~3</code>
+  でなければなりません。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>You can then transplant the old <code>subsystem..topic</code> to the new tip by saying
-(for the reflog case, and assuming you are on <em>topic</em> already):</p></div>
+<div class="paragraph"><p>次に、あなたは以下のように言って、古い <code>subsystem..topic</code> を新しい先端に移植できます(reflogの場合、すでに <em>topic</em>
+にいると仮定します):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git rebase --onto subsystem subsystem@{1}</code></pre>
@@ -2727,7 +2664,7 @@ results.  Use <code>--rebase-merges</code> in such scenarios instead.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-02-10 02:39:59 JST
+ 2022-03-01 11:31:48 JST
 </div>
 </div>
 </body>

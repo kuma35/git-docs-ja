@@ -742,229 +742,176 @@ asciidoc.install();
 <div class="paragraph"><p>Alan &lt;<a href="mailto:alan@clueserver.org">alan@clueserver.org</a>&gt; said:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>I have a master branch.  We have a branch off of that that some
-developers are doing work on.  They claim it is ready. We merge it
-into the master branch.  It breaks something so we revert the merge.
-They make changes to the code.  they get it to a point where they say
-it is ok and we merge again.</code></pre>
+<pre><code>masterブランチがあります。一部の開発者が取り組んでいるブランチがあります。
+彼らはそれが準備ができていると主張します。我々はそれをmasterブランチにマージします。
+そしたら何かが壊れたので、我々はマージを元に戻します。
+彼らはコードに変更を加えます。
+彼らが大丈夫だと言うところまでそれを取得し、そして我々は再びマージします。</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>When examined, we find that code changes made before the revert are
-not in the master branch, but code changes after are in the master
-branch.</code></pre>
+<pre><code>調べてみると、
+戻す前に行われたコード変更はmasterブランチにはありませんが、
+その後のコード変更はmasteerブランチにあります。</code></pre>
 </div></div>
-<div class="paragraph"><p>and asked for help recovering from this situation.</p></div>
-<div class="paragraph"><p>The history immediately after the "revert of the merge" would look like
-this:</p></div>
+<div class="paragraph"><p>そして、この状況から回復するための助けを求めています。</p></div>
+<div class="paragraph"><p>「マージの戻し」直後の履歴は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x---W
               /
       ---A---B</code></pre>
 </div></div>
-<div class="paragraph"><p>where A and B are on the side development that was not so good, M is the
-merge that brings these premature changes into the mainline, x are changes
-unrelated to what the side branch did and already made on the mainline, and
-W is the "revert of the merge M" (doesn&#8217;t W look M upside down?).  IOW,
-<code>"diff W^..W"</code> is similar to <code>"diff -R M^..M"</code>.</p></div>
-<div class="paragraph"><p>Such a "revert" of a merge can be made with:</p></div>
+<div class="paragraph"><p>ここで、AとBはあまり良くなかった傍流開発であり、Mはこれらの時期尚早な変更を本線にもたらすマージであり、xは傍流ブランチが行ったものとは無関係の変更であり、戻し作業以前にすでに本線で行われた変更です。Wは「マージMを元に戻した変更」(Mを逆さまにするとWに見えるので、ここではWを使いました)。
+ええっとつまり、 <code>diff W^..W</code> は <code>diff -R M^..M</code> に似ています。</p></div>
+<div class="paragraph"><p>マージのこのような「戻し」(revert)は、以下の方法で行うことができます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git revert -m 1 M</code></pre>
 </div></div>
-<div class="paragraph"><p>After the developers of the side branch fix their mistakes, the history may
-look like this:</p></div>
+<div class="paragraph"><p>傍流ブランチの開発者が間違いを修正した後、履歴は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x---W---x
               /
       ---A---B-------------------C---D</code></pre>
 </div></div>
-<div class="paragraph"><p>where C and D are to fix what was broken in A and B, and you may already
-have some other changes on the mainline after W.</p></div>
-<div class="paragraph"><p>If you merge the updated side branch (with D at its tip), none of the
-changes made in A or B will be in the result, because they were reverted by
-W.  That is what Alan saw.</p></div>
-<div class="paragraph"><p>Linus explains the situation:</p></div>
+<div class="paragraph"><p>ここで、CとDは、AとBで壊れていたものを修正するためのものであり、そして、本線ではWの後に他の変更がすでに行われている可能性があります。</p></div>
+<div class="paragraph"><p>更新された傍流ブランチ(先端はD)を本線にマージすると、(Mのマージは)Wにて元に戻されたため、AまたはBで行われた変更は結果に反映されません。これがAlanが見たものです。</p></div>
+<div class="paragraph"><p>Linusが状況を説明します:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>Reverting a regular commit just effectively undoes what that commit
-did, and is fairly straightforward. But reverting a merge commit also
-undoes the _data_ that the commit changed, but it does absolutely
-nothing to the effects on _history_ that the merge had.</code></pre>
+<pre><code>通常のコミットを元に戻す(revert)と、
+そのコミットが行ったことを効果的に元に戻すことができ、かなり簡単です。
+ただし、マージコミットを元に戻すと、コミットが変更した「データ」も元に戻されますが、
+マージが行った「履歴への影響」にはまったく何の効果も及ぼしません。</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>So the merge will still exist, and it will still be seen as joining
-the two branches together, and future merges will see that merge as
-the last shared state - and the revert that reverted the merge brought
-in will not affect that at all.</code></pre>
+<pre><code>したがって、そのマージは引き続き存在し、
+2つのブランチを結合していると見なされ、
+その後のマージでは、そのマージが最後の共有状態と見なされます。
+そして、マージを元に戻した戻しは、それにまったく影響しません。</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>So a "revert" undoes the data changes, but it's very much _not_ an
-"undo" in the sense that it doesn't undo the effects of a commit on
-the repository history.</code></pre>
+<pre><code>したがって、「revert」はデータの変更を元に戻しますが、
+リポジトリ履歴に対するコミットの影響を元に戻さないという意味では、
+「undo」ではありません。</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>So if you think of "revert" as "undo", then you're going to always
-miss this part of reverts. Yes, it undoes the data, but no, it doesn't
-undo history.</code></pre>
+<pre><code>したがって、あなたが「revert」を「undo」と考えてしまうと、常に
+revertのこの部分を見逃します。はい、データを元に戻しますが、
+しかし、履歴は元に戻しません。</code></pre>
 </div></div>
-<div class="paragraph"><p>In such a situation, you would want to first revert the previous revert,
-which would make the history look like this:</p></div>
+<div class="paragraph"><p>このような状況では、最初に以前の戻しを戻すことをお勧めします。これにより、履歴は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x---W---x---Y
               /
       ---A---B-------------------C---D</code></pre>
 </div></div>
-<div class="paragraph"><p>where Y is the revert of W.  Such a "revert of the revert" can be done with:</p></div>
+<div class="paragraph"><p>ここで、YはWの戻しです。このような「戻しの戻し」(revert of the revert)は、以下の方法で実行できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git revert W</code></pre>
 </div></div>
-<div class="paragraph"><p>This history would (ignoring possible conflicts between what W and W..Y
-changed) be equivalent to not having W or Y at all in the history:</p></div>
+<div class="paragraph"><p>この履歴は(WとW..Yが変更したものの間で発生する可能性のある競合を無視すると)、履歴にWまたはYがまったくないことと同等です:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x-------x----
               /
       ---A---B-------------------C---D</code></pre>
 </div></div>
-<div class="paragraph"><p>and merging the side branch again will not have conflict arising from an
-earlier revert and revert of the revert.</p></div>
+<div class="paragraph"><p>そして傍流ブランチを再度マージしても、以前の戻しと戻しの戻しから生じる競合は発生しません。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x-------x-------*
               /                       /
       ---A---B-------------------C---D</code></pre>
 </div></div>
-<div class="paragraph"><p>Of course the changes made in C and D still can conflict with what was done
-by any of the x, but that is just a normal merge conflict.</p></div>
-<div class="paragraph"><p>On the other hand, if the developers of the side branch discarded their
-faulty A and B, and redone the changes on top of the updated mainline after
-the revert, the history would have looked like this:</p></div>
+<div class="paragraph"><p>もちろん、CとDで行われた変更は、xのいずれかによって行われた変更と競合する可能性がありますが、これは通常のマージの競合です。</p></div>
+<div class="paragraph"><p>一方、傍流ブランチの開発者が障害のあるAとBを破棄し、元に戻した後に更新された本線に加えて変更をやり直した場合、履歴は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x---W---x---x
               /                 \
       ---A---B                   A'--B'--C'</code></pre>
 </div></div>
-<div class="paragraph"><p>If you reverted the revert in such a case as in the previous example:</p></div>
+<div class="paragraph"><p>前の例のような場合に戻しを戻した場合:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x---W---x---x---Y---*
               /                 \         /
       ---A---B                   A'--B'--C'</code></pre>
 </div></div>
-<div class="paragraph"><p>where Y is the revert of W, A' and B' are rerolled A and B, and there may
-also be a further fix-up C' on the side branch.  <code>"diff Y^..Y"</code> is similar
-to <code>"diff -R W^..W"</code> (which in turn means it is similar to <code>"diff M^..M"</code>),
-and <code>"diff A'^..C'"</code> by definition would be similar but different from that,
-because it is a rerolled series of the earlier change.  There will be a lot
-of overlapping changes that result in conflicts.  So do not do "revert of
-revert" blindly without thinking..</p></div>
+<div class="paragraph"><p>ここで、YはWの戻しであり、A' と B' は、 A と B に巻き直しされ、傍流ブランチにはさらに修正 C' がある場合もあります。 <code>diff
+Y^..Y</code> は <code>diff -R W^..W</code> に似ており(つまり、 <code>diff M^..M</code> に似ており)、 <code>diff A'^..C'</code>
+は、以前の変更の巻き直したリーズであるため、定義上は似ていますが、それとは異なります。競合する結果を生む重複する変更がたくさんあることでしょう。つまり、その、何がいいたいのかというと、何も考えずに盲目的に「戻しの戻し」をしてはいけないのです…</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>---o---o---o---M---x---x---W---x---x
               /                 \
       ---A---B                   A'--B'--C'</code></pre>
 </div></div>
-<div class="paragraph"><p>In the history with rebased side branch, W (and M) are behind the merge base
-of the updated branch and the tip of the mainline, and they should merge
-without the past faulty merge and its revert getting in the way.</p></div>
-<div class="paragraph"><p>To recap, these are two very different scenarios, and they want two very
-different resolution strategies:</p></div>
+<div class="paragraph"><p>リベースされた傍流ブランチの履歴では、
+W(およびM)は、更新されたブランチのマージベースと本線の先端の後ろにあり、過去の誤ったマージとその「戻し」が邪魔しないようマージする必要があります。</p></div>
+<div class="paragraph"><p>要約すると、これらは2つの非常に異なるシナリオであり、2つの非常に異なる解決戦略が必要です:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-If the faulty side branch was fixed by adding corrections on top, then doing
-   a revert of the previous revert would be the right thing to do.
+障害のある傍流ブランチが先頭に修正を追加することによって修正された場合、以前の戻しの戻しを行うことは正しいことです。
 </p>
 </li>
 <li>
 <p>
-If the faulty side branch whose effects were discarded by an earlier revert
-   of a merge was rebuilt from scratch (i.e. rebasing and fixing, as you seem
-   to have interpreted), then re-merging the result without doing anything else
-   fancy would be the right thing to do.  (See the ADDENDUM below for how to
-   rebuild a branch from scratch without changing its original branching-off
-   point.)
+以前のマージの戻しによって影響が破棄された、障害のある傍流ブランチが、最初から再構築された場合(つまり、あなたが解釈したように、リベースと修正した場合)は、他に何もせずに結果を再マージするのが正しいことです。(元の分岐点を変更せずに分岐を最初から再構築する方法については、以下の
+   ADDENDUM を参照してください。）
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>However, there are things to keep in mind when reverting a merge (and
-reverting such a revert).</p></div>
-<div class="paragraph"><p>For example, think about what reverting a merge (and then reverting the
-revert) does to bisectability. Ignore the fact that the revert of a revert
-is undoing it - just think of it as a "single commit that does a lot".
-Because that is what it does.</p></div>
-<div class="paragraph"><p>When you have a problem you are chasing down, and you hit a "revert this
-merge", what you&#8217;re hitting is essentially a single commit that contains all
-the changes (but obviously in reverse) of all the commits that got
-merged. So it&#8217;s debugging hell, because now you don&#8217;t have lots of small
-changes that you can try to pinpoint which <em>part</em> of it changes.</p></div>
-<div class="paragraph"><p>But does it all work? Sure it does. You can revert a merge, and from a
-purely technical angle, Git did it very naturally and had no real
-troubles. It just considered it a change from "state before merge" to "state
-after merge", and that was it. Nothing complicated, nothing odd, nothing
-really dangerous. Git will do it without even thinking about it.</p></div>
-<div class="paragraph"><p>So from a technical angle, there&#8217;s nothing wrong with reverting a merge, but
-from a workflow angle it&#8217;s something that you generally should try to avoid.</p></div>
-<div class="paragraph"><p>If at all possible, for example, if you find a problem that got merged into
-the main tree, rather than revert the merge, try <em>really</em> hard to bisect the
-problem down into the branch you merged, and just fix it, or try to revert
-the individual commit that caused it.</p></div>
-<div class="paragraph"><p>Yes, it&#8217;s more complex, and no, it&#8217;s not always going to work (sometimes the
-answer is: "oops, I really shouldn&#8217;t have merged it, because it wasn&#8217;t ready
-yet, and I really need to undo <em>all</em> of the merge"). So then you really
-should revert the merge, but when you want to re-do the merge, you now need
-to do it by reverting the revert.</p></div>
+<div class="paragraph"><p>けれども、マージの戻し(そして、そのような戻し)の場合は、注意が必要なことがあります。</p></div>
+<div class="paragraph"><p>たとえば、マージの戻し(そしてそれから、戻しの戻し)が二分性(bisectability)でどうなるかを考えてみましょう。戻しの戻しがそれを元に戻すという事実を無視してください。つまり「多くのことをする単一のコミット」と考えてください。なぜならそれがやることはそれだからです。</p></div>
+<div class="paragraph"><p>あなたが追いかけている問題があり、「マージの戻し」がヒットした場合、ヒットしているのは基本的に、マージされたすべてのコミットのすべての変更(しかし明らかに逆)を含む単一のコミットです。つまり、デバッグ地獄です。これは、変更のどの部分を特定できるかを示す小さな変更があまりないためです。</p></div>
+<div class="paragraph"><p>でも、全部うまくいくのでしょうか？
+もちろんうまくいきます。純粋に技術的な観点から言えば、Gitは非常に自然にそれを行い、何の問題もありません。「マージ前の状態」から「マージ後の状態」への変更とみなすだけで、ただそれだけです。複雑でもなく、奇妙でもなく、本当に危険でもありません。Gitは何も考えずにそれを実行します。</p></div>
+<div class="paragraph"><p>したがって、技術的な観点からは、マージを元に戻すことには何の問題もありませんが、作業フローの観点からは、一般的には回避する必要があります。</p></div>
+<div class="paragraph"><p>可能であれば、たとえば、メインツリーにマージされた問題を見つけた場合は、マージを元に戻すのではなく、問題のbisectを頑張ってブランチに括りだしてください。そしてそれを修正するか、それを引き起こした個々のコミットを元に戻してみてください。</p></div>
+<div class="paragraph"><p>ええもちろん、それはより複雑で、上記が常にうまくいくとは限りません。(「おっとスマソ。私はまだ準備ができていなかった。私は本当はそれをマージするべきではなかった、だｋら私は本当にすべてのマージを元に戻す必要がある」とかあるある)
+したがって、実際にマージを元に戻す必要がありますが、マージをやり直したい場合は、元に戻すことによってそれを行う必要があります。</p></div>
 <div class="paragraph"><p>ADDENDUM</p></div>
-<div class="paragraph"><p>Sometimes you have to rewrite one of a topic branch&#8217;s commits <strong>and</strong> you
-can&#8217;t change the topic&#8217;s branching-off point.  Consider the following
-situation:</p></div>
+<div class="paragraph"><p>あなたはトピックブランチのコミットの1つを書き直さなければならず、かつ、トピックの分岐点を変更できない場合があります。以下のような状況です:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>P---o---o---M---x---x---W---x
  \         /
   A---B---C</code></pre>
 </div></div>
-<div class="paragraph"><p>where commit W reverted commit M because it turned out that commit B was
-wrong and needs to be rewritten, but you need the rewritten topic to still
-branch from commit P (perhaps P is a branching-off point for yet another
-branch, and you want be able to merge the topic into both branches).</p></div>
-<div class="paragraph"><p>The natural thing to do in this case is to checkout the A-B-C branch and use
-"rebase -i P" to change commit B.  However this does not rewrite commit A,
-because "rebase -i" by default fast-forwards over any initial commits
-selected with the "pick" command.  So you end up with this:</p></div>
+<div class="paragraph"><p>ここで、コミットBが間違っていて、書き直す必要があることが判明したため、コミットWでコミットMを元に戻しましたが、コミットPから分岐するには、書き直されたトピックが必要です(おそらく、Pはさらに別のブランチの分岐点であり、そして、あなたはトピックを両方のブランチにマージできるようにしたい)。</p></div>
+<div class="paragraph"><p>この場合の自然なことは、A-B-C ブランチをチェックアウトし、 <code>rebase -i P</code> を使用してコミットBを変更することです。ただし、
+<code>rebase -i</code> はデフォルトで pick
+コマンドで選択された最初のコミットを早送り(fast-forwards)するため、コミットAを書き換えません。結局、以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>P---o---o---M---x---x---W---x
  \         /
   A---B---C   &lt;-- old branch
    \
-    B'---C'   &lt;-- naively rewritten branch</code></pre>
+    B'---C'   &lt;-- 素朴に書き直したブランチ</code></pre>
 </div></div>
-<div class="paragraph"><p>To merge A-B'-C' into the mainline branch you would still have to first
-revert commit W in order to pick up the changes in A, but then it&#8217;s likely
-that the changes in B' will conflict with the original B changes
-re-introduced by the reversion of W.</p></div>
-<div class="paragraph"><p>However, you can avoid these problems if you recreate the entire branch,
-including commit A:</p></div>
+<div class="paragraph"><p>A-B'-C' を本線ブランチにマージするには、Aの変更を取得するために、最初にコミットWを元に戻す必要がありますが、 B'
+の変更は、Wの戻しによって再導入された元のBの変更と競合する可能性があります。</p></div>
+<div class="paragraph"><p>ただし、コミットAを含むブランチ全体を再作成すると、これらの問題を回避できます:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>  A'---B'---C'  &lt;-- completely rewritten branch
+<pre><code>  A'---B'---C'  &lt;-- 完全に書き直したブランチ
  /
 P---o---o---M---x---x---W---x
  \         /
   A---B---C</code></pre>
 </div></div>
-<div class="paragraph"><p>You can merge A'-B'-C' into the mainline branch without worrying about first
-reverting W.  Mainline&#8217;s history would look like this:</p></div>
+<div class="paragraph"><p>最初にWを元に戻すことを心配せずに、 A'-B'-C' を本線ブランチにマージできます。本線の履歴は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>  A'---B'---C'------------------
@@ -973,43 +920,38 @@ P---o---o---M---x---x---W---x---M2
  \         /
   A---B---C</code></pre>
 </div></div>
-<div class="paragraph"><p>But if you don&#8217;t actually need to change commit A, then you need some way to
-recreate it as a new commit with the same changes in it.  The rebase
-command&#8217;s --no-ff option provides a way to do this:</p></div>
+<div class="paragraph"><p>ただし、あなたがコミットAを実際に変更する必要がない場合は、同じ変更を加えた新しいコミットとして再作成する方法が必要です。 rebaseコマンドの
+<code>--no-ff</code> オプションは、これを行う方法を提供します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git rebase [-i] --no-ff P</code></pre>
 </div></div>
-<div class="paragraph"><p>The --no-ff option creates a new branch A'-B'-C' with all-new commits (all
-the SHA IDs will be different) even if in the interactive case you only
-actually modify commit B.  You can then merge this new branch directly into
-the mainline branch and be sure you&#8217;ll get all of the branch&#8217;s changes.</p></div>
-<div class="paragraph"><p>You can also use --no-ff in cases where you just add extra commits to the
-topic to fix it up.  Let&#8217;s revisit the situation discussed at the start of
-this howto:</p></div>
+<div class="paragraph"><p>&#8216;--no-ff` オプションは、対話的に実際にコミットBを変更するだけの場合でも、まったく新しいコミットで新しいブランチ A&#8217;-B'-C'
+を作成します(SHA
+IDは全て異なります)。その後、マージできます。あなたはそれから、この新しいブランチを本線ブランチに直接接続し、ブランチのすべての変更を確実に取得できるようにします。</p></div>
+<div class="paragraph"><p>あんたがトピックにコミットを追加して修正する場合、 <code>--no-ff</code> を使用することもできます。この文書の冒頭で説明した状況をもう一度見てみましょう:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>P---o---o---M---x---x---W---x
  \         /
-  A---B---C----------------D---E   &lt;-- fixed-up topic branch</code></pre>
+  A---B---C----------------D---E   &lt;-- 修正されたトピックブランチ</code></pre>
 </div></div>
-<div class="paragraph"><p>At this point, you can use --no-ff to recreate the topic branch:</p></div>
+<div class="paragraph"><p>この時点で、あなたは `--no-ff｀ を使用してトピックブランチを再作成できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout E
 $ git rebase --no-ff P</code></pre>
 </div></div>
-<div class="paragraph"><p>yielding</p></div>
+<div class="paragraph"><p>これは以下のようになります</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>  A'---B'---C'------------D'---E'  &lt;-- recreated topic branch
+<pre><code>  A'---B'---C'------------D'---E'  &lt;-- 再作成したトピックブランチ
  /
 P---o---o---M---x---x---W---x
  \         /
   A---B---C----------------D---E</code></pre>
 </div></div>
-<div class="paragraph"><p>You can merge the recreated branch into the mainline without reverting
-commit W, and mainline&#8217;s history will look like this:</p></div>
+<div class="paragraph"><p>あなたはコミットWを元に戻さずに、再作成されたブランチを本線にマージできます。本線の履歴は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>  A'---B'---C'------------D'---E'
@@ -1025,7 +967,7 @@ P---o---o---M---x---x---W---x---M2
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-20 09:06:30 JST
+ 2022-03-16 16:43:02 JST
 </div>
 </div>
 </body>
