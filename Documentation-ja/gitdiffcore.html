@@ -740,7 +740,7 @@ gitdiffcore(7) Manual Page
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>gitdiffcore -
-   Tweaking diff output
+   diff出力の微調整
 </p>
 </div>
 </div>
@@ -757,54 +757,45 @@ gitdiffcore(7) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The diff commands <em>git diff-index</em>, <em>git diff-files</em>, and <em>git diff-tree</em>
-can be told to manipulate differences they find in unconventional ways
-before showing <em>diff</em> output.  The manipulation is collectively called
-"diffcore transformation".  This short note describes what they are and how
-to use them to produce <em>diff</em> output that is easier to understand than the
-conventional kind.</p></div>
+<div class="paragraph"><p>diffコマンド <code>gitdiff-index</code> と <code>git diff-files</code> と <code>git diff-tree</code> は、 <code>diff</code>
+出力を表示する前に、従来とは異なる方法で検出した差異を操作するように指示できます。この操作を総称して「diffcore変換」(diffcore
+transformation)と呼びます。この短いノートでは、それらが何であるか、およびそれらを使用して、従来の種類よりも理解しやすい <code>diff</code>
+出力を生成する方法について説明します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_the_chain_of_operation">The chain of operation</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The <em>git diff-&#42;</em> family works by first comparing two sets of files:</p></div>
+<div class="paragraph"><p><code>git diff-{asterisk}</code> ファミリの仕事は、まずは2つのファイルセットを比較することです:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<em>git diff-index</em> compares contents of a "tree" object and the working
-   directory (when <code>--cached</code> flag is not used) or a "tree" object and the
-   index file (when <code>--cached</code> flag is used);
+<code>git diff-index</code> は、 (<code>--cached</code>
+   フラグが使用されていない場合)ツリーオブジェクトと作業ディレクトリの内容を比較するか、または(` --cached`
+   フラグが使用されている場合)ツリーオブジェクトとインデックスファイルの内容を比較します。
 </p>
 </li>
 <li>
 <p>
-<em>git diff-files</em> compares contents of the index file and the working
-   directory;
+<code>git diff-files</code> は、インデックスファイルと作業ディレクトリの内容を比較します。
 </p>
 </li>
 <li>
 <p>
-<em>git diff-tree</em> compares contents of two "tree" objects;
+<code>git diff-tree</code> は、2つのツリーオブジェクトの内容を比較します。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>In all of these cases, the commands themselves first optionally limit the
-two sets of files by any pathspecs given on their command-lines, and compare
-corresponding paths in the two resulting sets of files.</p></div>
-<div class="paragraph"><p>The pathspecs are used to limit the world diff operates in.  They remove the
-filepairs outside the specified sets of pathnames.  E.g. If the input set of
-filepairs included:</p></div>
+<div class="paragraph"><p>これらすべての場合において、コマンド自体は、最初にオプションで、コマンドラインで指定されたパススペックによって2つのファイルの組を限定し、結果として得られる2つのファイルの組の対応するパスを比較します。</p></div>
+<div class="paragraph"><p>パススペックは、diffが動作するワールドを制限するために使用されます。これらは、指定されたパス名の組の外側にあるファイルペア(filepairs)を削除します。例えば。ファイルペアの入力組が含まれている場合:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 100644 bcd1234... 0123456... M junkfile</code></pre>
 </div></div>
-<div class="paragraph"><p>but the command invocation was <code>git diff-files myfile</code>, then the junkfile
-entry would be removed from the list because only "myfile" is under
-consideration.</p></div>
-<div class="paragraph"><p>The result of comparison is passed from these commands to what is internally
-called "diffcore", in a format similar to what is output when the -p option
-is not used.  E.g.</p></div>
+<div class="paragraph"><p>しかし、コマンドの呼び出しが <code>git diff-files myfile</code> の場合、 <code>myfile</code>
+のみが考慮されているため、junkfileエントリがリストから削除されます。</p></div>
+<div class="paragraph"><p>比較の結果は、これらのコマンドから、 `-p｀
+オプションが使用されていない場合に出力されるものと同様の形式で、内部的に「diffcore」と呼ばれるものに渡されます。例えば</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>in-place edit  :100644 100644 bcd1234... 0123456... M file0
@@ -812,10 +803,7 @@ create         :000000 100644 0000000... 1234567... A file4
 delete         :100644 000000 1234567... 0000000... D file5
 unmerged       :000000 000000 0000000... 0000000... U file6</code></pre>
 </div></div>
-<div class="paragraph"><p>The diffcore mechanism is fed a list of such comparison results (each of
-which is called "filepair", although at this point each of them talks about
-a single file), and transforms such a list into another list.  There are
-currently 5 such transformations:</p></div>
+<div class="paragraph"><p>diffcoreメカニズムには、そのような比較結果のリストが提供され(それぞれが「ファイルペア」(filepair)と呼ばれますが、この時点ではそれぞれ1つのファイルについて話します)、そのようなリストを別のリストに変換します。現在、そのような変換(transformations)は5つあります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -848,197 +836,134 @@ diffcore-rotate
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>These are applied in sequence.  The set of filepairs <em>git diff-&#42;</em>
-commands find are used as the input to diffcore-break, and the output from
-diffcore-break is used as the input to the next transformation.  The final
-result is then passed to the output routine and generates either diff-raw
-format (see Output format sections of the manual for <em>git diff-&#42;</em>
-commands) or diff-patch format.</p></div>
+<div class="paragraph"><p>これらは順番に適用されます。 <code>git diff-{asterisk}</code>
+コマンド群の探索のファイルペアのセットは、diffcore-breakへの入力として使用されます。diffcore-breakからの出力は、次の変換への入力として使用されます。そして、最終結果が出力ルーチンに渡され、diff-raw形式(マニュアルの
+<code>git diff-{asterisk}</code> コマンド の「Output
+format」セクションを参照)またはdiff-patch形式のいずれかが生成されます。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_diffcore_break_for_splitting_up_complete_rewrites">diffcore-break: For Splitting Up Complete Rewrites</h2>
+<h2 id="_diffcore_break_完全な書き換えを分割するため">diffcore-break: 完全な書き換えを分割するため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The second transformation in the chain is diffcore-break, and is controlled
-by the -B option to the <em>git diff-&#42;</em> commands.  This is used to
-detect a filepair that represents "complete rewrite" and break such filepair
-into two filepairs that represent delete and create.  E.g.  If the input
-contained this filepair:</p></div>
+<div class="paragraph"><p>操作チェーンの2番目の変換(transformation)はdiffcore-breakで、 <code>git diff-{asterisk}</code> コマンド群の
+<code>-B</code>
+オプションによって制御されます。これは、「完全な書き換え」を表すファイルペアを検出し、そして、そのようなファイルペアを削除と作成を表す2つのファイルペアに分割するために使用されます。例えば、入力に以下のファイルペアが含まれている場合:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 100644 bcd1234... 0123456... M file0</code></pre>
 </div></div>
-<div class="paragraph"><p>and if it detects that the file "file0" is completely rewritten, it changes
-it to:</p></div>
+<div class="paragraph"><p>そして、ファイル "file0" が完全に書き換えられたことを検出すると、以下のように変更されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 000000 bcd1234... 0000000... D file0
 :000000 100644 0000000... 0123456... A file0</code></pre>
 </div></div>
-<div class="paragraph"><p>For the purpose of breaking a filepair, diffcore-break examines the extent
-of changes between the contents of the files before and after modification
-(i.e. the contents that have "bcd1234&#8230;" and "0123456&#8230;" as their SHA-1
-content ID, in the above example).  The amount of deletion of original
-contents and insertion of new material are added together, and if it exceeds
-the "break score", the filepair is broken into two.  The break score
-defaults to 50% of the size of the smaller of the original and the result
-(i.e. if the edit shrinks the file, the size of the result is used; if the
-edit lengthens the file, the size of the original is used), and can be
-customized by giving a number after "-B" option (e.g. "-B75" to tell it to
-use 75%).</p></div>
+<div class="paragraph"><p>ファイルペアを切断する(break)目的で、diffcore-breakは、変更前後のファイルの内容(つまり、上記の例では、SHA-1コンテンツIDとして
+<code>bcd1234...</code> と <code>0123456...</code>
+を持つコンテンツ)の間の変更の程度を調べます。元のコンテンツの削除と新しい素材の挿入の量が合計され、「ブレークスコア」(break
+score)を超えると、ファイルペアが2つに分割されます。ブレークスコアのデフォルトは、元のサイズと結果の小さい方のサイズの50%であり(つまり、編集によってファイルが縮小される場合は、結果のサイズが使用されます。編集によってファイルが長くなる場合は、元のサイズが使用されます)、
+<code>-B</code> オプションの後に数字を付けることでカスタマイズできます(たとえば、 <code>-B75</code> で75%にするように指示します)。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_diffcore_rename_for_detecting_renames_and_copies">diffcore-rename: For Detecting Renames and Copies</h2>
+<h2 id="_diffcore_rename_名前変更とコピーを検出するため">diffcore-rename: 名前変更とコピーを検出するため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This transformation is used to detect renames and copies, and is controlled
-by the -M option (to detect renames) and the -C option (to detect copies as
-well) to the <em>git diff-&#42;</em> commands.  If the input contained these
-filepairs:</p></div>
+<div class="paragraph"><p>この変換(transformation)は、名前変更とコピーを検出するために使用され、 <code>git diff-{asterisk}</code> コマンド群の
+<code>-M</code> オプション(名前変更検出用）と <code>-C</code>
+オプション(コピーも検出するため)によって制御されます。入力にこれらのファイルペアが含まれている場合:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 000000 0123456... 0000000... D fileX
 :000000 100644 0000000... 0123456... A file0</code></pre>
 </div></div>
-<div class="paragraph"><p>and the contents of the deleted file fileX is similar enough to the contents
-of the created file file0, then rename detection merges these filepairs and
-creates:</p></div>
+<div class="paragraph"><p>ここで、削除されたファイルfileXの内容は、作成されたファイルfile0の内容と十分に類似しているため、名前変更検出はこれらのファイルペアをマージして以下を作成します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 100644 0123456... 0123456... R100 fileX file0</code></pre>
 </div></div>
-<div class="paragraph"><p>When the "-C" option is used, the original contents of modified files, and
-deleted files (and also unmodified files, if the "--find-copies-harder"
-option is used) are considered as candidates of the source files in
-rename/copy operation.  If the input were like these filepairs, that talk
-about a modified file fileY and a newly created file file0:</p></div>
+<div class="paragraph"><p><code>-C</code> オプションを使用すると、変更されたファイルと削除されたファイル( <code>--find-copies-harder</code>
+オプションが使用されている場合は、変更されていないファイルも)の元の内容が、名前変更/コピー
+操作のソースファイルの候補と見なされます。入力がこれらのファイルペアのようなものである場合、変更されたファイルfileYと新しく作成されたファイルfile0について以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 100644 0123456... 1234567... M fileY
 :000000 100644 0000000... bcd3456... A file0</code></pre>
 </div></div>
-<div class="paragraph"><p>the original contents of fileY and the resulting contents of file0 are
-compared, and if they are similar enough, they are changed to:</p></div>
+<div class="paragraph"><p>fileYの元の内容とfile0の結果の内容が比較され、それらが十分に類似している場合は、以下のように変更されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>:100644 100644 0123456... 1234567... M fileY
 :100644 100644 0123456... bcd3456... C100 fileY file0</code></pre>
 </div></div>
-<div class="paragraph"><p>In both rename and copy detection, the same "extent of changes" algorithm
-used in diffcore-break is used to determine if two files are "similar
-enough", and can be customized to use a similarity score different from the
-default of 50% by giving a number after the "-M" or "-C" option (e.g. "-M8"
-to tell it to use 8/10 = 80%).</p></div>
-<div class="paragraph"><p>Note that when rename detection is on but both copy and break detection are
-off, rename detection adds a preliminary step that first checks if files are
-moved across directories while keeping their filename the same.  If there is
-a file added to a directory whose contents is sufficiently similar to a file
-with the same name that got deleted from a different directory, it will mark
-them as renames and exclude them from the later quadratic step (the one that
-pairwise compares all unmatched files to find the "best" matches, determined
-by the highest content similarity).  So, for example, if a deleted
-docs/ext.txt and an added docs/config/ext.txt are similar enough, they will
-be marked as a rename and prevent an added docs/ext.md that may be even more
-similar to the deleted docs/ext.txt from being considered as the rename
-destination in the later step.  For this reason, the preliminary "match same
-filename" step uses a bit higher threshold to mark a file pair as a rename
-and stop considering other candidates for better matches.  At most, one
-comparison is done per file in this preliminary pass; so if there are
-several remaining ext.txt files throughout the directory hierarchy after
-exact rename detection, this preliminary step may be skipped for those
-files.</p></div>
-<div class="paragraph"><p>Note.  When the "-C" option is used with <code>--find-copies-harder</code> option, <em>git
-diff-&#42;</em> commands feed unmodified filepairs to diffcore mechanism as
-well as modified ones.  This lets the copy detector consider unmodified
-files as copy source candidates at the expense of making it slower.  Without
-<code>--find-copies-harder</code>, <em>git diff-&#42;</em> commands can detect copies
-only if the file that was copied happened to have been modified in the same
-changeset.</p></div>
+<div class="paragraph"><p>名前の変更とコピーの検出の両方で、diffcore-breakで使用されるのと同じ「変更の範囲」(extent of
+changes)アルゴリズムを使用して、2つのファイルが「十分に類似」しているかどうかを判断し、デフォルトの50%とは異なる類似スコアを使用するようにカスタマイズできます。
+<code>-M</code> または <code>-C</code> オプションの後に番号を付けます(たとえば、 <code>-M8</code> で 8/10 = 80% にするように指示します)。</p></div>
+<div class="paragraph"><p>注意:
+名前変更検出がオンで、コピーとブレークの両方の検出がオフの場合、名前変更検出は、ファイル名を同じに保ちながらファイルがディレクトリ間で移動されるかどうかを最初にチェックする予備ステップを追加することに注意してください。
+別のディレクトリから削除された同じ名前のファイルと内容が十分に類似しているファイルがディレクトリに追加されている場合、それらを名前変更としてマークし、後の2次ステップ(一致しないすべてのファイルをペアごとに比較して、コンテンツの類似性が最も高いことによって決定される「最良の」一致を見つけるステップ)から除外します。したがって、たとえば、削除された
+docs/ext.txt と追加された docs/config/ext.txt が十分に類似している場合、それらは名前変更としてマークされ、削除された
+docs/ext.txt にさらに類似している可能性のある、追加された docs/ext.md が後のステップで名前変更先と見なされないようにします。
+このため、予備の「同じファイル名に一致」ステップでは、少し高いしきい値を使用してファイルペアを名前変更としてマークし、他の候補をより適切に一致させることを検討しなくなります。
+この予備ステップでは、ファイルごとに最大で1つの比較が行われます。したがって、正確な名前変更が検出された後、ディレクトリ階層全体にext.txtファイルがいくつか残っている場合は、これらのファイルのこの準備手順をスキップできます。</p></div>
+<div class="paragraph"><p>注意: <code>-C</code> オプションを <code>--find-copies-harder</code> オプションとともに使用すると、 <code>git diff-{asterisk}</code>
+コマンド群は、変更されていないファイルペアと変更されたファイルペアをdiffcoreメカニズムに送ります。これにより、コピー検出器は、ファイルの速度を低下させる代わりに、変更されていないファイルをコピーソース候補と見なすことができます。
+<code>--find-copies-harder</code> がないと、 <code>git diff-{asterisk}</code>
+コマンド群は、コピーされたファイルがたまたま同じチェンジセットで変更された場合にのみコピーを検出できます。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_diffcore_merge_broken_for_putting_complete_rewrites_back_together">diffcore-merge-broken: For Putting Complete Rewrites Back Together</h2>
+<h2 id="_diffcore_merge_broken_完全な書き換えを元に戻すため">diffcore-merge-broken: 完全な書き換えを元に戻すため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This transformation is used to merge filepairs broken by diffcore-break, and
-not transformed into rename/copy by diffcore-rename, back into a single
-modification.  This always runs when diffcore-break is used.</p></div>
-<div class="paragraph"><p>For the purpose of merging broken filepairs back, it uses a different
-"extent of changes" computation from the ones used by diffcore-break and
-diffcore-rename.  It counts only the deletion from the original, and does
-not count insertion.  If you removed only 10 lines from a 100-line document,
-even if you added 910 new lines to make a new 1000-line document, you did
-not do a complete rewrite.  diffcore-break breaks such a case in order to
-help diffcore-rename to consider such filepairs as candidate of rename/copy
-detection, but if filepairs broken that way were not matched with other
-filepairs to create rename/copy, then this transformation merges them back
-into the original "modification".</p></div>
-<div class="paragraph"><p>The "extent of changes" parameter can be tweaked from the default 80% (that
-is, unless more than 80% of the original material is deleted, the broken
-pairs are merged back into a single modification) by giving a second number
-to -B option, like these:</p></div>
+<div class="paragraph"><p>この変換は、diffcore-breakによって分割したファイルペアをマージするために使用され、 diffcore-rename によって
+rename/copy に変換されず、単一の変更に戻されます。これは、diffcore-breakが使用されている場合は常に実行されます。</p></div>
+<div class="paragraph"><p>分割したファイルペアをマージする目的で、 diffcore-break および diffcore-rename
+で使用されるものとは異なる「変更の範囲」の計算を使用します。オリジナルからの削除のみをカウントし、挿入はカウントしません。100行のドキュメントから10行だけを削除した場合、新しい1000行のドキュメントを作成するために910行を追加しても、完全な書き換えは行われたとは見なしません。
+diffcore-break は、 diffcore-renameがそのようなファイルペアを 名前変更/コピー
+検出の候補と見なすのを助けるためにそのような場合のを分割しますが、その方法で分割したファイルペアが他のファイルペアと一致して 名前変更/コピー
+を作成しなかった場合、この変換でそれらをマージして「元の変更」に戻します 。</p></div>
+<div class="paragraph"><p>「変更の範囲」パラメータは、 <code>-B</code>
+に2番目の数値を指定することで、デフォルトの80%から微調整できます(つまり、元のマテリアルの80%以上が削除されない限り、分割されたペアは1つの変更にマージされます)。以下のように指定できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
--B50/60 (give 50% "break score" to diffcore-break, use 60% for
-  diffcore-merge-broken).
+<code>-B50/60</code> (diffcore-breakに50%の「ブレークスコア」を与え、diffcore-merge-brokenに60%を与えます)。
 </p>
 </li>
 <li>
 <p>
--B/60 (the same as above, since diffcore-break defaults to 50%).
+<code>-B/60</code> (上記と同じです。diffcore-breakのデフォルトは50%であるため)。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Note that earlier implementation left a broken pair as a separate creation
-and deletion patches.  This was an unnecessary hack and the latest
-implementation always merges all the broken pairs back into modifications,
-but the resulting patch output is formatted differently for easier review in
-case of such a complete rewrite by showing the entire contents of old
-version prefixed with <em>-</em>, followed by the entire contents of new version
-prefixed with <em>+</em>.</p></div>
+<div class="paragraph"><p>注意:以前の実装では、個別の作成パッチと削除パッチとして分割したペアが残っていたことに注意してください。これは不必要なハックであり、最新の実装では常にすべての分割されたペアが変更にマージされます。ただし、結果のパッチ出力は、
+<code>-</code>
+で始まる古いバージョンのコンテンツ全体を表示することにより、このような完全な書き換えの場合に簡単に確認できるように、異なる形式になっています。その後に、接頭辞
+<code>+</code> が付いた新しいバージョンのコンテンツ全体が続きます。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_diffcore_pickaxe_for_detecting_addition_deletion_of_specified_string">diffcore-pickaxe: For Detecting Addition/Deletion of Specified String</h2>
+<h2 id="_diffcore_pickaxe_指定の文字列_string_の追加_削除の検知のため">diffcore-pickaxe: 指定の文字列(string)の追加/削除の検知のため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This transformation limits the set of filepairs to those that change
-specified strings between the preimage and the postimage in a certain way.
--S&lt;block of text&gt; and -G&lt;regular expression&gt; options are used to specify
-different ways these strings are sought.</p></div>
-<div class="paragraph"><p>"-S&lt;block of text&gt;" detects filepairs whose preimage and postimage have
-different number of occurrences of the specified block of text.  By
-definition, it will not detect in-file moves.  Also, when a changeset moves
-a file wholesale without affecting the interesting string, diffcore-rename
-kicks in as usual, and <code>-S</code> omits the filepair (since the number of
-occurrences of that string didn&#8217;t change in that rename-detected filepair).
-When used with <code>--pickaxe-regex</code>, treat the &lt;block of text&gt; as an extended
-POSIX regular expression to match, instead of a literal string.</p></div>
-<div class="paragraph"><p>"-G&lt;regular expression&gt;" (mnemonic: grep) detects filepairs whose textual
-diff has an added or a deleted line that matches the given regular
-expression.  This means that it will detect in-file (or what
-rename-detection considers the same file) moves, which is noise.  The
-implementation runs diff twice and greps, and this can be quite expensive.
-To speed things up binary files without textconv filters will be ignored.</p></div>
-<div class="paragraph"><p>When <code>-S</code> or <code>-G</code> are used without <code>--pickaxe-all</code>, only filepairs that
-match their respective criterion are kept in the output.  When
-<code>--pickaxe-all</code> is used, if even one filepair matches their respective
-criterion in a changeset, the entire changeset is kept.  This behavior is
-designed to make reviewing changes in the context of the whole changeset
-easier.</p></div>
+<div class="paragraph"><p>この変換により、ファイルペアの組が、特定の方法でプリイメージとポストイメージの間で指した文字列を変更するものに制限されます。
+<code>-S&lt;テキストのブロック&gt;</code> および <code>-G&lt;正規表現&gt;</code> オプションは、これらの文字列を検索するさまざまな方法を指定するために使用されます。</p></div>
+<div class="paragraph"><p><code>-S&lt;テキストブロック&gt;</code>
+は、指定されたテキストのブロックの出現回数がプリイメージとポストイメージで異なるファイルペアを検出します。定義上、ファイル内の移動は検出されません。また、チェンジセットが対象の文字列に影響を与えずにファイルを大規模に移動すると、通常どおりdiffcore-renameが開始され、<code>-S</code>
+はファイルペアを省略します(その文字列の出現回数は、名前変更で検出されたファイルペアで変更されなかったため)。 <code>--pickaxe-regex</code>
+と一緒に使用する場合、&lt;テキストブロック&gt;は、リテラル文字列ではなく、マッチする拡張POSIX正規表現として扱います。</p></div>
+<div class="paragraph"><p><code>-G&lt;正規表現&gt;</code>
+(grep文法)は、指定された正規表現にマッチする行が追加または削除されたテキスト差分を持つファイルペアを検出します。これは、ノイズであるファイル内の移動(またはrename-detectionが同じファイルと見なすもの)を検出することを意味します。実装はdiffを2回実行してgrepsしますが、これは非常にコストがかかる可能性があります。高速化のため、textconvフィルタがないバイナリファイルは無視されます。</p></div>
+<div class="paragraph"><p><code>-S</code> または <code>-G</code> を <code>--pickaxe-all</code> なしで使用すると、それぞれの基準に一致するファイルペアのみが出力に保持されます。
+<code>--pickaxe-all</code>
+が使用されている場合、1つのファイルペアでもチェンジセット内のそれぞれの基準に一致すると、チェンジセット全体が保持されます。この振る舞いは、チェンジセット全体のコンテキストでの変更のレビューを容易にするために設計されています。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_diffcore_order_for_sorting_the_output_based_on_filenames">diffcore-order: For Sorting the Output Based on Filenames</h2>
+<h2 id="_diffcore_order_ファイル名に基づいて出力をソートするため">diffcore-order: ファイル名に基づいて出力をソートするため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This is used to reorder the filepairs according to the user&#8217;s (or project&#8217;s)
-taste, and is controlled by the -O option to the <em>git diff-&#42;</em>
-commands.</p></div>
-<div class="paragraph"><p>This takes a text file each of whose lines is a shell glob pattern.
-Filepairs that match a glob pattern on an earlier line in the file are
-output before ones that match a later line, and filepairs that do not match
-any glob pattern are output last.</p></div>
-<div class="paragraph"><p>As an example, a typical orderfile for the core Git probably would look like
-this:</p></div>
+<div class="paragraph"><p>これは、ユーザー(またはプロジェクト)の好みに応じてファイルペアを並べ替えるために使用され、 <code>git diff-{asterisk}</code> コマンド群の
+<code>-O</code> オプションによって制御されます。</p></div>
+<div class="paragraph"><p>これは、各行がシェルグロブパターンであるテキストファイルを取ります。ファイルの前の行のグロブパターンに一致するファイルペアは、後の行に一致するファイルペアの前に出力され、どのグロブパターンにも一致しないファイルペアは最後に出力されます。</p></div>
+<div class="paragraph"><p>例として、コアGitの一般的な orderfile おそらく以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>README
@@ -1051,21 +976,15 @@ t</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_diffcore_rotate_for_changing_at_which_path_output_starts">diffcore-rotate: For Changing At Which Path Output Starts</h2>
+<h2 id="_diffcore_rotate_出力開始パス_path_を変更するため">diffcore-rotate: 出力開始パス(path)を変更するため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This transformation takes one pathname, and rotates the set of filepairs so
-that the filepair for the given pathname comes first, optionally discarding
-the paths that come before it.  This is used to implement the <code>--skip-to</code>
-and the <code>--rotate-to</code> options.  It is an error when the specified pathname
-is not in the set of filepairs, but it is not useful to error out when used
-with "git log" family of commands, because it is unreasonable to expect that
-a given path would be modified by each and every commit shown by the "git
-log" command.  For this reason, when used with "git log", the filepair that
-sorts the same as, or the first one that sorts after, the given pathname is
-where the output starts.</p></div>
-<div class="paragraph"><p>Use of this transformation combined with diffcore-order will produce
-unexpected results, as the input to this transformation is likely not sorted
-when diffcore-order is in effect.</p></div>
+<div class="paragraph"><p>この変換は1つのパス名を取り、ファイルペアのセットをローテーションして、指定されたパス名のファイルペアが最初に来るようにします。オプションで、その前にあるパスを破棄します。これは、
+<code>--skip-to</code> および <code>--rotate-to</code>
+オプションを実装するために使用されます。指定されたパス名がファイルペアのセットにない場合はエラーになりますが、 <code>git log `
+ファミリーのコマンドで使用するとエラーになることはありません。 `git log</code>
+コマンドで表示されるすべてのコミットによって特定のパスが変更されることを期待するのは不合理だからです。このため、 <code>git log</code>
+と一緒に使用すると、指定されたパス名と同じように並べ替えられるファイルペア、または最初に並べ替えられるファイルペアが出力の開始場所になります。</p></div>
+<div class="paragraph"><p>この変換をdiffcore-orderと組み合わせて使用すると、diffcore-orderが有効な場合、この変換への入力がソートされない可能性があるため、予期しない結果が生成されます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1087,7 +1006,7 @@ when diffcore-order is in effect.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:02 JST
+ 2022-03-20 22:30:05 JST
 </div>
 </div>
 </body>
