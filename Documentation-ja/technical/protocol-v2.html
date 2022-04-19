@@ -877,11 +877,8 @@ value = 1*(ALPHA | DIGIT | " -_.,?\/{}[]()&lt;&gt;!@#$%^&amp;*+=:;")</code></pre
 <div class="sect1">
 <h2 id="_command_request">Command Request</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After receiving the capability advertisement, a client can then issue a
-request to select the command it wants with any particular capabilities or
-arguments.  There is then an optional section where the client can provide
-any command specific parameters or queries.  Only a single command can be
-requested at a time.</p></div>
+<div class="paragraph"><p>機能広告を受信した後、クライアントは、特定の機能または引数を使用して、必要なコマンドを選択する要求を発行できます。その次に、クライアントがコマンド固有のパラメータまたはクエリを提供できるオプションのセクションがあります。
+一度に要求できるコマンドは1つだけです。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>request = empty-request | command-request
@@ -896,80 +893,78 @@ command-args = delim-pkt
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>command-specific-args are packet line framed arguments defined by
-each individual command.</code></pre>
+<pre><code>command-specific-argsは、個々のコマンドによって定義される
+パケットラインフレームの引数です。</code></pre>
 </div></div>
-<div class="paragraph"><p>The server will then check to ensure that the client&#8217;s request is comprised
-of a valid command as well as valid capabilities which were advertised.  If
-the request is valid the server will then execute the command.  A server
-MUST wait till it has received the client&#8217;s entire request before issuing a
-response.  The format of the response is determined by the command being
-executed, but in all cases a flush-pkt indicates the end of the response.</p></div>
-<div class="paragraph"><p>When a command has finished, and the client has received the entire response
-from the server, a client can either request that another command be
-executed or can terminate the connection.  A client may optionally send an
-empty request consisting of just a flush-pkt to indicate that no more
-requests will be made.</p></div>
+<div class="paragraph"><p>次に、サーバーは、クライアントの要求が、広告された有効な機能だけでなく、有効なコマンドで構成されていることを確認します。リクエストが有効な場合、サーバーはコマンドを実行します。
+サーバーは、応答を発行する前に、クライアントの要求全体を受信するまで待機する必要があります。応答の形式は実行中のコマンドによって決まりますが、すべての場合で、flush-pktは応答の終了を示します。</p></div>
+<div class="paragraph"><p>コマンドが終了し、クライアントがサーバーからの応答全体を受信すると、クライアントは別のコマンドの実行を要求するか、接続を終了することができます。
+クライアントは、オプションで、flush-pktのみで構成される空の要求を送信して、これ以上要求が行われないことを示すことができます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_capabilities">Capabilities</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>There are two different types of capabilities: normal capabilities, which
-can be used to convey information or alter the behavior of a request, and
-commands, which are the core actions that a client wants to perform (fetch,
-push, etc).</p></div>
-<div class="paragraph"><p>Protocol version 2 is stateless by default.  This means that all commands
-must only last a single round and be stateless from the perspective of the
-server side, unless the client has requested a capability indicating that
-state should be maintained by the server.  Clients MUST NOT require state
-management on the server side in order to function correctly.  This permits
-simple round-robin load-balancing on the server side, without needing to
-worry about state management.</p></div>
+<div class="paragraph"><p>機能には異なる2つのタイプがあります。情報を伝達したり要求の動作を変更したりするために使用できる通常の機能と、クライアントが実行したいコアアクション（フェッチ、プッシュなど）であるコマンドです。</p></div>
+<div class="paragraph"><p>プロトコルバージョン2は、デフォルトではステートレスです。
+つまり、クライアントがサーバーで状態を維持する必要があることを指示する機能を要求しない限り、すべてのコマンドは1ラウンドだけ持続し、サーバー側の観点からステートレスである必要があります。クライアントは、正しく機能するためにサーバー側に状態管理を要求してはいけません(MUST
+NOT)。これにより、サーバー側では状態管理について心配することなく、単純なラウンドロビン負荷分散が可能になります。</p></div>
 <div class="sect2">
 <h3 id="_agent">agent</h3>
-<div class="paragraph"><p>The server can advertise the <code>agent</code> capability with a value <code>X</code> (in the
-form <code>agent=X</code>) to notify the client that the server is running version
-<code>X</code>.  The client may optionally send its own agent string by including the
-<code>agent</code> capability with a value <code>Y</code> (in the form <code>agent=Y</code>) in its request
-to the server (but it MUST NOT do so if the server did not advertise the
-agent capability). The <code>X</code> and <code>Y</code> strings may contain any printable ASCII
-characters except space (i.e., the byte range 32 &lt; x &lt; 127), and are
-typically of the form "package/version" (e.g., "git/1.8.3.1"). The agent
-strings are purely informative for statistics and debugging purposes, and
-MUST NOT be used to programmatically assume the presence or absence of
-particular features.</p></div>
+<div class="paragraph"><p>サーバーは、値 <code>X</code> (<code>agent=X</code> 形式)を使用して <code>agent</code> 機能を広告ズし、サーバーがバージョン <code>X</code>
+を実行していることをクライアントに通知できます。クライアントは、サーバーへの要求に値 <code>Y</code> (<code>agent=Y</code> 形式)を持つ <code>agent</code>
+機能を含めることにより、オプションで独自のエージェント文字列を送信できます(ただし、サーバーがagent機能を広告しなかった場合は、クライアントから送信してはいけません(MUST
+NOT))。<code>X</code> および <code>Y</code> 文字列には、スペースを除く任意の印刷可能なASCII文字(つまり、バイト範囲32 &lt; x
+&lt;127)を含めることができ、通常は「パッケージ/バージョン」(例:
+「git/1.8.3.1」形式です)。エージェント文字列は、統計およびデバッグの目的で純粋に情報を提供するものであり、特定の機能の有無をプログラムで想定するために使用してはいけません(MUST
+NOT)。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_ls_refs">ls-refs</h3>
-<div class="paragraph"><p><code>ls-refs</code> is the command used to request a reference advertisement in v2.
-Unlike the current reference advertisement, ls-refs takes in arguments which
-can be used to limit the refs sent from the server.</p></div>
-<div class="paragraph"><p>Additional features not supported in the base command will be advertised as
-the value of the command in the capability advertisement in the form of a
-space separated list of features: "&lt;command&gt;=&lt;feature 1&gt; &lt;feature 2&gt;"</p></div>
-<div class="paragraph"><p>ls-refs takes in the following arguments:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>symrefs
-    In addition to the object pointed by it, show the underlying ref
-    pointed by it when showing a symbolic ref.
+<div class="paragraph"><p><code>ls-refs</code>
+は、v2で参照広告を要求するために使用されるコマンドです。現在の参照広告とは異なり、ls-refsは、サーバーから送信される参照を制限するために使用できる引数を取ります。</p></div>
+<div class="paragraph"><p>基本コマンドでサポートされていない追加の機能は、機能広告のコマンドの値として、スペースで区切られた機能のリストの形式で広告されます:
+"&lt;command&gt;=&lt;feature 1&gt; &lt;feature 2&gt;"</p></div>
+<div class="paragraph"><p>ls-refsは以下の引数を取ります:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+symrefs
+</dt>
+<dd>
+<p>
+        それが指すオブジェクトに加えて、シンボリックrefを表示するときに、それが指す基になるrefを表示します。
+</p>
+</dd>
+<dt class="hdlist1">
 peel
-    Show peeled tags.
+</dt>
+<dd>
+<p>
+        剥いたタグ(peeled tags)を表示します。
+</p>
+</dd>
+<dt class="hdlist1">
 ref-prefix &lt;prefix&gt;
-    When specified, only references having a prefix matching one of
-    the provided prefixes are displayed.</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>unborn</em> feature is advertised the following argument can be included
-in the client&#8217;s request.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>unborn
-    The server will send information about HEAD even if it is a symref
-    pointing to an unborn branch in the form "unborn HEAD
-    symref-target:&lt;target&gt;".</code></pre>
-</div></div>
-<div class="paragraph"><p>The output of ls-refs is as follows:</p></div>
+</dt>
+<dd>
+<p>
+        指定すると、指定されたプレフィックスの1つと一致するプレフィックスを持つ参照のみが表示されます。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>「unborn」機能が広告される場合、以下の引数をクライアントの要求に含めることができます。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+unborn
+</dt>
+<dd>
+<p>
+        サーバーは、 <code>unborn HEAD symref-target:&lt;target&gt;</code>
+        の形式で、unbornブランチを指すsymrefであっても、HEADに関する情報を送信します。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>ls-refsの出力は以下のとおりです:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>output = *ref
@@ -983,174 +978,187 @@ peeled = "peeled:" obj-id</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_fetch">fetch</h3>
-<div class="paragraph"><p><code>fetch</code> is the command used to fetch a packfile in v2.  It can be looked at
-as a modified version of the v1 fetch where the ref-advertisement is
-stripped out (since the <code>ls-refs</code> command fills that role) and the message
-format is tweaked to eliminate redundancies and permit easy addition of
-future extensions.</p></div>
-<div class="paragraph"><p>Additional features not supported in the base command will be advertised as
-the value of the command in the capability advertisement in the form of a
-space separated list of features: "&lt;command&gt;=&lt;feature 1&gt; &lt;feature 2&gt;"</p></div>
-<div class="paragraph"><p>A <code>fetch</code> request can take the following arguments:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>want &lt;oid&gt;
-    Indicates to the server an object which the client wants to
-    retrieve.  Wants can be anything and are not limited to
-    advertised objects.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>have &lt;oid&gt;
-    Indicates to the server an object which the client has locally.
-    This allows the server to make a packfile which only contains
-    the objects that the client needs. Multiple 'have' lines can be
-    supplied.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>done
-    Indicates to the server that negotiation should terminate (or
-    not even begin if performing a clone) and that the server should
-    use the information supplied in the request to construct the
-    packfile.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>thin-pack
-    Request that a thin pack be sent, which is a pack with deltas
-    which reference base objects not contained within the pack (but
-    are known to exist at the receiving end). This can reduce the
-    network traffic significantly, but it requires the receiving end
-    to know how to "thicken" these packs by adding the missing bases
-    to the pack.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>no-progress
-    Request that progress information that would normally be sent on
-    side-band channel 2, during the packfile transfer, should not be
-    sent.  However, the side-band channel 3 is still used for error
-    responses.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>include-tag
-    Request that annotated tags should be sent if the objects they
-    point to are being sent.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>ofs-delta
-    Indicate that the client understands PACKv2 with delta referring
-    to its base by position in pack rather than by an oid.  That is,
-    they can read OBJ_OFS_DELTA (aka type 6) in a packfile.</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>shallow</em> feature is advertised the following arguments can be
-included in the clients request as well as the potential addition of the
-<em>shallow-info</em> section in the server&#8217;s response as explained below.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>shallow &lt;oid&gt;
-    A client must notify the server of all commits for which it only
-    has shallow copies (meaning that it doesn't have the parents of
-    a commit) by supplying a 'shallow &lt;oid&gt;' line for each such
-    object so that the server is aware of the limitations of the
-    client's history.  This is so that the server is aware that the
-    client may not have all objects reachable from such commits.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>deepen &lt;depth&gt;
-    Requests that the fetch/clone should be shallow having a commit
-    depth of &lt;depth&gt; relative to the remote side.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>deepen-relative
-    Requests that the semantics of the "deepen" command be changed
-    to indicate that the depth requested is relative to the client's
-    current shallow boundary, instead of relative to the requested
-    commits.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>deepen-since &lt;timestamp&gt;
-    Requests that the shallow clone/fetch should be cut at a
-    specific time, instead of depth.  Internally it's equivalent to
-    doing "git rev-list --max-age=&lt;timestamp&gt;". Cannot be used with
-    "deepen".</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>deepen-not &lt;rev&gt;
-    Requests that the shallow clone/fetch should be cut at a
-    specific revision specified by '&lt;rev&gt;', instead of a depth.
-    Internally it's equivalent of doing "git rev-list --not &lt;rev&gt;".
-    Cannot be used with "deepen", but can be used with
-    "deepen-since".</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>filter</em> feature is advertised, the following argument can be
-included in the client&#8217;s request:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>filter &lt;filter-spec&gt;
-    Request that various objects from the packfile be omitted
-    using one of several filtering techniques. These are intended
-    for use with partial clone and partial fetch operations. See
-    `rev-list` for possible "filter-spec" values. When communicating
-    with other processes, senders SHOULD translate scaled integers
-    (e.g. "1k") into a fully-expanded form (e.g. "1024") to aid
-    interoperability with older receivers that may not understand
-    newly-invented scaling suffixes. However, receivers SHOULD
-    accept the following suffixes: 'k', 'm', and 'g' for 1024,
-    1048576, and 1073741824, respectively.</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>ref-in-want</em> feature is advertised, the following argument can be
-included in the client&#8217;s request as well as the potential addition of the
-<em>wanted-refs</em> section in the server&#8217;s response as explained below.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>want-ref &lt;ref&gt;
-    Indicates to the server that the client wants to retrieve a
-    particular ref, where &lt;ref&gt; is the full name of a ref on the
-    server.</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>sideband-all</em> feature is advertised, the following argument can be
-included in the client&#8217;s request:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>sideband-all
-    Instruct the server to send the whole response multiplexed, not just
-    the packfile section. All non-flush and non-delim PKT-LINE in the
-    response (not only in the packfile section) will then start with a byte
-    indicating its sideband (1, 2, or 3), and the server may send "0005\2"
-    (a PKT-LINE of sideband 2 with no payload) as a keepalive packet.</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>packfile-uris</em> feature is advertised, the following argument can be
-included in the client&#8217;s request as well as the potential addition of the
-<em>packfile-uris</em> section in the server&#8217;s response as explained below.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>packfile-uris &lt;comma-separated list of protocols&gt;
-    Indicates to the server that the client is willing to receive
-    URIs of any of the given protocols in place of objects in the
-    sent packfile. Before performing the connectivity check, the
-    client should download from all given URIs. Currently, the
-    protocols supported are "http" and "https".</code></pre>
-</div></div>
-<div class="paragraph"><p>If the <em>wait-for-done</em> feature is advertised, the following argument can be
-included in the client&#8217;s request.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>wait-for-done
-    Indicates to the server that it should never send "ready", but
-    should wait for the client to say "done" before sending the
-    packfile.</code></pre>
-</div></div>
-<div class="paragraph"><p>The response of <code>fetch</code> is broken into a number of sections separated by
-delimiter packets (0001), with each section beginning with its section
-header. Most sections are sent only when the packfile is sent.</p></div>
+<div class="paragraph"><p><code>fetch</code> は、v2でパックファイルをフェッチするために使用されるコマンドです。  これは、v1 fetch
+の修正バージョンと見なすことができ、(<code>ls-refs</code>
+コマンドがその役割を果たしているため、)ref-advertisementが削除され、メッセージ形式が調整されて冗長性が排除され、将来の拡張機能を簡単に追加できるようになっています。</p></div>
+<div class="paragraph"><p>基本コマンドでサポートされていない追加の機能は、機能広告のコマンドの値として、スペースで区切られた機能のリストの形式で広告されます:
+"&lt;command&gt;=&lt;feature 1&gt; &lt;feature 2&gt;"</p></div>
+<div class="paragraph"><p><code>fetch</code> リクエストは、以下の引数を取ることができます:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+want &lt;oid&gt;
+</dt>
+<dd>
+<p>
+        クライアントが取得したいオブジェクトをサーバーに提示します。欲しいものは何でもかまいません。広告されているオブジェクトに限定されません。
+</p>
+</dd>
+<dt class="hdlist1">
+have &lt;oid&gt;
+</dt>
+<dd>
+<p>
+        クライアントがローカルに持っているオブジェクトをサーバーに提示します。
+        これにより、サーバーは、クライアントが必要とするオブジェクトのみを含むパックファイルを作成できます。 複数の「have」行を指定できます。
+</p>
+</dd>
+<dt class="hdlist1">
+done
+</dt>
+<dd>
+<p>
+        ネゴシエーションを終了する必要があること(またはクローンを実行する場合は開始しないこと)、およびサーバーが要求で提供された情報を使用してパックファイルを作成する必要があることをサーバーに提示します。
+</p>
+</dd>
+<dt class="hdlist1">
+thin-pack
+</dt>
+<dd>
+<p>
+        シンパック(thin
+        pack)の送信を要求します。これは、パック内に含まれていない（ただし、受信側に存在することがわかっている）ベースオブジェクトを参照するデルタを含むパックです。これにより、ネットワークトラフィックを大幅に削減できますが、受信側は、シンパックに不足しているベースを追加して、これらのパックを「厚く」(thicken)する方法を知っている必要があります。
+</p>
+</dd>
+<dt class="hdlist1">
+no-progress
+</dt>
+<dd>
+<p>
+        パックファイル転送中にサイドバンドチャネル2で通常送信される進行状況情報を送信しないように要求します。
+        ただし、サイドバンドチャネル3は引き続きエラー応答に使用されます。
+</p>
+</dd>
+<dt class="hdlist1">
+include-tag
+</dt>
+<dd>
+<p>
+        注釈付きタグ(annotated tags)が指すオブジェクトが送信されている場合は、注釈付きタグ(annotated
+        tags)を送信するように要求します。
+</p>
+</dd>
+<dt class="hdlist1">
+ofs-delta
+</dt>
+<dd>
+<p>
+        クライアントが PACKv2を理解していることを提示します。デルタは、OIDではなくパック内の位置によってベースを参照しています。
+        つまり、パックファイル内の OBJ_OFS_DELTA (別名タイプ 6)を読み取ることができます。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>「shallow」機能が広告される場合、以下で説明するように、以下の引数をクライアント要求に含めることができ、サーバーの応答に「shallow-info」セクションを追加する可能性があります。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+shallow &lt;oid&gt;
+</dt>
+<dd>
+<p>
+        クライアントは、サーバーがクライアントの履歴の制限を認識できるように、そのようなオブジェクトごとに「shallow
+        &lt;oid&gt;」行を指定することにより、shallowコピーしかない(つまり、そのコミットの親がないことを意味する、)すべてのコミットをサーバーに通知する必要があります。
+        これは、クライアントがそのようなコミットから到達可能なすべてのオブジェクトを持っていない可能性があることをサーバーが認識できるようにするためです。
+</p>
+</dd>
+<dt class="hdlist1">
+deepen &lt;depth&gt;
+</dt>
+<dd>
+<p>
+        フェッチ/クローンを浅くし(shallow)、リモート側に対してコミットの深さが&lt;depth&gt;であることを要求します。
+</p>
+</dd>
+<dt class="hdlist1">
+deepen-relative
+</dt>
+<dd>
+<p>
+        「deepen」コマンドのセマンティクスを変更して、要求された深さが、要求されたコミットではなく、クライアントの現在のshallow境界に関連していることを示すように要求します。
+</p>
+</dd>
+<dt class="hdlist1">
+deepen-since &lt;timestamp&gt;
+</dt>
+<dd>
+<p>
+        shallow クローン/フェッチ を深さではなく特定の日付時刻でカットするように要求します。 内部的には、「git rev-list
+        --max-age=&lt;timestamp&gt;」を実行するのと同じです。 「deepen」との併用はできません。
+</p>
+</dd>
+<dt class="hdlist1">
+deepen-not &lt;rev&gt;
+</dt>
+<dd>
+<p>
+        shallow クローン/フェッチを、深さではなく、 &lt;rev&gt; で指定された特定のリビジョンでカットするように要求します。 内部的には、「git
+        rev-list --not &lt;rev&gt;」を実行するのと同じです。 「deepen」では使用できませんが、「deepen-since」では使用できます。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p><em>filter</em> 機能が広告される場合、以下の引数をクライアントの要求に含めることができます:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+filter &lt;filter-spec&gt;
+</dt>
+<dd>
+<p>
+        いくつかのフィルタリング手法のいずれかを使用して、パックファイルのさまざまなオブジェクトを省略するように要求します。これらは、部分クローン(partial
+        clone)および部分フェッチ(partial fetch)操作での使用を目的としています。
+        可能な「filter-spec」値については、<code>rev-list</code>
+        を参照してください。他のプロセスと通信する場合、送信者はスケーリングされた整数(「1k」など)を完全に拡張された形式(「1024」など)に変換して、新発想のスケーリングサフィックスを理解できない古い受信者との相互運用性を支援する必要があります。しかしながら、受信者は次のサフィックスを受け入れる必要があります：「k」、「m」、「g」で、それぞれ、1024、1048576、1073741824
+        を現します。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>「ref-in-want」機能が広告される場合、以下で説明するように、以下の引数をクライアントの要求に含めることができ、サーバーの応答に「wanted-refs」セクションを追加する可能性があります。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+want-ref &lt;ref&gt;
+</dt>
+<dd>
+<p>
+        クライアントが特定のrefを取得することをサーバーに提示します。ここで、 &lt;ref&gt; はサーバー上のrefのフルネームです。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p><em>sideband-all</em> 機能が広告される場合、以下の引数をクライアントの要求に含めることができます:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+sideband-all
+</dt>
+<dd>
+<p>
+        packfileセクションだけでなく、応答全体を多重化して送信するようにサーバーに指示します。(packfileセクションだけでなく、)応答内のすべての非フラッシュ(non-flush)および
+        non-delim
+        PKT-LINEは、そのサイドバンド(1または2または3)を示すバイトで始まります。サーバーは、キープアライブパケットとして「0005\2」（ペイロードのないサイドバンド2のPKT-LINE)を送信する場合があります。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>「packfile-uris」機能が広告される場合、以下で説明するように、以下の引数をクライアントの要求に含めることができ、サーバーの応答に「packfile-uris」セクションを追加する可能性があります。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+packfile-uris &lt;comma-separated list of protocols&gt;
+</dt>
+<dd>
+<p>
+        クライアントが、送信されたパックファイル内のオブジェクトの代わりに、指定されたプロトコルのいずれかのURIを受信する用意があることをサーバーに提示します。
+        接続チェックを実行する前に、クライアントは指定されたすべてのURIからダウンロードする必要があります。
+        現在、サポートされているプロトコルは「http」と「https」です。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>「wait-for-done」機能が広告される場合、以下の引数をクライアントの要求に含めることができます。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+wait-for-done
+</dt>
+<dd>
+<p>
+        サーバは決して "ready" を送らず、クライアントが "done" と言うまで待ってからパックファイルを送信するように指示します。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p><code>fetch</code>
+の応答は、区切り文字パケット(0001)で区切られたいくつかのセクションに分割され、各セクションはセクションヘッダーで始まります。ほとんどのセクションは、パックファイルが送信されたときにのみ送信されます。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>output = acknowledgements flush-pkt |
@@ -1190,227 +1198,229 @@ packfile-uri = PKT-LINE(40*(HEXDIGIT) SP *%x20-ff LF)</code></pre>
 <pre><code>packfile = PKT-LINE("packfile" LF)
            *PKT-LINE(%x01-03 *%x00-ff)</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>acknowledgments section
-    * If the client determines that it is finished with negotiations by
-      sending a "done" line (thus requiring the server to send a packfile),
-      the acknowledgments sections MUST be omitted from the server's
-      response.</code></pre>
-</div></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+acknowledgments section
+</dt>
+<dd>
 <div class="ulist"><ul>
 <li>
 <p>
-Always begins with the section header "acknowledgments"
+クライアントが「done」行を送信してネゴシエーションが終了したと判断した場合(したがって、サーバーにパックファイルを送信する必要があります)、サーバーの応答からacknowledgmentsセクションを省略しなければなりません(MUST)。
 </p>
 </li>
 <li>
 <p>
-The server will respond with "NAK" if none of the object ids sent as have
-          lines were common.
+常にセクションヘッダー「acknowledgements」で始まります
 </p>
 </li>
 <li>
 <p>
-The server will respond with "ACK obj-id" for all of the object ids sent as
-          have lines which are common.
+have行として送信されたオブジェクトIDがどれも共通していない場合、サーバーは「NAK」で応答します。
 </p>
 </li>
 <li>
 <p>
-A response cannot have both "ACK" lines as well as a "NAK" line.
+サーバーは、共通のhave行として送信されたすべてのオブジェクトIDに対して「ACK obj-id」で応答します。
 </p>
 </li>
 <li>
 <p>
-The server will respond with a "ready" line indicating that the server has
-          found an acceptable common base and is ready to make and send a packfile
-          (which will be found in the packfile section of the same response)
+応答に「ACK」行と「NAK」行の両方を含めることはできません。
 </p>
 </li>
 <li>
 <p>
-If the server has found a suitable cut point and has decided to send a
-          "ready" line, then the server can decide to (as an optimization) omit any
-          "ACK" lines it would have sent during its response.  This is because the
-          server will have already determined the objects it plans to send to the
-          client and no further negotiation is needed.
+サーバーは、サーバーが許容可能な共通ベースを検出し、packfile（同じ応答のpackfileセクションにあります）を作成して、送信する準備ができていることを示す「ready」行で応答します。
+</p>
+</li>
+<li>
+<p>
+サーバーが適切な切断点(cut
+          point)を見つけて「ready」行を送信することを決定した場合、サーバーは(最適化として)応答中に送信した「ACK」行を省略することを決定できます。これは、サーバーがクライアントに送信する予定のオブジェクトをすでに決定しており、それ以上のネゴシエーションが必要ないためです。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+shallow-info section
+</dt>
+<dd>
+<div class="ulist"><ul>
+<li>
+<p>
+クライアントが shallow フェッチ/クローン
+          を要求した場合、shallowクライアントがフェッチを要求するか、サーバーがshallowの場合、サーバーの応答に shallow-info
+          セクションが含まれる場合があります。(上記の条件のいずれかにより、サーバーがクライアントにshallow 境界(shallow
+          boundaries)を通知する必要がある場合、または既存の浅い境界をクライアントと調整する必要がある場合は、 shallow-info
+          セクションが含まれます。
+</p>
+</li>
+<li>
+<p>
+常にセクションヘッダー「shallow-info」で始まります
+</p>
+</li>
+<li>
+<p>
+正数の深さが要求された場合、サーバーは指定の深さよりも深くないコミットのセットを計算します。
+</p>
+</li>
+<li>
+<p>
+サーバーは、続くパックファイルで親が送信されないコミットごとに「shallow obj-id」行を送信します。
+</p>
+</li>
+<li>
+<p>
+サーバーは、クライアントがshallowを指示したコミットごとに「unshallow
+          obj-id」行を送信しますが、(その親が次のパックファイルで送信されるため、)フェッチの結果としてはshallowにはなりません。
+</p>
+</li>
+<li>
+<p>
+サーバーは、クライアントが要求の一部としてshallowを指示していないものに対して、「unshallow」行を送信しては「いけません」。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+wanted-refs section
+</dt>
+<dd>
+<div class="ulist"><ul>
+<li>
+<p>
+このセクションは、クライアントが「want-ref」行を使用してrefを要求し、packfileセクションも応答に含まれている場合にのみ含まれます。
+</p>
+</li>
+<li>
+<p>
+常にセクションヘッダー「wanted-refs」で始まります。
+</p>
+</li>
+<li>
+<p>
+サーバーは、「want-ref」行を使用して要求された参照ごとに、参照リスト("&lt;oid&gt; &lt;refname&gt;")を送信します。
+</p>
+</li>
+<li>
+<p>
+サーバーは、「want-ref」行を使用して要求されなかった参照を送信しては「いけません」。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+packfile-uris section
+</dt>
+<dd>
+<div class="ulist"><ul>
+<li>
+<p>
+このセクションは、クライアントが「packfile-uris」を送信し、サーバーに送信するそのようなURIが少なくとも1つある場合にのみ含まれます。
+</p>
+</li>
+<li>
+<p>
+常にセクションヘッダー「packfile-uris」で始まります。
+</p>
+</li>
+<li>
+<p>
+サーバーが送信するURIごとに、パックの内容のハッシュ(git index-packによって出力される)と、それに続くURIを送信します。
+</p>
+</li>
+<li>
+<p>
+ハッシュの長さは40文字です。 Gitが新しいハッシュアルゴリズムにアップグレードするとき、これを更新する必要があるかもしれません。
+          (「pack\t」または「keep\t」の後に出力されるインデックスパックと一致する必要があります)。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+packfile section
+</dt>
+<dd>
+<div class="ulist"><ul>
+<li>
+<p>
+このセクションは、クライアントがリクエストで「want」行を送信し、「done」を送信してこれ以上ネゴシエーションを行わないように要求した場合、または、サーバーがパックファイルを生成するのに十分なカットポイントを見つけたと判断した場合、のいずれかにのみ含まれます。
+</p>
+</li>
+<li>
+<p>
+常にセクションヘッダー「packfile」で始まります
+</p>
+</li>
+<li>
+<p>
+パックファイルの送信は、セクションヘッダーの直後に開始されます
+</p>
+</li>
+<li>
+<p>
+パックファイルのデータ転送は、プロトコルバージョン1の「side-band-64k」機能と同じセマンティクスを使用して、常に多重化されます。つまり、packfileデータストリーム中の各パケットは、先頭の4バイトの
+          pkt-line長(通常はpkt-line形式)、1バイトのストリームコード、実際のデータで構成されます。
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>shallow-info section
-    * If the client has requested a shallow fetch/clone, a shallow
-      client requests a fetch or the server is shallow then the
-      server's response may include a shallow-info section.  The
-      shallow-info section will be included if (due to one of the
-      above conditions) the server needs to inform the client of any
-      shallow boundaries or adjustments to the clients already
-      existing shallow boundaries.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-Always begins with the section header "shallow-info"
-</p>
-</li>
-<li>
-<p>
-If a positive depth is requested, the server will compute the set of commits
-          which are no deeper than the desired depth.
-</p>
-</li>
-<li>
-<p>
-The server sends a "shallow obj-id" line for each commit whose parents will
-          not be sent in the following packfile.
-</p>
-</li>
-<li>
-<p>
-The server sends an "unshallow obj-id" line for each commit which the client
-          has indicated is shallow, but is no longer shallow as a result of the fetch
-          (due to its parents being sent in the following packfile).
-</p>
-</li>
-<li>
-<p>
-The server MUST NOT send any "unshallow" lines for anything which the client
-          has not indicated was shallow as a part of its request.
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>wanted-refs section
-    * This section is only included if the client has requested a
-      ref using a 'want-ref' line and if a packfile section is also
-      included in the response.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-Always begins with the section header "wanted-refs".
-</p>
-</li>
-<li>
-<p>
-The server will send a ref listing ("&lt;oid&gt; &lt;refname&gt;") for each reference
-          requested using <em>want-ref</em> lines.
-</p>
-</li>
-<li>
-<p>
-The server MUST NOT send any refs which were not requested using <em>want-ref</em>
-          lines.
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>packfile-uris section
-    * This section is only included if the client sent
-      'packfile-uris' and the server has at least one such URI to
-      send.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-Always begins with the section header "packfile-uris".
-</p>
-</li>
-<li>
-<p>
-For each URI the server sends, it sends a hash of the pack&#8217;s contents (as
-          output by git index-pack) followed by the URI.
-</p>
-</li>
-<li>
-<p>
-The hashes are 40 hex characters long. When Git upgrades to a new hash
-          algorithm, this might need to be updated. (It should match whatever
-          index-pack outputs after "pack\t" or "keep\t".
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>packfile section
-    * This section is only included if the client has sent 'want'
-      lines in its request and either requested that no more
-      negotiation be done by sending 'done' or if the server has
-      decided it has found a sufficient cut point to produce a
-      packfile.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-Always begins with the section header "packfile"
-</p>
-</li>
-<li>
-<p>
-The transmission of the packfile begins immediately after the section header
-</p>
-</li>
-<li>
-<p>
-The data transfer of the packfile is always multiplexed, using the same
-          semantics of the <em>side-band-64k</em> capability from protocol version 1.  This
-          means that each packet, during the packfile data stream, is made up of a
-          leading 4-byte pkt-line length (typical of the pkt-line format), followed by
-          a 1-byte stream code, followed by the actual data.
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>The stream code can be one of:
-      1 - pack data
-      2 - progress messages
-      3 - fatal error message just before stream aborts</code></pre>
+<pre><code>ストリームコードは以下のいずれかになります:
+      1 - パックデータ
+      2 - 進行状況メッセージ
+      3 - ストリームが中止(abort)される直前の致命的なエラーメッセージ</code></pre>
 </div></div>
 </li>
 </ul></div>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_server_option">server-option</h3>
-<div class="paragraph"><p>If advertised, indicates that any number of server specific options can be
-included in a request.  This is done by sending each option as a
-"server-option=&lt;option&gt;" capability line in the capability-list section of a
-request.</p></div>
-<div class="paragraph"><p>The provided options must not contain a NUL or LF character.</p></div>
+<div class="paragraph"><p>広告されている場合は、サーバー固有のオプションをいくつでもリクエストに含めることができることを示します。これは、リクエストの機能リストセクションで「server-option=&lt;option&gt;」機能行として各オプションを送信することによって行われます。</p></div>
+<div class="paragraph"><p>提供されるオプションには、NULまたはLF文字を含めることはできません。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_object_format"> object-format</h3>
-<div class="paragraph"><p>The server can advertise the <code>object-format</code> capability with a value <code>X</code> (in the
-form <code>object-format=X</code>) to notify the client that the server is able to deal
-with objects using hash algorithm X.  If not specified, the server is assumed to
-only handle SHA-1.  If the client would like to use a hash algorithm other than
-SHA-1, it should specify its object-format string.</p></div>
+<h3 id="_object_format">object-format</h3>
+<div class="paragraph"><p>サーバーは、値 <code>X</code> (<code>object-format=X</code> 形式)を使用して <code>object-format</code>
+機能を広告し、サーバーがハッシュアルゴリズムXを使用してオブジェクトを処理できることをクライアントに通知できます。
+指定しない場合、サーバーはSHA-1のみを処理すると見なされます。
+クライアントがSHA-1以外のハッシュアルゴリズムを使用する場合は、object-formatの文字列を指定する必要があります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_session_id_lt_session_id_gt">session-id=&lt;session id&gt;</h3>
-<div class="paragraph"><p>The server may advertise a session ID that can be used to identify this
-process across multiple requests. The client may advertise its own session
-ID back to the server as well.</p></div>
-<div class="paragraph"><p>Session IDs should be unique to a given process. They must fit within a
-packet-line, and must not contain non-printable or whitespace
-characters. The current implementation uses trace2 session IDs (see
-<a href="api-trace2.html">api-trace2</a> for details), but this may change and users
-of the session ID should not rely on this fact.</p></div>
+<div class="paragraph"><p>サーバーは、複数のリクエストにわたってこのプロセスを識別するために使用できるセッションIDを広告する場合があります。
+クライアントは、自身のセッションIDをサーバーに広告することもできます。</p></div>
+<div class="paragraph"><p>セッションIDは、特定のプロセスに固有である必要があります。それらはパケット行内に収まる必要があり、印刷不可能な文字や空白文字を含めることはできません。
+現在の実装ではtrace2セッションID(詳細は <a href="api-trace2.html">api-trace2</a>
+を参照)を使用していますが、これは変更される可能性があるため、セッションIDのユーザーはこの事実に依存しないでください。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_object_info">object-info</h3>
-<div class="paragraph"><p><code>object-info</code> is the command to retrieve information about one or more
-objects.  Its main purpose is to allow a client to make decisions based on
-this information without having to fully fetch objects. Object size is the
-only information that is currently supported.</p></div>
-<div class="paragraph"><p>An <code>object-info</code> request takes the following arguments:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>size
-Requests size information to be returned for each listed object id.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>oid &lt;oid&gt;
-Indicates to the server an object which the client wants to obtain
-information for.</code></pre>
-</div></div>
-<div class="paragraph"><p>The response of <code>object-info</code> is a list of the requested object ids and
-associated requested information, each separated by a single space.</p></div>
+<div class="paragraph"><p><code>object-info</code> は、1つまたは複数のオブジェクトに関する情報を取得するためのコマンドです。
+その主な目的は、クライアントがオブジェクトを完全にフェッチすることなく、この情報に基づいて決定を下せるようにすることです。
+現在サポートされている情報はオブジェクトサイズのみです。</p></div>
+<div class="paragraph"><p><code>object-info</code> リクエストは以下の引数を取ります:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+size
+</dt>
+<dd>
+<p>
+        リストされたオブジェクトIDごとに返されるサイズ情報を要求します。
+</p>
+</dd>
+<dt class="hdlist1">
+oid &lt;oid&gt;
+</dt>
+<dd>
+<p>
+        クライアントが情報を取得したいオブジェクトをサーバーに指示します。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p><code>object-info</code> の応答は、要求されたオブジェクトIDと関連する要求された情報のリストであり、それぞれが1つのスペースで区切られています。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>output = info flush-pkt</code></pre>
@@ -1440,7 +1450,7 @@ associated requested information, each separated by a single space.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-02-22 09:23:27 JST
+ 2022-04-05 09:44:59 JST
 </div>
 </div>
 </body>
