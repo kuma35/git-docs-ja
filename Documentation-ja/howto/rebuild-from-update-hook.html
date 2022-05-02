@@ -739,28 +739,25 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>The pages under <a href="https://www.kernel.org/pub/software/scm/git/docs/">https://www.kernel.org/pub/software/scm/git/docs/</a> are built
-from Documentation/ directory of the git.git project and needed to be kept
-up-to-date.  The www.kernel.org/ servers are mirrored and I was told that
-the origin of the mirror is on the machine $some.kernel.org, on which I was
-given an account when I took over Git maintainership from Linus.</p></div>
-<div class="paragraph"><p>The directories relevant to this how-to are these two:</p></div>
+<div class="paragraph"><p><a href="https://www.kernel.org/pub/software/scm/git/docs/">https://www.kernel.org/pub/software/scm/git/docs/</a> の下のページは、git.gitプロジェクトの
+Documentation/ ディレクトリから構築されており、最新の状態に保つ必要があります。 www.kernel.org/
+サーバー群はミラーリングされており、ミラーの原点はマシン $some.kernel.org にあります。
+このマシンで、LinusからGitのメンテナンス職(maintainership)を引き継いだときに私はアカウントを貰いました。</p></div>
+<div class="paragraph"><p>このハウツーに関連するディレクトリは以下の2つです:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>/pub/scm/git/git.git/       The public Git repository.
 /pub/software/scm/git/docs/ The HTML documentation page.</code></pre>
 </div></div>
-<div class="paragraph"><p>So I made a repository to generate the documentation under my home directory
-over there.</p></div>
+<div class="paragraph"><p>そこで、私はホームディレクトリの下にドキュメントを生成するためのリポジトリを作成しました。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ cd
 $ mkdir doc-git &amp;&amp; cd doc-git
 $ git clone /pub/scm/git/git.git/ docgen</code></pre>
 </div></div>
-<div class="paragraph"><p>What needs to happen is to update the $HOME/doc-git/docgen/ working tree,
-build HTML docs there and install the result in /pub/software/scm/git/docs/
-directory.  So I wrote a little script:</p></div>
+<div class="paragraph"><p>必要なことは、 $HOME/doc-git/docgen/ 作業ツリーを更新し、そこでHTMLドキュメントを作成して、結果を
+/pub/software/scm/git/docs/ ディレクトリにインストールすることです。 そのために私は小さなスクリプトを書きました:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ cat &gt;dododoc.sh &lt;&lt;\EOF
@@ -778,9 +775,8 @@ cd Documentation &amp;&amp;
 make install-webdoc
 EOF</code></pre>
 </div></div>
-<div class="paragraph"><p>Initially I used to run this by hand whenever I push into the public Git
-repository.  Then I did a cron job that ran twice a day.  The current round
-uses the post-update hook mechanism, like this:</p></div>
+<div class="paragraph"><p>当初、私はパブリックGitリポジトリにプッシュするたびにこれを手動で実行していました。 次に、1日に2回実行されるcronジョブを実行しました。
+現在のルーティンでは、以下のような更新後フック(post-update hook)メカニズムを使用しています:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ cat &gt;/pub/scm/git/git.git/hooks/post-update &lt;&lt;\EOF
@@ -802,36 +798,31 @@ exec git-update-server-info
 EOF
 $ chmod +x /pub/scm/git/git.git/hooks/post-update</code></pre>
 </div></div>
-<div class="paragraph"><p>There are four things worth mentioning:</p></div>
+<div class="paragraph"><p>ここで言及する価値のあるのは以下の4つです:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-The update-hook is run after the repository accepts a "git push", under my
-   user privilege.  It is given the full names of refs that have been updated
-   as arguments.  My post-update runs the dododoc.sh script only when the
-   master head is updated.
+リポジトリが <code>git push</code>
+   を受け入れた後、ユーザー権限でupdate-hookが実行されます。引数として更新されたrefのフルネームが与えられます。 私の post-update
+   は、masterヘッドが更新されたときにのみ dododoc.sh スクリプトを実行します。
 </p>
 </li>
 <li>
 <p>
-When update-hook is run, GIT_DIR is set to <em>.</em> by the calling receive-pack.
-   This is inherited by the dododoc.sh run via the "at" command, and needs to
-   be unset; otherwise, "git pull" it does into $HOME/doc-git/docgen/
-   repository would not work correctly.
+update-hookを実行すると、 receive-pack を呼び出すことによって GIT_DIRは <code>.</code> に設定されます。  これは、 <code>at</code>
+   コマンドを介して実行される dododoc.sh によって継承され、そして、設定を解除しなければなりません。 そうしないと、
+   $HOME/doc-git/docgen/ リポジトリへの <code>git pull</code> が正しく機能しません。
 </p>
 </li>
 <li>
 <p>
-The stdout of update hook script is not connected to git push; I run the
-   heavy part of the command inside "at", to receive the execution report via
-   e-mail.
+更新フックスクリプトのstdoutは <code>git push</code> に接続されていません。 コマンドの大部分を <code>at</code>
+   内で実行して、実行レポートを電子メールで受信します。
 </p>
 </li>
 <li>
 <p>
-This is still crude and does not protect against simultaneous make
-   invocations stomping on each other.  I would need to add some locking
-   mechanism for this.
+これはちょっと大雑把な説明で、同時に行われる呼び出しが互いに干渉するのを防ぐことができません。このためにはいくつかのロックメカニズムを追加する必要があります。
 </p>
 </li>
 </ul></div>
@@ -842,7 +833,7 @@ This is still crude and does not protect against simultaneous make
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-20 09:06:30 JST
+ 2022-05-03 05:39:31 JST
 </div>
 </div>
 </body>

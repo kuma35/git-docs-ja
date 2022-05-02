@@ -740,7 +740,7 @@ git-receive-pack(1) Manual Page
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>git-receive-pack -
-   Receive what is pushed into the repository
+   リポジトリにプッシュされたものを受信します
 </p>
 </div>
 </div>
@@ -757,23 +757,19 @@ git-receive-pack(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Invoked by <em>git send-pack</em> and updates the repository with the information
-fed from the remote end.</p></div>
-<div class="paragraph"><p>This command is usually not invoked directly by the end user.  The UI for
-the protocol is on the <em>git send-pack</em> side, and the program pair is meant
-to be used to push updates to remote repository.  For pull operations, see
-<a href="git-fetch-pack.html">git-fetch-pack(1)</a>.</p></div>
-<div class="paragraph"><p>The command allows for creation and fast-forwarding of sha1 refs
-(heads/tags) on the remote end (strictly speaking, it is the local end
-<em>git-receive-pack</em> runs, but to the user who is sitting at the send-pack
-end, it is updating the remote.  Confused?)</p></div>
-<div class="paragraph"><p>There are other real-world examples of using update and post-update hooks
-found in the Documentation/howto directory.</p></div>
-<div class="paragraph"><p><em>git-receive-pack</em> honours the receive.denyNonFastForwards config option,
-which tells it if updates to a ref should be denied if they are not
-fast-forwards.</p></div>
-<div class="paragraph"><p>A number of other receive.* config options are available to tweak its
-behavior, see <a href="git-config.html">git-config(1)</a>.</p></div>
+<div class="paragraph"><p><code>git send-pack</code> によって呼び出され、リモート側からもたらされた情報でリポジトリを更新します。</p></div>
+<div class="paragraph"><p>このコマンドは通常、エンドユーザーによって直接呼び出されることはありません。 プロトコルのUIは <code>git send-pack</code>
+側にあり、プログラムペアは更新をリモートリポジトリにプッシュするために使用されることを目的としています。 プル操作については、
+<a href="git-fetch-pack.html">git-fetch-pack(1)</a> を参照してください。</p></div>
+<div class="paragraph"><p>このコマンドを使用すると、リモート側で sha1 ref (ヘッド/タグ)を作成して早送りできます(厳密に言えば、ローカル側では
+<code>git-receive-pack</code>
+が実行されますが、send-pack側に居るユーザにとってはリモートの更新をしている事になります。混乱しないでね？)</p></div>
+<div class="paragraph"><p>Documentation/howtoディレクトリには、更新フック(update hook)と更新後フック(post-update
+hook)を使用した実例が他にもあります。</p></div>
+<div class="paragraph"><p><em>git-receive-pack</em> は、 receive.denyNonFastForwards
+構成オプションを尊重します。このオプションは、refの更新が早送りでない場合に拒否する必要があるかどうかを通知します。</p></div>
+<div class="paragraph"><p>他の多くの <code>receive.*</code> 構成オプションを使用して、その動作を微調整できます。 <a href="git-config.html">git-config(1)</a>
+を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -785,7 +781,7 @@ behavior, see <a href="git-config.html">git-config(1)</a>.</p></div>
 </dt>
 <dd>
 <p>
-        The repository to sync into.
+        同期するリポジトリ。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -793,9 +789,9 @@ behavior, see <a href="git-config.html">git-config(1)</a>.</p></div>
 </dt>
 <dd>
 <p>
-        Used by <a href="git-http-backend.html">git-http-backend(1)</a> to serve up
-        <code>$GIT_URL/info/refs?service=git-receive-pack</code> requests. See
-        <code>--http-backend-info-refs</code> in <a href="git-upload-pack.html">git-upload-pack(1)</a>.
+        <a href="git-http-backend.html">git-http-backend(1)</a> が、 <code>$GIT_URL/info/refs?service=git-receive-pack</code>
+        リクエストを処理するために使用します。 <a href="git-upload-pack.html">git-upload-pack(1)</a> の <code>--http-backend-info-refs</code>
+        を参照してください。
 </p>
 </dd>
 </dl></div>
@@ -804,32 +800,26 @@ behavior, see <a href="git-config.html">git-config(1)</a>.</p></div>
 <div class="sect1">
 <h2 id="_pre_receive_hook">PRE-RECEIVE HOOK</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Before any ref is updated, if $GIT_DIR/hooks/pre-receive file exists and is
-executable, it will be invoked once with no parameters.  The standard input
-of the hook will be one line per ref to be updated:</p></div>
+<div class="paragraph"><p>refが更新される前に、 $GIT_DIR/hooks/pre-receive
+ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、更新される参照ごとに1行になります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>sha1-old SP sha1-new SP refname LF</code></pre>
 </div></div>
-<div class="paragraph"><p>The refname value is relative to $GIT_DIR; e.g. for the master head this is
-"refs/heads/master".  The two sha1 values before each refname are the object
-names for the refname before and after the update.  Refs to be created will
-have sha1-old equal to 0{40}, while refs to be deleted will have sha1-new
-equal to 0{40}, otherwise sha1-old and sha1-new should be valid objects in
-the repository.</p></div>
-<div class="paragraph"><p>When accepting a signed push (see <a href="git-push.html">git-push(1)</a>), the signed push
-certificate is stored in a blob and an environment variable <code>GIT_PUSH_CERT</code>
-can be consulted for its object name.  See the description of <code>post-receive</code>
-hook for an example.  In addition, the certificate is verified using GPG and
-the result is exported with the following environment variables:</p></div>
+<div class="paragraph"><p>refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッドの場合、これは <code>refs/heads/master</code> です。
+各refnameの前の2つのsha1値は、更新前後のrefnameのオブジェクト名です。 作成されるrefのsha1-oldは 0{40}
+に等しく、削除されるrefのsha1-newは 0{40}
+になります。それ以外の場合、sha1-oldとsha1-newはリポジトリ内の有効なオブジェクトである必要があります。</p></div>
+<div class="paragraph"><p>署名されたプッシュを受け入れる場合(<a href="git-push.html">git-push(1)</a> 参照)、署名されたプッシュ証明書はブロブに格納され、環境変数
+<code>GIT_PUSH_CERT</code> でオブジェクト名を調べることができます。 例については、 <code>post-receive</code> フックの説明を参照してください。
+さらに、証明書はGPGを使用して検証され、結果は以下の環境変数とともにエクスポートされます:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 <code>GIT_PUSH_CERT_SIGNER</code>
 </dt>
 <dd>
 <p>
-        The name and the e-mail address of the owner of the key that signed the push
-        certificate.
+        プッシュ証明書に署名したキーの所有者の、名前(name)と電子メールアドレス(e-mail address)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -837,7 +827,7 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        The GPG key ID of the key that signed the push certificate.
+        プッシュ証明書に署名したキーのGPGキーID。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -845,9 +835,8 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        The status of GPG verification of the push certificate, using the same
-        mnemonic as used in <code>%G?</code> format of <code>git log</code> family of commands (see
-        <a href="git-log.html">git-log(1)</a>).
+        コマンドの <code>git log</code> ファミリーの <code>%G?</code>
+        形式で使用されるのと同一のニーモニックを使用した、プッシュ証明書のGPG検証のステータス(<a href="git-log.html">git-log(1)</a> を参照)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -855,10 +844,8 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        The nonce string the process asked the signer to include in the push
-        certificate.  If this does not match the value recorded on the "nonce"
-        header in the push certificate, it may indicate that the certificate is a
-        valid one that is being replayed from a separate "git push" session.
+        プロセスが署名者にプッシュ証明書に含めるように要求したノンス(nonce;その場限りの)文字列。これがプッシュ証明書の「nonce」ヘッダーに記録されている値と一致しない場合は、証明書が別の
+        <code>git push</code> セッションから再実行されている有効な証明書であることを示している可能性があります。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -871,7 +858,7 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        "git push --signed" sent a nonce when we did not ask it to send one.
+        <code>git push --signed</code> は、私達が送信を問い合わせなかったときにノンス(nonce)を送信しました。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -879,7 +866,7 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        "git push --signed" did not send any nonce header.
+        <code>git push --signed</code> はノンスヘッダーを送信しませんでした。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -887,7 +874,7 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        "git push --signed" sent a bogus nonce.
+        <code>git push --signed</code> は偽のノンスを送信しました。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -895,7 +882,7 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        "git push --signed" sent the nonce we asked it to send.
+        <code>git push --signed</code> は、私達が送信を要求したノンスを送信しました。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -903,9 +890,8 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        "git push --signed" sent a nonce different from what we asked it to send
-        now, but in a previous session.  See <code>GIT_PUSH_CERT_NONCE_SLOP</code> environment
-        variable.
+        <code>git push --signed</code> は、前回のセッションで送信するように要求したものとは異なるノンスを送信しました。
+        <code>GIT_PUSH_CERT_NONCE_SLOP</code> 環境変数を参照してください。
 </p>
 </dd>
 </dl></div>
@@ -915,68 +901,54 @@ the result is exported with the following environment variables:</p></div>
 </dt>
 <dd>
 <p>
-        "git push --signed" sent a nonce different from what we asked it to send
-        now, but in a different session whose starting time is different by this
-        many seconds from the current session.  Only meaningful when
-        <code>GIT_PUSH_CERT_NONCE_STATUS</code> says <code>SLOP</code>.  Also read about
-        <code>receive.certNonceSlop</code> variable in <a href="git-config.html">git-config(1)</a>.
+        <code>git push --signed</code>
+        は、現在送信するように要求したものとは異なるノンスを送信しました。開始時刻が現在のセッションとは何秒も違う別のセッションで送信されました。
+        <code>GIT_PUSH_CERT_NONCE_STATUS</code> が <code>SLOP</code> と言った場合にのみ意味があります。
+        <a href="git-config.html">git-config(1)</a> の <code>receive.certNonceSlop</code> 変数についてもお読みください。
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>This hook is called before any refname is updated and before any
-fast-forward checks are performed.</p></div>
-<div class="paragraph"><p>If the pre-receive hook exits with a non-zero exit status no updates will be
-performed, and the update, post-receive and post-update hooks will not be
-invoked either.  This can be useful to quickly bail out if the update is not
-to be supported.</p></div>
-<div class="paragraph"><p>See the notes on the quarantine environment below.</p></div>
+<div class="paragraph"><p>このフックは、refnameが更新される前、および早送りチェックが実行される前に呼び出されます。</p></div>
+<div class="paragraph"><p>受信前(pre-receive)フックがゼロ以外の終了ステータスで終了した場合、更新は実行されず、更新(update)フックや受信後フック(post-receive)や更新後(post-update)フックも呼び出されません。
+これは、更新がサポートされない場合に迅速に救済するのに役立ちます。</p></div>
+<div class="paragraph"><p>以下の検疫環境(quarantine environment)に関する注記を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_update_hook">UPDATE HOOK</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Before each ref is updated, if $GIT_DIR/hooks/update file exists and is
-executable, it is invoked once per ref, with three parameters:</p></div>
+<div class="paragraph"><p>各refが更新される前に、 $GIT_DIR/hooks/update
+ファイルが存在し、実行可能である場合、3つのパラメーターを使用してrefごとに1回呼び出されます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$GIT_DIR/hooks/update refname sha1-old sha1-new</code></pre>
 </div></div>
-<div class="paragraph"><p>The refname parameter is relative to $GIT_DIR; e.g. for the master head this
-is "refs/heads/master".  The two sha1 arguments are the object names for the
-refname before and after the update.  Note that the hook is called before
-the refname is updated, so either sha1-old is 0{40} (meaning there is no
-such ref yet), or it should match what is recorded in refname.</p></div>
-<div class="paragraph"><p>The hook should exit with non-zero status if it wants to disallow updating
-the named ref.  Otherwise it should exit with zero.</p></div>
-<div class="paragraph"><p>Successful execution (a zero exit status) of this hook does not ensure the
-ref will actually be updated, it is only a prerequisite.  As such it is not
-a good idea to send notices (e.g. email) from this hook.  Consider using the
-post-receive hook instead.</p></div>
+<div class="paragraph"><p>refnameパラメーターは$GIT_DIRに関連しています。 例えば masterヘッドの場合、これは <code>refs/heads/master</code> です。
+2つのsha1引数は、更新前後のrefnameのオブジェクト名です。 refnameが更新される前にフックが呼び出されるため、sha1-oldが
+0{40} (そのようなrefがまだないことを意味します)であるか、refnameに記録されているものと一致する必要があることに注意してください。</p></div>
+<div class="paragraph"><p>名前付きrefの更新を禁止する場合、フックはゼロ以外のステータスで終了する必要があります。 それ以外の場合は、ゼロで終了する必要があります。</p></div>
+<div class="paragraph"><p>このフックの正常な実行(ゼロ終了ステータス)は、refが実際に更新されることを保証するものではなく、前提条件にすぎません。
+そのため、このフックから通知(電子メールなど)を送信することはお勧めできません。
+代わりに、受信後(post-receive)フックの使用を検討してください。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_post_receive_hook">POST-RECEIVE HOOK</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After all refs were updated (or attempted to be updated), if any ref update
-was successful, and if $GIT_DIR/hooks/post-receive file exists and is
-executable, it will be invoked once with no parameters.  The standard input
-of the hook will be one line for each successfully updated ref:</p></div>
+<div class="paragraph"><p>すべてのrefが更新された後(または更新が試みられた後)、refの更新が成功した場合、および $GIT_DIR/hooks/post-receive
+ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、正常に更新された参照ごとに1行になります。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>sha1-old SP sha1-new SP refname LF</code></pre>
 </div></div>
-<div class="paragraph"><p>The refname value is relative to $GIT_DIR; e.g. for the master head this is
-"refs/heads/master".  The two sha1 values before each refname are the object
-names for the refname before and after the update.  Refs that were created
-will have sha1-old equal to 0{40}, while refs that were deleted will have
-sha1-new equal to 0{40}, otherwise sha1-old and sha1-new should be valid
-objects in the repository.</p></div>
-<div class="paragraph"><p>The <code>GIT_PUSH_CERT*</code> environment variables can be inspected, just as in
-<code>pre-receive</code> hook, after accepting a signed push.</p></div>
-<div class="paragraph"><p>Using this hook, it is easy to generate mails describing the updates to the
-repository.  This example script sends one mail message per ref listing the
-commits pushed to the repository, and logs the push certificates of signed
-pushes with good signatures to a logger service:</p></div>
+<div class="paragraph"><p>refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッドの場合、これは <code>refs/heads/master</code> です。
+各refnameの前の2つのsha1値は、更新前後のrefnameのオブジェクト名です。 作成された参照はsha1-oldが 0{40}
+に等しくなり、削除された参照はsha1-newが 0{40}
+に等しくなります。それ以外の場合、sha1-oldとsha1-newはリポジトリ内の有効なオブジェクトである必要があります。</p></div>
+<div class="paragraph"><p>署名されたプッシュを受け入れた後、 <code>pre-receive</code> フックの場合と同様に、 <code>GIT_PUSH_CERT*</code> 環境変数を検査できます。</p></div>
+<div class="paragraph"><p>このフックを使用すると、リポジトリの更新を説明するメールを簡単に生成できます。
+このサンプルスクリプトは、リポジトリにプッシュされたコミットを一覧表示するrefごとに1つのメールメッセージを送信し、適切な署名を持つ署名付きプッシュのプッシュ証明書をログ取りサービス(logger
+service)に記録します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>#!/bin/sh
@@ -1003,26 +975,22 @@ then
 fi
 exit 0</code></pre>
 </div></div>
-<div class="paragraph"><p>The exit code from this hook invocation is ignored, however a non-zero exit
-code will generate an error message.</p></div>
-<div class="paragraph"><p>Note that it is possible for refname to not have sha1-new when this hook
-runs.  This can easily occur if another user modifies the ref after it was
-updated by <em>git-receive-pack</em>, but before the hook was able to evaluate it.
-It is recommended that hooks rely on sha1-new rather than the current value
-of refname.</p></div>
+<div class="paragraph"><p>このフック呼び出しからの終了コードは無視されますが、ゼロ以外の終了コードはエラーメッセージを生成します。</p></div>
+<div class="paragraph"><p>このフックが実行されると、refnameにsha1-newがない可能性があることに注意してください。 これは、 <code>git-receive-pack</code>
+によって更新された後、フックがそれを評価できるようになる前に、別のユーザーが参照を変更した場合に簡単に発生する可能性があります。
+フックは、refnameの現在の値ではなく、sha1-newに依存することをお勧めします。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_post_update_hook">POST-UPDATE HOOK</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After all other processing, if at least one ref was updated, and if
-$GIT_DIR/hooks/post-update file exists and is executable, then post-update
-will be called with the list of refs that have been updated.  This can be
-used to implement any repository wide cleanup tasks.</p></div>
-<div class="paragraph"><p>The exit code from this hook invocation is ignored; the only thing left for
-<em>git-receive-pack</em> to do at that point is to exit itself anyway.</p></div>
-<div class="paragraph"><p>This hook can be used, for example, to run <code>git update-server-info</code> if the
-repository is packed and is served via a dumb transport.</p></div>
+<div class="paragraph"><p>他のすべての処理の後、少なくとも1つのrefが更新され、 $GIT_DIR/hooks/post-update
+ファイルが存在し、実行可能である場合、更新されたrefのリストを使用してpost-updateが呼び出されます。
+これは、リポジトリ全体のクリーンアップタスクを実装するために使用できます。</p></div>
+<div class="paragraph"><p>このフック呼び出しからの終了コードは無視されます。 その時点で <code>git-receive-pack</code>
+に残されているのは、とにかく自分自身を終了することだけです。</p></div>
+<div class="paragraph"><p>このフックは、たとえば、リポジトリがパックされてバカ転送(dumb transport)を介して提供される場合に <code>git
+update-server-info</code> を実行するために使用できます。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>#!/bin/sh
@@ -1033,34 +1001,28 @@ exec git update-server-info</code></pre>
 <div class="sect1">
 <h2 id="_quarantine_environment">QUARANTINE ENVIRONMENT</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>When <code>receive-pack</code> takes in objects, they are placed into a temporary
-"quarantine" directory within the <code>$GIT_DIR/objects</code> directory and migrated
-into the main object store only after the <code>pre-receive</code> hook has
-completed. If the push fails before then, the temporary directory is removed
-entirely.</p></div>
-<div class="paragraph"><p>This has a few user-visible effects and caveats:</p></div>
+<div class="paragraph"><p><code>receive-pack</code> がオブジェクトを取り込むと、それらは <code>$GIT_DIR/objects</code>
+ディレクトリ内の一時的な「隔離」(quarantine)ディレクトリに配置され、 <code>pre-receive</code>
+フックが完了した後にのみメインオブジェクトストアに移行されます。 それ以前にプッシュが失敗した場合、一時ディレクトリは完全に削除されます。</p></div>
+<div class="paragraph"><p>これには、ユーザーからも見えるいくつかの影響と注意事項があります:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-Pushes which fail due to problems with the incoming pack, missing objects,
-     or due to the <code>pre-receive</code> hook will not leave any on-disk data. This is
-     usually helpful to prevent repeated failed pushes from filling up your disk,
-     but can make debugging more challenging.
+着信パックの問題、またはオブジェクトの欠落、または <code>pre-receive</code> フックが原因で失敗したプッシュは、ディスク上のデータを残しません。
+     これは通常、繰り返し失敗したプッシュがディスクをいっぱいにするのを防ぐのに役立ちますが、デバッグがより困難になる可能性があります。
 </p>
 </li>
 <li>
 <p>
-Any objects created by the <code>pre-receive</code> hook will be created in the
-     quarantine directory (and migrated only if it succeeds).
+<code>pre-receive</code>
+     フックによって作成されたオブジェクトはすべて、隔離(quarantine)ディレクトリに作成されます(成功した場合にのみ移行されます)。
 </p>
 </li>
 <li>
 <p>
-The <code>pre-receive</code> hook MUST NOT update any refs to point to quarantined
-     objects. Other programs accessing the repository will not be able to see the
-     objects (and if the pre-receive hook fails, those refs would become
-     corrupted). For safety, any ref updates from within <code>pre-receive</code> are
-     automatically rejected.
+<code>pre-receive</code> フックは、隔離(quarantined)されたオブジェクトを指すように参照を更新してはなりません。
+     リポジトリにアクセスする他のプログラムはオブジェクトを見ることができません(そして、受信前(pre-receive)フックが失敗した場合、それらのrefは破損します)。
+     安全のため、 <code>pre-receive</code> 内からのrefの更新は自動的に拒否されます。
 </p>
 </li>
 </ol></div>
@@ -1083,7 +1045,7 @@ The <code>pre-receive</code> hook MUST NOT update any refs to point to quarantin
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:34:58 JST
+ 2022-04-30 19:55:37 JST
 </div>
 </div>
 </body>
