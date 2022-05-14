@@ -75,8 +75,11 @@ $(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : $(PO_DIR)/%$(PO_EXT)
 $(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
 	po4a-translate -f text -keep 0 -M utf8 -m $(SRC_INSTALL_TEXT) -p $< -l $@
 
+# Documentation/Makefile に 追加した場合に反映させる。 (technicalに一部html化されてないのがあった)
+$(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
+	cp $< $@
 
-ja: $(DST_FILES) $(DST_INSTALL_TEXT)
+ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile
 
 # rsyncの $(SRC_DIR)の直後の / 重要。超重要
 # cmds-*.txt are templates. not need translation. copy from $(SRC_DIR) to $(DST_DIR)
