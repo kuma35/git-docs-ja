@@ -79,7 +79,11 @@ $(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
 $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
 	cp $< $@
 
-ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile
+# Documentation/technical/api-index.sh を変更した場合に反映させる。
+$(DST_DIR)/technical/api-index.sh : $(SRC_DIR)/technical/api-index.sh
+	cp $< $@
+
+ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/api-index.sh
 
 # rsyncの $(SRC_DIR)の直後の / 重要。超重要
 # cmds-*.txt are templates. not need translation. copy from $(SRC_DIR) to $(DST_DIR)
