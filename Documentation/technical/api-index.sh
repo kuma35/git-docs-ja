@@ -13,7 +13,8 @@
 		case "$filename" in
 		api-index-skel.txt | api-index.txt) continue ;;
 		esac
-		title=$(sed -e 1q "$filename")
+		# title=$(sed -e 1q "$filename")
+		title=$(sed -e '1s/^=\+[[:blank:]]\+//' -e 'q' "$filename")
 		html=${filename%.txt}.html
 		echo "* link:$html[$title]"
 	done

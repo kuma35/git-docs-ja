@@ -739,99 +739,88 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p><code>BUG</code>, <code>die</code>, <code>usage</code>, <code>error</code>, and <code>warning</code> report errors of various
-kinds.</p></div>
+<div class="paragraph"><p><code>BUG</code>, <code>die</code>, <code>usage</code>, <code>error</code>, <code>warning</code> は、さまざまな種類のエラーを報告します。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>BUG</code> is for failed internal assertions that should never happen, i.e. a bug
-  in git itself.
+<code>BUG</code> は、決して起こらないはずの失敗した内部アサーション、つまりgit自体のバグのためのものです。
 </p>
 </li>
 <li>
 <p>
-<code>die</code> is for fatal application errors.  It prints a message to the user and
-  exits with status 128.
+<code>die</code> は致命的なアプリケーションエラー用です。 ユーザーにメッセージを出力し、ステータス128で終了します。
 </p>
 </li>
 <li>
 <p>
-<code>usage</code> is for errors in command line usage.  After printing its message, it
-  exits with status 129.  (See also <code>usage_with_options</code> in the
-  <a href="api-parse-options.html">parse-options API</a>.)
+<code>usage</code> は、コマンドラインの使用法のエラー用です。
+  メッセージを出力した後、ステータス129で終了します(<a href="api-parse-options.html">parse-options API</a> の
+  <code>usage_with_options</code> も参照してください)。
 </p>
 </li>
 <li>
 <p>
-<code>error</code> is for non-fatal library errors.  It prints a message to the user
-  and returns -1 for convenience in signaling the error to the caller.
+<code>error</code> は、致命的ではないライブラリエラー用です。 ユーザーにメッセージを出力し、呼び出し元にエラーを通知するのに便利なように -1
+  を返します。
 </p>
 </li>
 <li>
 <p>
-<code>warning</code> is for reporting situations that probably should not occur but
-  which the user (and Git) can continue to work around without running into
-  too many problems.  Like <code>error</code>, it returns -1 after reporting the
-  situation to the caller.
+<code>warning</code>
+  は、おそらく発生しないはずの状況を報告するためのものですが、ユーザー(およびGit)はあまり多くの問題に遭遇することなく回避を続けることができます。
+  <code>error</code> と同様に、呼び出し元に状況を報告した後、 -1 を返します。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>These reports will be logged via the trace2 facility. See the "error" event
-in <a href="api-trace2.txt">trace2 API</a>.</p></div>
+<div class="paragraph"><p>これらのレポートは、trace2機能を介してログに記録されます。 <a href="api-trace2.txt">trace2 API</a>
+の「error」イベントを参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_customizable_error_handlers">Customizable error handlers</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The default behavior of <code>die</code> and <code>error</code> is to write a message to stderr
-and then exit or return as appropriate.  This behavior can be overridden
-using <code>set_die_routine</code> and <code>set_error_routine</code>.  For example, "git daemon"
-uses set_die_routine to write the reason <code>die</code> was called to syslog before
-exiting.</p></div>
+<div class="paragraph"><p><code>die</code> と <code>error</code> のデフォルトの動作は、stderrにメッセージを書き込んでから、必要に応じて終了(exit)または戻ることです。
+この振る舞いは、 <code>set_die_routine</code> と <code>set_error_routine</code> を使用してオーバーライドできます。 例えば、 <code>git
+daemon</code> は set_die_routine を使って、 <code>die</code> が呼ばれた理由を syslog に書き込んでから終了するようにしています。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_library_errors">Library errors</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Functions return a negative integer on error.  Details beyond that vary from
-function to function:</p></div>
+<div class="paragraph"><p>各関数はエラー時に負の整数を返します。それ以外の詳細は機能ごとに異なります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Some functions return -1 for all errors.  Others return a more specific
-  value depending on how the caller might want to react to the error.
+一部の関数は、すべてのエラーに対して -1 を返します。
+  それ以外の関数は、呼び出し元がエラーにどのように反応したいかに応じて、より具体的な値を返します。
 </p>
 </li>
 <li>
 <p>
-Some functions report the error to stderr with <code>error</code>, while others leave
-  that for the caller to do.
+一部の関数はエラーを <code>error</code> でstderrに報告しますが、それ以外の関数はそれを呼び出し元に任せます。
 </p>
 </li>
 <li>
 <p>
-errno is not meaningful on return from most functions (except for thin
-  wrappers for system calls).
+errno は、ほとんどの関数から戻ったときに意味がありません(システムコールの薄いラッパー(thin wrappers)を除く)。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Check the function&#8217;s API documentation to be sure.</p></div>
+<div class="paragraph"><p>各関数のAPIドキュメントを確認してください。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_caller_handled_errors">Caller-handled errors</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>An increasing number of functions take a parameter <em>struct strbuf *err</em>.  On
-error, such functions append a message about what went wrong to the <em>err</em>
-strbuf.  The message is meant to be complete enough to be passed to <code>die</code> or
-<code>error</code> as-is.  For example:</p></div>
+<div class="paragraph"><p>ますます多くの関数がパラメータ <code>struct strbuf *err</code> を取るようになっています。エラーの場合、そのような関数は、 <code>err</code>
+strbufに何がうまくいかなかったかについてのメッセージを追加します。 メッセージは、そのまま <code>die</code> または <code>error</code>
+に渡されるのに十分なほど完全であることを意図しています。 例えば:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>if (ref_transaction_commit(transaction, &amp;err))
         die("%s", err.buf);</code></pre>
 </div></div>
-<div class="paragraph"><p>The <em>err</em> parameter will be untouched if no error occurred, so multiple
-function calls can be chained:</p></div>
+<div class="paragraph"><p>エラーが発生しなかった場合、 <code>err</code> パラメーターは変更されないため、複数の関数呼び出しを連鎖させることができます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>t = ref_transaction_begin(&amp;err);
@@ -840,8 +829,7 @@ if (!t ||
     ret_transaction_commit(t, &amp;err))
         die("%s", err.buf);</code></pre>
 </div></div>
-<div class="paragraph"><p>The <em>err</em> parameter must be a pointer to a valid strbuf.  To silence a
-message, pass a strbuf that is explicitly ignored:</p></div>
+<div class="paragraph"><p><code>err</code> パラメーターは、有効なstrbufへのポインターでなければなりません。 メッセージを黙らせるには、明示的に無視されるstrbufを渡します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>if (thing_that_can_fail_in_an_ignorable_way(..., &amp;err))
@@ -855,7 +843,7 @@ message, pass a strbuf that is explicitly ignored:</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:10 JST
+ 2022-05-24 10:52:33 JST
 </div>
 </div>
 </body>
