@@ -742,67 +742,55 @@ asciidoc.install();
 <div class="sidebarblock">
 <div class="content">
 <div class="title">Definition</div>
-<div class="paragraph"><p>Shallow commits do have parents, but not in the shallow repo, and therefore
-grafts are introduced pretending that these commits have no parents.</p></div>
+<div class="paragraph"><p>浅いコミットには親がありますが、浅いリポジトリにはありません。したがって、これらのコミットに親がないふりをしてgraftsが導入されます。</p></div>
 </div></div>
-<div class="paragraph"><p>$GIT_DIR/shallow lists commit object names and tells Git to pretend as if
-they are root commits (e.g. "git log" traversal stops after showing them;
-"git fsck" does not complain saying the commits listed on their "parent"
-lines do not exist).</p></div>
-<div class="paragraph"><p>Each line contains exactly one object name. When read, a commit_graft will
-be constructed, which has nr_parent &lt; 0 to make it easier to discern from
-user provided grafts.</p></div>
-<div class="paragraph"><p>Note that the shallow feature could not be changed easily to use replace
-refs: a commit containing a <code>mergetag</code> is not allowed to be replaced, not
-even by a root commit. Such a commit can be made shallow, though. Also,
-having a <code>shallow</code> file explicitly listing all the commits made shallow
-makes it a <strong>lot</strong> easier to do shallow-specific things such as to deepen the
-history.</p></div>
-<div class="paragraph"><p>Since fsck-objects relies on the library to read the objects, it honours
-shallow commits automatically.</p></div>
-<div class="paragraph"><p>There are some unfinished ends of the whole shallow business:</p></div>
+<div class="paragraph"><p>$GIT_DIR/shallow
+は、コミットオブジェクト名をリストし、それらがルートコミットであるかのように見せかけるようにGitに指示します(たとえば、 <code>git log `
+トラバーサルは表示後に停止します。 ` git fsck</code> は、「親」のラインにリストされているコミットが存在しない時は文句を言いません)。</p></div>
+<div class="paragraph"><p>各行には、オブジェクト名が1つだけ含まれています。 読み取られると、 commit_graft
+が作成されます。これは、ユーザーが提供したgraftsとの識別を容易にするために、 nr_parent &lt; 0 を持ちます。</p></div>
+<div class="paragraph"><p>注意: shallow機能を簡単に変更して置換refsを使用することはできないことに注意してください。ルートコミットであっても、 <code>mergetag</code>
+を含むコミットを置き換えることはできません。 ただし、このようなコミットはshallowにすることができます。
+また、shallowしたすべてのコミットを明示的にリストする <code>shallow</code>
+ファイルがあると、履歴を深める(deepen)など、shallow関連のことを <strong>たくさん</strong> 簡単に行うことができます。</p></div>
+<div class="paragraph"><p>fsck-objects はライブラリに依存してオブジェクトを読み取るため、shallowコミットを自動的に尊重します。</p></div>
+<div class="paragraph"><p>shallow機構全体ではいくつかの未完成のものがあります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-maybe we have to force non-thin packs when fetching into a shallow repo (ATM
-  they are forced non-thin).
+shallowレポにフェッチするときに、薄くない(non-thin)パックを強制する必要があるかもしれません(ATMでは薄くない(non-thin)パックが強制されます)。
 </p>
 </li>
 <li>
 <p>
-A special handling of a shallow upstream is needed. At some stage,
-  upload-pack has to check if it sends a shallow commit, and it should send
-  that information early (or fail, if the client does not support shallow
-  repositories). There is no support at all for this in this patch series.
+shallowな上流は特別な取り扱いが必要です。
+  ある段階で、upload-packはshallowコミットを送信するかどうかを確認する必要があり、その情報を早期に送信する必要があります(または、クライアントがshallowリポジトリをサポートしていない場合は失敗します)。
+  このパッチシリーズでは、これはまったくサポートされていません。
 </p>
 </li>
 <li>
 <p>
-Instead of locking $GIT_DIR/shallow at the start, just the timestamp of it
-  is noted, and when it comes to writing it, a check is performed if the mtime
-  is still the same, dying if it is not.
+開始時に $GIT_DIR/shallow
+  をロックする代わりに、そのタイムスタンプだけが記録され、書き込みに関しては、mtimeが同じであるかどうかのチェックが実行され、そうでない場合は終了します。
 </p>
 </li>
 <li>
 <p>
-It is unclear how "push into/from a shallow repo" should behave.
+「shallowレポへの push や shallowレポからのpush」がどのように動作するかは不明です。
 </p>
 </li>
 <li>
 <p>
-If you deepen a history, you&#8217;d want to get the tags of the newly stored (but
-  older!) commits. This does not work right now.
+あなたが履歴を深める(deepen)場合は、新しく保存された(ただし古い！)コミットのタグを取得する必要があります。 現在、これは機能しません。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>To make a shallow clone, you can call "git-clone --depth 20 repo".  The
-result contains only commit chains with a length of at most 20.  It also
-writes an appropriate $GIT_DIR/shallow.</p></div>
-<div class="paragraph"><p>You can deepen a shallow repository with "git-fetch --depth 20 repo branch",
-which will fetch branch from repo, but stop at depth 20, updating
-$GIT_DIR/shallow.</p></div>
-<div class="paragraph"><p>The special depth 2147483647 (or 0x7fffffff, the largest positive number a
-signed 32-bit integer can contain) means infinite depth.</p></div>
+<div class="paragraph"><p>shallowクローンを作成するには、 <code>git-clone --depth 20 repo</code> を呼び出すことができます。
+結果には、最大20の長さのコミットチェーンのみが含まれます。また、適切な $GIT_DIR/shallow を書き込みます。</p></div>
+<div class="paragraph"><p>あなたは  <code>git-fetch --depth 20 repo branch</code>
+を使用してshallowリポジトリを深めることができます。これにより、リポジトリからブランチがフェッチされますが、深さ20で停止し、
+$GIT_DIR/shallow を更新します。</p></div>
+<div class="paragraph"><p>特別な深さ 2147483647(または0x7fffffff、符号付き32ビット整数に含めることができる最大の正の数)は、無限の深さを意味します。</p></div>
 </div>
 </div>
 </div>
@@ -810,7 +798,7 @@ signed 32-bit integer can contain) means infinite depth.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:09 JST
+ 2022-06-06 06:59:48 JST
 </div>
 </div>
 </body>
