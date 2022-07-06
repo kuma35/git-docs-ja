@@ -5,7 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 9.1.1" />
-<title>How to recover a corrupted blob object</title>
+<title>破損ブロブオブジェクトの回復方法</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
 
@@ -734,7 +734,7 @@ asciidoc.install();
 </head>
 <body class="article">
 <div id="header">
-<h1>How to recover a corrupted blob object</h1>
+<h1>破損ブロブオブジェクトの回復方法</h1>
 </div>
 <div id="content">
 <div id="preamble">
@@ -743,36 +743,25 @@ asciidoc.install();
 <div class="content">
 <pre><code>On Fri, 9 Nov 2007, Yossi Leybovich wrote:
 &gt;
-&gt; Did not help still the repository look for this object?
-&gt; Any one know how can I track this object and understand which file is it</code></pre>
+&gt; リポジトリはこのオブジェクトを探すの助けになりませんか？
+&gt; このオブジェクトを追跡して、どのファイルがそうであるかを理解するにはどうしたらよいか、誰か知っていますか</code></pre>
 </div></div>
-<div class="paragraph"><p>So exactly <strong>because</strong> the SHA-1 hash is cryptographically secure, the hash
-itself doesn&#8217;t actually tell you anything, in order to fix a corrupt object
-you basically have to find the "original source" for it.</p></div>
-<div class="paragraph"><p>The easiest way to do that is almost always to have backups, and find the
-same object somewhere else. Backups really are a good idea, and Git makes it
-pretty easy (if nothing else, just clone the repository somewhere else, and
-make sure that you do <strong>not</strong> use a hard-linked clone, and preferably not the
-same disk/machine).</p></div>
-<div class="paragraph"><p>But since you don&#8217;t seem to have backups right now, the good news is that
-especially with a single blob being corrupt, these things <strong>are</strong> somewhat
-debuggable.</p></div>
-<div class="paragraph"><p>First off, move the corrupt object away, and <strong>save</strong> it. The most common
-cause of corruption so far has been memory corruption, but even so, there
-are people who would be interested in seeing the corruption - but it&#8217;s
-basically impossible to judge the corruption until we can also see the
-original object, so right now the corrupt object is useless, but it&#8217;s very
-interesting for the future, in the hope that you can re-create a non-corrupt
-version.</p></div>
+<div class="paragraph"><p>つまり、SHA-1ハッシュが暗号的に安全であるという理由だけで、ハッシュ自体は実際には何も教えてくれません。
+破損したオブジェクトを修正するには、基本的にその「元のソース」を見つける必要があります。</p></div>
+<div class="paragraph"><p>これを行う最も簡単な方法は、ほとんどの場合、バックアップを作成し、同じオブジェクトを別の場所で見つけることです。
+バックアップは本当に良い考えであり、Gitを使用すると非常に簡単になります(他に何もない場合は、リポジトリを別の場所に複製し、ハードリンクされたクローンを使用しないようにします。できれば同じ
+ディスク/マシン を使用し無いでください)。</p></div>
+<div class="paragraph"><p>しかし、あなたには現在バックアップがないように思われます。しかし、幸いなことに、特に1つのブロブが破損している場合には、これらはある程度デバッグ可能です。</p></div>
+<div class="paragraph"><p>まず、破損したオブジェクトを移動して「保存」します。 これまでの破損の最も一般的な原因はメモリの腐敗でしたが、それでも、破損を見たいと思う人がいます。
+しかし、基本的に元のオブジェクトを見るまでは、破損を判断することはできませんので、今は破損したオブジェクトは役に立ちませんが、将来的には破損していないバージョンを再作成できることを期待すると、それは非常に興味深い代物です。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>So:
 
 &gt; ib]$ mv .git/objects/4b/9458b3786228369c63936db65827de3cc06200 ../</code></pre>
 </div></div>
-<div class="paragraph"><p>This is the right thing to do, although it&#8217;s usually best to save it under
-it&#8217;s full SHA-1 name (you just dropped the "4b" from the result ;).</p></div>
-<div class="paragraph"><p>Let&#8217;s see what that tells us:</p></div>
+<div class="paragraph"><p>これは正しいことですが、通常は完全なSHA-1名で保存するのが最善です(あなたは結果から <code>4b</code> を落としてしまっただけです)。</p></div>
+<div class="paragraph"><p>それが私たちに何を伝えているか見てみましょう:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>&gt; ib]$ git-fsck --full
@@ -780,16 +769,15 @@ it&#8217;s full SHA-1 name (you just dropped the "4b" from the result ;).</p></d
 &gt;              to    blob 4b9458b3786228369c63936db65827de3cc06200
 &gt; missing blob 4b9458b3786228369c63936db65827de3cc06200</code></pre>
 </div></div>
-<div class="paragraph"><p>Ok, I removed the "dangling commit" messages, because they are just messages
-about the fact that you probably have rebased etc, so they&#8217;re not at all
-interesting. But what remains is still very useful. In particular, we now
-know which tree points to it!</p></div>
-<div class="paragraph"><p>Now you can do</p></div>
+<div class="paragraph"><p>ええ、私は「dangling
+commit」(宙ぶらりんコミット)のメッセージを削除しました。これは、おそらくリベースしたという事実に関するメッセージであり、全然面白くありません。
+しかし、残っているものはまだ非常に便利です。 特に、どのツリーがそれを指しているかがわかりました。</p></div>
+<div class="paragraph"><p>いまやあなたは以下のようにすることができます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git ls-tree 2d9263c6d23595e7cb2a21e5ebbb53655278dff8</code></pre>
 </div></div>
-<div class="paragraph"><p>which will show something like</p></div>
+<div class="paragraph"><p>これは以下のようなものをが表示します</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>100644 blob 8d14531846b95bfa3564b58ccfb7913a034323b8    .gitignore
@@ -801,33 +789,27 @@ know which tree points to it!</p></div>
 100644 blob 1c7c229a092665b11cd46a25dbd40feeb31661d9    MAINTAINERS
 ...</code></pre>
 </div></div>
-<div class="paragraph"><p>and you should now have a line that looks like</p></div>
+<div class="paragraph"><p>そして、以下のような行が表示されます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>10064 blob 4b9458b3786228369c63936db65827de3cc06200     my-magic-file</code></pre>
 </div></div>
-<div class="paragraph"><p>in the output. This already tells you a <strong>lot</strong> it tells you what file the
-corrupt blob came from!</p></div>
-<div class="paragraph"><p>Now, it doesn&#8217;t tell you quite enough, though: it doesn&#8217;t tell what
-<strong>version</strong> of the file didn&#8217;t get correctly written! You might be really
-lucky, and it may be the version that you already have checked out in your
-working tree, in which case fixing this problem is really simple, just do</p></div>
+<div class="paragraph"><p>この出力により、あなたには、破損したブロブがどのファイルから発生したかがわかりました！</p></div>
+<div class="paragraph"><p>さて、とはいえまだ十分ではありません。これはファイルのどの「バージョン」が正しく書かれなかったかを教えてくれません！
+あなたの運が良ければ、すでに作業ツリーでチェックアウトしているバージョンかもしれません。その場合この問題を修正することは本当に簡単です。ただ以下のようにするだけです</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git hash-object -w my-magic-file</code></pre>
 </div></div>
-<div class="paragraph"><p>again, and if it outputs the missing SHA-1 (4b945..) you&#8217;re now all done!</p></div>
-<div class="paragraph"><p>But that&#8217;s the really lucky case, so let&#8217;s assume that it was some older
-version that was broken. How do you tell which version it was?</p></div>
-<div class="paragraph"><p>The easiest way to do it is to do</p></div>
+<div class="paragraph"><p>繰り返しになりますが、欠落分のSHA-1(<code>4b945..</code>)が出力された場合は、これですべて完了です！</p></div>
+<div class="paragraph"><p>しかし、これは本当に幸運なケースでして、今回壊れたのは古いバージョンだったとしましょう。
+あなたは、それがどのバージョンだったかをどうやって見分ければよいのでしょうか？</p></div>
+<div class="paragraph"><p>それを行う最も簡単な方法が以下です</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git log --raw --all --full-history -- subdirectory/my-magic-file</code></pre>
 </div></div>
-<div class="paragraph"><p>and that will show you the whole log for that file (please realize that the
-tree you had may not be the top-level tree, so you need to figure out which
-subdirectory it was in on your own), and because you&#8217;re asking for raw
-output, you&#8217;ll now get something like</p></div>
+<div class="paragraph"><p>これにより、そのファイルのログ全体が表示されます(あなたが持っていたツリーはトップレベルのツリーではないかもしれないことを理解してください、それであなたはそれがどのサブディレクトリにあったかをあなた自身で理解する必要があります)。生の出力を要求しているため、以下のようなものが得られます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>commit abc
@@ -847,28 +829,23 @@ Date:</code></pre>
 <pre><code>  ..
 :100644 100644 oldsha... 4b9458b... M   somedirectory/my-magic-file</code></pre>
 </div></div>
-<div class="paragraph"><p>and this actually tells you what the <strong>previous</strong> and <strong>subsequent</strong> versions of
-that file were! So now you can look at those ("oldsha" and "newsha"
-respectively), and hopefully you have done commits often, and can re-create
-the missing my-magic-file version by looking at those older and newer
-versions!</p></div>
-<div class="paragraph"><p>If you can do that, you can now recreate the missing object with</p></div>
+<div class="paragraph"><p>これにより、実際に、そのファイルの「その前のバージョン」と「その次のバージョン」が何であったかを教えてくれるのです！
+これで、これら(それぞれ「oldsha」と「newsha」)を確認できます。また、あなたはコミットを頻繁に実行し、古いバージョンと新しいバージョンを確認することで、欠落しているmy-magic-fileバージョンを再作成できることを願っています！</p></div>
+<div class="paragraph"><p>これができれば、あなたは不足しているオブジェクトを以下のように再作成できます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git hash-object -w &lt;recreated-file&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>and your repository is good again!</p></div>
-<div class="paragraph"><p>(Btw, you could have ignored the fsck, and started with doing a</p></div>
+<div class="paragraph"><p>これで、あなたのリポジトリは再び良好になります！</p></div>
+<div class="paragraph"><p>(ちなみに、あなたはfsckを無視する事もでき、その場合は以下のように始めます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git log --raw --all</code></pre>
 </div></div>
-<div class="paragraph"><p>and just looked for the sha of the missing object (4b9458b..) in that whole
-thing. It&#8217;s up to you - Git does <strong>have</strong> a lot of information, it is just
-missing one particular blob version.</p></div>
-<div class="paragraph"><p>Trying to recreate trees and especially commits is <strong>much</strong> harder. So you
-were lucky that it&#8217;s a blob. It&#8217;s quite possible that you can recreate the
-thing.</p></div>
+<div class="paragraph"><p>こうやれば、あなたは、全体の中で欠けているオブジェクトのsha(4b9458b..)を探すだけです。ええ、どうやるかはあなた次第です。
+Gitは多くの情報を持っていて、ある特定のブロブのバージョンが欠けているだけなのです。</p></div>
+<div class="paragraph"><p>ツリー、特にコミットを再作成しようとすると、はるかに困難になります。 だから今回ブロブであることは幸運でした。
+コレなら再作成できる可能性は十分にあります。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>Linus</code></pre>
@@ -880,7 +857,7 @@ thing.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-23 05:43:50 JST
+ 2022-07-04 00:41:33 JST
 </div>
 </div>
 </body>

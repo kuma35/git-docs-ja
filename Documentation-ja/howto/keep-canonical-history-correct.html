@@ -5,7 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 9.1.1" />
-<title>Keep authoritative canonical history correct with git pull</title>
+<title>git pull で権威ある正規の履歴を正しく保つ</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
 
@@ -734,123 +734,101 @@ asciidoc.install();
 </head>
 <body class="article">
 <div id="header">
-<h1>Keep authoritative canonical history correct with git pull</h1>
+<h1>git pull で権威ある正規の履歴を正しく保つ</h1>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>Sometimes a new project integrator will end up with project history that
-appears to be "backwards" from what other project developers expect. This
-howto presents a suggested integration workflow for maintaining a central
-repository.</p></div>
-<div class="paragraph"><p>Suppose that that central repository has this history:</p></div>
+<div class="paragraph"><p>新しいプロジェクトインテグレーターは、他のプロジェクト開発者が期待するものから「後ろの方」に見えるプロジェクト履歴で終わることがあります。
+このハウツーは、中央リポジトリを維持するための推奨される統合ワークフローを示しています。</p></div>
+<div class="paragraph"><p>ある中央リポジトリに以下の履歴があるとします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A</code></pre>
 </div></div>
-<div class="paragraph"><p>which ends at commit <code>A</code> (time flows from left to right and each node in the
-graph is a commit, lines between them indicating parent-child relationship).</p></div>
-<div class="paragraph"><p>Then you clone it and work on your own commits, which leads you to have this
-history in <strong>your</strong> repository:</p></div>
+<div class="paragraph"><p>これはコミット <code>A</code> で終了します(時間は左から右に流れ、フラフの各ノードはコミットであり、それらの間の線は親子関係を示します)。</p></div>
+<div class="paragraph"><p>次に、あなたはこれをクローンして、あなた独自のコミット作業を行います。これにより、「あなたのリポジトリ」に以下の履歴が作成されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A---B---C</code></pre>
 </div></div>
-<div class="paragraph"><p>Imagine your coworker did the same and built on top of <code>A</code> in <strong>his</strong>
-repository in the meantime, and then pushed it to the central repository:</p></div>
+<div class="paragraph"><p>あなたの同僚が同様に、「彼のリポジトリ」の <code>A</code> 上に構築し、そしてそれから、それを中央リポジトリにプッシュしたと想像してみてください:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A---X---Y---Z</code></pre>
 </div></div>
-<div class="paragraph"><p>Now, if you <code>git push</code> at this point, because your history that leads to <code>C</code>
-lacks <code>X</code>, <code>Y</code> and <code>Z</code>, it will fail.  You need to somehow make the tip of
-your history a descendant of <code>Z</code>.</p></div>
-<div class="paragraph"><p>One suggested way to solve the problem is "fetch and then merge", aka <code>git
-pull</code>. When you fetch, your repository will have a history like this:</p></div>
+<div class="paragraph"><p>ここで あなたが <code>git push</code> した場合、 <code>C</code> に至るあなたの履歴には <code>X</code>,<code>Y</code>,<code>Z</code> が欠けているため、失敗してしまいます。
+どうにかして、履歴の先端を <code>Z</code> の子孫にする必要があります。</p></div>
+<div class="paragraph"><p>この問題の解決への提案の一つは、「フェッチしてからマージする」、別名「git pull」です。
+フェッチすると、あなたのリポジトリは以下のような履歴になります。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A---B---C
                 \
                  X---Y---Z</code></pre>
 </div></div>
-<div class="paragraph"><p>Once you run merge after that, while still on <strong>your</strong> branch, i.e. <code>C</code>, you
-will create a merge <code>M</code> and make the history look like this:</p></div>
+<div class="paragraph"><p>その後あなたがマージを実行すると、「あなたのブランチ」、つまり <code>C</code> にいる間に、マージ <code>M</code> を作成し、履歴を以下のようにします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A---B---C---M
                 \         /
                  X---Y---Z</code></pre>
 </div></div>
-<div class="paragraph"><p><code>M</code> is a descendant of <code>Z</code>, so you can push to update the central
-repository.  Such a merge <code>M</code> does not lose any commit in both histories, so
-in that sense it may not be wrong, but when people want to talk about "the
-authoritative canonical history that is shared among the project
-participants", i.e. "the trunk", they often view it as "commits you see by
-following the first-parent chain", and use this command to view it:</p></div>
+<div class="paragraph"><p><code>M</code> は <code>Z</code> の子孫であるため、あなたはプッシュして中央リポジトリを更新できます。 このようなマージ <code>M</code>
+は、両方の履歴でコミットを失うことはないので、その意味では間違いではないかもしれませんが、人々が「プロジェクト参加者間で共有される権威ある正規の履歴」、つまり「the
+trunk」について話したい場合は、 しばしばそれを 「最初の親からのチェーンをたどることによって表示されるコミット」
+と見なし、それを表示するために以下コマンドを使用します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git log --first-parent</code></pre>
 </div></div>
-<div class="paragraph"><p>For all other people who observed the central repository after your coworker
-pushed <code>Z</code> but before you pushed <code>M</code>, the commit on the trunk used to be
-<code>o-o-A-X-Y-Z</code>.  But because you made <code>M</code> while you were on <code>C</code>, <code>M</code>'s first
-parent is <code>C</code>, so by pushing <code>M</code> to advance the central repository, you made
-<code>X-Y-Z</code> a side branch, not on the trunk.</p></div>
-<div class="paragraph"><p>You would rather want to have a history of this shape:</p></div>
+<div class="paragraph"><p>同僚が <code>Z</code> をプッシュした後、 あなたが <code>M</code> をプッシュする前に中央リポジトリを観察した他のすべての人にとって、 the trunk
+のコミットは以前は <code>o-o-A-X-Y-Z</code> でした。 しかし、 あなたが <code>C</code> にいる間に <code>M</code> を作成したため、 <code>M</code> の最初の親は <code>C</code>
+になります。したがって、  <code>M</code> をプッシュして中央リポジトリを進めることにより、あなたは  <code>X-Y-Z</code> を、 the trunk
+上ではなくサイドブランチにしてしまいました。</p></div>
+<div class="paragraph"><p>あなたはむしろ以下の形の履歴を持ちたいはずです:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A---X---Y---Z---M'
                 \             /
                  B-----------C</code></pre>
 </div></div>
-<div class="paragraph"><p>so that in the first-parent chain, it is clear that the project first did
-<code>X</code> and then <code>Y</code> and then <code>Z</code> and merged a change that consists of two
-commits <code>B</code> and <code>C</code> that achieves a single goal.  You may have worked on
-fixing the bug #12345 with these two patches, and the merge <code>M'</code> with
-swapped parents can say in its log message "Merge fix-bug-12345". Having a
-way to tell <code>git pull</code> to create a merge but record the parents in reverse
-order may be a way to do so.</p></div>
-<div class="paragraph"><p>Note that I said "achieves a single goal" above, because this is important.
-"Swapping the merge order" only covers a special case where the project does
-not care too much about having unrelated things done on a single merge but
-cares a lot about first-parent chain.</p></div>
-<div class="paragraph"><p>There are multiple schools of thought about the "trunk" management.</p></div>
+<div class="paragraph"><p>これは、最初の親チェーンで、プロジェクトが最初に <code>X</code> その次に <code>Y</code> その次に <code>Z</code> のコミットを行い、2つのコミット <code>B</code> と <code>C</code>
+で構成される変更をマージして単一のゴールを達成することが明らかです。 この2つのパッチで バグ #12345 の修正に取り組み、親が入れ替わったマージ
+<code>M'</code> はログメッセージで「merge fix-bug-12345」と言うかもしれません。 <code>git pull</code>
+でマージを作成するが、親を逆順に記録するように指示する方法があるかもしれません。</p></div>
+<div class="paragraph"><p>注意: 上記で「単一の目標を達成する」と言ったことは重要です。
+「マージ順序の入れ替え」は、プロジェクトが無関係なものを一度のマージで処理することはあまり気にしないが、最初の親へのチェーンは気にするという特殊なケースにのみ対応します。</p></div>
+<div class="paragraph"><p>「the trunk」の管理については、複数の考え方があります。</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-Some projects want to keep a completely linear history without any merges.
-    Obviously, swapping the merge order would not match their taste.  You would
-    need to flatten your history on top of the updated upstream to result in a
-    history of this shape instead:
+あるプロジェクトでは、マージせずに完全に線形の履歴を保持する方針です。 明らかに、マージ順序を入れ替えても、彼らの好みとは一致しません。
+    代わりに、この形状の履歴を生成するには、更新されたアップストリーム上のあなたの履歴をフラット化する必要があります:
 </p>
 <div class="listingblock">
 <div class="content">
 <pre><code>    ---o---o---A---X---Y---Z---B---C</code></pre>
 </div></div>
-<div class="paragraph"><p>with <code>git pull --rebase</code> or something.</p></div>
+<div class="paragraph"><p>こうするには <code>git pull --rebase</code> とか使います。</p></div>
 </li>
 <li>
 <p>
-Some projects tolerate merges in their history, but do not worry too much
-    about the first-parent order, and allow fast-forward merges.  To them,
-    swapping the merge order does not hurt, but it is unnecessary.
+あるプロジェクトでは、履歴内のマージを許容しますが、最初の親の順序についてあまり心配せず、早送りマージを許可する方針です。
+    彼らにとって、マージ順序を入れ替えても問題はありませんが、マージ順序の入れ替えは不要です。
 </p>
 </li>
 <li>
 <p>
-Some projects want each commit on the "trunk" to do one single thing.  The
-    output of <code>git log --first-parent</code> in such a project would show either a
-    merge of a side branch that completes a single theme, or a single commit
-    that completes a single theme by itself.  If your two commits <code>B</code> and <code>C</code>
-    (or they may even be two groups of commits) were solving two independent
-    issues, then the merge <code>M'</code> we made in the earlier example by swapping the
-    merge order is still not up to the project standard.  It merges two
-    unrelated efforts <code>B</code> and <code>C</code> at the same time.
+あるプロジェクトでは、「the trunk」の各コミット毎に1つのことを行う方針です。このようなプロジェクトでの <code>git log
+    --first-parent</code>
+    の出力は、単一のテーマを完了するサイドブランチのマージ、または単一のテーマを単独で完了する単一のコミットのいずれかを示します。 もし二つのコミット
+    <code>B</code> と <code>C</code> (あるいは二つのコミットグループ) が独立した二つの問題を解決していたとしたら、先ほどの例でマージ順を入れ替えて作ったマージ
+    <code>M'</code> はまだプロジェクトの標準に達していないことになります。 これは、2つの無関係な作業 <code>B</code> と <code>C</code> を同時にマージします。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>For projects in the last category (Git itself is one of them), individual
-developers would want to prepare a history more like this:</p></div>
+<div class="paragraph"><p>最後のカテゴリのプロジェクト(Git自体もその1つです)の場合、個々の開発者は以下のような履歴を準備する必要があります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                 C0--C1--C2     topic-c
@@ -859,7 +837,7 @@ developers would want to prepare a history more like this:</p></div>
                 \
                  B0--B1--B2     topic-b</code></pre>
 </div></div>
-<div class="paragraph"><p>That is, keeping separate topics on separate branches, perhaps like so:</p></div>
+<div class="paragraph"><p>つまり、たぶん以下のように、別々のトピックを別々のブランチに保持します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git clone $URL work &amp;&amp; cd work
@@ -868,14 +846,13 @@ developers would want to prepare a history more like this:</p></div>
     $ git checkout -b topic-c master
     $ ... same for the theme of topic-c</code></pre>
 </div></div>
-<div class="paragraph"><p>And then</p></div>
+<div class="paragraph"><p>そしてそれから</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git checkout master
     $ git pull --ff-only</code></pre>
 </div></div>
-<div class="paragraph"><p>would grab <code>X</code>, <code>Y</code> and <code>Z</code> from the upstream and advance your master
-branch:</p></div>
+<div class="paragraph"><p>これは、アップストリームから <code>X</code> と <code>Y</code> と <code>Z</code> を掴んできて、あなたのmasterブランチを進めます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                 C0--C1--C2     topic-c
@@ -884,13 +861,13 @@ branch:</p></div>
                 \
                  B0--B1--B2     topic-b</code></pre>
 </div></div>
-<div class="paragraph"><p>And then you would merge these two branches separately:</p></div>
+<div class="paragraph"><p>そしてそれから、これら2つのブランチを別々にマージします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git merge topic-b
     $ git merge topic-c</code></pre>
 </div></div>
-<div class="paragraph"><p>to result in</p></div>
+<div class="paragraph"><p>これは以下の結果になります</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                 C0--C1---------C2
@@ -899,12 +876,10 @@ branch:</p></div>
                 \             /
                  B0--B1-----B2</code></pre>
 </div></div>
-<div class="paragraph"><p>and push it back to the central repository.</p></div>
-<div class="paragraph"><p>It is very much possible that while you are merging topic-b and topic-c,
-somebody again advanced the history in the central repository to put <code>W</code> on
-top of <code>Z</code>, and make your <code>git push</code> fail.</p></div>
-<div class="paragraph"><p>In such a case, you would rewind to discard <code>M</code> and <code>N</code>, update the tip of
-your <em>master</em> again and redo the two merges:</p></div>
+<div class="paragraph"><p>そして、中央リポジトリにプッシュバックします。</p></div>
+<div class="paragraph"><p>topic-bとtopic-cをマージしているときに、誰かが再び中央リポジトリの履歴を進めて、 <code>Z</code> の先に <code>W</code> を置き、 <code>git push</code>
+を失敗させる可能性があります。</p></div>
+<div class="paragraph"><p>このような場合は、巻き戻して <code>M</code> と <code>N</code> を破棄し、 <code>master</code> の先端を再度更新して、2つのマージをやり直します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git reset --hard origin/master
@@ -912,7 +887,7 @@ your <em>master</em> again and redo the two merges:</p></div>
     $ git merge topic-b
     $ git merge topic-c</code></pre>
 </div></div>
-<div class="paragraph"><p>The procedure will result in a history that looks like this:</p></div>
+<div class="paragraph"><p>この手順により、以下のような履歴が作成されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                 C0--C1--------------C2
@@ -921,8 +896,8 @@ your <em>master</em> again and redo the two merges:</p></div>
                 \                 /
                  B0--B1---------B2</code></pre>
 </div></div>
-<div class="paragraph"><p>See also
-<a href="http://git-blame.blogspot.com/2013/09/fun-with-first-parent-history.html">http://git-blame.blogspot.com/2013/09/fun-with-first-parent-history.html</a></p></div>
+<div class="paragraph"><p><a href="http://git-blame.blogspot.com/2013/09/fun-with-first-parent-history.html">http://git-blame.blogspot.com/2013/09/fun-with-first-parent-history.html</a>
+も参照して下さい。</p></div>
 </div>
 </div>
 </div>
@@ -930,7 +905,7 @@ your <em>master</em> again and redo the two merges:</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-20 09:06:31 JST
+ 2022-07-07 07:51:07 JST
 </div>
 </div>
 </body>

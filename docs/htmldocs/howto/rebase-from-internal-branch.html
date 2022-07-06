@@ -747,24 +747,23 @@ asciidoc.install();
 &gt; where Junio C Hamano &lt;junkio@cox.net&gt; told me that...
 &gt;&gt; Linus Torvalds &lt;torvalds@osdl.org&gt; writes:
 &gt;&gt;
-&gt;&gt; &gt; Junio, maybe you want to talk about how you move patches from your
-&gt;&gt; &gt; "seen" branch to the real branches.
+&gt;&gt; &gt; Junioさん、「seen」ブランチから実際のブランチにパッチを移動させる
+&gt;&gt; &gt; 方法についてお話いただけますか？
 &gt;&gt;
-&gt; Actually, wouldn't this be also precisely for what StGIT is intended to?</code></pre>
+&gt; 実際、これもStGITが意図していることにぴったり当てはまるのではないでしょうか？</code></pre>
 </div></div>
-<div class="paragraph"><p>Exactly my feeling.  I was sort of waiting for Catalin to speak up.  With
-its basing philosophical ancestry on quilt, this is the kind of task StGIT
-is designed to do.</p></div>
-<div class="paragraph"><p>I just have done a simpler one, this time using only the core Git tools.</p></div>
-<div class="paragraph"><p>I had a handful of commits that were ahead of master in <em>seen</em>, and I wanted
-to add some documentation bypassing my usual habit of placing new things in
-<em>seen</em> first.  At the beginning, the commit ancestry graph looked like this:</p></div>
+<div class="paragraph"><p>まさに私の思っている通りの事です。私は Catalin が声を上げるのを(ちょっと)待っていました。 quilt を哲学的な祖先とする StGIT
+は、このような作業を行うために設計されているのです。</p></div>
+<div class="paragraph"><p>今回は、Gitのコアツールだけを使った、よりシンプルなものを作ってみました。</p></div>
+<div class="paragraph"><p><code>seen</code> で <code>master</code> よりも進んでいるコミットがひと握りほどあり、 私は <code>seen</code>
+で新しいものを最初に配置するという通常の習慣をバイパスして、いくつかのドキュメントを追加したいと思いました。
+当初、コミットの家系図は以下のようになっていました:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>                         *"seen" head
 master --&gt; #1 --&gt; #2 --&gt; #3</code></pre>
 </div></div>
-<div class="paragraph"><p>So I started from master, made a bunch of edits, and committed:</p></div>
+<div class="paragraph"><p>それで、私は master から始めて、たくさんの編集をして、そしてコミットしました:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout master
@@ -772,7 +771,7 @@ $ cd Documentation; ed git.txt ...
 $ cd ..; git add Documentation/*.txt
 $ git commit -s</code></pre>
 </div></div>
-<div class="paragraph"><p>After the commit, the ancestry graph would look like this:</p></div>
+<div class="paragraph"><p>コミット後、家系図は以下のようになっています:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>                          *"seen" head
@@ -780,67 +779,53 @@ master^ --&gt; #1 --&gt; #2 --&gt; #3
       \
         \---&gt; master</code></pre>
 </div></div>
-<div class="paragraph"><p>The old master is now master^ (the first parent of the master).  The new
-master commit holds my documentation updates.</p></div>
-<div class="paragraph"><p>Now I have to deal with "seen" branch.</p></div>
-<div class="paragraph"><p>This is the kind of situation I used to have all the time when Linus was the
-maintainer and I was a contributor, when you look at "master" branch being
-the "maintainer" branch, and "seen" branch being the "contributor" branch.
-Your work started at the tip of the "maintainer" branch some time ago, you
-made a lot of progress in the meantime, and now the maintainer branch has
-some other commits you do not have yet.  And "git rebase" was written with
-the explicit purpose of helping to maintain branches like "seen".  You
-<em>could</em> merge master to <em>seen</em> and keep going, but if you eventually want to
-cherrypick and merge some but not necessarily all changes back to the master
-branch, it often makes later operations for <em>you</em> easier if you rebase
-(i.e. carry forward your changes) "seen" rather than merge.  So I ran "git
-rebase":</p></div>
+<div class="paragraph"><p>古い masterは 現在の <code>master^</code>(masterの最初の親)になりました。 新しい master
+のコミットは、ドキュメントの更新を保持しています。</p></div>
+<div class="paragraph"><p>いまや、私は「seen」ブランチへの対処をしなければなりません。</p></div>
+<div class="paragraph"><p>Linusがメンテナーであり、私がコントリビューターであったとき、「master」ブランチは「maintainer」ブランチであり、「seen」ブランチが「contributor」ブランチであるという状況でした。
+あなた作業の少し前に「maintainer」ブランチの先端で始まり、その後沢山の作業を進めました。そして今、 maintainer
+にはまだあなたが持っていない他のコミットがいくつかあります。 そして、「git
+rebase」は、「seen」のようなブランチの維持を支援するという明確な目的で書かれました。 master
+を「seen」にマージして続行することも可能ですが、最終的に一部の変更を master ブランチにマージして戻す場合は、マージするのではなく
+<code>seen</code> をリベースする(つまり、あなたの変更を繰り越す)と、その後のあなたの操作が簡単になることがよくあります。 だから私は「git
+rebase」を実行しました:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout seen
 $ git rebase master seen</code></pre>
 </div></div>
-<div class="paragraph"><p>What this does is to pick all the commits since the current branch (note
-that I now am on "seen" branch) forked from the master branch, and forward
-port these changes.</p></div>
+<div class="paragraph"><p>これは、masterブランチからフォークされた現在のブランチ(現在、私は「seen」ブランチにいることに注意してください)以降のすべてのコミットを選択し、これらの変更を転送することです。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>master^ --&gt; #1 --&gt; #2 --&gt; #3
       \                                  *"seen" head
         \---&gt; master --&gt; #1' --&gt; #2' --&gt; #3'</code></pre>
 </div></div>
-<div class="paragraph"><p>The diff between master^ and #1 is applied to master and committed to create
-#1' commit with the commit information (log, author and date) taken from
-commit #1.  On top of that #2' and #3' commits are made similarly out of #2
-and #3 commits.</p></div>
-<div class="paragraph"><p>Old #3 is not recorded in any of the .git/refs/heads/ file anymore, so after
-doing this you will have dangling commit if you ran fsck-cache, which is
-normal.  After testing "seen", you can run "git prune" to get rid of those
-original three commits.</p></div>
-<div class="paragraph"><p>While I am talking about "git rebase", I should talk about how to do
-cherrypicking using only the core Git tools.</p></div>
-<div class="paragraph"><p>Let&#8217;s go back to the earlier picture, with different labels.</p></div>
-<div class="paragraph"><p>You, as an individual developer, cloned upstream repository and made a
-couple of commits on top of it.</p></div>
+<div class="paragraph"><p><code>master^</code> と #1  の diff は master に適用され、コミット #1 から取得したコミット情報(ログ、作成者、日付)を使用して
+<code>#1'</code> コミットを作成するようにコミットされます。 その上で、 <code>#2'</code> と <code>#3'</code> コミットは、 #2 と #3
+のコミットから同様に行われます。</p></div>
+<div class="paragraph"><p>古い #3 は <code>.git/refs/heads/</code> ファイルのいずれにも記録されなくなったため、これを実行した後、fsck-cache
+を実行すると、宙ぶらりんコミット(dangling commit)が発生します。これは正常です。 「seen」をテストした後、「git
+prune」を実行して、元の3つのコミットを取り除くことができます。</p></div>
+<div class="paragraph"><p>「git rebase」について話すにあたって、コアGitツールのみを使用してチェリーピッキングを行う方法について話しておきましょう。</p></div>
+<div class="paragraph"><p>以前の図に戻りましょう。でも、ラベルは以前と異なります。</p></div>
+<div class="paragraph"><p>あなたは個人開発者として、上流のリポジトリをクローンし、そのリポジトリでいくつかのコミットを行いました。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>                           *your "master" head
 upstream --&gt; #1 --&gt; #2 --&gt; #3</code></pre>
 </div></div>
-<div class="paragraph"><p>You would want changes #2 and #3 incorporated in the upstream, while you
-feel that #1 may need further improvements.  So you prepare #2 and #3 for
-e-mail submission.</p></div>
+<div class="paragraph"><p>あなたは、変更 #2 と #3 をアップストリームに組み込む必要がありますが、 あなたは #1 には更に改善が必要だと思いました。
+したがって、あなたは電子メール送信用に #2 と #3 を準備します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git format-patch master^^ master</code></pre>
 </div></div>
-<div class="paragraph"><p>This creates two files, 0001-XXXX.patch and 0002-XXXX.patch.  Send them out
-"To: " your project maintainer and "Cc: " your mailing list.  You could use
-contributed script git-send-email if your host has necessary perl modules
-for this, but your usual MUA would do as long as it does not corrupt
-whitespaces in the patch.</p></div>
-<div class="paragraph"><p>Then you would wait, and you find out that the upstream picked up your
-changes, along with other changes.</p></div>
+<div class="paragraph"><p>これにより、 0001-XXXX.patch と 0002-XXXX.patch の2つのファイルが作成されます。 それらを "To: "
+であなたのプロジェクトメンテナと、"Cc: " であなたのメーリングリストに送信します。
+ホストにこれに必要なperlモジュールがある場合は、提供されたスクリプト git-send-email
+を使用できますが、パッチ内の空白(whitespaces)が破損しない限り、あなたは通常のMUAを使用できます。</p></div>
+<div class="paragraph"><p>それからしばらく待つと、あなたは、アップストリームが他の変更とともにあなたの変更を取得したことが分かります。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code> where                      *your "master" head
@@ -849,26 +834,23 @@ upstream --&gt; #1 --&gt; #2 --&gt; #3
  to be     \--&gt; #A --&gt; #2' --&gt; #3' --&gt; #B --&gt; #C
                                               *upstream head</code></pre>
 </div></div>
-<div class="paragraph"><p>The two commits #2' and #3' in the above picture record the same changes
-your e-mail submission for #2 and #3 contained, but probably with the new
-sign-off line added by the upstream maintainer and definitely with different
-committer and ancestry information, they are different objects from #2 and
-#3 commits.</p></div>
-<div class="paragraph"><p>You fetch from upstream, but not merge.</p></div>
+<div class="paragraph"><p>上の図の2つのコミット <code>#2'</code> と  <code>#3'</code> は、 #2 と #3
+を含む電子メール送信に同一の変更を記録しますが、おそらく上流のメンテナによって追加された新しい sign-off
+行と、間違いなく異なるコミッター名と家系情報(ancestry information)があり、それらは #2 と #3
+のコミットとは異なるオブジェクトです。</p></div>
+<div class="paragraph"><p>あなたはアップストリームからフェッチしますが、マージはしません。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git fetch upstream</code></pre>
 </div></div>
-<div class="paragraph"><p>This leaves the updated upstream head in .git/FETCH_HEAD but does not touch
-your .git/HEAD or .git/refs/heads/master.  You run "git rebase" now.</p></div>
+<div class="paragraph"><p>これにより、更新されたアップストリームヘッドは .git/FETCH_HEAD に残りますが、 .git/HEAD または
+.git/refs/heads/master には影響しません。 ここで「git rebase」を実行します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git rebase FETCH_HEAD master</code></pre>
 </div></div>
-<div class="paragraph"><p>Earlier, I said that rebase applies all the commits from your branch on top
-of the upstream head.  Well, I lied.  "git rebase" is a bit smarter than
-that and notices that #2 and #3 need not be applied, so it only applies #1.
-The commit ancestry graph becomes something like this:</p></div>
+<div class="paragraph"><p>以前、私は、リベースはブランチからのすべてのコミットをアップストリームヘッドの上に適用すると言いました。 ええと、それは嘘です。「git
+rebase」はそれよりも少し賢く、 #2 と #3 を適用する必要がないので、 #1 のみを適用します。 コミットの家系図は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code> where                     *your old "master" head
@@ -878,8 +860,8 @@ upstream --&gt; #1 --&gt; #2 --&gt; #3
                                               *upstream
                                               head</code></pre>
 </div></div>
-<div class="paragraph"><p>Again, "git prune" would discard the disused commits #1-#3 and you continue
-on starting from the new "master" head, which is the #1' commit.</p></div>
+<div class="paragraph"><p>繰り返しになりますが、「git prune」は、使用されなくなったコミット #1〜#3 を破棄し、新しい「master」ヘッド(<code>#1'</code>
+コミット)から開始し、続けます。</p></div>
 <div class="paragraph"><p>-jc</p></div>
 </div>
 </div>
@@ -888,7 +870,7 @@ on starting from the new "master" head, which is the #1' commit.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-23 05:43:51 JST
+ 2022-07-05 19:43:02 JST
 </div>
 </div>
 </body>
