@@ -739,12 +739,9 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>A typical distributed workflow using Git is for a contributor to fork a
-project, build on it, publish the result to her public repository, and ask
-the "upstream" person (often the owner of the project where she forked from)
-to pull from her public repository. Requesting such a "pull" is made easy by
-the <code>git request-pull</code> command.</p></div>
-<div class="paragraph"><p>Earlier, a typical pull request may have started like this:</p></div>
+<div class="paragraph"><p>Gitを使用する一般的な分散ワークフローは、貢献者がプロジェクトをフォークし、プロジェクトを構築し、結果をパブリックリポジトリに公開し、「上流」の人(多くの場合、フォーク元のプロジェクトの所有者)に、貢献者のパブリックリポジトリからプルするように依頼することです。
+このような「プル」のリクエストは、 <code>git request-pull</code> コマンドで簡単に行えます。</p></div>
+<div class="paragraph"><p>以前は、典型的なプルリクエストは以下ように始まっていたかもしれません:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> The following changes since commit 406da78032179...:
@@ -755,80 +752,62 @@ the <code>git request-pull</code> command.</p></div>
 
    example.com:/git/froboz.git for-xyzzy</code></pre>
 </div></div>
-<div class="paragraph"><p>followed by a shortlog of the changes and a diffstat.</p></div>
-<div class="paragraph"><p>The request was for a branch name (e.g. <code>for-xyzzy</code>) in the public
-repository of the contributor, and even though it stated where the
-contributor forked her work from, the message did not say anything about the
-commit to expect at the tip of the for-xyzzy branch. If the site that hosts
-the public repository of the contributor cannot be fully trusted, it was
-unnecessarily hard to make sure what was pulled by the integrator was
-genuinely what the contributor had produced for the project. Also there was
-no easy way for third-party auditors to later verify the resulting history.</p></div>
-<div class="paragraph"><p>Starting from Git release v1.7.9, a contributor can add a signed tag to the
-commit at the tip of the history and ask the integrator to pull that signed
-tag. When the integrator runs <code>git pull</code>, the signed tag is automatically
-verified to assure that the history is not tampered with.  In addition, the
-resulting merge commit records the content of the signed tag, so that other
-people can verify that the branch merged by the integrator was signed by the
-contributor, without fetching the signed tag used to validate the pull
-request separately and keeping it in the refs namespace.</p></div>
-<div class="paragraph"><p>This document describes the workflow between the contributor and the
-integrator, using Git v1.7.9 or later.</p></div>
+<div class="paragraph"><p>これに変更のショートログとdiffstatが続きます。</p></div>
+<div class="paragraph"><p>そのリクエストは、貢献者の公開リポジトリにあるブランチ名(例:
+<code>for-xyzzy</code>)で、そして、貢献者がどこからブツをフォークしたかを述べていたとしても、メッセージには、 for-xyzzy
+ブランチの先端で期待されるコミットについては何も書かれていませんでした。
+貢献者公開リポジトリをホストするサイトが完全に信頼できない場合は、インテグレーター(統合者)によってプルされたブツが、純粋にプロジェクトのために貢献者が作成したものであるかどうかを確かめるのは不必要に困難でした。
+また、第三者の監査人(auditors)が後で結果の履歴を検証(verify)する簡単な方法はありませんでした。</p></div>
+<div class="paragraph"><p>Gitリリースv1.7.9以降、貢献者は、履歴の先端にあるコミットに署名付きタグを追加し、インテグレーター(統合者)にその署名付きタグをプルするように依頼できます。
+インテグレーター(統合者)が <code>git pull</code> を実行すると、署名されたタグが自動的に検証され、履歴が改ざんされていないことが保証されます。
+さらに、結果のマージコミットは、署名されたタグの内容を記録するため、他の人々は、インテグレーター(統合者)によってマージされたブランチが貢献者によって署名されたことを確認できるように、プルリクエストの検証に使用される署名付きタグを個別にフェッチして、refs名前空間に保持する必要はありません。</p></div>
+<div class="paragraph"><p>このドキュメントでは、 Git v1.7.9 以降を使用した、貢献者とインテグレーター(統合者)間のワークフローについて説明します。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_a_contributor_or_a_lieutenant">A contributor or a lieutenant</h2>
+<h2 id="_貢献者_contributor_またはサブリーダー_lieutenant">貢献者(contributor)またはサブリーダー(lieutenant)</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After preparing her work to be pulled, the contributor uses <code>git tag -s</code> to
-create a signed tag:</p></div>
+<div class="paragraph"><p>プルするモノが準備できたら、貢献者は <code>git tag- s</code> を使用して署名付きタグを作成します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> $ git checkout work
  $ ... "git pull" from sublieutenants, "git commit" your own work ...
  $ git tag -s -m "Completed frotz feature" frotz-for-xyzzy work</code></pre>
 </div></div>
-<div class="paragraph"><p>Note that this example uses the <code>-m</code> option to create a signed tag with just
-a one-liner message, but this is for illustration purposes only. It is
-advisable to compose a well-written explanation of what the topic does to
-justify why it is worthwhile for the integrator to pull it, as this message
-will eventually become part of the final history after the integrator
-responds to the pull request (as we will see later).</p></div>
-<div class="paragraph"><p>Then she pushes the tag out to her public repository:</p></div>
+<div class="paragraph"><p>注意: この例では、 <code>-m</code> オプションを使用して、１行メッセージのみを含む署名付きタグを作成していますが、これは操作説明のための簡略です。
+インテグレーター(統合者)がプルリクエストに応答した後、このメッセージは最終的に最終的な履歴の一部になるため、このメッセージは、インテグレーター(統合者)がプルする価値がある理由を正当化するために、トピックが何をするかについて詳しく書かれた説明を作成することをお勧めします(後述します)。</p></div>
+<div class="paragraph"><p>次に、彼女はタグを自分の公開リポジトリにプッシュします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> $ git push example.com:/git/froboz.git/ +frotz-for-xyzzy</code></pre>
 </div></div>
-<div class="paragraph"><p>There is no need to push the <code>work</code> branch or anything else.</p></div>
-<div class="paragraph"><p>Note that the above command line used a plus sign at the beginning of
-<code>+frotz-for-xyzzy</code> to allow forcing the update of a tag, as the same
-contributor may want to reuse a signed tag with the same name after the
-previous pull request has already been responded to.</p></div>
-<div class="paragraph"><p>The contributor then prepares a message to request a "pull":</p></div>
+<div class="paragraph"><p><code>work</code> ブランチなどをプッシュする必要はありません。</p></div>
+<div class="paragraph"><p>上記のコマンドラインでは、 <code>+frotz-for-xyzzy</code> の先頭にプラス記号を使用して、タグの更新を強制できるようにしています。
+同一の寄稿者が、以前のプルリクエストがすでに応答された後、同一の名前の署名されたタグを再利用したい場合があるためです。</p></div>
+<div class="paragraph"><p>次に、貢献者は「プル」を要求するメッセージを準備します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> $ git request-pull v3.2 example.com:/git/froboz.git/ frotz-for-xyzzy &gt;msg.txt</code></pre>
 </div></div>
-<div class="paragraph"><p>The arguments are:</p></div>
+<div class="paragraph"><p>引数は以下のとおりです:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-the version of the integrator&#8217;s commit the contributor based her work on;
+インテグレーター(統合者)のコミットのバージョンは、貢献者の作業に基づいています
 </p>
 </li>
 <li>
 <p>
-the URL of the repository, to which the contributor has pushed what she
-  wants to get pulled; and
+貢献者がプルしたいものをプッシュしたリポジトリのURL
 </p>
 </li>
 <li>
 <p>
-the name of the tag the contributor wants to get pulled (earlier, she could
-  write only a branch name here).
+貢献者がプルしたいタグの名前(以前は、ここにブランチ名しか記述できませんでした)。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>The resulting msg.txt file begins like so:</p></div>
+<div class="paragraph"><p>結果のファイル msg.txt は以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> The following changes since commit 406da78032179...:
@@ -847,43 +826,35 @@ the name of the tag the contributor wants to get pulled (earlier, she could
  Completed frotz feature
  -----------------------------------------------</code></pre>
 </div></div>
-<div class="paragraph"><p>followed by a shortlog of the changes and a diffstat.  Comparing this with
-the earlier illustration of the output from the traditional <code>git
-request-pull</code> command, the reader should notice that:</p></div>
+<div class="paragraph"><p>これに変更のショートログとdiffstatが続きます。 先程の出力例の、従来の <code>git request-pull</code>
+コマンドからの出力と比較すると、読者は以下のことに気付くでしょう:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-The tip commit to expect is shown to the integrator; and
+期待する先端コミットがインテグレーター(統合者)に示されます
 </p>
 </li>
 <li>
 <p>
-The signed tag message is shown prominently between the dashed lines before
-  the shortlog.
+署名されたタグメッセージは、ショートログの前の破線(dashed lines)の間に目立つように表示されます。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>The latter is why the contributor would want to justify why pulling her work
-is worthwhile when creating the signed tag.  The contributor then opens her
-favorite MUA, reads msg.txt, edits and sends it to her upstream integrator.</p></div>
+<div class="paragraph"><p>後者は、なぜ、署名入りタグを作成して貢献者が自分の作品をプルする価値があるか正当化したかったかです。 その後、貢献者はお気に入りのMUAを開き、
+msg.txt を読み取り、編集して、上流インテグレーター(統合者)に送信します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_integrator">Integrator</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After receiving such a pull request message, the integrator fetches and
-integrates the tag named in the request, with:</p></div>
+<div class="paragraph"><p>以下のようなプルリクエストメッセージを受信後、インテグレーター(統合者)はリクエストで指定されたタグをフェッチして統合します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> $ git pull example.com:/git/froboz.git/ tags/frotz-for-xyzzy</code></pre>
 </div></div>
-<div class="paragraph"><p>This operation will always open an editor to allow the integrator to fine
-tune the commit log message when merging a signed tag.  Also, pulling a
-signed tag will always create a merge commit even when the integrator does
-not have any new commit since the contributor&#8217;s work forked (i.e. <em>fast
-forward</em>), so that the integrator can properly explain what the merge is
-about and why it was made.</p></div>
-<div class="paragraph"><p>In the editor, the integrator will see something like this:</p></div>
+<div class="paragraph"><p>この操作は常にエディターを開き、インテグレーター(統合者)が署名されたタグをマージするときにコミットログメッセージを微調整できるようにします。
+また、署名されたタグをプルすると、コントリビューターの作業がフォークされてからインテグレーターに新しいコミットがない場合(つまり、「早送り」の場合)でも、常にマージコミットが作成され、インテグレーター(統合者)がマージの内容とマージが行われた理由を適切に説明できるようにします。</p></div>
+<div class="paragraph"><p>エディター内では、インテグレーター(統合者)は以下のように表示されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> Merge tag 'frotz-for-xyzzy' of example.com:/git/froboz.git/
@@ -892,20 +863,14 @@ about and why it was made.</p></div>
  # gpg: Signature made Fri 02 Dec 2011 10:03:01 AM PST using RSA key ID 96AFE6CB
  # gpg: Good signature from "Con Tributor &lt;nitfol@example.com&gt;"</code></pre>
 </div></div>
-<div class="paragraph"><p>Notice that the message recorded in the signed tag "Completed frotz feature"
-appears here, and again that is why it is important for the contributor to
-explain her work well when creating the signed tag.</p></div>
-<div class="paragraph"><p>As usual, the lines commented with <code>#</code> are stripped out. The resulting
-commit records the signed tag used for this validation in a hidden field so
-that it can later be used by others to audit the history. There is no need
-for the integrator to keep a separate copy of the tag in his repository
-(i.e. <code>git tag -l</code> won&#8217;t list the <code>frotz-for-xyzzy</code> tag in the above
-example), and there is no need to publish the tag to his public repository,
-either.</p></div>
-<div class="paragraph"><p>After the integrator responds to the pull request and her work becomes part
-of the permanent history, the contributor can remove the tag from her public
-repository, if she chooses, in order to keep the tag namespace of her public
-repository clean, with:</p></div>
+<div class="paragraph"><p>署名されたタグ「Completed frotz
+feature」に記録されたメッセージがここに表示されることに注意してください。そのため、署名されたタグを作成するときに、貢献者が自分の作業をうまく説明することが重要です。</p></div>
+<div class="paragraph"><p>いつものように、 <code>#</code> でコメントされた行は削除されます。
+結果のコミットは、この検証に使用された署名付きタグを非表示フィールドに記録し、後で他のユーザーが履歴を監査するために使用できるようにします。
+インテグレーター(統合者)が自分のリポジトリにタグの個別のコピーを保持する必要はなく(つまり、 <code>git tag -l</code> は、上記の例の
+<code>frotz-for-xyzzy</code> タグ をリストしません)、タグを自分の公開リポジトリに公開する必要もありません。</p></div>
+<div class="paragraph"><p>インテグレーター(統合者)がプルリクエストに応答し、貢献者の作業が永続的な履歴の一部になった後、 貢献者は自分の公開リポジトリからタグを削除できます。
+貢献者が自分の公開リポジトリからタグを削除する選択をした場合、貢献者のパブリックリポジトリのタグ名前空間をクリーンに保つために、以下のようにします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> $ git push example.com:/git/froboz.git :frotz-for-xyzzy</code></pre>
@@ -913,12 +878,12 @@ repository clean, with:</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_auditors">Auditors</h2>
+<h2 id="_監査人_auditors">監査人(Auditors)</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The <code>--show-signature</code> option can be given to <code>git log</code> or <code>git show</code> and
-shows the verification status of the embedded signed tag in merge commits
-created when the integrator responded to a pull request of a signed tag.</p></div>
-<div class="paragraph"><p>A typical output from <code>git show --show-signature</code> may look like this:</p></div>
+<div class="paragraph"><p><code>--show-signature</code> オプションは <code>git log</code> または <code>git show</code>
+で指定でき、インテグレーター(統合者)が署名付きタグのプルリクエストに応答したときに作成されたマージコミットで埋め込まれた署名付きタグの検証ステータス(verification
+status)を表示します。</p></div>
+<div class="paragraph"><p><code>git show --show-signature</code> からの典型的な出力は、以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code> $ git show --show-signature
@@ -938,10 +903,8 @@ created when the integrator responded to a pull request of a signed tag.</p></di
        Add tests and documentation for frotz
        ...</code></pre>
 </div></div>
-<div class="paragraph"><p>There is no need for the auditor to explicitly fetch the contributor&#8217;s
-signature, or to even be aware of what tag(s) the contributor and integrator
-used to communicate the signature.  All the required information is recorded
-as part of the merge commit.</p></div>
+<div class="paragraph"><p>監査人(auditor)が貢献者の署名を明示的に取得したり、貢献者とインテグレーター(統合者)が署名の伝達に使用したタグを認識したりする必要はありません。
+必要なすべての情報は、マージコミットの一部として記録されます。</p></div>
 </div>
 </div>
 </div>
@@ -949,7 +912,7 @@ as part of the merge commit.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-23 05:43:49 JST
+ 2022-07-09 07:14:26 JST
 </div>
 </div>
 </body>

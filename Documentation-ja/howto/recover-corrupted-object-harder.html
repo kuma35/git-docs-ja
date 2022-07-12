@@ -739,19 +739,16 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>I was recently presented with a repository with a corrupted packfile, and
-was asked if the data was recoverable. This post-mortem describes the steps
-I took to investigate and fix the problem. I thought others might find the
-process interesting, and it might help somebody in the same situation.</p></div>
+<div class="paragraph"><p>私は、最近、破損したパックファイルを含むリポジトリを提示され、データが回復可能かどうかを尋ねられました。
+この事後分析では、問題を調査して修正するために私が行った手順について説明します。
+他の人がこのプロセスを興味深いと思うかもしれないし、同じ状況の誰かを助ける事になるかもしれないと思ったからです。</p></div>
 <div class="sidebarblock">
 <div class="content">
-<div class="paragraph"><p>Note: In this case, no good copy of the repository was available. For the
-much easier case where you can get the corrupted object from elsewhere, see
-<a href="recover-corrupted-blob-object.html">this howto</a>.</p></div>
+<div class="paragraph"><p>注意: このケースではリポジトリの適切なコピーは利用できませんでした。 破損したオブジェクトを他の場所から取得できる、はるかに簡単なケースについては、
+<a href="recover-corrupted-blob-object.html">this howto</a> を参照してください。</p></div>
 </div></div>
-<div class="paragraph"><p>I started with an fsck, which found a problem with exactly one object (I&#8217;ve
-used $pack and $obj below to keep the output readable, and also because I&#8217;ll
-refer to them later):</p></div>
+<div class="paragraph"><p>私はfsckで始め、1つのオブジェクトで問題が見つかりました(出力を読みやすくするために、また、後で私が引用しやすくするために、以下で $pack と
+$obj を使用しました):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git fsck
@@ -760,41 +757,31 @@ refer to them later):</p></div>
     error: inflate: data stream error (incorrect data check)
     error: cannot unpack $obj from $pack at offset 51653873</code></pre>
 </div></div>
-<div class="paragraph"><p>The pack checksum failing means a byte is munged somewhere, and it is
-presumably in the object mentioned (since both the index checksum and zlib
-were failing).</p></div>
-<div class="paragraph"><p>Reading the zlib source code, I found that "incorrect data check" means that
-the adler-32 checksum at the end of the zlib data did not match the inflated
-data. So stepping the data through zlib would not help, as it did not fail
-until the very end, when we realize the CRC does not match.  The problematic
-bytes could be anywhere in the object data.</p></div>
-<div class="paragraph"><p>The first thing I did was pull the broken data out of the packfile. I needed
-to know how big the object was, which I found out with:</p></div>
+<div class="paragraph"><p>パックチェックサムが失敗したということは、バイトがどこかで変更されたことを意味し、それはおそらく言及されたオブジェクトにあります(インデックスチェックサムとzlibの両方が失敗したため)。</p></div>
+<div class="paragraph"><p>私はzlibのソースコードを読んで、「incorrect data check」とは、zlibデータの最後にある adler-32
+チェックサムが展開したデータと一致しなかったことを意味することがわかりました。
+したがって、データをzlibを介してステップ実行しても、CRCが一致しないことが分かる最後の時点まで失敗しないので、役に立ちません。
+問題のあるバイトは、オブジェクトデータのどこにでもある可能性があります。</p></div>
+<div class="paragraph"><p>私が最初にしたことは、壊れたデータをパックファイルから引き出すことでした。 私はオブジェクトの大きさを知る必要がありました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git show-index &lt;$idx | cut -d' ' -f1 | sort -n | grep -A1 51653873
     51653873
     51664736</code></pre>
 </div></div>
-<div class="paragraph"><p>Show-index gives us the list of objects and their offsets. We throw away
-everything but the offsets, and then sort them so that our interesting
-offset (which we got from the fsck output above) is followed immediately by
-the offset of the next object. Now we know that the object data is 10863
-bytes long, and we can grab it with:</p></div>
+<div class="paragraph"><p>show-indexは、オブジェクトとそのオフセットのリストを提供します。
+オフセット以外のすべてを破棄し、次にそれらを並べ替えて、興味深いオフセット(上記のfsck出力から取得)の直後に次のオブジェクトのオフセットが続くようにします。
+これで、オブジェクトデータの長さが10863バイトであることがわかり、以下のコマンドで取得できます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  dd if=$pack of=object bs=1 skip=51653873 count=10863</code></pre>
 </div></div>
-<div class="paragraph"><p>I inspected a hexdump of the data, looking for any obvious bogosity (e.g., a
-4K run of zeroes would be a good sign of filesystem corruption). But
-everything looked pretty reasonable.</p></div>
-<div class="paragraph"><p>Note that the "object" file isn&#8217;t fit for feeding straight to zlib; it has
-the git packed object header, which is variable-length. We want to strip
-that off so we can start playing with the zlib data directly. You can either
-work your way through it manually (the format is described in
-<a href="../technical/pack-format.html">Documentation/technical/pack-format.txt</a>),
-or you can walk through it in a debugger. I did the latter, creating a valid
-pack like:</p></div>
+<div class="paragraph"><p>私はデータの16進ダンプを調べて、明らかなボゴシティを探しました(たとえば、4Kのゼロの連続はファイルシステムの破損の良い兆候です)。
+しかし、すべてがかなり合理的に見えました。</p></div>
+<div class="paragraph"><p>「オブジェクト」ファイルは、zlibに直接送り込むには適していないことに注意してください。 可変長のgitパックオブジェクトヘッダーがあります。
+zlibデータを直接操作できるように、これを取り除きます。 手動で作業するか(形式は
+<a href="../technical/pack-format.html">Documentation/technical/pack-format.txt</a>
+で説明されています)、デバッガーで操作することができます。 私は後者を行い、以下のような有効なパックを作成しました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    # pack magic and version
@@ -807,31 +794,24 @@ pack like:</p></div>
     /path/to/git.git/t/helper/test-tool sha1 -b &lt;tmp.pack &gt;trailer
     cat trailer &gt;&gt;tmp.pack</code></pre>
 </div></div>
-<div class="paragraph"><p>and then running "git index-pack tmp.pack" in the debugger (stop at
-unpack_raw_entry). Doing this, I found that there were 3 bytes of header
-(and the header itself had a sane type and size). So I stripped those off
-with:</p></div>
+<div class="paragraph"><p>次に、デバッガーで <code>git index-pack tmp.pack</code> を実行します(unpack_raw_entryで停止します)。
+これを行うと、3バイトのヘッダーがあることがわかりました(ヘッダー自体は適切なタイプとサイズでした)。 なので私はそれらを以下のように取り除きました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    dd if=object of=zlib bs=1 skip=3</code></pre>
 </div></div>
-<div class="paragraph"><p>I ran the result through zlib&#8217;s inflate using a custom C program. And while
-it did report the error, I did get the right number of output bytes (i.e.,
-it matched git&#8217;s size header that we decoded above). But feeding the result
-back to "git hash-object" didn&#8217;t produce the same sha1. So there were some
-wrong bytes, but I didn&#8217;t know which. The file happened to be C source code,
-so I hoped I could notice something obviously wrong with it, but I didn&#8217;t. I
-even got it to compile!</p></div>
-<div class="paragraph"><p>I also tried comparing it to other versions of the same path in the
-repository, hoping that there would be some part of the diff that didn&#8217;t
-make sense. Unfortunately, this happened to be the only revision of this
-particular file in the repository, so I had nothing to compare against.</p></div>
-<div class="paragraph"><p>So I took a different approach. Working under the guess that the corruption
-was limited to a single byte, I wrote a program to munge each byte
-individually, and try inflating the result. Since the object was only 10K
-compressed, that worked out to about 2.5M attempts, which took a few
-minutes.</p></div>
-<div class="paragraph"><p>The program I used is here:</p></div>
+<div class="paragraph"><p>カスタムCプログラムを使用して、zlibでの解凍を介して結果を実行しました。
+そして、それはエラーを報告はしましたが、正しい数の出力バイトを取得しました(つまり、上記でデコードしたgitのサイズヘッダーと一致しました)。
+しかし、結果を <code>git hash-object</code> にフィードバックしても、同じsha1は生成されませんでした。
+つまり、間違ったバイトがいくつかありましたが、どれかわからないということです。
+このファイルはたまたまCのソースコードだったので、明らかに何か問題があることに気付くといいのですが、私は気づきませんでした。
+それはコンパイルもできました！</p></div>
+<div class="paragraph"><p>また、リポジトリ内の同じパスの他のバージョンと比較してみました。意味のないdiffの一部があることを期待していました。
+しかし残念ながら、これはたまたまリポジトリ内のこの特定のファイルの唯一のリビジョンであったため、比較するものは何もありませんでした。</p></div>
+<div class="paragraph"><p>なので私は別のアプローチを取りました。
+破損は1バイトに限定されているという推測の下で、各バイトを個別に処理するプログラムを作成し、結果を解凍させてみました。
+オブジェクトはわずか10Kに圧縮されていたため、約250万回の試行に成功し、それは数分かかりました。</p></div>
+<div class="paragraph"><p>私が使用したプログラムはコレです:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>#include &lt;stdio.h&gt;
@@ -896,75 +876,57 @@ int main(void)
         return 0;
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>I compiled and ran with:</p></div>
+<div class="paragraph"><p>私は以下のようにしてコンパイルして実行しました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  gcc -Wall -Werror -O3 munge.c -o munge -lz
   ./munge &lt;zlib</code></pre>
 </div></div>
-<div class="paragraph"><p>There were a few false positives early on (if you write "no data" in the
-zlib header, zlib thinks it&#8217;s just fine :) ). But I got a hit about halfway
-through:</p></div>
+<div class="paragraph"><p>初期の段階でいくつかの誤検知がありました(zlibヘッダーに「no data」と記述した場合、zlibはそれで問題ないと見なします :) )。
+しかし、私は途中でヒットしました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  i=5642, j=c7</code></pre>
 </div></div>
-<div class="paragraph"><p>I let it run to completion, and got a few more hits at the end (where it was
-munging the CRC to match our broken data). So there was a good chance this
-middle hit was the source of the problem.</p></div>
-<div class="paragraph"><p>I confirmed by tweaking the byte in a hex editor, zlib inflating the result
-(no errors!), and then piping the output into "git hash-object", which
-reported the sha1 of the broken object. Success!</p></div>
-<div class="paragraph"><p>I fixed the packfile itself with:</p></div>
+<div class="paragraph"><p>私はそれを最後まで実行させ、最後にさらにいくつかのヒットを取得しました(壊れたデータと一致するようにCRCを変更していました)。
+したがって、この途中のヒットが問題の原因である可能性が高いです。</p></div>
+<div class="paragraph"><p>16進エディターでバイトを微調整し、結果をzlibで解凍して(エラーなし！)、出力を「git
+hash-object」にパイプして、壊れたオブジェクトのsha1を報告することで確認しました。 成功です！</p></div>
+<div class="paragraph"><p>私はパックファイル自体を以下のようにして修正しました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  chmod +w $pack
   printf '\xc7' | dd of=$pack bs=1 seek=51659518 conv=notrunc
   chmod -w $pack</code></pre>
 </div></div>
-<div class="paragraph"><p>The <code>\xc7</code> comes from the replacement byte our "munge" program found.  The
-offset 51659518 is derived by taking the original object offset (51653873),
-adding the replacement offset found by "munge" (5642), and then adding back
-in the 3 bytes of git header we stripped.</p></div>
-<div class="paragraph"><p>After that, "git fsck" ran clean.</p></div>
-<div class="paragraph"><p>As for the corruption itself, I was lucky that it was indeed a single
-byte. In fact, it turned out to be a single bit. The byte 0xc7 was corrupted
-to 0xc5. So presumably it was caused by faulty hardware, or a cosmic ray.</p></div>
-<div class="paragraph"><p>And the aborted attempt to look at the inflated output to see what was
-wrong? I could have looked forever and never found it. Here&#8217;s the diff
-between what the corrupted data inflates to, versus the real data:</p></div>
+<div class="paragraph"><p><code>\xc7</code> は、「munge」プログラムが見つけた置換バイトに由来します。 オフセット 51659518
+は、元のオブジェクトオフセット(51653873)を取得し、「munge」(5642)によって検出された置換オフセットを追加してから、削除した3バイトのgitヘッダーを追加して取得します。</p></div>
+<div class="paragraph"><p>その後、 「git fsck」はクリーンに実行されました。</p></div>
+<div class="paragraph"><p>破損自体に関しては、それが確かに1バイトであったことは幸運でした。 実際、それは1ビットであることが判明しました。 バイト0xc7 が 0xc5
+に破損しました。 したがって、おそらくそれは欠陥のあるハードウェア、または宇宙線によって引き起こされたのでしょう。</p></div>
+<div class="paragraph"><p>そして、何が悪かったのかを見るために解凍した出力を見るという中止された試みは？ 私は永遠に見て、それを見つけることができなかったかもしれません。
+破損したデータを解凍したものと実際のデータの違いは以下のとおりです:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  -       cp = strtok (arg, "+");
   +       cp = strtok (arg, ".");</code></pre>
 </div></div>
-<div class="paragraph"><p>It tweaked one byte and still ended up as valid, readable C that just
-happened to do something totally different! One takeaway is that on a less
-unlucky day, looking at the zlib output might have actually been helpful, as
-most random changes would actually break the C code.</p></div>
-<div class="paragraph"><p>But more importantly, git&#8217;s hashing and checksumming noticed a problem that
-easily could have gone undetected in another system. The result still
-compiled, but would have caused an interesting bug (that would have been
-blamed on some random commit).</p></div>
+<div class="paragraph"><p>それは1バイトを微調整しましたが、それでも、まったく異なることをしただけの、有効で読み取り可能なC言語のソースコードになりました！
+一つの収穫として、不運でない日であれば、ほとんどのランダムな変更はC言語のソースコードを壊してしまうので、zlibの出力を見ることは実際に役に立ったかもしれません。</p></div>
+<div class="paragraph"><p>しかし、さらに重要なことは、gitのハッシュとチェックサムは、別のシステムでは簡単に検出されない可能性のある問題に気付いた事です。その結果、コンパイルはできましたが、興味深いバグが発生したことでしょう(手当たりしだいのコミットのせいにされたかもしれません)。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_the_adventure_continues_8230">The adventure continues&#8230;</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>I ended up doing this again! Same entity, new hardware. The assumption at
-this point is that the old disk corrupted the packfile, and then the
-corruption was migrated to the new hardware (because it was done by rsync or
-similar, and no fsck was done at the time of migration).</p></div>
-<div class="paragraph"><p>This time, the affected blob was over 20 megabytes, which was far too large
-to do a brute-force on. I followed the instructions above to create the
-<code>zlib</code> file. I then used the <code>inflate</code> program below to pull the corrupted
-data from that. Examining that output gave me a hint about where in the file
-the corruption was. But now I was working with the file itself, not the zlib
-contents. So knowing the sha1 of the object and the approximate area of the
-corruption, I used the <code>sha1-munge</code> program below to brute-force the correct
-byte.</p></div>
-<div class="paragraph"><p>Here&#8217;s the inflate program (it&#8217;s essentially <code>gunzip</code> but without the <code>.gz</code>
-header processing):</p></div>
+<div class="paragraph"><p>私はまたやらかしてしまいました！ 同じ事を、新しいハードウェアで。
+この時点での想定は、古いディスクがpackfileを破損し、その破損が新しいハードウェアに移行されたというものです(rsyncなどによって行われ、移行時にfsckが行われなかったため)。</p></div>
+<div class="paragraph"><p>今回、影響を受けたブロブは20メガバイトを超えていましたが、これは大きすぎて力づくでとは行きませんでした。 私は上記の手順に従って、 <code>zlib</code>
+ファイルを作成しました。 次に、以下の <code>inflate</code> プログラムを使用して、破損したデータをそこからプルしました。
+その出力を調べると、ファイルのどこに破損があったかについてのヒントが得られました。
+しかし、今回はzlibの内容ではなく、ファイル自体を操作していました。 そのため、オブジェクトのsha1と破損のおおよその領域を知って、以下の
+<code>sha1-munge</code> プログラムを使用して、正しいバイトを力づくで割り出しました。</p></div>
+<div class="paragraph"><p>これが解凍(inflate)プログラムです(基本的には <code>gunzip</code> ですが、 <code>.gz</code> ヘッダー処理はありません):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>#include &lt;stdio.h&gt;
@@ -1003,7 +965,7 @@ int main(int argc, char **argv)
         return 0;
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>And here is the <code>sha1-munge</code> program:</p></div>
+<div class="paragraph"><p>そして、以下が <code>sha1-munge</code> プログラムです:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>#include &lt;stdio.h&gt;
@@ -1132,6 +1094,13 @@ int main(int argc, char **argv)
                  * below. In those cases, you'd have to do the whole
                  * sha1 from scratch, or possibly keep three running
                  * "orig" sha1 computations going.
+                 * JP: 削除 -- 私が考えるに、
+                 * これは実際にはうまくいかないと思います。
+                 * なぜなら、私たちはすでにヘッダーで特定のサイズに
+                 * コミットしているからです。以下の追加(addition)も
+                 * 同様です。このような場合、sha1全体を一からやり直すか、
+                 * あるいは3つの「orig」sha1計算を実行し続ける必要が
+                 * あるでしょう。
                  */
                 memcpy(&amp;x, &amp;orig, sizeof(x));
                 SHA1_Update(&amp;x, buf + i + 1, len - i - 1);
@@ -1145,6 +1114,10 @@ int main(int argc, char **argv)
                  * possible bytes. If you suspect a single-bit flip,
                  * it would be much shorter to just try the 8
                  * bit-flipped variants.
+                 * JP: 置換 -- これは256の可能なバイトをそれぞれ
+                 * 試行することに注意してください。もし1ビット反転が
+                 * 疑われるなら、8ビット反転したものを試す方が
+                 * ずっと短いでしょう。
                  */
                 c = buf[i];
                 for (j = 0; j &lt;= 0xff; j++) {
@@ -1187,7 +1160,7 @@ int main(int argc, char **argv)
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-20 09:06:30 JST
+ 2022-07-12 08:17:41 JST
 </div>
 </div>
 </body>
