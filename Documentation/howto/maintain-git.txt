@@ -15,22 +15,22 @@ Activities
 
 The maintainer's Git time is spent on three activities.
 
- - Communication (45%)
-
-   Mailing list discussions on general design, fielding user
-   questions, diagnosing bug reports; reviewing, commenting on,
-   suggesting alternatives to, and rejecting patches.
-
- - Integration (50%)
-
-   Applying new patches from the contributors while spotting and
-   correcting minor mistakes, shuffling the integration and
-   testing branches, pushing the results out, cutting the
-   releases, and making announcements.
-
- - Own development (5%)
-
-   Scratching my own itch and sending proposed patch series out.
+* Communication (45%)
++
+Mailing list discussions on general design, fielding user
+questions, diagnosing bug reports; reviewing, commenting on,
+suggesting alternatives to, and rejecting patches.
++
+* Integration (50%)
++
+Applying new patches from the contributors while spotting and
+correcting minor mistakes, shuffling the integration and
+testing branches, pushing the results out, cutting the
+releases, and making announcements.
++
+* Own development (5%)
++
+Scratching my own itch and sending proposed patch series out.
 
 The Policy
 ----------
@@ -97,261 +97,251 @@ A Typical Git Day
 A typical Git day for the maintainer implements the above policy
 by doing the following:
 
- - Scan mailing list.  Respond with review comments, suggestions
+ * Scan mailing list.  Respond with review comments, suggestions
    etc.  Kibitz.  Collect potentially usable patches from the
    mailing list.  Patches about a single topic go to one mailbox (I
    read my mail in Gnus, and type \C-o to save/append messages in
    files in mbox format).
 
- - Write his own patches to address issues raised on the list but
+ * Write his own patches to address issues raised on the list but
    nobody has stepped up solving.  Send it out just like other
    contributors do, and pick them up just like patches from other
    contributors (see above).
 
- - Review the patches in the saved mailboxes.  Edit proposed log
+ * Review the patches in the saved mailboxes.  Edit proposed log
    message for typofixes and clarifications, and add Acks
    collected from the list.  Edit patch to incorporate "Oops,
    that should have been like this" fixes from the discussion.
 
- - Classify the collected patches and handle 'master' and
+ * Classify the collected patches and handle 'master' and
    'maint' updates:
+   ** Obviously correct fixes that pertain to the tip of 'maint'
+      are directly applied to 'maint'.
+   ** Obviously correct fixes that pertain to the tip of 'master'
+      are directly applied to 'master'.
+   ** Other topics are not handled in this step.
++
+This step is done with "git am".
++
+ $ git checkout master    ;# or "git checkout maint"
+ $ git am -sc3 mailbox
+ $ make test
++
+In practice, almost no patch directly goes to 'master' or
+'maint'.
 
-   - Obviously correct fixes that pertain to the tip of 'maint'
-     are directly applied to 'maint'.
-
-   - Obviously correct fixes that pertain to the tip of 'master'
-     are directly applied to 'master'.
-
-   - Other topics are not handled in this step.
-
-   This step is done with "git am".
-
-     $ git checkout master    ;# or "git checkout maint"
-     $ git am -sc3 mailbox
-     $ make test
-
-   In practice, almost no patch directly goes to 'master' or
-   'maint'.
-
- - Review the last issue of "What's cooking" message, review the
+ * Review the last issue of "What's cooking" message, review the
    topics ready for merging (topic->master and topic->maint).  Use
    "Meta/cook -w" script (where Meta/ contains a checkout of the
    'todo' branch) to aid this step.
++
+And perform the merge.  Use "Meta/Reintegrate -e" script (see
+later) to aid this step.
++
+ $ Meta/cook -w last-issue-of-whats-cooking.mbox
++
+ $ git checkout master    ;# or "git checkout maint"
+ $ echo ai/topic | Meta/Reintegrate -e ;# "git merge ai/topic"
+ $ git log -p ORIG_HEAD.. ;# final review
+ $ git diff ORIG_HEAD..   ;# final review
+ $ make test              ;# final review
 
-   And perform the merge.  Use "Meta/Reintegrate -e" script (see
-   later) to aid this step.
-
-     $ Meta/cook -w last-issue-of-whats-cooking.mbox
-
-     $ git checkout master    ;# or "git checkout maint"
-     $ echo ai/topic | Meta/Reintegrate -e ;# "git merge ai/topic"
-     $ git log -p ORIG_HEAD.. ;# final review
-     $ git diff ORIG_HEAD..   ;# final review
-     $ make test              ;# final review
-
- - Handle the remaining patches:
-
-   - Anything unobvious that is applicable to 'master' (in other
-     words, does not depend on anything that is still in 'next'
-     and not in 'master') is applied to a new topic branch that
-     is forked from the tip of 'master' (or the last feature release,
-     which is a bit older than 'master').  This includes both
-     enhancements and unobvious fixes to 'master'.  A topic
-     branch is named as ai/topic where "ai" is two-letter string
-     named after author's initial and "topic" is a descriptive name
-     of the topic (in other words, "what's the series is about").
-
-   - An unobvious fix meant for 'maint' is applied to a new
-     topic branch that is forked from the tip of 'maint' (or the
-     oldest and still relevant maintenance branch).  The
-     topic may be named as ai/maint-topic.
-
-   - Changes that pertain to an existing topic are applied to
-     the branch, but:
-
-     - obviously correct ones are applied first;
-
-     - questionable ones are discarded or applied to near the tip;
-
-   - Replacement patches to an existing topic are accepted only
-     for commits not in 'next'.
-
-   The initial round is done with:
-
-     $ git checkout ai/topic ;# or "git checkout -b ai/topic master"
-     $ git am -sc3 mailbox
-
-   and replacing an existing topic with subsequent round is done with:
-
-     $ git checkout master...ai/topic ;# try to reapply to the same base
-     $ git am -sc3 mailbox
-
-   to prepare the new round on a detached HEAD, and then
-
-     $ git range-diff @{-1}...
-     $ git diff @{-1}
-
-   to double check what changed since the last round, and finally
-
-     $ git checkout -B @{-1}
-
-   to conclude (the last step is why a topic already in 'next' is
-   not replaced but updated incrementally).
-
-   Whether it is the initial round or a subsequent round, the topic
-   may not build even in isolation, or may break the build when
-   merged to integration branches due to bugs.  There may already
-   be obvious and trivial improvements suggested on the list.  The
-   maintainer often adds an extra commit, with "SQUASH???" in its
-   title, to fix things up, before publishing the integration
-   branches to make it usable by other developers for testing.
-   These changes are what the maintainer is not 100% committed to
-   (trivial typofixes etc. are often squashed directly into the
-   patches that need fixing, without being applied as a separate
-   "SQUASH???" commit), so that they can be removed easily as needed.
+ * Handle the remaining patches:
+   ** Anything unobvious that is applicable to 'master' (in other
+      words, does not depend on anything that is still in 'next'
+      and not in 'master') is applied to a new topic branch that
+      is forked from the tip of 'master' (or the last feature release,
+      which is a bit older than 'master').  This includes both
+      enhancements and unobvious fixes to 'master'.  A topic
+      branch is named as ai/topic where "ai" is two-letter string
+      named after author's initial and "topic" is a descriptive name
+      of the topic (in other words, "what's the series is about").
+   ** An unobvious fix meant for 'maint' is applied to a new
+      topic branch that is forked from the tip of 'maint' (or the
+      oldest and still relevant maintenance branch).  The
+      topic may be named as ai/maint-topic.
+   ** Changes that pertain to an existing topic are applied to
+      the branch, but:
+      *** obviously correct ones are applied first;
+      *** questionable ones are discarded or applied to near the tip;
+   ** Replacement patches to an existing topic are accepted only
+      for commits not in 'next'.
++
+The initial round is done with:
++
+ $ git checkout ai/topic ;# or "git checkout -b ai/topic master"
+ $ git am -sc3 mailbox
++
+and replacing an existing topic with subsequent round is done with:
++
+ $ git checkout master...ai/topic ;# try to reapply to the same base
+ $ git am -sc3 mailbox
++
+to prepare the new round on a detached HEAD, and then
++
+ $ git range-diff @{-1}...
+ $ git diff @{-1}
++
+to double check what changed since the last round, and finally
++
+ $ git checkout -B @{-1}
++
+to conclude (the last step is why a topic already in 'next' is
+not replaced but updated incrementally).
++
+Whether it is the initial round or a subsequent round, the topic
+may not build even in isolation, or may break the build when
+merged to integration branches due to bugs.  There may already
+be obvious and trivial improvements suggested on the list.  The
+maintainer often adds an extra commit, with "SQUASH???" in its
+title, to fix things up, before publishing the integration
+branches to make it usable by other developers for testing.
+These changes are what the maintainer is not 100% committed to
+(trivial typofixes etc. are often squashed directly into the
+patches that need fixing, without being applied as a separate
+"SQUASH???" commit), so that they can be removed easily as needed.
 
 
- - Merge maint to master as needed:
-
+ * Merge maint to master as needed:
++
      $ git checkout master
      $ git merge maint
      $ make test
 
- - Merge master to next as needed:
-
+ * Merge master to next as needed:
++
      $ git checkout next
      $ git merge master
      $ make test
 
- - Review the last issue of "What's cooking" again and see if topics
+ * Review the last issue of "What's cooking" again and see if topics
    that are ready to be merged to 'next' are still in good shape
    (e.g. has there any new issue identified on the list with the
    series?)
 
- - Prepare 'jch' branch, which is used to represent somewhere
+ * Prepare 'jch' branch, which is used to represent somewhere
    between 'master' and 'seen' and often is slightly ahead of 'next'.
++   
+ $ Meta/Reintegrate master..seen >Meta/redo-jch.sh
++
+The result is a script that lists topics to be merged in order to
+rebuild 'seen' as the input to Meta/Reintegrate script.  Remove
+later topics that should not be in 'jch' yet.  Add a line that
+consists of '### match next' before the name of the first topic
+in the output that should be in 'jch' but not in 'next' yet.
 
-     $ Meta/Reintegrate master..seen >Meta/redo-jch.sh
-
-   The result is a script that lists topics to be merged in order to
-   rebuild 'seen' as the input to Meta/Reintegrate script.  Remove
-   later topics that should not be in 'jch' yet.  Add a line that
-   consists of '### match next' before the name of the first topic
-   in the output that should be in 'jch' but not in 'next' yet.
-
- - Now we are ready to start merging topics to 'next'.  For each
+ * Now we are ready to start merging topics to 'next'.  For each
    branch whose tip is not merged to 'next', one of three things can
    happen:
+   ** The commits are all next-worthy; merge the topic to next;
+   ** The new parts are of mixed quality, but earlier ones are
+      next-worthy; merge the early parts to next;
+   ** Nothing is next-worthy; do not do anything.
++
+This step is aided with Meta/redo-jch.sh script created earlier.
+If a topic that was already in 'next' gained a patch, the script
+would list it as "ai/topic~1".  To include the new patch to the
+updated 'next', drop the "~1" part; to keep it excluded, do not
+touch the line.  If a topic that was not in 'next' should be
+merged to 'next', add it at the end of the list.  Then:
++
+ $ git checkout -B jch master
+ $ Meta/redo-jch.sh -c1
++
+to rebuild the 'jch' branch from scratch.  "-c1" tells the script
+to stop merging at the first line that begins with '###'
+(i.e. the "### match next" line you added earlier).
++
+At this point, build-test the result.  It may reveal semantic
+conflicts (e.g. a topic renamed a variable, another added a new
+reference to the variable under its old name), in which case
+prepare an appropriate merge-fix first (see appendix), and
+rebuild the 'jch' branch from scratch, starting at the tip of
+'master'.
++
+Then do the same to 'next'
++
+ $ git checkout next
+ $ sh Meta/redo-jch.sh -c1 -e
++
+The "-e" option allows the merge message that comes from the
+history of the topic and the comments in the "What's cooking" to
+be edited.  The resulting tree should match 'jch' as the same set
+of topics are merged on 'master'; otherwise there is a mismerge.
+Investigate why and do not proceed until the mismerge is found
+and rectified.
++
+ $ git diff jch next
++
+When all is well, clean up the redo-jch.sh script with
++
+ $ sh Meta/redo-jch.sh -u
++
+This removes topics listed in the script that have already been
+merged to 'master'.  This may lose '### match next' marker;
+add it again to the appropriate place when it happens.
 
-   - The commits are all next-worthy; merge the topic to next;
-   - The new parts are of mixed quality, but earlier ones are
-     next-worthy; merge the early parts to next;
-   - Nothing is next-worthy; do not do anything.
-
-   This step is aided with Meta/redo-jch.sh script created earlier.
-   If a topic that was already in 'next' gained a patch, the script
-   would list it as "ai/topic~1".  To include the new patch to the
-   updated 'next', drop the "~1" part; to keep it excluded, do not
-   touch the line.  If a topic that was not in 'next' should be
-   merged to 'next', add it at the end of the list.  Then:
-
-     $ git checkout -B jch master
-     $ Meta/redo-jch.sh -c1
-
-   to rebuild the 'jch' branch from scratch.  "-c1" tells the script
-   to stop merging at the first line that begins with '###'
-   (i.e. the "### match next" line you added earlier).
-
-   At this point, build-test the result.  It may reveal semantic
-   conflicts (e.g. a topic renamed a variable, another added a new
-   reference to the variable under its old name), in which case
-   prepare an appropriate merge-fix first (see appendix), and
-   rebuild the 'jch' branch from scratch, starting at the tip of
-   'master'.
-
-   Then do the same to 'next'
-
-     $ git checkout next
-     $ sh Meta/redo-jch.sh -c1 -e
-
-   The "-e" option allows the merge message that comes from the
-   history of the topic and the comments in the "What's cooking" to
-   be edited.  The resulting tree should match 'jch' as the same set
-   of topics are merged on 'master'; otherwise there is a mismerge.
-   Investigate why and do not proceed until the mismerge is found
-   and rectified.
-
-     $ git diff jch next
-
-   When all is well, clean up the redo-jch.sh script with
-
-     $ sh Meta/redo-jch.sh -u
-
-   This removes topics listed in the script that have already been
-   merged to 'master'.  This may lose '### match next' marker;
-   add it again to the appropriate place when it happens.
-
- - Rebuild 'seen'.
-
+ * Rebuild 'seen'.
++
      $ Meta/Reintegrate master..seen >Meta/redo-seen.sh
-
-   Edit the result by adding new topics that are not still in 'seen'
-   in the script.  Then
-
++
+Edit the result by adding new topics that are not still in 'seen'
+in the script.  Then
++
      $ git checkout -B seen jch
      $ sh Meta/redo-seen.sh
-
-   When all is well, clean up the redo-seen.sh script with
-
++
+When all is well, clean up the redo-seen.sh script with
++
      $ sh Meta/redo-seen.sh -u
-
-   Double check by running
-
++
+Double check by running
++
      $ git branch --no-merged seen
++
+to see there is no unexpected leftover topics.
++
+At this point, build-test the result for semantic conflicts, and
+if there are, prepare an appropriate merge-fix first (see
+appendix), and rebuild the 'seen' branch from scratch, starting at
+the tip of 'jch'.
 
-   to see there is no unexpected leftover topics.
-
-   At this point, build-test the result for semantic conflicts, and
-   if there are, prepare an appropriate merge-fix first (see
-   appendix), and rebuild the 'seen' branch from scratch, starting at
-   the tip of 'jch'.
-
- - Update "What's cooking" message to review the updates to
+ * Update "What's cooking" message to review the updates to
    existing topics, newly added topics and graduated topics.
-
-   This step is helped with Meta/cook script.
-
-     $ Meta/cook
-
-   This script inspects the history between master..seen, finds tips
-   of topic branches, compares what it found with the current
-   contents in Meta/whats-cooking.txt, and updates that file.
-   Topics not listed in the file but are found in master..seen are
-   added to the "New topics" section, topics listed in the file that
-   are no longer found in master..seen are moved to the "Graduated to
-   master" section, and topics whose commits changed their states
-   (e.g. used to be only in 'seen', now merged to 'next') are updated
-   with change markers "<<" and ">>".
-
-   Look for lines enclosed in "<<" and ">>"; they hold contents from
-   old file that are replaced by this integration round.  After
-   verifying them, remove the old part.  Review the description for
-   each topic and update its doneness and plan as needed.  To review
-   the updated plan, run
-
++
+This step is helped with Meta/cook script.
++
+ $ Meta/cook
++
+This script inspects the history between master..seen, finds tips
+of topic branches, compares what it found with the current
+contents in Meta/whats-cooking.txt, and updates that file.
+Topics not listed in the file but are found in master..seen are
+added to the "New topics" section, topics listed in the file that
+are no longer found in master..seen are moved to the "Graduated to
+master" section, and topics whose commits changed their states
+(e.g. used to be only in 'seen', now merged to 'next') are updated
+with change markers "<<" and ">>".
++
+Look for lines enclosed in "<<" and ">>"; they hold contents from
+old file that are replaced by this integration round.  After
+verifying them, remove the old part.  Review the description for
+each topic and update its doneness and plan as needed.  To review
+the updated plan, run
++
      $ Meta/cook -w
++
+which will pick up comments given to the topics, such as "Will
+merge to 'next'", etc. (see Meta/cook script to learn what kind
+of phrases are supported).
 
-   which will pick up comments given to the topics, such as "Will
-   merge to 'next'", etc. (see Meta/cook script to learn what kind
-   of phrases are supported).
-
- - Compile, test and install all four (five) integration branches;
+ * Compile, test and install all four (five) integration branches;
    Meta/Dothem script may aid this step.
 
- - Format documentation if the 'master' branch was updated;
+ * Format documentation if the 'master' branch was updated;
    Meta/dodoc.sh script may aid this step.
 
- - Push the integration branches out to public places; Meta/pushall
+ * Push the integration branches out to public places; Meta/pushall
    script may aid this step.
 
 Observations
