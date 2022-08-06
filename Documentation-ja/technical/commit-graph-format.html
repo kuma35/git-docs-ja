@@ -5,7 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 9.1.1" />
-<title>Use of index and Racy Git problem</title>
+<title>Git commit graph format</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
 
@@ -734,158 +734,290 @@ asciidoc.install();
 </head>
 <body class="article">
 <div id="header">
-<h1>Use of index and Racy Git problem</h1>
+<h1>Git commit graph format</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_background">Background</h2>
+<div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>インデックスは、Gitで最も重要なデータ構造の1つです。
-これは、パスとそのオブジェクト名のリストを記録することによって仮想の作業ツリーの状態を表し、コミットされる次のツリーオブジェクトを書き出すための足場領域(staging
-area)として機能します。 状態は、作業ツリー内のファイルと必ずしも一致する必要はなく、多くの場合一致しないという意味で「仮想」です。</p></div>
-<div class="paragraph"><p>Gitは、インデックス内の仮想作業ツリーの状態と、作業ツリー内のファイルの違いを調べる必要がある場合があります。 最も明白なケースは、ユーザーが
-<code>git diff</code>(またはその低レベルの実装である <code>git diff-files</code>) または <code>git-ls-files --modified</code>
-で問い合わせした場合です。
-さらにGitは、パッチ適用中や、ブランチの切り替え中や、マージ処理中に、作業ツリーのファイルがインデックスに記録されているものと異なるかどうかを内部的にチェックし、それらのローカルな変更を踏みにじらないようにしています。</p></div>
-<div class="paragraph"><p>作業ツリー内のファイルとインデックスエントリ間のこの比較を高速化するために、インデックスエントリは、最後に更新されたときに <code>lstat(2)</code>
-システムコールを介してファイルシステムから取得した情報を記録します。 それらが異なるかどうかを確認するとき、Gitは最初にファイルに対して
-<code>lstat(2)</code> 実行し、結果をこの情報と比較します(これは元々は <code>ce_match_stat()</code>
-関数によって行われてましたが、現在のコードでは <code>ce_match_stat_basic()</code> 関数で行います)。
-これらの「キャッシュされた統計情報」(cached stat
-information)フィールドのいくつかが一致しない場合、Gitは、ファイルの内容を見なくてもファイルが変更されたことを通知できます。</p></div>
-<div class="paragraph"><p>注意:  <code>lstat(2)</code> 介して取得した <code>struct stat</code> のすべてのメンバーがこの比較に使用されるわけではありません。たとえば、
-<code>st_atime</code> は明らかに役に立ちません。現在、Gitは、<code>st_mode</code>
-からのファイルタイプ(通常のファイルとシンボリックリンク)と実行可能ビット(通常のファイルのみ)、 <code>st_mtime</code> と <code>st_ctime</code>
-タイムスタンプ、 <code>st_uid</code> 、 <code>st_gid</code> 、 <code>st_ino</code> 、 <code>st_size</code> を比較します。 <code>USE_STDEV</code>
-コンパイル時オプションを使用すると、 <code>st_dev</code>
-も比較されますが、このメンバーはネットワークファイルシステム上で安定していないため、これはデフォルトでは有効になっていません。 <code>USE_NSEC</code>
-コンパイル時オプションを使用すると、<code>st_mtim.tv_nsec</code> と <code>st_ctim.tv_nsec</code> も比較されます。
-Linuxでは、これはデフォルトでは有効になっていません。これは、コア内のタイムスタンプがディスク上のタイムスタンプよりも細かい粒度である可能性があり、iノードがiノードキャッシュから削除されたときに意味のない変更が発生するためです。
-git://git.kernel.org/pub/scm/linux/kernel/git/tglx/history.git のコミット 8ce13b0
-([PATCH] Sync in core time granularity with filesystems,
-2005-01-04)を参照してください。このパッチはカーネル2.6.11以降に含まれていますが、正確に1nsまたは1sの粒度のファイルシステムの問題のみを修正します。他のファイルシステムは、現在のLinuxカーネル(たとえば
-CEPH, CIFS, NTFS, UDF)ではまだ壊れています。
-<a href="https://lore.kernel.org/lkml/5577240D.7020309@gmail.com/">https://lore.kernel.org/lkml/5577240D.7020309@gmail.com/</a> を参照してください。</p></div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_racy_git">Racy Git</h2>
-<div class="sectionbody">
-<div class="paragraph"><p>キャッシュされた統計情報に基づく最適化には、わずかな問題が1つあります。 以下のシーケンスについて考えてみましょう:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>: 'foo' を編集
-$ git update-index 'foo'
-: 再び 'foo' を編集。サイズを変更せずに 'foo' の内容を編集します</code></pre>
-</div></div>
-<div class="paragraph"><p>最初の <code>update-index `は、ファイル `foo</code> の内容のオブジェクト名を計算し、 <code>struct stat</code> 情報とともに <code>foo</code>
-のインデックスエントリを更新します。 その後の変更が非常に高速に行われ、ファイルの <code>st_mtime</code>
-タイムスタンプが変更されない場合、このシーケンスの後、インデックスエントリが記録するキャッシュされた統計情報は、ファイル <code>foo</code>
-は今では異なっいても、ファイルシステムに表示される情報と完全に一致します。
-このように、Gitは、実際には変更されていても、作業ツリー内のファイルが変更されていないと誤って考える可能性があります。 これは「racy
-Git」問題(Paskyによって発見されました)と呼ばれ、この問題が原因ではない可能性があるときにクリーンに見えるエントリは「racily
-clean」と呼ばれます。</p></div>
-<div class="paragraph"><p>この問題を回避するために、Gitは2つのことを行います:</p></div>
-<div class="olist arabic"><ol class="arabic">
+<div class="paragraph"><p>Gitコミットグラフには、コミットOIDのリストと、以下のような関連するメタデータが格納されます:</p></div>
+<div class="ulist"><ul>
 <li>
 <p>
-キャッシュされた統計情報によりファイルが変更されていないと言うには、 <code>st_mtime</code>
-  がインデックスファイル自体のタイムスタンプと同じ(またはそれより新しい)場合(これは、上記の例では <code>git update-index foo</code>
-  の実行を終了した時間です)では、コンテンツをインデックスエントリに登録されているオブジェクトと比較して、それらが一致することを確認します。
+コミットの世代番号。
 </p>
 </li>
 <li>
 <p>
-非常にクリーンなエントリを含むインデックスファイルが更新されると、キャッシュされた <code>st_size</code>
-  情報は、新しいバージョンのインデックスファイルを書き込む前にゼロに切り捨てられます。
-</p>
-</li>
-</ol></div>
-<div class="paragraph"><p>インデックスファイル自体は、更新されたパスからすべての統計情報を収集した後に書き込まれるため、その <code>st_mtime</code>
-タイムスタンプは通常、インデックスに含まれるどのパスと同じか、それよりも新しいものです。 また、 <code>git update-index foo</code>
-に続く変更がどれほど速く終了しても、 <code>foo</code> の結果の <code>st_mtime</code> タイムスタンプはインデックスファイルより前の値を取得できません。
-したがって、迅速にクリーンアップできるインデックスエントリは、インデックスファイル自体と同じタイムスタンプを持つエントリに制限されます。</p></div>
-<div class="paragraph"><p>インデックスエントリが作業ツリー内の対応するファイルと一致するかどうかを確認する呼び出し元は、引き続き <code>ce_match_stat()</code>
-を呼び出しますが、この変更により <code>ce_match_stat()</code> は <code>ce_modified_check_fs()</code> を使用して、
-<code>ce_match_stat_basic()</code> でキャッシュされた統計情報を比較してから racily clean が実際に clean
-かどうかを判断するようになりました。</p></div>
-<div class="paragraph"><p>後者が解決する問題は、以下のシーケンスです:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git update-index 'foo'
-: サイズを変更せずに `foo` をその場で変更
-: 十分な時間待つ
-$ git update-index 'bar'</code></pre>
-</div></div>
-<div class="paragraph"><p>後者がないと、インデックスファイルのタイムスタンプは新しい値を取得し、誤ってクリーンなエントリ <code>foo</code>
-は、前者のロジックで実行されたタイムスタンプ比較チェックによってキャッチされなくなります。 後者は、 <code>foo</code>
-のキャッシュされた統計情報が作業ツリー内のファイルと決して一致しないことを保証するため、後で <code>ce_match_stat_basic()</code>
-をチェックすると、インデックスエントリがファイルと一致しないことが報告され、Gitはより高価な <code>ce_modified_check_fs()</code>
-にフォールバックする必要がありません。</p></div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_runtime_penalty">Runtime penalty</h2>
-<div class="sectionbody">
-<div class="paragraph"><p><code>ce_match_stat()</code> から <code>ce_modified_check_fs()</code>
-にフォールバックすることによる実行時のペナルティは、非常にクリーンなエントリが多数ある場合、非常に高くつく可能性があります。
-この状況を人為的に作成する明白な方法は、大規模プロジェクトの作業ツリー内のすべてのファイルに同じタイムスタンプを付け、それらに対して <code>git
-update-index</code> を実行し、インデックスファイルに同じタイムスタンプを付けることです。</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ date &gt;.datestamp
-$ git ls-files | xargs touch -r .datestamp
-$ git ls-files | git update-index --stdin
-$ touch -r .datestamp .git/index</code></pre>
-</div></div>
-<div class="paragraph"><p>これにより、すべてのインデックスエントリが迅速にクリーンになります。
-たとえば、Linuxプロジェクトでは、作業ツリーに20,000を超えるファイルがあります。 私のAthlon64X2
-3800+で、上記の後に以下を実行します:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ /usr/bin/time git diff-files
-1.68user 0.54system 0:02.22elapsed 100%CPU (0avgtext+0avgdata 0maxresident)k
-0inputs+0outputs (0major+67111minor)pagefaults 0swaps
-$ git update-index MAINTAINERS
-$ /usr/bin/time git diff-files
-0.02user 0.12system 0:00.14elapsed 100%CPU (0avgtext+0avgdata 0maxresident)k
-0inputs+0outputs (0major+935minor)pagefaults 0swaps</code></pre>
-</div></div>
-<div class="paragraph"><p>途中で <code>git update-index</code> を実行すると、racily
-cleanなエントリがチェックされ、実際にはクリーンであるため、すべてのパスのキャッシュされた <code>st_mtime</code>
-がそのまま残りました(したがって、このステップには最初の <code>git diff-files</code> とほぼ同じ時間がかかりました)。
-その後、それらはもはやracily cleanではありませんが、本当にクリーンであるため、<code>git diff-files</code>
-の2回目の呼び出しはキャッシュされた統計情報を完全に利用しました。</p></div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_avoiding_runtime_penalty">Avoiding runtime penalty</h2>
-<div class="sectionbody">
-<div class="paragraph"><p>上記の実行時のペナルティを回避するために、1.4.2以降のGitには、結果のインデックスファイルと同じタイムスタンプを持つ若いファイルが多数ある場合に、インデックスファイルがインデックス内の最も若いファイルよりも新しいタイムスタンプを取得することを確認するコードがありました。
-それ以外の場合は、インデックスファイルの書き込みが完了する前に待機する必要があります。</p></div>
-<div class="paragraph"><p>実際には、インデックス内の多くのパスがすべて非常にクリーンであるという状況は非常にまれであると私は思いました。
-多数のパスの最近のタイムスタンプを記録できる唯一のコードパスは以下のとおりです:</p></div>
-<div class="olist arabic"><ol class="arabic">
-<li>
-<p>
-大規模プロジェクトの最初の <code>git add .</code> 。
+ルートツリーOID。
 </p>
 </li>
 <li>
 <p>
-大規模プロジェクトを、空のインデックスから未入力の作業ツリーへ <code>git checkout</code>
+コミット日付。
 </p>
 </li>
-</ol></div>
-<div class="paragraph"><p>注意: <code>git checkout</code>
-を使用してブランチを切り替えると、現在のブランチと新しいブランチの間で同じである既存の作業ツリーファイルのキャッシュされた統計情報が保持されます。これらはすべて、結果のインデックスファイルよりも古く、racily
-cleanになることはありません。 実際にチェックアウトされたファイルだけが、racily cleanになることができます。</p></div>
-<div class="paragraph"><p>ただし、racy回避コスト(raciness avoidance
-cost)が非常に重要な大規模なプロジェクトでは、インデックス内のすべてのオブジェクト名の初期計算に1秒以上かかり、その後インデックスファイルが書き出されます。
-したがって、インデックスファイルのタイムスタンプは、作業ツリーの最も若いファイルより1秒以上遅くなります。
-これは、これらの場合、結果のインデックスに実際には racily clean なエントリがないことを意味します。</p></div>
-<div class="paragraph"><p>この議論に基づいて、現在のコードは、実際にはもう存在しない実行時のペナルティを回避するために「回避策」を使用していません。
-これは、2006年8月15日にcommit0fc82cffで実行されました。</p></div>
+<li>
+<p>
+グラフファイル内の位置参照を使用して保存されたコミットの親。
+</p>
+</li>
+<li>
+<p>
+要求された場合、コミットとその最初の親の間で変更されたパスを伝えるコミットのブルームフィルター
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>これらの位置参照は、コミット OID のリスト内の配列位置に対応する符号なし 32 ビット整数として格納されます。
+親を追跡するために使用するいくつかの特別な定数により、最大で (1 &lt;&lt; 30) + (1 &lt;&lt; 29) + (1 &lt;&lt; 28) - 1 (約 18
+億) のコミットを格納できます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_commit_graph_files_have_the_following_format">Commit graph files have the following format:</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>グラフに余分なデータを追加する拡張を可能にするために、ボディを「チャンク」に編成し、ぼでぃの先頭にバイナリ ルックアップ テーブルを提供します。
+ヘッダーには、チャンク数やハッシュ タイプなどの特定の値が含まれます。</p></div>
+<div class="paragraph"><p>すべての複数バイト数値はネットワークバイトオーダーです。</p></div>
+<div class="sect2">
+<h3 id="_header">HEADER</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+4バイト シグネチャ:
+</p>
+<div class="paragraph"><p>シグネチャは: {<em>C</em>, <em>G</em>, <em>P</em>, <em>H</em>}</p></div>
+</li>
+<li>
+<p>
+1バイト バージョン番号:
+</p>
+<div class="paragraph"><p>現在、有効なバージョンは 1 のみです。</p></div>
+</li>
+<li>
+<p>
+1バイト ハッシュバージョン
+</p>
+<div class="paragraph"><p>以下の値からハッシュ長(H)を推測します:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>1 =&gt; SHA-1
+2 =&gt; SHA-256</code></pre>
+</div></div>
+<div class="paragraph"><p>ハッシュタイプがリポジトリのハッシュアルゴリズムと一致しない場合、コミットグラフファイルは無視され、ユーザーに警告が表示されます。</p></div>
+</li>
+<li>
+<p>
+1バイト チャンクの数&#169;
+</p>
+</li>
+<li>
+<p>
+1バイト ベースコミットグラフの数(B)
+</p>
+<div class="paragraph"><p>この値からベースグラフチャンクの長さ(H*B)を推測します。</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_chunk_lookup">CHUNK LOOKUP</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+(C + 1) * 12 バイト  チャンクの目次をリストします:
+</p>
+<div class="paragraph"><p>最初の 4 バイトはチャンク ID を表します。 値 0 は終了ラベルです。 他の 8
+バイトは、チャンクが始まる現在のファイル内バイトオフセットを提供します。
+(チャンクはファイル内で連続して並べられているため、必要に応じて次のチャンク位置を使用して長さを推測できます。)  各チャンク ID は最大 1
+回しか表れせん。</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>CHUNK LOOKUP は、 <a href="technical/chunk-format.html">the chunk-based file
+format</a> の目次(the table of contents)と一致します。</p></div>
+<div class="paragraph"><p>ボディ内の残りのデータは一度に 1 つのチャンクで記述され、これらのチャンクは任意の順序で指定できます。 チャンクは特に指定がない限り必須です。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_chunk_data">CHUNK DATA</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+OID Fanout (ID: {<em>O</em>, <em>I</em>, <em>D</em>, <em>F</em>}) (256 * 4 バイト)
+</p>
+<div class="paragraph"><p>i 番目のエントリ F[i] には、最初のバイトが最大で i 個の OID の数が格納されます。 したがって、F[255] にはコミットの総数 (N)
+が格納されます。</p></div>
+</li>
+<li>
+<p>
+OID Lookup (ID: {<em>O</em>, <em>I</em>, <em>D</em>, <em>L</em>}) (N * H バイト)
+</p>
+<div class="paragraph"><p>昇順でソートされた、グラフ内のすべてのコミットの OID。</p></div>
+</li>
+<li>
+<p>
+コミットデータ (ID: {<em>C</em>, <em>D</em>, <em>A</em>, <em>T</em> }) (N * (H + 16) バイト)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+最初の H バイトは、ルートツリーの OID 用です。
+</p>
+</li>
+<li>
+<p>
+次の 8 バイトは、i 番目のコミットの最初の 2 つの親の位置用です。 その位置に親がいない場合は、値 0x70000000 を格納します。 親が 3
+   つ以上ある場合、2 番目の値の最上位ビットがオンになり、他のビットは配列位置を Extra Edge List チャンクに格納します。
+</p>
+</li>
+<li>
+<p>
+その次の 8 バイトには、コミットのトポロジレベル(世代番号 v1)とエポックからのコミット時間(秒単位)が格納されます。 世代番号は最初の 4
+   バイトの上位 30 ビットを使用し、コミット時間はその次の 4 バイトの 32 ビットと最下位バイトの下位 2 ビットを使用して、コミット時間の 33
+   番目と 34 番目のビットを格納します。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+世代データ (ID: {<em>G</em>, <em>D</em>, <em>A</em>, <em>T</em> }) (N * 4 bytes) [オプション]
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+この 4 バイト値のリストには、コミットデータチャンクと同じ順序で配置された、コミットの修正されたコミット日付オフセットが格納されます。
+</p>
+</li>
+<li>
+<p>
+修正されたコミット日付オフセットが 31
+   ビット以内に格納できない場合、値の最上位ビットがオンになり、他のビットは修正されたコミット日付の位置をジェネレーション データ オーバーフロー
+   チャンク(Generation Data Overflow chunk)に格納します。
+</p>
+</li>
+<li>
+<p>
+ジェネレーション データ チャンクは、互換性のあるバージョンの Git によってコミット グラフ
+   ファイルが書き込まれた場合にのみ存在し、分割されたコミット グラフ チェーンの場合、最上層にもジェネレーション データ チャンクがあります。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Generation Data Overflow (ID: {<em>G</em>, <em>D</em>, <em>O</em>, <em>V</em> }) [Optional]
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+この 8 バイト値のリストには、31
+   ビット内に格納できない修正されたコミット日付オフセットを持つコミットの修正されたコミット日付オフセットが格納されます。
+</p>
+</li>
+<li>
+<p>
+ジェネレーション データ オーバーフロー チャンクは、ジェネレーション データ チャンクが存在し、少なくとも 1
+   つ以上修正されたコミット日付オフセットが 31 ビット内に格納できない場合にのみ存在します。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Extra Edge List (ID: {<em>E</em>, <em>D</em>, <em>G</em>, <em>E</em>}) [Optional]
+</p>
+<div class="paragraph"><p>この 4 バイト値のリストには、すべてのオクトパス マージの 2 番目から n 番目の親が格納されます。 コミット データの 2
+番目の親の値は、このリスト内の配列位置を最上位ビットをオンにして格納します。
+その配列位置から開始して、最上位ビットがオンの値に到達するまで、親のコミット位置のこのリストを繰り返します。 他のビットは、最後の親の位置に対応します。</p></div>
+</li>
+<li>
+<p>
+Bloom Filter Index (ID: {<em>B</em>, <em>I</em>, <em>D</em>, <em>X</em>}) (N * 4 bytes) [Optional]
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+i 番目のエントリ BIDX[i] には、コミット 0 からコミット i までのすべてのブルームフィルターのバイト数が、辞書順で格納されます。 i
+   番目のコミットのブルーム フィルターは、BIDX[i-1] から BIDX[i] (およびヘッダー長) に及びます。ここで、BIDX[-1] は 0
+   です。
+</p>
+</li>
+<li>
+<p>
+BDAT チャンクが存在しない場合、BIDX チャンクは無視されます。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Bloom Filter Data (ID: {<em>B</em>, <em>D</em>, <em>A</em>, <em>T</em>}) [Optional]
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+3 つの符号なし 32 ビット整数で構成されるヘッダーで始まります:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+使用されているハッシュ アルゴリズムのバージョン。 現在、
+    <a href="https://en.wikipedia.org/wiki/MurmurHash#Algorithm">https://en.wikipedia.org/wiki/MurmurHash#Algorithm</a> で説明されているとおりに実装された murmur3
+    ハッシュの 32 ビット バージョンに対応する値 1 と、シード値 0x293ae76f および 0x7e646e2
+    を使用した二重ハッシュ技術のみをサポートしています。
+    <a href="https://doi.org/10.1007/978-3-540-30494-4_26「Bloom">https://doi.org/10.1007/978-3-540-30494-4_26「Bloom</a> Filters in Probabilistic
+    Verification」(確率論的検証におけるブルームフィルター)に記載
+</p>
+</li>
+<li>
+<p>
+パスがハッシュされる回数、つまりファイルがコミットに存在するかどうかを累積的に決定するビット位置の数。
+</p>
+</li>
+<li>
+<p>
+ブルーム フィルターのエントリあたりのビット「b」の最小数。 フィルタに「n」個のエントリが含まれる場合、フィルタ サイズは、n*b ビットを含む 64
+    ビット ワードの最小数です。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+チャンクの残りの部分は、コミットに対して計算されたすべてのブルーム フィルターを辞書順で連結したものです。
+</p>
+</li>
+<li>
+<p>
+注意: 変更がないコミット、または 512 を超える変更があるコミットには、長さ 1 のブルーム フィルターがあり、すべてのビットがそれぞれ 0 または
+   1 に設定されます。
+</p>
+</li>
+<li>
+<p>
+BDAT チャンクは、BIDX が存在する場合にのみ存在します。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Base Graphs List (ID: {<em>B</em>, <em>A</em>, <em>S</em>, <em>E</em>}) [Optional]
+</p>
+<div class="paragraph"><p>この H バイト ハッシュのリストは、コミット グラフ チェーンを形成する一連の B コミット グラフ ファイルを記述します。 このファイルの OID
+ルックアップ チャンクの i 番目のコミットのグラフ位置は、i にすべてのベース グラフのコミット数を加えた値に等しくなります。 B
+がゼロでない場合、このチャンクが存在する必要があります。</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_trailer">TRAILER</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+上記すべての H バイト ハッシュ チェックサム。
+</p>
+</li>
+</ul></div>
+</div>
 </div>
 </div>
 </div>
@@ -893,7 +1025,7 @@ cost)が非常に重要な大規模なプロジェクトでは、インデック
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-07-28 03:56:20 JST
+ 2022-08-03 03:26:57 JST
 </div>
 </div>
 </body>
