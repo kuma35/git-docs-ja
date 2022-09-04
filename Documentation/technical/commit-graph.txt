@@ -1,5 +1,5 @@
-Git Commit Graph Design Notes
-=============================
+= Git Commit Graph Design Notes
+
 
 Git walks the commit graph for many reasons, including:
 
@@ -45,15 +45,15 @@ There are two definitions of generation number:
 Define "corrected committer date" of a commit recursively as follows:
 
  * A commit with no parents (a root commit) has corrected committer date
-    equal to its committer date.
+   equal to its committer date.
 
  * A commit with at least one parent has corrected committer date equal to
-    the maximum of its commiter date and one more than the largest corrected
-    committer date among its parents.
+   the maximum of its commiter date and one more than the largest corrected
+   committer date among its parents.
 
  * As a special case, a root commit with timestamp zero has corrected commit
-    date of 1, to be able to distinguish it from GENERATION_NUMBER_ZERO
-    (that is, an uncomputed corrected commit date).
+   date of 1, to be able to distinguish it from GENERATION_NUMBER_ZERO
+   (that is, an uncomputed corrected commit date).
 
 Define the "topological level" of a commit recursively as follows:
 
@@ -66,12 +66,12 @@ Equivalently, the topological level of a commit A is one more than the
 length of a longest path from A to a root commit. The recursive definition
 is easier to use for computation and observing the following property:
 
-    If A and B are commits with generation numbers N and M, respectively,
+  * If A and B are commits with generation numbers N and M, respectively,
     and N <= M, then A cannot reach B. That is, we know without searching
     that B is not an ancestor of A because it is further from a root commit
     than A.
 
-    Conversely, when checking if A is an ancestor of B, then we only need
+  * Conversely, when checking if A is an ancestor of B, then we only need
     to walk commits until all commits on the walk boundary have generation
     number at most N. If we walk commits using a priority queue seeded by
     generation numbers, then we always expand the boundary commit with highest
@@ -84,7 +84,7 @@ This property can be used to significantly reduce the time it takes to
 walk commits and determine topological relationships. Without generation
 numbers, the general heuristic is the following:
 
-    If A and B are commits with commit time X and Y, respectively, and
+  * If A and B are commits with commit time X and Y, respectively, and
     X < Y, then A _probably_ cannot reach B.
 
 In absence of corrected commit dates (for example, old versions of Git or
@@ -107,7 +107,7 @@ have generation number represented by the macro GENERATION_NUMBER_ZERO = 0.
 Since the commit-graph file is closed under reachability, we can guarantee
 the following weaker condition on all commits:
 
-    If A and B are commits with generation numbers N and M, respectively,
+  * If A and B are commits with generation numbers N and M, respectively,
     and N < M, then A cannot reach B.
 
 Note how the strict inequality differs from the inequality when we have
@@ -122,8 +122,8 @@ can be stored in the commit-graph file using the 30 bits available
 to topological levels. This presents another case where a commit can
 have generation number equal to that of a parent.
 
-Design Details
---------------
+== Design Details
+
 
 - The commit-graph file is stored in a file named 'commit-graph' in the
   .git/objects/info directory. This could be stored in the info directory
@@ -149,8 +149,8 @@ Design Details
   helpful for these clones, anyway. The commit-graph will not be read or
   written when shallow commits are present.
 
-Commit Graphs Chains
---------------------
+== Commit Graphs Chains
+
 
 Typically, repos grow with near-constant velocity (commits per day). Over time,
 the number of commits added by a fetch operation is much smaller than the
@@ -158,7 +158,7 @@ number of commits in the full history. By creating a "chain" of commit-graphs,
 we enable fast writes of new commit data without rewriting the entire commit
 history -- at least, most of the time.
 
-## File Layout
+=== File Layout
 
 A commit-graph chain uses multiple files, and we use a fixed naming convention
 to organize these files. Each commit-graph file has a name
@@ -170,11 +170,11 @@ hashes for the files in order from "lowest" to "highest".
 
 For example, if the `commit-graph-chain` file contains the lines
 
-```
+	```
 	{hash0}
 	{hash1}
 	{hash2}
-```
+	```
 
 then the commit-graph chain looks like the following diagram:
 
@@ -213,7 +213,7 @@ specifying the hashes of all files in the lower layers. In the above example,
 `graph-{hash1}.graph` contains `{hash0}` while `graph-{hash2}.graph` contains
 `{hash0}` and `{hash1}`.
 
-## Merging commit-graph files
+=== Merging commit-graph files
 
 If we only added a new commit-graph file on every write, we would run into a
 linear search problem through many commit-graph files.  Instead, we use a merge
@@ -257,14 +257,14 @@ lock-file.  When the file is flushed, we rename it to `graph-{hash3}`
 according to the computed `{hash3}`. Finally, we write the new chain data to
 `commit-graph-chain.lock`:
 
-```
+	```
 	{hash3}
 	{hash0}
-```
+	```
 
 We then close the lock-file.
 
-## Merge Strategy
+=== Merge Strategy
 
 When writing a set of commits that do not exist in the commit-graph stack of
 height N, we default to creating a new file at level N + 1. We then decide to
@@ -289,7 +289,7 @@ The merge strategy values (2 for the size multiple, 64,000 for the maximum
 number of commits) could be extracted into config settings for full
 flexibility.
 
-## Handling Mixed Generation Number Chains
+=== Handling Mixed Generation Number Chains
 
 With the introduction of generation number v2 and generation data chunk, the
 following scenario is possible:
@@ -318,7 +318,7 @@ have corrected commit dates when written by compatible versions of Git. Thus,
 rewriting split commit-graph as a single file (`--split=replace`) creates a
 single layer with corrected commit dates.
 
-## Deleting graph-{hash} files
+=== Deleting graph-{hash} files
 
 After a new tip file is written, some `graph-{hash}` files may no longer
 be part of a chain. It is important to remove these files from disk, eventually.
@@ -333,7 +333,7 @@ files whose modified times are older than a given expiry window. This window
 defaults to zero, but can be changed using command-line arguments or a config
 setting.
 
-## Chains across multiple object directories
+=== Chains across multiple object directories
 
 In a repo with alternates, we look for the `commit-graph-chain` file starting
 in the local object directory and then in each alternate. The first file that
@@ -369,33 +369,40 @@ their custom environment:
     access to the new chain until its chain is updated to reference those files.
     (This may change in the future [5].)
 
-Related Links
--------------
-[0] https://bugs.chromium.org/p/git/issues/detail?id=8
-    Chromium work item for: Serialized Commit Graph
+== Related Links
 
-[1] https://lore.kernel.org/git/20110713070517.GC18566@sigill.intra.peff.net/
-    An abandoned patch that introduced generation numbers.
+[start=0]
+. https://bugs.chromium.org/p/git/issues/detail?id=8
++
+Chromium work item for: Serialized Commit Graph
 
-[2] https://lore.kernel.org/git/20170908033403.q7e6dj7benasrjes@sigill.intra.peff.net/
-    Discussion about generation numbers on commits and how they interact
-    with fsck.
+. https://lore.kernel.org/git/20110713070517.GC18566@sigill.intra.peff.net/
++
+An abandoned patch that introduced generation numbers.
 
-[3] https://lore.kernel.org/git/20170908034739.4op3w4f2ma5s65ku@sigill.intra.peff.net/
-    More discussion about generation numbers and not storing them inside
-    commit objects. A valuable quote:
+. https://lore.kernel.org/git/20170908033403.q7e6dj7benasrjes@sigill.intra.peff.net/
++
+Discussion about generation numbers on commits and how they interact
+with fsck.
 
-    "I think we should be moving more in the direction of keeping
-     repo-local caches for optimizations. Reachability bitmaps have been
-     a big performance win. I think we should be doing the same with our
-     properties of commits. Not just generation numbers, but making it
-     cheap to access the graph structure without zlib-inflating whole
-     commit objects (i.e., packv4 or something like the "metapacks" I
-     proposed a few years ago)."
+. https://lore.kernel.org/git/20170908034739.4op3w4f2ma5s65ku@sigill.intra.peff.net/
++
+More discussion about generation numbers and not storing them inside
+commit objects. A valuable quote:
++
+"I think we should be moving more in the direction of keeping
+repo-local caches for optimizations. Reachability bitmaps have been
+a big performance win. I think we should be doing the same with our
+properties of commits. Not just generation numbers, but making it
+cheap to access the graph structure without zlib-inflating whole
+commit objects (i.e., packv4 or something like the "metapacks" I
+proposed a few years ago)."
 
-[4] https://lore.kernel.org/git/20180108154822.54829-1-git@jeffhostetler.com/T/#u
-    A patch to remove the ahead-behind calculation from 'status'.
+. https://lore.kernel.org/git/20180108154822.54829-1-git@jeffhostetler.com/T/#u
++
+A patch to remove the ahead-behind calculation from 'status'.
 
-[5] https://lore.kernel.org/git/f27db281-abad-5043-6d71-cbb083b1c877@gmail.com/
-    A discussion of a "two-dimensional graph position" that can allow reading
-    multiple commit-graph chains at the same time.
+. https://lore.kernel.org/git/f27db281-abad-5043-6d71-cbb083b1c877@gmail.com/
++
+A discussion of a "two-dimensional graph position" that can allow reading
+multiple commit-graph chains at the same time.

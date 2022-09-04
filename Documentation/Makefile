@@ -93,6 +93,7 @@ TECH_DOCS += SubmittingPatches
 TECH_DOCS += technical/bitmap-format
 TECH_DOCS += technical/bundle-format
 TECH_DOCS += technical/chunk-format
+TECH_DOCS += technical/commit-graph
 TECH_DOCS += technical/commit-graph-format
 TECH_DOCS += technical/directory-rename-detection
 TECH_DOCS += technical/hash-function-transition

@@ -740,69 +740,73 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="_the_git_index_file_has_the_following_format">The Git index file has the following format</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>All binary numbers are in network byte order.
-In a repository using the traditional SHA-1, checksums and object IDs
-(object names) mentioned below are all computed using SHA-1.  Similarly,
-in SHA-256 repositories, these values are computed using SHA-256.
-Version 2 is described here unless stated otherwise.</code></pre>
-</div></div>
+<div class="paragraph"><p>すべての2進数はネットワークバイトオーダーです。 従来の SHA-1 を使用するリポジトリでは、以下で説明するチェックサムとオブジェクトID
+(オブジェクト名) はすべて SHA-1 を使用して計算されます。 同様に、SHA-256 リポジトリでは、これらの値は SHA-256
+を使用して計算されます。 特に断りのない限り、ここではバージョン 2 について説明します。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-A 12-byte header consisting of
+12バイトのヘッダー は以下から構成されます
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>4-byte signature:
-  The signature is { 'D', 'I', 'R', 'C' } (stands for "dircache")</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>4-byte version number:
-  The current supported versions are 2, 3 and 4.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit number of index entries.</code></pre>
-</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+4バイト シグネチャ:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+シグネチャは { <em>D</em>, <em>I</em>, <em>R</em>, <em>C</em> } (「dircache」の略)
+</p>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
-A number of sorted index entries (see below).
+4バイト バージョン番号:
+</p>
+<div class="paragraph"><p>現在サポートしているバージョンは 2 と 3 と 4 です。</p></div>
+</li>
+<li>
+<p>
+32ビット インデクスエントリの数
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+ソートされたインデックスエントリの数(下記参照)。
 </p>
 </li>
 <li>
 <p>
-Extensions
+拡張機能(extensions)
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Extensions are identified by signature. Optional extensions can
-be ignored if Git does not understand them.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Git currently supports cache tree and resolve undo extensions.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>4-byte extension signature. If the first byte is 'A'..'Z' the extension is
-optional and can be ignored.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit size of the extension</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Extension data</code></pre>
-</div></div>
+<div class="paragraph"><p>拡張機能(extensions)はシグネチャによって識別されます。 オプションの拡張機能(extensions)は、Git
+が理解できない場合は無視できます。</p></div>
+<div class="paragraph"><p>Git は現在 cache tree 拡張機能と resolve undo 拡張機能をサポートします。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+4バイト 拡張機能シグネチャ。最初のバイトが <code>A</code> 〜 <code>Z</code> の場合は、その拡張機能はオプションで、無視する事ができます。
+</p>
 </li>
 <li>
 <p>
-Hash checksum over the content of the index file before this checksum.
+32ビット 拡張機能(extension)のサイズ
+</p>
+</li>
+<li>
+<p>
+拡張機能データ
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+このチェックサムより前のインデックスファイルの内容に対するハッシュチェックサム。
 </p>
 </li>
 </ul></div>
@@ -811,487 +815,432 @@ Hash checksum over the content of the index file before this checksum.
 <div class="sect1">
 <h2 id="_index_entry">Index entry</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>Index entries are sorted in ascending order on the name field,
-interpreted as a string of unsigned bytes (i.e. memcmp() order, no
-localization, no special casing of directory separator '/'). Entries
-with the same name are sorted by their stage field.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>An index entry typically represents a file. However, if sparse-checkout is
-enabled in cone mode (`core.sparseCheckoutCone` is enabled) and the
-`extensions.sparseIndex` extension is enabled, then the index may contain
-entries for directories outside of the sparse-checkout definition.  These
-entries have mode `040000`, include the `SKIP_WORKTREE` bit, and the path
-ends in a directory separator.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit ctime seconds, the last time a file's metadata changed
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit ctime nanosecond fractions
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit mtime seconds, the last time a file's data changed
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit mtime nanosecond fractions
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit dev
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit ino
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit mode, split into (high to low bits)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>4-bit object type
-  valid values in binary are 1000 (regular file), 1010 (symbolic link)
-  and 1110 (gitlink)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>3-bit unused</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>9-bit unix permission. Only 0755 and 0644 are valid for regular files.
-Symbolic links and gitlinks have value 0 in this field.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit uid
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit gid
-  this is stat(2) data</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>32-bit file size
-  This is the on-disk size from stat(2), truncated to 32-bit.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Object name for the represented object</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>A 16-bit 'flags' field split into (high to low bits)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>1-bit assume-valid flag</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>1-bit extended flag (must be zero in version 2)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>2-bit stage (during merge)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>12-bit name length if the length is less than 0xFFF; otherwise 0xFFF is
-stored in this field.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Version 3 or later) A 16-bit field, only applicable if the "extended flag"
-above is 1, split into (high to low bits).</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>1-bit reserved for future</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>1-bit skip-worktree flag (used by sparse checkout)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>1-bit intent-to-add flag (used by "git add -N")</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>13-bit unused, must be zero</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Entry path name (variable length) relative to top level directory
-  (without leading slash). '/' is used as path separator. The special
-  path components ".", ".." and ".git" (without quotes) are disallowed.
-  Trailing slash is also disallowed.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The exact encoding is undefined, but the '.' and '/' characters are encoded
-in 7-bit ASCII and the encoding cannot contain a NUL byte (iow, this is a
-UNIX pathname).</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Version 4) In version 4, the entry path name is prefix-compressed
-  relative to the path name for the previous entry (the very first
-  entry is encoded as if the path name for the previous entry is an
-  empty string).  At the beginning of an entry, an integer N in the
-  variable width encoding (the same encoding as the offset is encoded
-  for OFS_DELTA pack entries; see pack-format.txt) is stored, followed
-  by a NUL-terminated string S.  Removing N bytes from the end of the
-  path name for the previous entry, and replacing it with the string S
-  yields the path name for this entry.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>1-8 nul bytes as necessary to pad the entry to a multiple of eight bytes
-while keeping the name NUL-terminated.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Version 4) In version 4, the padding after the pathname does not exist.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Interpretation of index entries in split index mode is completely
-different. See below for details.</code></pre>
-</div></div>
+<div class="paragraph"><p>インデックスエントリは名前フィールドで昇順にソートされ、符号なしバイト(unsigned
+bytes)の文字列(string)として解釈されます(つまり、 memcmp() 順で、ローカライズなしで、ディレクトリセパレータ <code>/</code>
+という特別な場合は無し)。 同一名のエントリでは、それらのステージフィールド(stage field)によってソートされます。</p></div>
+<div class="paragraph"><p>通常、インデックスエントリはファイルを表します。 ただし、コーンモードでスパースチェックアウトが有効(<code>core.sparseCheckoutCone</code>
+が有効)で、 <code>extensions.sparseIndex</code>
+拡張機能が有効な場合、インデックスにはスパースチェックアウト定義外のディレクトリのエントリが含まれる場合があります。
+これらのエントリのモードは「040000」で、「SKIP_WORKTREE」ビットが含まれ、パスはディレクトリセパレータで終わります。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+32ビット ctime秒。ファイルのメタデータが最後に変更された時刻
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット ctime のナノ秒部分
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット mtime 秒。ファイルのデータが最後に変更された時刻
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット mtime のナノ秒部分
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット dev
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット ino
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット モード。以下の通り分割されています(高位からから低位ビットの順です)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+4ビット オブジェクトタイプ
+</p>
+<div class="paragraph"><p>有効な値は、2進数で 1000 (通常のファイル)と、1010 (シンボリック リンク)と、1110 (gitlink) です。</p></div>
+</li>
+<li>
+<p>
+3ビット 未使用
+</p>
+</li>
+<li>
+<p>
+9ビット UNIX パーミッション。 通常のファイルでは、(8進数の) 0755 と 0644 のみが有効です。 シンボリックリンクと gitlink
+   ではこのフィールドの値は 0 です。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+32ビット uid
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット gid
+</p>
+<div class="paragraph"><p>これは stat(2) のデータです</p></div>
+</li>
+<li>
+<p>
+32ビット ファイルサイズ
+    これは stat(2) からのディスク上のサイズで、32ビットに切り捨て(truncate)られます。
+</p>
+</li>
+<li>
+<p>
+表現されたオブジェクトのオブジェクト名
+</p>
+</li>
+<li>
+<p>
+16ビットの「flags」フィールドは以下のように分割されています(高位ビットから低位ビットへの順です)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+1ビット assume-valid フラグ
+</p>
+</li>
+<li>
+<p>
+1ビット extended フラグ(バージョン2ではゼロでなければなりません)
+</p>
+</li>
+<li>
+<p>
+2ビット ステージ(マージ作業中のステージ)
+</p>
+</li>
+<li>
+<p>
+12ビット 名前の長さ(長さが 0xFFF 未満の場合)、それ以外の場合、このフィールドには 0xFFF が格納されます。
+</p>
+<div class="paragraph"><p>(バージョン3以降) 16ビットフィールド。上記の「extended flag」が 1
+の場合にのみ適用され、以下のように分割されます(上位ビットから下位ビットの順)</p></div>
+</li>
+<li>
+<p>
+1ビット 将来の為に予約
+</p>
+</li>
+<li>
+<p>
+1ビット skip-worktree フラグ(スパースチェックアウトで使用)
+</p>
+</li>
+<li>
+<p>
+1ビット intent-to-add フラグ(「git add -N」で使用)
+</p>
+</li>
+<li>
+<p>
+13ビット 未使用。0でなければならない
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+最上位ディレクトリに対するエントリ パス名 (可変長) (先頭のスラッシュなし)。  <code>/</code> はパス区切りとして使用されます。 特別なパスコンポーネント
+  <code>.</code> と <code>..</code> と <code>.git</code> (引用符なし) は許可されていません。 末尾のスラッシュも許可されていません。
+</p>
+<div class="paragraph"><p>正確なエンコーディングは未定義ですが、 <code>.</code> と <code>/</code> 文字は 7ビットASCII でエンコードされ、エンコードに NUL
+バイトを含めることはできません (つまり、これは UNIX パス名です)。</p></div>
+<div class="paragraph"><p>(バージョン 4) バージョン 4
+では、エントリのパス名は、その前のエントリのパス名に対してプレフィックス圧縮(prefix-compressed)されます(最初のエントリは、前のエントリのパス名が空文字列であるかのようにエンコードされます)。
+エントリの先頭に、可変長エンコーディング(variable width encoding)の整数 N が格納され(OFS_DELTA
+パックエントリ用のオフセットと同一のエンコーディングです。 pack-format.txt 参照)、その後に NUL で終了する文字列 S が続きます。
+1つ前のエントリのパス名の末尾から N バイト削除した文字列を、文字列 S と置き換えると、このエントリのパス名が生成されます。</p></div>
+</li>
+<li>
+<p>
+1～8個の nul バイト。 名前を NUL で終了させたまま、必要に応じて 1～8個の nul バイト を使用して エントリを 8
+  バイトの倍数にパディングします。
+</p>
+<div class="paragraph"><p>(バージョン 4)バージョン4では、パス名の後のパディングは存在しません。</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>分割インデックスモードでのインデックス エントリの解釈は、まったく異なります。 詳細については、下記を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_extensions">Extensions</h2>
+<h2 id="_拡張機能_extensions">拡張機能(extensions)</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_cache_tree">Cache tree</h3>
-<div class="literalblock">
-<div class="content">
-<pre><code>Since the index does not record entries for directories, the cache entries
-cannot describe tree objects that already exist in the object database for
-regions of the index that are unchanged from an existing commit. The cache
-tree extension stores a recursive tree structure that describes the trees
-that already exist and completely match sections of the cache entries. This
-speeds up tree object generation from the index for a new commit by only
-computing the trees that are "new" to that commit. It also assists when
-comparing the index to another tree, such as `HEAD^{tree}`, since sections
-of the index can be skipped when a tree comparison demonstrates equality.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The recursive tree structure uses nodes that store a number of cache
-entries, a list of subnodes, and an object ID (OID). The OID references the
-existing tree for that node, if it is known to exist. The subnodes
-correspond to subdirectories that themselves have cache tree nodes. The
-number of cache entries corresponds to the number of cache entries in the
-index that describe paths within that tree's directory.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The extension tracks the full directory structure in the cache tree
-extension, but this is generally smaller than the full cache entry list.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>When a path is updated in index, Git invalidates all nodes of the recursive
-cache tree corresponding to the parent directories of that path. We store
-these tree nodes as being "invalid" by using "-1" as the number of cache
-entries. Invalid nodes still store a span of index entries, allowing Git to
-focus its efforts when reconstructing a full cache tree.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The signature for this extension is { 'T', 'R', 'E', 'E' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>A series of entries fill the entire extension; each of which consists of:</code></pre>
-</div></div>
+<div class="paragraph"><p>インデックスはディレクトリのエントリを記録しないため、キャッシュエントリは、既存のコミットから変更されていないインデックスの領域のオブジェクトデータベースに既に存在するツリーオブジェクトを記述することはできません。
+キャッシュツリー拡張機能は、既に存在し、キャッシュエントリのセクションと完全に一致するツリーを記述する再帰的なツリー構造を格納します。
+これにより、そのコミットに対して「新しい」ツリーのみを計算することで、新しいコミットのインデックスからのツリー オブジェクトの生成が高速化されます。
+また、ツリーの比較で同等性が示される場合にインデックスのセクションをスキップできるため、インデックスを <code>HEAD^{tree}</code>
+などの別のツリーと比較する場合にも役立ちます。</p></div>
+<div class="paragraph"><p>再帰的なツリー構造は、多数の キャッシュエントリや、サブノードのリストや、オブジェクトID(OID) を格納するノードを使用します。 OID
+は、そのノードの既存のツリーが存在することがわかっている場合、それを参照します。
+サブノードは、それ自体がキャッシュツリーノードを持つサブディレクトリに対応します。
+キャッシュエントリの数は、そのツリーのディレクトリ内のパスを記述するインデックス内のキャッシュエントリの数に対応します。</p></div>
+<div class="paragraph"><p>拡張機能は、キャッシュツリー拡張機能で全体のディレクトリ構造(full directory
+structure)を追跡しますが、これは通常、全体のキャッシュエントリリスト(full cache entry list)よりも小さくなります。</p></div>
+<div class="paragraph"><p>インデックスでパスが更新されると、Gitはそのパスの親ディレクトリに対応する再帰キャッシュツリーのすべてのノードを無効にします。
+キャッシュエントリの数として「-1」を使用して、これらのツリーノードを「無効」として保存します。
+無効なノードは引き続き一連のインデックスエントリを格納するため、Git は完全なキャッシュツリーを再構築する際にその作業に集中できます。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-NUL-terminated path component (relative to its parent directory);
+この拡張機能のシグネチャは { <em>T</em>, <em>R</em>, <em>E</em>, <em>E</em> } です。
 </p>
 </li>
 <li>
 <p>
-ASCII decimal number of entries in the index that is covered by the tree
-    this entry represents (entry_count);
+一連のエントリの連なりで拡張機能全体を満たします。これは以下のものから構成されています:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+NUL終端のパスコンポーネント(その親ディレクトリからの相対指定);
 </p>
 </li>
 <li>
 <p>
-A space (ASCII 32);
+ASCII文字による10進数の数値 このエントリが表すツリーによってカバーされるインデックス内のエントリの数 (entry_count);
 </p>
 </li>
 <li>
 <p>
-ASCII decimal number that represents the number of subtrees this tree has;
+空白1つ(ASCII 32);
 </p>
 </li>
 <li>
 <p>
-A newline (ASCII 10); and
+ASCII文字による10進数の数値。このツリーが持っているサブツリーの数をあらわします。
 </p>
 </li>
 <li>
 <p>
-Object name for the object that would result from writing this span of index
-    as a tree.
+改行(newline)(ASCII 10);
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>An entry can be in an invalidated state and is represented by having
-a negative number in the entry_count field. In this case, there is no
-object name and the next entry starts immediately after the newline.
-When writing an invalid entry, -1 should always be used as entry_count.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The entries are written out in the top-down, depth-first order.  The first
-entry represents the root level of the repository, followed by the first
-subtree--let's call this A--of the root level (with its name relative to the
-root level), followed by the first subtree of A (with its name relative to
-A), and so on. The specified number of subtrees indicates when the current
-level of the recursive stack is complete.</code></pre>
-</div></div>
+</li>
+<li>
+<p>
+オブジェクト名。この範囲のインデックスをツリーとして書き込んだ結果となるオブジェクトのオブジェクト名。
+</p>
 </li>
 </ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>エントリは無効化された状態にある可能性があり、entry_count フィールドに負の数があることで表されます。
+この場合、オブジェクト名はなく、改行(newline)の直後に次のエントリが開始されます。 無効なエントリを書き込む場合、entry_count
+として常に「-1」を使用する必要があります。</p></div>
+<div class="paragraph"><p>エントリは、上から下へ、深さ優先の順序で書き出されます。 最初のエントリはリポジトリのルート
+レベルを表し、ルートレベルの最初のサブツリー(これをAとする)(これはルートレベルに相対的な名前です)が続き、さらに A
+の最初のサブツリー(これはAに相対的な名前です)が続きます。 サブツリーの指定された数は、再帰スタックの現在のレベルがいつ完了するかを示します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_resolve_undo">Resolve undo</h3>
-<div class="literalblock">
-<div class="content">
-<pre><code>A conflict is represented in the index as a set of higher stage entries.
-When a conflict is resolved (e.g. with "git add path"), these higher stage
-entries will be removed and a stage-0 entry with proper resolution is added.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>When these higher stage entries are removed, they are saved in the resolve
-undo extension, so that conflicts can be recreated (e.g. with "git checkout
--m"), in case users want to redo a conflict resolution from scratch.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The signature for this extension is { 'R', 'E', 'U', 'C' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>A series of entries fill the entire extension; each of which consists of:</code></pre>
-</div></div>
+<div class="paragraph"><p>競合は、より高いステージのエントリのセットとしてインデックスで表されます。 (「git add
+path」などを使用して)競合が解決されると、これらの上位ステージのエントリが削除され、適切な解決策を持つ ステージ 0 エントリが追加されます。</p></div>
+<div class="paragraph"><p>これらのより高いステージのエントリが削除されると、解決前に戻す拡張機能(the resolve undo
+extension)に保存されるため、ユーザーが最初から競合解決をやり直したい場合に備えて、競合を再作成できます (たとえば、「git checkout
+-m」を使用)。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-NUL-terminated pathname the entry describes (relative to the root of the
-    repository, i.e. full pathname);
+この拡張機能のシグネチャは { <em>R</em>, <em>E</em>, <em>U</em>, <em>C</em> } です。
 </p>
 </li>
 <li>
 <p>
-Three NUL-terminated ASCII octal numbers, entry mode of entries in stage 1
-    to 3 (a missing stage is represented by "0" in this field); and
+一連のエントリの連なりで拡張機能全体を満たします。これは以下のものから構成されています:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+エントリを説明する、NULで終わるパス名(リポジトリのルートからの相対、つまりフルパス名)
 </p>
 </li>
 <li>
 <p>
-At most three object names of the entry in stages from 1 to 3 (nothing is
-    written for a missing stage).
+3つのNULで終わるASCII文字による8進数値。ステージ1〜3でのエントリのエントリモード(欠落しているステージは、このフィールドでは「0」で表されます)
 </p>
+</li>
+<li>
+<p>
+ステージ1〜3でのエントリの最大3つのオブジェクト名(欠落しているステージには何も書き込まれません)。
+</p>
+</li>
+</ul></div>
 </li>
 </ul></div>
 </div>
 <div class="sect2">
 <h3 id="_split_index">Split index</h3>
-<div class="literalblock">
-<div class="content">
-<pre><code>In split index mode, the majority of index entries could be stored
-in a separate file. This extension records the changes to be made on
-top of that to produce the final index.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The signature for this extension is { 'l', 'i', 'n', 'k' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The extension consists of:</code></pre>
-</div></div>
+<div class="paragraph"><p>分割インデックス モードでは、インデックスエントリの大部分を別のファイルに保存できます。
+この拡張機能は、最終的なインデックスを生成するために加えられる変更を記録します。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Hash of the shared index file. The shared index file path is
-    $GIT_DIR/sharedindex.&lt;hash&gt;. If all bits are zero, the index does not
-    require a shared index file.
+この拡張機能のシグネチャは { <em>l</em>, <em>i</em>, <em>n</em>, <em>k</em> } です。
 </p>
 </li>
 <li>
 <p>
-An ewah-encoded delete bitmap, each bit represents an entry in the shared
-    index. If a bit is set, its corresponding entry in the shared index will be
-    removed from the final index.  Note, because a delete operation changes
-    index entry positions, but we do need original positions in replace phase,
-    it&#8217;s best to just mark entries for removal, then do a mass deletion after
-    replacement.
+この拡張機能は以下から構成されます:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+共有インデックスファイルのハッシュ。 共有インデックスファイルのパスは <code>$GIT_DIR/sharedindex.&lt;hash&gt;</code> です。
+   すべてのビットが 0 の場合、インデックスは共有インデックスファイルを必要としません。
 </p>
 </li>
 <li>
 <p>
-An ewah-encoded replace bitmap, each bit represents an entry in the shared
-    index. If a bit is set, its corresponding entry in the shared index will be
-    replaced with an entry in this index file. All replaced entries are stored
-    in sorted order in this index. The first "1" bit in the replace bitmap
-    corresponds to the first index entry, the second "1" bit to the second entry
-    and so on. Replaced entries may have empty path names to save space.
+ewahでエンコードされた削除ビットマップで、各ビットは共有インデックス内のエントリを表します。ビットが設定されている場合、共有インデックス内の対応するエントリが最終インデックスから削除されます。
+   削除操作はインデックス
+   エントリの位置を変更しますが、置換フェーズでは元の位置が必要になるため、エントリを削除するようにマークし、置換後に一括削除を実行することをお勧めします。
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>The remaining index entries after replaced ones will be added to the
-final index. These added entries are also sorted by entry name then
-stage.</code></pre>
-</div></div>
+</li>
+<li>
+<p>
+ewahでエンコードされた置換ビットマップで、各ビットは共有インデックス内のエントリを表します。
+   ビットが設定されている場合、共有インデックス内の対応するエントリは、このインデックス ファイル内のエントリに置き換えられます。
+   置換されたすべてのエントリは、このインデックスに並べ替えられた順序で格納されます。 置換ビットマップの最初の「1」ビットは最初のインデックス
+   エントリに対応し、2 番目の「1」ビットは 2 番目のエントリに対応し、以下同様です。
+   スペースを節約するために、置換されたエントリのパス名が空の場合があります。
+</p>
 </li>
 </ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>置き換えられた後の残りのインデックスエントリは、最終的なインデックスに追加されます。
+これらの追加されたエントリも、エントリ名、ステージの順でソートされます。</p></div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_untracked_cache">Untracked cache</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>Untracked cache saves the untracked file list and necessary data to verify
-the cache. The signature for this extension is { 'U', 'N', 'T', 'R' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The extension starts with</code></pre>
-</div></div>
+<div class="paragraph"><p>未追跡キャッシュ(untracked cache)は、未追跡ファイルのリストと、キャッシュを検証するために必要なデータを保存します。
+この拡張機能(extension)のシグネチャは {<em>U</em>, <em>N</em>, <em>T</em>, <em>R</em> } です。</p></div>
+<div class="paragraph"><p>この拡張機能は以下から始まります</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-A sequence of NUL-terminated strings, preceded by the size of the sequence
-    in variable width encoding. Each string describes the environment where the
-    cache can be used.
+可変長エンコーディング(variable width encoding)のシーケンスのサイズが前に付いた、NUL で終了する文字列のシーケンス。
+  各文字列には、キャッシュを使用できる環境が記述されています。
 </p>
 </li>
 <li>
 <p>
-Stat data of $GIT_DIR/info/exclude. See "Index entry" section from ctime
-    field until "file size".
+$GIT_DIR/info/exclude の統計(stat)データ。 ctime フィールドから「file size」までの「Index
+  entry」セクションを参照してください。
 </p>
 </li>
 <li>
 <p>
-Stat data of core.excludesFile
+core.excludesFileの統計(stat)データ
 </p>
 </li>
 <li>
 <p>
-32-bit dir_flags (see struct dir_struct)
+32ビット dir_flags (struct dir_struct 参照)
 </p>
 </li>
 <li>
 <p>
-Hash of $GIT_DIR/info/exclude. A null hash means the file does not exist.
+$GIT_DIR/info/exclude の ハッシュ。 nullハッシュは、ファイルが存在しないことを意味します。
 </p>
 </li>
 <li>
 <p>
-Hash of core.excludesFile. A null hash means the file does not exist.
+core.excludesFile のハッシュ。 null ハッシュは、ファイルが存在しないことを意味します。
 </p>
 </li>
 <li>
 <p>
-NUL-terminated string of per-dir exclude file name. This usually is
-    ".gitignore".
+ディレクトリごとの除外ファイル名の NUL で終わる文字列。 これは通常「.gitignore」です。
 </p>
 </li>
 <li>
 <p>
-The number of following directory blocks, variable width encoding. If this
-    number is zero, the extension ends here with a following NUL.
+次のディレクトリブロックの数、可変長エンコーディング(variable width encoding)。 この数がゼロの場合、拡張機能(the
+  extension)は、ここに続く NUL で終わりです。
 </p>
 </li>
 <li>
 <p>
-A number of directory blocks in depth-first-search order, each consists of
+深さ優先検索順(depth-first-search order)のディレクトリブロックの数。これは以下から構成されます
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+未追跡エントリ(untracked entries)の数。可変長エンコーディング。
 </p>
 </li>
 <li>
 <p>
-The number of untracked entries, variable width encoding.
+サブディレクトリブロックの数。可変長エンコーディング。
 </p>
 </li>
 <li>
 <p>
-The number of sub-directory blocks, variable width encoding.
+NUL終端されたディレクトリ名。
 </p>
 </li>
 <li>
 <p>
-The directory name terminated by NUL.
-</p>
-</li>
-<li>
-<p>
-A number of untracked file/dir names terminated by NUL.
+NUL終端された 未追跡ファイル名/未追跡ディレクトリ名 の数。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>The remaining data of each directory block is grouped by type:</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>各ディレクトリブロックの残りのデータは、タイプ別にグループ化されます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-An ewah bitmap, the n-th bit marks whether the n-th directory has valid
-    untracked cache entries.
+ewah ビットマップでは、n番目のビットは、n番目のディレクトリに未追跡の有効なキャッシュエントリがあるかどうかを表します。
 </p>
 </li>
 <li>
 <p>
-An ewah bitmap, the n-th bit records "check-only" bit of
-    read_directory_recursive() for the n-th directory.
+ewah ビットマップでは、n番目のビットは、n番目のディレクトリの read_directory_recursive()
+  の「check-only」ビットを記録します。
 </p>
 </li>
 <li>
 <p>
-An ewah bitmap, the n-th bit indicates whether hash and stat data is valid
-    for the n-th directory and exists in the next data.
+ewah
+  ビットマップでは、n番目のビットは、ハッシュと統計(stat)データがn番目のディレクトリで有効であり、次のデータに存在するかどうかを表します。
 </p>
 </li>
 <li>
 <p>
-An array of stat data. The n-th data corresponds with the n-th "one" bit in
-    the previous ewah bitmap.
+統計(stat)データの配列。 n番目のデータは、この前にあるewahビットマップのn番目の「1」ビットに対応します。
 </p>
 </li>
 <li>
 <p>
-An array of hashes. The n-th hash corresponds with the n-th "one" bit in the
-    previous ewah bitmap.
+ハッシュの配列。 n番目のハッシュは、この前のewahビットマップのn番目の「1」ビットに対応します。
 </p>
 </li>
 <li>
 <p>
-One NUL.
+1つのNUL。
 </p>
 </li>
 </ul></div>
@@ -1300,46 +1249,36 @@ One NUL.
 <div class="sect1">
 <h2 id="_file_system_monitor_cache">File System Monitor cache</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>The file system monitor cache tracks files for which the core.fsmonitor
-hook has told us about changes.  The signature for this extension is
-{ 'F', 'S', 'M', 'N' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The extension starts with</code></pre>
-</div></div>
+<div class="paragraph"><p>ファイルシステムモニター キャッシュは、 core.fsmonitor フックが変更を通知したファイルを追跡します。 この拡張機能のシグネチャは {
+<em>F</em>, <em>S</em>, <em>M</em>, <em>N</em> } です。</p></div>
+<div class="paragraph"><p>この拡張機能は以下から始まります</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-32-bit version number: the current supported versions are 1 and 2.
+32ビット version number: 現在サポートするバージョンは 1 と 2 です。
 </p>
 </li>
 <li>
 <p>
-(Version 1)  64-bit time: the extension data reflects all changes through
-    the given
-        time which is stored as the nanoseconds elapsed since midnight, January 1,
-        1970.
+(バージョン 1)
+</p>
+<div class="paragraph"><p>64ビット time: 拡張機能データは、1970年1月1日午前0時からの経過ナノ秒として格納されている指定の時間までのすべての変更を反映します。</p></div>
+</li>
+<li>
+<p>
+(バージョン 2)
+</p>
+<div class="paragraph"><p>NULL終端文字列: ファイルシステムモニター アプリケーションによって定義される不透明な(opaque)トークン。
+拡張機能データには、そのトークンに関連するすべての変更が反映されます。</p></div>
+</li>
+<li>
+<p>
+32ビット bitmap size: CE_FSMONITOR_VALIDビットマップのサイズ。
 </p>
 </li>
 <li>
 <p>
-(Version 2)  A null terminated string: an opaque token defined by the file
-    system monitor application.  The extension data reflects all changes
-    relative to that token.
-</p>
-</li>
-<li>
-<p>
-32-bit bitmap size: the size of the CE_FSMONITOR_VALID bitmap.
-</p>
-</li>
-<li>
-<p>
-An ewah bitmap, the n-th bit indicates whether the n-th index entry is not
-    CE_FSMONITOR_VALID.
+ewah ビットマップでは、n 番目のビットは、n 番目のインデックス エントリが CE_FSMONITOR_VALID では無いかどうかを表します。
 </p>
 </li>
 </ul></div>
@@ -1348,35 +1287,21 @@ An ewah bitmap, the n-th bit indicates whether the n-th index entry is not
 <div class="sect1">
 <h2 id="_end_of_index_entry">End of Index Entry</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>The End of Index Entry (EOIE) is used to locate the end of the variable
-length index entries and the beginning of the extensions. Code can take
-advantage of this to quickly locate the index extensions without having
-to parse through all of the index entries.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Because it must be able to be loaded before the variable length cache
-entries and other index extensions, this extension must be written last.
-The signature for this extension is { 'E', 'O', 'I', 'E' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The extension consists of:</code></pre>
-</div></div>
+<div class="paragraph"><p>インデックスエントリの終わり(End of Index
+Entry;EOIE)は、可変長インデックスエントリの終わりと拡張機能の始まりを見つけるために使用されます。プログラムコードはこれを利用して、すべてのインデックスエントリを解析しなくてもインデックス拡張をすばやく見つけることができます。</p></div>
+<div class="paragraph"><p>可変長キャッシュエントリやその他のインデックス拡張の前にロードできる必要があるため、この拡張機能は最後に書き込む必要があります。この拡張機能のシグネチャは
+{ <em>E</em>, <em>O</em>, <em>I</em>, <em>E</em> } です。</p></div>
+<div class="paragraph"><p>この拡張機能は以下から構成されます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-32-bit offset to the end of the index entries
+32ビット インデックス エントリの末尾までのオフセット
 </p>
 </li>
 <li>
 <p>
-Hash over the extension types and their sizes (but not
-        their contents).  E.g. if we have "TREE" extension that is N-bytes long,
-        "REUC" extension that is M-bytes long, followed by "EOIE", then the hash
-        would be:
+拡張機能のタイプとそのサイズをハッシュします(ただし、その内容はハッシュしません)。 例えば。 N バイト長の「TREE」拡張機能、M
+  バイト長の「REUC」拡張機能の後に「EOIE」が続く場合、ハッシュは以下のようになります:
 </p>
 <div class="literalblock">
 <div class="content">
@@ -1390,38 +1315,32 @@ Hash over the extension types and their sizes (but not
 <div class="sect1">
 <h2 id="_index_entry_offset_table">Index Entry Offset Table</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>The Index Entry Offset Table (IEOT) is used to help address the CPU cost of
-loading the index by enabling multi-threading the process of converting
-cache entries from the on-disk format to the in-memory format.  The
-signature for this extension is { 'I', 'E', 'O', 'T' }.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>The extension consists of:</code></pre>
-</div></div>
+<div class="paragraph"><p>インデックスエントリオフセットテーブル(Index Entry Offset
+Table;IEOT)は、キャッシュエントリをディスク上のフォーマットからメモリ上のフォーマットに変換する処理のマルチスレッド化を有効にすることで、インデックスをロードするための
+CPU コストに対処するために使用されます。 この拡張機能のシグネチャは { <em>I</em>, <em>E</em>, <em>O</em>, <em>T</em> } です。</p></div>
+<div class="paragraph"><p>この拡張機能は以下から構成されます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-32-bit version (currently 1)
+32ビット version (現在 1)
 </p>
 </li>
 <li>
 <p>
-A number of index offset entries each consisting of:
+インデックスオフセットエントリの数。以下から構成されます:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+32ビット。ファイルの先頭から、このエントリブロック内の最初のキャッシュエントリまでのオフセット。
 </p>
 </li>
 <li>
 <p>
-32-bit offset from the beginning of the file to the first cache entry
-        in this block of entries.
+32ビット。このブロック内のキャッシュエントリの数
 </p>
 </li>
-<li>
-<p>
-32-bit count of cache entries in this block
-</p>
+</ul></div>
 </li>
 </ul></div>
 </div>
@@ -1429,18 +1348,12 @@ A number of index offset entries each consisting of:
 <div class="sect1">
 <h2 id="_sparse_directory_entries">Sparse Directory Entries</h2>
 <div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre><code>When using sparse-checkout in cone mode, some entire directories within
-the index can be summarized by pointing to a tree object instead of the
-entire expanded list of paths within that tree. An index containing such
-entries is a "sparse index". Index format versions 4 and less were not
-implemented with such entries in mind. Thus, for these versions, an
-index containing sparse directory entries will include this extension
-with signature { 's', 'd', 'i', 'r' }. Like the split-index extension,
-tools should avoid interacting with a sparse index unless they understand
-this extension.</code></pre>
-</div></div>
+<div class="paragraph"><p>sparse-checkout をコーンモードで使用する場合、ツリー内の展開されたパスのリスト全体ではなく、ツリー
+オブジェクトをポイントすることで、インデックス内の一部のディレクトリ全体を要約できます。
+このようなエントリを含むインデックスは「スパースインデックス」です。 インデックス フォーマット バージョン 4
+以前は、このようなエントリを考慮して実装されていませんでした。 したがって、これらのバージョンでは、スパース ディレクトリ
+エントリを含むインデックスには、この拡張機能とシグネチャ { <em>s</em>, <em>d</em>, <em>i</em>, <em>r</em> } が含まれます。
+分割インデックス拡張機能と同様に、ツールは、この拡張機能を理解していない限り、スパースインデックスとのやり取りを避ける必要があります。</p></div>
 </div>
 </div>
 </div>
@@ -1448,7 +1361,7 @@ this extension.</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:10 JST
+ 2022-09-01 15:37:48 JST
 </div>
 </div>
 </body>
