@@ -1,3 +1,10 @@
+= remembering-renames.txt
+:toc: 
+:toc-title: Outline:
+:toclevels: 1
+
+== Introduction
+
 Rebases and cherry-picks involve a sequence of merges whose results are
 recorded as new single-parent commits.  The first parent side of those
 merges represent the "upstream" side, and often include a far larger set of
@@ -8,34 +15,7 @@ rebases and cherry-picks to remember renames on the upstream side of
 history as an optimization, assuming all merges are automatic and clean
 (i.e. no conflicts and not interrupted for user input or editing).
 
-Outline:
-
-  0. Assumptions
-
-  1. How rebasing and cherry-picking work
-
-  2. Why the renames on MERGE_SIDE1 in any given pick are *always* a
-     superset of the renames on MERGE_SIDE1 for the next pick.
-
-  3. Why any rename on MERGE_SIDE1 in any given pick is _almost_ always also
-     a rename on MERGE_SIDE1 for the next pick
-
-  4. A detailed description of the the counter-examples to #3.
-
-  5. Why the special cases in #4 are still fully reasonable to use to pair
-     up files for three-way content merging in the merge machinery, and why
-     they do not affect the correctness of the merge.
-
-  6. Interaction with skipping of "irrelevant" renames
-
-  7. Additional items that need to be cached
-
-  8. How directory rename detection interacts with the above and why this
-     optimization is still safe even if merge.directoryRenames is set to
-     "true".
-
-
-=== 0. Assumptions ===
+== 0. Assumptions
 
 There are two assumptions that will hold throughout this document:
 
@@ -91,7 +71,7 @@ this config setting, but we have to discuss a few more cases to show why;
 this discussion is deferred until section 8.
 
 
-=== 1. How rebasing and cherry-picking work ===
+== 1. How rebasing and cherry-picking work
 
 Consider the following setup (from the git-rebase manpage):
 
@@ -112,16 +92,19 @@ in the merge operation as MERGE_BASE, MERGE_SIDE1, and MERGE_SIDE2.  For
 this picture, the three commits for each of the three merges would be:
 
 To create A':
+
    MERGE_BASE:   E
    MERGE_SIDE1:  G
    MERGE_SIDE2:  A
 
 To create B':
+
    MERGE_BASE:   A
    MERGE_SIDE1:  A'
    MERGE_SIDE2:  B
 
 To create C':
+
    MERGE_BASE:   B
    MERGE_SIDE1:  B'
    MERGE_SIDE2:  C
@@ -138,8 +121,7 @@ Conceptually the two statements above are the same as a three-way merge of
 B, B', and C, at least the parts before you decide to record a commit.
 
 
-=== 2. Why the renames on MERGE_SIDE1 in any given pick are always a ===
-===    superset of the renames on MERGE_SIDE1 for the next pick.     ===
+== 2. Why the renames on MERGE_SIDE1 in any given pick are always a superset of the renames on MERGE_SIDE1 for the next pick.
 
 The merge machinery uses the filenames it is fed from MERGE_BASE,
 MERGE_SIDE1, and MERGE_SIDE2.  It will only move content to a different
@@ -157,11 +139,13 @@ First, let's remember what commits are involved in the first and second
 picks of the cherry-pick or rebase sequence:
 
 To create A':
+
    MERGE_BASE:   E
    MERGE_SIDE1:  G
    MERGE_SIDE2:  A
 
 To create B':
+
    MERGE_BASE:   A
    MERGE_SIDE1:  A'
    MERGE_SIDE2:  B
@@ -181,17 +165,18 @@ are a subset of those between E and G.  Equivalently, all renames between E
 and G are a superset of those between A and A'.
 
 
-=== 3. Why any rename on MERGE_SIDE1 in any given pick is _almost_   ===
-===    always also a rename on MERGE_SIDE1 for the next pick.        ===
+== 3. Why any rename on MERGE_SIDE1 in any given pick is _almost_  always also a rename on MERGE_SIDE1 for the next pick.
 
 Let's again look at the first two picks:
 
 To create A':
+
    MERGE_BASE:   E
    MERGE_SIDE1:  G
    MERGE_SIDE2:  A
 
 To create B':
+
    MERGE_BASE:   A
    MERGE_SIDE1:  A'
    MERGE_SIDE2:  B
@@ -201,10 +186,13 @@ any given rename from E to G.  Let's use the filenames 'oldfile' and
 'newfile' for demonstration purposes.  That first pick will function as
 follows; when the rename is detected, the merge machinery will do a
 three-way content merge of the following:
+
     E:oldfile
     G:newfile
     A:oldfile
+
 and produce a new result:
+
     A':newfile
 
 Note above that I've assumed that E->A did not rename oldfile.  If that
@@ -254,7 +242,7 @@ were detected as renames, A:oldfile and A':newfile should also be
 detectable as renames almost always.
 
 
-=== 4. A detailed description of the counter-examples to #3.         ===
+== 4. A detailed description of the counter-examples to #3.
 
 We already noted in section 3 that rename/rename(1to1) (i.e. both sides
 renaming a file the same way) was one counter-example.  The more
@@ -276,18 +264,20 @@ still somehow merge cleanly), then traditional rename detection would not
 detect A:oldfile and A':newfile as renames.
 
 Here's an example where that can happen:
-  * E:oldfile had 20 lines
-  * G:newfile added 10 new lines at the beginning of the file
-  * A:oldfile kept the first 3 lines of the file, and deleted all the rest
-then
-  => A':newfile would have 13 lines, 3 of which matches those in A:oldfile.
+
+* E:oldfile had 20 lines
+* G:newfile added 10 new lines at the beginning of the file
+* A:oldfile kept the first 3 lines of the file, and deleted all the rest
+
+then:
+
+* => A':newfile would have 13 lines, 3 of which matches those in A:oldfile.
+
 E:oldfile -> G:newfile would be detected as a rename, but A:oldfile and
 A':newfile would not be.
 
 
-=== 5. Why the special cases in #4 are still fully reasonable to use to    ===
-===    pair up files for three-way content merging in the merge machinery, ===
-===    and why they do not affect the correctness of the merge.            ===
+== 5. Why the special cases in #4 are still fully reasonable to use to pair up files for three-way content merging in the merge machinery, and why they do not affect the correctness of the merge.
 
 In the rename/rename(1to1) case, A:newfile and A':newfile are not renames
 since they use the *same* filename.  However, files with the same filename
@@ -394,17 +384,17 @@ cases 1 and 3 seem to provide as good or better behavior with the
 optimization than without.
 
 
-=== 6. Interaction with skipping of "irrelevant" renames ===
+== 6. Interaction with skipping of "irrelevant" renames
 
 Previous optimizations involved skipping rename detection for paths
 considered to be "irrelevant".  See for example the following commits:
 
   * 32a56dfb99 ("merge-ort: precompute subset of sources for which we
-		need rename detection", 2021-03-11)
+    need rename detection", 2021-03-11)
   * 2fd9eda462 ("merge-ort: precompute whether directory rename
-		detection is needed", 2021-03-11)
+    detection is needed", 2021-03-11)
   * 9bd342137e ("diffcore-rename: determine which relevant_sources are
-		no longer relevant", 2021-03-13)
+    no longer relevant", 2021-03-13)
 
 Relevance is always determined by what the _other_ side of history has
 done, in terms of modifing a file that our side renamed, or adding a
@@ -421,17 +411,22 @@ detection -- though we can limit it to the paths for which we have not
 already detected renames.
 
 
-=== 7. Additional items that need to be cached ===
+== 7. Additional items that need to be cached
 
 It turns out we have to cache more than just renames; we also cache:
 
-  A) non-renames (i.e. unpaired deletes)
-  B) counts of renames within directories
-  C) sources that were marked as RELEVANT_LOCATION, but which were
-     downgraded to RELEVANT_NO_MORE
-  D) the toplevel trees involved in the merge
+["upperalpha"]
+. non-renames (i.e. unpaired deletes)
+
+. counts of renames within directories
+
+. sources that were marked as RELEVANT_LOCATION, but which were
+  downgraded to RELEVANT_NO_MORE
+
+. the toplevel trees involved in the merge
 
 These are all stored in struct rename_info, and respectively appear in
+
   * cached_pairs (along side actual renames, just with a value of NULL)
   * dir_rename_counts
   * cached_irrelevant
@@ -482,9 +477,7 @@ we store the trees to compare with what we are asked to merge next
 time.
 
 
-=== 8. How directory rename detection interacts with the above and   ===
-===    why this optimization is still safe even if                   ===
-===    merge.directoryRenames is set to "true".                      ===
+== 8. How directory rename detection interacts with the above and why this optimization is still safe even if merge.directoryRenames is set to "true".
 
 As noted in the assumptions section:
 
@@ -503,12 +496,14 @@ one.  So let's again use the first two picks from the diagram in section
 one:
 
   First pick does this three-way merge:
+
     MERGE_BASE:   E
     MERGE_SIDE1:  G
     MERGE_SIDE2:  A
     => creates A'
 
   Second pick does this three-way merge:
+
     MERGE_BASE:   A
     MERGE_SIDE1:  A'
     MERGE_SIDE2:  B
@@ -522,10 +517,10 @@ add a new file to an old directory: create a new file, or rename a file
 into that directory.  Also, directory renames can be done on either side of
 history, so there are four cases to consider:
 
-  * MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to   old dir
-  * MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames  file into old dir
-  * MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old dir
-  * MERGE_SIDE1 renames  file into old dir, MERGE_SIDE2 renames old dir
+* MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to old dir
+* MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames file into old dir
+* MERGE_SIDE1 adds new file to old dir, MERGE_SIDE2 renames old dir
+* MERGE_SIDE1 renames file into old dir, MERGE_SIDE2 renames old dir
 
 One last note before we consider these four cases: There are some
 important properties about how we implement this optimization with
@@ -538,14 +533,14 @@ while considering all of these cases:
     of history that did the directory rename.
 
   * dir_rename_counts, the nested map of
-	{oldname => {newname => count}},
+    `{oldname => {newname => count}}`,
     is cached between runs as well.  This basically means that directory
     rename detection is also cached, though only on the side of history
     that we cache renames for (MERGE_SIDE1 as far as this document is
     concerned; see the assumptions section).  Two interesting sub-notes
     about these counts:
 
-    * If we need to perform rename-detection again on the given side (e.g.
+   ** If we need to perform rename-detection again on the given side (e.g.
       some paths are relevant for rename detection that weren't before),
       then we clear dir_rename_counts and recompute it, making use of
       cached_pairs.  The reason it is important to do this is optimizations
@@ -556,7 +551,7 @@ while considering all of these cases:
       easiest way to "fix up" dir_rename_counts in such cases is to just
       recompute it.
 
-    * If we prune rename/rename(1to1) entries from the cache, then we also
+   ** If we prune rename/rename(1to1) entries from the cache, then we also
       need to update dir_rename_counts to decrement the counts for the
       involved directory and any relevant parent directories (to undo what
       update_dir_rename_counts() in diffcore-rename.c incremented when the
@@ -578,7 +573,7 @@ in order:
 
 Case 1: MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to old dir
 
-  This case looks like this:
+This case looks like this:
 
     MERGE_BASE:   E,   Has olddir/
     MERGE_SIDE1:  G,   Renames olddir/ -> newdir/
@@ -590,15 +585,18 @@ Case 1: MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to old dir
     MERGE_SIDE2:  B,   Modifies olddir/newfile
     => expected   B',  with threeway-merged newdir/newfile from above
 
-  In this case, with the optimization, note that after the first commit:
+In this case, with the optimization, note that after the first commit:
+  
     * MERGE_SIDE1 remembers olddir/ -> newdir/
     * MERGE_SIDE1 has cached olddir/newfile -> newdir/newfile
-  Given the cached rename noted above, the second merge can proceed as
-  expected without needing to perform rename detection from A -> A'.
 
-Case 2: MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames  file into old dir
+Given the cached rename noted above, the second merge can proceed as
+expected without needing to perform rename detection from A -> A'.
 
-  This case looks like this:
+Case 2: MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames file into old dir
+
+This case looks like this:
+
     MERGE_BASE:   E    oldfile, olddir/
     MERGE_SIDE1:  G    oldfile, olddir/ -> newdir/
     MERGE_SIDE2:  A    oldfile -> olddir/newfile
@@ -609,18 +607,19 @@ Case 2: MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames  file into old dir
     MERGE_SIDE2:  B    modify olddir/newfile
     => expected   B',  with threeway-merged newdir/newfile from above
 
-  In this case, with the optimization, note that after the first commit:
+In this case, with the optimization, note that after the first commit:
+
     * MERGE_SIDE1 remembers olddir/ -> newdir/
     * MERGE_SIDE1 has cached olddir/newfile -> newdir/newfile
-		  (NOT oldfile -> newdir/newfile; compare to case with
-		   (p->status == 'R' && new_path) in possibly_cache_new_pair())
+      (NOT oldfile -> newdir/newfile; compare to case with
+      (p->status == 'R' && new_path) in possibly_cache_new_pair())
 
-  Given the cached rename noted above, the second merge can proceed as
-  expected without needing to perform rename detection from A -> A'.
+Given the cached rename noted above, the second merge can proceed as
+expected without needing to perform rename detection from A -> A'.
 
-Case 3: MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old dir
+Case 3: MERGE_SIDE1 adds new file to old dir, MERGE_SIDE2 renames old dir
 
-  This case looks like this:
+This case looks like this:
 
     MERGE_BASE:   E,   Has olddir/
     MERGE_SIDE1:  G,   Adds olddir/newfile
@@ -632,13 +631,13 @@ Case 3: MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old dir
     MERGE_SIDE2:  B,   Has newdir/, but no notion of newdir/newfile
     => expected   B',  with newdir/newfile from A'
 
-  In this case, with the optimization, note that after the first commit there
-  were no renames on MERGE_SIDE1, and any renames on MERGE_SIDE2 are tossed.
-  But the second merge didn't need any renames so this is fine.
+In this case, with the optimization, note that after the first commit there
+were no renames on MERGE_SIDE1, and any renames on MERGE_SIDE2 are tossed.
+But the second merge didn't need any renames so this is fine.
 
-Case 4: MERGE_SIDE1 renames  file into old dir, MERGE_SIDE2 renames old dir
+Case 4: MERGE_SIDE1 renames file into old dir, MERGE_SIDE2 renames old dir
 
-  This case looks like this:
+This case looks like this:
 
     MERGE_BASE:   E,   Has olddir/
     MERGE_SIDE1:  G,   Renames oldfile -> olddir/newfile
@@ -650,14 +649,16 @@ Case 4: MERGE_SIDE1 renames  file into old dir, MERGE_SIDE2 renames old dir
     MERGE_SIDE2:  B,   Modifies oldfile
     => expected   B',  with threeway-merged newdir/newfile from above
 
-  In this case, with the optimization, note that after the first commit:
+In this case, with the optimization, note that after the first commit:
+  
     * MERGE_SIDE1 remembers oldfile -> newdir/newfile
-		  (NOT oldfile -> olddir/newfile; compare to case of second
-		   block under p->status == 'R' in possibly_cache_new_pair())
+      (NOT oldfile -> olddir/newfile; compare to case of second
+      block under p->status == 'R' in possibly_cache_new_pair())
+      
     * MERGE_SIDE2 renames are tossed because only MERGE_SIDE1 is remembered
 
-  Given the cached rename noted above, the second merge can proceed as
-  expected without needing to perform rename detection from A -> A'.
+Given the cached rename noted above, the second merge can proceed as
+expected without needing to perform rename detection from A -> A'.
 
 Finally, I'll just note here that interactions with the
 skip-irrelevant-renames optimization means we sometimes don't detect

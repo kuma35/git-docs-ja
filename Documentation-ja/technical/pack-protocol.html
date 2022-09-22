@@ -739,77 +739,64 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>Git supports transferring data in packfiles over the ssh://, git://, http://
-and file:// transports.  There exist two sets of protocols, one for pushing
-data from a client to a server and another for fetching data from a server
-to a client.  The three transports (ssh, git, file) use the same protocol to
-transfer data. http is documented in http-protocol.txt.</p></div>
-<div class="paragraph"><p>The processes invoked in the canonical Git implementation are <em>upload-pack</em>
-on the server side and <em>fetch-pack</em> on the client side for fetching data;
-then <em>receive-pack</em> on the server and <em>send-pack</em> on the client for pushing
-data.  The protocol functions to have a server tell a client what is
-currently on the server, then for the two to negotiate the smallest amount
-of data to send in order to fully update one or the other.</p></div>
+<div class="paragraph"><p>Git は、 <code>ssh://</code> と <code>git://</code> と <code>http://</code> と <code>file://</code>
+転送(transport)を介した、パックファイルでのデータ転送をサポートしています。
+クライアントからサーバーにデータをプッシュするためのプロトコルと、サーバーからクライアントがデータをフェッチするためのプロトコルの 2
+つのセットがあります。 3 つの転送(transport)(ssh、git、file)は、同じプロトコルを使用してデータを転送します。 http
+に関しては http-protocol.txt に記載されています。</p></div>
+<div class="paragraph"><p>正規の Git 実装で呼び出されるプロセスは、サーバー側では <code>upload-pack</code> 、クライアント側ではデータを取得(fetch)するための
+<code>fetch-pack</code> です。 それから、データをプッシュするためには、サーバー側では <code>receive-pack</code> 、クライアント側では
+<code>send-pack</code> です。
+プロトコルは、サーバーが現在サーバー上にあるものをクライアントに通知し、それから双方で送信する最小量のデータをネゴシエートして、一方または他方を完全に更新するよう機能します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_pkt_line_format">pkt-line Format</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The descriptions below build on the pkt-line format described in
-protocol-common.txt. When the grammar indicate <code>PKT-LINE(...)</code>, unless
-otherwise noted the usual pkt-line LF rules apply: the sender SHOULD include
-a LF, but the receiver MUST NOT complain if it is not present.</p></div>
-<div class="paragraph"><p>An error packet is a special pkt-line that contains an error string.</p></div>
+<div class="paragraph"><p>以下の説明は、protocol-common.txt で説明されている pkt-line 形式に基づいています。
+「PKT-LINE(&#8230;)」文法の場合、特に明記しない限り、通常の pkt-line LF 規則が適用されます。</p></div>
+<div class="paragraph"><p>エラーパケットは、エラー文字列を含む特別な pkt-line です。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  error-line     =  PKT-LINE("ERR" SP explanation-text)</code></pre>
 </div></div>
-<div class="paragraph"><p>Throughout the protocol, where <code>PKT-LINE(...)</code> is expected, an error packet
-MAY be sent. Once this packet is sent by a client or a server, the data
-transfer process defined in this protocol is terminated.</p></div>
+<div class="paragraph"><p><code>PKT-LINE(...)</code> が期待されるそのプロトコル中の何処であっても、エラーパケットが送信される場合があります。
+このパケットがクライアントまたはサーバーによって送信されると、そのプロトコルで定義されたデータ転送プロセスは終了します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_transports">Transports</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>There are three transports over which the packfile protocol is initiated.
-The Git transport is a simple, unauthenticated server that takes the command
-(almost always <em>upload-pack</em>, though Git servers can be configured to be
-globally writable, in which <em>receive- pack</em> initiation is also allowed) with
-which the client wishes to communicate and executes it and connects it to
-the requesting process.</p></div>
-<div class="paragraph"><p>In the SSH transport, the client just runs the <em>upload-pack</em> or
-<em>receive-pack</em> process on the server over the SSH protocol and then
-communicates with that invoked process over the SSH connection.</p></div>
-<div class="paragraph"><p>The file:// transport runs the <em>upload-pack</em> or <em>receive-pack</em> process
-locally and communicates with it over a pipe.</p></div>
+<div class="paragraph"><p>パックファイルプロトコルが開始される転送(transport)は 3 つあります。 Git 転送は、クライアントが希望するコマンド (ほとんどの場合
+<code>upload-pack</code> ですが、Git サーバーはグローバルに書き込み可能に構成でき、 <code>receive-pack</code> 開始も許可されます)
+を受け取る単純な非認証サーバーです。 通信して実行し、リクエスト元のプロセスに接続します。</p></div>
+<div class="paragraph"><p>SSH 転送では、クライアントは SSH プロトコルを介してサーバー上で <code>upload-pack</code> または <code>receive-pack</code>
+プロセスを実行し、SSH 接続を介して、その呼び出されたプロセスと通信します。</p></div>
+<div class="paragraph"><p><code>file://</code> 転送は、 <code>upload-pack</code> または <code>receive-pack</code> プロセスをローカルで実行し、パイプを介して通信します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_extra_parameters">Extra Parameters</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The protocol provides a mechanism in which clients can send additional
-information in its first message to the server. These are called "Extra
-Parameters", and are supported by the Git, SSH, and HTTP protocols.</p></div>
-<div class="paragraph"><p>Each Extra Parameter takes the form of <code>&lt;key&gt;=&lt;value&gt;</code> or <code>&lt;key&gt;</code>.</p></div>
-<div class="paragraph"><p>Servers that receive any such Extra Parameters MUST ignore all unrecognized
-keys. Currently, the only Extra Parameter recognized is "version" with a
-value of <em>1</em> or <em>2</em>.  See protocol-v2.txt for more information on protocol
-version 2.</p></div>
+<div class="paragraph"><p>このプロトコルは、クライアントが最初のメッセージで追加情報をサーバーに送信できるメカニズムを提供します。 これらは「追加パラメーター」(Extra
+Parameters)と呼ばれ、Git と SSH と HTTP プロトコルでサポートされています。</p></div>
+<div class="paragraph"><p>各追加パラメーター(Extra Parameter)は、 <code>&lt;key&gt;=&lt;value&gt;</code> 形式または <code>&lt;key&gt;</code> 形式を取ります。</p></div>
+<div class="paragraph"><p>そのような追加パラメータ(Extra Parameters)を受信するサーバーは、認識されていないすべてのキーを無視する必要があります。
+現在認識される追加パラメータ(Extra Parameter)は、値が「1」または「2」である「version」のみです。 プロトコル バージョン 2
+の詳細については、protocol-v2.txt を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_git_transport">Git Transport</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The Git transport starts off by sending the command and repository on the
-wire using the pkt-line format, followed by a NUL byte and a hostname
-parameter, terminated by a NUL byte.</p></div>
+<div class="paragraph"><p>Git 転送(transport)は、 pkt-line 形式を使用してネットワーク上でコマンドとリポジトリを送信することから始まり、その後に NUL
+バイトとホスト名パラメーターが続き、NUL バイトで終了します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>0033git-upload-pack /project.git\0host=myserver.com\0</code></pre>
 </div></div>
-<div class="paragraph"><p>The transport may send Extra Parameters by adding an additional NUL byte,
-and then adding one or more NUL-terminated strings:</p></div>
+<div class="paragraph"><p>その転送は、NUL バイトを追加し、そして更に 1 つ以上の、 NUL で終了する文字列を追加することによって、追加のパラメーター(Extra
+Parameters)を送信できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>003egit-upload-pack /project.git\0host=myserver.com\0\0version=1\0</code></pre>
@@ -828,10 +815,11 @@ extra-parameters  = 1*extra-parameter
 extra-parameter   = 1*( %x01-ff ) NUL</code></pre>
 </div></div>
 </div></div>
-<div class="paragraph"><p>host-parameter is used for the git-daemon name based virtual hosting.  See
---interpolated-path option to git daemon, with the %H/%CH format characters.</p></div>
-<div class="paragraph"><p>Basically what the Git client is doing to connect to an <em>upload-pack</em>
-process on the server side over the Git protocol is this:</p></div>
+<div class="paragraph"><p>host-parameter は、 git-daemon の 名前ベースの仮想ホスティング(name based virtual
+hosting)に使用されます。 <code>%H/%CH</code> 形式の文字を使用した git デーモンの <code>--interpolated-path</code>
+オプションを参照してください。</p></div>
+<div class="paragraph"><p>基本的に、GitクライアントがGitプロトコルを介してサーバー側の <code>upload-pack</code>
+プロセスに接続するために行っていることは以下のとおりです:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ echo -e -n \
@@ -843,22 +831,18 @@ process on the server side over the Git protocol is this:</p></div>
 <div class="sect1">
 <h2 id="_ssh_transport">SSH Transport</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Initiating the upload-pack or receive-pack processes over SSH is executing
-the binary on the server via SSH remote execution.  It is basically
-equivalent to running this:</p></div>
+<div class="paragraph"><p>SSH 経由で upload-pack または receive-pack プロセスを開始することは、SSH
+リモート実行を介してサーバー上でバイナリを実行することです。 これは基本的に以下を実行するのと同じです:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ ssh git.example.com "git-upload-pack '/project.git'"</code></pre>
 </div></div>
-<div class="paragraph"><p>For a server to support Git pushing and pulling for a given user over SSH,
-that user needs to be able to execute one or both of those commands via the
-SSH shell that they are provided on login.  On some systems, that shell
-access is limited to only being able to run those two commands, or even just
-one of them.</p></div>
-<div class="paragraph"><p>In an ssh:// format URI, it&#8217;s absolute in the URI, so the <em>/</em> after the host
-name (or port number) is sent as an argument, which is then read by the
-remote git-upload-pack exactly as is, so it&#8217;s effectively an absolute path
-in the remote filesystem.</p></div>
+<div class="paragraph"><p>サーバーが SSH を介して特定のユーザーの Git プッシュおよびプルをサポートするには、そのユーザーが、ログイン時に提供される SSH
+シェルを介して、これらのコマンドのいずれかまたは両方を実行できる必要があります。 一部のシステムでは、そのシェル アクセスは、これら 2
+つのコマンドの実行のみ、またはそれらの 1 つだけに制限されています。</p></div>
+<div class="paragraph"><p><code>ssh://</code> 形式の URI では、これは URI 内で絶対的であるため、ホスト名 (またはポート番号) の後の <code>/</code>
+が引数として送信され、リモートの git-upload-pack によってそのまま読み取られます。
+そのため、実質的にはリモートファイルシステムの絶対パスです。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>   git clone ssh://user@example.com/project.git
@@ -866,8 +850,7 @@ in the remote filesystem.</p></div>
                 v
 ssh user@example.com "git-upload-pack '/project.git'"</code></pre>
 </div></div>
-<div class="paragraph"><p>In a "user@host:path" format URI, its relative to the user&#8217;s home directory,
-because the Git client will run:</p></div>
+<div class="paragraph"><p><code>user@host:path</code> 形式の URI では、Git クライアントが実行されるため、ユーザーのホーム ディレクトリに相対的です:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>   git clone user@example.com:project.git
@@ -875,8 +858,7 @@ because the Git client will run:</p></div>
                   v
 ssh user@example.com "git-upload-pack 'project.git'"</code></pre>
 </div></div>
-<div class="paragraph"><p>The exception is if a <em>~</em> is used, in which case we execute it without the
-leading <em>/</em>.</p></div>
+<div class="paragraph"><p>例外は、 <code>~</code>  が使用されている場合です。この場合、先頭の <code>/</code> なしで実行されます。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>   ssh://user@example.com/~alice/project.git,
@@ -884,22 +866,19 @@ leading <em>/</em>.</p></div>
                   v
 ssh user@example.com "git-upload-pack '~alice/project.git'"</code></pre>
 </div></div>
-<div class="paragraph"><p>Depending on the value of the <code>protocol.version</code> configuration variable, Git
-may attempt to send Extra Parameters as a colon-separated string in the
-GIT_PROTOCOL environment variable. This is done only if the <code>ssh.variant</code>
-configuration variable indicates that the ssh command supports passing
-environment variables as an argument.</p></div>
-<div class="paragraph"><p>A few things to remember here:</p></div>
+<div class="paragraph"><p><code>protocol.version</code> 構成変数の値に応じて、Git は GIT_PROTOCOL
+環境変数のコロン(<code>:</code>)で区切られた文字列を追加パラメーター(Extra Parameters)として送信しようとする場合があります。 これは、
+<code>ssh.variant</code> 構成変数で、ssh コマンドが環境変数を引数として渡すことをサポートすることを示している場合にのみ行われます。</p></div>
+<div class="paragraph"><p>ここでいくつか覚えておいて欲しいことがあります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-The "command name" is spelled with dash (e.g. git-upload-pack), but this can
-  be overridden by the client;
+「コマンド名」はダッシュ(<code>-</code>)で続けて綴られます (例: git-upload-pack) が、これはクライアントによってオーバーライドできます。
 </p>
 </li>
 <li>
 <p>
-The repository path is always quoted with single quotes.
+リポジトリパスは常に一重引用符(single quotes)で囲みます。
 </p>
 </li>
 </ul></div>
@@ -908,19 +887,17 @@ The repository path is always quoted with single quotes.
 <div class="sect1">
 <h2 id="_fetching_data_from_a_server">Fetching Data From a Server</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>When one Git repository wants to get data that a second repository has, the
-first can <em>fetch</em> from the second.  This operation determines what data the
-server has that the client does not then streams that data down to the
-client in packfile format.</p></div>
+<div class="paragraph"><p>ある Git リポジトリが 2 つ目のリポジトリにあるデータを取得したい場合、最初の Git リポジトリは
+2つめ目のリポジトリから「fetch」(取得)できます。 この操作は、サーバーが持っていてクライアントが持っていないデータを判別し、そのデータを
+packfile 形式でクライアントにストリーミングします。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_reference_discovery">Reference Discovery</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>When the client initially connects the server will immediately respond with
-a version number (if "version=1" is sent as an Extra Parameter), and a
-listing of each reference it has (all branches and tags) along with the
-object name that each reference currently points to.</p></div>
+<div class="paragraph"><p>クライアントが最初に接続すると、サーバーはすぐに、バージョン番号 ("version=1" が追加パラメーター(Extra
+Parameter)として送信された場合) と、それが持つ各参照 (すべてのブランチとタグ)
+のリストと、各参照が現在指しているオブジェクト名で、応答します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ echo -e -n "0045git-upload-pack /schacon/gitbook.git\0host=example.com\0\0version=1\0" |
@@ -935,16 +912,14 @@ object name that each reference currently points to.</p></div>
 003fe92df48743b7bc7d26bcaabfddde0a1e20cae47c refs/tags/v1.0^{}
 0000</code></pre>
 </div></div>
-<div class="paragraph"><p>The returned response is a pkt-line stream describing each ref and its
-current value.  The stream MUST be sorted by name according to the C locale
-ordering.</p></div>
-<div class="paragraph"><p>If HEAD is a valid ref, HEAD MUST appear as the first advertised ref.  If
-HEAD is not a valid ref, HEAD MUST NOT appear in the advertisement list at
-all, but other refs may still appear.</p></div>
-<div class="paragraph"><p>The stream MUST include capability declarations behind a NUL on the first
-ref. The peeled value of a ref (that is "ref^{}") MUST be immediately after
-the ref itself, if presented. A conforming server MUST peel the ref if it&#8217;s
-an annotated tag.</p></div>
+<div class="paragraph"><p>返される応答は、各refとその現在の値を説明する pkt-line ストリームです。 そのストリームは、C
+ロケールの順序に従って名前でソートする必要があります。</p></div>
+<div class="paragraph"><p>HEAD が有効な ref である場合、HEAD は最初に広告(advertise)された ref として表示されなければなりません。 HEAD
+が有効な ref でない場合、HEAD は広告(advertise)リストにまったく表示されてはなりませんが、他の ref
+は表示される可能性があります。</p></div>
+<div class="paragraph"><p>ストリームは、最初のrefの NUL の後ろに機能宣言を含める必要があります。 ref の皮をむいた値(the (peeled value)
+(つまり、<code>ref^{}</code>) は、提示される場合、ref 自体の直後になければなりません。 準拠するサーバーは、注釈付きタグの場合、ref
+を皮むき(peel)しなければなりません。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  advertised-refs  =  *1("version 1")
@@ -969,26 +944,20 @@ an annotated tag.</p></div>
   capability       =  1*(LC_ALPHA / DIGIT / "-" / "_")
   LC_ALPHA         =  %x61-7A</code></pre>
 </div></div>
-<div class="paragraph"><p>Server and client MUST use lowercase for obj-id, both MUST treat obj-id as
-case-insensitive.</p></div>
-<div class="paragraph"><p>See protocol-capabilities.txt for a list of allowed server capabilities and
-descriptions.</p></div>
+<div class="paragraph"><p>サーバーとクライアントは obj-id に英小文字を使用する必要があり、サーバーとクライアントどちらも obj-id
+を英大文字と英小文字を区別しないものとして扱わなければなりません。</p></div>
+<div class="paragraph"><p>許可されているサーバー機能と説明のリストについては、 protocol-capabilities.txt を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_packfile_negotiation">Packfile Negotiation</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After reference and capabilities discovery, the client can decide to
-terminate the connection by sending a flush-pkt, telling the server it can
-now gracefully terminate, and disconnect, when it does not need any pack
-data. This can happen with the ls-remote command, and also can happen when
-the client already is up to date.</p></div>
-<div class="paragraph"><p>Otherwise, it enters the negotiation phase, where the client and server
-determine what the minimal packfile necessary for transport is, by telling
-the server what objects it wants, its shallow objects (if any), and the
-maximum commit depth it wants (if any).  The client will also send a list of
-the capabilities it wants to be in effect, out of what the server said it
-could do with the first <em>want</em> line.</p></div>
+<div class="paragraph"><p>参照と機能の検出後、クライアントは、 パックデータが不要になった時、 flush-pkt
+を送信して接続を終了することを決定し、サーバーに正常に終了できるようになったことを伝え、切断できます。 これは ls-remote
+コマンドで発生する可能性があり、そしてまた、クライアントが既に最新の状態である場合にも発生する可能性があります。</p></div>
+<div class="paragraph"><p>それ以外の場合は、ネゴシエーション フェーズに入り、クライアントとサーバーは、必要なオブジェクトや、浅い(shallow)オブジェクト
+(存在する場合)や、必要なコミットの最大深度 (対応する場合) をサーバーに伝えることによって、転送に必要な最小限のパックファイルを決定します。
+クライアントは、サーバーが最初の <code>want</code> 行に対して、実行できると言った機能の中から、有効にしたい機能のリストも送信します。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  upload-request    =  want-list
@@ -1013,33 +982,26 @@ could do with the first <em>want</em> line.</p></div>
 
   filter-request    =  PKT-LINE("filter" SP filter-spec)</code></pre>
 </div></div>
-<div class="paragraph"><p>Clients MUST send all the obj-ids it wants from the reference discovery
-phase as <em>want</em> lines. Clients MUST send at least one <em>want</em> command in the
-request body. Clients MUST NOT mention an obj-id in a <em>want</em> command which
-did not appear in the response obtained through ref discovery.</p></div>
-<div class="paragraph"><p>The client MUST write all obj-ids which it only has shallow copies of
-(meaning that it does not have the parents of a commit) as <em>shallow</em> lines
-so that the server is aware of the limitations of the client&#8217;s history.</p></div>
-<div class="paragraph"><p>The client now sends the maximum commit history depth it wants for this
-transaction, which is the number of commits it wants from the tip of the
-history, if any, as a <em>deepen</em> line.  A depth of 0 is the same as not making
-a depth request. The client does not want to receive any commits beyond this
-depth, nor does it want objects needed only to complete those
-commits. Commits whose parents are not received as a result are defined as
-shallow and marked as such in the server. This information is sent back to
-the client in the next step.</p></div>
-<div class="paragraph"><p>The client can optionally request that pack-objects omit various objects
-from the packfile using one of several filtering techniques.  These are
-intended for use with partial clone and partial fetch operations. An object
-that does not meet a filter-spec value is omitted unless explicitly
-requested in a <em>want</em> line. See <code>rev-list</code> for possible filter-spec values.</p></div>
-<div class="paragraph"><p>Once all the <em>want&#8217;s and 'shallow&#8217;s (and optional 'deepen</em>) are transferred,
-clients MUST send a flush-pkt, to tell the server side that it is done
-sending the list.</p></div>
-<div class="paragraph"><p>Otherwise, if the client sent a positive depth request, the server will
-determine which commits will and will not be shallow and send this
-information to the client. If the client did not request a positive depth,
-this step is skipped.</p></div>
+<div class="paragraph"><p>クライアントは、参照検出フェーズから必要なすべての obj-id を <code>want</code> 行として送信する必要があります。
+クライアントは、リクエスト本文で少なくとも 1 つの <code>want</code> コマンドを送信する必要があります。 クライアントは、ref
+検出によって取得された応答に表示されなかった obj-id について <code>want</code> コマンドで言及してはなりません。</p></div>
+<div class="paragraph"><p>クライアントは、サーバーがクライアントの履歴の制限を認識できるように、浅い(shallow)コピーしか持たない (つまり、コミットの親を持たない)
+すべての obj-id を <code>shallow</code> 行として書き込まなければなりません。</p></div>
+<div class="paragraph"><p>クライアントは、この取引(transaction)に必要な最大のコミット履歴の深さを送信します。
+これは、履歴の先端から必要なコミットの数であり、存在する場合は <code>deepen</code> 行として送信します。 深度 0
+は、深度(depth)リクエストを行わないことと同じです。
+クライアントは、この深さを超えるコミットを受け取りたくないし、それらのコミットを完了するためだけに必要なオブジェクトも欲していません。
+結果として親が受信されないコミットは、浅い(shallow)ものとして定義され、サーバーでそのようにマークされます。
+この情報は、次のステップでクライアントに送り返されます。</p></div>
+<div class="paragraph"><p>クライアントはオプションで、いくつかのフィルタリング手法の 1 つを使用して、 pack-objects が
+パックファイルからさまざまなオブジェクトを省略するように要求できます。
+これらは、部分(partial)クローンおよび部分(partial)フェッチ操作で使用するためのものです。 <code>want</code> 行で明示的に要求されない限り、
+filter-spec 値を満たさないオブジェクトは省略されます。 可能な filter-spec 値については、 <code>rev-list</code>
+を参照してください。</p></div>
+<div class="paragraph"><p>すべての <code>want</code> と <code>shallow</code> (およびオプションの <code>deepen</code> )
+が転送されると、クライアントは、リストの送信が完了したことをサーバー側に通知するために、 flush-pkt を送信する必要があります。</p></div>
+<div class="paragraph"><p>それ以外の場合、クライアントが正の深さ(depth)のリクエストを送信した場合、サーバーはどのコミットが浅い(shallow)かどうかを判断し、その情報をクライアントに送信します。
+クライアントが正の深さをリクエストしなかった場合、この手順はスキップされます。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  shallow-update   =  *shallow-line
@@ -1050,21 +1012,16 @@ this step is skipped.</p></div>
 
   unshallow-line   =  PKT-LINE("unshallow" SP obj-id)</code></pre>
 </div></div>
-<div class="paragraph"><p>If the client has requested a positive depth, the server will compute the
-set of commits which are no deeper than the desired depth. The set of
-commits start at the client&#8217;s wants.</p></div>
-<div class="paragraph"><p>The server writes <em>shallow</em> lines for each commit whose parents will not be
-sent as a result. The server writes an <em>unshallow</em> line for each commit
-which the client has indicated is shallow, but is no longer shallow at the
-currently requested depth (that is, its parents will now be sent). The
-server MUST NOT mark as unshallow anything which the client has not
-indicated was shallow.</p></div>
-<div class="paragraph"><p>Now the client will send a list of the obj-ids it has using <em>have</em> lines, so
-the server can make a packfile that only contains the objects that the
-client needs. In multi_ack mode, the canonical implementation will send up
-to 32 of these at a time, then will send a flush-pkt. The canonical
-implementation will skip ahead and send the next 32 immediately, so that
-there is always a block of 32 "in-flight on the wire" at a time.</p></div>
+<div class="paragraph"><p>クライアントが正の深さをリクエストした場合、サーバーは目的の深さまでの一連のコミットを計算します。
+一連のコミットは、クライアントの要求(wants)から始まります。</p></div>
+<div class="paragraph"><p>サーバーは、結果として親が送信されないコミットごとに <code>shallow</code> 行を書き込みます。
+サーバーは、クライアントが浅いと示したコミットごとに、現在要求されている深さ(depth)ではもはや浅く(shallow)は無いため、
+<code>unshallow</code> 行を書き込みます(つまり、その親が送信されます)。
+サーバーは、クライアントが浅い(shallow)と示していないものを非浅い(unshallow)としてマークしてはなりません。</p></div>
+<div class="paragraph"><p>これで、クライアントは <code>have</code> 行を使用して、所有している obj-id
+のリストを送信するため、サーバーはクライアントが必要とするオブジェクトのみを含むパックファイルを作成できます。 multi_ack
+モードでは、正規の実装はこれらを一度に最大 32 個送信して、それから flush-pkt を送信します。 正規の実装では、先にスキップして次の 32
+をすぐに送信し、一度に 32 の 「送信中」(in-flight on the wire)のブロックが常に存在するようにします。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  upload-haves      =  have-list
@@ -1074,80 +1031,67 @@ there is always a block of 32 "in-flight on the wire" at a time.</p></div>
   have-line         =  PKT-LINE("have" SP obj-id)
   compute-end       =  flush-pkt / PKT-LINE("done")</code></pre>
 </div></div>
-<div class="paragraph"><p>If the server reads <em>have</em> lines, it then will respond by ACKing any of the
-obj-ids the client said it had that the server also has. The server will ACK
-obj-ids differently depending on which ack mode is chosen by the client.</p></div>
-<div class="paragraph"><p>In multi_ack mode:</p></div>
+<div class="paragraph"><p>サーバーが <code>have</code> 行を読み取ると、サーバーも持っているとクライアントが言った obj-id のいずれかに ACK を返すことで応答します。
+サーバーは、クライアントが選択した ack モードに応じて、異なる方法で obj-id を ACK します。</p></div>
+<div class="paragraph"><p>multi_ack モードでは:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-the server will respond with <em>ACK obj-id continue</em> for any common commits.
+サーバーは、一般的なコミットに対して <code>ACK obj-id continue</code> で応答します。
 </p>
 </li>
 <li>
 <p>
-once the server has found an acceptable common base commit and is ready to
-    make a packfile, it will blindly ACK all <em>have</em> obj-ids back to the client.
+サーバーが受け入れ可能な共通ベースのコミットを見つけ、パックファイルを作成する準備が整うと、サーバーはすべての <code>have</code> obj-id
+    を盲目的にクライアントに返します。
 </p>
 </li>
 <li>
 <p>
-the server will then send a <em>NAK</em> and then wait for another response from
-    the client - either a <em>done</em> or another list of <em>have</em> lines.
+サーバーは <code>NAK</code> を送信し、クライアントからの別の応答を待ちます。それは <code>done</code> または <code>have</code> 行の別のリストのいずれかです。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>In multi_ack_detailed mode:</p></div>
+<div class="paragraph"><p>multi_ack_detailed モードでは:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-the server will differentiate the ACKs where it is signaling that it is
-    ready to send data with <em>ACK obj-id ready</em> lines, and signals the identified
-    common commits with <em>ACK obj-id common</em> lines.
+サーバーは、 <code>ACK obj-id ready</code> 行でデータを送信する準備ができていることを通知する ACK を識別し、そして、 <code>ACK
+    obj-id common</code> 行で識別された共通コミットを通知します。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Without either multi_ack or multi_ack_detailed:</p></div>
+<div class="paragraph"><p>multi_ack または multi_ack_detailed を使用しない場合:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-upload-pack sends "ACK obj-id" on the first common object it finds.  After
-   that it says nothing until the client gives it a "done".
+upload-pack は、最初に見つけた共通オブジェクトに対して <code>ACK obj-id</code> を送信します。 その後、クライアントが <code>done</code>
+   するまで何も言いません。
 </p>
 </li>
 <li>
 <p>
-upload-pack sends "NAK" on a flush-pkt if no common object has been found
-   yet.  If one has been found, and thus an ACK was already sent, it&#8217;s silent
-   on the flush-pkt.
+共通オブジェクトがまだ見つからない場合、 upload-pack は flush-pkt で <code>NAK</code> を送信します。 1 つ見つかった場合、ACK
+   が既に送信されている場合は、 flush-pkt では何も言いません。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>After the client has gotten enough ACK responses that it can determine that
-the server has enough information to send an efficient packfile (in the
-canonical implementation, this is determined when it has received enough
-ACKs that it can color everything left in the --date-order queue as common
-with the server, or the --date-order queue is empty), or the client
-determines that it wants to give up (in the canonical implementation, this
-is determined when the client sends 256 <em>have</em> lines without getting any of
-them ACKed by the server - meaning there is nothing in common and the server
-should just send all of its objects), then the client will send a <em>done</em>
-command.  The <em>done</em> command signals to the server that the client is ready
-to receive its packfile data.</p></div>
-<div class="paragraph"><p>However, the 256 limit <strong>only</strong> turns on in the canonical client
-implementation if we have received at least one "ACK %s continue" during a
-prior round.  This helps to ensure that at least one common ancestor is
-found before we give up entirely.</p></div>
-<div class="paragraph"><p>Once the <em>done</em> line is read from the client, the server will either send a
-final <em>ACK obj-id</em> or it will send a <em>NAK</em>. <em>obj-id</em> is the object name of
-the last commit determined to be common. The server only sends ACK after
-<em>done</em> if there is at least one common base and multi_ack or
-multi_ack_detailed is enabled. The server always sends NAK after <em>done</em> if
-there is no common base found.</p></div>
-<div class="paragraph"><p>Instead of <em>ACK</em> or <em>NAK</em>, the server may send an error message (for
-example, if it does not recognize an object in a <em>want</em> line received from
-the client).</p></div>
-<div class="paragraph"><p>Then the server will start sending its packfile data.</p></div>
+<div class="paragraph"><p>クライアントが十分な ACK 応答を取得して、サーバーが効率的なパックファイルを送信するのに十分な情報を持っていると判断した場合(正規の実装では、
+これは <code>--date-order</code> キューに残っているすべてをサーバーと共通のものとして色付けできるほど十分な ACK を受信した場合、 または
+<code>--date-order</code> キューが空である場合、に決定されます)、またはクライアントがあきらめたい(wants to give
+up)と判断した場合(正規の実装では、これは、クライアントが 256 の <code>have｀行をサーバーからの ACK を取得せずに送信したとき --
+これはサーバーとの共通点がなく、サーバーはすべてのオブジェクトを送信する必要があることを意味します-- に決定されます)、クライアントは `done</code>
+コマンドを送信します。 <code>done</code> コマンドは、クライアントがパックファイルデータを受信する準備ができていることをサーバーに通知します。</p></div>
+<div class="paragraph"><p>ただし、256 の制限は、前のラウンド中に少なくとも 1 つの <code>ACK %s continue</code>
+を受信した場合にのみ、正規のクライアント実装で有効になります。 これにより、完全にあきらめる(give up)前に、共通の祖先を少なくとも 1
+つ見つけることができます。</p></div>
+<div class="paragraph"><p><code>done</code> 行がクライアントから読み取られると、サーバーは最後の <code>ACK obj-id</code> を送信するか、あるいは
+<code>NAK`を送信する場合があります。 `obj-id</code> は、一般的であると判断された最後のコミットのオブジェクト名です。 サーバーは、少なくとも 1
+つの共通ベースがあり、 multi_ack または multi_ack_detailed が有効になっている場合にのみ、 <code>done</code> 後に ACK
+を送信します。 共通のベースが見つからない場合、サーバーは <code>done</code> 後に常に NAK を送信します。</p></div>
+<div class="paragraph"><p><code>ACK</code> または <code>NAK</code> の代わりに、サーバーはエラーメッセージを送信する場合があります(たとえば、クライアントから受信した <code>want</code>
+行のオブジェクトを認識できない場合)。</p></div>
+<div class="paragraph"><p>その後、サーバーはパックファイルデータの送信を開始します。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  server-response = *ack_multi ack / nak
@@ -1156,7 +1100,7 @@ the client).</p></div>
   ack             = PKT-LINE("ACK" SP obj-id)
   nak             = PKT-LINE("NAK")</code></pre>
 </div></div>
-<div class="paragraph"><p>A simple clone may look like this (with no <em>have</em> lines):</p></div>
+<div class="paragraph"><p>単純なクローンは以下のようになります(<code>have</code> 行はありません):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>   C: 0054want 74730d410fcb6603ace96f1dc55ea6196122532d multi_ack \
@@ -1171,7 +1115,7 @@ the client).</p></div>
    S: 0008NAK\n
    S: [PACKFILE]</code></pre>
 </div></div>
-<div class="paragraph"><p>An incremental update (fetch) response might look like this:</p></div>
+<div class="paragraph"><p>増分更新(fetch)応答は以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>   C: 0054want 74730d410fcb6603ace96f1dc55ea6196122532d multi_ack \
@@ -1198,67 +1142,50 @@ the client).</p></div>
 <div class="sect1">
 <h2 id="_packfile_data">Packfile Data</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Now that the client and server have finished negotiation about what the
-minimal amount of data that needs to be sent to the client is, the server
-will construct and send the required data in packfile format.</p></div>
-<div class="paragraph"><p>See pack-format.txt for what the packfile itself actually looks like.</p></div>
-<div class="paragraph"><p>If <em>side-band</em> or <em>side-band-64k</em> capabilities have been specified by the
-client, the server will send the packfile data multiplexed.</p></div>
-<div class="paragraph"><p>Each packet starting with the packet-line length of the amount of data that
-follows, followed by a single byte specifying the sideband the following
-data is coming in on.</p></div>
-<div class="paragraph"><p>In <em>side-band</em> mode, it will send up to 999 data bytes plus 1 control code,
-for a total of up to 1000 bytes in a pkt-line.  In <em>side-band-64k</em> mode it
-will send up to 65519 data bytes plus 1 control code, for a total of up to
-65520 bytes in a pkt-line.</p></div>
-<div class="paragraph"><p>The sideband byte will be a <em>1</em>, <em>2</em> or a <em>3</em>. Sideband <em>1</em> will contain
-packfile data, sideband <em>2</em> will be used for progress information that the
-client will generally print to stderr and sideband <em>3</em> is used for error
-information.</p></div>
-<div class="paragraph"><p>If no <em>side-band</em> capability was specified, the server will stream the
-entire packfile without multiplexing.</p></div>
+<div class="paragraph"><p>クライアントとサーバーは、クライアントに送信する必要があるデータの最小量についてのネゴシエーションを終了したので、サーバーは必要なデータを作成してパックファイル形式で送信します。</p></div>
+<div class="paragraph"><p>パックファイル自体が実際にどのように見えるかについては、pack-format.txt を参照してください。</p></div>
+<div class="paragraph"><p><code>side-band</code> または <code>side-band-64k</code>
+機能がクライアントによって指定されている場合、サーバーはパックファイルデータを多重化して送信します。</p></div>
+<div class="paragraph"><p>各パケットは、後続のデータ量のパケット行長さで始まり、後続のデータが入ってくるサイドバンドを指定する 1 バイトが続きます。</p></div>
+<div class="paragraph"><p><code>side-band</code> モードでは、最大 999 データ バイトと 1 つの制御コード、つまり合計で最大 1000 バイトを pkt-line
+で送信します。 <code>side-band-64k</code> モードでは、最大 65519 データ バイトと 1 つの制御コード、つまり合計で最大 65520
+バイトを pkt-line で送信します。</p></div>
+<div class="paragraph"><p>サイドバンドバイトは「1」または「2」または「3」になります。 サイドバンド <code>1</code> には packfile データが含まれ、サイドバンド <code>2</code>
+はクライアントが通常 stderr に出力する進捗情報に使用され、サイドバンド <code>3</code> はエラー情報に使用されます。</p></div>
+<div class="paragraph"><p><code>side-band</code> 機能が指定されていない場合、サーバーは多重化せずにパックファイル全体をストリーミングします。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_pushing_data_to_a_server">Pushing Data To a Server</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Pushing data to a server will invoke the <em>receive-pack</em> process on the
-server, which will allow the client to tell it which references it should
-update and then send all the data the server will need for those new
-references to be complete.  Once all the data is received and validated, the
-server will then update its references to what the client specified.</p></div>
+<div class="paragraph"><p>データをサーバーにプッシュすると、サーバー上で <code>receive-pack</code>
+プロセスが呼び出されます。これにより、クライアントは更新する必要がある参照をクライアントに通知し、それらの新しい参照を完結させるためにサーバーが必要とするすべてのデータを送信できます。
+すべてのデータが受信されて検証(validate)されると、サーバーはその参照をクライアントが指定したものに更新します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_authentication">Authentication</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The protocol itself contains no authentication mechanisms.  That is to be
-handled by the transport, such as SSH, before the <em>receive-pack</em> process is
-invoked.  If <em>receive-pack</em> is configured over the Git transport, those
-repositories will be writable by anyone who can access that port (9418) as
-that transport is unauthenticated.</p></div>
+<div class="paragraph"><p>プロトコル自体には、認証メカニズムは含まれていません。 これは、 <code>receive-pack</code> プロセスが呼び出される前に、SSH
+などの転送(transport)によって処理されます。 <code>receive-pack</code>
+がGit転送(transport)上で構成されている場合、その転送(transport)は認証されていないため、そのポート(9418)にアクセスできる人なら誰でもこれらのリポジトリに書き込みできます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_reference_discovery_2">Reference Discovery</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The reference discovery phase is done nearly the same way as it is in the
-fetching protocol. Each reference obj-id and name on the server is sent in
-packet-line format to the client, followed by a flush-pkt.  The only real
-difference is that the capability listing is different - the only possible
-values are <em>report-status</em>, <em>report-status-v2</em>, <em>delete-refs</em>, <em>ofs-delta</em>,
-<em>atomic</em> and <em>push-options</em>.</p></div>
+<div class="paragraph"><p>参照検出フェーズは、フェッチプロトコル(the fetching protocol)とほぼ同じ方法で行われます。 サーバー上の各参照 obj-id
+と名前は、 packet-line 形式でクライアントに送信され、その後に flush-pkt が続きます。
+唯一の違いは、機能リストが異なることです。可能な値は、 <code>report-status</code>, <code>report-status-v2</code>,
+<code>delete-refs</code>, <code>ofs-delta</code>, <code>atomic</code>, <code>push-options</code> のみです。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_reference_update_request_and_packfile_transfer">Reference Update Request and Packfile Transfer</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Once the client knows what references the server is at, it can send a list
-of reference update requests.  For each reference on the server that it
-wants to update, it sends a line listing the obj-id currently on the server,
-the obj-id the client would like to update it to and the name of the
-reference.</p></div>
-<div class="paragraph"><p>This list is followed by a flush-pkt.</p></div>
+<div class="paragraph"><p>クライアントがサーバー上にある参照を知ったら、参照更新リクエストのリストを送信できます。 更新するサーバー上の参照ごとに、現在サーバー上にある
+obj-id と、クライアントが更新したい obj-id と、参照の名前を、リストした行を送信します。</p></div>
+<div class="paragraph"><p>このリストの後には、flush-pkt が続きます。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  update-requests   =  *shallow ( command-list | push-cert )
@@ -1290,94 +1217,82 @@ reference.</p></div>
 
   push-option       =  1*( VCHAR | SP )</code></pre>
 </div></div>
-<div class="paragraph"><p>If the server has advertised the <em>push-options</em> capability and the client
-has specified <em>push-options</em> as part of the capability list above, the
-client then sends its push options followed by a flush-pkt.</p></div>
+<div class="paragraph"><p>サーバーが <code>push-options</code> 機能を広告し、クライアントが上記の機能リストの一部として <code>push-options</code>
+を指定した場合、クライアントはプッシュオプションに続いて flush-pkt を送信します。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  push-options      =  *PKT-LINE(push-option) flush-pkt</code></pre>
 </div></div>
-<div class="paragraph"><p>For backwards compatibility with older Git servers, if the client sends a
-push cert and push options, it MUST send its push options both embedded
-within the push cert and after the push cert. (Note that the push options
-within the cert are prefixed, but the push options after the cert are not.)
-Both these lists MUST be the same, modulo the prefix.</p></div>
-<div class="paragraph"><p>After that the packfile that should contain all the objects that the server
-will need to complete the new references will be sent.</p></div>
+<div class="paragraph"><p>古い Git
+サーバーとの下位互換性のために、クライアントがプッシュ証明書とプッシュオプションを送信する場合、プッシュ証明書内に埋め込まれたプッシュオプションと、プッシュ証明書の後のプッシュオプションの両方を送信する必要があります。
+(注意: 証明書内のプッシュオプションにはプレフィックスが付いていますが、証明書の後のプッシュオプションには付いていないことに注意してください。)
+これらのリストは、プレフィックスを除けば、両方とも同一でなければなりません。</p></div>
+<div class="paragraph"><p>その後、サーバーが新しい参照を完結させるために必要なすべてのオブジェクトを含むパックファイルが送信されます。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  packfile          =  "PACK" 28*(OCTET)</code></pre>
 </div></div>
-<div class="paragraph"><p>If the receiving end does not support delete-refs, the sending end MUST NOT
-ask for delete command.</p></div>
-<div class="paragraph"><p>If the receiving end does not support push-cert, the sending end MUST NOT
-send a push-cert command.  When a push-cert command is sent, command-list
-MUST NOT be sent; the commands recorded in the push certificate is used
-instead.</p></div>
-<div class="paragraph"><p>The packfile MUST NOT be sent if the only command used is <em>delete</em>.</p></div>
-<div class="paragraph"><p>A packfile MUST be sent if either create or update command is used,
-even if the server already has all the necessary objects.  In this
-case the client MUST send an empty packfile.   The only time this
-is likely to happen is if the client is creating
-a new branch or a tag that points to an existing obj-id.</p></div>
-<div class="paragraph"><p>The server will receive the packfile, unpack it, then validate each
-reference that is being updated that it hasn&#8217;t changed while the request was
-being processed (the obj-id is still the same as the old-id), and it will
-run any update hooks to make sure that the update is acceptable.  If all of
-that is fine, the server will then update the references.</p></div>
+<div class="paragraph"><p>受信側が delete-refs をサポートしていない場合、送信側は delete コマンドを要求してはなりません。</p></div>
+<div class="paragraph"><p>受信側がプッシュ証明書をサポートしていない場合、送信側はプッシュ証明書コマンドを送信してはいけません。 push-cert
+コマンドが送信される場合、command-list は送信してはいけません。
+代わりに、プッシュ証明書に記録されているコマンド(commands)が使用されます。</p></div>
+<div class="paragraph"><p>使用されるコマンドが <code>delete</code> のみの場合、パックファイルを送信してはなりません。</p></div>
+<div class="paragraph"><p>create または update コマンドを使用する場合は、サーバーに必要なすべての
+オブジェクトが既にある場合でも、パックファイルを送信する必要があります。
+の場合、クライアントは空のパックファイルを送信する必要があります。
+クライアントが既存の obj-id を指す新しいブランチまたはタグを
+作成している場合に、これが発生する可能性が高いです。</p></div>
+<div class="paragraph"><p>サーバーはパックファイルを受け取り、アンパックし、更新中の各参照がリクエストの処理中に変更されていないこと(obj-id は古い old-id
+と同一のままでである)を検証(validate)し、更新フックを実行して、更新が受け入れられることを確かめます。
+すべて問題なければ、サーバーは参照を更新します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_push_certificate">Push Certificate</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>A push certificate begins with a set of header lines.  After the header and
-an empty line, the protocol commands follow, one per line. Note that the
-trailing LF in push-cert PKT-LINEs is <em>not</em> optional; it must be present.</p></div>
-<div class="paragraph"><p>Currently, the following header fields are defined:</p></div>
+<div class="paragraph"><p>プッシュ証明書は一連のヘッダー行で始まります。 ヘッダーと1行の空行の後に、プロトコル コマンドが 1 行に 1 つずつ続きます。 push-cert
+PKT-LINE の末尾の LF は「オプションでは無い」ことに注意してください。 しかし push-cert PKT-LINE の末尾の LF
+は存在していなければなりません。</p></div>
+<div class="paragraph"><p>現在、以下のヘッダーフィールドが定義されています:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>pusher</code> ident
+<code>pusher</code> ID
 </dt>
 <dd>
 <p>
-        Identify the GPG key in "Human Readable Name &lt;<a href="mailto:email@address">email@address</a>&gt;" format.
+        <code>Human Readable Name &lt;email@address&gt;</code> 形式で GPG キーを識別します。
 </p>
 </dd>
 <dt class="hdlist1">
-<code>pushee</code> url
+<code>pushee</code> URL
 </dt>
 <dd>
 <p>
-        The repository URL (anonymized, if the URL contains authentication material)
-        the user who ran <code>git push</code> intended to push into.
+        <code>git push</code> を実行したユーザーがプッシュしようとしていたリポジトリ URL (URL に認証情報が含まれている場合は匿名化)。
 </p>
 </dd>
 <dt class="hdlist1">
-<code>nonce</code> nonce
+<code>nonce</code> ノンス
 </dt>
 <dd>
 <p>
-        The <em>nonce</em> string the receiving repository asked the pushing user to
-        include in the certificate, to prevent replay attacks.
+        リプレイ攻撃(replay
+        attacks)を防ぐために、受信リポジトリ側がプッシュするユーザーに証明書に含めるように要求した「ノンス」(nonce)文字列。
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>The GPG signature lines are a detached signature for the contents recorded
-in the push certificate before the signature block begins.  The detached
-signature is used to certify that the commands were given by the pusher, who
-must be the signer.</p></div>
+<div class="paragraph"><p>GPG 署名行は、署名ブロックが開始される前にプッシュ証明書に記録された、コンテンツから切り離された署名(detached signature)です。
+切り離された署名(detached
+signature)は、署名者(signer)でなければならないプッシャー(pusher)によってコマンドが与えられたことを証明するために使用されます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_report_status">Report Status</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>After receiving the pack data from the sender, the receiver sends a report
-if <em>report-status</em> or <em>report-status-v2</em> capability is in effect.  It is a
-short listing of what happened in that update.  It will first list the
-status of the packfile unpacking as either <em>unpack ok</em> or <em>unpack [error]</em>.
-Then it will list the status for each of the references that it tried to
-update.  Each line is either <em>ok [refname]</em> if the update was successful, or
-<em>ng [refname] [error]</em> if the update was not.</p></div>
+<div class="paragraph"><p>送信側からパックデータを受信した後、 <code>report-status</code> または <code>report-status</code>
+機能が有効な場合、受信側はレポートを送信します。 これは、その更新で何が起こったかの短いリストです。 最初に、パックファイルのアンパックのステータスが
+<code>unpack ok</code> または <code>unpack [error]</code> としてリストされます。 次に、更新しようとした各参照のステータスを一覧表示します。
+各行は、更新が成功した場合は <code>ok [refname]</code> 、更新が失敗した場合は <code>ng [refname] [error]</code> の、いずれかです。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  report-status     = unpack-status
@@ -1393,11 +1308,11 @@ update.  Each line is either <em>ok [refname]</em> if the update was successful,
 
   error-msg         = 1*(OCTET) ; where not "ok"</code></pre>
 </div></div>
-<div class="paragraph"><p>The <em>report-status-v2</em> capability extends the protocol by adding new option
-lines in order to support reporting of reference rewritten by the
-<em>proc-receive</em> hook.  The <em>proc-receive</em> hook may handle a command for a
-pseudo-reference which may create or update one or more references, and each
-reference may have different name, different new-oid, and different old-oid.</p></div>
+<div class="paragraph"><p><code>report-status-v2</code> 機能は、 <code>proc-receive</code>
+フックによって書き換え(rewritten)られた参照のレポートをサポートするために、新しいオプション行を追加してプロトコルを拡張(extend)します。
+<code>proc-receive</code> フックは、1
+つまたは複数の参照を作成または更新する疑似参照(pseudo-reference)のコマンドを処理できます。各参照は、異なる名前と、異なる
+new-oidと、異なる old-oid を、持つことができます。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>  report-status-v2  = unpack-status
@@ -1426,13 +1341,11 @@ reference may have different name, different new-oid, and different old-oid.</p>
   option-new-oid    = PKT-LINE("option" SP "new-oid" SP obj-id)
   option-force      = PKT-LINE("option" SP "forced-update")</code></pre>
 </div></div>
-<div class="paragraph"><p>Updates can be unsuccessful for a number of reasons.  The reference can have
-changed since the reference discovery phase was originally sent, meaning
-someone pushed in the meantime.  The reference being pushed could be a
-non-fast-forward reference and the update hooks or configuration could be
-set to not allow that, etc.  Also, some references can be updated while
-others can be rejected.</p></div>
-<div class="paragraph"><p>An example client/server communication might look like this:</p></div>
+<div class="paragraph"><p>更新は、さまざまな理由で失敗する可能性があります。
+参照検出フェーズが最初に送信されてから参照が変更された可能性があります。つまり、その間に誰かがプッシュしたことを意味します。
+プッシュされる参照は非早送り(non-fast-forward)参照である可能性があり、更新フックまたは構成がそれを許可しないように設定されている可能性があります。
+また、一部の参照は更新できまるけど、他の参照は拒否とかできます。</p></div>
+<div class="paragraph"><p>クライアント/サーバー 通信の例は以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>   S: 006274730d410fcb6603ace96f1dc55ea6196122532d refs/heads/local\0report-status delete-refs ofs-delta\n
@@ -1457,7 +1370,7 @@ others can be rejected.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:11 JST
+ 2022-09-06 22:08:42 JST
 </div>
 </div>
 </body>

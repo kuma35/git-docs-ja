@@ -740,107 +740,89 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="_objective">Objective</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Migrate Git from SHA-1 to a stronger hash function.</p></div>
+<div class="paragraph"><p>Git を SHA-1 から、より強力なハッシュ関数に移行します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_background">Background</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>At its core, the Git version control system is a content addressable
-filesystem. It uses the SHA-1 hash function to name content. For example,
-files, directories, and revisions are referred to by hash values unlike in
-other traditional version control systems where files or versions are
-referred to via sequential numbers. The use of a hash function to address
-its content delivers a few advantages:</p></div>
+<div class="paragraph"><p>Git バージョン管理システムの中核は、コンテンツ アドレス指定可能(addressable)なファイルシステムです。 それは SHA-1
+ハッシュ関数を使用してコンテンツに名前を付けます。
+たとえば、ファイルやディレクトリやリビジョンは、ファイルまたはバージョンが連番によって参照される他の従来のバージョン管理システムとは異なり、ハッシュ値によって参照されます。
+ハッシュ関数を使用してそのコンテンツを扱うことは、以下のようないくつかの利点があります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Integrity checking is easy. Bit flips, for example, are easily detected, as
-  the hash of corrupted content does not match its name.
+整合性チェックが簡単です。 たとえば、破損したコンテンツのハッシュはその名前と一致しないため、ビット反転(bit flips)は簡単に検出されます。
 </p>
 </li>
 <li>
 <p>
-Lookup of objects is fast.
+オブジェクトのルックアップは高速です。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Using a cryptographically secure hash function brings additional advantages:</p></div>
+<div class="paragraph"><p>暗号的に安全なハッシュ関数を使用すると、以下の追加の利点がもたらされます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Object names can be signed and third parties can trust the hash to address
-  the signed object and all objects it references.
+オブジェクト名は署名され、第三者は署名されたオブジェクトとそれが参照するすべてのオブジェクトのアドレスを表すハッシュを信頼することができます。
 </p>
 </li>
 <li>
 <p>
-Communication using Git protocol and out of band communication methods have
-  a short reliable string that can be used to reliably address stored content.
+Git プロトコルを使用した通信と帯域外通信方法には、格納されたコンテンツを確実にアドレス指定するために使用できる信頼性の高い短い文字列があります。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Over time some flaws in SHA-1 have been discovered by security
-researchers. On 23 February 2017 the SHAttered attack (<a href="https://shattered.io">https://shattered.io</a>)
-demonstrated a practical SHA-1 hash collision.</p></div>
-<div class="paragraph"><p>Git v2.13.0 and later subsequently moved to a hardened SHA-1 implementation
-by default, which isn&#8217;t vulnerable to the SHAttered attack, but SHA-1 is
-still weak.</p></div>
-<div class="paragraph"><p>Thus it&#8217;s considered prudent to move past any variant of SHA-1 to a new
-hash. There&#8217;s no guarantee that future attacks on SHA-1 won&#8217;t be published
-in the future, and those attacks may not have viable mitigations.</p></div>
-<div class="paragraph"><p>If SHA-1 and its variants were to be truly broken, Git&#8217;s hash function could
-not be considered cryptographically secure any more. This would impact the
-communication of hash values because we could not trust that a given hash
-value represented the known good version of content that the speaker
-intended.</p></div>
-<div class="paragraph"><p>SHA-1 still possesses the other properties such as fast object lookup and
-safe error checking, but other hash functions are equally suitable that are
-believed to be cryptographically secure.</p></div>
+<div class="paragraph"><p>時間の経過とともに、SHA-1 のいくつかの欠陥がセキュリティ研究者によって発見されました。 2017年2月23日の SHAttered 攻撃
+(<a href="https://shattered.io">https://shattered.io</a>) は、実際の SHA-1 ハッシュ衝突を示して見せました。</p></div>
+<div class="paragraph"><p>Git v2.13.0 以降では、デフォルトで強化された SHA-1 実装に移行しました。これは SHAttered
+攻撃に対しては脆弱ではありませんが、SHA-1 は依然として脆弱です。</p></div>
+<div class="paragraph"><p>したがって、SHA-1 の派生を超えて新しいハッシュに移行することが賢明であると考えられます。 SHA-1
+に対する攻撃が将来公開されないという保証はなく、それらの攻撃には有効な軽減策がない可能性があります。</p></div>
+<div class="paragraph"><p>SHA-1 とその派生が完全に破られた場合、Git のハッシュ関数は暗号学的に安全であるとは見なされなくなります。
+特定のハッシュ値が、話者が意図したコンテンツの既知の適切なバージョンを表すことを信頼できなくなったために、ハッシュ値の通信に影響を与える可能性があります。</p></div>
+<div class="paragraph"><p>SHA-1
+は、オブジェクトの高速検索や安全なエラーチェックなどの他の特性を引き続き備えていますが、暗号的に安全であると考えられている他のハッシュ関数も同様に適しています。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_choice_of_hash">Choice of Hash</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The hash to replace the hardened SHA-1 should be stronger than SHA-1 was: we
-would like it to be trustworthy and useful in practice for at least 10
-years.</p></div>
-<div class="paragraph"><p>Some other relevant properties:</p></div>
+<div class="paragraph"><p>強化された、 SHA-1 を置き換えるハッシュは、SHA-1 よりも強力である必要があります。少なくとも 10
+年間は、信頼性が高く、実際に役立つものであることが望まれます。</p></div>
+<div class="paragraph"><p>その他関連する特性:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-A 256-bit hash (long enough to match common security practice; not
-   excessively long to hurt performance and disk usage).
+256 ビットのハッシュ (一般的なセキュリティ実態にマッチするのに十分な長さ。しかし、パフォーマンスとディスク使用量を損なうほど長くはないこと)。
 </p>
 </li>
 <li>
 <p>
-High quality implementations should be widely available (e.g., in OpenSSL
-   and Apple CommonCrypto).
+高品質の実装が広く利用できるようにする必要があります (たとえば、OpenSSL や Apple CommonCrypto など)。
 </p>
 </li>
 <li>
 <p>
-The hash function&#8217;s properties should match Git&#8217;s needs (e.g. Git requires
-   collision and 2nd preimage resistance and does not require length extension
-   resistance).
+ハッシュ関数の特性は、Git のニーズと一致する必要があります (たとえば、Git は 衝突(collision)耐性と2番目のプリイメージ(2nd
+   preimage)耐性が必須で、長さ拡張(length extension)耐性は必須ではりません)。
 </p>
 </li>
 <li>
 <p>
-As a tiebreaker, the hash should be fast to compute (fortunately many
-   contenders are faster than SHA-1).
+タイブレーク(tiebreaker)のためにハッシュは計算が高速である必要があります (幸いなことに、多くの候補は SHA-1 よりも高速です)。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>There were several contenders for a successor hash to SHA-1, including
-SHA-256, SHA-512/256, SHA-256x16, K12, and BLAKE2bp-256.</p></div>
-<div class="paragraph"><p>In late 2018 the project picked SHA-256 as its successor hash.</p></div>
-<div class="paragraph"><p>See 0ed8d8da374 (doc hash-function-transition: pick SHA-256 as NewHash,
-2018-08-04) and numerous mailing list threads at the time, particularly the
-one starting at
+<div class="paragraph"><p>SHA-1 の後継ハッシュには、SHA-256、SHA-512/256、SHA-256x16、K12、BLAKE2bp-256
+など、いくつかの候補がありました。</p></div>
+<div class="paragraph"><p>2018 年後半、プロジェクトではその後継ハッシュとして SHA-256 を選択しました。</p></div>
+<div class="paragraph"><p>詳細については 0ed8d8da374 (doc hash-function-transition: pick SHA-256 as NewHash,
+2018-08-04) と、当時の多数のメーリングリスト、スレッド、 特に
 <a href="https://lore.kernel.org/git/20180609224913.GC38834@genre.crustytoothpaste.net/">https://lore.kernel.org/git/20180609224913.GC38834@genre.crustytoothpaste.net/</a>
-for more information.</p></div>
+で始まるスレッドを参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -849,59 +831,57 @@ for more information.</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-The transition to SHA-256 can be done one local repository at a time.
+SHA-256 への移行は、一度に 1 つのローカル リポジトリで実行できること。
 </p>
 <div class="olist loweralpha"><ol class="loweralpha">
 <li>
 <p>
-Requiring no action by any other party.
+他の当事者によるアクションを必要としないこと。
 </p>
 </li>
 <li>
 <p>
-A SHA-256 repository can communicate with SHA-1 Git servers (push/fetch).
+SHA-256 リポジトリは、SHA-1 Git サーバーと通信できること(プッシュ/フェッチ)。
 </p>
 </li>
 <li>
 <p>
-Users can use SHA-1 and SHA-256 identifiers for objects interchangeably (see
-      "Object names on the command line", below).
+ユーザーは、オブジェクトの SHA-1 識別子と SHA-256 識別子を交換可能(interchangeably)に使用できること(下記「Object
+      names on the command line」(コマンド ラインでのオブジェクト名)を参照)。
 </p>
 </li>
 <li>
 <p>
-New signed objects make use of a stronger hash function than SHA-1 for their
-      security guarantees.
+新しい署名付きオブジェクトは、セキュリティを保証するために SHA-1 よりも強力なハッシュ関数を使用すること。
 </p>
 </li>
 </ol></div>
 </li>
 <li>
 <p>
-Allow a complete transition away from SHA-1.
+SHA-1 から完全に移行できるようにすること。
 </p>
 <div class="olist loweralpha"><ol class="loweralpha">
 <li>
 <p>
-Local metadata for SHA-1 compatibility can be removed from a repository if
-      compatibility with SHA-1 is no longer needed.
+SHA-1 との互換性が不要になった場合は、SHA-1 互換性のローカルメタデータをリポジトリから削除できるようにすること。
 </p>
 </li>
 </ol></div>
 </li>
 <li>
 <p>
-Maintainability throughout the process.
+プロセス全体に渡る保守性が担保されていること。
 </p>
 <div class="olist loweralpha"><ol class="loweralpha">
 <li>
 <p>
-The object format is kept simple and consistent.
+オブジェクトのフォーマットはシンプルで一貫性が保たれていること。
 </p>
 </li>
 <li>
 <p>
-Creation of a generalized repository conversion tool.
+一般化されたリポジトリ変換ツールを作成すること。
 </p>
 </li>
 </ol></div>
@@ -915,35 +895,34 @@ Creation of a generalized repository conversion tool.
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-Add SHA-256 support to Git protocol. This is valuable and the logical next
-   step but it is out of scope for this initial design.
+Git プロトコルに SHA-256 サポートを追加すること。 これは価値があり、論理的な次のステップですが、この初期設計では範囲外とします。
 </p>
 </li>
 <li>
 <p>
-Transparently improving the security of existing SHA-1 signed objects.
+既存の SHA-1 署名付きオブジェクトのセキュリティを透過的に改善すること。
 </p>
 </li>
 <li>
 <p>
-Intermixing objects using multiple hash functions in a single repository.
+単一のリポジトリで複数のハッシュ関数を使用してオブジェクトを混在させること。
 </p>
 </li>
 <li>
 <p>
-Taking the opportunity to fix other bugs in Git&#8217;s formats and protocols.
+この機会に、Git のフォーマットとプロトコルの他のバグを修正すること。
 </p>
 </li>
 <li>
 <p>
-Shallow clones and fetches into a SHA-256 repository. (This will change when
-   we add SHA-256 support to Git protocol.)
+SHA-256 リポジトリから浅い(shallow)クローンしたりフェッチしたりすること。 (これは、Git プロトコルに SHA-256
+   サポートを追加すると変更されます。)
 </p>
 </li>
 <li>
 <p>
-Skip fetching some submodules of a project into a SHA-256 repository. (This
-   also depends on SHA-256 support in Git protocol.)
+プロジェクトの一部のサブモジュールの SHA-256 リポジトリへのフェッチをスキップすること。 (これは、Git プロトコルの SHA-256
+   サポートにも依存します。)
 </p>
 </li>
 </ol></div>
@@ -952,26 +931,18 @@ Skip fetching some submodules of a project into a SHA-256 repository. (This
 <div class="sect1">
 <h2 id="_overview">Overview</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>We introduce a new repository format extension. Repositories with this
-extension enabled use SHA-256 instead of SHA-1 to name their objects.  This
-affects both object names and object content&#8201;&#8212;&#8201;both the names of objects
-and all references to other objects within an object are switched to the new
-hash function.</p></div>
-<div class="paragraph"><p>SHA-256 repositories cannot be read by older versions of Git.</p></div>
-<div class="paragraph"><p>Alongside the packfile, a SHA-256 repository stores a bidirectional mapping
-between SHA-256 and SHA-1 object names. The mapping is generated locally and
-can be verified using "git fsck". Object lookups use this mapping to allow
-naming objects using either their SHA-1 and SHA-256 names interchangeably.</p></div>
-<div class="paragraph"><p>"git cat-file" and "git hash-object" gain options to display an object in
-its SHA-1 form and write an object given its SHA-1 form. This requires all
-objects referenced by that object to be present in the object database so
-that they can be named using the appropriate name (using the bidirectional
-hash mapping).</p></div>
-<div class="paragraph"><p>Fetches from a SHA-1 based server convert the fetched objects into SHA-256
-form and record the mapping in the bidirectional mapping table (see below
-for details). Pushes to a SHA-1 based server convert the objects being
-pushed into SHA-1 form so the server does not have to be aware of the hash
-function the client is using.</p></div>
+<div class="paragraph"><p>私達は新しい、リポジトリ形式拡張機能を導入します。 この拡張機能が有効になっているリポジトリは、SHA-1 の代わりに SHA-256
+を使用してオブジェクトに名前を付けます。 これは、オブジェクト名とオブジェクトの内容の両方に影響します&#8201;&#8212;&#8201;つまり、オブジェクトの名前と、オブジェクト内の他のオブジェクトへのすべての参照の両方が、新しいハッシュ関数に切り替えられます。</p></div>
+<div class="paragraph"><p>古いバージョンの Git では SHA-256 リポジトリを読み取ることができません。</p></div>
+<div class="paragraph"><p>パックファイルと並んで SHA-256 リポジトリは SHA-256 と SHA-1 オブジェクト名の間の双方向マッピングを格納します。
+マッピングはローカルで生成され、「git fsck」を使用して検証できます。 オブジェクトルックアップでは、このマッピングを使用して、SHA-1 名と
+SHA-256 名のいずれかを交換可能に使用してオブジェクトに名前を付けることができます。</p></div>
+<div class="paragraph"><p>「git cat-file」と「git hash-object」には、オブジェクトを SHA-1 形式で表示し、指定された SHA-1
+形式でオブジェクトを書き込むオプションが追加されました。
+このため、そのオブジェクトから参照されるすべてのオブジェクトがオブジェクトデータベースに存在し、適切な名前を使用(双方向ハッシュマッピングを使用)できるようにする必要があります。</p></div>
+<div class="paragraph"><p>SHA-1 ベースのサーバーからフェッチすると、フェッチされたオブジェクトが SHA-256
+形式に変換され、マッピングが双方向マッピング表に記録されます(詳細下記)。 SHA-1 ベースのサーバーへのプッシュは、プッシュされるオブジェクトを
+SHA-1 形式に変換するため、クライアントが使用しているハッシュ関数をサーバーが認識する必要はありません。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -979,9 +950,9 @@ function the client is using.</p></div>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_repository_format_extension">Repository format extension</h3>
-<div class="paragraph"><p>A SHA-256 repository uses repository format version <code>1</code> (see
-Documentation/technical/repository-version.txt) with extensions
-<code>objectFormat</code> and <code>compatObjectFormat</code>:</p></div>
+<div class="paragraph"><p>SHA-256 リポジトリは、リポジトリ フォーマット バージョン(repository format version) <code>1</code>
+(Documentation/technical/repository-version.txt 参照) を拡張機能(extensions)
+<code>objectFormat</code> および <code>compatObjectFormat</code> とともに使用します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>[core]
@@ -990,10 +961,8 @@ Documentation/technical/repository-version.txt) with extensions
         objectFormat = sha256
         compatObjectFormat = sha1</code></pre>
 </div></div>
-<div class="paragraph"><p>The combination of setting <code>core.repositoryFormatVersion=1</code> and populating
-<code>extensions.*</code> ensures that all versions of Git later than <code>v0.99.9l</code> will
-die instead of trying to operate on the SHA-256 repository, instead
-producing an error message.</p></div>
+<div class="paragraph"><p>core.repositoryFormatVersion=1` の設定と <code>extensions.*</code> の設定の組み合わせにより、<code>v0.99.9l</code>
+より後のバージョンの Git は SHA-256 リポジトリで操作しようとせずに死んでしまい、代わりにエラーメッセージを出すようになります。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code># Between v0.99.9l and v2.7.0
@@ -1005,209 +974,183 @@ fatal: unknown repository extensions found:
         objectformat
         compatobjectformat</code></pre>
 </div></div>
-<div class="paragraph"><p>See the "Transition plan" section below for more details on these repository
-extensions.</p></div>
+<div class="paragraph"><p>これらのリポジトリ拡張機能の詳細については、以下の「Transition plan」(移行計画)セクションを参照してください。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_object_names">Object names</h3>
-<div class="paragraph"><p>Objects can be named by their 40 hexadecimal digit SHA-1 name or 64
-hexadecimal digit SHA-256 name, plus names derived from those (see
-gitrevisions(7)).</p></div>
-<div class="paragraph"><p>The SHA-1 name of an object is the SHA-1 of the concatenation of its type,
-length, a nul byte, and the object&#8217;s SHA-1 content. This is the traditional
-&lt;sha1&gt; used in Git to name objects.</p></div>
-<div class="paragraph"><p>The SHA-256 name of an object is the SHA-256 of the concatenation of its
-type, length, a nul byte, and the object&#8217;s SHA-256 content.</p></div>
+<div class="paragraph"><p>オブジェクトは、40 桁の 16 進数の SHA-1 名または 64 桁の 16 進数の SHA-256
+名、およびそれらから派生した名前で名前を付けることができます (gitrevisions(7) 参照)。</p></div>
+<div class="paragraph"><p>オブジェクトの SHA-1 名は、そのタイプ、長さ、ヌルバイト、およびオブジェクトの SHA-1 コンテンツを連結した the SHA-1 です。
+これは、Git でオブジェクトに名前を付けるために使用される従来の &lt;sha1&gt; です。</p></div>
+<div class="paragraph"><p>オブジェクトの SHA-256 名は、そのタイプ、長さ、ヌルバイト、およびオブジェクトの SHA-256 コンテンツを連結した the SHA-256
+です。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_object_format">Object format</h3>
-<div class="paragraph"><p>The content as a byte sequence of a tag, commit, or tree object named by
-SHA-1 and SHA-256 differ because an object named by SHA-256 name refers to
-other objects by their SHA-256 names and an object named by SHA-1 name
-refers to other objects by their SHA-1 names.</p></div>
-<div class="paragraph"><p>The SHA-256 content of an object is the same as its SHA-1 content, except
-that objects referenced by the object are named using their SHA-256 names
-instead of SHA-1 names. Because a blob object does not refer to any other
-object, its SHA-1 content and SHA-256 content are the same.</p></div>
-<div class="paragraph"><p>The format allows round-trip conversion between SHA-256 content and SHA-1
-content.</p></div>
+<div class="paragraph"><p>SHA-256名で名付けられたオブジェクトはSHA-256名で他のオブジェクトを参照し、SHA-1名で名付けられたオブジェクトはSHA-1名で他のオブジェクトを参照するので、SHA-1とSHA-256で名付けられた、タグオブジェクトまたはコミットオブジェクトまたはツリーオブジェクトのバイト列としてのコンテンツは異なります。</p></div>
+<div class="paragraph"><p>あるオブジェクトの SHA-256 コンテンツは、あるオブジェクトによって参照されるオブジェクト達が、 SHA-1 名の代わりに SHA-256
+名を使用して命名されることを除いて、オブジェクトの SHA-1 コンテンツと同じです。 ブロブオブジェクトは他のオブジェクトを参照しないため、その
+SHA-1 コンテンツと SHA-256 コンテンツは同一です。</p></div>
+<div class="paragraph"><p>この形式では、SHA-256 コンテンツと SHA-1 コンテンツ間の双方向変換(round-trip conversion)が可能です。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_object_storage">Object storage</h3>
-<div class="paragraph"><p>Loose objects use zlib compression and packed objects use the packed format
-described in Documentation/technical/pack-format.txt, just like today. The
-content that is compressed and stored uses SHA-256 content instead of SHA-1
-content.</p></div>
+<div class="paragraph"><p>緩いオブジェクト(loose objects)は zlib 圧縮を使用し、パックオブジェクトは
+Documentation/technical/pack-format.txt に記載されているパック形式を使用します。
+圧縮されて保存されるコンテンツは、SHA-1 コンテンツの代わりに SHA-256 コンテンツを使用します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_pack_index">Pack index</h3>
-<div class="paragraph"><p>Pack index (.idx) files use a new v3 format that supports multiple hash
-functions. They have the following format (all integers are in network byte
-order):</p></div>
+<div class="paragraph"><p>パックインデックスファイル(.idx) は、複数のハッシュ関数をサポートする新しい v3 形式を使用します。
+その形式は以下のとおりです(すべての整数はネットワークバイトオーダーです):</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-A header appears at the beginning and consists of the following:
-</p>
-<div class="ulist"><ul>
-<li>
-<p>
-The 4-byte pack index signature: <em>\377t0c</em>
-</p>
-</li>
-<li>
-<p>
-4-byte version number: 3
-</p>
-</li>
-<li>
-<p>
-4-byte length of the header section, including the signature and version
-    number
-</p>
-</li>
-<li>
-<p>
-4-byte number of objects contained in the pack
-</p>
-</li>
-<li>
-<p>
-4-byte number of object formats in this pack index: 2
-</p>
-</li>
-<li>
-<p>
-For each object format:
+ヘッダーは先頭に表れ、以下のもので構成されます:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-4-byte format identifier (e.g., <em>sha1</em> for SHA-1)
+4バイト。パックインデックス シグネチャ: "\377t0c"(訳注: 0xff, 0x74 , 0x30, 0x63)
 </p>
 </li>
 <li>
 <p>
-4-byte length in bytes of shortened object names. This is the
-      shortest possible length needed to make names in the shortened
-      object name table unambiguous.
+4バイト。バージョン番号: 3
 </p>
 </li>
 <li>
 <p>
-4-byte integer, recording where tables relating to this format
-      are stored in this index file, as an offset from the beginning.
+4バイト。署名とバージョン番号を含むヘッダーセクションの長さ
+</p>
+</li>
+<li>
+<p>
+4バイト。パックに含まれるオブジェクトの数
+</p>
+</li>
+<li>
+<p>
+4バイト。このパックインデックス内のオブジェクト形式の数: 2
+</p>
+</li>
+<li>
+<p>
+以下、オブジェクト形式ごとに、:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+4バイト。フォーマットID(例えば、 <code>sha1</code> なら SHA-1)
+</p>
+</li>
+<li>
+<p>
+4バイト。短縮オブジェクト名(shortened object names)のバイト単位の長さ。
+       これは、短縮オブジェクト名表内の名前を明確(unambiguous)にするために必要な最短の長さです(訳注:パックファイル内でそのオブジェクト名ユニークにするのに最低限必要な長さ)
+</p>
+</li>
+<li>
+<p>
+4バイト。このインデックスファイル内で、この形式に関連する表が格納されている箇所を、先頭からのオフセットとして記録する整数。
 </p>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-4-byte offset to the trailer from the beginning of this file.
+4バイト。このファイルの先頭からトレーラまでのオフセット。
 </p>
 </li>
 <li>
 <p>
-Zero or more additional key/value pairs (4-byte key, 4-byte
-    value). Only one key is supported: <em>PSRC</em>. See the "Loose objects
-    and unreachable objects" section for supported values and how this
-    is used.  All other keys are reserved. Readers must ignore
-    unrecognized keys.
-</p>
-</li>
-</ul></div>
-</li>
-<li>
-<p>
-Zero or more NUL bytes. This can optionally be used to improve the
-  alignment of the full object name table below.
-</p>
-</li>
-<li>
-<p>
-Tables for the first object format:
-</p>
-<div class="ulist"><ul>
-<li>
-<p>
-A sorted table of shortened object names.  These are prefixes of
-    the names of all objects in this pack file, packed together
-    without offset values to reduce the cache footprint of the binary
-    search for a specific object name.
-</p>
-</li>
-<li>
-<p>
-A table of full object names in pack order. This allows resolving a
-    reference to "the nth object in the pack file" (from a reachability bitmap
-    or from the next table of another object format) to its object name.
-</p>
-</li>
-<li>
-<p>
-A table of 4-byte values mapping object name order to pack order.  For an
-    object in the table of sorted shortened object names, the value at the
-    corresponding index in this table is the index in the previous table for
-    that same object.  This can be used to look up the object in reachability
-    bitmaps or to look up its name in another object format.
-</p>
-</li>
-<li>
-<p>
-A table of 4-byte CRC32 values of the packed object data, in the order that
-    the objects appear in the pack file. This is to allow compressed data to be
-    copied directly from pack to pack during repacking without undetected data
-    corruption.
-</p>
-</li>
-<li>
-<p>
-A table of 4-byte offset values. For an object in the table of sorted
-    shortened object names, the value at the corresponding index in this table
-    indicates where that object can be found in the pack file. These are usually
-    31-bit pack file offsets, but large offsets are encoded as an index into the
-    next table with the most significant bit set.
-</p>
-</li>
-<li>
-<p>
-A table of 8-byte offset entries (empty for pack files less than 2
-    GiB). Pack files are organized with heavily used objects toward the front,
-    so most object references should not need to refer to this table.
+0個以上の追加の キー/値 (key/value) のペア(4バイトのキー(key)、4バイトの値(value))。 サポートされているキーは 1
+    つだけです: <code>PSRC</code> 。 サポートされている値とその使用方法については、「Loose objects and unreachable
+    objects」(緩いオブジェクトと到達不能オブジェクト)セクションを参照してください。 他のすべてのキーは予約されています。
+    読み込みプログラム(readers)は、認識されないキーを無視する必要があります。
 </p>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-Zero or more NUL bytes.
+0 個以上の NUL バイト。 これはオプションで、下記の完全なオブジェクト名表(the full object name
+  table)の位置合わせを改善するために使用できます。
 </p>
 </li>
 <li>
 <p>
-Tables for the second object format, with the same layout as above, up to
-  and not including the table of CRC32 values.
-</p>
-</li>
-<li>
-<p>
-Zero or more NUL bytes.
-</p>
-</li>
-<li>
-<p>
-The trailer consists of the following:
+最初のオブジェクト形式の表達(tables):
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-A copy of the 20-byte SHA-256 checksum at the end of the corresponding
-    packfile.
+短縮オブジェクト名の並べ替えられた表。これらは、このパックファイル内のすべてのオブジェクトの名前のプレフィックスであり、特定のオブジェクト名のバイナリ検索のキャッシュ・フットプリントを減らすために、オフセット値なしで一緒にパックされます。
 </p>
 </li>
 <li>
 <p>
-20-byte SHA-256 checksum of all of the above.
+パック順の完全なオブジェクト名(full object names)の表。 これにより、「パックファイル内の n
+    番目のオブジェクト」への参照(到達可能性ビットマップまたは、別のオブジェクト形式の次の表ルから)を、そのオブジェクト名に解決できます。
+</p>
+</li>
+<li>
+<p>
+オブジェクト名の順序をパックの順序にマッピングする4バイト値の表。
+    並べ替えられた短縮オブジェクト名表内のオブジェクトの場合、この表内の対応するインデックスの値は、同一オブジェクトの前の表内のインデックスです。
+    これを使用して、到達可能性ビットマップでオブジェクトを検索したり、別のオブジェクト形式でその名前を検索したりできます。
+</p>
+</li>
+<li>
+<p>
+オブジェクトがパックファイルに表示される順序での、パックされたオブジェクトデータの4バイトのCRC32値の表。
+    これは、圧縮されたデータが再パック中、パックからパックに直接コピーされるとき、データの破損が検出されないようにするためです。
+</p>
+</li>
+<li>
+<p>
+4バイトのオフセット値の表。
+    並べ替えのられた短縮オブジェクト名の表内のオブジェクトの場合、この表内の対応するインデックスの値は、そのオブジェクトがパックファイル内のどこにあるかを示します。
+    これらは通常 31 ビットのパック ファイル
+    オフセットですが、大きなオフセットは、最上位ビットが設定され、次の表へのインデックスとしてエンコードされます。
+</p>
+</li>
+<li>
+<p>
+8バイトのオフセットエントリの表(2GiB未満のパックファイルの場合は空)。
+    パックファイルは、使用頻度の高いオブジェクトを前に並べて編成されているため、ほとんどのオブジェクト参照ではこの表を参照する必要はありません。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+ゼロ個以上の NUL バイト。
+</p>
+</li>
+<li>
+<p>
+2番目のオブジェクト形式の表。CRC32 値の表までは含まれませんが、上記と同じレイアウトです。
+</p>
+</li>
+<li>
+<p>
+ゼロ個以上の NUL バイト。
+</p>
+</li>
+<li>
+<p>
+トレーラーは以下の内容で構成されています:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+対応するパックファイルの末尾にある 20 バイトの SHA-256 チェックサムのコピー。
+</p>
+</li>
+<li>
+<p>
+20バイト 上記全てのSHA-256チェックサム
 </p>
 </li>
 </ul></div>
@@ -1216,332 +1159,304 @@ A copy of the 20-byte SHA-256 checksum at the end of the corresponding
 </div>
 <div class="sect2">
 <h3 id="_loose_object_index">Loose object index</h3>
-<div class="paragraph"><p>A new file $GIT_OBJECT_DIR/loose-object-idx contains information about all
-loose objects. Its format is</p></div>
+<div class="paragraph"><p>新しいファイル $GIT_OBJECT_DIR/loose-object-idx には、すべての緩いオブジェクト(loose
+objects)に関する情報が含まれています。その形式は以下のとおり</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code># loose-object-idx
 (sha256-name SP sha1-name LF)*</code></pre>
 </div></div>
-<div class="paragraph"><p>where the object names are in hexadecimal format. The file is not sorted.</p></div>
-<div class="paragraph"><p>The loose object index is protected against concurrent writes by a lock file
-$GIT_OBJECT_DIR/loose-object-idx.lock. To add a new loose object:</p></div>
+<div class="paragraph"><p>ここで、オブジェクト名は 16 進形式です。 ファイルはソートされません。</p></div>
+<div class="paragraph"><p>緩いオブジェクト・インデックスは、ロック・ファイル $GIT_OBJECT_DIR/loose-object-idx.lock
+によって並列書き込みから保護されます。 新しい緩いオブジェクト(loose objects)を追加するには:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-Write the loose object to a temporary file, like today.
+まずは、緩いオブジェクト(loose object)を一時ファイルに書き込みます。
 </p>
 </li>
 <li>
 <p>
-Open loose-object-idx.lock with O_CREAT | O_EXCL to acquire the lock.
+ロックを取得するためにファイル loose-object-idx.lock を O_CREAT | O_EXCL でオープンします。
 </p>
 </li>
 <li>
 <p>
-Rename the loose object into place.
+緩いオブジェクト(loose object)の名前をこれに変更します。
 </p>
 </li>
 <li>
 <p>
-Open loose-object-idx with O_APPEND and write the new object
+Loose-object-idx を O_APPEND でオープンし、新しいオブジェクトを書き込みます
 </p>
 </li>
 <li>
 <p>
-Unlink loose-object-idx.lock to release the lock.
+Loose-object-idx.lock を削除(unlink)して、ロックを開放します。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>To remove entries (e.g. in "git pack-refs" or "git-prune"):</p></div>
+<div class="paragraph"><p>エントリを削除するには(「git pack-refs」内や「git-prune」内などで):</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-Open loose-object-idx.lock with O_CREAT | O_EXCL to acquire the lock.
+ロックを取得するためにファイル loose-object-idx.lock を O_CREAT | O_EXCL でオープンします。
 </p>
 </li>
 <li>
 <p>
-Write the new content to loose-object-idx.lock.
+新しいコンテンツを Loose-object-idx.lock に書き込みます。
 </p>
 </li>
 <li>
 <p>
-Unlink any loose objects being removed.
+削除しようとしている緩いオブジェクト(loose object)を削除(unlink)します。
 </p>
 </li>
 <li>
 <p>
-Rename to replace loose-object-idx, releasing the lock.
+名前変更して Loose-object-idx を置き換え、ロックを開放します。
 </p>
 </li>
 </ol></div>
 </div>
 <div class="sect2">
 <h3 id="_translation_table">Translation table</h3>
-<div class="paragraph"><p>The index files support a bidirectional mapping between SHA-1 names and
-SHA-256 names. The lookup proceeds similarly to ordinary object lookups. For
-example, to convert a SHA-1 name to a SHA-256 name:</p></div>
+<div class="paragraph"><p>インデックスファイルは、SHA-1 名と SHA-256 名の間の双方向マッピングをサポートします。
+ルックアップは、通常のオブジェクトルックアップと同様に進行します。 たとえば、SHA-1 名を SHA-256
+名に変換(convert)するには、以下のようにします:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-Look for the object in idx files. If a match is present in the idx&#8217;s sorted
-    list of truncated SHA-1 names, then:
+idx ファイルでオブジェクトを探します。 切り捨てられた SHA-1 名(truncated SHA-1 names)の idx
+    の並べ替えられたリストに一致が存在する場合:
 </p>
 <div class="olist loweralpha"><ol class="loweralpha">
 <li>
 <p>
-Read the corresponding entry in the SHA-1 name order to pack name order
-       mapping.
+SHA-1 名前順の対応するエントリを読み取り、名前順マッピングをパックします。
 </p>
 </li>
 <li>
 <p>
-Read the corresponding entry in the full SHA-1 name table to verify we found
-       the right object. If it is, then
+完全な SHA-1 名表の対応するエントリを読んで、正しいオブジェクトが見つかったことを確認します。 もしそうなら、
 </p>
 </li>
 <li>
 <p>
-Read the corresponding entry in the full SHA-256 name table.  That is the
-       object&#8217;s SHA-256 name.
+完全な SHA-256 名前表(the full SHA-256 name table)の対応するエントリを読み取ります。これがそのオブジェクトの
+       SHA-256 名です。
 </p>
 </li>
 </ol></div>
 </li>
 <li>
 <p>
-Check for a loose object. Read lines from loose-object-idx until we find a
-    match.
+緩いオブジェクト(loose object)がないか確認してください。 一致するものが見つかるまで Loose-object-idx
+    から行を読み取ります。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>Step (1) takes the same amount of time as an ordinary object lookup:
-O(number of packs * log(objects per pack)). Step (2) takes O(number of loose
-objects) time. To maintain good performance it will be necessary to keep the
-number of loose objects low. See the "Loose objects and unreachable objects"
-section below for more details.</p></div>
-<div class="paragraph"><p>Since all operations that make new objects (e.g., "git commit") add the new
-objects to the corresponding index, this mapping is possible for all objects
-in the object store.</p></div>
+<div class="paragraph"><p>ステップ(1)は、通常のオブジェクト検索(lookup)と同じ時間がかかります: O(パック数 * log(パックあたりのオブジェクト数)) です。
+ステップ(2)は O(緩いオブジェクトの数) 時間かかります。 良好なパフォーマンスを維持するには、緩いオブジェクトの数を低く抑える必要があります。
+詳細については、以下の「Loose objects and unreachable
+objects」(緩いオブジェクトと到達不能オブジェクト)セクションを参照してください。</p></div>
+<div class="paragraph"><p>新しいオブジェクトを作成するすべての操作(「git commit」など)
+は、新しいオブジェクトを対応するインデックスに追加するため、このマッピングはオブジェクトストア内のすべてのオブジェクトに対して可能です。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_reading_an_object_8217_s_sha_1_content">Reading an object&#8217;s SHA-1 content</h3>
-<div class="paragraph"><p>The SHA-1 content of an object can be read by converting all SHA-256 names
-of its SHA-256 content references to SHA-1 names using the translation
-table.</p></div>
+<div class="paragraph"><p>オブジェクトのSHA-1コンテンツは、そのSHA-256コンテンツ参照のすべてのSHA-256名を、変換表(translation
+table)を使用してSHA-1名に変換することで読み取ることができます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_fetch">Fetch</h3>
-<div class="paragraph"><p>Fetching from a SHA-1 based server requires translating between SHA-1 and
-SHA-256 based representations on the fly.</p></div>
-<div class="paragraph"><p>SHA-1s named in the ref advertisement that are present on the client can be
-translated to SHA-256 and looked up as local objects using the translation
-table.</p></div>
-<div class="paragraph"><p>Negotiation proceeds as today. Any "have"s generated locally are converted
-to SHA-1 before being sent to the server, and SHA-1s mentioned by the server
-are converted to SHA-256 when looking them up locally.</p></div>
-<div class="paragraph"><p>After negotiation, the server sends a packfile containing the requested
-objects. We convert the packfile to SHA-256 format using the following
-steps:</p></div>
+<div class="paragraph"><p>SHA-1ベースのサーバーから取得するには、 SHA-1ベースの表現と SHA-256 ベースの表現をその場で変換する必要があります。</p></div>
+<div class="paragraph"><p>クライアントに存在する ref 広告(advertisement)で指定された SHA-1 は、SHA-256
+に変換でき、変換表(translation table)を使用してローカルオブジェクトとして検索(look up)できます。</p></div>
+<div class="paragraph"><p>ネゴシエーションは次のように進行します。 ローカルで生成されたすべての「have」は、サーバーに送信される前に SHA-1
+に変換され、サーバーによって言及された SHA-1 は、ローカルで検索(look up)するときに SHA-256 に変換されます。</p></div>
+<div class="paragraph"><p>ネゴシエーション後、サーバーは要求されたオブジェクトを含むパックファイルを送信します。 以下の手順を使用して、パックファイルを SHA-256
+形式に変換します:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-index-pack: inflate each object in the packfile and compute its
-   SHA-1. Objects can contain deltas in OBJ_REF_DELTA format against objects
-   the client has locally. These objects can be looked up using the translation
-   table and their SHA-1 content read as described above to resolve the deltas.
+インデックスパック(index-pack): パックファイル内の各オブジェクトを解凍(inflate)し、その SHA-1 を計算します。
+   オブジェクトには、クライアントがローカルに持っているオブジェクトに対する OBJ_REF_DELTA 形式のデルタを含めることができます。
+   これらのオブジェクトは、変換表(translation table)を使用して検索(look
+   up)でき、そのSHA-1コンテンツを上記のように読み取ることでデルタを解決することができる。
 </p>
 </li>
 <li>
 <p>
-topological sort: starting at the "want"s from the negotiation phase, walk
-   through objects in the pack and emit a list of them, excluding blobs, in
-   reverse topologically sorted order, with each object coming later in the
-   list than all objects it references.  (This list only contains objects
-   reachable from the "wants". If the pack from the server contained additional
-   extraneous objects, then they will be discarded.)
+トポロジー的ソート(topological sort):
+   ネゴシエーションフェーズの「want」達から始めて、パック内のオブジェクトをウォークスルーし、ブロブを除くそれらのリストをトポロジー的に逆順に並べ替えて出力します。各オブジェクトは、それが参照するすべてのオブジェクトよりも後になります。
+   (このリストには、「wants」から到達可能なオブジェクトのみが含まれます。サーバーからのパックに余分なオブジェクトが含まれていた場合、それらは破棄されます。)
 </p>
 </li>
 <li>
 <p>
-convert to SHA-256: open a new SHA-256 packfile. Read the topologically
-   sorted list just generated. For each object, inflate its SHA-1 content,
-   convert to SHA-256 content, and write it to the SHA-256 pack. Record the new
-   SHA-1&#8592;&#8594;SHA-256 mapping entry for use in the idx.
+SHA-256 に変換(convert): 新しい SHA-256 パックファイルを開きます。
+   生成されたばかりの、トポロジ的(topologically)に並べ替えられたリストを読み取ります。 オブジェクトごとに、その SHA-1
+   コンテンツを解凍し、SHA-256 コンテンツに変換して、SHA-256 パックに書き込みます。 idx で使用するために、新しい
+   SHA-1⇔SHA-256 マッピング エントリを記録します。
 </p>
 </li>
 <li>
 <p>
-sort: reorder entries in the new pack to match the order of objects in the
-   pack the server generated and include blobs. Write a SHA-256 idx file
+ソート: サーバーが生成したパック内のオブジェクトの順序と一致するように新しいパック内のエントリを並べ替え、ブロブを含めます。 SHA-256 idx
+   ファイルへ書き込みます。
 </p>
 </li>
 <li>
 <p>
-clean up: remove the SHA-1 based pack file, index, and topologically sorted
-   list obtained from the server in steps 1 and 2.
+クリーンアップ: SHA-1 ベースのパックファイルと、インデックスと、手順 1 と 2
+   でサーバーから取得したトポロジ的(topologically)に並べ替えられたリストを削除します。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>Step 3 requires every object referenced by the new object to be in the
-translation table. This is why the topological sort step is necessary.</p></div>
-<div class="paragraph"><p>As an optimization, step 1 could write a file describing what non-blob
-objects each object it has inflated from the packfile references. This makes
-the topological sort in step 2 possible without inflating the objects in the
-packfile for a second time. The objects need to be inflated again in step 3,
-for a total of two inflations.</p></div>
-<div class="paragraph"><p>Step 4 is probably necessary for good read-time performance. "git
-pack-objects" on the server optimizes the pack file for good data locality
-(see Documentation/technical/pack-heuristics.txt).</p></div>
-<div class="paragraph"><p>Details of this process are likely to change. It will take some
-experimenting to get this to perform well.</p></div>
+<div class="paragraph"><p>ステップ 3 では、新しいオブジェクトによって参照されるすべてのオブジェクトが変換表(translation table)にある必要があります。
+これが、トポロジ的並べ替えステップ(the topological sort step)が必要な理由です。</p></div>
+<div class="paragraph"><p>最適化として、ステップ 1 で、各オブジェクトがパックファイル参照から解凍させた非ブロブオブジェクトを記述したファイルを作成できます。
+これにより、パックファイル内のオブジェクトを再度解凍させることなく、ステップ 2 のトポロジ的並べ替えが可能になります。 オブジェクトは、ステップ 3
+で再度解凍する必要があり、合計で 2 回膨らませます。</p></div>
+<div class="paragraph"><p>ステップ 4 は、読み取り時のパフォーマンスを向上させるためにたぶん必要です。 サーバー上の <code>git pack-objects</code>
+は、パックファイルを最適化してデータの局所性を高めます(good data
+locality)(Documentation/technical/pack-heuristics.txt 参照)。</p></div>
+<div class="paragraph"><p>このプロセスの詳細は変更される可能性があります。 これをうまく機能させるには、ある程度実地で試してみる事が必要です。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_push">Push</h3>
-<div class="paragraph"><p>Push is simpler than fetch because the objects referenced by the pushed
-objects are already in the translation table. The SHA-1 content of each
-object being pushed can be read as described in the "Reading an object&#8217;s
-SHA-1 content" section to generate the pack written by git send-pack.</p></div>
+<div class="paragraph"><p>プッシュされたオブジェクトによって参照されるオブジェクトはすでに変換表(translation
+table)にあるため、プッシュはフェッチよりも簡単です。 プッシュされる各オブジェクトの SHA-1 コンテンツは、「Reading an
+object&#8217;s SHA-1 content」(オブジェクトの SHA-1
+コンテンツの読み取り)セクションで説明した方法で説明した方法で読み込むと、git send-pack
+で書かれたパックを生成することができるようになります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_signed_commits">Signed Commits</h3>
-<div class="paragraph"><p>We add a new field "gpgsig-sha256" to the commit object format to allow
-signing commits without relying on SHA-1. It is similar to the existing
-"gpgsig" field. Its signed payload is the SHA-256 content of the commit
-object with any "gpgsig" and "gpgsig-sha256" fields removed.</p></div>
-<div class="paragraph"><p>This means commits can be signed</p></div>
+<div class="paragraph"><p>新しいフィールド「gpgsig-sha256」をコミットオブジェクト形式に追加して、 SHA-1 に依存せずにコミットに署名できるようにします。
+既存の「gpgsig」フィールドに似ています。
+その署名付きペイロードは、「gpgsig」および「gpgsig-sha256」フィールドが削除されたコミットオブジェクトの SHA-256
+コンテンツです。</p></div>
+<div class="paragraph"><p>これは、コミットに署名できることを意味します</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-using SHA-1 only, as in existing signed commit objects
+既存の署名付きコミットオブジェクトと同様に、SHA-1 のみを使用する
 </p>
 </li>
 <li>
 <p>
-using both SHA-1 and SHA-256, by using both gpgsig-sha256 and gpgsig fields.
+gpgsig-sha256 と gpgsig フィールドの両方を使用して、SHA-1 と SHA-256 の両方を使用します。
 </p>
 </li>
 <li>
 <p>
-using only SHA-256, by only using the gpgsig-sha256 field.
+gpgsig-sha256 フィールドのみを使用して、SHA-256 のみを使用します。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>Old versions of "git verify-commit" can verify the gpgsig signature in cases
-(1) and (2) without modifications and view case (3) as an ordinary unsigned
-commit.</p></div>
+<div class="paragraph"><p>「git verify-commit」の古いバージョンでは、ケース (1) と (2) の gpgsig 署名を変更せずに検証でき、ケース (3)
+を通常の署名なしコミットと見なすことができます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_signed_tags">Signed Tags</h3>
-<div class="paragraph"><p>We add a new field "gpgsig-sha256" to the tag object format to allow signing
-tags without relying on SHA-1. Its signed payload is the SHA-256 content of
-the tag with its gpgsig-sha256 field and "-----BEGIN PGP SIGNATURE-----"
-delimited in-body signature removed.</p></div>
-<div class="paragraph"><p>This means tags can be signed</p></div>
+<div class="paragraph"><p>新しいフィールド「gpgsig-sha256」をタグオブジェクト形式に追加して、SHA-1 に依存せずにタグに署名できるようにします。
+署名されたペイロードは、gpgsig-sha256 フィールドと <code>-----BEGIN PGP SIGNATURE-----</code>
+で区切られた本文内の署名が削除されたタグの SHA-256 コンテンツです。</p></div>
+<div class="paragraph"><p>これは、タグに署名できることを意味します</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-using SHA-1 only, as in existing signed tag objects
+既存の署名付きタグ オブジェクトと同様に、SHA-1 のみを使用する
 </p>
 </li>
 <li>
 <p>
-using both SHA-1 and SHA-256, by using gpgsig-sha256 and an in-body
-   signature.
+gpgsig-sha256 と in-body 署名を使用して、SHA-1 と SHA-256 の両方を使用します。
 </p>
 </li>
 <li>
 <p>
-using only SHA-256, by only using the gpgsig-sha256 field.
+gpgsig-sha256 フィールドのみを使用して、SHA-256 のみを使用します。
 </p>
 </li>
 </ol></div>
 </div>
 <div class="sect2">
 <h3 id="_mergetag_embedding">Mergetag embedding</h3>
-<div class="paragraph"><p>The mergetag field in the SHA-1 content of a commit contains the SHA-1
-content of a tag that was merged by that commit.</p></div>
-<div class="paragraph"><p>The mergetag field in the SHA-256 content of the same commit contains the
-SHA-256 content of the same tag.</p></div>
+<div class="paragraph"><p>コミットの SHA-1 コンテンツの mergetag フィールドには、そのコミットによってマージされたタグの SHA-1 コンテンツが含まれます。</p></div>
+<div class="paragraph"><p>同じコミットの SHA-256 コンテンツの mergetag フィールドには、同じタグの SHA-256 コンテンツが含まれています。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_submodules">Submodules</h3>
-<div class="paragraph"><p>To convert recorded submodule pointers, you need to have the converted
-submodule repository in place. The translation table of the submodule can be
-used to look up the new hash.</p></div>
+<div class="paragraph"><p>記録されたサブモジュールポインターを変換(convert)するには、変換されたサブモジュールリポジトリを配置する必要があります。
+サブモジュールの変換表(translation table)を使用して、新しいハッシュを検索(look up)できます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_loose_objects_and_unreachable_objects">Loose objects and unreachable objects</h3>
-<div class="paragraph"><p>Fast lookups in the loose-object-idx require that the number of loose
-objects not grow too high.</p></div>
-<div class="paragraph"><p>"git gc --auto" currently waits for there to be 6700 loose objects present
-before consolidating them into a packfile. We will need to measure to find a
-more appropriate threshold for it to use.</p></div>
-<div class="paragraph"><p>"git gc --auto" currently waits for there to be 50 packs present before
-combining packfiles. Packing loose objects more aggressively may cause the
-number of pack files to grow too quickly. This can be mitigated by using a
-strategy similar to Martin Fick&#8217;s exponential rolling garbage collection
-script: <a href="https://gerrit-review.googlesource.com/c/gerrit/+/35215">https://gerrit-review.googlesource.com/c/gerrit/+/35215</a></p></div>
-<div class="paragraph"><p>"git gc" currently expels any unreachable objects it encounters in pack
-files to loose objects in an attempt to prevent a race when pruning them (in
-case another process is simultaneously writing a new object that refers to
-the about-to-be-deleted object). This leads to an explosion in the number of
-loose objects present and disk space usage due to the objects in delta form
-being replaced with independent loose objects.  Worse, the race is still
-present for loose objects.</p></div>
-<div class="paragraph"><p>Instead, "git gc" will need to move unreachable objects to a new packfile
-marked as UNREACHABLE_GARBAGE (using the PSRC field; see below). To avoid
-the race when writing new objects referring to an about-to-be-deleted
-object, code paths that write new objects will need to copy any objects from
-UNREACHABLE_GARBAGE packs that they refer to new, non-UNREACHABLE_GARBAGE
-packs (or loose objects).  UNREACHABLE_GARBAGE are then safe to delete if
-their creation time (as indicated by the file&#8217;s mtime) is long enough ago.</p></div>
-<div class="paragraph"><p>To avoid a proliferation of UNREACHABLE_GARBAGE packs, they can be combined
-under certain circumstances. If "gc.garbageTtl" is set to greater than one
-day, then packs created within a single calendar day, UTC, can be coalesced
-together. The resulting packfile would have an mtime before midnight on that
-day, so this makes the effective maximum ttl the garbageTtl + 1 day. If
-"gc.garbageTtl" is less than one day, then we divide the calendar day into
-intervals one-third of that ttl in duration. Packs created within the same
-interval can be coalesced together. The resulting packfile would have an
-mtime before the end of the interval, so this makes the effective maximum
-ttl equal to the garbageTtl * 4/3.</p></div>
-<div class="paragraph"><p>This rule comes from Thirumala Reddy Mutchukota&#8217;s JGit change
-<a href="https://git.eclipse.org/r/90465">https://git.eclipse.org/r/90465</a>.</p></div>
-<div class="paragraph"><p>The UNREACHABLE_GARBAGE setting goes in the PSRC field of the pack
-index. More generally, that field indicates where a pack came from:</p></div>
+<div class="paragraph"><p>Loose-object-idx の高速検索(fast lookup)では、緩いオブジェクト(loose
+objects)の数が増えすぎないようにする必要があります。</p></div>
+<div class="paragraph"><p>「git gc --auto」は現在、6700 個の緩いオブジェクトが存在するようになるまで待ってから、パックファイルに統合します。
+私達はこれを使用するためのより適切なしきい値を見つけるために測定を行う必要があります。</p></div>
+<div class="paragraph"><p>「git gc --auto」は現在、50 個のパックが存在するようになるまで待ってから、パックファイルを結合します。
+緩いオブジェクトを積極的にパッキングすると、パックファイルの数が急激に増加する可能性があります。 これは、Martin Fick の指数ローリング
+ガベージ コレクション スクリプト(exponential rolling garbage collection script)
+(<a href="https://gerrit-review.googlesource.com/c/gerrit/+/35215">https://gerrit-review.googlesource.com/c/gerrit/+/35215</a>)
+に似た戦略を使用することで軽減できます。</p></div>
+<div class="paragraph"><p>「git
+gc」は現在、刈り込み(prune)時の競合(race)を防ぐために。パックファイル内で遭遇(encounter)した到達不可能なオブジェクトを緩いオブジェクト(loose
+objects)に追い出し(expel)ます(別のプロセスが、削除しようとしているオブジェクト(the about-to-be-deleted
+object)を参照する新しいオブジェクトを同時に書き込んでいる場合)。
+このため、存在する緩いオブジェクトの数が爆発的に増加し、そして、デルタ形式のオブジェクトが独立した緩いオブジェクトに置き換えられるためにディスク領域の使用量が爆発的に増加します。
+さらに悪いことに、緩いオブジェクトの競合は依然として存在します。</p></div>
+<div class="paragraph"><p>代わりに、「git gc」は到達不能オブジェクトを UNREACHABLE_GARBAGE
+としてマークされた新しいパックファイルに移動する必要があります(PSRC フィールドを使用。下記参照)。
+削除されようとしている(about-to-be-deleted)オブジェクトを参照する新しいオブジェクトを作成するときの競合(race)を避けるために、新しいオブジェクトを作成するプログラムコードは、新しい非
+UNREACHABLE_GARBAGE パック (または緩いオブジェクト) を参照する UNREACHABLE_GARBAGE
+パックからすべてのオブジェクトをコピーする必要があります。 UNREACHABLE_GARBAGE は、その作成時刻 (ファイルの mtime
+で示される) が十分前であれば安全に削除できます。</p></div>
+<div class="paragraph"><p>UNREACHABLE_GARBAGE パックの急増を避けるために、特定の状況下でそれらを組み合わせることができます。 <code>gc.garbageTtl</code>
+が 1 日(one day)よりも長く設定されている場合は、単一暦日(single calendar
+day)(UTC)以内に作成されたパック達をまとめて結合できます。 結果のパックファイルには、その日の午前 0 時(midnight)より前の
+mtime が含まれるため、有効な最大 ttl は、garbageTtl + 1 日になります。 <code>gc.garbageTtl</code> が 1
+日未満の場合、暦日(calendar day)をその ttl の 3 分の 1 の間隔に分割します。
+同じ間隔内で作成されたパック達は、一緒に結合できます。 結果のパックファイルには、間隔の終了前の mtime が含まれるため、有効な最大 ttl
+は、garbageTtl * 4/3 に等しくなります。</p></div>
+<div class="paragraph"><p>このルールは、Thirumala Reddy Mutchukota の JGit の変更 <a href="https://git.eclipse.org/r/90465">https://git.eclipse.org/r/90465</a>
+に由来します。</p></div>
+<div class="paragraph"><p>UNREACHABLE_GARBAGE 設定は、パックインデックスの PSRC フィールドに入ります。
+より一般的には、そのフィールドはパックがどこから来たかを示します。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-1 (PACK_SOURCE_RECEIVE) for a pack received over the network
+1 (PACK_SOURCE_RECEIVE) ネットワーク経由で受信したパックの場合
 </p>
 </li>
 <li>
 <p>
-2 (PACK_SOURCE_AUTO) for a pack created by a lightweight "gc --auto"
-   operation
+2 (PACK_SOURCE_AUTO) 軽量の <code>gc --auto</code> 操作で作成されたパックの場合
 </p>
 </li>
 <li>
 <p>
-3 (PACK_SOURCE_GC) for a pack created by a full gc
+3 (PACK_SOURCE_GC) 完全(full)な GC によって作成されたパックの場合
 </p>
 </li>
 <li>
 <p>
-4 (PACK_SOURCE_UNREACHABLE_GARBAGE) for potential garbage discovered by gc
+4 (PACK_SOURCE_UNREACHABLE_GARBAGE) gc によって検出された潜在的なゴミ(garbage)
 </p>
 </li>
 <li>
 <p>
-5 (PACK_SOURCE_INSERT) for locally created objects that were written
-   directly to a pack file, e.g. from "git add ."
+5 (PACK_SOURCE_INSERT) 例えば <code>git add .</code>
+   で、パックファイルに直接書き込まれた、ローカルで作成されたオブジェクトの場合
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>This information can be useful for debugging and for "gc --auto" to make
-appropriate choices about which packs to coalesce.</p></div>
+<div class="paragraph"><p>この情報は、デバッグや、「gc --auto」でどのパックを合体させるかを適切に選択するのに役立ちます。</p></div>
 </div>
 </div>
 </div>
@@ -1550,54 +1465,47 @@ appropriate choices about which packs to coalesce.</p></div>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_invalid_objects">Invalid objects</h3>
-<div class="paragraph"><p>The conversion from SHA-1 content to SHA-256 content retains any brokenness
-in the original object (e.g., tree entry modes encoded with leading 0, tree
-objects whose paths are not sorted correctly, and commit objects without an
-author or committer). This is a deliberate feature of the design to allow
-the conversion to round-trip.</p></div>
-<div class="paragraph"><p>More profoundly broken objects (e.g., a commit with a truncated "tree"
-header line) cannot be converted but were not usable by current Git anyway.</p></div>
+<div class="paragraph"><p>SHA-1 コンテンツから SHA-256
+コンテンツへの変換(conversion)では、元のオブジェクトの破損(brokenness)が保持されます(例えば: 先行 0
+でエンコードされたツリーエントリモードや、パスが正しくソートされていないツリーオブジェクトや、作成者またはコミッターなしでオブジェクトをコミットする)。
+これは、双方向(round-trip)変換を可能にする設計上の意図的な機能です。</p></div>
+<div class="paragraph"><p>より深刻に壊れたオブジェクト (たとえば、切り捨てられた「ツリー」ヘッダー行を含むコミット) は変換できませんが、なにしろそんなのは現在の Git
+でも使用できません。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_shallow_clone_and_submodules">Shallow clone and submodules</h3>
-<div class="paragraph"><p>Because it requires all referenced objects to be available in the locally
-generated translation table, this design does not support shallow clone or
-unfetched submodules. Protocol improvements might allow lifting this
-restriction.</p></div>
+<div class="paragraph"><p>ローカルで生成された変換表(translation
+table)ですべての参照オブジェクトを使用できるようにする必要があるため、この設計では浅い(shallow)クローンまたはフェッチされていないサブモジュールはサポートされていません。
+プロトコルの改善により、この制限を解除できる可能性はあります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_alternates">Alternates</h3>
-<div class="paragraph"><p>For the same reason, a SHA-256 repository cannot borrow objects from a SHA-1
-repository using objects/info/alternates or
-$GIT_ALTERNATE_OBJECT_REPOSITORIES.</p></div>
+<div class="paragraph"><p>上記と同一の理由により、SHA-256 リポジトリは、objects/info/alternates または
+$GIT_ALTERNATE_OBJECT_REPOSITORIES を使用して SHA-1
+リポジトリからオブジェクトを借用(borrow)することはできません。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_git_notes">git notes</h3>
-<div class="paragraph"><p>The "git notes" tool annotates objects using their SHA-1 name as key.  This
-design does not describe a way to migrate notes trees to use SHA-256
-names. That migration is expected to happen separately (for example using a
-file at the root of the notes tree to describe which hash it uses).</p></div>
+<div class="paragraph"><p>「git notes」ツールは、SHA-1 名をキーとしてオブジェクトに注釈を付けます。 この設計では、ノートツリーを移行(migrate)して
+SHA-256 名を使用する方法については説明していません。
+その移行は個別に行われるものと思われます(例えばノートツリーのルートにあるファイルを使用して、どのハッシュを使用するかを記述するなど)。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_server_side_cost">Server-side cost</h3>
-<div class="paragraph"><p>Until Git protocol gains SHA-256 support, using SHA-256 based storage on
-public-facing Git servers is strongly discouraged. Once Git protocol gains
-SHA-256 support, SHA-256 based servers are likely not to support SHA-1
-compatibility, to avoid what may be a very expensive hash re-encode during
-clone and to encourage peers to modernize.</p></div>
-<div class="paragraph"><p>The design described here allows fetches by SHA-1 clients of a personal
-SHA-256 repository because it&#8217;s not much more difficult than allowing pushes
-from that repository. This support needs to be guarded by a configuration
-option --- servers like git.kernel.org that serve a large number of clients
-would not be expected to bear that cost.</p></div>
+<div class="paragraph"><p>Git プロトコルが SHA-256 をサポートするまでは、公開されている Git サーバーで SHA-256
+ベースのストレージを使用することはかなり非推奨です。 Git プロトコルが SHA-256 のサポートを取得したら、SHA-256 ベースのサーバーは
+SHA-1
+互換性をサポートしない可能性が高くなります。これは、複製中に非常にコストのかかるハッシュの再エンコードを回避し、ピアの最新化を促進するためです。</p></div>
+<div class="paragraph"><p>ここで説明する設計では、個人の SHA-256 リポジトリの SHA-1
+クライアントによるフェッチを許可します。これは、そのリポジトリからのプッシュを許可するよりもそれほど難しくないためです。
+このサポートは、構成オプションによって保護する必要があります&#8201;&#8212;&#8201;多数のクライアントにサービスを提供する git.kernel.org
+のようなサーバーは、そのコストを負担しないと予想されます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_meaning_of_signatures">Meaning of signatures</h3>
-<div class="paragraph"><p>The signed payload for signed commits and tags does not explicitly name the
-hash used to identify objects. If some day Git adopts a new hash function
-with the same length as the current SHA-1 (40 hexadecimal digit) or SHA-256
-(64 hexadecimal digit) objects then the intent behind the PGP signed payload
-in an object signature is unclear:</p></div>
+<div class="paragraph"><p>署名されたコミットとタグの署名されたペイロードは、オブジェクトの識別に使用されるハッシュを明示的に指定しません。 いつか Git が現在の SHA-1
+(16 進数 40 桁) または SHA-256 (16 進数 64 桁) オブジェクトと同じ長さの新しいハッシュ関数を採用した場合、オブジェクト署名の
+PGP 署名ペイロードの背後にある意図は不明瞭になります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>object e7e07d5a4fcc2a203d9873968ad3e6bd4d7419d7
@@ -1612,51 +1520,45 @@ tagger Junio C Hamano &lt;gitster@pobox.com&gt; 1487962205 -0800</code></pre>
 <div class="paragraph"><p>Does this mean Git v2.12.0 is the commit with SHA-1 name
 e7e07d5a4fcc2a203d9873968ad3e6bd4d7419d7 or the commit with
 new-40-digit-hash-name e7e07d5a4fcc2a203d9873968ad3e6bd4d7419d7?</p></div>
-<div class="paragraph"><p>Fortunately SHA-256 and SHA-1 have different lengths. If Git starts using
-another hash with the same length to name objects, then it will need to
-change the format of signed payloads using that hash to address this issue.</p></div>
+<div class="paragraph"><p>幸い、SHA-256 と SHA-1 では長さが異なります。 Git
+がオブジェクトに名前を付けるために同じ長さの別のハッシュを使用し始めた場合、この問題に対処するには、そのハッシュを使用する署名付きペイロードの形式を変更する必要があります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_object_names_on_the_command_line">Object names on the command line</h3>
-<div class="paragraph"><p>To support the transition (see Transition plan below), this design supports
-four different modes of operation:</p></div>
+<div class="paragraph"><p>移行をサポートするために (下記「Transition plan」(移行計画)参照)、この設計では 4 つの異なる操作モードがサポートされています:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-("dark launch") Treat object names input by the user as SHA-1 and convert
-    any object names written to output to SHA-1, but store objects using
-    SHA-256.  This allows users to test the code with no visible behavior change
-    except for performance.  This allows running even tests that assume the
-    SHA-1 hash function, to sanity-check the behavior of the new mode.
+("dark launch") ユーザーが入力したオブジェクト名を SHA-1 として扱い、出力に書き込まれたオブジェクト名を SHA-1
+    に変換(convert)しますが、SHA-256 を使用してオブジェクトを格納します。
+    これにより、ユーザーは、パフォーマンス以外の目に見える動作の変更なしでコードをテストできます。 これにより、SHA-1
+    ハッシュ関数を想定したテストを実行して、新しいモードの動作を健全性チェックすることができます。
 </p>
 </li>
 <li>
 <p>
-("early transition") Allow both SHA-1 and SHA-256 object names in input. Any
-    object names written to output use SHA-1. This allows users to continue to
-    make use of SHA-1 to communicate with peers (e.g. by email) that have not
-    migrated yet and prepares for mode 3.
+("early transition") 入力で SHA-1 と SHA-256 の両方のオブジェクト名を許可します。
+    出力に書き込まれるオブジェクト名は、SHA-1 を使用します。 これにより、ユーザーは引き続き SHA-1 を使用して、まだ移行されておらず、モード 3
+    の準備をしているピアと (電子メールなどで) 通信できます。
 </p>
 </li>
 <li>
 <p>
-("late transition") Allow both SHA-1 and SHA-256 object names in input. Any
-    object names written to output use SHA-256. In this mode, users are using a
-    more secure object naming method by default.  The disruption is minimal as
-    long as most of their peers are in mode 2 or mode 3.
+("late transition") 入力で SHA-1 と SHA-256 の両方のオブジェクト名を許可します。
+    出力に書き込まれるオブジェクト名は、SHA-256 を使用します。
+    このモードでは、ユーザーはデフォルトでより安全なオブジェクト命名方法を使用しています。 ほとんどのピアがモード 2 またはモード 3
+    である限り、中断は最小限です。
 </p>
 </li>
 <li>
 <p>
-("post-transition") Treat object names input by the user as SHA-256 and
-    write output using SHA-256. This is safer than mode 3 because there is less
-    risk that input is incorrectly interpreted using the wrong hash function.
+("post-transition") ユーザーが入力したオブジェクト名を SHA-256 として扱い、SHA-256 を使用して出力を書き込みます。
+    これは、間違ったハッシュ関数を使用して入力が誤って解釈されるリスクが少ないため、モード 3 よりも安全です。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>The mode is specified in configuration.</p></div>
-<div class="paragraph"><p>The user can also explicitly specify which format to use for a particular
-revision specifier and for output, overriding the mode. For example:</p></div>
+<div class="paragraph"><p>モードは構成で指定されます。</p></div>
+<div class="paragraph"><p>ユーザーは、モードをオーバーライドして、特定のリビジョン指定子(specifier)と出力に使用する形式を明示的に指定することもできます。 例えば:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git --output-format=sha1 log abac87a^{sha1}..f787cac^{sha256}</code></pre>
@@ -1667,100 +1569,99 @@ revision specifier and for output, overriding the mode. For example:</p></div>
 <div class="sect1">
 <h2 id="_transition_plan">Transition plan</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Some initial steps can be implemented independently of one another:</p></div>
+<div class="paragraph"><p>いくつかの初期ステップは、互いに独立して実装できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-adding a hash function API (vtable)
+ハッシュ関数 API (vtable) の追加
 </p>
 </li>
 <li>
 <p>
-teaching fsck to tolerate the gpgsig-sha256 field
+fsck に gpgsig-sha256 フィールドを許容するように教える(teaching)
 </p>
 </li>
 <li>
 <p>
-excluding gpgsig-* from the fields copied by "git commit --amend"
+<code>git commit --amend</code> でコピーされたフィールドから <code>gpgsig-*</code> を除外する
 </p>
 </li>
 <li>
 <p>
-annotating tests that depend on SHA-1 values with a SHA1 test prerequisite
+SHA-1 テスト前提条件で SHA-1 値に依存するテストに注釈を付ける
 </p>
 </li>
 <li>
 <p>
-using "struct object_id", GIT_MAX_RAWSZ, and GIT_MAX_HEXSZ consistently
-  instead of "unsigned char *" and the hardcoded constants 20 and 40.
+<code>unsigned char *</code> とハードコードされた定数 20 や 40 の代わりに、一貫して <code>struct object_id</code> と
+  GIT_MAX_RAWSZ や GIT_MAX_HEXSZ を使用します。
 </p>
 </li>
 <li>
 <p>
-introducing index v3
+インデックス v3 を導入
 </p>
 </li>
 <li>
 <p>
-adding support for the PSRC field and safer object pruning
+PSRCフィールドのサポートの追加と、より安全なオブジェクト刈り込み(pruning)の追加
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>The first user-visible change is the introduction of the objectFormat
-extension (without compatObjectFormat). This requires:</p></div>
+<div class="paragraph"><p>ユーザーが目にする最初の変更は、objectFormat 拡張機能 (compatObjectFormat なし) の導入です。
+これには以下が必要です:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-teaching fsck about this mode of operation
+この操作モードについて fsck に教える(teaching)
 </p>
 </li>
 <li>
 <p>
-using the hash function API (vtable) when computing object names
+オブジェクト名の計算時にハッシュ関数 API (vtable) を使用
 </p>
 </li>
 <li>
 <p>
-signing objects and verifying signatures
+オブジェクトへの署名と署名の検証(verify)
 </p>
 </li>
 <li>
 <p>
-rejecting attempts to fetch from or push to an incompatible repository
+互換性のないリポジトリからのフェッチまたはプッシュの試行を拒否
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Next comes introduction of compatObjectFormat:</p></div>
+<div class="paragraph"><p>お次は compatObjectFormat の紹介です:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-implementing the loose-object-idx
+Loose-object-idx の実装
 </p>
 </li>
 <li>
 <p>
-translating object names between object formats
+オブジェクト形式間でのオブジェクト名の変換(translate)
 </p>
 </li>
 <li>
 <p>
-translating object content between object formats
+オブジェクト形式間でのオブジェクトコンテンツの変換(translate)
 </p>
 </li>
 <li>
 <p>
-generating and verifying signatures in the compat format
+compat 形式での署名の生成と検証(verify)
 </p>
 </li>
 <li>
 <p>
-adding appropriate index entries when adding a new object to the object
-  store
+新しいオブジェクトをオブジェクトストアに追加するときに、適切なインデックスエントリを追加する
 </p>
 </li>
 <li>
 <p>
---output-format option
+<code>--output-format</code> オプション
 </p>
 </li>
 <li>
@@ -1769,156 +1670,130 @@ adding appropriate index entries when adding a new object to the object
 </li>
 <li>
 <p>
-configuration to specify default input and output format (see "Object names
-  on the command line" above)
+デフォルトの入力形式および出力形式を指定する構成(上記「Object names on the command line」(コマンド
+  ライン上のオブジェクト名)参照)
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>The next step is supporting fetches and pushes to SHA-1 repositories:</p></div>
+<div class="paragraph"><p>次のステップは、 SHA-1 リポジトリへのフェッチとプッシュのサポートです:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-allow pushes to a repository using the compat format
+compat 形式を使用したリポジトリへのプッシュを許可する
 </p>
 </li>
 <li>
 <p>
-generate a topologically sorted list of the SHA-1 names of fetched objects
+フェッチされたオブジェクトの SHA-1 名のトポロジ的(topologically)にソートされたリストを生成する
 </p>
 </li>
 <li>
 <p>
-convert the fetched packfile to SHA-256 format and generate an idx file
+取得したパックファイルを SHA-256 形式に変換(convert)し、idx ファイルを生成します
 </p>
 </li>
 <li>
 <p>
-re-sort to match the order of objects in the fetched packfile
+取得したパックファイル内のオブジェクトの順序に一致するように再ソートします
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>The infrastructure supporting fetch also allows converting an existing
-repository. In converted repositories and new clones, end users can gain
-support for the new hash function without any visible change in behavior
-(see "dark launch" in the "Object names on the command line" section). In
-particular this allows users to verify SHA-256 signatures on objects in the
-repository, and it should ensure the transition code is stable in production
-in preparation for using it more widely.</p></div>
-<div class="paragraph"><p>Over time projects would encourage their users to adopt the "early
-transition" and then "late transition" modes to take advantage of the new,
-more futureproof SHA-256 object names.</p></div>
-<div class="paragraph"><p>When objectFormat and compatObjectFormat are both set, commands generating
-signatures would generate both SHA-1 and SHA-256 signatures by default to
-support both new and old users.</p></div>
-<div class="paragraph"><p>In projects using SHA-256 heavily, users could be encouraged to adopt the
-"post-transition" mode to avoid accidentally making implicit use of SHA-1
-object names.</p></div>
-<div class="paragraph"><p>Once a critical mass of users have upgraded to a version of Git that can
-verify SHA-256 signatures and have converted their existing repositories to
-support verifying them, we can add support for a setting to generate only
-SHA-256 signatures. This is expected to be at least a year later.</p></div>
-<div class="paragraph"><p>That is also a good moment to advertise the ability to convert repositories
-to use SHA-256 only, stripping out all SHA-1 related metadata. This improves
-performance by eliminating translation overhead and security by avoiding the
-possibility of accidentally relying on the safety of SHA-1.</p></div>
-<div class="paragraph"><p>Updating Git&#8217;s protocols to allow a server to specify which hash functions
-it supports is also an important part of this transition. It is not
-discussed in detail in this document but this transition plan assumes it
-happens. :)</p></div>
+<div class="paragraph"><p>フェッチをサポートするインフラストラクチャにより、既存のリポジトリを変換(convert)することもできます。
+変換されたリポジトリと新しいクローンでは、エンドユーザーは、動作に目に見える変更を加えることなく、新しいハッシュ関数のサポートを得ることができます(「Object
+names on the command line」セクションの「dark launch」を参照してください)。
+特に、これにより、ユーザーはリポジトリ内のオブジェクトの SHA-256
+署名を検証(verify)できます。また、より広く使用する準備として、移行コードが本番環境で安定していることを確認しなければなりません。</p></div>
+<div class="paragraph"><p>時間が経つにつれて、プロジェクトはユーザーに「early transition」(早期移行)モードを採用し、次に「late
+transition」(後期移行)モードを採用して、新しい、より将来性の高い SHA-256 オブジェクト名を利用するよう促します。</p></div>
+<div class="paragraph"><p>objectFormat と compatObjectFormat の両方が設定されている場合、署名を生成するコマンドはデフォルトで SHA-1 と
+SHA-256 の両方の署名を生成し、新しいユーザーと古いユーザーの両方をサポートします。</p></div>
+<div class="paragraph"><p>SHA-256 を多用するプロジェクトでは、SHA-1
+オブジェクト名を誤って暗黙的に使用することを避けるために、ユーザーは「post-transition」(移行後)モードを採用するよう奨励される可能性があります。</p></div>
+<div class="paragraph"><p>クリティカル・マスのユーザーが SHA-256 署名を検証(verify)できる Git
+のバージョンにアップグレードし、既存のリポジトリを変換(convert)して検証をサポートすると、SHA-256
+署名のみを生成する設定のサポートを追加できます。 これは、少なくとも 1 年後になると予想されます。</p></div>
+<div class="paragraph"><p>これは、リポジトリを変換して SHA-256 のみを使用し、SHA-1 関連のメタデータをすべて取り除く機能を宣伝する良い機会でもあります。
+これにより、変換のオーバーヘッドをなくすことで性能を向上させ、誤ってSHA-1の安全性に頼ってしまう可能性をなくすことで安全性を向上させています。</p></div>
+<div class="paragraph"><p>サーバーがサポートするハッシュ関数を指定できるように Git のプロトコルを更新することも、この移行の重要な部分です。
+このドキュメントでは詳しく説明しませんが、この移行計画ではそれが発生することを前提としています。 :)</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_alternatives_considered">Alternatives considered</h2>
+<h2 id="_検討された代替案">検討された代替案</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_upgrading_everyone_working_on_a_particular_project_on_a_flag_day">Upgrading everyone working on a particular project on a flag day</h3>
-<div class="paragraph"><p>Projects like the Linux kernel are large and complex enough that flipping
-the switch for all projects based on the repository at once is infeasible.</p></div>
-<div class="paragraph"><p>Not only would all developers and server operators supporting developers
-have to switch on the same flag day, but supporting tooling (continuous
-integration, code review, bug trackers, etc) would have to be adapted as
-well. This also makes it difficult to get early feedback from some project
-participants testing before it is time for mass adoption.</p></div>
+<h3 id="_指定日に特定のプロジェクトに取り組んでいる全員をアップグレード">指定日に特定のプロジェクトに取り組んでいる全員をアップグレード</h3>
+<div class="paragraph"><p>Linux カーネルのようなプロジェクトは大規模で複雑なため、リポジトリに基づくすべてのプロジェクトのスイッチを一度に切り替えることは不可能です。</p></div>
+<div class="paragraph"><p>すべての開発者と開発者をサポートするサーバーオペレーターが同じ指定日に切り替えなければならないだけでなく、サポートツール
+(継続的インテグレーション、コードレビュー、バグトラッカーなど) も同様に調整する必要があります。
+これにより、多数の人が移行に踏み切る時期が来る前に、一部のプロジェクト参加者のテストから早期にフィードバックを得るというのは難しくなります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_using_hash_functions_in_parallel">Using hash functions in parallel</h3>
-<div class="paragraph"><p>(e.g.
+<div class="paragraph"><p>(例:
 <a href="https://lore.kernel.org/git/22708.8913.864049.452252@chiark.greenend.org.uk/">https://lore.kernel.org/git/22708.8913.864049.452252@chiark.greenend.org.uk/</a>
-)  Objects newly created would be addressed by the new hash, but inside such
-an object (e.g. commit) it is still possible to address objects using the
-old hash function.</p></div>
+) 新しく作成されたオブジェクトは新しいハッシュによってアドレス指定されますが、そのようなオブジェクト内(例:
+コミットオブジェクト)では、まだ古いハッシュ関数を使用してオブジェクトをアドレス指定できます。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-You cannot trust its history (needed for bisectability) in the future
-  without further work
+あなたは、将来、さらなる作業なしにその履歴(二分探索可能性(bisectability)に必要)を信頼することはできません
 </p>
 </li>
 <li>
 <p>
-Maintenance burden as the number of supported hash functions grows (they
-  will never go away, so they accumulate). In this proposal, by comparison,
-  converted objects lose all references to SHA-1.
+サポートされているハッシュ関数の数が増えると、保守の負担が大きくなります (決してなくなることはないため、累積されます)。
+  この提案では、比較すると、変換されたオブジェクトは SHA-1 へのすべての参照を失います。
 </p>
 </li>
 </ul></div>
 </div>
 <div class="sect2">
 <h3 id="_signed_objects_with_multiple_hashes">Signed objects with multiple hashes</h3>
-<div class="paragraph"><p>Instead of introducing the gpgsig-sha256 field in commit and tag objects for
-SHA-256 content based signatures, an earlier version of this design added
-"hash sha256 &lt;SHA-256 name&gt;" fields to strengthen the existing SHA-1 content
-based signatures.</p></div>
-<div class="paragraph"><p>In other words, a single signature was used to attest to the object content
-using both hash functions. This had some advantages:</p></div>
+<div class="paragraph"><p>SHA-256 コンテンツ ベースの署名のコミットおよびタグオブジェクトに gpgsig-sha256
+フィールドを導入する代わりに、この設計の以前のバージョンでは、既存の SHA-1 コンテンツ ベースの署名を強化するために「hash sha256
+&lt;SHA-256 name&gt;」フィールドが追加されました。</p></div>
+<div class="paragraph"><p>つまり、単一の署名が、両方のハッシュ関数を使用してオブジェクトのコンテンツを証明するために使用されました。 これにはいくつかの利点がありました:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Using one signature instead of two speeds up the signing process.
+2 つではなく 1 つの署名を使用すると、署名プロセスが高速化されます。
 </p>
 </li>
 <li>
 <p>
-Having one signed payload with both hashes allows the signer to attest to
-  the SHA-1 name and SHA-256 name referring to the same object.
+両方のハッシュを持つ 1 つの署名済みペイロードを持つことで、署名者は同じオブジェクトを参照する SHA-1 名と SHA-256 名を証明できます。
 </p>
 </li>
 <li>
 <p>
-All users consume the same signature. Broken signatures are likely to be
-  detected quickly using current versions of git.
+すべてのユーザーが同じ署名を使用します。 破損した署名は、現在のバージョンの git を使用して迅速に検出(detect)される可能性があります。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>However, it also came with disadvantages:</p></div>
+<div class="paragraph"><p>ただし、欠点もありました:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Verifying a signed object requires access to the SHA-1 names of all objects
-  it references, even after the transition is complete and translation table
-  is no longer needed for anything else. To support this, the design added
-  fields such as "hash sha1 tree &lt;SHA-1 name&gt;" and "hash sha1 parent &lt;SHA-1
-  name&gt;" to the SHA-256 content of a signed commit, complicating the
-  conversion process.
+署名されたオブジェクトを検証(verify)するには、移行が完了し、他の目的で変換表が(translation
+  table)不要になった後でも、それが参照するすべてのオブジェクトの SHA-1 名にアクセスする必要があります。
+  これをサポートするために、署名付きコミットの SHA-256 コンテンツに「hash sha1 tree &lt;SHA-1 name&gt;」や「hash
+  sha1 parent &lt;SHA-1 name&gt;」などのフィールドが追加され、変換プロセスが複雑になりました。
 </p>
 </li>
 <li>
 <p>
-Allowing signed objects without a SHA-1 (for after the transition is
-  complete) complicated the design further, requiring a "nohash sha1" field to
-  suppress including "hash sha1" fields in the SHA-256 content and signed
-  payload.
+SHA-1 なしで署名付きオブジェクトを許可すると、(移行完了後、)設計がさらに複雑になり、SHA-256 コンテンツと署名付きペイロードに「hash
+  sha1」フィールドを含めることを抑制するために「nohash sha1」フィールドが必要になりました。
 </p>
 </li>
 </ul></div>
 </div>
 <div class="sect2">
 <h3 id="_lazily_populated_translation_table">Lazily populated translation table</h3>
-<div class="paragraph"><p>Some of the work of building the translation table could be deferred to push
-time, but that would significantly complicate and slow down pushes.
-Calculating the SHA-1 name at object creation time at the same time it is
-being streamed to disk and having its SHA-256 name calculated should be an
-acceptable cost.</p></div>
+<div class="paragraph"><p>変換表(translation table)を構築する作業の一部は、プッシュする時まで延期できますが、それはプッシュを非常に複雑にし、遅くします。
+オブジェクトの作成時に SHA-1 名を計算すると同時に、オブジェクトがディスクにストリーミングされ、その SHA-256
+名が計算されることは、許容できるコストです。</p></div>
 </div>
 </div>
 </div>
@@ -1935,18 +1810,16 @@ Initial version sent to
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>2017-03-03 <a href="mailto:jrnieder@gmail.com">jrnieder@gmail.com</a> Incorporated suggestions from jonathantanmy
-and sbeller:</p></div>
+<div class="paragraph"><p>2017-03-03 <a href="mailto:jrnieder@gmail.com">jrnieder@gmail.com</a>  jonathantanmy と sbeller からの提案を受け入れました:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Describe purpose of signed objects with each hash type
+各ハッシュタイプで署名済みオブジェクトの目的を説明
 </p>
 </li>
 <li>
 <p>
-Redefine signed object verification using object content under the first
-  hash function
+最初のハッシュ関数の下でオブジェクトコンテンツを使用して、署名付きオブジェクトの検証(verification)を再定義
 </p>
 </li>
 </ul></div>
@@ -1954,36 +1827,39 @@ Redefine signed object verification using object content under the first
 <div class="ulist"><ul>
 <li>
 <p>
-Use SHA3-256 instead of SHA2 (thanks, Linus and brian m. carlson).[1][2]
+SHA2 の代わりに SHA3-256 を使用します(Linus と brian m. carlson に感謝します)。 [1][2]
 </p>
 </li>
 <li>
 <p>
-Make SHA3-based signatures a separate field, avoiding the need for "hash"
-  and "nohash" fields (thanks to peff[3]).
+SHA3ベースの署名を別のフィールドにして、「hash」フィールドと「nohash」フィールドの必要性を回避します(peff[3] に感謝)。
 </p>
 </li>
 <li>
 <p>
-Add a sorting phase to fetch (thanks to Junio for noticing the need for
-  this).
+フェッチするための並べ替えフェーズを追加します (この必要性に気付いた Junio に感謝します)。
 </p>
 </li>
 <li>
 <p>
-Omit blobs from the topological sort during fetch (thanks to peff).
+フェッチ中にトポロジ的(topological)ソートからブロブを省略します (peff に感謝)。
 </p>
 </li>
 <li>
 <p>
-Discuss alternates, git notes, and git servers in the caveats section
-  (thanks to Junio Hamano, brian m. carlson[4], and Shawn Pearce).
+代替案 や git note や git サーバーについては、「caveats」セクションで扱います (Junio Hamano、brian
 </p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+carlson[4]、Shawn Pearce に感謝します)。
+</p>
+</li>
+</ol></div>
 </li>
 <li>
 <p>
-Clarify language throughout (thanks to various commenters, especially
-  Junio).
+全体を通して言葉を明確にします (さまざまなコメンテーター、特に Junio に感謝します)。
 </p>
 </li>
 </ul></div>
@@ -1991,43 +1867,43 @@ Clarify language throughout (thanks to various commenters, especially
 <div class="ulist"><ul>
 <li>
 <p>
-Use placeholder NewHash instead of SHA3-256
+SHA3-256 の代わりにプレースホルダー NewHash を使用する
 </p>
 </li>
 <li>
 <p>
-Describe criteria for picking a hash function.
+ハッシュ関数をピックする基準を説明。
 </p>
 </li>
 <li>
 <p>
-Include a transition plan (thanks especially to Brandon Williams for
-  fleshing these ideas out)
+移行計画を含める (特に、これらのアイデアを具体化してくれた Brandon Williams に感謝します)
 </p>
 </li>
 <li>
 <p>
-Define the translation table (thanks, Shawn Pearce[5], Jonathan Tan, and
-  Masaya Suzuki)
+変換(translation)表を定義 (Shawn Pearce[5] 、Jonathan Tan 、Masaya Suzuki に感謝します)。
 </p>
 </li>
 <li>
 <p>
-Avoid loose object overhead by packing more aggressively in "git gc --auto"
+<code>git gc --auto</code> でより積極的にパッキングすることで、緩いオブジェクト(loose object)のオーバーヘッドを回避。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Later history:</p></div>
+<div class="sect2">
+<h3 id="_その後の履歴">その後の履歴</h3>
 <div class="ulist"><ul>
 <li>
 <p>
-See the history of this file in git.git for the history of subsequent
-  edits. This document history is no longer being maintained as it would now
-  be superfluous to the commit log
+その後の編集の履歴については、 git.git でこのファイルの履歴を参照してください。
+  このドキュメントの履歴は、コミットログには不要になるため、維持されなくなりました
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>References:</p></div>
+</div>
+<div class="sect2">
+<h3 id="_references">References</h3>
 <div class="literalblock">
 <div class="content">
 <pre><code>[1] https://lore.kernel.org/git/CA+55aFzJtejiCjV0e43+9oR3QuJK2PiFiLQemytoLpyJWe6P9w@mail.gmail.com/
@@ -2039,11 +1915,12 @@ See the history of this file in git.git for the history of subsequent
 </div>
 </div>
 </div>
+</div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-04 05:35:04 JST
+ 2022-09-17 01:07:00 JST
 </div>
 </div>
 </body>

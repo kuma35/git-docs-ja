@@ -112,6 +112,7 @@ TECH_DOCS += technical/protocol-common
 TECH_DOCS += technical/protocol-v2
 TECH_DOCS += technical/racy-git
 TECH_DOCS += technical/reftable
+TECH_DOCS += technical/remembering-renames
 TECH_DOCS += technical/repository-version
 TECH_DOCS += technical/rerere
 TECH_DOCS += technical/send-pack-pipeline
