@@ -1018,13 +1018,9 @@ We cannot bisect more!</code></pre>
 とにかく、Linusは、後に濱野 純(Junio Hamano)によって改良された「本当にばかげた」(truly
 stupid)アルゴリズムを見つけて実装しました。これは非常にうまく機能します。</p></div>
 <div class="paragraph"><p>スキップされたコミットがない場合に最適な二等分コミットを見つけるために「git bisect」によって使用されるアルゴリズムは以下のとおり:</p></div>
-<div class="olist arabic"><ol class="arabic">
-<li>
-<p>
-以下のコミットのみを保持します:
-</p>
-<div class="paragraph"><p>a) 「bad」コミットの祖先(「bad」コミット自体を含む)</p></div>
-<div class="paragraph"><p>b) 「good」コミットの祖先では無い(「good」コミット自体を除く)</p></div>
+<div class="paragraph"><p>1) 以下のコミットのみを保持します:</p></div>
+<div class="paragraph"><p>a) 「bad」コミットの祖先(「bad」コミット自体を含む)
+b) 「good」コミットの祖先では無い(「good」コミット自体を除く)</p></div>
 <div class="paragraph"><p>これは、DAGで興味のないコミット(uninteresting commits)を取り除くことを意味します。</p></div>
 <div class="paragraph"><p>たとえば、以下のようなグラフから始める場合:</p></div>
 <div class="listingblock">
@@ -1062,11 +1058,7 @@ b）によって削除されるためです。</p></div>
    /
 Z-Z</code></pre>
 </div></div>
-</li>
-<li>
-<p>
-グラフの「good」端から始めて、各コミットに、それが持っている祖先の数に1を加えた数を関連付けます
-</p>
+<div class="paragraph"><p>2) グラフの「good」端から始めて、各コミットに、それが持っている祖先の数に1を加えた数を関連付けます</p></div>
 <div class="paragraph"><p>たとえば、以下のグラフでは、Hは「bad」コミットであり、AとDはいくつかの「good」コミットの親です:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -1086,11 +1078,7 @@ A-B-C
 1   2/
 D---E</code></pre>
 </div></div>
-</li>
-<li>
-<p>
-各コミットの相関: min(X, N - X)
-</p>
+<div class="paragraph"><p>3) 各コミットの相関: min(X, N - X)</p></div>
 <div class="paragraph"><p>ここで、X はステップ 2）のコミットに関連付けられた値であり、N はグラフ内のコミットの総数です。</p></div>
 <div class="paragraph"><p>上記の例では、<code>N = 8</code> であるため、以下のようになります:</p></div>
 <div class="listingblock">
@@ -1102,22 +1090,12 @@ A-B-C
 1   2/
 D---E</code></pre>
 </div></div>
-</li>
-<li>
-<p>
-最適な二等分点は、相関値が最も大きいコミットです
-</p>
+<div class="paragraph"><p>4) 最適な二等分点は、相関値が最も大きいコミットです</p></div>
 <div class="paragraph"><p>したがって、上記の例では、最良の二等分点はコミットCです。</p></div>
-</li>
-<li>
-<p>
-注意: アルゴリズムを高速化するためにいくつかのショートカットが実装されていることに注意してください
-</p>
+<div class="paragraph"><p>5) 注意: アルゴリズムを高速化するためにいくつかのショートカットが実装されていることに注意してください</p></div>
 <div class="paragraph"><p>最初からNを知っているので、 <code>min(X, N - X)</code> は <code>N/2</code> より大きくなることはできないことがわかります。 したがって、ステップ
 2）と ステップ 3）で、 <code>N/2</code> をコミットに関連付ける場合、これが最良の二等分点であることがわかります。
 したがって、この場合、他のコミットの処理を停止して、現在のコミットを返すことができます。</p></div>
-</li>
-</ol></div>
 </div>
 <div class="sect2">
 <h3 id="_bisection_algorithm_debugging">Bisection algorithm debugging</h3>
@@ -1229,43 +1207,13 @@ A-B-C-D-E-F         O
 <h3 id="_skip_algorithm">Skip algorithm</h3>
 <div class="paragraph"><p>(「git bisect skip」を使用して)一部のコミットがスキップされた場合、bisectアルゴリズムは ステップ 1）から ステップ
 3）までは同じです。 ただし、それ以降は大まかに以下の手順を使用します:</p></div>
-<div class="olist arabic"><ol class="arabic" start="6">
-<li>
-<p>
-関連値の降順でコミットを並べ替えます
-</p>
-</li>
-<li>
-<p>
-最初のコミットがスキップされていない場合は、それを返してここで停止(stop)できます
-</p>
-</li>
-<li>
-<p>
-それ以外の場合は、ソートされたリストでスキップされたすべてのコミットを除外します
-</p>
-</li>
-<li>
-<p>
-疑似乱数ジェネレーター(PRNG)を使用して、0〜1の乱数を生成します
-</p>
-</li>
-<li>
-<p>
-この乱数に平方根を乗じて0に偏らせます
-</p>
-</li>
-<li>
-<p>
-結果に、フィルターされたリスト内のコミット数を乗じて、このリストへのインデックスを取得します
-</p>
-</li>
-<li>
-<p>
-計算されたインデックスでコミットを返します
-</p>
-</li>
-</ol></div>
+<div class="paragraph"><p>6) 関連値の降順でコミットを並べ替えます</p></div>
+<div class="paragraph"><p>7) 最初のコミットがスキップされていない場合は、それを返してここで停止(stop)できます</p></div>
+<div class="paragraph"><p>8) それ以外の場合は、ソートされたリストでスキップされたすべてのコミットを除外します</p></div>
+<div class="paragraph"><p>9) 疑似乱数ジェネレーター(PRNG)を使用して、0〜1の乱数を生成します</p></div>
+<div class="paragraph"><p>10) この乱数に平方根を乗じて0に偏らせます</p></div>
+<div class="paragraph"><p>11) 結果に、フィルターされたリスト内のコミット数を乗じて、このリストへのインデックスを取得します</p></div>
+<div class="paragraph"><p>12) 計算されたインデックスでコミットを返します</p></div>
 </div>
 <div class="sect2">
 <h3 id="_skip_algorithm_discussed">Skip algorithm discussed</h3>
@@ -1734,7 +1682,7 @@ O. Pierce, Jeff King, Sam Vilain, Jon Seymour に感謝します。</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-06-05 09:53:18 JST
+ 2022-09-23 01:38:09 JST
 </div>
 </div>
 </body>
