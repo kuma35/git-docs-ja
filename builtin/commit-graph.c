@@ -50,8 +50,6 @@ static struct option common_opts[] = {
 	OPT_STRING(0, "object-dir", &opts.obj_dir,
 		   N_("dir"),
 		   N_("the object directory to store the graph")),
-	OPT_BOOL(0, "progress", &opts.progress,
-		 N_("force progress reporting")),
 	OPT_END()
 };
 
@@ -60,7 +58,7 @@ static struct option *add_common_options(struct option *to)
 	return parse_options_concat(common_opts, to);
 }
 
-static int graph_verify(int argc, const char **argv)
+static int graph_verify(int argc, const char **argv, const char *prefix)
 {
 	struct commit_graph *graph = NULL;
 	struct object_directory *odb = NULL;
@@ -73,6 +71,8 @@ static int graph_verify(int argc, const char **argv)
 	static struct option builtin_commit_graph_verify_options[] = {
 		OPT_BOOL(0, "shallow", &opts.shallow,
 			 N_("if the commit-graph is split, only verify the tip file")),
+		OPT_BOOL(0, "progress", &opts.progress,
+			 N_("force progress reporting")),
 		OPT_END(),
 	};
 	struct option *options = add_common_options(builtin_commit_graph_verify_options);
@@ -80,7 +80,7 @@ static int graph_verify(int argc, const char **argv)
 	trace2_cmd_mode("verify");
 
 	opts.progress = isatty(2);
-	argc = parse_options(argc, argv, NULL,
+	argc = parse_options(argc, argv, prefix,
 			     options,
 			     builtin_commit_graph_verify_usage, 0);
 	if (argc)
@@ -172,14 +172,14 @@ static int write_option_max_new_filters(const struct option *opt,
 		const char *s;
 		*to = strtol(arg, (char **)&s, 10);
 		if (*s)
-			return error(_("%s expects a numerical value"),
-				     optname(opt, opt->flags));
+			return error(_("option `%s' expects a numerical value"),
+				     "max-new-filters");
 	}
 	return 0;
 }
 
 static int git_commit_graph_write_config(const char *var, const char *value,
-					 void *cb)
+					 void *cb UNUSED)
 {
 	if (!strcmp(var, "commitgraph.maxnewfilters"))
 		write_opts.max_new_filters = git_config_int(var, value);
@@ -190,9 +190,9 @@ static int git_commit_graph_write_config(const char *var, const char *value,
 	return 0;
 }
 
-static int graph_write(int argc, const char **argv)
+static int graph_write(int argc, const char **argv, const char *prefix)
 {
-	struct string_list pack_indexes = STRING_LIST_INIT_NODUP;
+	struct string_list pack_indexes = STRING_LIST_INIT_DUP;
 	struct strbuf buf = STRBUF_INIT;
 	struct oidset commits = OIDSET_INIT;
 	struct object_directory *odb = NULL;
@@ -224,6 +224,8 @@ static int graph_write(int argc, const char **argv)
 		OPT_CALLBACK_F(0, "max-new-filters", &write_opts.max_new_filters,
 			NULL, N_("maximum number of changed-path Bloom filters to compute"),
 			0, write_option_max_new_filters),
+		OPT_BOOL(0, "progress", &opts.progress,
+			 N_("force progress reporting")),
 		OPT_END(),
 	};
 	struct option *options = add_common_options(builtin_commit_graph_write_options);
@@ -239,7 +241,7 @@ static int graph_write(int argc, const char **argv)
 
 	git_config(git_commit_graph_write_config, &opts);
 
-	argc = parse_options(argc, argv, NULL,
+	argc = parse_options(argc, argv, prefix,
 			     options,
 			     builtin_commit_graph_write_usage, 0);
 	if (argc)
@@ -261,7 +263,6 @@ static int graph_write(int argc, const char **argv)
 	    git_env_bool(GIT_TEST_COMMIT_GRAPH_CHANGED_PATHS, 0))
 		flags |= COMMIT_GRAPH_WRITE_BLOOM_FILTERS;
 
-	read_replace_refs = 0;
 	odb = find_odb(the_repository, opts.obj_dir);
 
 	if (opts.reachable) {
@@ -272,8 +273,8 @@ static int graph_write(int argc, const char **argv)
 
 	if (opts.stdin_packs) {
 		while (strbuf_getline(&buf, stdin) != EOF)
-			string_list_append(&pack_indexes,
-					   strbuf_detach(&buf, NULL));
+			string_list_append_nodup(&pack_indexes,
+						 strbuf_detach(&buf, NULL));
 	} else if (opts.stdin_commits) {
 		oidset_init(&commits, 0);
 		if (opts.progress)
@@ -306,25 +307,22 @@ cleanup:
 
 int cmd_commit_graph(int argc, const char **argv, const char *prefix)
 {
-	struct option *builtin_commit_graph_options = common_opts;
+	parse_opt_subcommand_fn *fn = NULL;
+	struct option builtin_commit_graph_options[] = {
+		OPT_SUBCOMMAND("verify", &fn, graph_verify),
+		OPT_SUBCOMMAND("write", &fn, graph_write),
+		OPT_END(),
+	};
+	struct option *options = parse_options_concat(builtin_commit_graph_options, common_opts);
 
 	git_config(git_default_config, NULL);
-	argc = parse_options(argc, argv, prefix,
-			     builtin_commit_graph_options,
-			     builtin_commit_graph_usage,
-			     PARSE_OPT_STOP_AT_NON_OPTION);
-	if (!argc)
-		goto usage;
 
+	read_replace_refs = 0;
 	save_commit_buffer = 0;
 
-	if (!strcmp(argv[0], "verify"))
-		return graph_verify(argc, argv);
-	else if (argc && !strcmp(argv[0], "write"))
-		return graph_write(argc, argv);
+	argc = parse_options(argc, argv, prefix, options,
+			     builtin_commit_graph_usage, 0);
+	FREE_AND_NULL(options);
 
-	error(_("unrecognized subcommand: %s"), argv[0]);
-usage:
-	usage_with_options(builtin_commit_graph_usage,
-			   builtin_commit_graph_options);
+	return fn(argc, argv, prefix);
 }

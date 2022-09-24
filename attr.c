@@ -14,7 +14,6 @@
 #include "utf8.h"
 #include "quote.h"
 #include "thread-utils.h"
-#include "dir.h"
 
 const char git_attr__true[] = "(builtin)true";
 const char git_attr__false[] = "\0(builtin)false";
@@ -62,10 +61,10 @@ struct attr_hash_entry {
 };
 
 /* attr_hashmap comparison function */
-static int attr_hash_entry_cmp(const void *unused_cmp_data,
+static int attr_hash_entry_cmp(const void *cmp_data UNUSED,
 			       const struct hashmap_entry *eptr,
 			       const struct hashmap_entry *entry_or_key,
-			       const void *unused_keydata)
+			       const void *keydata UNUSED)
 {
 	const struct attr_hash_entry *a, *b;
 
@@ -80,7 +79,7 @@ static int attr_hash_entry_cmp(const void *unused_cmp_data,
  * Access to this dictionary must be surrounded with a mutex.
  */
 static struct attr_hashmap g_attr_hashmap = {
-	HASHMAP_INIT(attr_hash_entry_cmp, NULL)
+	.map = HASHMAP_INIT(attr_hash_entry_cmp, NULL),
 };
 
 /*
@@ -1024,7 +1023,7 @@ static int path_matches(const char *pathname, int pathlen,
 	}
 	return match_pathname(pathname, pathlen - isdir,
 			      base, baselen,
-			      pattern, prefix, pat->patternlen, pat->flags);
+			      pattern, prefix, pat->patternlen);
 }
 
 static int macroexpand_one(struct all_attrs_item *all_attrs, int nr, int rem);

@@ -116,7 +116,7 @@ int load_idx(const char *path, const unsigned int hashsz, void *idx_map,
 
 	if (idx_size < 4 * 256 + hashsz + hashsz)
 		return error("index file %s is too small", path);
-	if (idx_map == NULL)
+	if (!idx_map)
 		return error("empty data");
 
 	if (hdr->idx_signature == htonl(PACK_IDX_SIGNATURE)) {
@@ -324,7 +324,8 @@ void close_pack_index(struct packed_git *p)
 	}
 }
 
-void close_pack_revindex(struct packed_git *p) {
+static void close_pack_revindex(struct packed_git *p)
+{
 	if (!p->revindex_map)
 		return;
 
@@ -333,12 +334,23 @@ void close_pack_revindex(struct packed_git *p) {
 	p->revindex_data = NULL;
 }
 
+static void close_pack_mtimes(struct packed_git *p)
+{
+	if (!p->mtimes_map)
+		return;
+
+	munmap((void *)p->mtimes_map, p->mtimes_size);
+	p->mtimes_map = NULL;
+}
+
 void close_pack(struct packed_git *p)
 {
 	close_pack_windows(p);
 	close_pack_fd(p);
 	close_pack_index(p);
 	close_pack_revindex(p);
+	close_pack_mtimes(p);
+	oidset_clear(&p->bad_objects);
 }
 
 void close_object_store(struct raw_object_store *o)
@@ -361,7 +373,7 @@ void close_object_store(struct raw_object_store *o)
 
 void unlink_pack_path(const char *pack_name, int force_delete)
 {
-	static const char *exts[] = {".pack", ".idx", ".rev", ".keep", ".bitmap", ".promisor"};
+	static const char *exts[] = {".pack", ".idx", ".rev", ".keep", ".bitmap", ".promisor", ".mtimes"};
 	int i;
 	struct strbuf buf = STRBUF_INIT;
 	size_t plen;
@@ -716,6 +728,10 @@ struct packed_git *add_packed_git(const char *path, size_t path_len, int local)
 	if (!access(p->pack_name, F_OK))
 		p->pack_promisor = 1;
 
+	xsnprintf(p->pack_name + path_len, alloc - path_len, ".mtimes");
+	if (!access(p->pack_name, F_OK))
+		p->is_cruft = 1;
+
 	xsnprintf(p->pack_name + path_len, alloc - path_len, ".pack");
 	if (stat(p->pack_name, &st) || !S_ISREG(st.st_mode)) {
 		free(p);
@@ -867,7 +883,8 @@ static void prepare_pack(const char *full_name, size_t full_name_len,
 	    ends_with(file_name, ".pack") ||
 	    ends_with(file_name, ".bitmap") ||
 	    ends_with(file_name, ".keep") ||
-	    ends_with(file_name, ".promisor"))
+	    ends_with(file_name, ".promisor") ||
+	    ends_with(file_name, ".mtimes"))
 		string_list_append(data->garbage, full_name);
 	else
 		report_garbage(PACKDIR_FILE_GARBAGE, full_name);
@@ -924,20 +941,10 @@ unsigned long repo_approximate_object_count(struct repository *r)
 	return r->objects->approximate_object_count;
 }
 
-static void *get_next_packed_git(const void *p)
-{
-	return ((const struct packed_git *)p)->next;
-}
+DEFINE_LIST_SORT(static, sort_packs, struct packed_git, next);
 
-static void set_next_packed_git(void *p, void *next)
+static int sort_pack(const struct packed_git *a, const struct packed_git *b)
 {
-	((struct packed_git *)p)->next = next;
-}
-
-static int sort_pack(const void *a_, const void *b_)
-{
-	const struct packed_git *a = a_;
-	const struct packed_git *b = b_;
 	int st;
 
 	/*
@@ -964,9 +971,7 @@ static int sort_pack(const void *a_, const void *b_)
 
 static void rearrange_packed_git(struct repository *r)
 {
-	r->objects->packed_git = llist_mergesort(
-		r->objects->packed_git, get_next_packed_git,
-		set_next_packed_git, sort_pack);
+	sort_packs(&r->objects->packed_git, sort_pack);
 }
 
 static void prepare_packed_git_mru(struct repository *r)
@@ -1059,7 +1064,7 @@ unsigned long unpack_object_header_buffer(const unsigned char *buf,
 		unsigned long len, enum object_type *type, unsigned long *sizep)
 {
 	unsigned shift;
-	unsigned long size, c;
+	size_t size, c;
 	unsigned long used = 0;
 
 	c = buf[used++];
@@ -1067,16 +1072,16 @@ unsigned long unpack_object_header_buffer(const unsigned char *buf,
 	size = c & 15;
 	shift = 4;
 	while (c & 0x80) {
-		if (len <= used || bitsizeof(long) <= shift) {
+		if (len <= used || (bitsizeof(long) - 7) < shift) {
 			error("bad object header");
 			size = used = 0;
 			break;
 		}
 		c = buf[used++];
-		size += (c & 0x7f) << shift;
+		size = st_add(size, st_left_shift(c & 0x7f, shift));
 		shift += 7;
 	}
-	*sizep = size;
+	*sizep = cast_size_t_to_ulong(size);
 	return used;
 }
 
@@ -1387,7 +1392,7 @@ static int delta_base_cache_key_eq(const struct delta_base_cache_key *a,
 	return a->p == b->p && a->base_offset == b->base_offset;
 }
 
-static int delta_base_cache_hash_cmp(const void *unused_cmp_data,
+static int delta_base_cache_hash_cmp(const void *cmp_data UNUSED,
 				     const struct hashmap_entry *va,
 				     const struct hashmap_entry *vb,
 				     const void *vkey)
@@ -2212,7 +2217,17 @@ static int add_promisor_object(const struct object_id *oid,
 			       void *set_)
 {
 	struct oidset *set = set_;
-	struct object *obj = parse_object(the_repository, oid);
+	struct object *obj;
+	int we_parsed_object;
+
+	obj = lookup_object(the_repository, oid);
+	if (obj && obj->parsed) {
+		we_parsed_object = 0;
+	} else {
+		we_parsed_object = 1;
+		obj = parse_object(the_repository, oid);
+	}
+
 	if (!obj)
 		return 1;
 
@@ -2226,7 +2241,7 @@ static int add_promisor_object(const struct object_id *oid,
 		struct tree *tree = (struct tree *)obj;
 		struct tree_desc desc;
 		struct name_entry entry;
-		if (init_tree_desc_gently(&desc, tree->buffer, tree->size))
+		if (init_tree_desc_gently(&desc, tree->buffer, tree->size, 0))
 			/*
 			 * Error messages are given when packs are
 			 * verified, so do not print any here.
@@ -2234,7 +2249,8 @@ static int add_promisor_object(const struct object_id *oid,
 			return 0;
 		while (tree_entry_gently(&desc, &entry))
 			oidset_insert(set, &entry.oid);
-		free_tree_buffer(tree);
+		if (we_parsed_object)
+			free_tree_buffer(tree);
 	} else if (obj->type == OBJ_COMMIT) {
 		struct commit *commit = (struct commit *) obj;
 		struct commit_list *parents = commit->parents;
@@ -2258,7 +2274,8 @@ int is_promisor_object(const struct object_id *oid)
 		if (has_promisor_remote()) {
 			for_each_packed_object(add_promisor_object,
 					       &promisor_objects,
-					       FOR_EACH_OBJECT_PROMISOR_ONLY);
+					       FOR_EACH_OBJECT_PROMISOR_ONLY |
+					       FOR_EACH_OBJECT_PACK_ORDER);
 		}
 		promisor_objects_prepared = 1;
 	}

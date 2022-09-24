@@ -34,11 +34,18 @@ static void ensure_config_read(void)
 		} else if (!strcmp(str, "ignore")) {
 			/* do nothing */
 		} else {
-			die(_("invalid value '%s' for lsrefs.unborn"), str);
+			die(_("invalid value for '%s': '%s'"),
+			    "lsrefs.unborn", str);
 		}
 	}
 	config_read = 1;
 }
+
+/*
+ * If we see this many or more "ref-prefix" lines from the client, we consider
+ * it "too many" and will avoid using the prefix feature entirely.
+ */
+#define TOO_MANY_PREFIXES 65536
 
 /*
  * Check if one of the prefixes is a prefix of the ref.
@@ -129,7 +136,8 @@ static void send_possibly_unborn_head(struct ls_refs_data *data)
 	strbuf_release(&namespaced);
 }
 
-static int ls_refs_config(const char *var, const char *value, void *data)
+static int ls_refs_config(const char *var, const char *value,
+			  void *data UNUSED)
 {
 	/*
 	 * We only serve fetches over v2 for now, so respect only "uploadpack"
@@ -158,20 +166,32 @@ int ls_refs(struct repository *r, struct packet_reader *request)
 			data.peel = 1;
 		else if (!strcmp("symrefs", arg))
 			data.symrefs = 1;
-		else if (skip_prefix(arg, "ref-prefix ", &out))
-			strvec_push(&data.prefixes, out);
+		else if (skip_prefix(arg, "ref-prefix ", &out)) {
+			if (data.prefixes.nr < TOO_MANY_PREFIXES)
+				strvec_push(&data.prefixes, out);
+		}
 		else if (!strcmp("unborn", arg))
 			data.unborn = allow_unborn;
+		else
+			die(_("unexpected line: '%s'"), arg);
 	}
 
 	if (request->status != PACKET_READ_FLUSH)
 		die(_("expected flush after ls-refs arguments"));
 
+	/*
+	 * If we saw too many prefixes, we must avoid using them at all; as
+	 * soon as we have any prefix, they are meant to form a comprehensive
+	 * list.
+	 */
+	if (data.prefixes.nr >= TOO_MANY_PREFIXES)
+		strvec_clear(&data.prefixes);
+
 	send_possibly_unborn_head(&data);
 	if (!data.prefixes.nr)
 		strvec_push(&data.prefixes, "");
 	for_each_fullref_in_prefixes(get_git_namespace(), data.prefixes.v,
-				     send_ref, &data, 0);
+				     send_ref, &data);
 	packet_fflush(stdout);
 	strvec_clear(&data.prefixes);
 	strbuf_release(&data.buf);

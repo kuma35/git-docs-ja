@@ -255,6 +255,15 @@ test_expect_success 'merge --squash c3 with c7' '
 	test_cmp expect actual
 '
 
+test_expect_success 'merge --squash --autostash conflict does not attempt to apply autostash' '
+	git reset --hard c3 &&
+	>unrelated &&
+	git add unrelated &&
+	test_must_fail git merge --squash c7 --autostash >out 2>err &&
+	! grep "Applying autostash resulted in conflicts." err &&
+	grep "When finished, apply stashed changes with \`git stash pop\`" out
+'
+
 test_expect_success 'merge c3 with c7 with commit.cleanup = scissors' '
 	git config commit.cleanup scissors &&
 	git reset --hard c3 &&
@@ -967,7 +976,7 @@ test_expect_success 'set up mod-256 conflict scenario' '
 	# 256 near-identical stanzas...
 	for i in $(test_seq 1 256); do
 		for j in 1 2 3 4 5; do
-			echo $i-$j
+			echo $i-$j || return 1
 		done
 	done >file &&
 	git add file &&
