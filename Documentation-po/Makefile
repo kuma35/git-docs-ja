@@ -10,6 +10,8 @@ TECHNICAL_DIR = technical
 RELNOTES_DIR = RelNotes
 CONFIG_DIR = config
 HOWTO_DIR = howto
+INCLUDES_DIR = includes
+MERGETOOLS_DIR = mergetools
 SRC_INSTALL_TEXT = ../INSTALL
 PO_INSTALL_TEXT = $(addprefix $(PO_DIR)/,INSTALL.po)
 DST_INSTALL_TEXT = ../docs/INSTALL.txt
@@ -37,12 +39,16 @@ SRC_TECHNICAL = $(addprefix $(TECHNICAL_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(T
 SRC_RELNOTES = $(addprefix $(RELNOTES_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(RELNOTES_DIR)/*$(ASCIIDOC_EXT))))
 SRC_CONFIG = $(addprefix $(CONFIG_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(CONFIG_DIR)/*$(ASCIIDOC_EXT))))
 SRC_HOWTO = $(addprefix $(HOWTO_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(HOWTO_DIR)/*$(ASCIIDOC_EXT))))
+SRC_INCLUDES = $(addprefix $(INCLUDES_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(INCLUDES_DIR)/*$(ASCIIDOC_EXT))))
+SRC_MERGETOOLS = $(addprefix $(MERGETOOLS_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(MERGETOOLS_DIR)/*$(ASCIIDOC_EXT))))
 
 SRC_PACKAGE = $(SRC_CURRENT)
 SRC_PACKAGE += $(SRC_TECHNICAL)
 SRC_PACKAGE += $(SRC_RELNOTES)
 SRC_PACKAGE += $(SRC_CONFIG)
 SRC_PACKAGE += $(SRC_HOWTO)
+SRC_PACKAGE += $(SRC_INCLUDES)
+SRC_PACKAGE += $(SRC_MERGETOOLS)
 
 SRC_FILES = $(addprefix $(SRC_DIR)/,$(SRC_PACKAGE))
 

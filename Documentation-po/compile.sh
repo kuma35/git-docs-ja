@@ -1,7 +1,7 @@
 #!/bin/sh
 PROJ=${HOME}/work/git-docs-ja
 cd ${PROJ}/Documentation-sedout
-for dst_dir in technical RelNotes config howto
+for dst_dir in technical RelNotes config howto includes mergetools
 do
     if [ ! -d ${dst_dir} ]; then
 	mkdir ${dst_dir}
