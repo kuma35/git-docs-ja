@@ -778,8 +778,8 @@ git-notes(1) Manual Page
 (&lt;refname&gt;):" (<code>refs/notes/commits</code> の場合は "Notes:") と書かれています。</p></div>
 <div class="paragraph"><p><code>--notes</code> オプションを使用して、 <code>git format-patch</code> で作成されたパッチにノートを追加することもできます。
 このようなノートは、3つのダッシュの区切り行の後にパッチの解説として追加されます。</p></div>
-<div class="paragraph"><p><code>git log</code> で表示されるノートを変更するには、 <a href="git-log.html">git-log(1)</a> の <code>notes.displayRef</code>
-構成を参照してください。</p></div>
+<div class="paragraph"><p>To change which notes are shown by <em>git log</em>, see the "notes.displayRef"
+discussion in <a href="#CONFIGURATION">[CONFIGURATION]</a>.</p></div>
 <div class="paragraph"><p>コミットを書き換えるコマンド間でノートを渡す法については、 <code>notes.rewrite.&lt;command&gt;</code> 構成を参照してください。</p></div>
 </div>
 </div>
@@ -1121,7 +1121,7 @@ $ git notes --ref=built add --allow-empty -C "$blob" HEAD</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_configuration">CONFIGURATION</h2>
+<h2 id="CONFIGURATION">CONFIGURATION</h2>
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
@@ -1133,16 +1133,21 @@ core.notesRef
         の代わりに読み取りおよび操作するノートref。省略されていないref名である必要があります。この設定は、環境およびコマンドラインから上書きできます。
 </p>
 </dd>
+</dl></div>
+<div class="paragraph"><p>このセクションのこの行より上にあるものはすべて、 <a href="git-config.html">git-config(1)</a> ドキュメントには含まれていません。
+以下の内容に関しては、<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です。</p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 notes.mergeStrategy
 </dt>
 <dd>
 <p>
         ノートの競合を解決するときにデフォルトで選択するマージ戦略。 <code>manual</code> 、` ours`、 <code>theirs</code>、` union`
-        、<code>cat_sort_uniq</code> のいずれかである必要があります。 デフォルトは <code>manual</code> です。 各戦略の詳細については、 「NOTES
-        MERGE STRATEGIES」セクションを参照してください。
+        、<code>cat_sort_uniq</code> のいずれかである必要があります。 デフォルトは <code>manual</code> です。 各戦略の詳細については、
+        <a href="git-notes.html">git-notes(1)</a> の「NOTES MERGE STRATEGIES」セクションを参照してください。
 </p>
-<div class="paragraph"><p>この設定は、 <code>--strategy</code> オプションを渡すことで上書きできます。</p></div>
+<div class="paragraph"><p>This setting can be overridden by passing the <code>--strategy</code> option to
+<a href="git-notes.html">git-notes(1)</a>.</p></div>
 </dd>
 <dt class="hdlist1">
 notes.&lt;name&gt;.mergeStrategy
@@ -1150,8 +1155,8 @@ notes.&lt;name&gt;.mergeStrategy
 <dd>
 <p>
         <code>refs/notes/&lt;name&gt;</code> にノートをマージするときに、どのマージ戦略を選択するか。 これは、より一般的な
-        <code>notes.mergeStrategy</code> をオーバーライドします。 利用可能な戦略の詳細については、 「NOTES MERGE
-        STRATEGIES」セクションを参照してください。
+        <code>notes.mergeStrategy</code> をオーバーライドします。 利用可能な戦略の詳細については、 <a href="git-notes.html">git-notes(1)</a>
+        の「NOTES MERGE STRATEGIES」セクションを参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1159,29 +1164,39 @@ notes.displayRef
 </dt>
 <dd>
 <p>
-        <code>git log</code> 系のコマンドでコミットメッセージを表示する際に、 <code>core.notesRef</code> や <code>GIT_NOTES_REF</code>
-        で設定したデフォルトに加えて、どのref(あるいはグロブ(glob)で複数回指定した場合は複数のreef)からノートを読み込むかを指定します。
-        この設定は、コマンドラインや環境変数 <code>GIT_NOTES_DISPLAY_REF</code> で上書きすることができます。 <a href="git-log.html">git-log(1)</a>
-        を参照してください。
+        Which ref (or refs, if a glob or specified more than once), in addition to
+        the default set by <code>core.notesRef</code> or <code>GIT_NOTES_REF</code>, to read notes from
+        when showing commit messages with the <em>git log</em> family of commands.
 </p>
+<div class="paragraph"><p>この設定は、 <code>GIT_NOTES_DISPLAY_REF</code>
+環境変数でオーバーライドでき、環境変数はコロンで区切られたrefまたはグロブ(glob)のリストである必要があります。</p></div>
+<div class="paragraph"><p>A warning will be issued for refs that do not exist, but a glob that does
+not match any refs is silently ignored.</p></div>
+<div class="paragraph"><p>This setting can be disabled by the <code>--no-notes</code> option to the <em>git log</em>
+family of commands, or by the <code>--notes=&lt;ref&gt;</code> option accepted by those
+commands.</p></div>
+<div class="paragraph"><p><code>core.notesRef</code>
+の有効な値(GIT_NOTES_REFによってオーバーライドされる可能性があります)も、表示されるrefのリストに暗黙的に追加されます。</p></div>
 </dd>
 <dt class="hdlist1">
 notes.rewrite.&lt;command&gt;
 </dt>
 <dd>
 <p>
-        &lt;command&gt; (現在は <code>amend</code> または <code>rebase</code>)を使用してコミットを書き換える時、この変数が <code>false</code>
-        の場合、gitは元のコミットから書き換えられたコミットにノートをコピーしません。 デフォルトは <code>true</code> です。 以下の
-        <code>notes.rewriteRef</code> も参照してください。
+        When rewriting commits with &lt;command&gt; (currently <code>amend</code> or <code>rebase</code>), if
+        this variable is <code>false</code>, git will not copy notes from the original to the
+        rewritten commit.  Defaults to <code>true</code>.  See also "<code>notes.rewriteRef</code>" below.
 </p>
-<div class="paragraph"><p>この設定は、 <code>GIT_NOTES_REWRITE_REF</code> 環境変数で上書きできます。</p></div>
+<div class="paragraph"><p>この設定は、 <code>GIT_NOTES_REWRITE_REF</code>
+環境変数でオーバーライドでき、環境変数はコロンで区切られたrefまたはグロブ(glob)のリストである必要があります。</p></div>
 </dd>
 <dt class="hdlist1">
 notes.rewriteMode
 </dt>
 <dd>
 <p>
-        書き換え中にノートをコピーするときに、ターゲットコミットにすでにノートがある場合の対処方法。 <code>overwrite</code> 、 <code>concatenate</code> 、
+        書き換え時にノートをコピーする場合(<code>notes.rewrite.&lt;command&gt;</code>
+        オプション参照)、ターゲットコミットにすでにノートがある場合の対処方法を決定します。 <code>overwrite</code> 、 <code>concatenate</code> 、
         <code>cat_sort_uniq</code> 、 <code>ignore</code> のいずれかである必要があります。 デフォルトは <code>concatenate</code> です。
 </p>
 <div class="paragraph"><p>この設定は、 <code>GIT_NOTES_REWRITE_MODE</code> 環境変数でオーバーライドできます。</p></div>
@@ -1191,10 +1206,15 @@ notes.rewriteRef
 </dt>
 <dd>
 <p>
-        書き換え中にノートをコピーする時に、ノートをコピーする(完全修飾された)refを指定します。グロブ(glob)の可能性があります。その場合、一致するすべてのrefのノートがコピーされます。この構成を複数回指定することもできます。
+        When copying notes during a rewrite, specifies the (fully qualified) ref
+        whose notes should be copied.  May be a glob, in which case notes in all
+        matching refs will be copied.  You may also specify this configuration
+        several times.
 </p>
-<div class="paragraph"><p>デフォルト値はありません。 あなたがノートの書き換えを有効にするには、この変数を構成しなければなりません。</p></div>
-<div class="paragraph"><p><code>GIT_NOTES_REWRITE_REF</code> 環境変数でオーバーライドできます。</p></div>
+<div class="paragraph"><p>デフォルト値はありません。 ノートの書き換えを有効にするには、この変数を構成する必要があります。
+デフォルトのコミットノートの書き換えを有効にするには、これを <code>refs/notes/commits</code> に設定します。</p></div>
+<div class="paragraph"><p>Can be overridden with the <code>GIT_NOTES_REWRITE_REF</code> environment variable.
+See <code>notes.rewrite.&lt;command&gt;</code> above for a further description of its format.</p></div>
 </dd>
 </dl></div>
 </div>
@@ -1255,7 +1275,7 @@ notes.rewriteRef
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-04-25 07:30:55 JST
+ 2022-09-25 22:03:27 JST
 </div>
 </div>
 </body>

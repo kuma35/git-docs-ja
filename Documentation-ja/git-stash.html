@@ -754,7 +754,7 @@ git-stash(1) Manual Page
 <em>git stash</em> drop [-q|--quiet] [&lt;stash&gt;]
 <em>git stash</em> ( pop | apply ) [--index] [-q|--quiet] [&lt;stash&gt;]
 <em>git stash</em> branch &lt;branchname&gt; [&lt;stash&gt;]
-<em>git stash</em> [push [-p|--patch] [-k|--[no-]keep-index] [-q|--quiet]
+<em>git stash</em> [push [-p|--patch] [-S|--staged] [-k|--[no-]keep-index] [-q|--quiet]
              [-u|--include-untracked] [-a|--all] [-m|--message &lt;message&gt;]
              [--pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]]
              [--] [&lt;pathspec&gt;&#8230;]]
@@ -785,7 +785,7 @@ git-stash(1) Manual Page
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>push [-p|--patch] [-k|--[no-]keep-index] [-u|--include-untracked] [-a|--all] [-q|--quiet] [-m|--message &lt;message&gt;] [--pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]] [--] [&lt;pathspec&gt;...]</code>
+push [-p|--patch] [-S|--staged] [-k|--[no-]keep-index] [-u|--include-untracked] [-a|--all] [-q|--quiet] [-m|--message &lt;message&gt;] [--pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]] [--] [&lt;pathspec&gt;&#8230;]
 </dt>
 <dd>
 <p>
@@ -798,7 +798,7 @@ git-stash(1) Manual Page
 <code>--</code> の後ろで許可されるpathspec要素です。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>save [-p|--patch] [-k|--[no-]keep-index] [-u|--include-untracked] [-a|--all] [-q|--quiet] [&lt;message&gt;]</code>
+save [-p|--patch] [-S|--staged] [-k|--[no-]keep-index] [-u|--include-untracked] [-a|--all] [-q|--quiet] [&lt;message&gt;]
 </dt>
 <dd>
 <p>
@@ -992,6 +992,21 @@ store
 を使用してこれを上書きできます。</p></div>
 </dd>
 <dt class="hdlist1">
+<code>-S</code>
+</dt>
+<dt class="hdlist1">
+<code>--staged</code>
+</dt>
+<dd>
+<p>
+        このオプションは、 <code>push</code> および <code>save</code> コマンドでのみ有効です。
+</p>
+<div class="paragraph"><p>Stash only the changes that are currently staged. This is similar to basic
+<code>git commit</code> except the state is committed to the stash instead of current
+branch.</p></div>
+<div class="paragraph"><p>The <code>--patch</code> option has priority over this one.</p></div>
+</dd>
+<dt class="hdlist1">
 <code>--pathspec-from-file=&lt;file&gt;</code>
 </dt>
 <dd>
@@ -1150,6 +1165,28 @@ $ git commit foo -m 'Remaining parts'</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
+Saving unrelated changes for future use
+</dt>
+<dd>
+<p>
+When you are in the middle of massive changes and you find some unrelated
+issue that you don&#8217;t want to forget to fix, you can do the change(s), stage
+them, and use <code>git stash push --staged</code> to stash them out for future
+use. This is similar to committing the staged changes, only the commit
+ends-up being in the stash and not on the current branch.
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code># ... hack hack hack ...
+$ git add --patch foo           # add unrelated changes to the index
+$ git stash push --staged       # save these changes to the stash
+# ... hack hack hack, finish curent changes ...
+$ git commit -m 'Massive'       # commit fully tested changes
+$ git switch fixup-branch       # switch to another branch
+$ git stash pop                 # to finish work on the saved changes</code></pre>
+</div></div>
+</dd>
+<dt class="hdlist1">
 誤ってクリアまたはドロップされたスタッシュエントリの回復
 </dt>
 <dd>
@@ -1163,6 +1200,42 @@ $ git commit foo -m 'Remaining parts'</code></pre>
 grep commit | cut -d\  -f3 |
 xargs git log --merges --no-walk --grep=WIP</code></pre>
 </div></div>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+stash.showIncludeUntracked
+</dt>
+<dd>
+<p>
+        これがtrueに設定されている場合、 <code>git stash show</code> コマンドはstashエントリの追跡されていないファイルを表示します。
+        デフォルトはfalseです。 <a href="git-stash.html">git-stash(1)</a> の showコマンドの説明を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+stash.showPatch
+</dt>
+<dd>
+<p>
+        これがtrueに設定されている場合、オプションのない <code>git stash show</code> コマンドは、パッチ形式でstashエントリを表示します。
+        デフォルトはfalseです。 <a href="git-stash.html">git-stash(1)</a>の showコマンドの説明を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+stash.showStat
+</dt>
+<dd>
+<p>
+        これがtrueに設定されている場合、オプションのない <code>git stash show</code> コマンドは、stashエントリのdiffstatを表示します。
+        デフォルトはtrueです。 <a href="git-stash.html">git-stash(1)</a> の showコマンドの説明を参照してください。
+</p>
 </dd>
 </dl></div>
 </div>
@@ -1185,7 +1258,7 @@ xargs git log --merges --no-walk --grep=WIP</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-05-17 09:16:16 JST
+ 2022-09-25 22:03:34 JST
 </div>
 </div>
 </body>

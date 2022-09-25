@@ -1353,12 +1353,13 @@ Git構成ファイル(configuration file)内のリモート(remote)として、 
 <div class="listingblock">
 <div class="content">
 <pre><code>        [remote "&lt;name&gt;"]
-                url = &lt;url&gt;
+                url = &lt;URL&gt;
                 pushurl = &lt;pushurl&gt;
                 push = &lt;refspec&gt;
                 fetch = &lt;refspec&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p><code>&lt;pushurl&gt;</code> はプッシュにのみ使用されます。 これはオプションであり、デフォルトは <code>&lt;url&gt;</code> です。</p></div>
+<div class="paragraph"><p>The <code>&lt;pushurl&gt;</code> is used for pushes only. It is optional and defaults to
+<code>&lt;URL&gt;</code>.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_named_file_in_code_git_dir_remotes_code">Named file in <code>$GIT_DIR/remotes</code></h3>
@@ -1379,9 +1380,9 @@ Git構成ファイル(configuration file)内のリモート(remote)として、 
 このファイルの形式は以下のとおりです:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>        &lt;url&gt;#&lt;head&gt;</code></pre>
+<pre><code>        &lt;URL&gt;#&lt;head&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p><code>&lt;url&gt;</code> は必須です。 <code>#&lt;head&gt;</code> はオプションです。</p></div>
+<div class="paragraph"><p><code>&lt;URL&gt;</code> is required; <code>#&lt;head&gt;</code> is optional.</p></div>
 <div class="paragraph"><p>コマンドラインで指定しない場合、操作に応じて、gitは以下のrefspecのいずれかを使用します。 <code>&lt;branch&gt;</code> は
 <code>$GIT_DIR/branchs</code> 内のこのファイルの名前であり、 <code>&lt;head&gt;`はデフォルトで `master</code> になります。</p></div>
 <div class="paragraph"><p>git fetch は以下を使用します:</p></div>
@@ -1743,6 +1744,177 @@ HEAD</code> を使用します。 有効な &lt;refspec&gt; (以下の例のよ�
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+push.autoSetupRemote
+</dt>
+<dd>
+<p>
+        If set to "true" assume <code>--set-upstream</code> on default push when no upstream
+        tracking exists for the current branch; this option takes effect with
+        push.default options <em>simple</em>, <em>upstream</em>, and <em>current</em>. It is useful if by
+        default you want new branches to be pushed to the default remote (like the
+        behavior of <em>push.default=current</em>) and you also want the upstream tracking
+        to be set. Workflows most likely to benefit from this option are <em>simple</em>
+        central workflows where all branches are expected to have the same name on
+        the remote.
+</p>
+</dd>
+<dt class="hdlist1">
+push.default
+</dt>
+<dd>
+<p>
+        (コマンドライン、構成、またはその他の場所で、)refspecが指定されていない場合に <code>git push</code> が実行するアクションを定義します。
+        特定の作業フローに適するさまざまな値があります。 たとえば、純粋に中央のワークフロー(つまり、フェッチ元がプッシュ先と等しい)では、
+        <code>upstream</code> がおそらく必要なものです。 可能な値は以下のとおりです:
+</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>nothing</code> - refspecが指定されていない限り、何もプッシュ(エラー出力)しないでください。
+  これは主に、常に明示的にすることで間違いを避けたい人を対象としています。
+</p>
+</li>
+<li>
+<p>
+<code>current</code> - 現在のブランチをプッシュして、受信側で同一の名前のブランチを更新します。 中央作業フローと非中央作業フローの両方で機能します。
+</p>
+</li>
+<li>
+<p>
+<code>upstream</code> - 現在のブランチを、通常その変更が現在のブランチに統合されるブランチにプッシュバックします(これを <code>@{upstream}</code>
+  と呼びます)。 このモードは、通常プルするのと同じリポジトリ(つまり中央ワークフロー)にプッシュする場合にのみ意味があります。
+</p>
+</li>
+<li>
+<p>
+<code>tracking</code> - これは <code>upstream</code> の非推奨の同義語です。
+</p>
+</li>
+<li>
+<p>
+<code>simple</code> - リモートで同一の名前の現在のブランチをプッシュします。
+</p>
+<div class="paragraph"><p>あなたが一元化された作業フロー(あなたのプル元の同一のリポジトリにプッシュする、通常は <code>origin</code>
+)で作業している場合は、あなたは同一の名前でアップストリームブランチを構成する必要があります。</p></div>
+<div class="paragraph"><p>このモードはGit2.0以降のデフォルトであり、初心者に適した最も安全なオプションです。</p></div>
+</li>
+<li>
+<p>
+<code>matching</code> -  送信側受信側両方で同一の名前のすべてのブランチをプッシュします。
+  これにより、プッシュするリポジトリは、プッシュされるブランチのセットを記憶するようになります(たとえば、常に「maint」と「master」をプッシュし、他のブランチがない場合、プッシュするリポジトリには、これら2つのブランチがあり、ローカルの「maint」と「master」がそこにプッシュされます)。
+</p>
+<div class="paragraph"><p>このモードを効果的に使用するには、 <code>git push</code>
+を実行する前に、あなたがプッシュしたい「すべてのブランチ」がプッシュされる準備ができていることを確認する必要があります。このモードの要点は、すべてのブランチを一度にプッシュできるようにすることです。通常、1つのブランチのみで作業を終了して結果をプッシュする場合、他のブランチは未完了ですので、このモードは適していません。
+また、このモードは、共有中央リポジトリにプッシュするのには適していません。他の人がそこに新しいブランチを追加したり、コントロール外の既存のブランチの先端を更新したりする可能性があるためです。</p></div>
+<div class="paragraph"><p>これは以前はデフォルトでしたが、Git 2.0以降ではそうではありません(<code>simple</code> が新しいデフォルトです)。</p></div>
+</li>
+</ul></div>
+</div></div>
+</dd>
+<dt class="hdlist1">
+push.followTags
+</dt>
+<dd>
+<p>
+        trueに設定されている場合、デフォルトで <code>--follow-tags</code> オプションを有効にします。 <code>--no-follow-tags</code>
+        を指定することにより、プッシュ時にこの構成をオーバーライドできます。
+</p>
+</dd>
+<dt class="hdlist1">
+push.gpgSign
+</dt>
+<dd>
+<p>
+        ブール値、または文字列 <code>if-asked</code> に設定できます。 true値を指定すると、 <code>--signed</code> linkgit:git-push
+        [1]に渡されたかのように、すべてのプッシュがGPG署名されます。 文字列 <code>if-asked</code> を指定し、サーバーがサポートしている場合は、
+        <code>--signed=if-asked</code> が <code>git push</code> に渡されたかのように、プッシュで署名されます。
+        誤った値は、優先度の低い構成ファイルの値を上書きする可能性があります。 明示的なコマンドラインオプションは、常にこの設定オプションを上書きします。
+</p>
+</dd>
+<dt class="hdlist1">
+push.pushOption
+</dt>
+<dd>
+<p>
+        コマンドラインから <code>--push-option=&lt;option&gt;</code> 引数が指定されていない場合、 <code>git push</code> はこの変数の各&lt;value&gt;
+        が <code>--push-option=&lt;value&gt;</code> として指定されているかのように動作します。
+</p>
+<div class="paragraph"><p>これは複数値の変数であり、優先度の高い構成ファイル(リポジトリ内の <code>.git/config</code>
+など)で空の値を使用して、優先度の低い構成ファイル(<code>$HOME/.gitconfig</code> など)から継承された値をクリアできます。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Example:
+
+/etc/gitconfig
+  push.pushoption = a
+  push.pushoption = b
+
+~/.gitconfig
+  push.pushoption = c
+
+repo/.git/config
+  push.pushoption =
+  push.pushoption = b
+
+This will result in only b (a and c are cleared).</code></pre>
+</div></div>
+</dd>
+<dt class="hdlist1">
+push.recurseSubmodules
+</dt>
+<dd>
+<p>
+        プッシュされるリビジョンで使用されるすべてのサブモジュールコミットがリモートト追跡ブランチで利用可能であることを確認します。 値が <code>check</code>
+        の場合、Gitは、プッシュされるリビジョンで変更されたすべてのサブモジュールコミットが、サブモジュールの少なくとも1つのリモートで使用可能であることを確認します。
+        コミットが欠落している場合、プッシュは中止(abort)され、ゼロ以外のステータスで終了します。 値が <code>on-demand</code>
+        の場合、プッシュされるリビジョンで変更されたすべてのサブモジュールがプッシュされます。
+        on-demandで必要なすべてのリビジョンをプッシュできなかった場合も、中止(abort)され、ゼロ以外のステータスで終了します。 値が <code>no</code>
+        の場合、プッシュ時にサブモジュールを無視するデフォルトの動作が保持されます。
+        <code>--recurse-submodules=check|on-demand|no</code> を指定することにより、プッシュ時にこの構成をオーバーライドできます。
+        設定されていない場合、 <code>submodule.recurse</code> が設定されていない限り、デフォルトで <code>no</code> が使用されます(この場合、 <code>true</code>
+        値は <code>on-demand</code> を意味します)。
+</p>
+</dd>
+<dt class="hdlist1">
+push.useForceIfIncludes
+</dt>
+<dd>
+<p>
+        「true」に設定すると、コマンドラインで <a href="git-push.html">git-push(1)</a> のオプションとして <code>--force-if-includes</code>
+        を指定するのと同じです。 プッシュ時に <code>--no-force-if-includes</code> を追加すると、この構成設定が上書きされます。
+</p>
+</dd>
+<dt class="hdlist1">
+push.negotiate
+</dt>
+<dd>
+<p>
+        「true」に設定されている場合は、クライアントとサーバーが共通のコミットを見つけようとするネゴシエーションの段階で送信されるパックファイルのサイズを縮小してみます。
+        「false」の場合、Gitはサーバーのref広告のみに依存して、共通のコミットを検索します。
+</p>
+</dd>
+<dt class="hdlist1">
+push.useBitmaps
+</dt>
+<dd>
+<p>
+        If set to "false", disable use of bitmaps for "git push" even if
+        <code>pack.useBitmaps</code> is "true", without preventing other git operations from
+        using bitmaps. Default is true.
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_git">GIT</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
@@ -1753,7 +1925,7 @@ HEAD</code> を使用します。 有効な &lt;refspec&gt; (以下の例のよ�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-07-01 04:32:36 JST
+ 2022-09-25 22:03:21 JST
 </div>
 </div>
 </body>

@@ -855,9 +855,10 @@ allowed directories)(下記参照)も指定する必要があります。
 </dt>
 <dd>
 <p>
-許可されるディレクトリのリストを指定できます。 ディレクトリが指定されていない場合、すべてが許可されます。 これは追加の制限です。
-<code>--export-all</code> も指定されていない限り、 gitcvs アクセスは <code>gitcvs.enabled</code>
-構成オプションで有効にする必要があります。
+The remaining arguments provide a list of directories. If no directories are
+given, then all are allowed. Repositories within these directories still
+require the <code>gitcvs.enabled</code> config option, unless <code>--export-all</code> is
+specified.
 </p>
 </dd>
 </dl></div>
@@ -892,9 +893,10 @@ pserverを介してCVSアクセスを提供する場合は、 /etc/inetd.conf �
 <div class="content">
 <pre><code>   cvspserver stream tcp nowait nobody /usr/bin/git-cvsserver git-cvsserver pserver</code></pre>
 </div></div>
-<div class="paragraph"><p>デフォルトでは、匿名(anonymous)アクセスのみがpserveによって提供されます。
-コミットするには、pserverアカウントを作成する必要があります。 cvsserverに書き込みを許可するリポジトリの構成ファイルに
-gitcvs.authdb 設定を追加するだけです。たとえば以下のようにします:</p></div>
+<div class="paragraph"><p>Only anonymous access is provided by pserver by default. To commit you will
+have to create pserver accounts, simply add a gitcvs.authdb setting in the
+config file of the repositories you want the cvsserver to allow writes to,
+for example:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>   [gitcvs]
@@ -903,27 +905,26 @@ gitcvs.authdb 設定を追加するだけです。たとえば以下のように
 <div class="paragraph"><p>これらのファイルの形式は、ユーザー名の後に暗号化されたパスワードが続きます。以下に例を示します:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>   myuser:$1Oyx5r9mdGZ2
-   myuser:$1$BA)@$vbnMJMDym7tA32AamXrm./</code></pre>
+<pre><code>   myuser:sqkNi8zPf01HI
+   myuser:$1$9K7FzU28$VfF6EoPYCJEYcVQwATgOP/
+   myuser:$5$.NqmNH1vwfzGpV8B$znZIcumu1tNLATgV2l6e1/mY8RzhUDHMOaVOeL1cxV3</code></pre>
 </div></div>
-<div class="paragraph"><p>Apacheに付属の「htpasswd」機能を使用してこれらのファイルを作成できますが、ApacheのMD5
-cryptメソッドは、ほとんどのCライブラリの crypt() 関数で使用されるメソッドとは異なるため、 <code>-m</code> オプションは使用しないでください。</p></div>
-<div class="paragraph"><p>あるいは、perlの crypt() 演算子を使用してパスワードを作成することもできます:</p></div>
-<div class="listingblock">
-<div class="content">
-<pre><code>   perl -e 'my ($user, $pass) = @ARGV; printf "%s:%s\n", $user, crypt($user, $pass)' $USER password</code></pre>
-</div></div>
+<div class="paragraph"><p>You can use the <em>htpasswd</em> facility that comes with Apache to make these
+files, but only with the -d option (or -B if your system suports it).</p></div>
+<div class="paragraph"><p>Preferably use the system specific utility that manages password hash
+creation in your platform (e.g. mkpasswd in Linux, encrypt in OpenBSD or
+pwhash in NetBSD) and paste it in the right location.</p></div>
 <div class="paragraph"><p>次に、pserverメソッドを介してあなたのパスワードを入力します。以下に例を示します:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>   cvs -d:pserver:someuser:somepassword &lt;at&gt; server/path/repo.git co &lt;HEAD_name&gt;</code></pre>
+<pre><code>   cvs -d:pserver:someuser:somepassword@server:/path/repo.git co &lt;HEAD_name&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>PATHにGitツールを含める以外に、SSHアクセスに特別な設定は必要ありません。 CVS_SERVER環境変数を受け入れないクライアントがある場合は、
 <code>git-cvsserver</code> の名前を <code>cvs</code> に変更できます。</p></div>
 <div class="paragraph"><p>注意: 新しいCVSバージョン(&gt;= 1.12.11)では、CVSROOTで直接CVS_SERVERを指定することもサポートしています</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>cvs -d ":ext;CVS_SERVER=git cvsserver:user@server/path/repo.git" co &lt;HEAD_name&gt;</code></pre>
+<pre><code>   cvs -d ":ext;CVS_SERVER=git cvsserver:user@server/path/repo.git" co &lt;HEAD_name&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>これは、あなたの <code>CVS/Root</code>  ファイルに保存されるので、常に正しい環境変数を設定することを心配する必要がないという利点があります。
 <code>git-shell</code>  に制限されている SSH ユーザは CVS_SERVER でデフォルトを上書きする必要はありません(すべきでもありません)。
@@ -973,8 +974,8 @@ CVSからアクセスできるようにするリポジトリごとに、リポ�
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre><code>     export CVSROOT=:ext:user@server:/var/git/project.git
-     export CVS_SERVER="git cvsserver"</code></pre>
+<pre><code>   export CVSROOT=:ext:user@server:/var/git/project.git
+   export CVS_SERVER="git cvsserver"</code></pre>
 </div></div>
 </div></div>
 </li>
@@ -995,7 +996,7 @@ CVSからアクセスできるようにするリポジトリごとに、リポ�
 </p>
 <div class="listingblock">
 <div class="content">
-<pre><code>     cvs co -d project-master master</code></pre>
+<pre><code>   cvs co -d project-master master</code></pre>
 </div></div>
 </li>
 </ol></div>
@@ -1128,9 +1129,26 @@ gitcvs.dbTableNamePrefix
 <h2 id="_environment">ENVIRONMENT</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>これらの変数により、状況によってはコマンドラインオプションが不要になり、git-shellを使用して使用を制限しやすくなります。</p></div>
-<div class="paragraph"><p>GIT_CVSSERVER_BASE_PATHは、 <code>--base-path</code> 引数の代わりになります。</p></div>
-<div class="paragraph"><p>GIT_CVSSERVER_ROOTは、単一ディレクトリのホワイトリストを指定します。 上記のように、リポジトリは git-cvsserver
-を介したアクセスを許可するように構成する必要があります。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+GIT_CVSSERVER_BASE_PATH
+</dt>
+<dd>
+<p>
+        This variable replaces the argument to --base-path.
+</p>
+</dd>
+<dt class="hdlist1">
+GIT_CVSSERVER_ROOT
+</dt>
+<dd>
+<p>
+        This variable specifies a single directory, replacing the <code>&lt;directory&gt;...</code>
+        argument list. The repository still requires the <code>gitcvs.enabled</code> config
+        option, unless <code>--export-all</code> is specified.
+</p>
+</dd>
+</dl></div>
 <div class="paragraph"><p>これらの環境変数が設定されている場合、対応するコマンドライン引数は使用されない場合があります。</p></div>
 </div>
 </div>
@@ -1256,7 +1274,7 @@ git refspec を提供するだけで機能する場合があります。 一部�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-05-31 16:26:29 JST
+ 2022-09-25 22:03:27 JST
 </div>
 </div>
 </body>

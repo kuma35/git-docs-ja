@@ -749,7 +749,7 @@ git-log(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git log</em> [&lt;options&gt;] [&lt;revision range&gt;] [[--] &lt;path&gt;&#8230;]</pre>
+<pre class="content"><em>git log</em> [&lt;options&gt;] [&lt;revision-range&gt;] [[--] &lt;path&gt;&#8230;]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -823,12 +823,25 @@ $ git log A...B</code></pre>
 </dt>
 <dd>
 <p>
-        <code>--decorate-refs</code>
-        が指定されていない場合は、すべてのrefが含まれているように見せかけます。候補ごとに、<code>--decorate-refs-exclude</code>
-        に指定されたパターンのいずれにもマッチしない場合、または <code>--decorate-refs</code>
-        に指定されたパターンのいずれにもマッチしない場合は、装飾に使用しないでください。 <code>log.excludeDecoration</code>
-        構成オプションを使用すると、装飾からrefを除外できますが、明示的な <code>--decorate-refs</code> パターンは
-        <code>log.excludeDecoration</code> のマッチングをオーバーライドします。
+        For each candidate reference, do not use it for decoration if it matches any
+        patterns given to <code>--decorate-refs-exclude</code> or if it doesn&#8217;t match any of
+        the patterns given to <code>--decorate-refs</code>. The <code>log.excludeDecoration</code> config
+        option allows excluding refs from the decorations, but an explicit
+        <code>--decorate-refs</code> pattern will override a match in <code>log.excludeDecoration</code>.
+</p>
+<div class="paragraph"><p>If none of these options or config settings are given, then references are
+used as decoration if they match <code>HEAD</code>, <code>refs/heads/</code>, <code>refs/remotes/</code>,
+<code>refs/stash/</code>, or <code>refs/tags/</code>.</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--clear-decorations</code>
+</dt>
+<dd>
+<p>
+        When specified, this option clears all previous <code>--decorate-refs</code> or
+        <code>--decorate-refs-exclude</code> options and relaxes the default decoration filter
+        to include all references. This option is assumed if the config value
+        <code>log.initialDecorationSet</code> is set to <code>all</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -918,15 +931,16 @@ $ git log A...B</code></pre>
 a custom hunk-header」参照)。</p></div>
 </dd>
 <dt class="hdlist1">
-&lt;revision range&gt;
+&lt;revision-range&gt;
 </dt>
 <dd>
 <p>
-        指定されたリビジョン範囲のコミットのみを表示します。 &lt;revision range&gt; が指定されていない場合、デフォルトで <code>HEAD</code>
-        (つまり、現在のコミットにつながる履歴全体)になります。 <code>origin..HEAD</code>
-        は、現在のコミット(つまり、<code>HEAD</code>)から到達可能なすべてのコミットを指定しますが、`origin`からは指定しません。 &lt;revision
-        range&gt; の綴り方の完全なリストについては、 <a href="gitrevisions.html">gitrevisions(7)</a> の「Specifying
-        Ranges」節を参照してください。
+        Show only commits in the specified revision range.  When no &lt;revision-range&gt;
+        is specified, it defaults to <code>HEAD</code> (i.e. the whole history leading to the
+        current commit).  <code>origin..HEAD</code> specifies all the commits reachable from
+        the current commit (i.e. <code>HEAD</code>), but not from <code>origin</code>. For a complete list
+        of ways to spell &lt;revision-range&gt;, see the <em>Specifying Ranges</em> section of
+        <a href="gitrevisions.html">gitrevisions(7)</a>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -977,6 +991,16 @@ a custom hunk-header」参照)。</p></div>
 <dd>
 <p>
         指定の日付よりも新しいコミットを表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--since-as-filter=&lt;date&gt;</code>
+</dt>
+<dd>
+<p>
+        Show all commits more recent than a specific date. This visits all commits
+        in the range, rather than stopping at the first commit which is older than a
+        specific date.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1137,9 +1161,26 @@ a custom hunk-header」参照)。</p></div>
 </dt>
 <dd>
 <p>
-        マージコミットを確認したら、最初の親コミットのみを探索します。このオプションは、特定のトピックブランチの進化を表示するときに、より良い概要を提供できます。トピックブランチへのマージは、時々更新されるアップストリームに調整することだけである傾向があり、このオプションを使用すると、そのようなマージによって履歴に取り込まれた個々のコミットを無視できます。
+        When finding commits to include, follow only the first parent commit upon
+        seeing a merge commit.  This option can give a better overview when viewing
+        the evolution of a particular topic branch, because merges into a topic
+        branch tend to be only about adjusting to updated upstream from time to
+        time, and this option allows you to ignore the individual commits brought in
+        to your history by such a merge.
 </p>
 <div class="paragraph"><p>このオプションは、マージコミットのデフォルトのdiff形式も`first-parent`に変更します。詳細については、`--diff-merges=first-parent`を参照してください。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--exclude-first-parent-only</code>
+</dt>
+<dd>
+<p>
+        When finding commits to exclude (with a <em>&#94;</em>), follow only the first
+        parent commit upon seeing a merge commit.  This can be used to find the set
+        of changes in a topic branch from the point where it diverged from the
+        remote branch, given that arbitrary merges can be valid topic branch
+        changes.
+</p>
 </dd>
 <dt class="hdlist1">
 <code>--not</code>
@@ -1445,13 +1486,17 @@ Default mode
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--ancestry-path</code>
+<code>--ancestry-path[=&lt;commit&gt;]</code>
 </dt>
 <dd>
 <p>
-        表示するコミットの範囲が指定されている場合(たとえば、 <code>commit1..commit2</code> または "commit2
-        &#94;commit1")、 commit1 と commit2 の間の祖先チェーンに直接存在するコミットのみ、つまり、 commit1
-        の子孫であり、 commit2 の祖先であるコミットを表示します。
+        When given a range of commits to display (e.g. <em>commit1..commit2</em> or
+        <em>commit2 &#94;commit1</em>), only display commits in that range that are
+        ancestors of &lt;commit&gt;, descendants of &lt;commit&gt;, or &lt;commit&gt; itself.  If no
+        commit is specified, use <em>commit1</em> (the excluded part of the range) as
+        &lt;commit&gt;.  Can be passed multiple times; if so, a commit is included if it
+        is any of the commits given or if it is an ancestor or descendant of one of
+        them.
 </p>
 </dd>
 </dl></div>
@@ -1658,13 +1703,12 @@ Default mode
 <div class="paragraph"><p>利用可能な別の簡略化モードがあります:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>--ancestry-path</code>
+<code>--ancestry-path[=&lt;commit&gt;]</code>
 </dt>
 <dd>
 <p>
-        表示されるコミットを、指定されたコミット範囲内の &#8220;from&#8221; コミットと &#8220;to&#8221;
-        コミットの間の祖先チェーンに直接あるコミットに制限します。つまり、 &#8220;to&#8221; コミットの祖先であるコミットと &#8220;from&#8221;
-        コミットの子孫であるコミットのみを表示します。
+        Limit the displayed commits to those which are an ancestor of &lt;commit&gt;, or
+        which are a descendant of &lt;commit&gt;, or are &lt;commit&gt; itself.
 </p>
 <div class="paragraph"><p>ユースケースの例として、以下のコミット履歴について考えます:</p></div>
 <div class="listingblock">
@@ -1688,6 +1732,25 @@ Default mode
                   G---H---I---J
                                \
                                 L--M</code></pre>
+</div></div>
+<div class="paragraph"><p>We can also use <code>--ancestry-path=D</code> instead of <code>--ancestry-path</code> which means
+the same thing when applied to the <em>D..M</em> range but is just more explicit.</p></div>
+<div class="paragraph"><p>If we instead are interested in a given topic within this range, and all
+commits affected by that topic, we may only want to view the subset of
+<code>D..M</code> which contain that topic in their ancestry path.  So, using
+<code>--ancestry-path=H D..M</code> for example would result in:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>                E
+                 \
+                  G---H---I---J
+                               \
+                                L--M</code></pre>
+</div></div>
+<div class="paragraph"><p>Whereas <code>--ancestry-path=K D..M</code> would result in</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>                K---------------L--M</code></pre>
 </div></div>
 </dd>
 </dl></div>
@@ -1728,10 +1791,12 @@ Default mode
           \ /      /\        /
            `---X--'  `------'</code></pre>
 </div></div>
-<div class="paragraph"><p>ここで、マージコミット <code>O</code> と <code>P</code> は、実際には <code>file.txt</code> への変更を提供しなかったため、余分なノイズを提供します。古いバージョンの
-<code>file.txt</code>
-に基づいたトピックのみをマージしました。これは、多くの寄稿者が並行して作業し、トピックブランチを単一のトランクに沿ってマージするワークフローを使用するリポジトリの一般的な問題です。開発に関係のないマージが
-<code>--full-history</code> の結果に表示されます。</p></div>
+<div class="paragraph"><p>Here, the merge commits <code>O</code> and <code>P</code> contribute extra noise, as they did not
+actually contribute a change to <code>file.txt</code>. They only merged a topic that
+was based on an older version of <code>file.txt</code>. This is a common issue in
+repositories using a workflow where many contributors work in parallel and
+merge their topic branches along a single trunk: many unrelated merges
+appear in the <code>--full-history</code> results.</p></div>
 <div class="paragraph"><p><code>--simplify-merges</code> オプションを使用すると、コミット <code>O</code> と <code>P</code> が結果から消えます。 これは、 <code>O</code> と <code>P</code>
 の書き直された2番目の親が、最初の親から到達可能であるためです。これらのエッジが削除されると、コミットは、親にとってTREESAMEである単一の親のコミットのように見えます。これはコミット
 <code>N</code> にも発生し、以下のような履歴ビューが表示されます:</p></div>
@@ -1842,23 +1907,16 @@ Default mode
 <div class="paragraph"><p>これらのオプションは、主にGitリポジトリのパッキングを対象としています。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>--unsorted-input</code>
-</dt>
-<dd>
-<p>
-        コミット時間で時系列の逆順に並べ替えるのではなく、コマンドラインで指定された順序でコミットを表示します。<code>--no-walk</code> または
-        <code>--no-walk=sorted</code> と組み合わせることはできません。
-</p>
-</dd>
-<dt class="hdlist1">
 <code>--no-walk[=(sorted|unsorted)]</code>
 </dt>
 <dd>
 <p>
-        指定されたコミットのみを表示し、祖先をトラバースしない。範囲が指定されている場合、これは効果がありません。引数 <code>unsorted</code>
-        が指定されている場合、コミットはコマンドラインで指定された順序で表示されます。それ以外の場合( <code>sorted</code>
-        または引数が指定されていない場合)、コミットはコミット時間の逆順に表示されます。 <code>--graph</code> と組み合わせることはできません。 <code>sorted</code>
-        または引数が指定されていない場合、 <code>--unsorted-input</code> と組み合わせることはできません。
+        Only show the given commits, but do not traverse their ancestors.  This has
+        no effect if a range is specified. If the argument <code>unsorted</code> is given, the
+        commits are shown in the order they were given on the command
+        line. Otherwise (if <code>sorted</code> or no argument was given), the commits are
+        shown in reverse chronological order by commit time.  Cannot be combined
+        with <code>--graph</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1924,10 +1982,14 @@ medium になります。</p></div>
 </dt>
 <dd>
 <p>
-        コミットオブジェクトは、ログメッセージに使用される文字エンコードをエンコードヘッダーに記録します。このオプションを使用して、ユーザーが好むエンコーディングでコミットログメッセージを再コーディングするようにコマンドに指示できます。配管以外のコマンドの場合、これはデフォルトでUTF-8になります。オブジェクトが
-        <code>X</code> でエンコードされていると主張し、 <code>X</code>
-        で出力している場合、オブジェクトをそのまま出力することに注意してください。これは、元のコミットの無効なシーケンスが出力にコピーされる可能性があることを意味します。同様に、
-        iconv(3) コミットの変換に失敗した場合、警告とともに元のオブジェクトをそのまま出力します。
+        Commit objects record the character encoding used for the log message in
+        their encoding header; this option can be used to tell the command to
+        re-code the commit log message in the encoding preferred by the user.  For
+        non plumbing commands this defaults to UTF-8. Note that if an object claims
+        to be encoded in <code>X</code> and we are outputting in <code>X</code>, we will output the object
+        verbatim; this means that invalid sequences in the original commit may be
+        copied to the output. Likewise, if iconv(3) fails to convert the commit, we
+        will quietly output the original object verbatim.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2052,10 +2114,11 @@ ref(s) の両方のnotesを表示します。</p></div>
 古い日付の場合、時と分も省略されます。</p></div>
 <div class="paragraph"><p><code>--date=unix</code> は、日付をUnixエポックタイムスタンプ(1970年からの秒数)として表示します。 <code>--raw</code>
 と同様に、これは常にUTCであるため、 ` -local` は効果がありません。</p></div>
-<div class="paragraph"><p><code>--date=format:...</code> は、内部で処理される%zと%Zを除いて、フォーマット <code>...</code> をあなたのシステムの <code>strftime</code>
-に送ります。 <code>--date=format:%c</code>
-を使用して、システムロケールの推奨形式で日付を表示します。フォーマットプレースホルダーの完全なリストについては、 <code>strftime</code>
-マニュアルを参照してください。 <code>-local</code> を使用する場合、正しい構文は <code>--date=format-local:...</code> です。</p></div>
+<div class="paragraph"><p><code>--date=format:...</code> feeds the format <code>...</code> to your system <code>strftime</code>, except
+for %s, %z, and %Z, which are handled internally.  Use <code>--date=format:%c</code> to
+show the date in your system locale&#8217;s preferred format.  See the <code>strftime</code>
+manual for a complete list of format placeholders. When using <code>-local</code>, the
+correct syntax is <code>--date=format-local:...</code>.</p></div>
 <div class="paragraph"><p><code>--date=default</code> はデフォルトの形式であり、いくつかの例外を除いて <code>--date=rfc2822</code> に似ています:</p></div>
 </div></div>
 <div class="ulist"><ul>
@@ -2162,7 +2225,7 @@ option)を別のフォーマット名または <code>format:</code>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;hash&gt; &lt;title line&gt;</code></pre>
+<pre><code>&lt;hash&gt; &lt;title-line&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>これは、可能な限りコンパクトになるように設計されています。</p></div>
 </li>
@@ -2177,7 +2240,7 @@ Author: &lt;author&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;title line&gt;</code></pre>
+<pre><code>&lt;title-line&gt;</code></pre>
 </div></div>
 </li>
 <li>
@@ -2188,15 +2251,15 @@ Author: &lt;author&gt;</code></pre>
 <div class="content">
 <pre><code>commit &lt;hash&gt;
 Author: &lt;author&gt;
-Date:   &lt;author date&gt;</code></pre>
+Date:   &lt;author-date&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;title line&gt;</code></pre>
+<pre><code>&lt;title-line&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;full commit message&gt;</code></pre>
+<pre><code>&lt;full-commit-message&gt;</code></pre>
 </div></div>
 </li>
 <li>
@@ -2211,11 +2274,11 @@ Commit: &lt;committer&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;title line&gt;</code></pre>
+<pre><code>&lt;title-line&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;full commit message&gt;</code></pre>
+<pre><code>&lt;full-commit-message&gt;</code></pre>
 </div></div>
 </li>
 <li>
@@ -2226,17 +2289,17 @@ Commit: &lt;committer&gt;</code></pre>
 <div class="content">
 <pre><code>commit &lt;hash&gt;
 Author:     &lt;author&gt;
-AuthorDate: &lt;author date&gt;
+AuthorDate: &lt;author-date&gt;
 Commit:     &lt;committer&gt;
-CommitDate: &lt;committer date&gt;</code></pre>
+CommitDate: &lt;committer-date&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;title line&gt;</code></pre>
+<pre><code>&lt;title-line&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;full commit message&gt;</code></pre>
+<pre><code>&lt;full-commit-message&gt;</code></pre>
 </div></div>
 </li>
 <li>
@@ -2245,7 +2308,7 @@ CommitDate: &lt;committer date&gt;</code></pre>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;abbrev hash&gt; (&lt;title line&gt;, &lt;short author date&gt;)</code></pre>
+<pre><code>&lt;abbrev-hash&gt; (&lt;title-line&gt;, &lt;short-author-date&gt;)</code></pre>
 </div></div>
 <div class="paragraph"><p>この形式は、コミットメッセージ内の別のコミットを参照するために使用され、 <code>--pretty='format:%C(auto)%h (%s,
 %ad)'</code> と同じです。 デフォルトでは、別の <code>--date</code> オプションが明示的に指定されていない限り、日付は <code>--date=short</code>
@@ -2260,12 +2323,12 @@ CommitDate: &lt;committer date&gt;</code></pre>
 <div class="content">
 <pre><code>From &lt;hash&gt; &lt;date&gt;
 From: &lt;author&gt;
-Date: &lt;author date&gt;
-Subject: [PATCH] &lt;title line&gt;</code></pre>
+Date: &lt;author-date&gt;
+Subject: [PATCH] &lt;title-line&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>&lt;full commit message&gt;</code></pre>
+<pre><code>&lt;full-commit-message&gt;</code></pre>
 </div></div>
 </li>
 <li>
@@ -2287,10 +2350,11 @@ Subject: [PATCH] &lt;title line&gt;</code></pre>
 </li>
 <li>
 <p>
-<code>format:&lt;string&gt;</code>
+<em>format:&lt;format-string&gt;</em>
 </p>
-<div class="paragraph"><p><code>format:&lt;string&gt;</code> 形式を使用すると、表示する情報を指定できます。注意: これはprintf書式に少し似ていますが、 <code>\n</code>
-の代わりに <code>%n</code> を使用して改行を取得するという例外に注意してください。</p></div>
+<div class="paragraph"><p>The <em>format:&lt;format-string&gt;</em> format allows you to specify which information
+you want to show. It works a little bit like printf format, with the notable
+exception that you get a newline with <em>%n</em> instead of <em>\n</em>.</p></div>
 <div class="paragraph"><p>例: <code>format:"The author of %h was %an, %ar%nThe title was &gt;&gt;%s&lt;&lt;%n"</code>
 は以下のように表示されます:</p></div>
 <div class="listingblock">
@@ -2759,6 +2823,20 @@ ref名 <a href="git-log.html">git-log(1)</a> の --decorate オプションみ�
 <div class="ulist"><ul>
 <li>
 <p>
+<em>tags[=&lt;bool-value&gt;]</em>: Instead of only considering annotated tags, consider
+   lightweight tags as well.
+</p>
+</li>
+<li>
+<p>
+<em>abbrev=&lt;number&gt;</em>: Instead of using the default number of hexadecimal digits
+   (which will vary according to the number of objects in the repository with a
+   default of 7) of the abbreviated object name, use &lt;number&gt; digits, or as
+   many digits as needed to form a unique object name.
+</p>
+</li>
+<li>
+<p>
 <code>match=&lt;pattern&gt;</code>:  <code>refs/tags/</code> プレフィックスを除いて、指定された <code>glob(7)</code>
    パターンに一致するタグのみを考慮します。
 </p>
@@ -3019,54 +3097,58 @@ reflog 件名
                           <code>trailers</code>
                           文字列の後には、コロンと0個以上のカンマ区切りオプションを続けることができます。いずれかのオプションが複数回提供された場合、それぞれ最後のものが優先されます。
 </p>
-<div class="paragraph"><p>ブール値オプションは、オプションの値 <code>[=&lt;BOOL&gt;]</code> を受け入れます。 値 <code>true</code> 、<code>false</code> 、 <code>on</code> 、<code>off</code>
-などはすべて受け入れられます。 <a href="git-config.html">git-config(1)</a> の "EXAMPLES" の "boolean"
-サブセクションを参照してください。ブール値オプションが値なしで指定された場合、それは有効を指定した事になります。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>key=&lt;K&gt;</code>
-   は指定されたキーを持つトレーラーのみを表示します。マッチングは大文字と小文字を区別せずに行われ、末尾のコロンはオプションです。オプションが複数回指定されている場合、いずれかのキーに一致するトレーラー行が表示されます。このオプションは自動的に
-   <code>only</code> オプションを有効にして、トレーラーブロック内の非トレーラー行が非表示になるようにします。それが望ましくない場合は、
-   <code>only=false</code> で無効にすることができます。 たとえば、 <code>%(trailers:key=Reviewed-by)</code> は、キーが
-   `Reviewed-by`のトレーラー行を表示します。
+<em>key=&lt;key&gt;</em>: only show trailers with specified &lt;key&gt;. Matching is done
+   case-insensitively and trailing colon is optional. If option is given
+   multiple times trailer lines matching any of the keys are shown. This option
+   automatically enables the <code>only</code> option so that non-trailer lines in the
+   trailer block are hidden. If that is not desired it can be disabled with
+   <code>only=false</code>.  E.g., <code>%(trailers:key=Reviewed-by)</code> shows trailer lines with
+   key <code>Reviewed-by</code>.
 </p>
 </li>
 <li>
 <p>
-<code>only[=&lt;BOOL&gt;]</code> はトレーラーブロックに非トレーラー行を含めるかどうかを選択します。
+<em>only[=&lt;bool&gt;]</em>: select whether non-trailer lines from the trailer block
+   should be included.
 </p>
 </li>
 <li>
 <p>
-<code>separator=&lt;SEP&gt;</code>
-   はトレーラー行の間に挿入される区切り文字を指定します。このオプションが指定されていない場合、各トレーラー行は改行文字で終了します。文字列SEPには、上記のリテラルフォーマットコードが含まれる場合があります。区切り文字としてコンマを使用するには、次のオプションとして解析されないよう
-   <code>%x2C</code> を使用する必要があります。 たとえば、 <code>%(trailers:key=Ticket,separator=%x2C )</code> は、キーが
-   <code>Ticket</code> であるすべてのトレーラー行をカンマとスペースで区切って表示します。
+<em>separator=&lt;sep&gt;</em>: specify a separator inserted between trailer lines. When
+   this option is not given each trailer line is terminated with a line feed
+   character. The string &lt;sep&gt; may contain the literal formatting codes
+   described above. To use comma as separator one must use <code>%x2C</code> as it would
+   otherwise be parsed as next option. E.g.,
+   <code>%(trailers:key=Ticket,separator=%x2C )</code> shows all trailer lines whose key
+   is "Ticket" separated by a comma and a space.
 </p>
 </li>
 <li>
 <p>
-<code>unfold[=&lt;BOOL&gt;]</code> は interpret-trailer の <code>--unfold</code>
-   オプションが指定されたかのように動作させます。たとえば、 <code>%(trailers:only,unfold=true)</code>
-   が展開され、すべてのトレーラー行が表示されます。
+<em>unfold[=&lt;bool&gt;]</em>: make it behave as if interpret-trailer&#8217;s <code>--unfold</code>
+   option was given. E.g., <code>%(trailers:only,unfold=true)</code> unfolds and shows all
+   trailer lines.
 </p>
 </li>
 <li>
 <p>
-<code>keyonly[=&lt;BOOL&gt;]</code> トレーラーのキー部分のみを表示。
+<em>keyonly[=&lt;bool&gt;]</em>: only show the key part of the trailer.
 </p>
 </li>
 <li>
 <p>
-<code>valueonly[=&lt;BOOL&gt;]</code> トレーラーの値部分のみ表示。
+<em>valueonly[=&lt;bool&gt;]</em>: only show the value part of the trailer.
 </p>
 </li>
 <li>
 <p>
-<code>key_value_separator=&lt;SEP&gt;</code>
-   トレーラー行の間に挿入される区切り文字を指定します。このオプションが指定されていない場合、各トレーラーのキーと値のペアは ": " で区切られます。
-   それ以外の場合は、上記の <code>separator=&lt;SEP&gt;</code> と同じセマンティクスを共有します。
+<em>key_value_separator=&lt;sep&gt;</em>: specify a separator inserted between trailer
+   lines. When this option is not given each trailer key-value pair is
+   separated by ": ". Otherwise it shares the same semantics as
+   <em>separator=&lt;sep&gt;</em> above.
 </p>
 </li>
 </ul></div>
@@ -3087,6 +3169,10 @@ reflogオプションは、reflogエントリをトラバースしない限り(�
 プレースホルダーは「短い」(short)装飾形式を使用します。</td>
 </tr></table>
 </div>
+<div class="paragraph"><p>The boolean options accept an optional value <code>[=&lt;bool-value&gt;]</code>. The values
+<code>true</code>, <code>false</code>, <code>on</code>, <code>off</code> etc. are all accepted. See the "boolean"
+sub-section in "EXAMPLES" in <a href="git-config.html">git-config(1)</a>. If a boolean option is
+given with no value, it&#8217;s enabled.</p></div>
 <div class="paragraph"><p>プレースホルダーの <code>%</code> の後に <code>+</code>
 (プラス記号)を追加すると、プレースホルダーが空でない文字列に展開される場合に限り、展開の直前に改行が挿入されます。</p></div>
 <div class="paragraph"><p>プレースホルダーの <code>%</code> の後に <code>-</code>
@@ -3159,7 +3245,7 @@ $ git log -2 --pretty=%h 4da45bef</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--diff-merges=(off|none|on|first-parent|1|separate|m|combined|c|dense-combined|cc)</code>
+<code>--diff-merges=(off|none|on|first-parent|1|separate|m|combined|c|dense-combined|cc|remerge|r)</code>
 </dt>
 <dt class="hdlist1">
 <code>--no-diff-merges</code>
@@ -3216,6 +3302,27 @@ $ git log -2 --pretty=%h 4da45bef</code></pre>
         これにより、マージコミットは各親に関して完全なdiffを表示します。親ごとに個別のログエントリとdiffが生成されます。
 </p>
 </dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+<code>--diff-merges=remerge:</code>
+</dt>
+<dt class="hdlist1">
+<code>--diff-merges=r:</code>
+</dt>
+<dt class="hdlist1">
+<code>--remerge-diff:</code>
+</dt>
+<dd>
+<p>
+        With this option, two-parent merge commits are remerged to create a
+        temporary tree object&#8201;&#8212;&#8201;potentially containing files with conflict markers
+        and such.  A diff is then shown between that temporary tree and the actual
+        merge commit.
+</p>
+<div class="paragraph"><p>The output emitted when this option is used is subject to change, and so is
+its interaction with other options (unless explicitly documented).</p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <code>--diff-merges=combined</code>
 </dt>
@@ -4015,9 +4122,8 @@ settings)が明示的にオーバーライドされます。diffドライバー�
 </p>
 <div class="paragraph"><p>また、逆に、除外したい時はこれらの各大文字指定を小文字にして指定します。例えば <code>--diff-filter=ad</code>
 は、追加および削除されたパスを除外します。</p></div>
-<div class="paragraph"><p>注意:すべてのdiffがすべてのタイプを特徴とするわけではないことに注意してください。
-たとえば、インデックスから作業ツリーへのdiffにエントリを追加することはできません(diffに含まれるパスのセットは、インデックスの内容によって制限されるため)。
-同様に、これらのタイプの検出が無効になっている場合、コピーおよび名前変更されたエントリは表示されません。</p></div>
+<div class="paragraph"><p>Note that not all diffs can feature all types. For instance, copied and
+renamed entries cannot appear if detection for those types is disabled.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>-S&lt;string&gt;</code>
@@ -4695,25 +4801,85 @@ i18n.logOutputEncoding
         <code>i18n.commitEncoding</code> の値になり、そうでない場合は UTF-8 になります。
 </p>
 </dd>
+</dl></div>
+<div class="paragraph"><p>このセクションのこの行より上にあるものはすべて、 <a href="git-config.html">git-config(1)</a> ドキュメントには含まれていません。
+以下の内容に関しては、<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+log.abbrevCommit
+</dt>
+<dd>
+<p>
+        trueの場合、 linkgit:git-log [1] と <a href="git-show.html">git-show(1)</a> と
+        <a href="git-whatchanged.html">git-whatchanged(1)</a> に <code>--abbrev-commit</code> を想定させます。 このオプションは
+        <code>--no-abbrev-commit</code> で上書きできます。
+</p>
+</dd>
 <dt class="hdlist1">
 log.date
 </dt>
 <dd>
 <p>
-        人間が読める形式の日付のデフォルト形式。 (<code>--date</code> オプションと比べてみてください。) デフォルトは default です。これは、<code>Sat
-        May 8 19:35:34 2010 -0500</code> のような日付を書き込むことを意味します。
+        <code>log</code> コマンドのデフォルトの日時モードを設定します。 log.dateの値の設定は、 <code>git log</code> の <code>--date</code>
+        オプションと同様です。 詳細については、 <a href="git-log.html">git-log(1)</a> を参照してください。
 </p>
-<div class="paragraph"><p>フォーマットが auto:foo に設定されていて、かつ、ページャーが使用されている場合、フォーマット foo
-が日付フォーマットに使用されます。それ以外の場合は default が使用されます。</p></div>
+<div class="paragraph"><p>If the format is set to "auto:foo" and the pager is in use, format "foo"
+will be the used for the date format. Otherwise "default" will be used.</p></div>
+</dd>
+<dt class="hdlist1">
+log.decorate
+</dt>
+<dd>
+<p>
+        logコマンドで表示されるコミットのref名を出力します。 <code>short</code> が指定されている場合、ref名の接頭辞 <code>refs/heads/</code> と
+        <code>refs/tags/</code> と <code>refs/remotes/</code> は出力されません。 <code>full</code>
+        が指定されている場合、完全なref名(接頭辞を含む)が出力されます。 <code>auto</code> が指定されている場合、出力が端末に送られる場合、ref名は
+        <code>short</code> が指定されているかのように表示されます。それ以外の場合、ref名は表示されません。 これは、 <code>git log</code> の
+        <code>--decorate</code> オプションと同じです。
+</p>
+</dd>
+<dt class="hdlist1">
+log.initialDecorationSet
+</dt>
+<dd>
+<p>
+        By default, <code>git log</code> only shows decorations for certain known ref
+        namespaces. If <em>all</em> is specified, then show all refs as decorations.
+</p>
+</dd>
+<dt class="hdlist1">
+log.excludeDecoration
+</dt>
+<dd>
+<p>
+        ログ装飾(log decorations)から指定されたパターンを除外します。 これは <code>--decorate-refs-exclude</code>
+        コマンドラインオプションに似ていますが、構成オプションは <code>--decorate-refs</code> オプションで上書きできます。
+</p>
+</dd>
+<dt class="hdlist1">
+log.diffMerges
+</dt>
+<dd>
+<p>
+        マージコミットに使用されるデフォルトのdiff形式を設定します。 詳細については、 <a href="git-log.html">git-log(1)</a> の
+        <code>--diff-merges</code> を参照してください。 デフォルトは <code>separate</code> です。
+</p>
 </dd>
 <dt class="hdlist1">
 log.follow
 </dt>
 <dd>
 <p>
-        trueの場合、<code>git log</code> は、単一の&lt;path&gt;が指定されたときに <code>--follow</code> オプションが使用されたかのように機能します。これには
-        <code>--follow</code> と同じ制限があります。つまり、複数のファイルを追跡するために使用することはできず、非線形履歴(non-linear
-        history)ではうまく機能しません。
+        <code>true</code> の場合、 <code>git log</code> は、単一の&lt;path&gt;が指定されたときに <code>--follow</code> オプションが使用されたかのように機能します。
+        これには <code>--follow</code> と同じ制限があります。つまり、複数のファイルを追跡するために使用することはできず、非線形履歴ではうまく機能しません。
+</p>
+</dd>
+<dt class="hdlist1">
+log.graphColors
+</dt>
+<dd>
+<p>
+        <code>git log --graph</code> で履歴線(history lines)を描画するために使用できる、コンマで区切られた色のリスト。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4721,8 +4887,9 @@ log.showRoot
 </dt>
 <dd>
 <p>
-        falseの場合、 <code>git log</code> および関連するコマンドは最初のコミットを大きな作成イベント(big creation
-        event)として扱いません。 <code>git log -p</code> 出力のルートコミットは、差分を添付せずに表示されます。デフォルトは true です。
+        trueの場合、最初のコミットは大きな作成イベントとして表示されます。 これは、空のツリーに対するdiffに相当します。
+        <a href="git-log.html">git-log(1)</a> や <a href="git-whatchanged.html">git-whatchanged(1)</a>
+        などのツールは、通常はルートコミットを隠していますが、今後は表示されるようになります。 デフォルトでは True です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4730,15 +4897,40 @@ log.showSignature
 </dt>
 <dd>
 <p>
-        trueの場合、 <code>git log</code> および関連するコマンドは <code>--show-signature</code> オプションが渡されたかのように動作します。
+        trueの場合、 <a href="git-log.html">git-log(1)</a> と <a href="git-show.html">git-show(1)</a> と
+        <a href="git-whatchanged.html">git-whatchanged(1)</a> に <code>--show-signature</code> を想定させます。
 </p>
 </dd>
 <dt class="hdlist1">
-mailmap.*
+log.mailmap
 </dt>
 <dd>
 <p>
-        <a href="git-shortlog.html">git-shortlog(1)</a> 参照。
+        trueの場合、 <a href="git-log.html">git-log(1)</a> と <a href="git-show.html">git-show(1)</a> と
+        <a href="git-whatchanged.html">git-whatchanged(1)</a> で <code>--use-mailmap</code> を想定させ、それ以外の場合は
+        <code>--no-use-mailmap</code> を想定させます。 デフォルトではtrueです。
+</p>
+</dd>
+<dt class="hdlist1">
+notes.mergeStrategy
+</dt>
+<dd>
+<p>
+        ノートの競合を解決するときにデフォルトで選択するマージ戦略。 <code>manual</code> 、` ours`、 <code>theirs</code>、` union`
+        、<code>cat_sort_uniq</code> のいずれかである必要があります。 デフォルトは <code>manual</code> です。 各戦略の詳細については、
+        <a href="git-notes.html">git-notes(1)</a> の「NOTES MERGE STRATEGIES」セクションを参照してください。
+</p>
+<div class="paragraph"><p>This setting can be overridden by passing the <code>--strategy</code> option to
+<a href="git-notes.html">git-notes(1)</a>.</p></div>
+</dd>
+<dt class="hdlist1">
+notes.&lt;name&gt;.mergeStrategy
+</dt>
+<dd>
+<p>
+        <code>refs/notes/&lt;name&gt;</code> にノートをマージするときに、どのマージ戦略を選択するか。 これは、より一般的な
+        <code>notes.mergeStrategy</code> をオーバーライドします。 利用可能な戦略の詳細については、 <a href="git-notes.html">git-notes(1)</a>
+        の「NOTES MERGE STRATEGIES」セクションを参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4746,12 +4938,57 @@ notes.displayRef
 </dt>
 <dd>
 <p>
-        `core.notesRef`または GIT_NOTES_REF
-        によって設定されたデフォルトに加えて、コマンドのlogファミリーでコミットメッセージを表示するときにメモを読み取るためのrefs。<a href="git-notes.html">git-notes(1)</a>を参照してください。
+        Which ref (or refs, if a glob or specified more than once), in addition to
+        the default set by <code>core.notesRef</code> or <code>GIT_NOTES_REF</code>, to read notes from
+        when showing commit messages with the <em>git log</em> family of commands.
 </p>
-<div class="paragraph"><p>省略されていないref名またはグロブ(glob)である可能性があり、複数回指定される可能性があります。存在しないrefsに対しては警告が発行されますが、どのrefsとも一致しないグロブ(glob)は黙って無視されます。</p></div>
-<div class="paragraph"><p>この設定は、<code>--no-notes</code> オプションで無効にしたり、 GIT_NOTES_DISPLAY_REF 環境変数で上書きしたり、
-<code>--notes=&lt;ref&gt;</code> オプションで上書きしたりできます。</p></div>
+<div class="paragraph"><p>この設定は、 <code>GIT_NOTES_DISPLAY_REF</code>
+環境変数でオーバーライドでき、環境変数はコロンで区切られたrefまたはグロブ(glob)のリストである必要があります。</p></div>
+<div class="paragraph"><p>A warning will be issued for refs that do not exist, but a glob that does
+not match any refs is silently ignored.</p></div>
+<div class="paragraph"><p>This setting can be disabled by the <code>--no-notes</code> option to the <em>git log</em>
+family of commands, or by the <code>--notes=&lt;ref&gt;</code> option accepted by those
+commands.</p></div>
+<div class="paragraph"><p><code>core.notesRef</code>
+の有効な値(GIT_NOTES_REFによってオーバーライドされる可能性があります)も、表示されるrefのリストに暗黙的に追加されます。</p></div>
+</dd>
+<dt class="hdlist1">
+notes.rewrite.&lt;command&gt;
+</dt>
+<dd>
+<p>
+        When rewriting commits with &lt;command&gt; (currently <code>amend</code> or <code>rebase</code>), if
+        this variable is <code>false</code>, git will not copy notes from the original to the
+        rewritten commit.  Defaults to <code>true</code>.  See also "<code>notes.rewriteRef</code>" below.
+</p>
+<div class="paragraph"><p>この設定は、 <code>GIT_NOTES_REWRITE_REF</code>
+環境変数でオーバーライドでき、環境変数はコロンで区切られたrefまたはグロブ(glob)のリストである必要があります。</p></div>
+</dd>
+<dt class="hdlist1">
+notes.rewriteMode
+</dt>
+<dd>
+<p>
+        書き換え時にノートをコピーする場合(<code>notes.rewrite.&lt;command&gt;</code>
+        オプション参照)、ターゲットコミットにすでにノートがある場合の対処方法を決定します。 <code>overwrite</code> 、 <code>concatenate</code> 、
+        <code>cat_sort_uniq</code> 、 <code>ignore</code> のいずれかである必要があります。 デフォルトは <code>concatenate</code> です。
+</p>
+<div class="paragraph"><p>この設定は、 <code>GIT_NOTES_REWRITE_MODE</code> 環境変数でオーバーライドできます。</p></div>
+</dd>
+<dt class="hdlist1">
+notes.rewriteRef
+</dt>
+<dd>
+<p>
+        When copying notes during a rewrite, specifies the (fully qualified) ref
+        whose notes should be copied.  May be a glob, in which case notes in all
+        matching refs will be copied.  You may also specify this configuration
+        several times.
+</p>
+<div class="paragraph"><p>デフォルト値はありません。 ノートの書き換えを有効にするには、この変数を構成する必要があります。
+デフォルトのコミットノートの書き換えを有効にするには、これを <code>refs/notes/commits</code> に設定します。</p></div>
+<div class="paragraph"><p>Can be overridden with the <code>GIT_NOTES_REWRITE_REF</code> environment variable.
+See <code>notes.rewrite.&lt;command&gt;</code> above for a further description of its format.</p></div>
 </dd>
 </dl></div>
 </div>
@@ -4767,7 +5004,7 @@ notes.displayRef
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-06-11 05:10:24 JST
+ 2022-09-25 22:03:34 JST
 </div>
 </div>
 </body>

@@ -749,14 +749,14 @@ git-clone(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git clone</em> [--template=&lt;template_directory&gt;]
+<pre class="content"><em>git clone</em> [--template=&lt;template-directory&gt;]
           [-l] [-s] [--no-hardlinks] [-q] [-n] [--bare] [--mirror]
           [-o &lt;name&gt;] [-b &lt;name&gt;] [-u &lt;upload-pack&gt;] [--reference &lt;repository&gt;]
-          [--dissociate] [--separate-git-dir &lt;git dir&gt;]
+          [--dissociate] [--separate-git-dir &lt;git-dir&gt;]
           [--depth &lt;depth&gt;] [--[no-]single-branch] [--no-tags]
           [--recurse-submodules[=&lt;pathspec&gt;]] [--[no-]shallow-submodules]
           [--[no-]remote-submodules] [--jobs &lt;n&gt;] [--sparse] [--[no-]reject-shallow]
-          [--filter=&lt;filter&gt;] [--] &lt;repository&gt;
+          [--filter=&lt;filter&gt; [--also-filter-submodules]] [--] &lt;repository&gt;
           [&lt;directory&gt;]</pre>
 <div class="attribution">
 </div></div>
@@ -949,8 +949,9 @@ branch --remotes</code>
 </dt>
 <dd>
 <p>
-        (sparse:まばらなの意)作業ディレクトリがリポジトリのルートにあるファイルのみで開始するように、sparse-checkoutファイルを初期化します。
-        sparse-checkoutファイルは、必要に応じて作業ディレクトリを拡張するように変更できます。
+        Employ a sparse-checkout, with only files in the toplevel directory
+        initially being present.  The <a href="git-sparse-checkout.html">git-sparse-checkout(1)</a> command can be
+        used to grow the working directory as needed.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -964,6 +965,16 @@ branch --remotes</code>
         <code>--filter=blob:none</code> は、Gitで必要になるまで、すべてのブロブ(ファイルの内容)を除外します。 また、
         <code>--filter=blob:limit=&lt;size&gt;</code> は、少なくとも <code>&lt;size&gt;</code> のサイズのすべてのブロブを除外します。
         フィルタ仕様の詳細については、 <a href="git-rev-list.html">git-rev-list(1)</a> の <code>--filter</code> オプションを参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--also-filter-submodules</code>
+</dt>
+<dd>
+<p>
+        Also apply the partial clone filter to any submodules in the repository.
+        Requires <code>--filter</code> and <code>--recurse-submodules</code>. This can be turned on by
+        default by setting the <code>clone.filterSubmodules</code> config option.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1014,7 +1025,7 @@ branch --remotes</code>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--template=&lt;template_directory&gt;</code>
+<code>--template=&lt;template-directory&gt;</code>
 </dt>
 <dd>
 <p>
@@ -1124,7 +1135,7 @@ branch --remotes</code>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--separate-git-dir=&lt;git dir&gt;</code>
+<code>--separate-git-dir=&lt;git-dir&gt;</code>
 </dt>
 <dd>
 <p>
@@ -1161,6 +1172,17 @@ branch --remotes</code>
         ディレクトリが明示的に指定されていない場合は、ソースリポジトリの「人間味のある」(humanish)部分が使用されます(<code>/path/to/repo.git</code>
         の場合は <code>repo</code> 、 <code>host.xz:foo/.git</code> の場合は <code>foo</code> )。
         既存のディレクトリへのクローン作成は、ディレクトリが空の場合にのみ許可されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--bundle-uri=&lt;uri&gt;</code>
+</dt>
+<dd>
+<p>
+        Before fetching from the remote, fetch a bundle from the given <code>&lt;uri&gt;</code> and
+        unbundle the data into the local repository. The refs in the bundle will be
+        stored under the hidden <code>refs/bundle/*</code> namespace. This option is
+        incompatible with <code>--depth</code>, <code>--shallow-since</code>, and <code>--shallow-exclude</code>.
 </p>
 </dd>
 </dl></div>
@@ -1334,6 +1356,59 @@ $ cd my-linux</code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+init.templateDir
+</dt>
+<dd>
+<p>
+        テンプレートのコピー元のディレクトリを指定します。 (<a href="git-init.html">git-init(1)</a> の「TEMPLATE
+        DIRECTORY」セクションを参照してください。)
+</p>
+</dd>
+<dt class="hdlist1">
+init.defaultBranch
+</dt>
+<dd>
+<p>
+        デフォルトのブランチ名を上書きできます。例えば、新しいリポジトリを初期化するとき。
+</p>
+</dd>
+<dt class="hdlist1">
+clone.defaultRemoteName
+</dt>
+<dd>
+<p>
+        リポジトリのクローンを作成するときに作成するリモートの名前。 デフォルトは <code>origin</code> で、 <code>--origin</code> コマンドラインオプションを
+        <a href="git-clone.html">git-clone(1)</a> に渡すことでオーバーライドできます。
+</p>
+</dd>
+<dt class="hdlist1">
+clone.rejectShallow
+</dt>
+<dd>
+<p>
+        リポジトリが浅い(shallow)場合は、リポジトリの複製(clone)を拒否します。コマンドラインでオプション <code>--reject-shallow</code>
+        を渡すことでオーバーライドできます。  <a href="git-clone.html">git-clone(1)</a> を参照してください
+</p>
+</dd>
+<dt class="hdlist1">
+clone.filterSubmodules
+</dt>
+<dd>
+<p>
+        部分(partial)クローン・フィルタが提供され(<a href="git-rev-list.html">git-rev-list(1)</a> の <code>--filter</code> を参照)、かつ、
+        <code>--recurse-submodules</code> が使用されている場合は、フィルタをサブモジュールにも適用します。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_git">GIT</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
@@ -1344,7 +1419,7 @@ $ cd my-linux</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-05-18 08:24:00 JST
+ 2022-09-25 22:03:21 JST
 </div>
 </div>
 </body>

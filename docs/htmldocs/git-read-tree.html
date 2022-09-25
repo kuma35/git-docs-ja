@@ -750,8 +750,7 @@ git-read-tree(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git read-tree</em> [[-m [--trivial] [--aggressive] | --reset | --prefix=&lt;prefix&gt;]
-                [-u [--exclude-per-directory=&lt;gitignore&gt;] | -i]]
-                [--index-output=&lt;file&gt;] [--no-sparse-checkout]
+                [-u | -i]] [--index-output=&lt;file&gt;] [--no-sparse-checkout]
                 (--empty | &lt;tree-ish1&gt; [&lt;tree-ish2&gt; [&lt;tree-ish3&gt;]])</pre>
 <div class="attribution">
 </div></div>
@@ -786,8 +785,9 @@ git-read-tree(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>-m</code> と同じですが、マージされていないエントリが失敗する代わりに破棄される点が異なります。 <code>-u</code>
-        と一緒に使用すると、作業ツリーの変更が失われる原因となる更新によって操作が中止されることはありません。
+        Same as -m, except that unmerged entries are discarded instead of failing.
+        When used with <code>-u</code>, updates leading to loss of working tree changes or
+        untracked files or directories will not abort the operation.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -868,18 +868,6 @@ git-read-tree(1) Manual Page
 <p>
         現在のインデックスの内容を保持し、 <code>&lt;prefix&gt;</code>
         のディレクトリの下にある名前付きtree-ishの内容を読み取ります。このコマンドは、元のインデックスファイルにすでに存在しているエントリの上書きを拒否します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--exclude-per-directory=&lt;gitignore&gt;</code>
-</dt>
-<dd>
-<p>
-        <code>-u</code> および <code>-m</code>
-        オプションを指定してコマンドを実行すると、現在のブランチで追跡されていないパスをマージ結果で上書きする必要がある場合があります。コマンドは通常、そのようなパスを失うことを避けるためにマージを続行することを拒否します。ただし、この安全弁が邪魔になることがあります。たとえば、他のブランチがブランチで生成されたファイルであったファイルを追加し、
-        <code>make</code> を実行した後、 <code>make clean</code>
-        を実行して生成されたファイルを削除する前に、そのブランチに切り替えようとすると安全弁がトリガーされることがよくあります。このオプションは、ディレクトリごとの除外ファイル(通常は
-        <code>.gitignore</code>)を読み取るようにコマンドに指示し、追跡されていないが明示的に無視されたファイルを上書きできるようにします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1143,16 +1131,24 @@ $ echo "Merge with Linus" | \
 <div class="sect1">
 <h2 id="_sparse_checkout">SPARSE CHECKOUT</h2>
 <div class="sectionbody">
+<div class="paragraph"><p>Note: The skip-worktree capabilities in <a href="git-update-index.html">git-update-index(1)</a> and
+<code>read-tree</code> predated the introduction of <a href="git-sparse-checkout.html">git-sparse-checkout(1)</a>.
+Users are encouraged to use the <code>sparse-checkout</code> command in preference to
+these plumbing commands for sparse-checkout/skip-worktree related needs.
+However, the information below might be useful to users trying to understand
+the pattern style used in non-cone mode of the <code>sparse-checkout</code> command.</p></div>
 <div class="paragraph"><p>「スパースチェックアウト」(Sparse checkout)を使用すると、作業ディレクトリにまばらに(sparsely)データを入力できます。
 skip-worktreeビット(<a href="git-update-index.html">git-update-index(1)</a>
 参照)を使用して、作業ディレクトリ内のファイルを確認する価値があるかどうかをGitに通知します。</p></div>
-<div class="paragraph"><p><code>git read-tree</code> およびその他のマージベースコマンド(<code>git merge</code> 、 <code>git checkout</code>
-…)は、skip-worktreeビットマップと作業ディレクトリの更新を維持するのに役立ちます。<code>$GIT_DIR/info/sparse-checkout</code>
-は、skip-worktree参照ビットマップを定義するために使用されます。 <code>git read-tree</code>
-が作業ディレクトリを更新する必要がある場合、このファイルに基づいてインデックスのskip-worktreeビットをリセットします。これは、
-<code>.gitignore</code> ファイルと同じ構文を使用します。
-エントリがこのファイルのパターンとマッチする場合、skip-worktreeはそのエントリに設定されません。
-それ以外の場合は、skip-worktreeが設定されます。</p></div>
+<div class="paragraph"><p><em>git read-tree</em> and other merge-based commands (<em>git merge</em>, <em>git
+checkout</em>&#8230;) can help maintaining the skip-worktree bitmap and working
+directory update. <code>$GIT_DIR/info/sparse-checkout</code> is used to define the
+skip-worktree reference bitmap. When <em>git read-tree</em> needs to update the
+working directory, it resets the skip-worktree bit in the index based on
+this file, which uses the same syntax as .gitignore files.  If an entry
+matches a pattern in this file, or the entry corresponds to a file present
+in the working tree, then skip-worktree will not be set on that
+entry. Otherwise, skip-worktree will be set.</p></div>
 <div class="paragraph"><p>次に、新しいskip-worktree値を前の値と比較します。
 skip-worktreeがsetからunsetに変わると、対応するファイルが追加されます。
 unsetからsetに変わると、そのファイルは削除されます。</p></div>
@@ -1179,8 +1175,8 @@ skip-worktreeビットはまだインデックスにあり、作業ディレク�
 <div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><a href="git-write-tree.html">git-write-tree(1)</a>; <a href="git-ls-files.html">git-ls-files(1)</a>; <a href="gitignore.html">gitignore(5)</a>;
-<a href="git-sparse-checkout.html">git-sparse-checkout(1)</a>;</p></div>
+<div class="paragraph"><p><a href="git-write-tree.html">git-write-tree(1)</a>, <a href="git-ls-files.html">git-ls-files(1)</a>, <a href="gitignore.html">gitignore(5)</a>,
+<a href="git-sparse-checkout.html">git-sparse-checkout(1)</a></p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1194,7 +1190,7 @@ skip-worktreeビットはまだインデックスにあり、作業ディレク�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-07-14 14:13:56 JST
+ 2022-09-25 22:03:37 JST
 </div>
 </div>
 </body>

@@ -749,7 +749,9 @@ git-maintenance(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git maintenance</em> run [&lt;options&gt;]</pre>
+<pre class="content"><em>git maintenance</em> run [&lt;options&gt;]
+<em>git maintenance</em> start [--scheduler=&lt;scheduler&gt;]
+<em>git maintenance</em> (stop|register|unregister)</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -767,6 +769,35 @@ experience)を実現するために最適化されています。これらのコ
 <h2 id="_subcommands">SUBCOMMANDS</h2>
 <div class="sectionbody">
 <div class="dlist"><dl>
+<dt class="hdlist1">
+run
+</dt>
+<dd>
+<p>
+        1つ以上のメンテナンスタスクを実行します。 1つ以上の <code>--task</code> オプションが指定されている場合、それらのタスクは指定した順序で実行されます。
+        それ以外の場合、タスクは、どの <code>maintenance.&lt;task&gt;.enabled</code> 構成オプションがtrueであるかによって決定されます。
+        デフォルトでは、 <code>maintenance.gc.enabled</code> のみがtrueです。
+</p>
+</dd>
+<dt class="hdlist1">
+start
+</dt>
+<dd>
+<p>
+        現在のリポジトリでメンテナンスの実行を開始します。 これにより、 <code>register</code>
+        サブコマンドと同一構成の更新が実行され、バックグラウンドスケジューラが更新されて、1時間ごとに <code>git maintenance run
+        --scheduled</code> が実行されます。
+</p>
+</dd>
+<dt class="hdlist1">
+stop
+</dt>
+<dd>
+<p>
+        バックグラウンドメンテナンススケジュールを停止します。
+        バックグラウンドメンテナンスが後で再開された場合に備えて、現在のリポジトリはメンテナンスされたリポジトリのリストから削除されません。
+</p>
+</dd>
 <dt class="hdlist1">
 register
 </dt>
@@ -812,35 +843,6 @@ register
 <div class="paragraph"><p><code>git maintenance register</code> は、現在のリポジトリで <code>maintenance.auto = false</code>
 を設定することにより、フォアグラウンドメンテナンスも無効にします。 この設定設定は、 <code>git maintenance unregister</code>
 コマンドの後も残ります。</p></div>
-</dd>
-<dt class="hdlist1">
-run
-</dt>
-<dd>
-<p>
-        1つ以上のメンテナンスタスクを実行します。 1つ以上の <code>--task</code> オプションが指定されている場合、それらのタスクは指定した順序で実行されます。
-        それ以外の場合、タスクは、どの <code>maintenance.&lt;task&gt;.enabled</code> 構成オプションがtrueであるかによって決定されます。
-        デフォルトでは、 <code>maintenance.gc.enabled</code> のみがtrueです。
-</p>
-</dd>
-<dt class="hdlist1">
-start
-</dt>
-<dd>
-<p>
-        現在のリポジトリでメンテナンスの実行を開始します。 これにより、 <code>register</code>
-        サブコマンドと同一構成の更新が実行され、バックグラウンドスケジューラが更新されて、1時間ごとに <code>git maintenance run
-        --scheduled</code> が実行されます。
-</p>
-</dd>
-<dt class="hdlist1">
-stop
-</dt>
-<dd>
-<p>
-        バックグラウンドメンテナンススケジュールを停止します。
-        バックグラウンドメンテナンスが後で再開された場合に備えて、現在のリポジトリはメンテナンスされたリポジトリのリストから削除されません。
-</p>
 </dd>
 <dt class="hdlist1">
 unregister
@@ -1148,6 +1150,104 @@ not」(ユーザーがログインしているかどうかに関係なく実行�
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+maintenance.auto
+</dt>
+<dd>
+<p>
+        このブール構成オプションは、一部のコマンドが通常の作業を行った後に <code>git maintenance run --auto</code>
+        を実行するかどうかを制御します。 デフォルトはtrueです。
+</p>
+</dd>
+<dt class="hdlist1">
+maintenance.strategy
+</dt>
+<dd>
+<p>
+        この文字列設定オプションは、バックグラウンドメンテナンスのいくつかの推奨スケジュールの1つを指定する方法を提供します。 これは、
+        <code>--task=&lt;task&gt;</code> 引数が指定されていない場合、 <code>git maintenance run --schedule=X</code>
+        コマンド中に実行されるタスクにのみ影響します。 さらに、 <code>maintenance.&lt;task&gt;.schedule</code> 構成値が設定されている場合、
+        <code>maintenance.strategy</code> によって提供される値の代わりにその値が使用されます。 戦略として指定可能な文字列は以下のとおりです:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>none</code>: このデフォルト設定は、どのスケジュールでもタスクが実行されないことを意味します。
+</p>
+</li>
+<li>
+<p>
+<code>incremental</code>: この設定は、データを削除しない小さなメンテナンスアクティビティの実行に最適化されています。 これは <code>gc</code>
+  タスクをスケジュールしませんが、 <code>prefetch</code> および <code>commit-graph</code> タスクを1時間ごとに実行し、
+  <code>loose-objects</code> および <code>incremental-repack</code> タスクを毎日実行し、 <code>pack-refs</code> タスクを毎週実行します。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+maintenance.&lt;task&gt;.enabled
+</dt>
+<dd>
+<p>
+        このブール構成オプションは、 <code>git maintenance run</code> に <code>--task</code> オプションが指定されていない場合に、 <code>&lt;task&gt;</code>
+        という名前のメンテナンスタスクを実行するかどうかを制御します。 <code>--task</code> オプションが存在する場合、これらの構成値は無視されます。
+        デフォルトでは、 <code>maintenance.gc.enabled</code> のみがtrueです。
+</p>
+</dd>
+<dt class="hdlist1">
+maintenance.&lt;task&gt;.schedule
+</dt>
+<dd>
+<p>
+        この設定オプションは、指定された <code>&lt;task&gt;</code> が <code>git maintenance run --schedule=&lt;frequency&gt;</code>
+        コマンド中に実行されるかどうかを制御します。 値は、 "hourly", "daily", "weekly" のいずれかである必要があります。
+</p>
+</dd>
+<dt class="hdlist1">
+maintenance.commit-graph.auto
+</dt>
+<dd>
+<p>
+        この整数値構成オプションは、 <code>git maintenance run --auto</code> の一部として <code>commit-graph</code>
+        タスクを実行する頻度を制御します。 ゼロの場合、 <code>commit-graph</code> タスクは`--auto`
+        オプションで実行されません。負の値を指定すると、タスクは毎回実行されます。
+        それ以外の場合、正の値は、commit-graphファイルにない到達可能なコミットの数が <code>maintenance.commit-graph.auto</code>
+        の値以上であるときにコマンドを実行する必要があることを意味します。デフォルト値は100です。
+</p>
+</dd>
+<dt class="hdlist1">
+maintenance.loose-objects.auto
+</dt>
+<dd>
+<p>
+        この整数値構成オプションは、 <code>git maintenance run --auto</code> の一部として <code>loose-objects</code>
+        タスクを実行する頻度を制御します。 ゼロの場合、 <code>loose-objects</code> タスクは <code>--auto</code> オプションでは実行されません。
+        負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、緩いオブジェクト(loose objects)の数が
+        <code>maintenance.loose-objects.auto</code> の値以上であるときにコマンドを実行する必要があることを意味します。
+        デフォルト値は100です。
+</p>
+</dd>
+<dt class="hdlist1">
+maintenance.incremental-repack.auto
+</dt>
+<dd>
+<p>
+        この整数値構成オプションは、 <code>git maintenance run --auto</code> の一部として <code>incremental-repack</code>
+        タスクを実行する頻度を制御します。 ゼロの場合、 <code>incremental-repack</code> タスクは <code>--auto</code> オプションでは実行されません。
+        負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、multi-pack-indexにないpack-fileの数が
+        <code>maintenance.incremental-repack.auto</code> の値以上であるときにコマンドを実行する必要があることを意味します。
+        デフォルト値は10です。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_git">GIT</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
@@ -1158,7 +1258,7 @@ not」(ユーザーがログインしているかどうかに関係なく実行�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-04-26 19:58:43 JST
+ 2022-09-25 22:03:20 JST
 </div>
 </div>
 </body>

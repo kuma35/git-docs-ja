@@ -883,8 +883,9 @@ remotes.&lt;group&gt; エントリがある場合は、一度に複数のリポ�
 <p>
         サーバーから何もフェッチせず、代わりに、サーバーと共通している、提供された <code>--negotiation-tip=*</code> 引数の祖先を出力します。
 </p>
-<div class="paragraph"><p>内部的には、これは  <code>push.negotiate</code> オプションを実装するために使用されます。 <a href="git-config.html">git-config(1)</a>
-を参照してください。</p></div>
+<div class="paragraph"><p>This is incompatible with <code>--recurse-submodules=[yes|on-demand]</code>.
+Internally this is used to implement the <code>push.negotiate</code> option, see
+<a href="git-config.html">git-config(1)</a>.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--dry-run</code>
@@ -1012,6 +1013,19 @@ remotes.&lt;group&gt; エントリがある場合は、一度に複数のリポ�
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--refetch</code>
+</dt>
+<dd>
+<p>
+        Instead of negotiating with the server to avoid transferring commits and
+        associated objects that are already present locally, this option fetches all
+        objects as a fresh clone would. Use this to reapply a partial clone filter
+        from configuration or using <code>--filter=</code> when the filter definition has
+        changed. Automatic post-fetch maintenance will perform object database pack
+        consolidation to remove any duplicate objects.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>--refmap=&lt;refspec&gt;</code>
 </dt>
 <dd>
@@ -1042,13 +1056,23 @@ remotes.&lt;group&gt; エントリがある場合は、一度に複数のリポ�
 </dt>
 <dd>
 <p>
-        このオプションは、入力されたサブモジュールの新しいコミットもフェッチするかどうか、およびどのような条件でフェッチするかを制御します。
-        これはブールオプションとして使用でき、 <code>no</code> に設定すると再帰を完全に無効にしたり、 <code>yes</code>
-        に設定するとすべての入力済みサブモジュールに無条件に再帰します。 <code>yes</code> は、このオプションを値なしで使用した場合のデフォルトです。
-        スーパープロジェクトが、ローカルサブモジュールクローンにまだ存在しないコミットへのサブモジュールの参照を更新するコミットを取得する場合にのみ、
-        <code>on-demand</code> を使用して、入力されたサブモジュールに再帰します。 デフォルトでは、 <code>fetch.recurseSubmodules</code>
-        が設定されていない限り、 <code>on-demand</code> が使用されます(<a href="git-config.html">git-config(1)</a> 参照)。
+        This option controls if and under what conditions new commits of submodules
+        should be fetched too. When recursing through submodules, <code>git fetch</code> always
+        attempts to fetch "changed" submodules, that is, a submodule that has
+        commits that are referenced by a newly fetched superproject commit but are
+        missing in the local submodule clone. A changed submodule can be fetched as
+        long as it is present locally e.g.  in <code>$GIT_DIR/modules/</code> (see
+        <a href="gitsubmodules.html">gitsubmodules(7)</a>); if the upstream adds a new submodule, that
+        submodule cannot be fetched until it is cloned e.g. by <code>git submodule
+        update</code>.
 </p>
+<div class="paragraph"><p>When set to <em>on-demand</em>, only changed submodules are fetched. When set to
+<em>yes</em>, all populated submodules are fetched and submodules that are both
+unpopulated and changed are fetched. When set to <em>no</em>, submodules are never
+fetched.</p></div>
+<div class="paragraph"><p>When unspecified, this uses the value of <code>fetch.recurseSubmodules</code> if it is
+set (see <a href="git-config.html">git-config(1)</a>), defaulting to <em>on-demand</em> if unset.  When
+this option is used without any value, it defaults to <em>yes</em>.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>-j</code>
@@ -1443,12 +1467,13 @@ Git構成ファイル(configuration file)内のリモート(remote)として、 
 <div class="listingblock">
 <div class="content">
 <pre><code>        [remote "&lt;name&gt;"]
-                url = &lt;url&gt;
+                url = &lt;URL&gt;
                 pushurl = &lt;pushurl&gt;
                 push = &lt;refspec&gt;
                 fetch = &lt;refspec&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p><code>&lt;pushurl&gt;</code> はプッシュにのみ使用されます。 これはオプションであり、デフォルトは <code>&lt;url&gt;</code> です。</p></div>
+<div class="paragraph"><p>The <code>&lt;pushurl&gt;</code> is used for pushes only. It is optional and defaults to
+<code>&lt;URL&gt;</code>.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_named_file_in_code_git_dir_remotes_code">Named file in <code>$GIT_DIR/remotes</code></h3>
@@ -1469,9 +1494,9 @@ Git構成ファイル(configuration file)内のリモート(remote)として、 
 このファイルの形式は以下のとおりです:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>        &lt;url&gt;#&lt;head&gt;</code></pre>
+<pre><code>        &lt;URL&gt;#&lt;head&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p><code>&lt;url&gt;</code> は必須です。 <code>#&lt;head&gt;</code> はオプションです。</p></div>
+<div class="paragraph"><p><code>&lt;URL&gt;</code> is required; <code>#&lt;head&gt;</code> is optional.</p></div>
 <div class="paragraph"><p>コマンドラインで指定しない場合、操作に応じて、gitは以下のrefspecのいずれかを使用します。 <code>&lt;branch&gt;</code> は
 <code>$GIT_DIR/branchs</code> 内のこのファイルの名前であり、 <code>&lt;head&gt;`はデフォルトで `master</code> になります。</p></div>
 <div class="paragraph"><p>git fetch は以下を使用します:</p></div>
@@ -1774,11 +1799,156 @@ $ git log FETCH_HEAD</code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+fetch.recurseSubmodules
+</dt>
+<dd>
+<p>
+        このオプションは、 <code>git fetch</code>(および <code>git pull</code>
+        の基になるフェッチ)が入力されたサブモジュールに再帰的にフェッチするかどうかを制御します。 このオプションは、ブール値または <code>on-demand</code>
+        のいずれかに設定できます。
+        ブール値に設定すると、フェッチとプルの動作が変更され、trueに設定されている場合は無条件にサブモジュールに再帰し、falseに設定されている場合はまったく再帰しません。
+        <code>on-demand</code>
+        に設定すると、フェッチとプルは、スーパープロジェクトがサブモジュールの参照を更新するコミットを取得したときにのみ、入力されたサブモジュールに再帰します。
+        デフォルトは <code>on-demand</code> 、または <code>submodule.recurse</code> が設定されている場合はその値です。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.fsckObjects
+</dt>
+<dd>
+<p>
+        trueに設定されている場合、git-fetch-packはフェッチされたすべてのオブジェクトをチェックします。 チェックされる内容については、
+        <code>transfer.fsckObjects</code> を参照してください。 デフォルトはfalseです。 設定されていない場合は、代わりに
+        <code>transfer.fsckObjects</code> の値が使用されます。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.fsck.&lt;msg-id&gt;
+</dt>
+<dd>
+<p>
+        <code>fsck.&lt;msg-id&gt;</code> のように機能しますが、 <a href="git-fsck.html">git-fsck(1)</a> の代わりに
+        <a href="git-fetch-pack.html">git-fetch-pack(1)</a> によって使用されます。 詳細については、 <code>fsck.&lt;msg-id&gt;</code>
+        のドキュメントを参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.fsck.skipList
+</dt>
+<dd>
+<p>
+        <code>fsck.skipList</code> のように機能しますが、 <a href="git-fsck.html">git-fsck(1)</a> の代わりに
+        <a href="git-fetch-pack.html">git-fetch-pack(1)</a> によって使用されます。 詳細については、 <code>fsck.skipList</code>
+        のドキュメントを参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.unpackLimit
+</dt>
+<dd>
+<p>
+        Gitネイティブ転送を介してフェッチされるオブジェクトの数がこの制限を下回る場合、オブジェクトは緩いオブジェクト(loose
+        object)ファイルに解凍されます。
+        ただし、受信したオブジェクトの数がこの制限以上の場合、受信したパックは、欠落しているデルタベースを追加した後、パックとして保存されます。
+        プッシュからパックを保存すると、特に低速のファイルシステムで、プッシュ操作をより速く完了することができます。 これが設定されていない場合は、代わりに
+        <code>transfer.unpackLimit</code> の値が使用されます。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.prune
+</dt>
+<dd>
+<p>
+        trueの場合、fetchはコマンドラインで <code>--prune</code> オプションが指定されたかのように自動的に動作します。
+        <code>remote.&lt;name&gt;.prune</code> および <a href="git-fetch.html">git-fetch(1)</a> の「PRUNING」セクションも参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.pruneTags
+</dt>
+<dd>
+<p>
+        trueの場合、フェッチは、まだ設定されていない場合、刈り込み(pruning)時に <code>refs/tags/*:refs/tags/*</code>
+        refspecが提供されたかのように自動的に振る舞います。 これにより、このオプションと <code>fetch.prune</code>
+        の両方を設定して、アップストリーム参照への 1=1 マッピングを維持できます。 <code>remote.&lt;name&gt;.pruneTags</code> および
+        <a href="git-fetch.html">git-fetch(1)</a> の「PRUNING」セクションも参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.output
+</dt>
+<dd>
+<p>
+        ref updateステータスの出力方法を制御します。 有効な値は <code>full</code> と <code>compact</code> です。 デフォルト値は <code>full</code> です。
+        詳細については、 <a href="git-fetch.html">git-fetch(1)</a> の「OUTPUT」セクションを参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.negotiationAlgorithm
+</dt>
+<dd>
+<p>
+        サーバーによって送信されるパックファイルの内容をネゴシエートするときに、ローカルリポジトリ内のコミットに関する情報がどのように送信されるかを制御します。
+        <code>consecutive</code> に設定すると、連続したコミットをそれぞれチェックするアルゴリズムを使用します。  <code>skipping</code>
+        に設定すると、収束を高速化するためにコミットをスキップするアルゴリズムが使用されますが、必要以上の大きさのパックファイルが生成される可能性があります。
+        または、 <code>noop</code>
+        に設定して情報をまったく送信しないようにします。これにより、ほぼ確実に必要以上に大きなパックファイルが生成されますが、ネゴシエーション・ステップはスキップされます。
+        <code>default</code> に設定すると、それ以前に行われた設定をオーバーライドしてデフォルトの振る舞いをします。 デフォルトは通常 <code>consecutive</code>
+        ですが、 <code>feature.experimental</code> が true の場合、デフォルトは <code>skipping</code> です。 値が不明な場合、 <code>git
+        fetch</code> でエラーが発生します。
+</p>
+<div class="paragraph"><p><a href="git-fetch.html">git-fetch(1)</a> の <code>--negotiate-only</code> および <code>--negotiation-tip</code>
+オプションも参照してください。</p></div>
+</dd>
+<dt class="hdlist1">
+fetch.showForcedUpdates
+</dt>
+<dd>
+<p>
+        falseに設定すると、 <a href="git-fetch.html">git-fetch(1)</a> および <a href="git-pull.html">git-pull(1)</a> コマンドで
+        <code>--no-show-forced-updates</code> が有効になります。 デフォルトはtrueです。
+</p>
+</dd>
+<dt class="hdlist1">
+fetch.parallel
+</dt>
+<dd>
+<p>
+        一度に並行して実行されるフェッチ操作の最大数を指定します(サブモジュール、または、<a href="git-fetch.html">git-fetch(1)</a> の <code>--multiple</code>
+        オプションが有効な場合はリモート)。
+</p>
+<div class="paragraph"><p>値0は、適切なデフォルトを提供します。 設定されていない場合、デフォルトで1になります。</p></div>
+<div class="paragraph"><p>サブモジュールの場合、この設定は、 <code>submodule.fetchJobs</code> 構成設定を使用してオーバーライドできます。</p></div>
+</dd>
+<dt class="hdlist1">
+fetch.writeCommitGraph
+</dt>
+<dd>
+<p>
+        リモートからパックファイルをダウンロードするすべての <code>git fetch</code>
+        コマンドの後でcommit-graphを書き込むには、trueに設定します。 <code>--split</code>
+        オプションを使用すると、ほとんどの実行で、既存のcommit-graphファイルの上に非常に小さなcommit-graphファイルが作成されます。
+        場合によっては、これらのファイルがマージされ、書き込みに時間がかかることがあります。 更新されたcommit-graphファイルがあると、 <code>git
+        merge-base</code> や <code>git push -f</code> や <code>git log --graph</code>
+        などの多くのGitコマンドのパフォーマンス改善に役立ちます。 デフォルトはfalseです。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_bugs">BUGS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>--recurse-submodules</code> を使用すると、現在、すでにチェックアウトされているサブモジュールでのみ新しいコミットをフェッチできます。
-たとえば、アップストリームは、スーパープロジェクトのフェッチされたばかりのコミットに新しいサブモジュールを追加したとき、サブモジュール自体はフェッチできないため、後で再度フェッチを実行せずにそのサブモジュールをチェックアウトすることはできません。
-これは、将来のGitバージョンで修正される予定です。</p></div>
+<div class="paragraph"><p>Using --recurse-submodules can only fetch new commits in submodules that are
+present locally e.g. in <code>$GIT_DIR/modules/</code>. If the upstream adds a new
+submodule, that submodule cannot be fetched until it is cloned e.g. by <code>git
+submodule update</code>. This is expected to be fixed in a future Git version.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1798,7 +1968,7 @@ $ git log FETCH_HEAD</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-09-24 10:59:15 JST
+ 2022-09-25 22:03:23 JST
 </div>
 </div>
 </body>

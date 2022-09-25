@@ -750,7 +750,7 @@ git-add(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git add</em> [--verbose | -v] [--dry-run | -n] [--force | -f] [--interactive | -i] [--patch | -p]
-          [--edit | -e] [--[no-]all | --[no-]ignore-removal | [--update | -u]]
+          [--edit | -e] [--[no-]all | --[no-]ignore-removal | [--update | -u]] [--sparse]
           [--intent-to-add | -N] [--refresh] [--ignore-errors] [--ignore-missing] [--renormalize]
           [--chmod=(+|-)x] [--pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]]
           [--] [&lt;pathspec&gt;&#8230;]</pre>
@@ -826,6 +826,17 @@ Gitによって実行されたディレクトリ再帰またはファイル名�
 <dd>
 <p>
         これ以外の場合は無視されるファイルの追加を許可します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--sparse</code>
+</dt>
+<dd>
+<p>
+        Allow updating index entries outside of the sparse-checkout cone.  Normally,
+        <code>git add</code> refuses to update index entries whose paths do not fit within the
+        sparse-checkout cone, since those files might be removed from the working
+        tree without warning. See <a href="git-sparse-checkout.html">git-sparse-checkout(1)</a> for more details.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -970,10 +981,12 @@ files)すべてが更新されます(Gitの古いバージョンでは、更新�
 </dt>
 <dd>
 <p>
-        全ての追跡されたファイル(tracked
-        files)に「クリーン」(clean)プロセスを新たに適用して、それらをインデックスに強制的に再度追加します。 これは、誤った CRLF/LF
-        行末で追加されたファイルを修正するために、 <code>core.autocrlf</code> 構成または <code>text</code> 属性を変更した後に役立ちます。 このオプションは
-        <code>-u</code> の指定を含んでいます。
+        Apply the "clean" process freshly to all tracked files to forcibly add them
+        again to the index.  This is useful after changing <code>core.autocrlf</code>
+        configuration or the <code>text</code> attribute in order to correct files added with
+        wrong CRLF/LF line endings.  This option implies <code>-u</code>. Lone CR characters
+        are untouched, thus while a CRLF cleans to LF, a CRCRLF sequence is only
+        partially cleaned to CRLF.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1260,6 +1273,37 @@ new content
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+add.ignoreErrors
+</dt>
+<dt class="hdlist1">
+add.ignore-errors (非推奨)
+</dt>
+<dd>
+<p>
+        インデックスエラーのために一部のファイルを追加できない場合にファイルの追加を続行するように <code>git add</code> に指示します。
+        <a href="git-add.html">git-add(1)</a> の <code>--ignore-errors</code> オプションと同等です。 <code>add.ignore-errors</code>
+        は、構成変数の通常の命名規則に従わないため、非推奨になりました。
+</p>
+</dd>
+<dt class="hdlist1">
+add.interactive.useBuiltin
+</dt>
+<dd>
+<p>
+        組み込みバージョンではなく、 <a href="git-add.html">git-add(1)</a> の対話型バージョンの元の Perl 実装にフォールバックするには、<code>false</code>
+        に設定します。 デフォルトでは <code>true</code> です。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
 <div class="paragraph"><p><a href="git-status.html">git-status(1)</a> <a href="git-rm.html">git-rm(1)</a> <a href="git-reset.html">git-reset(1)</a>
@@ -1277,7 +1321,7 @@ new content
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-05-26 15:09:13 JST
+ 2022-09-25 22:03:34 JST
 </div>
 </div>
 </body>

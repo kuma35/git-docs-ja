@@ -749,7 +749,8 @@ git-send-email(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git send-email</em> [&lt;options&gt;] &lt;file|directory|rev-list options&gt;&#8230;
+<pre class="content"><em>git send-email</em> [&lt;options&gt;] &lt;file|directory&gt;&#8230;
+<em>git send-email</em> [&lt;options&gt;] &lt;format-patch options&gt;
 <em>git send-email</em> --dump-aliases</pre>
 <div class="attribution">
 </div></div>
@@ -758,10 +759,11 @@ git-send-email(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>コマンドラインで指定されたパッチを取得し、電子メールで送信します。
-パッチは、ファイルまたは、ディレクトリ(ディレクトリ内のすべてのファイルを送信します)または、リビジョンリストとして直接指定できます。
-リビジョンリストの場合、<a href="git-format-patch.html">git-format-patch(1)</a> によって受け入れられた任意の形式を <code>git send-email</code>
-に渡すことができます。</p></div>
+<div class="paragraph"><p>Takes the patches given on the command line and emails them out.  Patches
+can be specified as files, directories (which will send all files in the
+directory), or directly as a revision list.  In the last case, any format
+accepted by <a href="git-format-patch.html">git-format-patch(1)</a> can be passed to git send-email, as
+well as options understood by <a href="git-format-patch.html">git-format-patch(1)</a>.</p></div>
 <div class="paragraph"><p>電子メールのヘッダーは、コマンドラインオプションを使用して構成できます。
 コマンドラインで指定されていない場合、ReadLine対応のインターフェイスでユーザーが必要な情報を提供するためのプロンプトが表示されます。</p></div>
 <div class="paragraph"><p>パッチファイルに使用できる形式は2つあります:</p></div>
@@ -1427,14 +1429,72 @@ sendemail-validate フックが存在する場合はそれを呼び出します(
 <div class="sect1">
 <h2 id="_configuration">CONFIGURATION</h2>
 <div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
 <div class="dlist"><dl>
+<dt class="hdlist1">
+sendemail.identity
+</dt>
+<dd>
+<p>
+        構成ID。 指定すると、 <code>sendemail.&lt;identity&gt;</code> サブセクションの値が <code>sendemail</code> セクションの値よりも優先されます。
+        デフォルトのIDは、 `sendemail.identity`の値です。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.smtpEncryption
+</dt>
+<dd>
+<p>
+        説明については、 <a href="git-send-email.html">git-send-email(1)</a> を参照してください。 注意: この設定は <em>identity</em>
+        メカニズムの対象ではないことに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.smtpsslcertpath
+</dt>
+<dd>
+<p>
+        ca-certificatesへのパス(ディレクトリまたは単一ファイルのどちらか)。 証明書の検証を無効にするには、空の文字列に設定します。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.&lt;identity&gt;.*
+</dt>
+<dd>
+<p>
+        以下の  <code>sendemail.*</code> パラメータのID固有のバージョン。コマンドラインまたは <code>sendemail.identity</code>
+        のいずれかを使用して、このIDが選択された場合のパラメータよりも優先されます。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.multiEdit
+</dt>
+<dd>
+<p>
+        If true (default), a single editor instance will be spawned to edit files
+        you have to edit (patches when <code>--annotate</code> is used, and the summary when
+        <code>--compose</code> is used). If false, files will be edited one after the other,
+        spawning a new editor each time.
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.confirm
+</dt>
+<dd>
+<p>
+        Sets the default for whether to confirm before sending. Must be one of
+        <em>always</em>, <em>never</em>, <em>cc</em>, <em>compose</em>, or <em>auto</em>. See <code>--confirm</code> in the
+        <a href="git-send-email.html">git-send-email(1)</a> documentation for the meaning of these values.
+</p>
+</dd>
 <dt class="hdlist1">
 sendemail.aliasesFile
 </dt>
 <dd>
 <p>
-        長いメールアドレスを入力しないようにするには、これが1つ以上のメールエイリアスファイルを指すようにします。
-        <code>sendemail.aliasFileType</code> も指定する必要があります。
+        To avoid typing long email addresses, point this to one or more email
+        aliases files.  You must also supply <code>sendemail.aliasFileType</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1442,11 +1502,12 @@ sendemail.aliasFileType
 </dt>
 <dd>
 <p>
-        sendemail.aliasesFile で指定するファイルの形式。 <code>mutt</code>, <code>mailrc</code>, <code>pine</code>, <code>elm</code>, <code>gnus</code>
-        のいずれか、または <code>sendmail</code> である必要があります。
+        Format of the file(s) specified in sendemail.aliasesFile. Must be one of
+        <em>mutt</em>, <em>mailrc</em>, <em>pine</em>, <em>elm</em>, or <em>gnus</em>, or <em>sendmail</em>.
 </p>
-<div class="paragraph"><p>各形式のエイリアスファイルがどのように見えるかは、同じ名前の電子メールプログラムのドキュメントに記載されています。
-標準フォーマットとの違いと制限を以下で説明します:</p></div>
+<div class="paragraph"><p>What an alias file in each format looks like can be found in the
+documentation of the email program of the same name. The differences and
+limitations from the standard formats are described below:</p></div>
 <div class="openblock">
 <div class="content">
 <div class="dlist"><dl>
@@ -1457,22 +1518,26 @@ sendmail
 <div class="ulist"><ul>
 <li>
 <p>
-クォートされたエイリアスとクォートされたアドレスはサポートされていません。 <code>"</code> 記号を含む行は無視されます。
+Quoted aliases and quoted addresses are not supported: lines that
+        contain a <code>"</code> symbol are ignored.
 </p>
 </li>
 <li>
 <p>
-ファイル(<code>/path/name</code>)またはパイプ(<code>|command</code>)へのリダイレクトはサポートされていません。
+Redirection to a file (<code>/path/name</code>) or pipe (<code>|command</code>) is not
+        supported.
 </p>
 </li>
 <li>
 <p>
-ファイルのインクルード(<code>:include: /path/name</code>)はサポートされていません。
+File inclusion (<code>:include: /path/name</code>) is not supported.
 </p>
 </li>
 <li>
 <p>
-明示的にサポートされていない構文や、パーサーが認識できないその他の行については、標準エラー出力に警告が表示されます。
+Warnings are printed on the standard error output for any
+        explicitly unsupported constructs, and any other lines that are not
+        recognized by the parser.
 </p>
 </li>
 </ul></div>
@@ -1481,22 +1546,111 @@ sendmail
 </div></div>
 </dd>
 <dt class="hdlist1">
-sendemail.multiEdit
+sendemail.annotate
+</dt>
+<dt class="hdlist1">
+sendemail.bcc
+</dt>
+<dt class="hdlist1">
+sendemail.cc
+</dt>
+<dt class="hdlist1">
+sendemail.ccCmd
+</dt>
+<dt class="hdlist1">
+sendemail.chainReplyTo
+</dt>
+<dt class="hdlist1">
+sendemail.envelopeSender
+</dt>
+<dt class="hdlist1">
+sendemail.from
+</dt>
+<dt class="hdlist1">
+sendemail.signedoffbycc
+</dt>
+<dt class="hdlist1">
+sendemail.smtpPass
+</dt>
+<dt class="hdlist1">
+sendemail.suppresscc
+</dt>
+<dt class="hdlist1">
+sendemail.suppressFrom
+</dt>
+<dt class="hdlist1">
+sendemail.to
+</dt>
+<dt class="hdlist1">
+sendemail.tocmd
+</dt>
+<dt class="hdlist1">
+sendemail.smtpDomain
+</dt>
+<dt class="hdlist1">
+sendemail.smtpServer
+</dt>
+<dt class="hdlist1">
+sendemail.smtpServerPort
+</dt>
+<dt class="hdlist1">
+sendemail.smtpServerOption
+</dt>
+<dt class="hdlist1">
+sendemail.smtpUser
+</dt>
+<dt class="hdlist1">
+sendemail.thread
+</dt>
+<dt class="hdlist1">
+sendemail.transferEncoding
+</dt>
+<dt class="hdlist1">
+sendemail.validate
+</dt>
+<dt class="hdlist1">
+sendemail.xmailer
 </dt>
 <dd>
 <p>
-        true(デフォルト)の場合、編集する必要のあるファイルを編集するために単一のエディターインスタンスが生成されます(<code>--annotate</code>
-        が使用されている場合はパッチ、 <code>--compose</code> が使用されている場合はサマリー)。
-        falseの場合、ファイルは次々に編集され、毎回新しいエディターインスタンスが生成されます。
+        These configuration variables all provide a default for
+        <a href="git-send-email.html">git-send-email(1)</a> command-line options. See its documentation for
+        details.
 </p>
 </dd>
 <dt class="hdlist1">
-sendemail.confirm
+sendemail.signedoffcc (非推奨)
 </dt>
 <dd>
 <p>
-        送信前に確認するかどうかのデフォルトを設定します。 <code>always</code> または <code>never</code> または <code>cc</code> または <code>compose</code> または
-        <code>auto</code> のいずれかである必要があります。 これらの値の意味については、前セクションの <code>--confirm</code> を参照してください。
+        <code>sendemail.signedoffbycc</code> の非推奨のエイリアス。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.smtpBatchSize
+</dt>
+<dd>
+<p>
+        接続ごとに送信されるメッセージの数。その後、再ログインが発生します。 値が0または未定義の場合、すべてのメッセージを1つの接続で送信します。
+        <a href="git-send-email.html">git-send-email(1)</a> の <code>--batch-size</code> オプションも参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.smtpReloginDelay
+</dt>
+<dd>
+<p>
+        SMTPサーバーに再接続する前に指定の秒数待機します。 <a href="git-send-email.html">git-send-email(1)</a>の <code>--relogin-delay</code>
+        オプションも参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+sendemail.forbidSendmailVariables
+</dt>
+<dd>
+<p>
+        一般的な設定ミスを回避するために、 <a href="git-send-email.html">git-send-email(1)</a> は、 <code>sendmail</code>
+        の設定オプションが存在する場合、警告とともに中止します。 チェックをバイパスするには、この変数を設定します。
 </p>
 </dd>
 </dl></div>
@@ -1555,7 +1709,7 @@ $ git send-email outgoing/*</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-06-28 09:57:35 JST
+ 2022-09-25 22:03:27 JST
 </div>
 </div>
 </body>

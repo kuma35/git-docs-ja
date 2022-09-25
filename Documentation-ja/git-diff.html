@@ -1642,9 +1642,8 @@ settings)が明示的にオーバーライドされます。diffドライバー�
 </p>
 <div class="paragraph"><p>また、逆に、除外したい時はこれらの各大文字指定を小文字にして指定します。例えば <code>--diff-filter=ad</code>
 は、追加および削除されたパスを除外します。</p></div>
-<div class="paragraph"><p>注意:すべてのdiffがすべてのタイプを特徴とするわけではないことに注意してください。
-たとえば、インデックスから作業ツリーへのdiffにエントリを追加することはできません(diffに含まれるパスのセットは、インデックスの内容によって制限されるため)。
-同様に、これらのタイプの検出が無効になっている場合、コピーおよび名前変更されたエントリは表示されません。</p></div>
+<div class="paragraph"><p>Note that not all diffs can feature all types. For instance, copied and
+renamed entries cannot appear if detection for those types is disabled.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>-S&lt;string&gt;</code>
@@ -2099,7 +2098,8 @@ unmerged       :000000 000000 0000000 0000000 U file6</code></pre>
 </li>
 <li>
 <p>
-"dst" のsha1。作成(creation)またはマージされていない(unmerged)または作業ツリーにある場合は 0{40}
+sha1 for "dst"; 0{40} if deletion, unmerged or "work tree out of sync with
+  the index".
 </p>
 </li>
 <li>
@@ -2167,7 +2167,7 @@ R: ファイル名の名前変更
 </li>
 <li>
 <p>
-T: ファイルのタイプを変更
+T: change in the type of the file (regular file, symbolic link or submodule)
 </p>
 </li>
 <li>
@@ -2182,7 +2182,8 @@ X: 「不明な」変更タイプ(おそらくバグです。報告してくだ�
 </li>
 </ul></div>
 <div class="paragraph"><p>ステータス文字CとRの後には常にスコアが続きます(移動またはコピーのソースとターゲットの間の類似性のパーセンテージを示します)。ステータス文字Mの後には、ファイルの書き換えのスコア(非類似度のパーセンテージを示す)が続く場合があります。</p></div>
-<div class="paragraph"><p>&lt;sha1&gt; は、ファイルがファイルシステム上で新規で、インデックスと同期していない場合、すべて0として表示されます。</p></div>
+<div class="paragraph"><p>The sha1 for "dst" is shown as all 0&#8217;s if a file on the filesystem is out of
+sync with the index.</p></div>
 <div class="paragraph"><p>例:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -2692,6 +2693,600 @@ $ git diff -R                          <b>&lt;2&gt;</b></code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+diff.autoRefreshIndex
+</dt>
+<dd>
+<p>
+        <em>git diff</em> を使用して作業ツリーファイルと比較する場合、統計のみの変更を変更されたものと見なさない。代わりに、サイレントに <code>git
+        update-index --refresh</code>
+        を実行して、ワークツリーの内容がインデックスの内容と一致するパスの、キャッシュされた統計情報を更新します。このオプションのデフォルトはtrueです。注意:
+        これは <code>git diff</code> 磁器コマンドにのみ影響し、 <code>git diff-files</code>
+        などの下位レベルのdiffコマンドには影響しないことに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.dirstat
+</dt>
+<dd>
+<p>
+        <a href="git-diff.html">git-diff(1)</a> およびその仲間に対する <code>--dirstat</code> オプションのデフォルトの動作を指定する <code>--dirstat</code>
+        パラメーターのコンマ区切りリスト。デフォルトは(<code>--dirstat=&lt;param1,param2,...&gt;</code>
+        を使用して)コマンドラインでオーバーライドできます。フォールバックのデフォルトは <code>changes,noncumulative,3</code>
+        です(<code>diff.dirstat</code> によって変更されていない限り)。以下のパラメータを使用できます:
+</p>
+<div class="openblock">
+<div class="content">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>changes</code>
+</dt>
+<dd>
+<p>
+        ソースから削除された、または宛先に追加された行をカウントして、dirstat数を計算します。これは、ファイル内の純粋なコード移動の量を無視します。つまり、ファイル内の行の再配置は、他の変更ほどカウントされません。これは、パラメーターが指定されていない場合のデフォルトの動作です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>lines</code>
+</dt>
+<dd>
+<p>
+        通常の行ベースのdiff分析を実行し、削除/追加
+        された行数を合計して、dirstat数を計算します。(バイナリファイルの場合、バイナリファイルには行の自然な概念がないため、代わりに64バイトのチャンクをカウントします)。
+        これは <code>changes</code> 動作よりもコストのかかる <code>--dirstat</code>
+        動作ですが、他の変更と同じようにファイル内の再配置された行をカウントします。 結果の出力は、他の <code>--*stat</code>
+        オプションから得られるものと一致しています。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>files</code>
+</dt>
+<dd>
+<p>
+        変更されたファイルの数を数えて、dirstat数を計算します。変更された各ファイルは、dirstat分析で等しくカウントされます。これは、ファイルの内容をまったく調べる必要がないため、計算コストが最も安価な
+        <code>--dirstat</code> の動作です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>cumulative</code>
+</dt>
+<dd>
+<p>
+        親ディレクトリの子ディレクトリの変更もカウントします。 <code>cumulative</code>
+        を使用する場合、報告されるパーセンテージの合計が100％を超える場合があることに注意してください。 デフォルトの(非累積的な)動作は、
+        <code>non-cumulative</code> パラメーターで指定できます。
+</p>
+</dd>
+<dt class="hdlist1">
+&lt;limit&gt;
+</dt>
+<dd>
+<p>
+        整数パラメーターは、カットオフパーセント(デフォルトでは3%)を指定します。変更への貢献がこの割合より少ないディレクトリは出力に表示されません。
+</p>
+</dd>
+</dl></div>
+</div></div>
+<div class="paragraph"><p>例: 変更されたファイルの総数の10%未満のディレクトリを無視し、親ディレクトリに子ディレクトリの数を累積しながら、変更されたファイルをカウントする:
+<code>files,10,cumulative</code></p></div>
+</dd>
+<dt class="hdlist1">
+diff.statGraphWidth
+</dt>
+<dd>
+<p>
+        <code>--stat</code> 出力でグラフ部分の幅を制限します。設定されている場合、format-patchを除く <code>--stat</code>
+        出力を生成するすべてのコマンドに適用されます。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.context
+</dt>
+<dd>
+<p>
+        デフォルトの3ではなく&lt;n&gt;行のコンテキストで差分を生成します。この値は <code>-U</code> オプションによってオーバーライドされます。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.interHunkContext
+</dt>
+<dd>
+<p>
+        指定された行数までのdiffハンク間のコンテキストを表示し、それによって互いに近いハンクを融合します。この値は、
+        <code>--inter-hunk-context</code> コマンドラインオプションのデフォルトとして機能します。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.external
+</dt>
+<dd>
+<p>
+        この構成変数が設定されている場合、diffの生成は、内部のdiff機構を使用して実行されるのではなく、指定されたコマンドを使用して実行されます。
+        &#8216;GIT_EXTERNAL_DIFF&#8217; 環境変数でオーバーライドできます。このコマンドは、 <a href="git.html">git(1)</a> の「git
+        Diffs」で説明されているパラメーターを使用して呼び出されます。 注意: ファイルのサブセットでのみ外部diffプログラムを使用する場合は、代わりに
+        <a href="gitattributes.html">gitattributes(5)</a> を使用することをお勧めします。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.ignoreSubmodules
+</dt>
+<dd>
+<p>
+        <code>--ignore-submodules</code> のデフォルト値を設定します。これは <code>git diff</code> 磁器コマンドにのみ影響し、 <code>git
+        diff-files</code> などの下位レベルのdiffコマンドには影響しないことに注意してください。 <code>git checkout</code> や <code>git
+        switch</code> も、コミットされていない変更を報告するときにこの設定を尊重します。 <em>all</em> に設定すると、
+        <code>--ignore-submodules</code> コマンドラインオプションを使用してオーバーライドされない限り、
+        <code>status.submoduleSummary</code> が設定されている場合、通常は <em>git commit</em> および <em>git status</em>
+        で表示されるサブモジュールの概要が無効になります。 <em>git submodule</em> コマンドは、この設定の影響を受けません。デフォルトでは、これは
+        untracked に設定されているため、追跡されていないサブモジュールはすべて無視されます。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.mnemonicPrefix
+</dt>
+<dd>
+<p>
+        設定されている場合、 <code>git diff</code> は、比較対象に応じて標準の <em>a/</em> や <em>b/</em>
+        とは異なるプレフィックスのペアを使用します。この構成が有効な場合、逆差分出力でもプレフィックスの順序が入れ替わります:
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>git diff</code>
+</dt>
+<dd>
+<p>
+        (i)ndex と (w)ork tree を比較
+</p>
+</dd>
+<dt class="hdlist1">
+<code>git diff HEAD</code>
+</dt>
+<dd>
+<p>
+         (c)ommit と (w)ork tree を比較
+</p>
+</dd>
+<dt class="hdlist1">
+<code>git diff --cached</code>
+</dt>
+<dd>
+<p>
+        (c)ommit と (i)ndex を比較
+</p>
+</dd>
+<dt class="hdlist1">
+<code>git diff HEAD:file1 file2</code>
+</dt>
+<dd>
+<p>
+        (o)bject と (w)ork tree エンティティを比較
+</p>
+</dd>
+<dt class="hdlist1">
+<code>git diff --no-index a b</code>
+</dt>
+<dd>
+<p>
+        2つの非git項目 (1) と (2) を比較
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+diff.noprefix
+</dt>
+<dd>
+<p>
+        設定されている場合、 <code>git diff</code> は送信元または宛先のプレフィックスを表示しません。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.relative
+</dt>
+<dd>
+<p>
+        <em>true</em> に設定すると、 <em>git diff</em> はディレクトリ外の変更を表示せず、現在のディレクトリへの相対的なパス名を表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.orderFile
+</dt>
+<dd>
+<p>
+        diff内でファイルを並べ替える方法を示すファイル。 詳細については、 <a href="git-diff.html">git-diff(1)</a> の <code>-O</code>
+        オプションを参照してください。 <code>diff.orderFile</code> が相対パス名の場合、作業ツリーの最上位を基準として扱います。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.renameLimit
+</dt>
+<dd>
+<p>
+        コピー/名前変更 の検出の徹底的な部分で考慮するファイルの数。 <em>git diff</em> の <code>-l</code>
+        オプションと同等です。設定されていない場合、デフォルト値は現在1000です。この設定は、名前変更の検出がオフになっている場合は効果がありません。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.renames
+</dt>
+<dd>
+<p>
+        Gitが名前の変更を検出するかどうかとその方法。 "false" に設定すると、名前変更の検出が無効になります。 "true"
+        に設定すると、基本的な名前変更の検出が有効になります。 "copies" または "copy"
+        に設定されている場合、Gitはコピーも検出します。デフォルトはtrueです。これは <a href="git-diff.html">git-diff(1)</a> や
+        <a href="git-log.html">git-log(1)</a> のような <em>git diff</em> 磁器コマンドにのみ影響し、 <a href="git-diff-files.html">git-diff-files(1)</a>
+        などの下位レベルのコマンドには影響しないことに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.suppressBlankEmpty
+</dt>
+<dd>
+<p>
+        空の出力行の前にスペースを印刷する標準的な動作を禁止するブール値。デフォルトはfalseです。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.submodule
+</dt>
+<dd>
+<p>
+        サブモジュールの違いを表示する形式を指定します。 "short" 形式は、範囲の最初と最後にコミットの名前を表示するだけです。 "log" 形式は、
+        <a href="git-submodule.html">git-submodule(1)</a> の <code>summary</code> のように範囲内のコミットをリストします。 "diff"
+        形式は、サブモジュールの変更された内容のインラインdiffを示します。デフォルトは "short" です。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.wordRegex
+</dt>
+<dd>
+<p>
+        単語ごとの差の計算を実行するときに「単語」(word)とは何かを判別するために使用されるPOSIX拡張正規表現。正規表現に一致する文字シーケンスは「単語」(words)であり、他のすべての文字は*無視できる*空白(whitespace)です。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.&lt;driver&gt;.command
+</dt>
+<dd>
+<p>
+        カスタムdiffドライバーコマンド。詳細については <a href="gitattributes.html">gitattributes(5)</a> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.&lt;driver&gt;.xfuncname
+</dt>
+<dd>
+<p>
+        diffドライバーがハンクヘッダーを認識するために使用する必要がある正規表現。内蔵パターンを使用することもできます。詳細については
+        <a href="gitattributes.html">gitattributes(5)</a> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.&lt;driver&gt;.binary
+</dt>
+<dd>
+<p>
+        このオプションをtrueに設定すると、diffドライバーがファイルをバイナリとして処理します。詳細については
+        <a href="gitattributes.html">gitattributes(5)</a> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.&lt;driver&gt;.textconv
+</dt>
+<dd>
+<p>
+        ファイルのテキスト変換バージョンを生成するためにdiffドライバーが呼び出す必要のあるコマンド。変換の結果は、人間が読める形式のdiffを生成するために使用されます。詳細については
+        <a href="gitattributes.html">gitattributes(5)</a> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.&lt;driver&gt;.wordRegex
+</dt>
+<dd>
+<p>
+        diffドライバーが単語(words)を1行に分割するために使用する必要がある正規表現。詳細については <a href="gitattributes.html">gitattributes(5)</a>
+        を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.&lt;driver&gt;.cachetextconv
+</dt>
+<dd>
+<p>
+        このオプションをtrueに設定すると、diffドライバーがテキスト変換出力をキャッシュするようになります。詳細については
+        <a href="gitattributes.html">gitattributes(5)</a> を参照してください。
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>araxis</code>
+</dt>
+<dd>
+<p>
+Use Araxis Merge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>bc</code>
+</dt>
+<dd>
+<p>
+Use Beyond Compare (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>bc3</code>
+</dt>
+<dd>
+<p>
+Use Beyond Compare (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>bc4</code>
+</dt>
+<dd>
+<p>
+Use Beyond Compare (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>codecompare</code>
+</dt>
+<dd>
+<p>
+Use Code Compare (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>deltawalker</code>
+</dt>
+<dd>
+<p>
+Use DeltaWalker (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>diffmerge</code>
+</dt>
+<dd>
+<p>
+Use DiffMerge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>diffuse</code>
+</dt>
+<dd>
+<p>
+Use Diffuse (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>ecmerge</code>
+</dt>
+<dd>
+<p>
+Use ECMerge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>emerge</code>
+</dt>
+<dd>
+<p>
+Use Emacs' Emerge
+</p>
+</dd>
+<dt class="hdlist1">
+<code>examdiff</code>
+</dt>
+<dd>
+<p>
+Use ExamDiff Pro (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>guiffy</code>
+</dt>
+<dd>
+<p>
+Use Guiffy&#8217;s Diff Tool (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>gvimdiff</code>
+</dt>
+<dd>
+<p>
+Use gVim (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>kdiff3</code>
+</dt>
+<dd>
+<p>
+Use KDiff3 (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>kompare</code>
+</dt>
+<dd>
+<p>
+Use Kompare (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>meld</code>
+</dt>
+<dd>
+<p>
+Use Meld (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>nvimdiff</code>
+</dt>
+<dd>
+<p>
+Use Neovim
+</p>
+</dd>
+<dt class="hdlist1">
+<code>opendiff</code>
+</dt>
+<dd>
+<p>
+Use FileMerge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>p4merge</code>
+</dt>
+<dd>
+<p>
+Use HelixCore P4Merge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>smerge</code>
+</dt>
+<dd>
+<p>
+Use Sublime Merge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>tkdiff</code>
+</dt>
+<dd>
+<p>
+Use TkDiff (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>vimdiff</code>
+</dt>
+<dd>
+<p>
+Use Vim
+</p>
+</dd>
+<dt class="hdlist1">
+<code>winmerge</code>
+</dt>
+<dd>
+<p>
+Use WinMerge (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>xxdiff</code>
+</dt>
+<dd>
+<p>
+Use xxdiff (requires a graphical session)
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+diff.indentHeuristic
+</dt>
+<dd>
+<p>
+        このオプションを <code>false</code>
+        に設定すると、パッチを読みやすくするためにdiffハンク境界をシフトするデフォルトのヒューリスティックが無効になります。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.algorithm
+</dt>
+<dd>
+<p>
+        diffアルゴリズムを選択します。 派生形は以下のとおりです:
+</p>
+<div class="openblock">
+<div class="content">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>default</code>, <code>myers</code>
+</dt>
+<dd>
+<p>
+        基本的な貪欲な差分アルゴリズム。現在、これがデフォルトです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>minimal</code>
+</dt>
+<dd>
+<p>
+        より多くの時間を費やして。可能な限り最小の差分が生成されるようにします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>patience</code>
+</dt>
+<dd>
+<p>
+        パッチを生成するときは、patience diff(忍耐差分)アルゴリズムを使用してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>histogram</code>
+</dt>
+<dd>
+<p>
+        このアルゴリズムは、忍耐アルゴリズムを拡張して、「発生頻度の低い共通要素をサポート」(support low-occurrence common
+        elements)します。
+</p>
+</dd>
+</dl></div>
+</div></div>
+</dd>
+<dt class="hdlist1">
+diff.wsErrorHighlight
+</dt>
+<dd>
+<p>
+        差分の <code>context</code> または <code>old または `new</code> 行の空白エラー(whitespace
+        errors)を強調表示します。複数の値はコンマで区切られ、 <code>none</code> は前の値をリセットし、 <code>default</code> はリストを <code>new</code>
+        にリセットし、 <code>all</code> は <code>old,new,context</code> の省略形です。空白のエラー(whitespace errors)は
+        <code>color.diff.whitespace</code> で色分けされています。コマンドラインオプション
+        <code>--ws-error-highlight=&lt;kind&gt;</code> はこの設定を上書きします。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.colorMoved
+</dt>
+<dd>
+<p>
+        有効な <code>&lt;mode&gt;</code> またはtrueのいずれかに設定すると、diff内の移動された行が異なる色で表示されます。有効なモードの詳細については、
+        <a href="git-diff.html">git-diff(1)</a> の <code>--color-moved</code>
+        を参照してください。単にtrueに設定すると、デフォルトのカラーモードが使用されます。 falseに設定すると、移動した行は色付けされません。
+</p>
+</dd>
+<dt class="hdlist1">
+diff.colorMovedWS
+</dt>
+<dd>
+<p>
+        このオプションは、例えば <code>diff.colorMoved</code> 設定を使用して移動した行に色を付ける場合、スペース(spaces)をどのように扱うかを
+        <code>&lt;mode&gt;</code> で制御します。有効なモードの詳細については <a href="git-diff.html">git-diff(1)</a> の <code>--color-moved-ws</code>
+        を参照してください。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>diff(1), <a href="git-difftool.html">git-difftool(1)</a>, <a href="git-log.html">git-log(1)</a>,
@@ -2710,7 +3305,7 @@ $ git diff -R                          <b>&lt;2&gt;</b></code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-04-12 02:57:00 JST
+ 2022-09-25 22:03:39 JST
 </div>
 </div>
 </body>

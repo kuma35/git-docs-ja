@@ -1354,17 +1354,104 @@ $ prove -j$(nproc) --shuffle t[0-9]*.sh</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="ready-to-share">Getting Ready to Share</h2>
+<h2 id="ready-to-share">共有の準備: パッチシリーズの解剖分析</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>あなたはGitプロジェクトが電子メールで送信されたパッチを介してコードレビューを実行し、コミュニティによって準備ができて承認されたときにメンテナによって適用されることにすでに気付いているかもしれません。
-Gitプロジェクトはプルリクエストからのパッチを受け入れません。レビューのためにメールで送信されたパッチは、特定の方法でフォーマットする必要があります。
-この点において、パッチセットをフォーマットしてレビューする2つの異なる方法を示すために、チュートリアルは分岐します。</p></div>
+<div class="paragraph"><p>あなたは、
+Gitプロジェクトは電子メールで送信されたパッチを介してコード・レビューが行われ、準備が整いコミュニティによって承認されると、メンテナーによって適用されることに、既に気づかれていると思います。
+Git
+プロジェクトはプル・リクエストからの貢献を受け入れません。また、レビューのために電子メールで送信されるパッチは、指定の方法でフォーマットする必要があります。</p></div>
+<div class="paragraph"><p>コミットを電子メールで送信されるパッチに変換する方法を検討する前に、最終結果である「パッチ・シリーズ」がどのようになるかを分析してみましょう。
+<a href="https://lore.kernel.org/git/pull.1218.git.git.1645209647.gitgitgadget@gmail.com/">例</a> は、 <a href="https://lore.kernel.org/git/">Git mailing list archive</a>
+のWebインターフェース上のパッチ・シリーズの概要ビューです:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>2022-02-18 18:40 [PATCH 0/3] libify reflog John Cai via GitGitGadget
+2022-02-18 18:40 ` [PATCH 1/3] reflog: libify delete reflog function and helpers John Cai via GitGitGadget
+2022-02-18 19:10   ` Ævar Arnfjörð Bjarmason [this message]
+2022-02-18 19:39     ` Taylor Blau
+2022-02-18 19:48       ` Ævar Arnfjörð Bjarmason
+2022-02-18 19:35   ` Taylor Blau
+2022-02-21  1:43     ` John Cai
+2022-02-21  1:50       ` Taylor Blau
+2022-02-23 19:50         ` John Cai
+2022-02-18 20:00   ` // other replies ellided
+2022-02-18 18:40 ` [PATCH 2/3] reflog: call reflog_delete from reflog.c John Cai via GitGitGadget
+2022-02-18 19:15   ` Ævar Arnfjörð Bjarmason
+2022-02-18 20:26     ` Junio C Hamano
+2022-02-18 18:40 ` [PATCH 3/3] stash: call reflog_delete from reflog.c John Cai via GitGitGadget
+2022-02-18 19:20   ` Ævar Arnfjörð Bjarmason
+2022-02-19  0:21     ` Taylor Blau
+2022-02-22  2:36     ` John Cai
+2022-02-22 10:51       ` Ævar Arnfjörð Bjarmason
+2022-02-18 19:29 ` [PATCH 0/3] libify reflog Ævar Arnfjörð Bjarmason
+2022-02-22 18:30 ` [PATCH v2 0/3] libify reflog John Cai via GitGitGadget
+2022-02-22 18:30   ` [PATCH v2 1/3] stash: add test to ensure reflog --rewrite --updatref behavior John Cai via GitGitGadget
+2022-02-23  8:54     ` Ævar Arnfjörð Bjarmason
+2022-02-23 21:27       ` Junio C Hamano
+// continued</code></pre>
+</div></div>
+<div class="paragraph"><p>以下の幾つかの点に留意してください:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+各コミットは、 <em>n</em> コミット シリーズの <em>i</em> 番目のコミットを表す <code>[PATCH _i_/_n_]</code>
+  という接頭辞が付けられたコミット・メッセージのタイトルを件名として、個別の電子メールとして送信されます。
+</p>
+</li>
+<li>
+<p>
+各パッチは、<code>[PATCH 0/_n_]</code> という接頭辞が付いた、シリーズの、 カバー・レターと呼ばれる紹介メールへの返信として送信されます。
+</p>
+</li>
+<li>
+<p>
+パッチ・シリーズの後続の反復は、「PATCH」の代わりに「PATCH v2」、「PATCH v3」などのラベルが付けられます。 たとえば、「[PATCH
+  v2 1/3]」は、2 回目の繰り返しの 3 つのパッチの最初のパッチになります。 各反復は新しいカバー・レター (「[PATCH v2
+  0/3]」など) と共に送信され、それ自体が前の反復のカバー・レターへの返信です(詳細下記)。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">シングル・パッチ・トピックは、<em>i</em>/<em>n</em> 番号なしで「[PATCH]」、「[PATCH v2]」などで送信されます
+(ただし、上記の「スレッド概要」では、シングル・パッチ・トピックは表示されません)。</td>
+</tr></table>
+</div>
+<div class="sect2">
+<h3 id="cover-letter">The cover letter</h3>
+<div class="paragraph"><p>パッチごとの電子メールに加えて、Git コミュニティは、パッチにカバー・レターが付属していることも期待しています。 これは変更提出(change
+submission)の重要な要素であり、パッチを見るだけではなく、何をしようとしているのか、その理由をコミュニティに高レベルで説明するものです。</p></div>
+<div class="paragraph"><p>カバー・レターのタイトルは、トピック・ブランチ全体の目的を簡潔に網羅するものにする必要があります。
+コミット・メッセージのタイトルと同じように、しばしば命令調になっています。 シリーズにタイトルを付ける方法は以下のとおりです:</p></div>
+<div class="paragraph"><p>---
+Add the <em>psuh</em> command
+---</p></div>
+<div class="paragraph"><p>カバー・レターの本文は、レビュー担当者に追加のコンテキストを提供するために使用されます。 パッチだけでは明らかにならないことは必ず説明してください。
+ただし、カバー・レターはコミット履歴に記録されないため、将来リポジトリの履歴を読む人にとって役立つ可能性があるものはコミット・メッセージにも記載する必要があることを忘れないでください。</p></div>
+<div class="paragraph"><p>ここで、 <code>push</code> の本文の例を以下に示します:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Our internal metrics indicate widespread interest in the command
+git-psuh - that is, many users are trying to use it, but finding it is
+unavailable, using some unknown workaround instead.
+
+The following handful of patches add the psuh command and implement some
+handy features on top of it.
+
+This patchset is part of the MyFirstContribution tutorial and should not
+be merged.</code></pre>
+</div></div>
+<div class="paragraph"><p>ここから、 パッチ・セットをフォーマットしてレビューを受けるための 2 つの異なる方法を示すために、チュートリアルは分岐します。</p></div>
 <div class="paragraph"><p>一番目の方法はGitGitGadgetです。これは、GitHubの一般的なプルリクエストワークフローに既に精通しているユーザーに役立ちます。
 この方法ではGitHubアカウントが必要です。</p></div>
 <div class="paragraph"><p>2番目の方法は <code>git send-email</code> にて対応します。これにより、送信する電子メールを少し細かく制御できます。
 この方法には、システムに応じて変更される可能性のあるいくつかの設定が必要であり、このチュートリアルでは説明しません。</p></div>
 <div class="paragraph"><p>どちらの方法を選択しても、レビュー担当者との関わりは同じです。 レビュープロセスについては、GitGitGadget と <code>git
 send-email</code> のセクションの後で説明します。</p></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1423,8 +1510,23 @@ $ git rebase master psuh</code></pre>
 <a href="https://github.com/gitgitgadget/git">https://github.com/gitgitgadget/git</a> にアクセスし、「New pull
 request」(新しいプルリクエスト)ボタンまたは、新しくプッシュしたブランチの名前とともに表示される便利な「Compare &amp; pull
 request」(比較してプルリクエスト)ボタンを使用してPRを開きます。</p></div>
-<div class="paragraph"><p>GitGitGadgetがあなたの変更のカバーレターとして使用しているPRのタイトルと説明を確認します。
-満足したら、あなたのプルリクエストを送信します。</p></div>
+<div class="paragraph"><p>PR のタイトルと説明を確認してください。 GitGitGadget では、あなたの変更の、カバー・レターの件名と本文としてそれぞれ使用されます。
+提出物にタイトルを付ける方法と説明に含める内容については、上記 <a href="#cover-letter">"The cover letter"</a>
+を参照してください。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">単一パッチでの貢献の場合、あなたのコミット・メッセージはすでに意味のある内容があり、それはパッチの目的 (何が起こっているのか、その理由)
+を高レベルで説明しているべきであるため、通常は追加のコンテキストは必要ありません。 その場合、 GitHub がコミット・メッセージから自動的に生成する
+PR の説明を削除します (PR の説明は空にする必要があります)。
+さらに多くのコンテキストを提供する必要がある場合は、その場所で行うことができ、GitGitGadget
+が送信する電子メールの三点鎖線(three-dash)と diffstat の間に追加されます (送信後の様子については
+<a href="#single-patch">Bonus Chapter: One-Patch Changes</a> を参照してください)。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>満足したら、プル・リクエストを送信します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="run-ci-ggg">Running CI and Getting Ready to Send</h3>
@@ -1494,17 +1596,45 @@ PATCH]のタグを使用できること)や、メーリングリストに投稿�
 幸いなことに、これは非常に簡単です:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ git format-patch --cover-letter -o psuh/ master..psuh</code></pre>
+<pre><code>$ git format-patch --cover-letter -o psuh/ --base=auto psuh@{u}..psuh</code></pre>
 </div></div>
-<div class="paragraph"><p><code>--cover-letter</code> パラメータは、 <code>format-patch</code> にカバーレターテンプレートを作成するように指示します。
-送信する準備が整う前にテンプレートに入力する必要がありますが、テンプレートをごにょごにょするのはパッチの後の話になります。</p></div>
-<div class="paragraph"><p><code>-o psuh /</code> パラメータは、パッチファイルをディレクトリに配置するように <code>format-patch</code> に指示します。 <code>git
-send-email</code> はディレクトリを取得し、そこからすべてのパッチを送信できるため、これは便利です。</p></div>
-<div class="paragraph"><p><code>master..psuh</code> は <code>format-patch</code> に <code>master</code> と <code>psuh</code> の違いに対するパッチを生成するように指示します。
-コミットごとに1つのパッチファイルを作成します。
-実行したら、お気に入りのテキストエディタで各パッチを確認し、すべてが正常に表示されることを確認できます。
-ただし、パッチファイルを使用してコードを修正することはお勧めしません。 パッチを変更するよりも、 <code>git rebase -i</code>
-を使用するか、新しいコミットを追加することによって、通常の方法で変更を行うことをお勧めします。</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<code>--cover-letter</code> オプションは、 <code>format-patch</code> にカバーレター・テンプレートを作成するように指示します。
+   送信する準備が整う前にテンプレートに入力する必要がありますが、テンプレートをごにょごにょするのはパッチの後の話になります。
+</p>
+</li>
+<li>
+<p>
+<code>-o psuh /</code> オプションは、パッチファイルをディレクトリに配置するように <code>format-patch</code> に指示します。 <code>git
+   send-email</code> はディレクトリを取得し、そこからすべてのパッチを送信できるため、これは便利です。
+</p>
+</li>
+<li>
+<p>
+The <code>--base=auto</code> option tells the command to record the "base commit", on
+   which the recipient is expected to apply the patch series.  The <code>auto</code> value
+   will cause <code>format-patch</code> to compute the base commit automatically, which is
+   the merge base of tip commit of the remote-tracking branch and the specified
+   revision range.
+</p>
+</li>
+<li>
+<p>
+The <code>psuh@{u}..psuh</code> option tells <code>format-patch</code> to generate patches for the
+   commits you created on the <code>psuh</code> branch since it forked from its upstream
+   (which is <code>origin/master</code> if you followed the example in the "Set up your
+   workspace" section).  If you are already on the <code>psuh</code> branch, you can just
+   say <code>@{u}</code>, which means "commits on the current branch since it forked from
+   its upstream", which is the same thing.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>このコマンドは、コミットごとに 1 つのパッチ・ファイルを作成します。
+実行した後、お気に入りのテキスト・エディタで各パッチを調べて、すべてが適切に表示されることを確認できます。
+ただし、パッチ・ファイルを使用してコードを修正することはお勧めしません。 パッチを変更するよりも、<code>git rebase -i</code>
+を使用するか、新しいコミットを追加することによって、通常の方法で変更を加える方が良い考えです。</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
@@ -1521,35 +1651,20 @@ comments」の略で、コードを送信する準備が整っていないとき
 <div class="paragraph"><p>パッチとカバーレターのテンプレートが指定したディレクトリに存在することを確認してください。これであなたがレビューを送信する準備がほぼ整いました！</p></div>
 </div>
 <div class="sect2">
-<h3 id="cover-letter">Preparing Email</h3>
-<div class="paragraph"><p>パッチごとのメールに加えて、Git コミュニティではパッチに、通常は件名行 [PATCH 0/x]
-(xは送信するパッチの数)があるカバーレターを添付することを想定しています。 <code>--cover-letter</code> を指定して <code>format-patch</code>
-を呼び出したので、あなたには既にテンプレートが用意されています。それをお気に入りのエディタで開いてみてください。</p></div>
-<div class="paragraph"><p>すでにいくつかのヘッダーが存在するはずです。 あなたの <code>From:</code> ヘッダーが正しいことを確認してください。 その次に、 <code>Subject:</code>
-を、トピックブランチ全体の目的を簡潔にカバーするものに変更します。医科に例を示します:</p></div>
+<h3 id="preparing-cover-letter">Preparing Email</h3>
+<div class="paragraph"><p>Since you invoked <code>format-patch</code> with <code>--cover-letter</code>, you&#8217;ve already got a
+cover letter template ready. Open it up in your favorite editor.</p></div>
+<div class="paragraph"><p>あなたは既に多数のヘッダーを拝んでいるはずです。 <code>From:</code> ヘッダーが正しいことを確認してください。 その次に、<code>Subject:</code>
+を変更します(パッチシリーズに適切なタイトルを選ぶには、 <a href="#cover-letter">上記</a> を参照してください):</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>Subject: [PATCH 0/7] adding the 'psuh' command</code></pre>
+<pre><code>Subject: [PATCH 0/7] Add the 'psuh' command</code></pre>
 </div></div>
 <div class="paragraph"><p>必ず ”[PATCH 0/X]” の部分を保持してください。
-これが、このメールがレビューの始まりであることをGitコミュニティに示しており、多くのレビュー担当者がこのタイプのフラグでメールをフィルタリングしています。</p></div>
+これが、このメールがパッチ・シリーズの始まりであることをGitコミュニティに示しており、多くのレビュー担当者がこのタイプのフラグでメールをフィルタリングしています。</p></div>
 <div class="paragraph"><p>あなたはカバーレターを追加するために <code>git send-email</code> を呼び出すときに、いくつかの追加パラメーターを追加する必要があります。</p></div>
-<div class="paragraph"><p>それから、あなたはカバーレターの本文に記入する必要があります。
-これは、変更送信の重要なコンポーネントです。これは、あなたがやろうとしていることと、その理由を、単にあなたのdiffを見るよりも明白な方法でコミュニティに説明するためです。
-あなたのdiffで明確になっていないことは必ず説明してください。</p></div>
-<div class="paragraph"><p>ここで、 <code>push</code> の本文の例を以下に示します:</p></div>
-<div class="listingblock">
-<div class="content">
-<pre><code>Our internal metrics indicate widespread interest in the command
-git-psuh - that is, many users are trying to use it, but finding it is
-unavailable, using some unknown workaround instead.
-
-The following handful of patches add the psuh command and implement some
-handy features on top of it.
-
-This patchset is part of the MyFirstContribution tutorial and should not
-be merged.</code></pre>
-</div></div>
+<div class="paragraph"><p>Next you&#8217;ll have to fill out the body of your cover letter. Again, see
+<a href="#cover-letter">above</a> for what content to include.</p></div>
 <div class="paragraph"><p><code>git format-patch --cover-letter</code> によって作成されたテンプレートには、diffstatが含まれています。
 これにより、レビュー担当者は、トピックをレビューするときに何をしているのかを要約できます。 サンプル実装から <code>psuh</code>
 用に生成されたものは以下のようになります:</p></div>
@@ -1602,17 +1717,38 @@ be merged.</code></pre>
 </div>
 <div class="sect2">
 <h3 id="v2-git-send-email">Sending v2</h3>
-<div class="paragraph"><p>レビュー担当者からのコメントの処理方法については、 <a href="#reviewing">Responding to Reviews</a> に進んでください。
-あなたのトピックブランチがあなたのパッチセットv2を検索するように形作られている場合は、このセクションを続けてください。</p></div>
-<div class="paragraph"><p>次回のパッチの準備ができたら、同じような手順で作業を進めます。</p></div>
-<div class="paragraph"><p>まず、v2パッチを再度生成します:</p></div>
+<div class="paragraph"><p>This section will focus on how to send a v2 of your patchset. To learn what
+should go into v2, skip ahead to <a href="#reviewing">Responding to Reviews</a> for
+information on how to handle comments from reviewers.</p></div>
+<div class="paragraph"><p>We&#8217;ll reuse our <code>psuh</code> topic branch for v2. Before we make any changes,
+we&#8217;ll mark the tip of our v1 branch for easy reference:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ git format-patch -v2 --cover-letter -o psuh/ master..psuh</code></pre>
+<pre><code>$ git checkout psuh
+$ git branch psuh-v1</code></pre>
 </div></div>
-<div class="paragraph"><p>これにより、すべて <code>v2-000n-my-commit-subject.patch</code> のような名前のv2パッチが <code>psuh/</code>
-ディレクトリに追加されます。 あなたはそれらがv1パッチと並んでることに気付くかもしれません。
-それは問題ありませんが、送信する準備ができたら注意してください。</p></div>
+<div class="paragraph"><p>Refine your patch series by using <code>git rebase -i</code> to adjust commits based
+upon reviewer comments. Once the patch series is ready for submission,
+generate your patches again, but with some new flags:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch -v2 --cover-letter -o psuh/ --range-diff master..psuh-v1 master..</code></pre>
+</div></div>
+<div class="paragraph"><p>The <code>--range-diff master..psuh-v1</code> parameter tells <code>format-patch</code> to include
+a range-diff between <code>psuh-v1</code> and <code>psuh</code> in the cover letter (see
+<a href="git-range-diff.html">git-range-diff(1)</a>). This helps tell reviewers about the differences
+between your v1 and v2 patches.</p></div>
+<div class="paragraph"><p>The <code>-v2</code> parameter tells <code>format-patch</code> to output your patches as version
+"2". For instance, you may notice that your v2 patches are all named like
+<code>v2-000n-my-commit-subject.patch</code>. <code>-v2</code> will also format your patches by
+prefixing them with "[PATCH v2]" instead of "[PATCH]", and your range-diff
+will be prefaced with "Range-diff against v1".</p></div>
+<div class="paragraph"><p>After you run this command, <code>format-patch</code> will output the patches to the
+<code>psuh/</code> directory, alongside the v1 patches. Using a single directory makes
+it easy to refer to the old v1 patches while proofreading the v2 patches,
+but you will need to be careful to send out only the v2 patches. We will use
+a pattern like "psuh/v2-<strong>.patch" (not "psuh/</strong>.patch", which would match v1
+and v2 patches).</p></div>
 <div class="paragraph"><p>カバーレターをもう一度編集します。 何か重要なことがあれば、今が前回のバージョンと現在のバージョンの違いについて言及する良い機会です。
 2番目のカバーレターにまったく同じ本文は必要ありません。 レビューアの目に見えない可能性のある変更を説明することに焦点を当てます。</p></div>
 <div class="paragraph"><p>また、あなたは前のカバーレターのメッセージIDを探しに行く必要があります。 <code>git send-email</code>
@@ -1638,7 +1774,7 @@ v3を送信する場合は、v2のMessage-Idを使用します。</p></div>
 <div class="content">
 <pre><code>$ git send-email --to=target@example.com
                  --in-reply-to="&lt;foo.12345.author@example.com&gt;"
-                 psuh/v2*</code></pre>
+                 psuh/v2-*.patch</code></pre>
 </div></div>
 </div>
 <div class="sect2">
@@ -1742,7 +1878,7 @@ git.git」メールで、あなたのトピックに「next」のマークが付
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-06-16 14:55:41 JST
+ 2022-09-25 22:03:23 JST
 </div>
 </div>
 </body>

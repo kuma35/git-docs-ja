@@ -756,8 +756,9 @@ git-am(1) Manual Page
          [--exclude=&lt;path&gt;] [--include=&lt;path&gt;] [--reject] [-q | --quiet]
          [--[no-]scissors] [-S[&lt;keyid&gt;]] [--patch-format=&lt;format&gt;]
          [--quoted-cr=&lt;action&gt;]
+         [--empty=(stop|drop|keep)]
          [(&lt;mbox&gt; | &lt;Maildir&gt;)&#8230;]
-<em>git am</em> (--continue | --skip | --abort | --quit | --show-current-patch[=(diff|raw)])</pre>
+<em>git am</em> (--continue | --skip | --abort | --quit | --show-current-patch[=(diff|raw)] | --allow-empty)</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -851,6 +852,18 @@ git-am(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--empty=(stop|drop|keep)</code>
+</dt>
+<dd>
+<p>
+        By default, or when the option is set to <em>stop</em>, the command errors out on
+        an input e-mail message lacking a patch and stops into the middle of the
+        current am session. When this option is set to <em>drop</em>, skip such an e-mail
+        message instead.  When this option is set to <em>keep</em>, create an empty commit,
+        recording the contents of the e-mail message as its log.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>-m</code>
 </dt>
 <dt class="hdlist1">
@@ -930,7 +943,11 @@ git-am(1) Manual Page
 </dt>
 <dd>
 <p>
-        可能であれば、rerereメカニズムが自動競合解決の結果でインデックスを更新できるようにします。
+        After the rerere mechanism reuses a recorded resolution on the current
+        conflict to update the files in the working tree, allow it to also update
+        the index with the result of resolution.  <code>--no-rerere-autoupdate</code> is a good
+        way to double-check what <code>rerere</code> did and catch potential mismerges, before
+        committing the result to the index with a separate <code>git add</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1080,6 +1097,15 @@ git-am(1) Manual Page
         です。
 </p>
 </dd>
+<dt class="hdlist1">
+<code>--allow-empty</code>
+</dt>
+<dd>
+<p>
+        After a patch failure on an input e-mail message lacking a patch, create an
+        empty commit with the contents of the e-mail message as its log message.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -1142,6 +1168,37 @@ git-am(1) Manual Page
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+am.keepcr
+</dt>
+<dd>
+<p>
+        trueの場合、 <code>git-am</code> は、パラメーター <code>--keep-cr</code> を使用してmbox形式のパッチに対して` git-mailsplit`
+        を呼び出します。 この場合、 <code>git-mailsplit</code> は <code>\r\n</code> で終わる行から <code>\r</code> を削除しません。 コマンドラインから
+        <code>--no-keep-cr</code> を指定することでオーバーライドできます。 <a href="git-am.html">git-am(1)</a> と
+        <a href="git-mailsplit.html">git-mailsplit(1)</a> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+am.threeWay
+</dt>
+<dd>
+<p>
+        デフォルトでは、パッチが正しく適用されない場合、 <code>git am</code> は失敗します。
+        trueに設定すると、この設定は、パッチが適用される予定のブロブのIDを記録し、それらのブロブをローカルで使用できる場合に、3方向マージにフォールバックするように
+        <code>git am</code> に指示します(コマンドラインから <code>--3way</code> オプションを指定するのと同じです)。 デフォルトは <code>false</code> です。
+        <a href="git-am.html">git-am(1)</a>を参照してください。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
 <div class="paragraph"><p><a href="git-apply.html">git-apply(1)</a>.</p></div>
@@ -1158,7 +1215,7 @@ git-am(1) Manual Page
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-05-01 19:14:37 JST
+ 2022-09-25 22:03:28 JST
 </div>
 </div>
 </body>
