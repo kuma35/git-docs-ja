@@ -757,7 +757,8 @@ git-branch(1) Manual Page
         [--points-at &lt;object&gt;] [--format=&lt;format&gt;]
         [(-r | --remotes) | (-a | --all)]
         [--list] [&lt;pattern&gt;&#8230;]
-<em>git branch</em> [--track | --no-track] [-f] &lt;branchname&gt; [&lt;start-point&gt;]
+<em>git branch</em> [--track[=(direct|inherit)] | --no-track] [-f]
+        [--recurse-submodules] &lt;branchname&gt; [&lt;start-point&gt;]
 <em>git branch</em> (--set-upstream-to=&lt;upstream&gt; | -u &lt;upstream&gt;) [&lt;branchname&gt;]
 <em>git branch</em> --unset-upstream [&lt;branchname&gt;]
 <em>git branch</em> (-m | -M) [&lt;oldbranch&gt;] &lt;newbranch&gt;
@@ -869,7 +870,7 @@ git-branch(1) Manual Page
 </dt>
 <dd>
 <p>
-        ブランチと、対応するreflogを、移動/名前変更 します。
+        ブランチを、その構成や reflog とともに 移動/名前変更 します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -888,7 +889,7 @@ git-branch(1) Manual Page
 </dt>
 <dd>
 <p>
-        ブランチと、対応するreflogをコピーします。
+        ブランチを、その構成や reflog とともにコピーします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1031,27 +1032,51 @@ git-branch(1) Manual Page
 <code>-t</code>
 </dt>
 <dt class="hdlist1">
-<code>--track</code>
+<code>--track[=(direct|inherit)]</code>
 </dt>
 <dd>
 <p>
         新しいブランチを作成するときは、 <code>branch.&lt;name&gt;.remote</code> および <code>branch.&lt;name&gt;.merge</code>
-        構成エントリを設定して、開始点ブランチを新しいブランチの「アップストリーム」としてマークします。 この構成は、 <code>git status</code> と <code>git
-        branch -v</code> で、2つのブランチの間の関係を表示するようにgitに指示します。 さらに、引数なしで <code>git pull</code>
-        に、新しいブランチがチェックアウトされたときにアップストリームからプルするように指示します。
+        構成エントリをセットアップして、新しいブランチの「上流」追跡構成(upstream tracking configuration)を設定します。
+        この構成は、 <code>git status</code> と <code>git branch -v</code> で、2つのブランチの間の関係を表示するようにgitに指示します。
+        さらに、引数なしで <code>git pull</code> に、新しいブランチがチェックアウトされたときに上流(upstream)からプルするように指示します。
 </p>
-<div class="paragraph"><p>この振る舞いは、開始点がリモート追跡ブランチである場合のデフォルトです。 <code>git switch</code> と <code>git checkout</code> と <code>git
-branch</code> を常に <code>--no-track</code> が指定されているかのように動作させる場合は、 branch.autoSetupMerge構成変数を
-<code>false</code> に設定します。 開始点がローカルまたはリモート追跡ブランチのいずれかであるときにこの動作が必要な場合は、これを <code>always</code>
-に設定します。</p></div>
+<div class="paragraph"><p>オプションの引数に応じて、正確な上流(upstream)ブランチが選択されます。 <code>-t</code>  または <code>--track</code> または
+<code>--track=direct</code> は、起点(start-point)ブランチ自体を上流として使用することを意味します。
+`--track=inherit｀ は、起点ブランチの上流構成(upstream configuration)をコピーすることを意味します。</p></div>
+<div class="paragraph"><p>branch.autoSetupMerge 構成変数は、<code>--track</code> も <code>--no-track</code> も指定されていない場合に、 <code>git
+switch</code> や <code>git checkout</code> や <code>git branch</code> がどのように振る舞うかを指定します:</p></div>
+<div class="paragraph"><p>デフォルトのオプション <code>true</code> は、起点(start-point)がリモート追跡ブランチである場合はいつでも <code>--track=direct</code>
+が指定されたかのように振る舞います。 <code>false</code> は、<code>--no-track</code> が指定されたかのように振る舞います。 <code>always</code>
+は、<code>--track=direct</code> が指定されたかのように振る舞います。 <code>inherit</code> は <code>--track=inherit</code>
+が与えられたかのように振る舞います。  <code>simple</code>
+は、起点がリモート追跡ブランチであり、新しいブランチがリモート・ブランチと同じ名前を持つ場合にのみ、 <code>--track=direct</code>
+が指定されたかのように振る舞います。</p></div>
+<div class="paragraph"><p><code>branch.&lt;name&gt;.remote</code> および <code>branch.&lt;name&gt;.merge</code> オプションの使用方法に関する追加の説明については、
+<a href="git-pull.html">git-pull(1)</a> および <a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--no-track</code>
 </dt>
 <dd>
 <p>
-        branch.autoSetupMerge構成変数がtrueの場合でも、「upstream」構成をセットアップしないでください。
+        branch.autoSetupMerge構成変数がセットされている場合でも、「upstream」構成をセットアップしないでください。
 </p>
+</dd>
+<dt class="hdlist1">
+<code>--recurse-submodules</code>
+</dt>
+<dd>
+<p>
+        このオプションは実験的機能です!  <code>submodule.propagateBranches</code>
+        が有効になっている場合、現在のコマンドをサブモジュール内でも再帰させます。 <a href="git-config.html">git-config(1)</a> の
+        <code>submodule.propagateBranches</code> を参照してください。 現在、ブランチの作成のみがサポートされています。
+</p>
+<div class="paragraph"><p>ブランチの作成で使用すると、新しいブランチ &lt;branchname&gt; がスーパープロジェクトに作成され、すべてのサブモジュールがスーパープロジェクトの
+&lt;start-point&gt; に作成されます。 サブモジュールでは、ブランチはスーパープロジェクトの &lt;start-point&gt;
+でサブモジュールのコミットを指しますが、ブランチの追跡情報はサブモジュールのブランチとremoteに基づいて設定されます。 例えば <code>git
+branch --recurse-submodules topic origin/main</code> は、スーパープロジェクトの <code>origin/main</code>
+内のサブモジュール・コミットを指すサブモジュール・ブランチ <code>topic</code> を作成しますが、サブモジュールの <code>origin/main</code> を追跡します。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--set-upstream</code>
@@ -1195,6 +1220,125 @@ branch</code> を常に <code>--no-track</code> が指定されているかの�
 <div class="sectionbody">
 <div class="paragraph"><p><code>pager.branch</code> は、ブランチを一覧表示する場合、 つまり <code>--list</code> が使用または暗示されている場合にのみ尊重されます。
 デフォルトでは、ページャーを使用します。 <a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
+<div class="paragraph"><p>このセクションのこの行より上にあるものはすべて、 <a href="git-config.html">git-config(1)</a> ドキュメントには含まれていません。
+以下の内容に関しては、<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+branch.autoSetupMerge
+</dt>
+<dd>
+<p>
+        <a href="git-pull.html">git-pull(1)</a> が開始点ブランチから適切にマージされるように、 <code>git branch</code> や <code>git switch</code> や
+        <code>git checkout</code> に新しいブランチを設定するように指示します。 このオプションが設定されていない場合でも、この動作は、 <code>--track</code>
+        や <code>--no-track</code> オプションを使用してブランチごとに選択できることに注意してください。 有効な設定は次のとおりです: <code>false</code>&#8201;&#8212;&#8201;        自動セットアップは行われません。 <code>true</code>&#8201;&#8212;&#8201;開始点がリモート追跡ブランチの場合、自動セットアップが実行されます。 <code>always</code>&#8201;&#8212;&#8201;        自動セットアップは、開始点がローカルブランチまたはリモート追跡ブランチのいずれかである場合に実行されます。 このオプションのデフォルトはtrueです。
+        <code>inherit</code>&#8201;&#8212;&#8201;開始点に追跡構成(tracking configuration)がある場合、それは新しいブランチにコピーされます。
+        <code>simple</code>&#8201;&#8212;&#8201;        自動セットアップは、開始点がリモート追跡ブランチであり、新しいブランチがリモート・ブランチと同じ名前を持つ場合にのみ実行されます。
+        このオプションのデフォルトは true です。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.autoSetupRebase
+</dt>
+<dd>
+<p>
+        別のブランチを追跡する <code>git branch</code> または <code>git switch</code> または <code>git checkout</code>
+        を使用して新しいブランチが作成されると、この変数はGitにマージではなくリベースするプルを設定するように指示します(<code>branch.&lt;name&gt;.rebase</code>
+        参照)。 <code>never</code> の場合、リベースが自動的にtrueに設定されることはありません。 <code>local</code>
+        の場合、他のローカルブランチの追跡されたブランチに対してリベースがtrueに設定されます。 <code>remote</code>
+        の場合、リモート追跡ブランチの追跡されたブランチに対してリベースがtrueに設定されます。 <code>always</code>
+        の場合、リベースはすべての追跡ブランチに対してtrueに設定されます。 別のブランチを追跡するためにブランチを設定する方法の詳細については、
+        <code>branch.autoSetupMerge</code> を参照してください。 このオプションのデフォルトは <code>never</code> です。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.sort
+</dt>
+<dd>
+<p>
+        この変数は、 <a href="git-branch.html">git-branch(1)</a> によって表示されるときのブランチの並べ替え順序を制御します。 <code>--sort=&lt;value&gt;</code>
+        オプションが指定されていない場合、この変数の値がデフォルトとして使用されます。 有効な値については、
+        <a href="git-for-each-ref.html">git-for-each-ref(1)</a> のfield namesを参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.&lt;name&gt;.remote
+</dt>
+<dd>
+<p>
+        ブランチ&lt;name&gt;にいる場合、フェッチ元/プッシュ先 のremoteを <code>git fetch</code> と <code>git push</code> に通知します。
+        プッシュ先のremoteは、 (全ブランチ用の) <code>remote.pushDefault</code> でオーバーライドできます。
+        現在のブランチの場合、プッシュ先のremoteは、 <code>branch.&lt;name&gt;.pushRemote</code>
+        によってさらにオーバーライドされる可能性があります。
+        remoteが構成されていない場合、または、どのブランチにも属しておらずリポジトリに複数のremoteが定義されている場合、フェッチの場合は
+        <code>origin</code> に、プッシュの場合は <code>remote.pushDefault</code> にデフォルト設定されます。 さらに、 <code>.</code>
+        (ピリオド)は現在のローカルリポジトリ(ドットリポジトリ)です。下記 <code>branch.&lt;name&gt;.merge</code> の最後の注意を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.&lt;name&gt;.pushRemote
+</dt>
+<dd>
+<p>
+        ブランチ&lt;name&gt;にいる場合、プッシュするための <code>branch.&lt;name&gt;.remote</code> をオーバーライドします。
+        また、ブランチ&lt;name&gt;からプッシュするための <code>remote.pushDefault</code> をオーバーライドします。
+        ある場所(あなたのアップストリームなど)から別の場所(独自の公開リポジトリなど)にプッシュする場合は、 <code>remote.pushDefault</code>
+        を設定して、すべてのブランチにプッシュするリモートを指定し、そして、このオプションを使用して 特定のブランチに対してオーバーライドします。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.&lt;name&gt;.merge
+</dt>
+<dd>
+<p>
+        branch.&lt;name&gt;.remote とともに、指定されたブランチのアップストリームブランチを定義します。 マージするブランチを <code>git
+        fetch</code>/<code>git pull</code>/<code>git rebase</code> に通知し、 <code>git push</code>
+        にも影響を与える可能性があります(push.default参照)。
+        ブランチ&lt;name&gt;にいる場合、FETCH_HEADでマージするためにマークされるデフォルトのrefspecを <code>git fetch</code> に指示します。
+        値はrefspecのリモート部分のように処理され、 <code>branch.&lt;name&gt;.remote `
+        で指定されたリモートからフェッチされたrefと一致する必要があります。 マージ情報は、マージのためにデフォルトのブランチを検索するために `git
+        pull</code> (最初に <code>git fetch</code> を呼び出します)によって使用されます。 このオプションがない場合、 <code>git pull</code>
+        はデフォルトで、フェッチされた最初のrefspecをマージします。 octopusマージを取得するには、複数値を指定します。
+        あなたがローカルリポジトリ内の別のブランチから&lt;name&gt;にマージされるように <code>git pull</code>
+        を設定したい場合は、branch.&lt;name&gt;.mergeが目的をブランチを指すようにして、そして、 branch.&lt;name&gt;.remote
+        に相対パス設定 <code>.</code> (ピリオド)を使用できます。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.&lt;name&gt;.mergeOptions
+</dt>
+<dd>
+<p>
+        ブランチ&lt;name&gt;にマージするためのデフォルトオプションを設定します。 構文とサポートされているオプションは <a href="git-merge.html">git-merge(1)</a>
+        のものと同じですが、空白文字を含むオプション値は現在サポートされていません。
+</p>
+</dd>
+<dt class="hdlist1">
+branch.&lt;name&gt;.rebase
+</dt>
+<dd>
+<p>
+        trueの場合、 <code>git pull</code>
+        の実行時にデフォルトのリモートからデフォルトのブランチをマージするのではなく、フェッチされたブランチの上にブランチ&lt;name&gt;をリベースします。
+        ブランチ固有ではない方法でこれを行うには、 <code>pull.rebase</code> を参照してください。
+</p>
+<div class="paragraph"><p><code>merges</code> (または単に <code>m</code>) の場合、 <code>--rebase-merges</code> オプションを <code>git rebase</code>
+に渡して、ローカル・マージ・コミットがリベースに含まれるようにします (詳細については <a href="git-rebase.html">git-rebase(1)</a>
+を参照してください)。</p></div>
+<div class="paragraph"><p>値が <code>interactive</code> (または単に <code>i</code>)の場合、リベースは対話モードで実行されます。</p></div>
+<div class="paragraph"><p><strong>注意</strong>: これはおそらく危険な操作です。
+あなたが影響を理解していない限り、使用しないでください
+(詳細については、 <a href="git-rebase.html">git-rebase(1)</a> を参照してください)。</p></div>
+</dd>
+<dt class="hdlist1">
+branch.&lt;name&gt;.description
+</dt>
+<dd>
+<p>
+        ブランチの説明は、 <code>git branch --edit-description</code> で編集できます。
+        ブランチの説明は、format-patchのカバーレターまたはrequest-pullの概要に自動的に追加されます。
+</p>
+</dd>
+</dl></div>
 </div>
 </div>
 <div class="sect1">
@@ -1328,7 +1472,7 @@ branch?&#8221;</a> in the Git User&#8217;s Manual.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-05-24 05:41:00 JST
+ 2022-09-25 10:38:11 JST
 </div>
 </div>
 </body>

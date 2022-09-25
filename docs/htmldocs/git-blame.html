@@ -752,8 +752,8 @@ git-blame(1) Manual Page
 <pre class="content"><em>git blame</em> [-c] [-b] [-l] [--root] [-t] [-f] [-n] [-s] [-e] [-p] [-w] [--incremental]
             [-L &lt;range&gt;] [-S &lt;revs-file&gt;] [-M] [-C] [-C] [-C] [--since=&lt;date&gt;]
             [--ignore-rev &lt;rev&gt;] [--ignore-revs-file &lt;file&gt;]
-            [--progress] [--abbrev=&lt;n&gt;] [&lt;rev&gt; | --contents &lt;file&gt; | --reverse &lt;rev&gt;..&lt;rev&gt;]
-            [--] &lt;file&gt;</pre>
+            [--color-lines] [--color-by-age] [--progress] [--abbrev=&lt;n&gt;]
+            [&lt;rev&gt; | --contents &lt;file&gt; | --reverse &lt;rev&gt;..&lt;rev&gt;] [--] &lt;file&gt;</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -815,11 +815,11 @@ ea4c7f9bf69e781dd0cd88d2bccb2bf5cc15c9a7 git-blame: Make the output</code></pre>
 </dt>
 <dd>
 <p>
-        <em>&lt;start&gt;,&lt;end&gt;</em> で指定の行範囲のみ、または正規表現関数名 <em>&lt;funcname&gt;</em>
+        <code>&lt;start&gt;,&lt;end&gt;</code> で指定の行範囲のみ、または正規表現関数名 <code>&lt;funcname&gt;</code>
         で指定の行範囲のみに注釈を付けます。複数回指定できます。範囲が重複するのは許されます。
 </p>
-<div class="paragraph"><p><em>&lt;start&gt;</em> と <em>&lt;end&gt;</em> はオプションです。 <code>-L &lt;start&gt;</code> または <code>-L &lt;start&gt;,</code> は <em>&lt;start&gt;</em>
-からファイルの終わりまでの範囲です。 <code>-L ,&lt;end&gt;</code> は、ファイルの先頭から <em>&lt;end&gt;</em> までの範囲です。</p></div>
+<div class="paragraph"><p><code>&lt;start&gt;</code> と <code>&lt;end&gt;</code> はオプションです。 <code>-L &lt;start&gt;</code> または <code>-L &lt;start&gt;,</code> は <code>&lt;start&gt;</code>
+からファイルの終わりまでの範囲です。 <code>-L ,&lt;end&gt;</code> は、ファイルの先頭から <code>&lt;end&gt;</code> までの範囲です。</p></div>
 <div class="paragraph"><p>&lt;start&gt; と &lt;end&gt; は、以下のいずれかの形式です:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -990,7 +990,7 @@ of alphanumeric characters)の下限です。また、デフォルト値は40で
         <code>blame.markIgnoredLines</code>
         構成オプションが設定されている場合、無視されたコミットによって変更され、別のコミットに起因する行は、blame出力で <code>?</code> でマークされます。
         <code>blame.markUnblamableLines</code>
-        構成オプションが設定されている場合、別のリビジョンに帰することができなかった無視されたコミットによって触れられた行は、 <em>*</em> でマークされます。
+        構成オプションが設定されている場合、別のリビジョンに帰することができなかった無視されたコミットによって触れられた行は、 <code>*</code> でマークされます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1001,6 +1001,25 @@ of alphanumeric characters)の下限です。また、デフォルト値は40で
         <code>file</code> にリストされているリビジョンを無視します。これは <code>fsck.skipList</code>
         と同じ形式である必要があります。このオプションは繰り返すことができ、これらのファイルは、 <code>blame.ignoreRevsFile</code>
         構成オプションで指定されたファイルの後に処理されます。空のファイル名 <code>""</code> は、以前に処理されたファイルからrevsのリストをクリアします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--color-lines</code>
+</dt>
+<dd>
+<p>
+        前行と同一のコミットからの場合、デフォルト形式の行注釈に異なる色を付けます。
+        これにより、異なるコミットによって導入されたコード・ブロックを区別しやすくなります。 色のデフォルトはシアン(cyan)で、
+        <code>color.blame.repeatedLines</code> 設定オプションを使用して調整できます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--color-by-age</code>
+</dt>
+<dd>
+<p>
+        デフォルトの形式では、行の経過時間に応じて行の注釈に色を付けます。 <code>color.blame.highlightRecent</code>
+        構成オプションは、年齢の各範囲で使用される色を制御します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1089,6 +1108,31 @@ of alphanumeric characters)の下限です。また、デフォルト値は40で
 </p>
 </dd>
 </dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_default_format">THE DEFAULT FORMAT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>--porcelain</code> オプションも <code>--incremental</code> オプションも指定されていない場合、<code>git Blame</code>
+は各行の注釈を以下のとおり出力します:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+行の元となったコミットのオブジェクトの省略名
+</p>
+</li>
+<li>
+<p>
+作者ID (<code>-s</code> または <code>-e</code> が指定されていない限り、デフォルトでは作者名と日付)
+</p>
+</li>
+<li>
+<p>
+行番号
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>上記を行の内容の前に表示します。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1245,6 +1289,86 @@ commentary)のような)情報が追加されたとしても、blameビュワー
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
+<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+blame.blankBoundary
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a>で境界コミット(boundary
+        commits)の空白コミットオブジェクト名を表示します。このオプションのデフォルトはfalseです。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.coloring
+</dt>
+<dd>
+<p>
+        これにより、blame出力に適用される配色が決まります。 これは、 <code>repeatedLines</code> または <code>highlightRecent</code>
+        またはデフォルトの <code>none</code> にすることができます。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.date
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a> で日付を出力するために使用される形式を指定します。 設定を解除すると、iso形式が使用されます。
+        サポートされている値については、 <a href="git-log.html">git-log(1)</a> の <code>--date</code> オプションの説明を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.showEmail
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a> で、作者名(author)の代わりに作者の電子メールアドレス(author email)を表示します。
+        このオプションのデフォルトはfalseです。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.showRoot
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a> ではルートコミットを境界として扱わないでください。 このオプションのデフォルトはfalseです。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.ignoreRevsFile
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a> で、ファイルにリストされているリビジョン(1行に1つの省略されていないオブジェクト名)を無視します。 <code>#</code>
+        で始まる空白とコメントは無視されます。 このオプションは複数回繰り返すことができます。 空のファイル名は、無視されたリビジョンのリストをリセットします。
+        このオプションは、コマンドラインオプション <code>--ignore-revs-file</code> の前に処理されます。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.markUnblamableLines
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a>の出力で <code>*</code>
+        を使用して、別のコミットに帰することができなかった、無視されたリビジョンによって変更された行をマークします。
+</p>
+</dd>
+<dt class="hdlist1">
+blame.markIgnoredLines
+</dt>
+<dd>
+<p>
+        <a href="git-blame.html">git-blame(1)</a>の出力で、別のコミットに起因する無視されたリビジョンによって変更された行を <code>?</code> でマークします。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
 <div class="paragraph"><p><a href="git-annotate.html">git-annotate(1)</a></p></div>
@@ -1261,7 +1385,7 @@ commentary)のような)情報が追加されたとしても、blameビュワー
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-04-26 23:46:23 JST
+ 2022-09-25 08:47:34 JST
 </div>
 </div>
 </body>
