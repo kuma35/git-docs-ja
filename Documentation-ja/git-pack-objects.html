@@ -769,7 +769,7 @@ git-pack-objects(1) Manual Page
 <div class="paragraph"><p>パックインデックスファイル(.idx)が、パック内のオブジェクトへの高速でランダムなアクセスのために生成されます。インデックスファイル(.idx)とパックされたアーカイブ(.pack)の両方を
 $GIT_OBJECT_DIRECTORY の pack/ サブディレクトリ（または $GIT_ALTERNATE_OBJECT_DIRECTORIES
 の任意のディレクトリ)に配置すると、Gitはパックアーカイブから読み取ることができます。</p></div>
-<div class="paragraph"><p><em>git unpack-objects</em>
+<div class="paragraph"><p><code>git unpack-objects</code>
 コマンドは、パックされたアーカイブを読み取り、パックに含まれるオブジェクトを「1ファイル1オブジェクト」形式に展開できます。これは通常、ピアによる効率的なネットワーク転送のためにパックがオンザフライで作成されるときに、smart-pullコマンドによって実行されます。</p></div>
 </div>
 </div>
@@ -850,35 +850,27 @@ base-name
 </dt>
 <dd>
 <p>
-        Packs unreachable objects into a separate "cruft" pack, denoted by the
-        existence of a <code>.mtimes</code> file. Typically used by <code>git repack
-        --cruft</code>. Callers provide a list of pack names and indicate which packs will
-        remain in the repository, along with which packs will be deleted (indicated
-        by the <code>-</code> prefix). The contents of the cruft pack are all objects not
-        contained in the surviving packs which have not exceeded the grace period
-        (see <code>--cruft-expiration</code> below), or which have exceeded the grace period,
-        but are reachable from an other object which hasn&#8217;t.
+        到達不能なオブジェクトを、 <code>.mtimes</code>  ファイルの存在によって示される別の「クラフト・パック」にパックします。 通常は <code>git repack
+        --cruft</code> で使用されます。 呼び出し元はパック名のリストを提供し、 リポジトリに残すパックと削除するパックを示します(接頭辞 <code>-</code>
+        で示されます)。 クラフト・パックの内容は、猶予期間(下記 <code>--cruft-expiration</code>
+        参照)を超えていない、または、猶予期間を超えているが猶予期間を超えていない他のオブジェクトから到達可能な生き残ったパックに含まれていないすべてのオブジェクトです。
 </p>
-<div class="paragraph"><p>When the input lists a pack containing all reachable objects (and lists all
-other packs as pending deletion), the corresponding cruft pack will contain
-all unreachable objects (with mtime newer than the <code>--cruft-expiration</code>)
-along with any unreachable objects whose mtime is older than the
-<code>--cruft-expiration</code>, but are reachable from an unreachable object whose
-mtime is newer than the <code>--cruft-expiration</code>).</p></div>
-<div class="paragraph"><p>Incompatible with <code>--unpack-unreachable</code>, <code>--keep-unreachable</code>,
-<code>--pack-loose-unreachable</code>, <code>--stdin-packs</code>, as well as any other options
-which imply <code>--revs</code>. Also incompatible with <code>--max-pack-size</code>; when this
-option is set, the maximum pack size is not inferred from
-<code>pack.packSizeLimit</code>.</p></div>
+<div class="paragraph"><p>入力が到達可能なすべてのオブジェクトを含むパックをリストする(そして他のすべてのパックを削除保留中としてリストする)場合、
+対応するクラフト・パックには、 すべての到達不能オブジェクト(<code>--cruft-expiration</code> よりも新しい mtime)が含まれます。
+mtime は <code>--cruft-expiration</code> よりも古いですが、 mtime が <code>--cruft-expiration</code>
+よりも新しい到達不能オブジェクトから到達可能です。</p></div>
+<div class="paragraph"><p><code>--unpack-unreachable</code> や <code>--keep-unreachable</code> や <code>--pack-loose-unreachable</code> や
+<code>--stdin-packs</code> と、<code>--revs</code> を暗示するその他のオプションとは互換性がありません。 <code>--max-pack-size</code>
+とも互換性がありません。 <code>--max-pack-size</code> オプションが設定されている場合、パックの最大サイズは
+<code>pack.packSizeLimit</code> から推測されません。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--cruft-expiration=&lt;approxidate&gt;</code>
 </dt>
 <dd>
 <p>
-        If specified, objects are eliminated from the cruft pack if they have an
-        mtime older than <code>&lt;approxidate&gt;</code>. If unspecified (and given <code>--cruft</code>), then
-        no objects are eliminated.
+        指定されている場合、 mtime が <code>&lt;approxidate&gt;</code> よりも古いオブジェクトはクラフト・パック(cruft pack)から削除されます。
+        指定されていない(そして  <code>--cruft</code> が指定されている)場合、オブジェクトは削除されません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1120,13 +1112,13 @@ option is set, the maximum pack size is not inferred from
 <p>
         将来の「partial clone」(部分クローン)開発に役立つデバッグオプション。このオプションは、欠落しているオブジェクトの処理方法を指定します。
 </p>
-<div class="paragraph"><p><em>--missing=error</em>
+<div class="paragraph"><p><code>--missing=error</code>
 は、欠落しているオブジェクトが検出された場合に、pack-objectsがエラーで停止することを要求します。リポジトリが部分クローン(partial
-clone)の場合は、欠落していると言う前に、欠落しているオブジェクトをフェッチしようとします。 <em>--missing=error</em>
+clone)の場合は、欠落していると言う前に、欠落しているオブジェクトをフェッチしようとします。 <code>--missing=error</code>
 がデフォルトの操作です。</p></div>
-<div class="paragraph"><p><em>--missing=allow-any</em> は、欠落しているオブジェクトが検出された場合でも、オブジェクトの走査(object
+<div class="paragraph"><p><code>--missing=allow-any</code> は、欠落しているオブジェクトが検出された場合でも、オブジェクトの走査(object
 traversal)を続行できます。欠落しているオブジェクトのフェッチは発生しません。欠落しているオブジェクトは、結果から警告無しに黙って省略されます。</p></div>
-<div class="paragraph"><p><em>--missing=allow-promisor</em> は <em>allow-any</em>
+<div class="paragraph"><p><code>--missing=allow-promisor</code> は <code>allow-any</code>
 に似ていますが、オブジェクトの走査は、「予想される」promisorが欠落しているオブジェクトに対してのみ続行できます。欠落しているオブジェクトのフェッチは発生しません。予期しないオブジェクトの欠落により、エラーが発生します。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1248,7 +1240,7 @@ island = refs/virtual/([0-9]+)/(pull)/</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-09-25 22:03:39 JST
+ 2022-10-05 06:10:52 JST
 </div>
 </div>
 </body>
