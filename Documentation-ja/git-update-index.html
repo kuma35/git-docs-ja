@@ -815,7 +815,7 @@ updating」(更新が必要)状態がクリアされます。</p></div>
 <dd>
 <p>
         静かにします。 もし <code>--refresh</code> がインデックスの更新を必要としていると判断した場合、デフォルトの動作はエラーになります。
-        このオプションは、 <em>git update-index</em> をとにかく継続させます。
+        このオプションは、 <code>git update-index</code> をとにかく継続させます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1193,9 +1193,8 @@ update-index paths...</code> で更新されたパスと、インデックスと
 が、作業ツリーファイルとインデックスが一致することを検出した場合、「assume
 unchanged」ビットは設定されないことに注意してください(あなたがそれらに「assume unchanged」マークを付けたい場合は、 <code>git
 update-index --really-refresh</code> を使用してください)。</p></div>
-<div class="paragraph"><p>Sometimes users confuse the assume-unchanged bit with the skip-worktree
-bit.  See the final paragraph in the "Skip-worktree bit" section below for
-an explanation of the differences.</p></div>
+<div class="paragraph"><p>時々ユーザーは assume-unchanged ビットと skip-worktree ビットを混同することがあります。 これらの違いの説明については、
+下記「Skip-worktree bit」セクションの最後の段落を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1281,39 +1280,29 @@ lstat(2) に、インデックスに一致するパスに「assume unchanged」(
 <div class="sect1">
 <h2 id="_skip_worktree_bit">SKIP-WORKTREE BIT</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Skip-worktree bit can be defined in one (long) sentence: Tell git to avoid
-writing the file to the working directory when reasonably possible, and
-treat the file as unchanged when it is not present in the working directory.</p></div>
-<div class="paragraph"><p>Note that not all git commands will pay attention to this bit, and some only
-partially support it.</p></div>
-<div class="paragraph"><p>The update-index flags and the read-tree capabilities relating to the
-skip-worktree bit predated the introduction of the
-<a href="git-sparse-checkout.html">git-sparse-checkout(1)</a> command, which provides a much easier way to
-configure and handle the skip-worktree bits.  If you want to reduce your
-working tree to only deal with a subset of the files in the repository, we
-strongly encourage the use of <a href="git-sparse-checkout.html">git-sparse-checkout(1)</a> in preference
-to the low-level update-index and read-tree primitives.</p></div>
-<div class="paragraph"><p>The primary purpose of the skip-worktree bit is to enable sparse checkouts,
-i.e. to have working directories with only a subset of paths present.  When
-the skip-worktree bit is set, Git commands (such as <code>switch</code>, <code>pull</code>,
-<code>merge</code>) will avoid writing these files.  However, these commands will
-sometimes write these files anyway in important cases such as conflicts
-during a merge or rebase.  Git commands will also avoid treating the lack of
-such files as an intentional deletion; for example <code>git add -u</code> will not
-stage a deletion for these files and <code>git commit -a</code> will not make a commit
-deleting them either.</p></div>
-<div class="paragraph"><p>Although this bit looks similar to assume-unchanged bit, its goal is
-different.  The assume-unchanged bit is for leaving the file in the working
-tree but having Git omit checking it for changes and presuming that the file
-has not been changed (though if it can determine without stat&#8217;ing the file
-that it has changed, it is free to record the changes).  skip-worktree tells
-Git to ignore the absence of the file, avoid updating it when possible with
-commands that normally update much of the working directory
-(e.g. <code>checkout</code>, <code>switch</code>, <code>pull</code>, etc.), and not have its absence be
-recorded in commits.  Note that in sparse checkouts (setup by <code>git
-sparse-checkout</code> or by configuring core.sparseCheckout to true), if a file
-is marked as skip-worktree in the index but is found in the working tree,
-Git will clear the skip-worktree bit for that file.</p></div>
+<div class="paragraph"><p>skip-worktreeビットは1つの(長い)文で定義できます。 合理的に可能な限り作業ディレクトリへのファイルの書き込みを避け、
+作業ディレクトリにファイルが存在しない場合は未変更として扱うようにgitに指示します。</p></div>
+<div class="paragraph"><p>注意: すべての git コマンドがこのビットに注意を払うわけではなく、部分的にしかサポートしていないものもあります。</p></div>
+<div class="paragraph"><p>update-index フラグと skip-worktree ビットに関連する read-tree 機能は、
+<a href="git-sparse-checkout.html">git-sparse-checkout(1)</a> コマンド導入以前のものです。 <a href="git-sparse-checkout.html">git-sparse-checkout(1)</a>
+コマンド導入により、skip-worktree ビットを構成および処理するはるかに簡単な方法が提供されます。
+リポジトリ内のファイルのサブセットのみを処理するように作業ツリーを縮小したい場合は、 低レベルの update-index や read-tree
+プリミティブに優先して、 <a href="git-sparse-checkout.html">git-sparse-checkout(1)</a> の使用を強くお勧めします。</p></div>
+<div class="paragraph"><p>skip-worktree
+ビットの主な目的は、スパース・チェックアウトを有効にすることです。つまり、パスのサブセットのみが存在する作業ディレクトリを作成します。
+skip-worktree ビットが設定されている場合、 (<code>switch</code> や <code>pull</code> や <code>merge</code> のような) Git
+コマンドはこれらのファイルへの書き込みを回避します。 ただし、これらのコマンドは、マージ中またはリベース中の競合などの重要な場合に、
+とにかくこれらのファイルを書き込むことがあります。 Git コマンドでは、そのようなファイルの欠如を意図的な削除として扱うことも回避します。 たとえば、
+<code>git add -u</code> はこれらのファイルの削除をステージングせず、 <code>git commit -a</code> はそれらを削除するコミットも行いません。</p></div>
+<div class="paragraph"><p>このビットは、assume-unchange ビットに似ていますが、その目的は異なります。 変更されていないと仮定するビットは、
+ファイルを作業ツリーに残しますが、 Git に変更のチェックを省略させ、 ファイルが変更されていないと推定するためのものです(ただし、
+ファイルが変更されたと明記せずに判断できる場合は、 その変更を記録するのは自由にできます)。 skip-worktree は Git
+にファイルの不在を無視するように指示し、 通常は作業ディレクトリの大部分を更新するコマンド(例: <code>checkout</code> や`switch` や
+<code>pull</code> など)で可能な場合はファイルを更新しないようにし、その不在がコミットに記録されないようにします。 注意: (<code>git
+sparse-checkout</code> または core.sparseCheckout を true
+に設定してセットアップする)スパース・チェックアウトでは、 ファイルがインデックスで skip-worktree
+としてマークされているが、作業ツリー内で見つかった場合、 Git はそのファイルの skip-worktree
+ビットをクリアすることに注意してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1372,11 +1361,10 @@ status」を1回実行して、残っている不良データをフラッシュ�
 <h2 id="_file_system_monitor">FILE SYSTEM MONITOR</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>この機能は、巨大な作業ディレクトリを持つリポジトリのgit操作を高速化することを目的としています。</p></div>
-<div class="paragraph"><p>It enables git to work together with a file system monitor (see
-<a href="git-fsmonitor&#45;&#45;daemon.html">git-fsmonitor&#45;&#45;daemon(1)</a> and the "fsmonitor-watchman" section
-of <a href="githooks.html">githooks(5)</a>) that can inform it as to what files have been
-modified. This enables git to avoid having to lstat() every file to find
-modified files.</p></div>
+<div class="paragraph"><p>これにより、gitはファイルシステムモニター(<a href="git-fsmonitor&#45;&#45;daemon.html">git-fsmonitor&#45;&#45;daemon(1)</a> と、
+<a href="githooks.html">githooks(5)</a>
+の「fsmonitor-watchman」セクションを参照)と連携して、どのファイルが変更されたかを通知できます。
+これにより、gitは、変更されたファイルを見つけるためにすべてのファイルを lstat() する必要がなくなります。</p></div>
 <div class="paragraph"><p>追跡されていないモノのキャッシュ(untracked
 cache)と組み合わせて使用すると、作業ディレクトリ全体をスキャンして新しいファイルを探すコストを回避できるため、パフォーマンスをさらに向上させることができます。</p></div>
 <div class="paragraph"><p>この機能を有効(または無効)にする場合は、 各リポジトリの <code>git update-index</code> に <code>--fsmonitor</code>
@@ -1398,7 +1386,7 @@ cache)と組み合わせて使用すると、作業ディレクトリ全体を�
 実行可能ビットのみが異なる場合はファイルシステムのファイルモードの違いを無視します。
 このような不幸なファイルシステムでは、
 「git update-index --chmod=」を使用する必要があるかもしれません。</p></div>
-<div class="paragraph"><p>まったく同様に、 <code>core.symlinks</code> 構成変数が <em>false</em> に設定されている場合(<a href="git-config.html">git-config(1)</a>
+<div class="paragraph"><p>まったく同様に、 <code>core.symlinks</code> 構成変数が <code>false</code> に設定されている場合(<a href="git-config.html">git-config(1)</a>
 参照)、シンボリックリンクはプレーンファイルとしてチェックアウトされ、そしてこのコマンドは記録されたファイルモードをシンボリックから通常のファイルへのリンクへ変更しません。</p></div>
 <div class="paragraph"><p>このコマンドは、 <code>core.ignorestat</code> 構成変数を調べます。 上記「Using "assume unchanged"
 bit」セクションを参照してください。</p></div>
@@ -1437,7 +1425,7 @@ Gitは特定の操作を実行するときに、インデックスに対して�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-09-25 22:03:24 JST
+ 2022-10-10 06:39:53 JST
 </div>
 </div>
 </body>
