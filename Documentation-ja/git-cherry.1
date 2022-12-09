@@ -1,0 +1,188 @@
+'\" t
+.\"     Title: git-cherry
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CHERRY" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-cherry \- アップストリームにまだ適用されていないコミットを検索する
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit cherry\fR [\-v] [<upstream> [<head> [<limit>]]]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fB<head>\&.\&.<upstream>\fR に \fB<limit>\&.\&.<head>\fR の範囲と同等のコミットがあるかどうかを検査(determine)します。
+.sp
+等価性テストは、空白と行番号を削除した後のdiffに基づいています。したがって、git\-cherry は、 \fBgit-cherry-pick\fR(1) または \fBgit-am\fR(1) または \fBgit-rebase\fR(1) を使用してコミットが「コピー」された時に検出します。
+.sp
+\fB<limit>\&.\&.<head>\fR の範囲のすべてのコミットのSHA1を出力し、 <upstream> に同等のものがあるコミットの場合は \fB\-\fR を接頭辞として付け、そうでないコミットの場合は \fB+\fR を接頭辞として付けます。
+.SH "OPTIONS"
+.PP
+\fB\-v\fR
+.RS 4
+SHA1の横にコミット件名(commit subject)を表示します。
+.RE
+.PP
+<upstream>
+.RS 4
+同等のコミットを検索するためのアップストリームブランチ。デフォルトはHEADのアップストリームブランチです。
+.RE
+.PP
+<head>
+.RS 4
+作業ブランチ。デフォルトはHEADです。
+.RE
+.PP
+<limit>
+.RS 4
+コミットをlimitまで(limitを含む)報告しないでください。
+.RE
+.SH "EXAMPLES"
+.SS "Patch workflows"
+.sp
+git\-cherryは、パッチベースのワークフロー(\fBgitworkflows\fR(7) 参照)で頻繁に使用され、一連のパッチがアップストリームメンテナによって適用されているかどうかを判断します。このようなワークフローでは、以下のようなトピックブランチを作成して送信できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-b topic origin/master
+# work and create some commits
+$ git format\-patch origin/master
+$ git send\-email \&.\&.\&. 00*
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+後で、あなたは(まだ \fBtopic\fR に居る時に、)次のように言うことで、変更が適用されたかどうかを確認できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch  # update your notion of origin/master
+$ git cherry \-v
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SS "Concrete example"
+.sp
+トピックが3つのコミットで構成され、メンテナがそのうちの2つを適用した状況では、状況は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log \-\-graph \-\-oneline \-\-decorate \-\-boundary origin/master\&.\&.\&.topic
+* 7654321 (origin/master) upstream tip commit
+[\&.\&.\&. snip some other commits \&.\&.\&.]
+* cccc111 cherry\-pick of C
+* aaaa111 cherry\-pick of A
+[\&.\&.\&. snip a lot more that has happened \&.\&.\&.]
+| * cccc000 (topic) commit C
+| * bbbb000 commit B
+| * aaaa000 commit A
+|/
+o 1234567 branch point
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このような場合、git\-cherryはまだ適用されていないモノの簡潔な要約を示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cherry origin/master topic
+\- cccc000\&.\&.\&. commit C
++ bbbb000\&.\&.\&. commit B
+\- aaaa000\&.\&.\&. commit A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ここで、(\fB\-\fR でマークされている)コミットAとCは、 \fBorigin/master\fR のトップでリベースすると、トピックブランチから削除できますが、（\fB+\fR でマークされている)コミットBは \fBorigin/master\fR にapplyするために送信されるために、まだ保持しつづける必要があります。
+.SS "Using a limit"
+.sp
+オプションの <limit> は、あなたのトピックがアップストリームにない他の作業に基づいている場合に役立ちます。前の例を拡張すると、これは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log \-\-graph \-\-oneline \-\-decorate \-\-boundary origin/master\&.\&.\&.topic
+* 7654321 (origin/master) upstream tip commit
+[\&.\&.\&. snip some other commits \&.\&.\&.]
+* cccc111 cherry\-pick of C
+* aaaa111 cherry\-pick of A
+[\&.\&.\&. snip a lot more that has happened \&.\&.\&.]
+| * cccc000 (topic) commit C
+| * bbbb000 commit B
+| * aaaa000 commit A
+| * 0000fff (base) unpublished stuff F
+[\&.\&.\&. snip \&.\&.\&.]
+| * 0000aaa unpublished stuff A
+|/
+o 1234567 merge\-base between upstream and topic
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+制限として \fBbase\fR を指定することで、 \fBbase\fR と \fBtopic\fR の間のコミットをリストすることを回避できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cherry origin/master topic base
+\- cccc000\&.\&.\&. commit C
++ bbbb000\&.\&.\&. commit B
+\- aaaa000\&.\&.\&. commit A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBgit-patch-id\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

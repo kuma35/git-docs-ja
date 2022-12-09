@@ -1,0 +1,213 @@
+'\" t
+.\"     Title: git-send-pack
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-SEND\-PACK" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-send-pack \- Gitプロトコルを介してオブジェクトを別のリポジトリにプッシュする
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit send\-pack\fR [\-\-dry\-run] [\-\-force] [\-\-receive\-pack=<git\-receive\-pack>]
+                [\-\-verbose] [\-\-thin] [\-\-atomic]
+                [\-\-[no\-]signed|\-\-signed=(true|false|if\-asked)]
+                [<host>:]<directory> (\-\-all | <ref>\&...)
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+通常は、代わりに、このコマンドの上位レベルのラッパーである「git push」を使用することをお勧めします。 \fBgit-push\fR(1) を参照してください。
+.sp
+おそらくリモートリポジトリで \fBgit\-receive\-pack\fR を呼び出し、現在のリポジトリから更新して、名前付きrefsを送信します。
+.SH "OPTIONS"
+.PP
+\fB\-\-receive\-pack=<git\-receive\-pack>\fR
+.RS 4
+リモート側の 「git\-receive\-pack」プログラムへのパス。 sshを介してリモートリポジトリにプッシュするとき、デフォルトの $PATH のディレクトリにプログラムが無い場合に便利です。
+.RE
+.PP
+\fB\-\-exec=<git\-receive\-pack>\fR
+.RS 4
+\fB\-\-receive\-pack=<git\-receive\-pack>\fR
+と同じ。
+.RE
+.PP
+\fB\-\-all\fR
+.RS 4
+更新するrefを明示的に指定する代わりに、ローカルに存在するすべてのヘッドを更新します。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+stdinからrefのリストを1行に1つずつ取得します。 このオプションに加えてコマンドラインでrefが指定されている場合、stdinからのrefはコマンドラインでのrefの後に処理されます。
+.sp
+\fB\-\-stateless\-rpc\fR
+がこのオプションと一緒に指定されている場合、refのリストはパケット形式(pkt\-line)である必要があります。各refは個別のパケットに含まれている必要があり、リストはフラッシュパケットで終了している必要があります。
+.RE
+.PP
+\fB\-\-dry\-run\fR
+.RS 4
+実際に更新を送信する以外はすべて行います。
+.RE
+.PP
+\fB\-\-force\fR
+.RS 4
+通常、このコマンドは、上書きに使用されたローカル ref の祖先ではないリモート ref の更新を拒否します。 このフラグは、このチェックを無効にします。 これが意味することは、リモートリポジトリがコミットを失う可能性があるということです。注意して使用してください。
+.RE
+.PP
+\fB\-\-verbose\fR
+.RS 4
+おしゃべりに実行します。
+.RE
+.PP
+\fB\-\-thin\fR
+.RS 4
+ネットワークトラフィックを削減するために、パックに含まれていないオブジェクトに基づいてオブジェクトを削除された形式で記録する薄いパック(thin pack)を送信します。
+.RE
+.PP
+\fB\-\-atomic\fR
+.RS 4
+参照を更新するためにアトミック取引(atomic transaction)を使用します。いずれかのrefが更新に失敗した場合、refを変更せずにプッシュ全体が失敗します。
+.RE
+.PP
+\fB\-\-[no\-]signed\fR, \fB\-\-signed=(true|false|if\-asked)\fR
+.RS 4
+プッシュリクエストをGPG署名して、受信側のrefを更新し、フックでチェックしたり、ログに記録したりできるようにします。
+\fBfalse\fR
+または
+\fB\-\-no\-signed\fR
+の場合、署名は試行されません。
+\fBtrue\fR
+または
+\fB\-\-signed\fR
+の場合、サーバーが署名付きプッシュをサポートしていないと、プッシュは失敗します。
+\fBif\-asked\fR
+に設定されている場合、サーバーが署名されたプッシュをサポートしている場合にのみ署名します。
+\fBgpg \-\-sign\fR
+の実際の呼び出しが失敗した場合も、プッシュは失敗します。 受信側の詳細については、
+\fBgit-receive-pack\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-push\-option=<string>\fR
+.RS 4
+サーバー側のフックで使用するためのプッシュオプションとして、指定された文字列を渡します。 サーバーがプッシュオプションをサポートしていない場合は、エラーになります。 詳細については、
+\fBgit-push\fR(1)
+と
+\fBgithooks\fR(5)
+を参照してください。
+.RE
+.PP
+<host>
+.RS 4
+リポジトリを収容するリモートホスト。 この部分を指定すると、sshを介して「git\-receive\-pack」が呼び出されます。
+.RE
+.PP
+<directory>
+.RS 4
+更新するリポジトリ。
+.RE
+.PP
+<ref>\&...
+.RS 4
+更新するリモートref。
+.RE
+.SH "SPECIFYING THE REFS"
+.sp
+リモート側で更新するrefを指定するには、3つの方法があります。
+.sp
+\fB\-\-all\fR フラグを使用すると、ローカルに存在するすべての参照がリモート側に転送されます。 このフラグを使用する場合、 <ref> を指定することはできません。
+.sp
+\fB\-\-all\fR がなく、 \fB<ref>\fR がない場合、ローカル側とリモート側の両方に存在するヘッドが更新されます。
+.sp
+(コマンドラインまたは \fB\-\-stdin\fR を介して、)1つ以上の \fB<ref>\fR が明示的に指定されている場合、単一のパターン、またはコロン(\fB:\fR)で区切られたそのようなパターンのペアのいずれかです(これはref名にコロンを含めることはできないことを意味します)。単一のパターン \fB<name>\fR は、\fB<name>:<name>\fR の省略形です。
+.sp
+各パターンペアは、ソース側(コロンの前)と、宛先側(コロンの後)で構成されます。プッシュされるrefは、ソース側にマッチするモノを見つけることによって決定され、プッシュされる場所は、宛先側を使用して決定されます。refの照合に使用されるルールは、シンボリックref名を解決するために「git rev\-parse」で使用されるルールと同じです。 \fBgit-rev-parse\fR(1) を参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<src> がローカル参照の1つと正確に一致しない場合はエラーとなります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<dst> が複数のリモート参照と一致する場合はエラーになります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<dst> がどのリモート参照とも一致しない場合は以下のいずれかです。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「refs/」で始まる必要があります。 この場合、文字通り <dst> が宛先として使用されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<src> == <dst> および、 <src> に一致するrefは、リモートrefのセットに存在してはなりません。 ローカルで一致する参照 <src> が、宛先の名前として使用されます。
+.RE
+.RE
+.sp
+\fB\-\-force\fR がない場合、<src> refは、<dst>が存在しない場合、または<dst>が<src>の適切なサブセット(つまり、祖先)である場合にのみリモートに保存されます。 「早送りチェック」(fast\-forward check)と呼ばれるこのチェックは、リモートrefを誤って上書きして、そこから他の人のコミットを失うことを回避するために行われます。
+.sp
+\fB\-\-force\fR を使用すると、すべてのrefに対して早送りチェック(fast\-forward check)が無効になります。
+.sp
+オプションで、<ref>パラメーターの前にプラスの「+」記号を付けて、そのrefでのみ早送りチェック(fast\-forward check)を無効にすることができます。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

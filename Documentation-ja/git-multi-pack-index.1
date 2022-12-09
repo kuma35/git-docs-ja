@@ -1,0 +1,243 @@
+'\" t
+.\"     Title: git-multi-pack-index
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MULTI\-PACK\-IN" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-multi-pack-index \- multi\-pack\-indexを書き出し・検証します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit multi\-pack\-index\fR [\-\-object\-dir=<dir>] [\-\-[no\-]bitmap] <sub\-command>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+multi\-pack\-index (MIDX) ファイルを書き出し・検証します。
+.SH "OPTIONS"
+.PP
+\fB\-\-object\-dir=<dir>\fR
+.RS 4
+Gitオブジェクトの場所として、指定されたディレクトリを使用します。 現在のMIDXファイルについては
+\fB<dir>/packs/multi\-pack\-index\fR
+をチェックし、インデックスを作成するパックファイルについては
+\fB<dir>/packs\fR
+をチェックします。
+.sp
+\fB<dir>\fR
+は、現在のリポジトリの代替(alternate)である必要があります。
+.RE
+.PP
+\fB\-\-[no\-]progress\fR
+.RS 4
+進行状況を明示的にオン/オフにします。どちらも指定されていない場合、標準エラーが端末に接続されていれば進行状況が表示されます。 サブコマンド
+\fBwrite\fR
+と
+\fBverify\fR
+と
+\fBexpire\fR
+と
+\fBrepack\fR
+がサポートされています。
+.RE
+.sp
+以下のサブコマンドを使用できます:
+.PP
+write
+.RS 4
+新しいMIDXファイルを書き込みます。
+\fBwrite\fR
+サブコマンドでは、以下のオプションを使用できます:
+.PP
+\fB\-\-preferred\-pack=<pack>\fR
+.RS 4
+オプションで、複数のパックに同じオブジェクトが含まれている場合に使用されるタイブレークパッキング(tie\-breaking pack)を指定します。
+\fB<pack>\fR
+には少なくとも1つのオブジェクトが含まれている必要があります。与えられていない場合、mtimeが最も低いパックを優先して採用(ties are broken)します。
+.RE
+.PP
+\fB\-\-[no\-]bitmap\fR
+.RS 4
+マルチパックビットマップ(multi\-pack bitmap)を書き込むかどうかを制御します。
+.RE
+.PP
+\-\-stdin\-packs
+.RS 4
+stdin 経由で提供される行区切りのパック・インデックスのベース名のセットのみを含む マルチパック・インデックスを作成します。
+.RE
+.PP
+\-\-refs\-snapshot=<path>
+.RS 4
+\fB\-\-bitmap\fR
+を使用して、必要に応じて、再パックの前に作成された 「refs スナップショット」を含むファイルを指定します。
+.sp
+参照スナップショットは、参照先端(reference tips)に対応する行区切りの OID で構成され、通常は新しいパックを生成する前に
+\fBgit repack\fR
+によって取得されます。 オプションで
+\fB+\fR
+文字で始まる行は、 その OID に対応する参照が「優先」(preferred)であることを示すことができます(\fBgit-config\fR(1)
+の
+\fBpack\&.preferBitmapTips\fR
+を参照してください)。
+.sp
+\fB<path>\fR
+で指定されたファイルは読み取り可能であることが期待されており、重複を含んでいる可能性があります。 (特定の OID が複数回指定されている場合、少なくとも 1 つのインスタンスが特別な
+\fB+\fR
+マーカーで始まる場合、優先としてマークされます)。
+.RE
+.RE
+.PP
+verify
+.RS 4
+MIDXファイルの内容を検証(verify)します。
+.RE
+.PP
+expire
+.RS 4
+MIDXファイルによって追跡されているが、MIDXによって参照されているオブジェクトがないパックファイルを削除します。その後、MIDXファイルを書き直して、これらのパックファイルへのすべての参照を削除します。
+.RE
+.PP
+repack
+.RS 4
+マルチパックインデックス(multi\-pack\-index)によって参照される小さなパックファイル(pack\-files)にオブジェクトを含む新しいパックファイルを作成します。
+\fB\-\-batch\-size=<size>\fR
+引数で指定されたサイズがゼロの場合、マルチパックインデックスによって参照されるすべてのオブジェクトを含むパックを作成します。ゼロ以外のバッチサイズの場合は、パックを古いものから新しいものへと調べてパックファイルを選択します。マルチパックインデックスによって参照されるパック内のオブジェクトの数をカウントすることにより、「予想サイズ」を計算します。次に、予想サイズをパック内のオブジェクトの総数で割り、パックサイズを掛けます。パックのセットが少なくともバッチサイズの合計予想サイズになるまで、またはすべてのパックファイルが考慮されるまで、予想サイズがバッチサイズよりも小さいパックを選択します。パックファイルが1つだけ選択されている場合は、何もしません。 新しいパックファイルが作成された場合は、マルチパックインデックスを書き直して(rewrite)、新しいパックファイルを参照します。後で
+\fBgit multi\-pack\-index expire\fR
+を実行すると、このバッチの一部であったパックファイルが削除されます。
+.sp
+\fBrepack\&.packKeptObjects\fR
+が
+\fBfalse`の場合、 `\&.keep\fR
+ファイルが関連付けられているパックファイルはバッチで再パックするために選択されません。
+.RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在の
+\fB\&.git\fR
+ディレクトリにパックファイル達のMIDXファイルを書き込みます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git multi\-pack\-index write
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+対応するビットマップを使用して、現在の
+\fB\&.git\fR
+ディレクトリ内のパックファイル達のMIDXファイルを書き込みます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git multi\-pack\-index write \-\-preferred\-pack=<pack> \-\-bitmap
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+代替オブジェクトストア(alternate object store)にパックファイルのMIDXファイルを書き込みます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git multi\-pack\-index \-\-object\-dir <alt> write
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在の
+\fB\&.git\fR
+ディレクトリ内のパックファイル達のMIDXファイルを検証(verify)します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git multi\-pack\-index verify
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "SEE ALSO"
+.sp
+マルチパックインデックス機能の詳細については、 \m[blue]\fBThe Multi\-Pack\-Index Design Document\fR\m[]\&\s-2\u[1]\d\s+2 と \fBgitformat-pack\fR(5) を参照してください。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+The Multi-Pack-Index Design Document
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/technical/multi-pack-index.html
+.RE

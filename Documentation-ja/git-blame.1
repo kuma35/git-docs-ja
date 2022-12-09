@@ -1,0 +1,718 @@
+'\" t
+.\"     Title: git-blame
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-BLAME" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-blame \- ファイルの各行を最後に変更したリビジョンと作者を表示する
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit blame\fR [\-c] [\-b] [\-l] [\-\-root] [\-t] [\-f] [\-n] [\-s] [\-e] [\-p] [\-w] [\-\-incremental]
+            [\-L <range>] [\-S <revs\-file>] [\-M] [\-C] [\-C] [\-C] [\-\-since=<date>]
+            [\-\-ignore\-rev <rev>] [\-\-ignore\-revs\-file <file>]
+            [\-\-color\-lines] [\-\-color\-by\-age] [\-\-progress] [\-\-abbrev=<n>]
+            [<rev> | \-\-contents <file> | \-\-reverse <rev>\&.\&.<rev>] [\-\-] <file>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+指定のファイルの各行で、その行を最後に変更したリビジョンからの情報を注釈します。 オプションで、指定のリビジョンから注釈を開始します。
+.sp
+\fB\-L\fR は注釈を指定行に制限します。複数回指定できます。
+.sp
+行の原初は、ファイル自体の名前変更にまたがって自動的に追跡されます(現在のところ、名前変更追跡をオフにするオプションはありません)。 あるファイルから別のファイルに移動した行を追跡したり、別のファイルからコピーして貼り付けた行を追跡したりするには、 \fB\-C\fR および \fB\-M\fR オプションを参照してください。
+.sp
+レポートには、削除または置換された行については何も表示されません。 以下の段落で簡単に説明する \fBgit diff\fR や \fBpickaxe\fR インターフェースなどのツールを使用する必要があります。
+.sp
+Gitは、ファイル注釈のサポートとは別に、変更時にコード断片(code snippet)が発生したときの開発履歴の検索もサポートしています。 これにより、コード断片がファイルに追加され、ファイル間で移動またはコピーされ、最終的に削除または置換された時期を追跡できます。 これは、diffでテキスト文字列を検索することで機能します。 \fBblame_usage\fR を検索するpickaxeインターフェースの小さな例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log \-\-pretty=oneline \-S\*(Aqblame_usage\*(Aq
+5040f17eba15504bad66b14a645bddd9b015ebb7 blame \-S <ancestry\-file>
+ea4c7f9bf69e781dd0cd88d2bccb2bf5cc15c9a7 git\-blame: Make the output
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "OPTIONS"
+.PP
+\fB\-b\fR
+.RS 4
+境界コミットでは空白のSHA\-1を表示します。これは、
+\fBblame\&.blankBoundary\fR
+構成オプションを介して制御することもできます。
+.RE
+.PP
+\fB\-\-root\fR
+.RS 4
+ルートコミットを境界として扱わないでください。 これは、
+\fBblame\&.showRoot\fR
+構成オプションを介して制御することもできます。
+.RE
+.PP
+\fB\-\-show\-stats\fR
+.RS 4
+blameの出力の最後に追加の統計を含めます。
+.RE
+.PP
+\fB\-L <start>,<end>\fR, \fB\-L :<funcname>\fR
+.RS 4
+\fB<start>,<end>\fR
+で指定の行範囲のみ、または正規表現関数名
+\fB<funcname>\fR
+で指定の行範囲のみに注釈を付けます。複数回指定できます。範囲が重複するのは許されます。
+.sp
+\fB<start>\fR
+と
+\fB<end>\fR
+はオプションです。
+\fB\-L <start>\fR
+または
+\fB\-L <start>,\fR
+は
+\fB<start>\fR
+からファイルの終わりまでの範囲です。
+\fB\-L ,<end>\fR
+は、ファイルの先頭から
+\fB<end>\fR
+までの範囲です。
+.sp
+<start> と <end> は、以下のいずれかの形式です:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+数値
+.sp
+<start> または <end> が数値の場合、絶対行番号を指定します(行は1から数えます)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB/regex/\fR
+.sp
+この形式は、指定されたPOSIX正規表現に一致する最初の行を使用します。 <start> が正規表現の場合、前の
+\fB\-L\fR
+範囲の末尾から検索します。それ以外の場合は、ファイルの先頭から検索します。 <start> が
+\fB^/regex/\fR
+の場合、ファイルの先頭から検索します。 <end> が正規表現の場合、 <start> で指定された行から検索開始します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
++offset or \-offset
+.sp
+これは <end> に対してのみ有効であり、 <start> で指定された行の前後の行数を指定します。
+.RE
+.sp
+<start> と <end> の代わりに
+\fB:<funcname>\fR
+が指定されている場合、これは <funcname> に一致する最初の関数名行から次の関数名行までの範囲を示す正規表現です。
+\fB:<funcname>\fR
+は、前の
+\fB\-L\fR
+範囲の末尾から検索します。それ以外の場合は、ファイルの先頭から検索します。
+\fB^:<funcname>\fR
+はファイルの先頭から検索します。関数名は、
+\fBgit diff\fR
+がパッチハンクヘッダーを処理するのと同じ方法で決定されます(\fBgitattributes\fR(5)
+の「Defining a custom hunk\-header」参照)。
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+長いレビジョンを表示します(デフォルト: off)。
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+生のタイムスタンプを表示します(デフフォルト: off)。
+.RE
+.PP
+\fB\-S <revs\-file>\fR
+.RS 4
+\fBgit-rev-list\fR(1)
+を呼び出す代わりに、revs\-fileのリビジョンを使用します。
+.RE
+.PP
+\fB\-\-reverse <rev>\&.\&.<rev>\fR
+.RS 4
+履歴を後方へではなく前方へウォークします。行があらわれたされたリビジョンを表示する代わりに、行が存在した最後のリビジョンを表示します。これには、START\&.\&.END のように、STARTにblameのパスが存在するレビジョン範囲が必要です。 便宜上、
+\fBgit blame \-\-reverse START\fR
+は
+\fBgit blame \-\-reverse START\&.\&.HEAD\fR
+と見なされます。
+.RE
+.PP
+\fB\-\-first\-parent\fR
+.RS 4
+マージコミットを確認したら、最初の親コミットのみを追跡します。 このオプションは、履歴全体にいつ導入されたかではなく、特定の統合ブランチにいつ導入されたかを判別するために使用できます。
+.RE
+.PP
+\fB\-p\fR, \fB\-\-porcelain\fR
+.RS 4
+ソフトウェア等で使用するのに適した形式で表示します。
+.RE
+.PP
+\fB\-\-line\-porcelain\fR
+.RS 4
+磁器形式で表示しますが、コミットが最初に参照されたときだけでなく、各行のコミット情報を出力します。 \-\-porcelain の機能を含んでいます。
+.RE
+.PP
+\fB\-\-incremental\fR
+.RS 4
+ソフトウェア等で使用するのに適した形式で結果を段階的(incrementally)に表示します。
+.RE
+.PP
+\fB\-\-encoding=<encoding>\fR
+.RS 4
+作者名(author names)の出力と要約のコミットに使用されるエンコーディングを指定します。 これを
+\fBnone\fR
+に設定すると、blame出力は変換されていないデータになります。詳細については、
+\fBgit-log\fR(1)
+のマニュアルページにある discussion の encoding に関する説明を参照してください。
+.RE
+.PP
+\fB\-\-contents <file>\fR
+.RS 4
+<rev> が指定されていない場合、コマンドは作業ツリーのコピーから逆方向に開始して変更に注釈を付けます。このフラグにより、コマンドは、作業ツリーのコピーに、指定されたファイルの内容が含まれているように見せかけます(コマンドを標準入力から読み取るには、
+\fB\-\fR
+を指定します)。
+.RE
+.PP
+\fB\-\-date <format>\fR
+.RS 4
+日付の出力に使用される形式を指定します。 \-\-date が指定されていない場合、blame\&.date 構成変数の値が使用されます。 blame\&.date 構成変数も設定されていない場合は、 iso形式が使用されます。サポートされている値については、
+\fBgit-log\fR(1)
+の \-\-date オプションの説明を参照してください。
+.RE
+.PP
+\fB\-\-[no\-]progress\fR
+.RS 4
+進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。このフラグは、端末に接続されていない場合でも進行状況のレポートを有効にします。
+\fB\-\-progress\fR
+を
+\fB\-\-porcelain\fR
+または
+\fB\-\-incremental\fR
+と一緒に使用することはできません。
+.RE
+.PP
+\fB\-M[<num>]\fR
+.RS 4
+ファイル内の移動またはコピーされた行を検出します。コミットが行のブロックを移動またはコピーすると(たとえば、元のファイルにA、次にBがあり、コミットによってB、次にAに変更される)、従来の「blame」アルゴリズムは移動の半分だけに気づき、通常は行をblameします それは親に上に移動され(つまりB)、子のコミットに下に移動された(つまりA)行にblameを割り当てます。このオプションを使用すると、追加の検査パスを実行することにより、両方のグループの行が親のせいになります。
+.sp
+<num> はオプションですが、Gitがそれらの行を親コミットに関連付けるためにファイル内で移動/コピーとして検出する必要がある英数字の数(number of alphanumeric characters)の下限です。デフォルト値は20です。
+.RE
+.PP
+\fB\-C[<num>]\fR
+.RS 4
+\fB\-M\fR
+に加えて、同じコミットで変更された他のファイルから移動またはコピーされた行を検出します。これは、プログラムを再編成し、ファイル間でコードを移動するときに役立ちます。このオプションを2回指定すると、コマンドは、ファイルを作成するコミットで他のファイルからのコピーを追加で検索します。このオプションを3回指定すると、コマンドはコミットで他のファイルからのコピーを追加で検索します。
+.sp
+<num> はオプションですが、Gitがそれらの行を親コミットに関連付けるためにファイル間の移動/コピーとして検出する必要がある英数字の数(number of alphanumeric characters)の下限です。また、デフォルト値は40です。複数の
+\fB\-C\fR
+オプションが指定されている場合、最後の
+\fB\-C\fR
+の <num> 引数が有効になります。
+.RE
+.PP
+\fB\-\-ignore\-rev <rev>\fR
+.RS 4
+変更が発生しなかったかのように、blameを割り当てるときにリビジョンによって行われた変更を無視します。無視されたコミットによって変更または追加された行は、その行または近くの行を変更した前のコミットのせいになります。このオプションは、複数のリビジョンを無視するために複数回指定できます。
+\fBblame\&.markIgnoredLines\fR
+構成オプションが設定されている場合、無視されたコミットによって変更され、別のコミットに起因する行は、blame出力で
+\fB?\fR
+でマークされます。
+\fBblame\&.markUnblamableLines\fR
+構成オプションが設定されている場合、別のリビジョンに帰することができなかった無視されたコミットによって触れられた行は、
+\fB*\fR
+でマークされます。
+.RE
+.PP
+\fB\-\-ignore\-revs\-file <file>\fR
+.RS 4
+\fBfile\fR
+にリストされているリビジョンを無視します。これは
+\fBfsck\&.skipList\fR
+と同じ形式である必要があります。このオプションは繰り返すことができ、これらのファイルは、
+\fBblame\&.ignoreRevsFile\fR
+構成オプションで指定されたファイルの後に処理されます。空のファイル名
+\fB""\fR
+は、以前に処理されたファイルからrevsのリストをクリアします。
+.RE
+.PP
+\fB\-\-color\-lines\fR
+.RS 4
+前行と同一のコミットからの場合、デフォルト形式の行注釈に異なる色を付けます。 これにより、異なるコミットによって導入されたコード・ブロックを区別しやすくなります。 色のデフォルトはシアン(cyan)で、
+\fBcolor\&.blame\&.repeatedLines\fR
+設定オプションを使用して調整できます。
+.RE
+.PP
+\fB\-\-color\-by\-age\fR
+.RS 4
+デフォルトの形式では、行の経過時間に応じて行の注釈に色を付けます。
+\fBcolor\&.blame\&.highlightRecent\fR
+構成オプションは、年齢の各範囲で使用される色を制御します。
+.RE
+.PP
+\fB\-h\fR
+.RS 4
+ヘルプメッセージを表示する。
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+\fBgit-annotate\fR(1)
+と同じ出力モードを使用します(デフォルト: オフ)。
+.RE
+.PP
+\fB\-\-score\-debug\fR
+.RS 4
+ファイル間の行の移動(\fB\-C\fR
+参照)およびファイル内で移動された行(\fB\-M\fR
+参照)に関連するデバッグ情報を含めます。 リストされている最初の数字はスコアです。 これは、ファイル間またはファイル内で移動を検出した英数字の数です。これらのコード行が移動されたと見なすには、 これが
+\fBgit blame\fR
+の特定のしきい値を超えている必要があります。
+.RE
+.PP
+\fB\-f\fR, \fB\-\-show\-name\fR
+.RS 4
+元のコミットのファイル名を表示します。 デフォルトでは、名前変更の検出により、別の名前のファイルからの行がある場合はファイル名が表示されます。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-show\-number\fR
+.RS 4
+元のコミットの行番号を表示します(デフォルト: オフ)。
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+作者名とタイムスタンプの出力を抑制します。
+.RE
+.PP
+\fB\-e\fR, \fB\-\-show\-email\fR
+.RS 4
+作者名の代わりに作者の電子メールアドレス(author email)を表示します(デフォルト: オフ)。 これは、
+\fBblame\&.showEmail\fR
+構成オプションを介して制御することもできます。
+.RE
+.PP
+\fB\-w\fR
+.RS 4
+親のバージョンと子のバージョンを比較して、その行がどこから来たのかを見つけるときは、空白(whitespace)を無視します。
+.RE
+.PP
+\fB\-\-abbrev=<n>\fR
+.RS 4
+デフォルトの7+1桁の16進数でオブジェクト名を省略する代わりに、<m>+1桁を使用します。ここで<m>は少なくとも<n>ですが、コミットオブジェクト名が一意になるような長さにします。 1列分はコミットの境界を示すカレット(\fB^\fR)に使用されることに注意してください。
+.RE
+.SH "THE DEFAULT FORMAT"
+.sp
+\fB\-\-porcelain\fR オプションも \fB\-\-incremental\fR オプションも指定されていない場合、\fBgit Blame\fR は各行の注釈を以下のとおり出力します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+行の元となったコミットのオブジェクトの省略名
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+作者ID (\fB\-s\fR
+または
+\fB\-e\fR
+が指定されていない限り、デフォルトでは作者名と日付)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+行番号
+.RE
+.sp
+上記を行の内容の前に表示します。
+.SH "THE PORCELAIN FORMAT(磁器形式)"
+.sp
+この形式では、各行はヘッダーの後に出力されます。 少なくともヘッダーには、以下のような最初の行があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+その行が属するコミットの40バイトのSHA\-1;
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+元のファイルの行の行番号;
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+最終ファイルの行の行番号;
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+前のコミットとは異なるコミットからの行のグループを開始する行においては、そのグループの行数。以降の行では、このフィールドはありません。
+.RE
+.sp
+このヘッダー行の後には、コミットごとに少なくとも1回は以下の情報が続きます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+author name ("author") と email ("author\-mail") と time ("author\-time") と time zone ("author\-tz"); コミッターも同様。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+その行が属するコミット内のファイル名。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コミットログメッセージの最初の行("summary")。
+.RE
+.sp
+実際の行の内容は、上記のヘッダーの後にTABが前に付いて出力されます。 これは、後でヘッダー要素を追加できるようにするためです。
+.sp
+磁器形式(porcelain format)は、一般的に、既視のコミット情報を抑制します。 たとえば、同じコミットのせいにされた2行が両方とも表示されますが、そのコミットの詳細は1回だけ表示されます。これはより効率的ですが、リーダーがより多くの状態を保持する必要がある場合があります。 \fB\-\-line\-porcelain\fR オプションを使用すると、各行の完全なコミット情報を出力できるため、以下のように単純な(ただし効率の低い)使用法が可能になります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# count the number of lines attributed to each author
+git blame \-\-line\-porcelain file |
+sed \-n \*(Aqs/^author //p\*(Aq |
+sort | uniq \-c | sort \-rn
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SPECIFYING RANGES"
+.sp
+古いバージョンのgitの \fBgit blame\fR や \fBgit annotate\fR と異なり、注釈の範囲は行範囲とリビジョン範囲の両方で制限できます。注釈を行の範囲に制限する \fB\-L\fR オプションは、複数回指定できます。
+.sp
+あなたがファイル \fBfoo\fR の40〜60行目の行の原初を見つけることに関心がある場合は、以下のように \fB\-L\fR オプションを使用できます(2行とも同じ意味です。どちらも40行目から21行を要求します):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git blame \-L 40,60 foo
+git blame \-L 40,+21 foo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+また、正規表現を使用して行範囲を指定することもできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git blame \-L \*(Aq/^sub hello {/,/^}$/\*(Aq foo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは、注釈を \fBhello\fR サブルーチンの本体に制限します。
+.sp
+あなたがバージョンv2\&.6\&.18より古い変更、または3週間より古い変更に関心がない場合は、 \fBgit rev\-list\fR のようにリビジョン範囲指定子を使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git blame v2\&.6\&.18\&.\&. \-\- foo
+git blame \-\-since=3\&.weeks \-\- foo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+リビジョン範囲指定子を使用して注釈を制限すると、範囲境界以降に変更されていない行(上記の例で、コミットv2\&.6\&.18 または 3週間以上経過した最新のコミットのいずれか)は、その範囲境界のコミットのblameになります。
+.sp
+特に便利な方法は、追加されたファイルに、既存のファイルからコピペして作成された行があるかどうかを確認することです。 これは、開発者がだらしなく、コードを適切にリファクタリングしなかったことを示している場合があります。 最初に、ファイルを導入したコミットを以下のように見つけることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git log \-\-diff\-filter=A \-\-pretty=short \-\- foo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+次に、 \fBcommit^!\fR 表記を使用して、コミットとその親の間の変更に注釈を付けます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git blame \-C \-C \-f $commit^! \-\- foo
+.fi
+.if n \{\
+.RE
+.\}
+.SH "INCREMENTAL OUTPUT"
+.sp
+\fB\-\-incremental\fR オプションを付けて呼び出すと、ビルドした結果を出力します。 出力は一般に、より新しいコミットによって触れられた行から順に語られます(つまり、行の注釈は順不同になります)。これは、対話的なビューアで使用するためのものです。
+.sp
+出力形式は磁器形式(Porcelain format)に似ていますが、注釈が付けられているファイルの実際の行は含まれていません。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+各blame項目は必ず行で始まる:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<40\-byte hex sha1> <sourceline> <resultline> <num_lines>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+行番号は1から数えます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+コミットがストリームに初めて現れるとき、追加のコミット情報(作成者、電子メール、コミッター、日付、要約など)を説明する1語のタグが各行の先頭に出力されて、コミットに関するその他のさまざまな情報が出力されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+磁器形式(Porcelain format)とは異なり、ファイル名情報が常に与えられ、エントリを終了します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"filename" <whitespace\-quoted\-filename\-goes\-here>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+したがって、一部の行指向および単語指向のパーサーの解析は非常に簡単です(ほとんどのスクリプト言語では非常に自然なはずです)。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+構文解析を行う人の場合: より堅牢にするために、拡張情報行(extended information lines)の先頭にあるタグワード(またはその特定のものを気にする)を認識できない最初の行と最後の行の間の行(\fB<sha1>\fR
+行や
+\fBfilename\fR
+行)はすべて無視してください。 そうすれば、(コミットエンコーディング(commit encoding)や拡張コミット解説(extended commit commentary)のような)情報が追加されたとしても、blameビュワーは気にしません。
+.sp .5v
+.RE
+.RE
+.SH "MAPPING AUTHORS"
+.sp
+\fBgitmailmap\fR(5) を参照してください。
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+blame\&.blankBoundary
+.RS 4
+\fBgit-blame\fR(1)で境界コミット(boundary commits)の空白コミットオブジェクト名を表示します。このオプションのデフォルトはfalseです。
+.RE
+.PP
+blame\&.coloring
+.RS 4
+これにより、blame出力に適用される配色が決まります。 これは、
+\fBrepeatedLines\fR
+または
+\fBhighlightRecent\fR
+またはデフォルトの
+\fBnone\fR
+にすることができます。
+.RE
+.PP
+blame\&.date
+.RS 4
+\fBgit-blame\fR(1)
+で日付を出力するために使用される形式を指定します。 設定を解除すると、iso形式が使用されます。 サポートされている値については、
+\fBgit-log\fR(1)
+の
+\fB\-\-date\fR
+オプションの説明を参照してください。
+.RE
+.PP
+blame\&.showEmail
+.RS 4
+\fBgit-blame\fR(1)
+で、作者名(author)の代わりに作者の電子メールアドレス(author email)を表示します。 このオプションのデフォルトはfalseです。
+.RE
+.PP
+blame\&.showRoot
+.RS 4
+\fBgit-blame\fR(1)
+ではルートコミットを境界として扱わないでください。 このオプションのデフォルトはfalseです。
+.RE
+.PP
+blame\&.ignoreRevsFile
+.RS 4
+\fBgit-blame\fR(1)
+で、ファイルにリストされているリビジョン(1行に1つの省略されていないオブジェクト名)を無視します。
+\fB#\fR
+で始まる空白とコメントは無視されます。 このオプションは複数回繰り返すことができます。 空のファイル名は、無視されたリビジョンのリストをリセットします。 このオプションは、コマンドラインオプション
+\fB\-\-ignore\-revs\-file\fR
+の前に処理されます。
+.RE
+.PP
+blame\&.markUnblamableLines
+.RS 4
+\fBgit-blame\fR(1)の出力で
+\fB*\fR
+を使用して、別のコミットに帰することができなかった、無視されたリビジョンによって変更された行をマークします。
+.RE
+.PP
+blame\&.markIgnoredLines
+.RS 4
+\fBgit-blame\fR(1)の出力で、別のコミットに起因する無視されたリビジョンによって変更された行を
+\fB?\fR
+でマークします。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-annotate\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

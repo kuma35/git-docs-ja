@@ -1,0 +1,585 @@
+'\" t
+.\"     Title: git-for-each-ref
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-FOR\-EACH\-REF" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-for-each-ref \- 各refに関する情報を出力します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit for\-each\-ref\fR [\-\-count=<count>] [\-\-shell|\-\-perl|\-\-python|\-\-tcl]
+                   [(\-\-sort=<key>)\&...] [\-\-format=<format>] [<pattern>\&...]
+                   [\-\-points\-at=<object>]
+                   [\-\-merged[=<object>]] [\-\-no\-merged[=<object>]]
+                   [\-\-contains[=<object>]] [\-\-no\-contains[=<object>]]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fB<pattern>\fR に一致するすべてのrefを繰り返し、指定された \fB<key>\fR の組に従って並べ替えた後、指定の \fB<format>\fR に従って表示します。 \fB<count>\fR が指定されている場合は、その数のrefを表示した後で停止します。 \fB<format>\fR のプレースホルダで差し込みされる値は、オプションで、指定のホストプログラム言語の文字列リテラルとなるようクォートでき、そのホストプログラム言語で直接評価できます。
+.SH "OPTIONS"
+.PP
+<pattern>\&...
+.RS 4
+1つ以上のパターンが指定されている場合、少なくとも1つのパターンに一致する参照のみが表示されます。fnmatch(3) を使用するか、文字通り(lietrally)に書くかです。文字通りに書いた場合場合、完全に一致するか、最初からスラッシュ(\fB/\fR)まで一致するかです。
+.RE
+.PP
+\fB\-\-count=<count>\fR
+.RS 4
+デフォルトでは、コマンドは
+\fB<pattern>\fR
+に一致するすべてのrefを表示します。このオプションは、指定の数のrefを表示した後に停止します。
+.RE
+.PP
+\fB\-\-sort=<key>\fR
+.RS 4
+並べ替えるフィールド名。 プレフィックス
+\fB\-`を使用して、値の降順で並べ替えます。 並べ替えるフィールド名を指定しない場合 `refname\fR
+が使用されます。
+\fB\-\-sort=<key>\fR
+オプションは複数回使用できます。その場合、最後のキーが主キー(primary key)になります。
+.RE
+.PP
+\fB\-\-format=<format>\fR
+.RS 4
+表示されているrefとそれが指すオブジェクトを
+\fB%(fieldname)\fR
+によってを差し込みする書式文字列。
+\fBfieldname\fR
+の前にアスタリスク(\fB*\fR)が付いていて、refがタグオブジェクトを指している場合は、(タグオブジェクトのフィールドではなく)タグオブジェクトが参照するオブジェクトのフィールドの値を使用します。このオプションを指定しない場合、
+\fB<format>\fR
+はデフォルトで
+\fB%(objectname) SPC %(objecttype) TAB %(refname)\fR
+です。また
+\fB%%\fR
+は
+\fB%\fR
+を差し込み、
+\fB%xx\fR
+(\fBxx\fR
+は16進数)は16進コード
+\fBxx\fR
+の文字を差し込みます。 たとえば、\fB%00\fR
+は
+\fB\e0\fR
+(NUL) を、
+\fB%09\fR
+は
+\fB\et\fR
+(TAB) を、
+\fB%0a\fR
+は
+\fB\en\fR
+(LF) を、それぞれ差し込みます。
+.RE
+.PP
+\fB\-\-color[=<when>]\fR
+.RS 4
+\fB\-\-format\fR
+オプションで指定された色を尊重します。
+\fB<when>\fR
+フィールドは
+\fBalways\fR
+または
+\fBnever\fR
+または
+\fBauto\fR
+のいずれかでなければなりません(\fB<when>\fR
+がない場合は、
+\fBalways\fR
+が指定されたかのように動作します)。
+.RE
+.PP
+\fB\-\-shell\fR, \fB\-\-perl\fR, \fB\-\-python\fR, \fB\-\-tcl\fR
+.RS 4
+指定した場合、
+\fB%(fieldname)\fR
+プレースホルダーを置き換える文字列は、指定のホストプログラム言語に適した文字列リテラルとしてクォートします。これは、直接「評価」(eval)できるスクリプトレットを作成することを目的としています。
+.RE
+.PP
+\fB\-\-points\-at=<object>\fR
+.RS 4
+指定のオブジェクトを指すrefのみをリストします。
+.RE
+.PP
+\fB\-\-merged[=<object>]\fR
+.RS 4
+指定のコミット(指定されていない場合はHEAD)から先端に到達できるrefのみをリストします。
+.RE
+.PP
+\fB\-\-no\-merged[=<object>]\fR
+.RS 4
+指定のコミット(指定されていない場合はHEAD)から先端に到達できないrefのみをリストします。
+.RE
+.PP
+\fB\-\-contains[=<object>]\fR
+.RS 4
+指定のコミット(指定されていない場合はHEAD)を含むrefのみをリストします。
+.RE
+.PP
+\fB\-\-no\-contains[=<object>]\fR
+.RS 4
+指定のコミット(指定されていない場合はHEAD)を含まないrefのみをリストします。
+.RE
+.PP
+\fB\-\-ignore\-case\fR
+.RS 4
+refの並べ替え(sort)とフィルタリングでは英大文字小文字を区別しません。
+.RE
+.SH "FIELD NAMES"
+.sp
+参照オブジェクトの構造化フィールドのさまざまな値を使用して、結果の出力に差し込みしたり、ソートキーとして使用したりできます。
+.sp
+すべてのオブジェクトで、以下の名前を使用できます:
+.PP
+refname
+.RS 4
+refの名前( $GIT_DIR/ の後の部分)。refのあいまいでない短い名前の場合は、
+\fB:short\fR
+を追加します。オプション core\&.warnAmbiguousRefs は、厳密な省略形モードを選択するために使用されます。
+\fBlstrip=<N>\fR
+(\fBrstrip=<N>\fR) が追加された場合、refnameの前(後ろ)からスラッシュ(\fB/\fR)で区切られたパスの部分を`<N>` 個削除します(例:
+\fB%(refname:lstrip=2)\fR
+は
+\fBrefs/tags/foo\fR
+を
+\fBfoo\fR
+に変換し、
+\fB%(refname:rstrip=2)\fR
+は
+\fBrefs/tags/foo\fR
+を
+\fBrefs\fR
+に変換します。
+\fB<N>\fR
+が負の数の場合、指定された端から必要な数のパスコンポーネントを削除して、
+\fB\-<N>\fR
+パス部分を残します(たとえば、
+\fB%(refname:lstrip=\-2)\fR
+は
+\fBrefs/tags/foo\fR
+を
+\fBtags/foo\fR
+に変換し、
+\fB%(refname:rstrip=\-1)\fR
+は
+\fBrefs/tags/foo\fR
+を
+\fBrefs\fR
+に変換します)。refに十分な数のパス部品がない場合、正の <N> でストリッピングすると結果は空の文字列になり、負の<N>でストリッピングすると完全なrefnameになります。どちらもエラーではありません。
+.sp
+\fBstrip\fR
+は
+\fBlstrip\fR
+の同義語として使用できます。
+.RE
+.PP
+objecttype
+.RS 4
+オブジェクトのタイプ(
+\fBblob\fR
+、\fBtree\fR
+、
+\fBcommit\fR
+、\fBtag\fR
+)。
+.RE
+.PP
+objectsize
+.RS 4
+オブジェクトのサイズ(\fBgit cat\-file \-s\fR
+がレポートするものと同じです)。
+\fB:disk\fR
+を追加して、オブジェクトがディスク上で占めるサイズをバイト単位で取得できます。以下の「CAVEATS」(注意事項)セクションのディスク上のサイズに関する注記を参照してください。
+.RE
+.PP
+objectname
+.RS 4
+オブジェクト名(別名SHA\-1)。オブジェクト名のあいまいでない省略形については、
+\fB:short\fR
+を追加してください。目的の長さのオブジェクト名の省略形については、
+\fB:short=<length>\fR
+を追加します。ここで、最小の長さは MINIMUM_ABBREV です。一意のオブジェクト名を確保するために、指定の長さを超える場合があります。
+.RE
+.PP
+deltabase
+.RS 4
+デルタとして保存されている場合、これは指定されたオブジェクトのデルタベースのオブジェクト名に展開されます。それ以外の場合は、ヌルオブジェクト名(すべてゼロ)に展開されます。
+.RE
+.PP
+upstream
+.RS 4
+表示されたrefから「上流」(upstream)と見なすことができるローカル参照の名前。 上記の
+\fBrefname\fR
+と同じように、
+\fB:short\fR
+や
+\fB:lstrip\fR
+や
+\fB:rstrip\fR
+を尊重します。さらに、
+\fB:track\fR
+は
+\fB[ahead N, behind M]\fR
+を表示し、
+\fB:trackshort\fR
+は
+\fB>\fR
+(ahead) または
+\fB<\fR
+(behind) または "<>" (ahead and behind) または "=" (in sync) という簡潔なバージョンを表示します。
+\fB:track\fR
+は不明なアップストリーム参照が検出されるたびに
+\fB[gone]\fR
+も出力します。
+\fB:track,nobracket\fR
+を追加すると角かっこ(\fB[\fR
+と
+\fB]\fR
+)無しで追跡情報を表示します（つまり、
+\fBahead N, behind M\fR
+)。
+.sp
+リモート追跡ブランチの
+\fB%(upstream)\fR
+と
+\fB%(upstream:remotename)\fR
+と
+\fB%(upstream:remoteref)`は、それぞれリモートの名前と追跡されたリモートrefの名前を参照します。つまり、 refspec `%(upstream:remoteref):%(upstream)\fR
+を使用して
+\fB%(upstream:remotename)\fR
+からフェッチすることにより、リモートト追跡ブランチを明示的かつ個別に更新できます。
+.sp
+refに追跡情報が関連付けられていない場合、効果はありません。
+\fBnobracket\fR
+以外のすべてのオプションは相互に排他的ですが、一緒に使用する場合は最後のオプションが選択されます。
+.RE
+.PP
+push
+.RS 4
+表示されたrefの
+\fB@{push}\fR
+の場所を表すローカルrefの名前。
+\fBupstream\fR
+と同様に
+\fB:short\fR
+・
+\fB:lstrip\fR
+・
+\fB:rstrip\fR
+・
+\fB:track\fR
+・
+\fB:trackshort\fR
+・
+\fB:remotename\fR
+・
+\fB:remoteref\fR
+オプションを尊重します。
+\fB@{push}\fR
+refが設定されていない場合、空の文字列を生成します。
+.RE
+.PP
+HEAD
+.RS 4
+HEADが現在のref (チェックアウトされたブランチ)と一致する場合は
+\fB*\fR
+、それ以外の場合は \*(Aq \*(Aq 。
+.RE
+.PP
+color
+.RS 4
+出力色を変更します。 その後に
+\fB:<colorname>\fR
+が続きます。色の名前は、
+\fBgit-config\fR(1)
+の「CONFIGURATION FILE」セクションの「Values」で説明されています。 たとえば、
+\fB%(color:bold red)\fR
+です。
+.RE
+.PP
+align
+.RS 4
+コンテンツを %(align:\&...) から %(end) の間で左揃え、中央揃え、または右揃えにします。
+\fBalign:\fR
+の後には、
+\fBwidth=<width>\fR
+と
+\fBposition=<position>\fR
+がコンマ(\fB,\fR)で区切られた任意の順序で続きます。ここで、
+\fB<position>\fR
+は left または right または middle のいずれかで、\fB<position>\fR
+の デフォルトは left で
+\fB<width>\fR
+のデフォルトは配置されたコンテンツの全長です。 簡潔にするために、
+\fBwidth=\fR
+および/または
+\fBposition=\fR
+プレフィックスを省略して、代わりに裸の <width> および <position> を使用することができます。 たとえば、
+\fB%(align:<width>,<position>)\fR
+です。 コンテンツの長さがwidthよりも大きい場合、位置合わせは実行されません。
+\fB\-\-quote\fR
+とともに使用すると、 %(align:\&...) から %(end) の間のすべてがクォートされまれますが、ネストされている場合は、最上位レベルのみがクォートされます。
+.RE
+.PP
+if
+.RS 4
+%(if) \&... %(then) \&... %(end) または %(if) \&... %(then) \&... %(else) \&... %(end) として使用されます。 %(if) の後に値または文字列リテラルを持つアトムがある場合は、 %(then) の後のすべてが出力されます。そうでない場合、 %(else) アトムが使用されている場合は、 %(else) の後のすべてが出力されます。 %(then) の前の文字列を評価するときはスペースを無視します。これは、
+\fB*\fR
+または ` ` のいずれかを出力する %(HEAD) アトムを使用し、 HEAD ref にのみ if 条件を適用する場合に役立ちます。
+\fB:equals=<string>\fR
+または
+\fB:notequals=<string>\fR
+を追加して、 %(if:\&...) アトムと %(then) アトムの間の値を指定された文字列と比較します。(訳注:つまり、 %(if) から %(then) の間がconditionである)
+.RE
+.PP
+symref
+.RS 4
+与えられたシンボリックrefが参照するref。シンボリックrefでない場合、何も出力されません。上記の
+\fBrefname\fR
+と同じ方法で、
+\fB:short\fR
+と
+\fB:lstrip\fR
+と
+\fB:rstrip\fR
+オプションを尊重します。
+.RE
+.PP
+worktreepath
+.RS 4
+リンクされたワークツリー(linked worktree)でチェックアウトされている場合、refがチェックアウトされているワークツリーへの絶対パス。それ以外の場合は空文字列です。
+.RE
+.sp
+上記に加えて、commitとtagオブジェクトの場合、ヘッダーフィールド名(\fBtree\fR と \fBparent\fR と \fBobject\fR と \fBtype\fR と \fBtag\fR)を使用して、ヘッダーフィールドの値を指定できます。 フィールド \fBtree\fR と \fBparent\fR は、 \fBobjectname\fR と同じように、修飾子 \fB:short\fR や \fB:short=<length>\fR とともに使用することもできます。
+.sp
+commitオブジェクトとtagオブジェクトの場合、特別な \fBcreatordate\fR フィールドと \fBcreator\fR フィールドは、オブジェクトタイプに応じて、 \fBcommitter\fR または \fBtagger\fR フィールドの適切な日付またはname\-email\-dateタプルに対応します。これらは、注釈付きタグと軽量タグの組み合わせでの作業を目的としています。
+.sp
+name\-email\-dateタプルを値として持つフィールド(\fBauthor\fR と \fBcommitter\fR と \fBtagger\fR)には、名前付きコンポーネントを抽出するために \fBname\fR と \fBemail\fR と \fBdate\fR の接尾辞を付けることができます。メールフィールド(\fBauthoremail\fR と \fBcommitteremail\fR と \fBtaggeremail\fR)の場合、 \fB:trim\fR を追加すると山かっこ(\fB<\fR, \fB>\fR)なしでメールを取得し、 \fB:localpart\fR を追加すると電子メールアドレスをトリミングして \fB@\fR 記号の前の部分を取得できます。
+.sp
+オブジェクトの生データは \fBraw\fR です。
+.PP
+raw:size
+.RS 4
+オブジェクトの生データサイズ。
+.RE
+.sp
+注意: \fB\-\-format=%(raw)\fR は、 \fB\-\-python\fR や \fB\-\-shell\fR や \fB\-\-tcl\fR と一緒に使用できないことに注意してください。これらのプログラム言語は、文字列変数タイプで任意のバイナリデータをサポートしていない可能性があるためです。
+.sp
+コミットまたはタグオブジェクト内のメッセージは \fBcontents\fR であり、そこから \fBcontents:<part>\fR を使用して以下によりさまざまな部分を抽出できます:
+.PP
+contents:size
+.RS 4
+コミットメッセージまたはタグメッセージのバイト単位のサイズ。
+.RE
+.PP
+contents:subject
+.RS 4
+メッセージの最初の段落(通常は1行)は、コミットまたはタグメッセージの「件名」(subject)と見なされます。
+\fBcontents：subject\fR
+の代わりに、フィールド
+\fBsubject\fR
+を使用して同じ結果を取得することもできます。
+\fBsubject\fR
+に追加できる
+\fB:sanitize\fR
+は、件名行をファイル名に適した形にします。
+.RE
+.PP
+contents:body
+.RS 4
+コミットメッセージまたはタグメッセージの「件名」に続く残りの部分。
+.RE
+.PP
+contents:signature
+.RS 4
+タグのオプションのGPG署名。
+.RE
+.PP
+contents:lines=N
+.RS 4
+メッセージの最初の N行。
+.RE
+.sp
+加えて、 \fBgit-interpret-trailers\fR(1) によって解釈されるトレーラーは、 \fBtrailers[:options]\fR として(または履歴エイリアス \fBcontents:trailers[:options]\fR を使用して)取得されます。有効な [:option] 値については、 \fBgit-log\fR(1) の \fBtrailers\fR セクションを参照してください。
+.sp
+並べ替えの目的のため、数値のフィールドは数値順で並べ替えられます(\fBobjectsize\fR 、\fBauthordate\fR 、 \fBcommitterdate\fR 、\fBcreatordate\fR 、 \fBtaggerdate\fR)。他のすべてのフィールドは、バイト値の順序で並べ替えられます。
+.sp
+バージョンで並べ替えるオプションもあります。これは、フィールド名 \fBversion:refname\fR またはそのエイリアス \fBv:refname\fR を使用して行うことができます。
+.sp
+いずれの場合も、refによって参照されるオブジェクトに適用できないフィールドを参照するフィールド名はエラーを引き起こしません。代わりに空文字列を返します。
+.sp
+日付タイプフィールドの特殊なケースとして、 \fB:\fR の後に日付フォーマット名を追加して日付のフォーマットを指定できます(\fBgit-rev-list\fR(1) の \fB\-\-date\fR オプションのが取る値を参照してください)。
+.sp
+%(align) や %(if) などの一部のアトムには、常に対応する %(end) が必要です。 %(align) や %(if) などの一部のアトムを「開始アトム」(opening atoms)と呼び、 %($open) と表記することもあります。
+.sp
+スクリプト言語固有のクォートが有効な場合、トップレベルの開始アトムとそれに対応する %(end) の間のすべてが、トップレベル開始アトムのセマンティクスに従って評価され、そのトップレベルからの結果のみがクォートされます。
+.SH "EXAMPLES"
+.sp
+フォーマットされたテキストを直接生成する例。 直近の3つのタグ付きコミットを表示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#!/bin/sh
+
+git for\-each\-ref \-\-count=3 \-\-sort=\*(Aq\-*authordate\*(Aq \e
+\-\-format=\*(AqFrom: %(*authorname) %(*authoremail)
+Subject: %(*subject)
+Date: %(*authordate)
+Ref: %(*refname)
+
+%(*body)
+\*(Aq \*(Aqrefs/tags\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+出力でのshell evalの使用を示す簡単な例で、\fB\-\-shell\fR の使用を示しています。 すべてのheadのプレフィックスを一覧表示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#!/bin/sh
+
+git for\-each\-ref \-\-shell \-\-format="ref=%(refname)" refs/heads | \e
+while read entry
+do
+        eval "$entry"
+        echo `dirname $ref`
+done
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+タグに関するもう少し手の込んだレポートで、スクリプト全体のフォーマットである可能性があることを示しています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#!/bin/sh
+
+fmt=\*(Aq
+        r=%(refname)
+        t=%(*objecttype)
+        T=${r#refs/tags/}
+
+        o=%(*objectname)
+        n=%(*authorname)
+        e=%(*authoremail)
+        s=%(*subject)
+        d=%(*authordate)
+        b=%(*body)
+
+        kind=Tag
+        if test "z$t" = z
+        then
+                # could be a lightweight tag
+                t=%(objecttype)
+                kind="Lightweight tag"
+                o=%(objectname)
+                n=%(authorname)
+                e=%(authoremail)
+                s=%(subject)
+                d=%(authordate)
+                b=%(body)
+        fi
+        echo "$kind $T points at a $t object $o"
+        if test "z$t" = zcommit
+        then
+                echo "The commit was authored by $n $e
+at $d, and titled
+
+    $s
+
+Its message reads as:
+"
+                echo "$b" | sed \-e "s/^/    /"
+                echo
+        fi
+\*(Aq
+
+eval=`git for\-each\-ref \-\-shell \-\-format="$fmt" \e
+        \-\-sort=\*(Aq*objecttype\*(Aq \e
+        \-\-sort=\-taggerdate \e
+        refs/tags`
+eval "$eval"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+%(if) \&... %(then) \&... %(else) \&... %(end) の使用法を示す例。 これにより、現在のブランチの前にアスタリスクが付けられます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git for\-each\-ref \-\-format="%(if)%(HEAD)%(then)* %(else)  %(end)%(refname:short)" refs/heads/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+%(if) \&... %(then) \&... %(end) の使用法を示す例。 存在する場合、これは作者名を出力します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git for\-each\-ref \-\-format="%(refname)%(if)%(authorname)%(then) Authored by: %(authorname)%(end)"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "CAVEATS"
+.sp
+注意: ディスク上のオブジェクトのサイズは正確に報告されますが、どのrefまたはオブジェクトがディスクの使用に関与しているかについて結論を出す際には注意が必要です。パックされた非デルタオブジェクトのサイズは、それに対してデルタするオブジェクトのサイズよりもはるかに大きい場合がありますが、ベースとデルタのオブジェクトの選択は任意であり、再パック中に変更される可能性があります。
+.sp
+注意: オブジェクトの複数のコピーがオブジェクトデータベースに存在する可能性があることにも注意してください。この場合、どのコピーのサイズまたはデルタベースが報告されるかは未定義です。
+.SH "NOTES"
+.sp
+複数の \fB\-\-contains\fR フィルターと \fB\-\-no\-contains\fR フィルターを組み合わせる場合、少なくとも1つの \fB\-\-contains\fR コミットを含み、 \fB\-\-no\-contains\fR コミットを含まない参照のみが表示されます。
+.sp
+複数の \fB\-\-merged\fR フィルターと \fB\-\-no\-merged\fR フィルターを組み合わせると、少なくとも1つの \fB\-\-merged\fR コミットから到達可能で、 \fB\-\-no\-merged\fR コミットのいずれからも到達できない参照のみが表示されます。
+.SH "SEE ALSO"
+.sp
+\fBgit-show-ref\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

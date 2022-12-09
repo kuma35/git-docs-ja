@@ -1,0 +1,405 @@
+'\" t
+.\"     Title: git-bundle
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-BUNDLE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-bundle \- アーカイブごとにオブジェクトとrefを移動します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit bundle\fR create [\-q | \-\-quiet | \-\-progress | \-\-all\-progress] [\-\-all\-progress\-implied]
+                    [\-\-version=<version>] <file> <git\-rev\-list\-args>
+\fIgit bundle\fR verify [\-q | \-\-quiet] <file>
+\fIgit bundle\fR list\-heads <file> [<refname>\&...]
+\fIgit bundle\fR unbundle [\-\-progress] <file> [<refname>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+「bundle」ファイルを作成や解凍や操作します。 バンドルは、ネットワーク接続の反対側にアクティブな「サーバー」がない時に、Gitオブジェクトの「オフライン」転送に使用されます。
+.sp
+これらを使用して、リポジトリの増分(incremental)バックアップと完全(full)バックアップの両方を作成し、あるリポジトリ内の参照の状態を別のリポジトリに取り次ぐことができます。
+.sp
+\fBssh://\fR や \fBhttps://\fR などのプロトコルを介してフェッチまたは「読み取り」するGitコマンドも、バンドルファイルを操作できます。 バンドルから新しいリポジトリを作成するために \fBgit-clone\fR(1) を使うことができ、そして、バンドルからリポジトリを取得するために \fBgit-fetch\fR(1) を使うことができ、そして、バンドルの中に含まれる参照を \fBgit-ls-remote\fR(1) でリストすることが可能です。 対応する「書き込み」サポートはありません。 つまり、バンドルへの \fBgit push\fR はサポートされていません。
+.sp
+バンドルの使用方法例については、以下の「EXAMPLES」セクションを参照してください。
+.SH "BUNDLE FORMAT"
+.sp
+バンドルは \fB\&.pack\fR ファイル(linkgit：git\-pack\-objects[1] 参照)であり、バンドル内に含まれる参照を示すヘッダーが付いています。
+.sp
+パックされたアーカイブ形式自体と同様に、バンドルは自己完結型にすることも、除外を使用して作成することもできます。 以下の「OBJECT PREREQUISITES」(オブジェクトの前提条件)セクションを参照してください。
+.sp
+リビジョンの除外を使用して作成されたバンドルは、 \fBgit-pack-objects\fR(1) の \fB\-\-thin\fR オプションを使用して作成された「薄いパック」(thin packs)であり、 \fBgit-index-pack\fR(1) の \fB\-\-fix\-thin\fR オプションを使用してバンドル解除します。
+.sp
+リビジョンの除外を使用する場合、厚いパック(thick pack)を作成するオプションはありません。ユーザーは違いについて心配する必要はありません。 薄いパック(thin packs)を使用することにより、除外を使用して作成されたバンドルのサイズが小さくなります。 それらが内部で「薄い」(thin)ことは、ここでは単に好奇心として、そして他のドキュメントへの参照として示されています。
+.sp
+詳しくは \fBgitformat-bundle\fR(5) を、「thin pack」については \fBgitformat-pack\fR(5) をご覧ください。
+.SH "OPTIONS"
+.PP
+create [options] <file> <git\-rev\-list\-args>
+.RS 4
+\fBfile\fR
+という名前のバンドルを作成するために使用されます。 これには、バンドルの内容を定義するための
+\fB<git\-rev\-list\-args>\fR
+引数が必要です。
+\fBoptions\fR
+には、
+\fBgit bundle create\fR
+サブコマンドに固有のオプションが含まれています。
+.RE
+.PP
+verify <file>
+.RS 4
+バンドルファイルが有効であり、現在のリポジトリにきれいに適用されることを確認するために使用されます。 これには、バンドル形式自体のチェックと、前提条件となるコミットが現在のリポジトリに存在し、完全にリンクされているかどうかのチェックが含まれます。 次に、「git bundle」は、欠落しているコミットがあれば、そのリストを出力します。 最後に、「オブジェクト・フィルタ」などの追加機能に関する情報が表示されます。 詳細については、\fBgitformat-bundle\fR(5)
+の「Capabilities」を参照してください。 exitコードは成功の場合はゼロですが、バンドル・ファイルが無効な場合はゼロ以外になります。
+.RE
+.PP
+list\-heads <file>
+.RS 4
+バンドルで定義されている参照を一覧表示します。 参照のリストが後に続く場合、与えられたものと一致する参照のみが出力されます。
+.RE
+.PP
+unbundle <file>
+.RS 4
+バンドル内のオブジェクトをリポジトリに保存するために
+\fBgit index\-pack\fR
+に渡し、定義されたすべての参照の名前を出力します。 参照のリストが指定されている場合、リスト内の参照と一致する参照のみが出力されます。 このコマンドは実際には配管コマンド(plumbing)であり、
+\fBgit fetch\fR
+によって呼び出されることのみを目的としています。
+.RE
+.PP
+<git\-rev\-list\-args>
+.RS 4
+\fBgit rev\-parse\fR
+および
+\fBgit rev\-list\fR
+に受け入れられる引数のリスト(および名前付きrefを含む。下記「SPECIFYING REFERENCES」参照)。これは、転送する特定のオブジェクトと参照を指定します。 たとえば、
+\fBmaster~10\&.\&.master\fR
+を指定すると、現在のmaster参照が、10番目の祖先のコミット以降に追加されたすべてのオブジェクトとともにパッケージ化されます。 パッケージ化できる参照とオブジェクトの数に明示的な制限はありません。
+.RE
+.PP
+[<refname>\&...]
+.RS 4
+利用可能として報告された参照を制限するために使用される参照のリスト。 これは主に
+\fBgit fetch\fR
+に役立ちます。これは、要求された参照のみを受け取り、必ずしもパック内のすべてを受け取るとは限りません(この場合、
+\fBgit bundle\fR
+は
+\fBgit fetch\-pack\fR
+のように機能します)。
+.RE
+.PP
+\fB\-\-progress\fR
+.RS 4
+\fB\-q\fR
+が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送られていない場合でも、進行状況を強制します。
+.RE
+.PP
+\fB\-\-all\-progress\fR
+.RS 4
+\fB\-\-stdout\fR
+を指定すると、進行状況レポートはオブジェクトのカウントおよび圧縮フェーズでは表示されますが、書き込みフェーズでは禁止されます。 その理由は、場合によっては、出力ストリームが別のコマンドに直接リンクされており、受信パックデータを処理するときに独自の進行状況を表示したい場合があるためです。 このフラグは
+\fB\-\-progress\fR
+に似ていますが、
+\fB\-\-stdout\fR
+が使用されている場合でも、書き込みフェーズの進行状況レポートを強制する点が異なります。
+.RE
+.PP
+\fB\-\-all\-progress\-implied\fR
+.RS 4
+これは、進行状況の表示がアクティブになるたびに
+\fB\-\-all\-progress\fR
+を意味するために使用されます。
+\fB\-\-all\-progress\fR
+とは異なり、このフラグは実際にはそれ自体では進行状況の表示を強制しません。
+.RE
+.PP
+\fB\-\-version=<version>\fR
+.RS 4
+バンドルのバージョンを指定します。 バージョン2 は古い形式であり、SHA\-1リポジトリでのみ使用できます。 新しい バージョン3 には、拡張を許可する機能が含まれています。 デフォルトは、使用中のハッシュアルゴリズムに基づいて、サポートされている最も古い形式です。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+このフラグにより、コマンドは標準エラーストリームで進行状況を報告しなくなります。
+.RE
+.SH "SPECIFYING REFERENCES"
+.sp
+リビジョンは、バンドルにパッケージ化される参照名を伴う必要があります。
+.sp
+複数の参照をパッケージ化でき、複数の前提条件オブジェクトのセットを指定できます。 パッケージ化されたオブジェクトは、前提条件の結合に含まれていないオブジェクトです。
+.sp
+\fBgit bundle create\fR コマンドは、 \fBgit rev\-parse \-\-abbrev\-ref=loose\fR と同じルールを使用して参照名を解決します。 各前提条件は、明示的に指定することも(例: \fB^master~10\fR)、暗黙的に指定することもできます(例: \fBmaster~10\&.\&.master\fR, \fB\-\-since=10\&.days\&.ago master\fR)。
+.sp
+これらの単純なケースはすべてOKです(「master」ブランチと「next」ブランチがあると仮定します):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create master\&.bundle master
+$ echo master | git bundle create master\&.bundle \-\-stdin
+$ git bundle create master\-and\-next\&.bundle master next
+$ (echo master; echo next) | git bundle create master\-and\-next\&.bundle \-\-stdin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そして、以下も同様です(上記と同一ですが \fB\-\-stdin\fR が省略された例です):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create recent\-master\&.bundle master~10\&.\&.master
+$ git bundle create recent\-updates\&.bundle master~10\&.\&.master next~5\&.\&.next
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+リビジョン名や、右辺が参照に解決できない範囲は、受け付けられません:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create HEAD\&.bundle $(git rev\-parse HEAD)
+fatal: Refusing to create empty bundle\&.
+$ git bundle create master\-yesterday\&.bundle master~10\&.\&.master~5
+fatal: Refusing to create empty bundle\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "OBJECT PREREQUISITES"
+.sp
+PREREQUISITES(前提条件);バンドルを作成する場合、共通の履歴のないリポジトリでバンドル解凍できる自己完結型のバンドルを作成できます。また、履歴の初期の部分で必要なオブジェクトを除外するための負のリビジョン(negative revisions)を提供することもできます。
+.sp
+\fBnew\fR などのリビジョンを \fBgit bundle create\fR にフィードすると、リビジョン \fBnew\fR から到達可能なすべてのオブジェクトを含むバンドルファイルが作成されます。 そのバンドルを任意のリポジトリでバンドル解凍して、リビジョン \fBnew\fR につながる完全な履歴を取得できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create full\&.bundle new
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBold\&.\&.new\fR のようなリビジョン範囲は、バンドルファイルを生成しますが、バンドルが「バンドル解除」可能(unbundle\-able)であるためには、リビジョン \fBold\fR (とそこから到達できるすべてのオブジェクト) が存在する必要があります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create full\&.bundle old\&.\&.new
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+前提条件のない自己完結型のバンドルは、空のリポジトリにさえもどこにでも抽出できます。または、そのバンドルからcloneすることもできます(つまり、 \fBnew\fR ですが、 \fBold\&.\&.new\fR ではありません)。
+.sp
+注意: バンドルファイルには、宛先に既に存在するオブジェクトが含まれていても、宛先で解凍する際には無視されますので、注意してください。
+.sp
+\fBrefs/remotes/*\fR などの参照を含む \fBgit clone \-\-mirror\fR と一致させる場合は、 \fB\-\-all\fR を使用します。 ソースリポジトリから直接クローンが取得するのと同じ参照セットを提供する場合は、 \fB<git\-rev\-list\-args>\fR に \fB\-\-branches \-\-tags\fR を使用します。
+.sp
+\fBgit bundle verify\fR コマンドを使用して、受信者リポジトリにバンドルに必要な前提条件のコミットがあるかどうかを確認できます。
+.SH "EXAMPLES"
+.sp
+あなたが、マシンAのリポジトリR1から、マシンBの別のリポジトリR2に、履歴を転送するとします。 何らかの理由で、AとBの間の直接接続は許可されていませんが、何らかのメカニズム(CD、電子メールなど)を介してAからBにデータを移動することはできます。 私達は、R1のmasterブランチで行われた開発で、R2を更新したいと思います。
+.sp
+開発プロセスをブートストラップするために、あなたは、最初に前提条件のないバンドルを作成します。あなたはタグを使用して、最後に処理したコミットまでを記憶し、後で他のリポジトリを増分バンドル(incremental bundle)で簡単に更新できるようにすることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+machineA$ cd R1
+machineA$ git bundle create file\&.bundle master
+machineA$ git tag \-f lastR2bundle master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、file\&.bundleをターゲットマシンBに転送します。このバンドルでは既存のオブジェクトを抽出する必要がないため、あなたはマシンBからクローンを作成して、新しいリポジトリを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+machineB$ git clone \-b master /home/me/tmp/file\&.bundle R2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、結果のリポジトリに「origin」と呼ばれるリモートが定義され、バンドルからフェッチおよびプルできるようになります。 R2 の $GIT_DIR/config ファイルには、以下のようなエントリがあります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[remote "origin"]
+    url = /home/me/tmp/file\&.bundle
+    fetch = refs/heads/*:refs/remotes/origin/*
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+結果のmine\&.gitリポジトリを更新するには、 /home/me/tmp/file\&.bundle に保存されているバンドルを増分更新(incremental updates)に置き換えた後、フェッチまたはプルできます。
+.sp
+元のリポジトリでさらに作業した後、増分バンドル(incremental bundle)を作成して、他のリポジトリを更新できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+machineA$ cd R1
+machineA$ git bundle create file\&.bundle lastR2bundle\&.\&.master
+machineA$ git tag \-f lastR2bundle master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、あなたはバンドルを他のマシンに転送して /home/me/tmp/file\&.bundle を置き換え、そこからプルします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+machineB$ cd R2
+machineB$ git pull
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+目的の受信者リポジトリが必要なオブジェクトをどのコミットまで持つべきかがわかっている場合は、その知識を使用して前提条件を指定し、結果のバンドルに含まれるリビジョンとオブジェクトを制限するカットオフポイントを指定できます。 前の例では、この目的でlastR2bundleタグを使用しましたが、 \fBgit-log\fR(1) コマンドに指定する他のオプションを使用できます。 その他の例は以下のとおりです:
+.sp
+あなたは両方に存在するタグを使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create mybundle v1\&.0\&.0\&.\&.master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたは日時に基づく前提条件を使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create mybundle \-\-since=10\&.days master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたはコミット数を利用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle create mybundle \-10 master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBgit\-bundle verify\fR を実行して、前提条件に従って作成されたバンドルから抽出可能かどうかを確認できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git bundle verify mybundle
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、バンドルから抽出するために必要なコミットが一覧表示され、コミットがない場合はエラーになります。
+.sp
+受信者リポジトリの観点からのバンドルは、フェッチまたはプルする通常のリポジトリと同じです。 たとえば、フェッチするときに参照をマップできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch mybundle master:localRef
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたはまた、それが提供する参照を確認することもできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-remote mybundle
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "FILE FORMAT"
+.sp
+See \fBgitformat-bundle\fR(5)\&.
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,918 @@
+'\" t
+.\"     Title: gitprotocol-v2
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITPROTOCOL\-V2" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitprotocol-v2 \- Git通信プロトコル・バージョン 2
+.SH "SYNOPSIS"
+.sp
+.nf
+<over\-the\-wire\-protocol>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このドキュメントは、Gitの通信(wire)プロトコルのバージョン2の仕様を示しています。プロトコルv2は、以下の方法でv1を改善します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+複数のサービス名の代わりに、単一のサービスで複数のコマンドがサポートされます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+機能(capability)がプロトコルの独自のセクションに移動され、NULバイトの後ろに隠されたり、pkt行のサイズによって制限されたりすることがないため、簡単に拡張できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NULバイトの後ろに隠されている他の情報を分離します(たとえば、機能(capability)としてのエージェント文字列とsymrefsは
+\fBls\-refs\fR
+を使用して要求できます)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+明示的に要求されない限り、 reference advertisement は省略されます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+一部のrefを明示的に要求する ls\-refs コマンド
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http と stateless\-rpc を念頭に置いて設計されています。明確なフラッシュセマンティクス(flush semantics)を使用すると、httpリモートヘルパーは単にプロキシとして機能できます
+.RE
+.sp
+プロトコルv2では、通信はコマンド指向です。サーバーに最初に接続するときに、機能のリストが広告されます。これらの機能の一部は、クライアントが実行を要求できるコマンドになります。コマンドが完了すると、クライアントは接続を再利用して、他のコマンドの実行を要求できます。
+.SH "PACKET\-LINE FRAMING"
+.sp
+すべての通信は、v1と同様に、パケットラインフレーミングを使用して行われます。 詳細については、 \fBgitprotocol-pack\fR(5) と \fBgitprotocol-common\fR(5) を参照してください。
+.sp
+プロトコルv2では、これらの特別なパケットの意味は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB0000\fR
+フラッシュパケット (flush\-pkt) \- メッセージの終わりを示します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB0001\fR
+区切りパケット (delim\-pkt) \- メッセージのセクションを区切ります
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB0002\fR
+応答終了パケット (response\-end\-pkt) \- ステートレス接続の応答の終了を示します
+.RE
+.SH "INITIAL CLIENT REQUEST"
+.sp
+一般に、クライアントは、使用されているトランスポートのそれぞれのサイドチャネルを介して \fBversion=2\fR を送信することにより、プロトコルv2を話すように要求できます。これにより、必然的に \fBGIT_PROTOCOL\fR が定されます。詳細については \fBgitprotocol-pack\fR(5) や \fBgitprotocol-http\fR(5) と、 \fBgit\&.txt\fR の \fBGIT_PROTOCOL\fR 定義を参照してください。すべての場合において、サーバーからの応答は機能広告(capability advertisement)です。
+.SS "Git Transport"
+.sp
+git:// 輸送を使用する場合、追加のパラメーターとして "version=2" を送信することにより、プロトコルv2の使用を要求できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+003egit\-upload\-pack /project\&.git\e0host=myserver\&.com\e0\e0version=2\e0
+.fi
+.if n \{\
+.RE
+.\}
+.SS "SSH and File Transport"
+.sp
+ssh:// 輸送 または file:// 輸送 のどちらかを使用する場合、GIT_PROTOCOL環境変数を明示的に設定して「version=2」を含める必要があります。この環境変数が渡されるようにサーバーを構成する必要がある場合があります。
+.SS "HTTP Transport"
+.sp
+http:// 転送または https:// 転送を使用する場合、 クライアントは \fBgitprotocol-http\fR(5) で説明されているように「smart」な info/refs リクエストを作成し、 \fBGit\-Protocol\fR ヘッダー内で「version=2」を指定してv2を使用するように要求します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+C: GET $GIT_URL/info/refs?service=git\-upload\-pack HTTP/1\&.0
+C: Git\-Protocol: version=2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+v2サーバーは以下のように応答します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+S: 200 OK
+S: <Some headers>
+S: \&.\&.\&.
+S:
+S: 000eversion 2\en
+S: <capability\-advertisement>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+その後の要求は、サービス \fB$GIT_URL/git\-upload\-pack\fR に対して直接行われます。(これはgit\-receive\-packでも同じように機能します)。
+.sp
+\fB\-\-http\-backend\-info\-refs\fR オプションを使用して \fBgit-upload-pack\fR(1) を実行します。
+.sp
+サーバーは、 \fBGIT_PROTOCOL\fR 変数を介してこのヘッダーの内容を渡すように構成する必要がある場合があります。 \fBgit\-http\-backend\&.txt\fR の説明を参照してください。
+.SH "CAPABILITY ADVERTISEMENT"
+.sp
+(クライアントからの要求に基づいて)プロトコルバージョン2を使用して通信することを決定したサーバーは、初期応答でバージョン文字列を送信し、続いてその機能を広告することによってクライアントに通知します。各機能は、オプションの値を持つキーです。クライアントは、不明なキーをすべて無視する必要があります。未知の値の意味は、各キーの定義に任されています。一部の機能では、クライアントによる実行を要求できるコマンドについて説明します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+capability\-advertisement = protocol\-version
+                           capability\-list
+                           flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+protocol\-version = PKT\-LINE("version 2" LF)
+capability\-list = *capability
+capability = PKT\-LINE(key[=value] LF)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+key = 1*(ALPHA | DIGIT | "\-_")
+value = 1*(ALPHA | DIGIT | " \-_\&.,?\e/{}[]()<>!@#$%^&*+=:;")
+.fi
+.if n \{\
+.RE
+.\}
+.SH "COMMAND REQUEST"
+.sp
+機能広告を受信した後、クライアントは、特定の機能または引数を使用して、必要なコマンドを選択する要求を発行できます。その次に、クライアントがコマンド固有のパラメータまたはクエリを提供できるオプションのセクションがあります。 一度に要求できるコマンドは1つだけです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+request = empty\-request | command\-request
+empty\-request = flush\-pkt
+command\-request = command
+                  capability\-list
+                  delim\-pkt
+                  command\-args
+                  flush\-pkt
+command = PKT\-LINE("command=" key LF)
+command\-args = *command\-specific\-arg
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+command\-specific\-argsは、個々のコマンドによって定義される
+パケットラインフレームの引数です。
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+次に、サーバーは、クライアントの要求が、広告された有効な機能だけでなく、有効なコマンドで構成されていることを確認します。リクエストが有効な場合、サーバーはコマンドを実行します。 サーバーは、応答を発行する前に、クライアントの要求全体を受信するまで待機する必要があります。応答の形式は実行中のコマンドによって決まりますが、すべての場合で、flush\-pktは応答の終了を示します。
+.sp
+コマンドが終了し、クライアントがサーバーからの応答全体を受信すると、クライアントは別のコマンドの実行を要求するか、接続を終了することができます。 クライアントは、オプションで、flush\-pktのみで構成される空の要求を送信して、これ以上要求が行われないことを示すことができます。
+.SH "CAPABILITIES"
+.sp
+機能には異なる2つのタイプがあります。情報を伝達したり要求の動作を変更したりするために使用できる通常の機能と、クライアントが実行したいコアアクション（フェッチ、プッシュなど）であるコマンドです。
+.sp
+プロトコルバージョン2は、デフォルトではステートレスです。 つまり、クライアントがサーバーで状態を維持する必要があることを指示する機能を要求しない限り、すべてのコマンドは1ラウンドだけ持続し、サーバー側の観点からステートレスである必要があります。クライアントは、正しく機能するためにサーバー側に状態管理を要求してはいけません(MUST NOT)。これにより、サーバー側では状態管理について心配することなく、単純なラウンドロビン負荷分散が可能になります。
+.SS "agent"
+.sp
+サーバーは、値 \fBX\fR (\fBagent=X\fR 形式)を使用して \fBagent\fR 機能を広告ズし、サーバーがバージョン \fBX\fR を実行していることをクライアントに通知できます。クライアントは、サーバーへの要求に値 \fBY\fR (\fBagent=Y\fR 形式)を持つ \fBagent\fR 機能を含めることにより、オプションで独自のエージェント文字列を送信できます(ただし、サーバーがagent機能を広告しなかった場合は、クライアントから送信してはいけません(MUST NOT))。\fBX\fR および \fBY\fR 文字列には、スペースを除く任意の印刷可能なASCII文字(つまり、バイト範囲32 < x <127)を含めることができ、通常は「パッケージ/バージョン」(例: 「git/1\&.8\&.3\&.1」形式です)。エージェント文字列は、統計およびデバッグの目的で純粋に情報を提供するものであり、特定の機能の有無をプログラムで想定するために使用してはいけません(MUST NOT)。
+.SS "ls\-refs"
+.sp
+\fBls\-refs\fR は、v2で参照広告を要求するために使用されるコマンドです。現在の参照広告とは異なり、ls\-refsは、サーバーから送信される参照を制限するために使用できる引数を取ります。
+.sp
+基本コマンドでサポートされていない追加の機能は、機能広告のコマンドの値として、スペースで区切られた機能のリストの形式で広告されます: "<command>=<feature 1> <feature 2>"
+.sp
+ls\-refsは以下の引数を取ります:
+.PP
+symrefs
+.RS 4
+それが指すオブジェクトに加えて、シンボリックrefを表示するときに、それが指す基になるrefを表示します。
+.RE
+.PP
+peel
+.RS 4
+剥いたタグ(peeled tags)を表示します。
+.RE
+.PP
+ref\-prefix <prefix>
+.RS 4
+指定すると、 指定された接頭辞のいずれかに一致する接頭辞を持つ参照のみが表示されます。 複数のインスタンスを指定できます。 その場合、プレフィックスに一致する参照が表示されます。 注意: これは純粋に最適化のためであることに注意してください。 サーバーは、 選択した場合、 プレフィックスに一致しない参照を表示する場合があり、 クライアントは結果を自分でフィルターする必要があります。
+.RE
+.sp
+「unborn」機能が広告される場合、以下の引数をクライアントの要求に含めることができます。
+.PP
+unborn
+.RS 4
+サーバーは、
+\fBunborn HEAD symref\-target:<target>\fR
+の形式で、unbornブランチを指すsymrefであっても、HEADに関する情報を送信します。
+.RE
+.sp
+ls\-refsの出力は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+output = *ref
+         flush\-pkt
+obj\-id\-or\-unborn = (obj\-id | "unborn")
+ref = PKT\-LINE(obj\-id\-or\-unborn SP refname *(SP ref\-attribute) LF)
+ref\-attribute = (symref | peeled)
+symref = "symref\-target:" symref\-target
+peeled = "peeled:" obj\-id
+.fi
+.if n \{\
+.RE
+.\}
+.SS "fetch"
+.sp
+\fBfetch\fR は、v2でパックファイルをフェッチするために使用されるコマンドです。 これは、v1 fetch の修正バージョンと見なすことができ、(\fBls\-refs\fR コマンドがその役割を果たしているため、)ref\-advertisementが削除され、メッセージ形式が調整されて冗長性が排除され、将来の拡張機能を簡単に追加できるようになっています。
+.sp
+基本コマンドでサポートされていない追加の機能は、機能広告のコマンドの値として、スペースで区切られた機能のリストの形式で広告されます: "<command>=<feature 1> <feature 2>"
+.sp
+\fBfetch\fR リクエストは、以下の引数を取ることができます:
+.PP
+want <oid>
+.RS 4
+クライアントが取得したいオブジェクトをサーバーに提示します。欲しいものは何でもかまいません。広告されているオブジェクトに限定されません。
+.RE
+.PP
+have <oid>
+.RS 4
+クライアントがローカルに持っているオブジェクトをサーバーに提示します。 これにより、サーバーは、クライアントが必要とするオブジェクトのみを含むパックファイルを作成できます。 複数の「have」行を指定できます。
+.RE
+.PP
+done
+.RS 4
+ネゴシエーションを終了する必要があること(またはクローンを実行する場合は開始しないこと)、およびサーバーが要求で提供された情報を使用してパックファイルを作成する必要があることをサーバーに提示します。
+.RE
+.PP
+thin\-pack
+.RS 4
+シンパック(thin pack)の送信を要求します。これは、パック内に含まれていない（ただし、受信側に存在することがわかっている）ベースオブジェクトを参照するデルタを含むパックです。これにより、ネットワークトラフィックを大幅に削減できますが、受信側は、シンパックに不足しているベースを追加して、これらのパックを「厚く」(thicken)する方法を知っている必要があります。
+.RE
+.PP
+no\-progress
+.RS 4
+パックファイル転送中にサイドバンドチャネル2で通常送信される進行状況情報を送信しないように要求します。 ただし、サイドバンドチャネル3は引き続きエラー応答に使用されます。
+.RE
+.PP
+include\-tag
+.RS 4
+注釈付きタグ(annotated tags)が指すオブジェクトが送信されている場合は、注釈付きタグ(annotated tags)を送信するように要求します。
+.RE
+.PP
+ofs\-delta
+.RS 4
+クライアントが PACKv2を理解していることを提示します。デルタは、OIDではなくパック内の位置によってベースを参照しています。 つまり、パックファイル内の OBJ_OFS_DELTA (別名タイプ 6)を読み取ることができます。
+.RE
+.sp
+「shallow」機能が広告される場合、以下で説明するように、以下の引数をクライアント要求に含めることができ、サーバーの応答に「shallow\-info」セクションを追加する可能性があります。
+.PP
+shallow <oid>
+.RS 4
+クライアントは、サーバーがクライアントの履歴の制限を認識できるように、そのようなオブジェクトごとに「shallow <oid>」行を指定することにより、shallowコピーしかない(つまり、そのコミットの親がないことを意味する、)すべてのコミットをサーバーに通知する必要があります。 これは、クライアントがそのようなコミットから到達可能なすべてのオブジェクトを持っていない可能性があることをサーバーが認識できるようにするためです。
+.RE
+.PP
+deepen <depth>
+.RS 4
+フェッチ/クローンを浅くし(shallow)、リモート側に対してコミットの深さが<depth>であることを要求します。
+.RE
+.PP
+deepen\-relative
+.RS 4
+「deepen」コマンドのセマンティクスを変更して、要求された深さが、要求されたコミットではなく、クライアントの現在のshallow境界に関連していることを示すように要求します。
+.RE
+.PP
+deepen\-since <timestamp>
+.RS 4
+shallow クローン/フェッチ を深さではなく特定の日付時刻でカットするように要求します。 内部的には、「git rev\-list \-\-max\-age=<timestamp>」を実行するのと同じです。 「deepen」との併用はできません。
+.RE
+.PP
+deepen\-not <rev>
+.RS 4
+shallow クローン/フェッチを、深さではなく、 <rev> で指定された特定のリビジョンでカットするように要求します。 内部的には、「git rev\-list \-\-not <rev>」を実行するのと同じです。 「deepen」では使用できませんが、「deepen\-since」では使用できます。
+.RE
+.sp
+\fBfilter\fR 機能が広告される場合、以下の引数をクライアントの要求に含めることができます:
+.PP
+filter <filter\-spec>
+.RS 4
+いくつかのフィルタリング手法のいずれかを使用して、パックファイルのさまざまなオブジェクトを省略するように要求します。これらは、部分クローン(partial clone)および部分フェッチ(partial fetch)操作での使用を目的としています。 可能な「filter\-spec」値については、\fBrev\-list\fR
+を参照してください。他のプロセスと通信する場合、送信者はスケーリングされた整数(「1k」など)を完全に拡張された形式(「1024」など)に変換して、新発想のスケーリングサフィックスを理解できない古い受信者との相互運用性を支援する必要があります。しかしながら、受信者は次のサフィックスを受け入れる必要があります：「k」、「m」、「g」で、それぞれ、1024、1048576、1073741824 を現します。
+.RE
+.sp
+「ref\-in\-want」機能が広告される場合、以下で説明するように、以下の引数をクライアントの要求に含めることができ、サーバーの応答に「wanted\-refs」セクションを追加する可能性があります。
+.PP
+want\-ref <ref>
+.RS 4
+クライアントが特定のrefを取得することをサーバーに提示します。ここで、 <ref> はサーバー上のrefのフルネームです。
+.RE
+.sp
+\fBsideband\-all\fR 機能が広告される場合、以下の引数をクライアントの要求に含めることができます:
+.PP
+sideband\-all
+.RS 4
+packfileセクションだけでなく、応答全体を多重化して送信するようにサーバーに指示します。(packfileセクションだけでなく、)応答内のすべての非フラッシュ(non\-flush)および non\-delim PKT\-LINEは、そのサイドバンド(1または2または3)を示すバイトで始まります。サーバーは、キープアライブパケットとして「0005\e2」（ペイロードのないサイドバンド2のPKT\-LINE)を送信する場合があります。
+.RE
+.sp
+「packfile\-uris」機能が広告される場合、以下で説明するように、以下の引数をクライアントの要求に含めることができ、サーバーの応答に「packfile\-uris」セクションを追加する可能性があります。
+.PP
+packfile\-uris <comma\-separated list of protocols>
+.RS 4
+クライアントが、送信されたパックファイル内のオブジェクトの代わりに、指定されたプロトコルのいずれかのURIを受信する用意があることをサーバーに提示します。 接続チェックを実行する前に、クライアントは指定されたすべてのURIからダウンロードする必要があります。 現在、サポートされているプロトコルは「http」と「https」です。
+.RE
+.sp
+\fBwait\-for\-done\fR 機能が広告される場合、以下の引数をクライアントの要求に含めることができます。
+.PP
+wait\-for\-done
+.RS 4
+サーバは決して "ready" を送らず、クライアントが "done" と言うまで待ってからパックファイルを送信するように指示します。
+.RE
+.sp
+\fBfetch\fR の応答は、区切り文字パケット(0001)で区切られたいくつかのセクションに分割され、各セクションはセクションヘッダーで始まります。ほとんどのセクションは、パックファイルが送信されたときにのみ送信されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+output = acknowledgements flush\-pkt |
+         [acknowledgments delim\-pkt] [shallow\-info delim\-pkt]
+         [wanted\-refs delim\-pkt] [packfile\-uris delim\-pkt]
+         packfile flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+acknowledgments = PKT\-LINE("acknowledgments" LF)
+                  (nak | *ack)
+                  (ready)
+ready = PKT\-LINE("ready" LF)
+nak = PKT\-LINE("NAK" LF)
+ack = PKT\-LINE("ACK" SP obj\-id LF)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+shallow\-info = PKT\-LINE("shallow\-info" LF)
+               *PKT\-LINE((shallow | unshallow) LF)
+shallow = "shallow" SP obj\-id
+unshallow = "unshallow" SP obj\-id
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+wanted\-refs = PKT\-LINE("wanted\-refs" LF)
+              *PKT\-LINE(wanted\-ref LF)
+wanted\-ref = obj\-id SP refname
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packfile\-uris = PKT\-LINE("packfile\-uris" LF) *packfile\-uri
+packfile\-uri = PKT\-LINE(40*(HEXDIGIT) SP *%x20\-ff LF)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packfile = PKT\-LINE("packfile" LF)
+           *PKT\-LINE(%x01\-03 *%x00\-ff)
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+acknowledgments section
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+クライアントが「done」行を送信してネゴシエーションが終了したと判断した場合(したがって、サーバーにパックファイルを送信する必要があります)、サーバーの応答からacknowledgmentsセクションを省略しなければなりません(MUST)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+常にセクションヘッダー「acknowledgements」で始まります
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+have行として送信されたオブジェクトIDがどれも共通していない場合、サーバーは「NAK」で応答します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、共通のhave行として送信されたすべてのオブジェクトIDに対して「ACK obj\-id」で応答します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+応答に「ACK」行と「NAK」行の両方を含めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、サーバーが許容可能な共通ベースを検出し、packfile（同じ応答のpackfileセクションにあります）を作成して、送信する準備ができていることを示す「ready」行で応答します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーが適切な切断点(cut point)を見つけて「ready」行を送信することを決定した場合、サーバーは(最適化として)応答中に送信した「ACK」行を省略することを決定できます。これは、サーバーがクライアントに送信する予定のオブジェクトをすでに決定しており、それ以上のネゴシエーションが必要ないためです。
+.RE
+.RE
+.PP
+shallow\-info section
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+クライアントが shallow フェッチ/クローン を要求した場合、shallowクライアントがフェッチを要求するか、サーバーがshallowの場合、サーバーの応答に shallow\-info セクションが含まれる場合があります。(上記の条件のいずれかにより、サーバーがクライアントにshallow 境界(shallow boundaries)を通知する必要がある場合、または既存の浅い境界をクライアントと調整する必要がある場合は、 shallow\-info セクションが含まれます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+常にセクションヘッダー「shallow\-info」で始まります
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+正数の深さが要求された場合、サーバーは指定の深さよりも深くないコミットのセットを計算します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、続くパックファイルで親が送信されないコミットごとに「shallow obj\-id」行を送信します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、クライアントがshallowを指示したコミットごとに「unshallow obj\-id」行を送信しますが、(その親が次のパックファイルで送信されるため、)フェッチの結果としてはshallowにはなりません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、クライアントが要求の一部としてshallowを指示していないものに対して、「unshallow」行を送信しては「いけません」。
+.RE
+.RE
+.PP
+wanted\-refs section
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+このセクションは、クライアントが「want\-ref」行を使用してrefを要求し、packfileセクションも応答に含まれている場合にのみ含まれます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+常にセクションヘッダー「wanted\-refs」で始まります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、「want\-ref」行を使用して要求された参照ごとに、参照リスト("<oid> <refname>")を送信します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、「want\-ref」行を使用して要求されなかった参照を送信しては「いけません」。
+.RE
+.RE
+.PP
+packfile\-uris section
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+このセクションは、クライアントが「packfile\-uris」を送信し、サーバーに送信するそのようなURIが少なくとも1つある場合にのみ含まれます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+常にセクションヘッダー「packfile\-uris」で始まります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーが送信するURIごとに、パックの内容のハッシュ(git index\-packによって出力される)と、それに続くURIを送信します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ハッシュの長さは40文字です。 Gitが新しいハッシュアルゴリズムにアップグレードするとき、これを更新する必要があるかもしれません。 (「pack\et」または「keep\et」の後に出力されるインデックスパックと一致する必要があります)。
+.RE
+.RE
+.PP
+packfile section
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+このセクションは、クライアントがリクエストで「want」行を送信し、「done」を送信してこれ以上ネゴシエーションを行わないように要求した場合、または、サーバーがパックファイルを生成するのに十分なカットポイントを見つけたと判断した場合、のいずれかにのみ含まれます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+常にセクションヘッダー「packfile」で始まります
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パックファイルの送信は、セクションヘッダーの直後に開始されます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パックファイルのデータ転送は、プロトコルバージョン1の「side\-band\-64k」機能と同じセマンティクスを使用して、常に多重化されます。つまり、packfileデータストリーム中の各パケットは、先頭の4バイトの pkt\-line長(通常はpkt\-line形式)、1バイトのストリームコード、実際のデータで構成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ストリームコードは以下のいずれかになります:
+      1 \- パックデータ
+      2 \- 進行状況メッセージ
+      3 \- ストリームが中止(abort)される直前の致命的なエラーメッセージ
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.RE
+.SS "server\-option"
+.sp
+広告されている場合は、サーバー固有のオプションをいくつでもリクエストに含めることができることを示します。これは、リクエストの機能リストセクションで「server\-option=<option>」機能行として各オプションを送信することによって行われます。
+.sp
+提供されるオプションには、NULまたはLF文字を含めることはできません。
+.SS "object\-format"
+.sp
+サーバーは、値 \fBX\fR (\fBobject\-format=X\fR 形式)を使用して \fBobject\-format\fR 機能を広告し、サーバーがハッシュアルゴリズムXを使用してオブジェクトを処理できることをクライアントに通知できます。 指定しない場合、サーバーはSHA\-1のみを処理すると見なされます。 クライアントがSHA\-1以外のハッシュアルゴリズムを使用する場合は、object\-formatの文字列を指定する必要があります。
+.SS "session\-id=<session id>"
+.sp
+サーバーは、複数のリクエストにわたってこのプロセスを識別するために使用できるセッションIDを広告する場合があります。 クライアントは、自身のセッションIDをサーバーに広告することもできます。
+.sp
+セッションIDは、特定のプロセスに固有である必要があります。それらはパケット行内に収まる必要があり、印刷不可能な文字や空白文字を含めることはできません。 現在の実装ではtrace2セッションID(詳細は \m[blue]\fBapi\-trace2\fR\m[]\&\s-2\u[1]\d\s+2 参照)を使用していますが、これは変更される可能性があるため、セッションIDのユーザーはこの事実に依存しないでください。
+.SS "object\-info"
+.sp
+\fBobject\-info\fR は、1つまたは複数のオブジェクトに関する情報を取得するためのコマンドです。 その主な目的は、クライアントがオブジェクトを完全にフェッチすることなく、この情報に基づいて決定を下せるようにすることです。 現在サポートされている情報はオブジェクトサイズのみです。
+.sp
+\fBobject\-info\fR リクエストは以下の引数を取ります:
+.PP
+size
+.RS 4
+リストされたオブジェクトIDごとに返されるサイズ情報を要求します。
+.RE
+.PP
+oid <oid>
+.RS 4
+クライアントが情報を取得したいオブジェクトをサーバーに指示します。
+.RE
+.sp
+\fBobject\-info\fR の応答は、要求されたオブジェクトIDと関連する要求された情報のリストであり、それぞれが1つのスペースで区切られています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+output = info flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+info = PKT\-LINE(attrs) LF)
+        *PKT\-LINE(obj\-info LF)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+attrs = attr | attrs SP attrs
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+attr = "size"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+obj\-info = obj\-id SP obj\-size
+.fi
+.if n \{\
+.RE
+.\}
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+api-trace2
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/technical/api-trace2.html
+.RE

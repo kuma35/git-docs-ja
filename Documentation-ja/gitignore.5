@@ -1,0 +1,523 @@
+'\" t
+.\"     Title: gitignore
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITIGNORE" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitignore \- 無視する、意図的に追跡しないファイルを指定します
+.SH "SYNOPSIS"
+.sp
+$XDG_CONFIG_HOME/git/ignore, $GIT_DIR/info/exclude, \&.gitignore
+.SH "DESCRIPTION"
+.sp
+\fBgitignore\fR ファイルは、Gitが無視する必要のある意図的に追跡しないファイルを指定します。 Gitによってすでに追跡されているファイルは影響を受けません。 詳細については、以下のNOTESを参照してください。
+.sp
+\fBgitignore\fR ファイルの各行にはパターンを指定します。パスを無視するかどうかを決定するとき、Gitは通常、複数のソースからの \fBgitignore\fR パターンを、最高から最低の順に以下の優先順位でチェックします(各レベルの優先順位内では最後に一致するパターンが結果を決定します)。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターンは、それらをサポートするコマンドのコマンドラインから読み取られます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+そのパスから見て同じディレクトリまたは親ディレクトリ(作業ツリーの最上位まで)にある
+\fB\&.gitignore\fR
+ファイルから読み取られたパターン。ディレクトリの上位レベルのファイルのパターンは、\fB\&.gitignore\fR
+ファイルを含むディレクトリまでディレクトリ下位レベルの
+\fB\&.gitignore\fR
+ファイルのパターンによって上書きされますこれらのパターンは、
+\fB\&.gitignore\fR
+ファイルのあるディレクトリを基準にしてマッチします。 プロジェクトは通常、リポジトリにそのような、プロジェクトビルドの部品として生成されたファイルのパターンを含んだ
+\fB\&.gitignore\fR
+ファイルを含みます。(訳注:各サブディレクトリに \&.gigignore ファイルを含む事ができ、各ディレクトリの \&.gitignore はその親ディレクトリまたはその上位ディレクトリの \&.gitignore をオーバーライドする)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターンは
+\fB$GIT_DIR/info/exclude\fR
+から読み取られます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+構成変数
+\fBcore\&.excludesFile\fR
+で指定されたファイルから読み取られたパターン。
+.RE
+.sp
+パターンを配置するファイルは、パターンの使用方法によって異なります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+バージョン管理され、クローンを介して他のリポジトリに配布される必要があるパターン(つまり、すべての開発者が無視したいファイル)は、
+\fB\&.gitignore\fR
+ファイルに入れる必要があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+特定のリポジトリに固有であるが、他の関連するリポジトリと共有する必要のないパターン(たとえば、リポジトリ内に存在するが1人のユーザーのワークフローに固有の補助ファイル)は、
+\fB$GIT_DIR/info/exclude\fR
+ファイルに配置する必要があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ユーザーがすべての状況でGitに無視させたいパターン(たとえば、選択したユーザーのエディタによって生成されたバックアップファイルまたは一時ファイル)は、通常、ユーザーの
+\fB~/\&.gitconfig\fR
+の
+\fBcore\&.excludesFile\fR
+で指定されたファイルに入ります。デフォルト値は $XDG_CONFIG_HOME/git/ignore です。 $XDG_CONFIG_HOME が設定されていないか空の場合、代わりに $HOME/\&.config/git/ignore が使用されます。
+.RE
+.sp
+\fBgitls\-files\fR や \fBgit read\-tree\fR などの基盤となるGit配管コマンドツールは、 コマンドラインオプションで指定された \fBgitignore\fR パターンを読み取るか、 コマンドラインオプションで指定されたファイルから読み取ります。 \fBgit status\fR や \fBgit add\fR などの高レベルのGitツールは、 上記で指定されたソースからのパターンを使用します。
+.SH "PATTERN FORMAT"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+空行はどのファイルともマッチしないため、読みやすくするための区切りとして使えます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB#\fR
+で始まる行はコメントとして機能します。
+\fB#\fR
+で始まるパターンの最初の
+\fB#\fR
+の前にはバックスラッシュ(「\fB\e\fR」)を置きます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+末尾の空白は、バックススラッシュ(\fB\e\fR)でクォートされていない限り無視されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターンを否定するオプションのプレフィックス
+\fB!\fR
+。以前のパターンで除外されたマッチするファイルは、再び含まれるようになります。そのファイルの親ディレクトリが除外されている場合、そのファイルを再インクルードすることはできません。Gitはパフォーマンス上の理由から除外されたディレクトリを一覧表示しないため、含まれているファイルのパターンは、それらがどこで定義されていても効果がありません。 リテラル
+\fB!\fR
+で始まるパターンの場合は、最初の
+\fB!\fR
+の前にバックスラッシュ(\fB\e\fR)を付けます(例:
+\fB\e!important!\&.txt\fR)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+スラッシュ
+\fB/\fR
+はディレクトリ区切り文字として使用されます。区切り文字は、
+\fB\&.gitignore\fR
+検索パターンの最初、中間、または最後に発生する可能性があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターンの先頭または中間(あるいはその両方)に区切り文字がある場合、パターンは特定の
+\fB\&.gitignore\fR
+ファイル自体のディレクトリレベルに関連しています。そうしないと、パターンは
+\fB\&.gitignore\fR
+レベルより下の任意のレベルでも一致する可能性があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターンの最後に区切り文字がある場合、パターンはディレクトリのみに一致します。それ以外の場合、パターンはファイルとディレクトリの両方に一致する可能性があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+たとえば、パターン
+\fBdoc/frotz/\fR
+は
+\fBdoc/frotz\fR
+ディレクトリと一致しますが、
+\fBa/doc/frotz\fR
+ディレクトリとは一致しません。 ただし、
+\fBfrotz/\fR
+は
+\fBfrotz\fR
+およびディレクトリである
+\fBa/frotz\fR
+と一致します(すべてのパスは
+\fB\&.gitignore\fR
+ファイルのあるディレクトリからの相対パスです)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+アスタリスク(\fB*\fR)はスラッシュ(\fB/\fR)以外のものと一致します。文字
+\fB?\fR
+は、
+\fB/\fR
+以外の任意の1文字と一致します。 範囲表記、例えば
+\fB[a\-zA\-Z]\fR
+は、範囲内の文字の1つと一致させるために使用できます。詳細については、 fnmatch3）および FNM_PATHNAME フラグを参照してください。
+.RE
+.sp
+フルパス名と一致するパターンの、2つの連続するアスタリスク(\fB**\fR)は、以下の特別な意味を持つ場合があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+先頭の
+\fB**\fR
+の後にスラッシュ(\fB/\fR)が続く場合は、すべてのディレクトリで一致することを意味します。 たとえば、
+\fB**/foo\fR
+は、パターン
+\fBfoo\fR
+と同じように、任意の場所のファイルまたはディレクトリ
+\fBfoo\fR
+と一致します。
+\fB**/foo/bar\fR
+は、ディレクトリ
+\fBfoo\fR
+の直下にあるファイルまたはディレクトリ
+\fBbar\fR
+と一致します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+末尾の
+\fB/**\fR
+は内部のすべてに一致します。 たとえば、
+\fBabc/**\fR
+は、
+\fB\&.gitignore\fR
+ファイルの場所を基準にして、ディレクトリ
+\fBabc\fR
+内のすべてのファイルと無限の深さで一致します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+スラッシュ(\fB/\fR)の後に2つの連続するアスタリスク(\fB**\fR)が続く場合、スラッシュは0個以上のディレクトリに一致します。たとえば、
+\fBa/**/b\fR
+は
+\fBa/b\fR
+や
+\fBa/x/b\fR
+や
+\fBa/x/y/b\fR
+などと一致します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+他の連続するアスタリスクは通常のアスタリスクと見なされ、以前のルールに従って一致します。
+.RE
+.SH "CONFIGURATION"
+.sp
+オプションの構成変数 \fBcore\&.excludesFile\fR は、 \fB$GIT_DIR/info/exclude\fR と同様に、除外するファイル名のパターンを含むファイルへのパスを示します。 \fB$GIT_DIR/info/exclude\fR のパターンに加えて、excludeファイルのパターンが使用されます。
+.SH "NOTES"
+.sp
+gitignoreファイルの目的は、Gitによって未だ追跡されていない特定のファイルがGitによって追跡される事が無いようにすることです。
+.sp
+現在追跡されているファイルの追跡を停止するには、 \fBgit rm \-\-cached\fR を使用します。
+.sp
+作業ツリーの \fB\&.gitignore\fR ファイルにアクセスするとき、Gitはシンボリックリンクをたどりません。これにより、ファイルシステムからではなく、インデックスまたはツリーからファイルにアクセスする場合の動作の一貫性が保たれます。
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターン
+\fBhello\&.*\fR
+は、 名前が
+\fBhello\&.\fR
+で始まるすべてのファイルまたはディレクトリにマッチします。 これをディレクトリのみに制限し、 そのサブディレクトリには制限したくない場合は、 パターンの前にスラッシュを付けることができます。 つまり、
+\fB/hello\&.*\fR
+とします。 このパターンは
+\fBhello\&.txt\fR
+や
+\fBhello\&.c\fR
+とマッチしますが、
+\fBa/hello\&.java\fR
+とはマッチしません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターン
+\fBfoo/\fR
+は、ディレクトリ
+\fBfoo\fR
+とその下のパスに一致しますが、通常のファイルまたはシンボリックリンク
+\fBfoo\fR
+には一致しません(これは、Gitでのpathspecの一般的な動作方法と一致します)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターン
+\fBdoc/frotz\fR
+と
+\fB/doc/frotz\fR
+は、どの
+\fB\&.gitignore\fR
+ファイルでも同じ効果があります。つまり、パターンの中間にスラッシュ(\fB/\fR)がある場合、先頭のスラッシュは関係ありません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パターン
+\fBfoo/*\fR
+は、
+\fBfoo/test\&.json\fR
+(通常のファイル) や
+\fBfoo/bar\fR
+(ディレクトリ)とマッチしますが、パターンのアスタリスク(\fB*\fR)がスラッシュ(\fB/\fR)を含む
+\fBbar/hello\&.c\fR
+とマッチしないため、
+\fBfoo/bar/hello\&.c\fR
+(通常のファイル)とは一致しません。
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ git status
+    [\&.\&.\&.]
+    # Untracked files:
+    [\&.\&.\&.]
+    #       Documentation/foo\&.html
+    #       Documentation/gitignore\&.html
+    #       file\&.o
+    #       lib\&.a
+    #       src/internal\&.o
+    [\&.\&.\&.]
+    $ cat \&.git/info/exclude
+    # ignore objects and archives, anywhere in the tree\&.
+    *\&.[oa]
+    $ cat Documentation/\&.gitignore
+    # ignore generated html files,
+    *\&.html
+    # except foo\&.html which is maintained by hand
+    !foo\&.html
+    $ git status
+    [\&.\&.\&.]
+    # Untracked files:
+    [\&.\&.\&.]
+    #       Documentation/foo\&.html
+    [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+別の例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ cat \&.gitignore
+    vmlinux*
+    $ ls arch/foo/kernel/vm*
+    arch/foo/kernel/vmlinux\&.lds\&.S
+    $ echo \*(Aq!/vmlinux*\*(Aq >arch/foo/kernel/\&.gitignore
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+2番目の \&.gitignore は、Gitが \fBarch/foo/kernel/vmlinux\&.lds\&.S\fR を無視するのを防ぎます。
+.sp
+特定のディレクトリ \fBfoo/bar\fR 以外のすべてを除外する例(\fB/*\fR に注意してください。スラッシュ(\fB/\fR)なしでワイルドカード(\fB*\fR)は、 \fBfoo/bar\fR 内のすべても除外します):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ cat \&.gitignore
+    # exclude everything except directory foo/bar
+    /*
+    !/foo
+    /foo/*
+    !/foo/bar
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBgit-rm\fR(1), \fBgitrepository-layout\fR(5), \fBgit-check-ignore\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

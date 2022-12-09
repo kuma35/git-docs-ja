@@ -1,0 +1,312 @@
+'\" t
+.\"     Title: git-receive-pack
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-RECEIVE\-PACK" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-receive-pack \- リポジトリにプッシュされたものを受信します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit\-receive\-pack\fR <directory>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fBgit send\-pack\fR によって呼び出され、リモート側からもたらされた情報でリポジトリを更新します。
+.sp
+このコマンドは通常、エンドユーザーによって直接呼び出されることはありません。 プロトコルのUIは \fBgit send\-pack\fR 側にあり、プログラムペアは更新をリモートリポジトリにプッシュするために使用されることを目的としています。 プル操作については、 \fBgit-fetch-pack\fR(1) を参照してください。
+.sp
+このコマンドを使用すると、リモート側で sha1 ref (ヘッド/タグ)を作成して早送りできます(厳密に言えば、ローカル側では \fBgit\-receive\-pack\fR が実行されますが、send\-pack側に居るユーザにとってはリモートの更新をしている事になります。混乱しないでね？)
+.sp
+Documentation/howtoディレクトリには、更新フック(update hook)と更新後フック(post\-update hook)を使用した実例が他にもあります。
+.sp
+\fIgit\-receive\-pack\fR は、 receive\&.denyNonFastForwards 構成オプションを尊重します。このオプションは、refの更新が早送りでない場合に拒否する必要があるかどうかを通知します。
+.sp
+他の多くの \fBreceive\&.*\fR 構成オプションを使用して、その動作を微調整できます。 \fBgit-config\fR(1) を参照してください。
+.SH "OPTIONS"
+.PP
+<directory>
+.RS 4
+同期するリポジトリ。
+.RE
+.PP
+\fB\-\-http\-backend\-info\-refs\fR
+.RS 4
+\fBgit-http-backend\fR(1)
+が、
+\fB$GIT_URL/info/refs?service=git\-receive\-pack\fR
+リクエストを処理するために使用します。
+\fBgit-upload-pack\fR(1)
+の
+\fB\-\-http\-backend\-info\-refs\fR
+を参照してください。
+.RE
+.SH "PRE\-RECEIVE HOOK"
+.sp
+refが更新される前に、 $GIT_DIR/hooks/pre\-receive ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、更新される参照ごとに1行になります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+sha1\-old SP sha1\-new SP refname LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッドの場合、これは \fBrefs/heads/master\fR です。 各refnameの前の2つのsha1値は、更新前後のrefnameのオブジェクト名です。 作成されるrefのsha1\-oldは 0{40} に等しく、削除されるrefのsha1\-newは 0{40} になります。それ以外の場合、sha1\-oldとsha1\-newはリポジトリ内の有効なオブジェクトである必要があります。
+.sp
+署名されたプッシュを受け入れる場合(\fBgit-push\fR(1) 参照)、署名されたプッシュ証明書はブロブに格納され、環境変数 \fBGIT_PUSH_CERT\fR でオブジェクト名を調べることができます。 例については、 \fBpost\-receive\fR フックの説明を参照してください。 さらに、証明書はGPGを使用して検証され、結果は以下の環境変数とともにエクスポートされます:
+.PP
+\fBGIT_PUSH_CERT_SIGNER\fR
+.RS 4
+プッシュ証明書に署名したキーの所有者の、名前(name)と電子メールアドレス(e\-mail address)。
+.RE
+.PP
+\fBGIT_PUSH_CERT_KEY\fR
+.RS 4
+プッシュ証明書に署名したキーのGPGキーID。
+.RE
+.PP
+\fBGIT_PUSH_CERT_STATUS\fR
+.RS 4
+コマンドの
+\fBgit log\fR
+ファミリーの
+\fB%G?\fR
+形式で使用されるのと同一のニーモニックを使用した、プッシュ証明書のGPG検証のステータス(\fBgit-log\fR(1)
+を参照)。
+.RE
+.PP
+\fBGIT_PUSH_CERT_NONCE\fR
+.RS 4
+プロセスが署名者にプッシュ証明書に含めるように要求したノンス(nonce;その場限りの)文字列。これがプッシュ証明書の「nonce」ヘッダーに記録されている値と一致しない場合は、証明書が別の
+\fBgit push\fR
+セッションから再実行されている有効な証明書であることを示している可能性があります。
+.RE
+.PP
+\fBGIT_PUSH_CERT_NONCE_STATUS\fR
+.RS 4
+.PP
+\fBUNSOLICITED\fR
+.RS 4
+\fBgit push \-\-signed\fR
+は、私達が送信を問い合わせなかったときにノンス(nonce)を送信しました。
+.RE
+.PP
+\fBMISSING\fR
+.RS 4
+\fBgit push \-\-signed\fR
+はノンスヘッダーを送信しませんでした。
+.RE
+.PP
+\fBBAD\fR
+.RS 4
+\fBgit push \-\-signed\fR
+は偽のノンスを送信しました。
+.RE
+.PP
+\fBOK\fR
+.RS 4
+\fBgit push \-\-signed\fR
+は、私達が送信を要求したノンスを送信しました。
+.RE
+.PP
+\fBSLOP\fR
+.RS 4
+\fBgit push \-\-signed\fR
+は、前回のセッションで送信するように要求したものとは異なるノンスを送信しました。
+\fBGIT_PUSH_CERT_NONCE_SLOP\fR
+環境変数を参照してください。
+.RE
+.RE
+.PP
+\fBGIT_PUSH_CERT_NONCE_SLOP\fR
+.RS 4
+\fBgit push \-\-signed\fR
+は、現在送信するように要求したものとは異なるノンスを送信しました。開始時刻が現在のセッションとは何秒も違う別のセッションで送信されました。
+\fBGIT_PUSH_CERT_NONCE_STATUS\fR
+が
+\fBSLOP\fR
+と言った場合にのみ意味があります。
+\fBgit-config\fR(1)
+の
+\fBreceive\&.certNonceSlop\fR
+変数についてもお読みください。
+.RE
+.sp
+このフックは、refnameが更新される前、および早送りチェックが実行される前に呼び出されます。
+.sp
+受信前(pre\-receive)フックがゼロ以外の終了ステータスで終了した場合、更新は実行されず、更新(update)フックや受信後フック(post\-receive)や更新後(post\-update)フックも呼び出されません。 これは、更新がサポートされない場合に迅速に救済するのに役立ちます。
+.sp
+以下の検疫環境(quarantine environment)に関する注記を参照してください。
+.SH "UPDATE HOOK"
+.sp
+各refが更新される前に、 $GIT_DIR/hooks/update ファイルが存在し、実行可能である場合、3つのパラメーターを使用してrefごとに1回呼び出されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$GIT_DIR/hooks/update refname sha1\-old sha1\-new
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+refnameパラメーターは$GIT_DIRに関連しています。 例えば masterヘッドの場合、これは \fBrefs/heads/master\fR です。 2つのsha1引数は、更新前後のrefnameのオブジェクト名です。 refnameが更新される前にフックが呼び出されるため、sha1\-oldが 0{40} (そのようなrefがまだないことを意味します)であるか、refnameに記録されているものと一致する必要があることに注意してください。
+.sp
+名前付きrefの更新を禁止する場合、フックはゼロ以外のステータスで終了する必要があります。 それ以外の場合は、ゼロで終了する必要があります。
+.sp
+このフックの正常な実行(ゼロ終了ステータス)は、refが実際に更新されることを保証するものではなく、前提条件にすぎません。 そのため、このフックから通知(電子メールなど)を送信することはお勧めできません。 代わりに、受信後(post\-receive)フックの使用を検討してください。
+.SH "POST\-RECEIVE HOOK"
+.sp
+すべてのrefが更新された後(または更新が試みられた後)、refの更新が成功した場合、および $GIT_DIR/hooks/post\-receive ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、正常に更新された参照ごとに1行になります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+sha1\-old SP sha1\-new SP refname LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッドの場合、これは \fBrefs/heads/master\fR です。 各refnameの前の2つのsha1値は、更新前後のrefnameのオブジェクト名です。 作成された参照はsha1\-oldが 0{40} に等しくなり、削除された参照はsha1\-newが 0{40} に等しくなります。それ以外の場合、sha1\-oldとsha1\-newはリポジトリ内の有効なオブジェクトである必要があります。
+.sp
+署名されたプッシュを受け入れた後、 \fBpre\-receive\fR フックの場合と同様に、 \fBGIT_PUSH_CERT*\fR 環境変数を検査できます。
+.sp
+このフックを使用すると、リポジトリの更新を説明するメールを簡単に生成できます。 このサンプルスクリプトは、リポジトリにプッシュされたコミットを一覧表示するrefごとに1つのメールメッセージを送信し、適切な署名を持つ署名付きプッシュのプッシュ証明書をログ取りサービス(logger service)に記録します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#!/bin/sh
+# mail out commit update information\&.
+while read oval nval ref
+do
+        if expr "$oval" : \*(Aq0*$\*(Aq >/dev/null
+        then
+                echo "Created a new ref, with the following commits:"
+                git rev\-list \-\-pretty "$nval"
+        else
+                echo "New commits:"
+                git rev\-list \-\-pretty "$nval" "^$oval"
+        fi |
+        mail \-s "Changes to ref $ref" commit\-list@mydomain
+done
+# log signed push certificate, if any
+if test \-n "${GIT_PUSH_CERT\-}" && test ${GIT_PUSH_CERT_STATUS} = G
+then
+        (
+                echo expected nonce is ${GIT_PUSH_NONCE}
+                git cat\-file blob ${GIT_PUSH_CERT}
+        ) | mail \-s "push certificate from $GIT_PUSH_CERT_SIGNER" push\-log@mydomain
+fi
+exit 0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このフック呼び出しからの終了コードは無視されますが、ゼロ以外の終了コードはエラーメッセージを生成します。
+.sp
+このフックが実行されると、refnameにsha1\-newがない可能性があることに注意してください。 これは、 \fBgit\-receive\-pack\fR によって更新された後、フックがそれを評価できるようになる前に、別のユーザーが参照を変更した場合に簡単に発生する可能性があります。 フックは、refnameの現在の値ではなく、sha1\-newに依存することをお勧めします。
+.SH "POST\-UPDATE HOOK"
+.sp
+他のすべての処理の後、少なくとも1つのrefが更新され、 $GIT_DIR/hooks/post\-update ファイルが存在し、実行可能である場合、更新されたrefのリストを使用してpost\-updateが呼び出されます。 これは、リポジトリ全体のクリーンアップタスクを実装するために使用できます。
+.sp
+このフック呼び出しからの終了コードは無視されます。 その時点で \fBgit\-receive\-pack\fR に残されているのは、とにかく自分自身を終了することだけです。
+.sp
+このフックは、たとえば、リポジトリがパックされてバカ転送(dumb transport)を介して提供される場合に \fBgit update\-server\-info\fR を実行するために使用できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#!/bin/sh
+exec git update\-server\-info
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "QUARANTINE ENVIRONMENT"
+.sp
+\fBreceive\-pack\fR がオブジェクトを取り込むと、それらは \fB$GIT_DIR/objects\fR ディレクトリ内の一時的な「隔離」(quarantine)ディレクトリに配置され、 \fBpre\-receive\fR フックが完了した後にのみメインオブジェクトストアに移行されます。 それ以前にプッシュが失敗した場合、一時ディレクトリは完全に削除されます。
+.sp
+これには、ユーザーからも見えるいくつかの影響と注意事項があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+着信パックの問題、またはオブジェクトの欠落、または
+\fBpre\-receive\fR
+フックが原因で失敗したプッシュは、ディスク上のデータを残しません。 これは通常、繰り返し失敗したプッシュがディスクをいっぱいにするのを防ぐのに役立ちますが、デバッグがより困難になる可能性があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+\fBpre\-receive\fR
+フックによって作成されたオブジェクトはすべて、隔離(quarantine)ディレクトリに作成されます(成功した場合にのみ移行されます)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+\fBpre\-receive\fR
+フックは、隔離(quarantined)されたオブジェクトを指すように参照を更新してはなりません。 リポジトリにアクセスする他のプログラムはオブジェクトを見ることができません(そして、受信前(pre\-receive)フックが失敗した場合、それらのrefは破損します)。 安全のため、
+\fBpre\-receive\fR
+内からのrefの更新は自動的に拒否されます。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-send-pack\fR(1), \fBgitnamespaces\fR(7)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,148 @@
+'\" t
+.\"     Title: git-remote-ext
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-REMOTE\-EXT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-remote-ext \- スマートトランスポートを外部コマンドにブリッジします。
+.SH "SYNOPSIS"
+.sp
+.nf
+git remote add <nick> "ext::<command>[ <arguments>\&...]"
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このリモートヘルパーは、指定の \fB<command>\fR を使用してリモートGitサーバーに接続します。
+.sp
+指定の \fB<command>\fR のstdinに書き込んだデータは、git:// サーバーまたは git\-upload\-pack または git\-receive\-pack または (状況に応じて)git\-upload\-archive に送信されるものと見なし、かつ、 <command> のstdoutからの読み取りは、同一のサービスから受信されたものと見なされます。
+.sp
+コマンドと引数は、エスケープされていない空白で区切られます。
+.sp
+以下のシーケンスには特別な意味があります:
+.PP
+`% `
+.RS 4
+コマンドまたは引数のリテラル空白
+.RE
+.PP
+\fB%%\fR
+.RS 4
+リテラルのパーセント文字
+.RE
+.PP
+\fB%s\fR
+.RS 4
+Gitが呼び出したいサービスの名前(receive\-pack または upload\-pack または upload\-archive)に置き換えられます。
+.RE
+.PP
+\fB%S\fR
+.RS 4
+Gitが呼び出したいサービスの長い名前(long name)(git\-receive\-pack または git\-upload\-pack または git\-upload\-archive)に置き換えられます。
+.RE
+.PP
+\fB%G\fR (引数の最初の文字列である必要があります)
+.RS 4
+この引数は
+\fB<command>\fR
+には渡されません。その代わりにヘルパーは、サービスフィールドが適切な値に設定され、かつ、リポジトリフィールドが引数の残りの部分に設定された状態でリモート側に git:// サービス要求(request)を送信することから開始します。デフォルトでは、そのような要求は送信されません。
+.sp
+これはリモート側の git:// サーバーへトンネルを介してアクセスする場合に便利です。
+.RE
+.PP
+\fB%V\fR (引数の最初の文字列である必要があります)
+.RS 4
+この引数は
+\fB<command>\fR
+には渡されません。その代わりに git:// サービス要求でvhostフィールドを(引数の残りの部分に)設定します。デフォルトでは、(送信の場合)そのような要求でvhostを送信しません。
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+GIT_TRANSLOOP_DEBUG
+.RS 4
+設定されている場合、さまざまな読み取り/書き込みに関するデバッグ情報を出力します。
+.RE
+.SH "ENVIRONMENT VARIABLES PASSED TO COMMAND"
+.PP
+GIT_EXT_SERVICE
+.RS 4
+サービスヘルパーが呼び出す必要のある長い名前(git\-upload\-pack など)を設定します。
+.RE
+.PP
+GIT_EXT_SERVICE_NOPREFIX
+.RS 4
+サービスヘルパーが呼び出す必要のある名前(upload\-pack など)を設定します。
+.RE
+.SH "EXAMPLES"
+.sp
+このリモートヘルパーは、 \fBgit fetch <URL>\fR 、 \fBgit clone <URL>\fR 、 \fBgit push <URL>\fR 、 \fBgit remote add <nick> <URL>\fR などのコマンドを使用するときに、Gitによって透過的に使用され、 <URL>は \fBext::\fR で始まります。 例:
+.PP
+"ext::ssh \-i /home/foo/\&.ssh/somekey user@host\&.example %S \fIfoo/repo\fR"
+.RS 4
+host\&.example:foo/repo と同様ですが、キーペアとして /home/foo/\&.ssh/somekey を使用し、リモート側のユーザーとしてuserを使用します。 これにより、 \&.ssh/config を編集する必要がなくなります。
+.RE
+.PP
+"ext::socat \-t3600 \- ABSTRACT\-CONNECT:/git\-server %G/somerepo"
+.RS 4
+抽象名前空間アドレス(abstract namespace address) /git\-server でgitプロトコルを介してアクセス可能なパス /somerepo を持つリポジトリを表します。
+.RE
+.PP
+"ext::git\-server\-alias foo %G/repo"
+.RS 4
+ヘルパープログラム
+\fBgit\-server\-alias foo\fR
+を使用してアクセスされるパス /repo を持つリポジトリを表します。リポジトリへのパスとリクエストのタイプは、コマンドラインではなく、通常の git:// プロトコルのようにプロトコルストリームの一部として渡されます。
+.RE
+.PP
+"ext::git\-server\-alias foo %G/repo %Vfoo"
+.RS 4
+ヘルパープログラム
+\fBgit\-server\-alias foo\fR
+を使用してアクセスされるパス /repo を持つリポジトリを表します。プロトコルストリームで渡されるリモートサーバーのホスト名は「foo」になります(これにより、複数の仮想Gitサーバーがリンクレベルのアドレスを共有できるようになります)。
+.RE
+.PP
+"ext::git\-server\-alias foo %G/repo% with% spaces %Vfoo"
+.RS 4
+ヘルパープログラム
+\fBgit\-server\-alias foo\fR
+を使用してアクセスされるパス
+\fB/repo with spaces\fR
+のリポジトリを表します。プロトコルストリームで渡されるリモートサーバーのホスト名は「foo」になります(これにより、複数の仮想Gitサーバーがリンクレベルのアドレスを共有できるようになります)。
+.RE
+.PP
+"ext::git\-ssl foo\&.example /bar"
+.RS 4
+ヘルパープログラム
+\fBgit\-ssl foo\&.example /bar\fR
+を使用してアクセスされるリポジトリを表します。リクエストのタイプは、ヘルパーが環境変数を使用して決定できます(上記参照)。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgitremote-helpers\fR(7)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

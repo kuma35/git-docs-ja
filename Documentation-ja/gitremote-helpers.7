@@ -1,0 +1,620 @@
+'\" t
+.\"     Title: gitremote-helpers
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITREMOTE\-HELPERS" "7" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitremote-helpers \- リモートリポジトリと対話するためのヘルパープログラム群
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit remote\-<transport>\fR <repository> [<URL>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+リモートヘルパープログラムは通常、エンドユーザーが直接使用することはありませんが、Gitがネイティブでサポートしていないリモートリポジトリと対話する必要がある場合にGitによって呼び出されます。 特定のヘルパーは、ここに記載されている機能のサブセットを実装します。 Gitがリモートヘルパーを使用してリポジトリと対話する必要がある場合、Gitは独立したプロセスとしてヘルパーを生成し、ヘルパーの標準入力にコマンドを送信し、ヘルパーの標準出力からの結果を期待します。 リモートヘルパーはGitから独立したプロセスとして実行されるため、新しいヘルパーを追加するためにGitを再リンクする必要も、ヘルパーをGitの実装にリンクする必要もありません。
+.sp
+すべてのヘルパーは \fBcapabilities\fR (機能)コマンドをサポートする必要があります。これは、ヘルパーが受け入れる他のコマンドをGitが決定するために使用します。これらの他のコマンドを使用して、リモート参照の検出と更新や、オブジェクトデータベースとリモートリポジトリ間のオブジェクトの転送や、ローカルオブジェクトストアの更新を行うことができます。
+.sp
+Gitには、 \fBgit\-remote\-http\fR や、 \fBgit\-remote\-https\fR や、 \fBgit\-remote\-ftp\fR や、 \fBgit\-remote\-ftps\fR などのさまざまな転送(transport)プロトコルを処理する "curl" ファミリーのリモートヘルパーが付属しています。これらは、機能(capabilities)として、 \fBfetch\fR と \fBoption\fR と \fBpush\fR を実装します。
+.SH "INVOCATION"
+.sp
+リモートヘルパープログラムは、1つまたは(オプションで)2つの引数を使用して呼び出されます。最初の引数は、Gitのようにリモートリポジトリを指定します。それは設定されたリモートの名前またはURLのいずれかです。2番目の引数はURLを指定します。 通常は \fB<transport>://<address>\fR の形式ですが、任意の文字列を使用できます。 \fBGIT_DIR\fR 環境変数はリモートヘルパー用に設定されており、追加データを保存する場所や、補助Gitコマンドを呼び出すディレクトリを決定するために使用できます。
+.sp
+Gitが \fB<transport>://<address>\fR の形式のURLを検出すると、ここで、 \fB<transport>\fR はネイティブに処理できないプロトコルで、2番目の引数として完全なURLを使用して \fBgit remote\-<transport>\fR を自動的に呼び出します。そのようなURLがコマンドラインで直接検出された場合は最初の引数は2番目の引数と同じであり、構成されたリモートで検出された場合最初の引数はそのリモートの名前です。
+.sp
+\fB<transport>::<address>\fR の形式のURLは、2番目の引数として \fB<address>\fR を使用して \fBgit remote\-<transport>\fR を呼び出すようにGitに明示的に指示します。このようなURLがコマンドラインで直接検出された場合最初の引数は \fB<address>\fR であり、構成されたリモートで検出された場合最初の引数はそのリモートの名前です。
+.sp
+さらに、構成されたリモートで \fBremote\&.<name>\&.vcs\fR が \fB<transport>\fR に設定されている場合、Gitは最初の引数として \fB<name>\fR を使用して \fBgit remote\-<transport>\fR を明示的に呼び出します。 \fBremote\&.<name>\&.url\fR が設定されている場合は、2番目の引数は \fBremote\&.<name>\&.url\fR です。 \fBremote\&.<name>\&.url\fR が設定されてない場合、2番目の引数は省略されます。
+.SH "INPUT FORMAT"
+.sp
+Gitは、リモートヘルパーの標準入力にコマンドのリストを1行に1つずつ送信します。 最初のコマンドは常に \fBcapabilities\fR (機能)コマンドであり、これに応答して、リモートヘルパーはサポートする機能のリスト(以下を参照)とそれに続く空白行を出力する必要があります。機能コマンドへの応答により、Gitがコマンドストリームの残りの部分で使用するコマンドが決まります。
+.sp
+コマンドストリームは空白行で終了します。場合によっては(関連するコマンドのドキュメントに示されています)、この空白行の後に他のプロトコル(packプロトコルなど)のペイロードが続きますが、他の場合は入力の終了を示します。
+.SS "Capabilities"
+.sp
+各リモートヘルパーは、コマンド群のサブセットのみをサポートすることが期待されています。ヘルパーがサポートする操作は、 \fBcapabilities\fR コマンドへの応答でGitに宣言されます(以下のCOMMANDSを参照)。
+.sp
+以下に、定義されているすべての機能をリストし、それぞれについて、その機能を持つヘルパーが提供しなければならないコマンドをリストします。
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCapabilities for Pushing\fR
+.RS 4
+.PP
+connect
+.RS 4
+gitのネイティブpackfileプロトコルを使用した通信のために、
+\fBgit receive\-pack\fR(プッシュ用)、
+\fBgit upload\-pack\fR
+などへの接続を試みることができます。これには、双方向の全二重接続が必要です。
+.sp
+サポートされているコマンド:
+\fBconnect\fR
+.RE
+.PP
+stateless\-connect
+.RS 4
+実験的:内部使用のみ。 gitのワイヤープロトコル バージョン2を使用して、通信のためにリモートサーバーへの接続を試みることができます。詳細については、 stateless\-connect コマンドのドキュメントを参照してください。
+.sp
+サポートされているコマンド:
+\fBstateless\-connect\fR\&.
+.RE
+.PP
+push
+.RS 4
+リモートrefを発見する事ができ、そして、ローカルコミットとそれらに至るまでの履歴を、新規または既存のリモートrefにプッシュする事ができます。
+.sp
+サポートされているコマンド:
+\fBlist for\-push\fR,
+\fBpush\fR\&.
+.RE
+.PP
+export
+.RS 4
+リモートrefを発見し、指定のオブジェクトを高速インポートストリームからリモートrefにプッシュできます。
+.sp
+サポートされているコマンド:
+\fBlist for\-push\fR,
+\fBexport\fR\&.
+.RE
+.sp
+ヘルパーが \fBconnect\fR を広告(advertise)する場合、Gitは可能であればそれを使用し、接続時にヘルパーが要求すると別の機能にフォールバックします(「COMMANDS」セクションの \fBconnect\fR コマンド参照)。 \fBpush\fR と \fBexport\fR のどちらかを選択する場合、Gitは \fBpush\fR を優先します。他のフロントエンドには、他の優先順位がある場合があります。
+.PP
+no\-private\-update
+.RS 4
+\fBrefspec\fR
+機能を使用する場合、gitは通常、プッシュが成功するとプライベートrefを更新します。リモートヘルパーが機能
+\fBno\-private\-update\fR
+を宣言すると、この更新は無効になります。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCapabilities for Fetching\fR
+.RS 4
+.PP
+connect
+.RS 4
+Gitのネイティブpackfileプロトコルを使用した通信のために、
+\fBgit upload\-pack\fR(フェッチ用)、
+\fBgit receive\-pack\fR
+などへの接続を試みることができます。これには、双方向の全二重接続が必要です。
+.sp
+サポートされているコマンド:
+\fBconnect\fR
+.RE
+.PP
+stateless\-connect
+.RS 4
+実験的:内部使用のみ。 gitのワイヤープロトコル バージョン2を使用して、通信のためにリモートサーバーへの接続を試みることができます。詳細については、 stateless\-connect コマンドのドキュメントを参照してください。
+.sp
+サポートされているコマンド:
+\fBstateless\-connect\fR\&.
+.RE
+.PP
+fetch
+.RS 4
+リモートrefを発見し、それらから到達可能なオブジェクトをローカルオブジェクトストアに転送できます。
+.sp
+サポートされているコマンド:
+\fBlist\fR,
+\fBfetch\fR\&.
+.RE
+.PP
+import
+.RS 4
+リモートrefを発見し、それらから到達可能なオブジェクトを高速インポート形式(fast\-import format)のストリームとして出力できます。
+.sp
+サポートされているコマンド:
+\fBlist\fR,
+\fBimport\fR\&.
+.RE
+.PP
+check\-connectivity
+.RS 4
+クローンを要求(request)されたときに、受信したパックが、自己完結しており、そして、接続されていることを保証できます。
+.RE
+.PP
+get
+.RS 4
+\fBget\fR
+コマンドを使用して、 特定の URI からファイルをダウンロードできます。
+.RE
+.sp
+ヘルパーが \fBconnect\fR を広告(advertise)する場合、Gitは可能であればそれを使用し、接続時にヘルパーが要求すると別の機能にフォールバックします(「COMMANDS」セクションの \fBconnect\fR コマンド参照)。 \fBfetch\fR と \fBimport\fR のどちらかを選択する場合、Gitは \fBfetch\fR を優先します。他のフロントエンドには、他の優先順位がある場合があります。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBMiscellaneous capabilities\fR
+.RS 4
+.PP
+option
+.RS 4
+他のコマンドの実行方法に影響を与える
+\fBverbosity\fR
+(stderrに書き込む出力量)や、
+\fBdepth\fR
+(浅いクローン(shallow clone)の場合に必要な履歴量)などの設定を指定します。
+.RE
+.PP
+refspec <refspec>
+.RS 4
+\fBimport\fR
+または
+\fBexport\fR
+を実装するリモートヘルパーの場合、この機能により、
+\fBrefs/heads\fR
+または
+\fBrefs/remotes\fR
+に直接書き込む代わりに、refsをプライベート名前空間に制約できます。
+\fBimport\fR
+機能を提供するすべてのインポーターがこれを使用することをお勧めします。
+\fBexport\fR
+では必須です。
+.sp
+機能
+\fBrefspec refs/heads/*:refs/svn/origin/branches/*\fR
+を広告(advertise)するヘルパーは、
+\fBimport refs/heads/topic\fR
+と問われた時に出力されるストリームは 、\fBrefs/svn/origin/branches/topic\fR
+ref を更新します。
+.sp
+この機能は複数回広告できます。最初に適用可能なrefspecが優先されます。この機能でアドバタイズされるrefspecの(\fB:\fR
+の)左側は、listコマンドによって報告されるすべてのrefをカバーする必要があります。
+\fBrefspec\fR
+機能が広告されていない場合は暗黙の
+\fBrefspec *:*\fR
+が設定されています。
+.sp
+分散型バージョン管理システム用のリモートヘルパーを作成する場合は、リポジトリのローカルコピーを保持して対話することをお勧めします。プライベート名前空間refsがこのローカルリポジトリを指すようにし、refs/remotes 名前空間はリモートリポジトリを追跡するために使用されます。
+.RE
+.PP
+bidi\-import
+.RS 4
+これにより、
+\fBimport\fR
+機能が変更されます。fast\-importコマンドの
+\fBcat\-blob\fR
+と
+\fBls\fR
+をリモートヘルパーが使用して、fast\-importのメモリにすでに存在するブロブとツリーに関する情報を取得できます。これには、fast\-importからリモートヘルパーへのチャネルが必要です。
+\fBimport\fR
+に加えて広告される場合、Gitはfast\-importからリモートヘルパーのstdinへのパイプを確立します。 したがって、Gitとfast\-importは両方ともリモートヘルパーのstdinに接続されています。Gitは複数のコマンドをリモートヘルパーに送信できるため、データをfast\-importに送信する前に、
+\fBbidi\-import\fR
+を使用するヘルパーがバッチのすべての
+\fBimport\fR
+コマンドをバッファリングする必要があります。 これは、ヘルパーのstdinでコマンドと、fast\-import高速インポート応答が混在するのを防ぐためです。
+.RE
+.PP
+export\-marks <file>
+.RS 4
+これにより、
+\fBexport\fR
+機能が変更され、完了時に内部マークテーブル(internal marks table)を<file>にダンプするようにGitに指示します。詳細については
+\fBgit-fast-export\fR(1)
+の
+\fB\-\-export\-marks=<file>\fR
+を参照してください。
+.RE
+.PP
+import\-marks <file>
+.RS 4
+これにより、
+\fBexport\fR
+機能が変更され、入力を処理する前に<file>で指定したマークをロードするようにGitに指示します。詳細については
+\fBgit-fast-export\fR(1)
+の
+\fB\-\-import\-marks=<file>\fR
+を参照してください。
+.RE
+.PP
+signed\-tags
+.RS 4
+これにより、
+\fBexport\fR
+機能が変更され、
+\fB\-\-signed\-tags=verbatim\fR
+を linkgit：git\-fast\-export[1]に渡すようにGitに指示します。この機能がない場合、Gitは
+\fB\-\-signed\-tags=warn\-strip\fR
+を使用します。
+.RE
+.PP
+object\-format
+.RS 4
+これは、ヘルパーが明示的なハッシュアルゴリズム拡張(explicit hash algorithm extension)を使用してリモート側と対話できることを示しています。
+.RE
+.RE
+.SH "COMMANDS"
+.sp
+コマンドは、ヘルパーの標準入力に、呼び出し元によって1行に1つずつ与えられます。
+.PP
+capabilities
+.RS 4
+ヘルパーの機能を1行に1つずつリスト出力し、空白行で終わります。各機能の前に
+\fB*\fR
+を付けることができます。これは、リモートヘルパーを使うGitのバージョンで理解することが必須であることを示します。不明な必須機能は致命的なエラーです。
+.sp
+このコマンドのサポートは必須です。
+.RE
+.PP
+list
+.RS 4
+refを1行に1つずつ、
+\fB<value> <name> [<attr> \&.\&.\&.]\fR
+の形式で一覧出力します。 値は、16進のsha1ハッシュ または、symrefの場合は
+\fB@<dest>\fR
+または、キーと値のペアの場合は
+\fB:<keyword> <value>\fR
+または、 `？｀ の場合はヘルパーがrefの値を取得できなかったことを示します。 nameの後には、スペースで区切られたattributes(属性)のリストが続きます。認識されない属性は無視されます。リストは空白行で終わります。
+.sp
+現在定義されている属性のリストについては、「REF LIST ATTRIBUTES」を参照してください。現在定義されているキーワードのリストについては、「REF LIST KEYWORDS」を参照してください。
+.sp
+ヘルパーに「fetch」または「import」機能がある場合にサポートされます。
+.RE
+.PP
+list for\-push
+.RS 4
+\fBlist\fR
+と似ていますが、呼び出し元が結果のrefリストでプッシュコマンドを準備したい場合にのみ使用される点が異なります。プッシュとフェッチの両方をサポートするヘルパーは、これを使用して、
+\fBlist\fR
+の出力が使用される操作を区別し、実行する必要のある作業の量を減らすことができます。
+.sp
+ヘルパーに "push" または "export" 機能がある場合にサポートされます。
+.RE
+.PP
+option <name> <value>
+.RS 4
+転送(transport)ヘルパーオプション <name> を <value> に設定します。出力は、
+\fBok\fR(オプションが正常に設定された)または、
+\fBunsupported\fR(オプションが認識されない)または、
+\fBerror <msg>\fR(オプション<name>はサポートされていますが、<value>は無効です)のいずれかを含む単一行です。オプションは他のコマンドの前に設定する必要があり、それらのコマンドの動作に影響を与える可能性があります。
+.sp
+現在定義されているオプションのリストについては、OPTIONSを参照してください。
+.sp
+ヘルパーに "option" 機能がある場合にサポートされます。
+.RE
+.PP
+fetch <sha1> <name>
+.RS 4
+指定されたオブジェクトをフェッチし、必要なオブジェクトをデータベースに書き込みます。fetchコマンドは、1行に1つずつバッチで送信され、空白行で終了します。 同じバッチ内のすべてのfetchコマンドが完了すると、1行の空白行を出力します。この方法でフェッチできるのは、sha1を使用した
+\fBlist\fR
+の出力で報告されたオブジェクトのみです。
+.sp
+オプションで、refが適切に更新されるまでパックを保持している
+\fB$GIT_DIR/objects/pack\fR
+の下のファイルのフルパスを示す
+\fBlock<file>\fR
+行を出力できます。パスは
+\fB\&.keep\fR
+で終わる必要があります。これは、keepコンポーネントのみを指定して、 <pack,idx,keep> タプルに名前を付けるメカニズムです。保持されたパックは、フェッチが完了するまでそのオブジェクトが参照されない場合でも、並列再パック(concurrent repack)によって削除されません。
+\fB\&.keep\fR
+ファイルはフェッチの終了時に削除されます。
+.sp
+オプション
+\fBcheck\-connectivity\fR
+が要求された場合、クローンが自己完結型(self\-contained)で接続されていれば、ヘルパーは
+\fBconnectivity\-ok\fR
+を出力する必要があります。
+.sp
+ヘルパーに "fetch" 機能がある場合にサポートされます。
+.RE
+.PP
+push +<src>:<dst>
+.RS 4
+指定された ローカル <src> コミットまたはブランチを、 <dst>で記述されたリモートブランチにプッシュします。 1つ以上の
+\fBpush\fR
+コマンドのバッチシーケンスは空白行で終了します(pushへの参照が1つしかない場合は、単一の
+\fBpush\fR
+コマンドの後に空白行が続きます)。たとえば、以下は
+\fBpush\fR
+の2つのバッチであり、最初のはリモートヘルパーに、ローカル参照
+\fBmaster\fR
+をリモート参照
+\fBmaster\fR
+にプッシュし、ローカル
+\fBHEAD\fR
+をリモート
+\fBbranch\fR
+にプッシュするように要求します。2番目のは ref
+\fBfoo\fR
+を ref
+\fBbar\fR
+にプッシュするように要求します(\fB+\fR
+によって要求された強制更新です)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+push refs/heads/master:refs/heads/master
+push HEAD:refs/heads/branch
+\en
+push +refs/heads/foo:refs/heads/bar
+\en
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+最後の
+\fBpush\fR
+コマンドの後、バッチの終了空白行の前に、0個以上のプロトコルオプションを入力できます。
+.sp
+プッシュが完了すると、1つ以上の
+\fBok <dst>\fR
+または
+\fBerror <dst> <why>?\fR
+行を出力して、プッシュされた各参照の成功または失敗を示します。ステータスレポートの出力は空白行で終了します。オプションフィールド <why> は、LFが含まれている場合、Cスタイルの文字列でクォートされる場合があります。
+.sp
+ヘルパーに "push" 機能がある場合にサポートされます。
+.RE
+.PP
+import <name>
+.RS 4
+名前付きrefの現在の値をインポートするfast\-importストリームを生成します。履歴を効率的に構築するために、必要に応じて他の参照を追加でインポートする場合があります。スクリプトは、ヘルパー固有のプライベート名前空間に書き込みます。名前付きrefの値は、「refspec」機能からのrefspecをrefの名前に適用することによって派生した、この名前空間内の場所に書き込む必要があります。
+.sp
+他のバージョン管理システムとの相互運用性に特に役立ちます。
+.sp
+\fBpush\fR
+と同様に、1つ以上の
+\fBimport\fR
+のバッチシーケンスは空白行で終了します。
+\fBimport\fR
+の各バッチごとに、リモートヘルパーは
+\fBdone\fR
+コマンドで終了する fast\-import ストリームを生成する必要があります。
+.sp
+\fBbidi\-import\fR
+機能を使用する場合は、ヘルパーのstdinでの、コマンドとfast\-import応答の混合を防ぐために、fast\-importへのデータの送信を開始する前にバッチシーケンスを完全にバッファリングする必要があることに注意してください。
+.sp
+ヘルパーに "import" 機能がある場合にサポートされます。
+.RE
+.PP
+export
+.RS 4
+後続の入力は、リモートにプッシュする必要のあるオブジェクトを含むfast\-importストリーム(
+\fBgit fast\-export\fR
+によって生成される)の一部であることをリモートヘルパーに指示します。
+.sp
+他のバージョン管理システムとの相互運用性に特に役立ちます。
+.sp
+\fBexport\-marks\fR
+と
+\fBimport\-marks\fR
+機能は、指定されている場合、
+\fBgit fast\-export｀ に渡される限り、このコマンドに影響します。 `git fast\-export\fR
+は、ローカルオブジェクトのマークのテーブルを ロード/保存 します。 これは、増分操作の実装に使用できます。
+.sp
+ヘルパーに "export" 機能がある場合にサポートされます。
+.RE
+.PP
+connect <service>
+.RS 4
+指定のサービスに接続します。ヘルパーの標準入力と標準出力は、リモート側で指定指定のサービスに接続されます(gitプレフィックスはサービス名に含まれているので、例えばフェッチはサービスとして
+\fBgit\-upload\-pack\fR
+を使用します)。このコマンドに対する有効な応答は、空行(接続が確立されました)と、
+\fBfallback\fR
+(スマート転送サポートなし、バカ転送(dumb transports)にフォールバック)と、エラーメッセージが印刷された状態で終了するだけです(接続できません、フォールバックしようと気にしないで)。肯定(空)応答が改行で終了すると、サービスの出力が開始されます。接続が終了すると、リモートヘルパーは終了します。
+.sp
+ヘルパーに "connect" 機能がある場合にサポートされます。
+.RE
+.PP
+stateless\-connect <service>
+.RS 4
+実験的: 内部使用のみ。 gitのワイヤープロトコルバージョン2を使用して通信するために、指定のリモートサービスに接続します。このコマンドへの有効な応答は、空行(接続が確立されました)と、
+\fBfall back\fR
+(スマート転送サポートなし、バカ転送にフォールバック)と、エラーメッセージ出力するだけです(接続できません。わざわざフォールバックしようとしないでください)。 正の(空の)応答を終了する改行の後、サービスの出力が開始されます。 メッセージ(要求と応答の両方)は、0個以上のPKT\-LINEで構成され、フラッシュパケットで終了する必要があります。 応答メッセージには、応答の終了を示すフラッシュパケットの後に応答終了パケットがあります。 クライアントは、サーバーが要求と応答のペアの間に状態を保持することを期待してはなりません。接続が終了すると、リモートヘルパーが終了します。
+.sp
+ヘルパーに "stateless\-connect" 機能がある場合にサポートされます。
+.RE
+.PP
+get <uri> <path>
+.RS 4
+指定の
+\fB<uri>\fR
+から指定の
+\fB<path>\fR
+へファイルをダウンロードします。
+\fB<path>\&.temp\fR
+が存在する場合、Git は
+\fB\&.temp\fR
+ファイルが以前の試みからの部分的なダウンロードであると想定し、 その位置からダウンロードを再開します。
+.RE
+.sp
+致命的なエラーが発生した場合、プログラムはエラーメッセージをstderrに書き込み、終了します。呼び出し元は、子が現在のコマンドに対する有効な応答を完了せずに接続を閉じた場合に、適切なエラーメッセージを出力することを期待します。
+.sp
+ヘルパーによって報告された機能から判断できるように、追加のコマンドがサポートされる場合があります。
+.SH "REF LIST ATTRIBUTES"
+.sp
+\fBlist\fR コマンドは、各refの後に属性(attribute)のリストが続くことがあるrefのリストを生成します。以下のrefリスト属性(ref list attributes)が定義されています。
+.PP
+unchanged
+.RS 4
+このrefは、最後にインポートまたはフェッチしたときから変更されていませんが、ヘルパーは必ずしもどの値が生成されたかを判別することはできるわけではありません。
+.RE
+.SH "REF LIST KEYWORDS"
+.sp
+listコマンドは、キーと値のペア(key\-value pairs)のリストを生成する場合があります。以下のキーが定義されています。
+.PP
+object\-format
+.RS 4
+refは指定のハッシュアルゴリズムを使用しています。このキーワードは、サーバーとクライアントの両方がオブジェクト形式の拡張機能(object\-format extension)をサポートしている場合にのみ使用されます。
+.RE
+.SH "OPTIONS"
+.sp
+以下のオプションは、リモートヘルパーに option 機能がある場合にGitによって定義され、(適切な状況下で)設定されます。
+.PP
+option verbosity <n>
+.RS 4
+ヘルパーによって表示されるメッセージの詳細度を変更します。 <n>の値0は、プロセスが静かに動作し、ヘルパーがエラー出力のみを生成することを意味します。 1は冗長性のデフォルトレベルであり、<n>の値が大きさは、コマンドラインで渡される
+\fB\-v\fR
+フラグの数に対応します。
+.RE
+.PP
+option progress {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+コマンド実行中に転送(transport)ヘルパーによって表示される進行状況メッセージを有効(または無効)にします。
+.RE
+.PP
+option depth <depth>
+.RS 4
+浅いリポジトリ(shallow repository)の履歴を深めます。
+.RE
+.PP
+option deepen\-since <timestamp>
+.RS 4
+時間に基づいて浅いリポジトリ(shallow repository)の履歴を深めます。
+.RE
+.PP
+option deepen\-not <ref>
+.RS 4
+refを除く浅いリポジトリ(shallow repository)の履歴を深めます。複数回使用できます。
+.RE
+.PP
+option deepen\-relative {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+現在の境界に比べて浅いリポジトリの履歴を深めます。 「option depth」で使用する場合にのみ有効です。
+.RE
+.PP
+option followtags {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+有効にすると、フェッチコマンド中にタグが指すオブジェクトが転送された場合、ヘルパーは注釈付きのタグオブジェクトを自動的にフェッチする必要があります。 タグがヘルパーによってフェッチされない場合、通常、2番目のフェッチコマンドが送信され、タグを具体的に要求します。一部のヘルパーは、このオプションを使用して2番目のネットワーク接続を回避できる場合があります。
+.RE
+.PP
+option dry\-run {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+trueの場合、操作が正常に完了したふりをしますが、実際にはリポジトリデータを変更しません。 ほとんどのヘルパーの場合、これはサポートされている場合、
+\fBpush\fR
+にのみ適用されます。
+.RE
+.PP
+option servpath <c\-style\-quoted\-path>
+.RS 4
+次の接続のサービスパス(\fB\-\-upload\-pack\fR
+、\fB\-\-receive\-pack\fR
+など)を設定します。 リモートヘルパーはこのオプションをサポートする場合がありますが、接続要求が発生する前に、設定されているこのオプションに依存してはなりません。
+.RE
+.PP
+option check\-connectivity {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+ヘルパーにクローンの接続を確認(check)するように依頼(request)します。
+.RE
+.PP
+option force {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+ヘルパーに強制更新を実行するように依頼(request)します。デフォルトは
+\fBfalse\fR
+です。
+.RE
+.PP
+option cloning {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+これがクローンリクエストであることをヘルパーに通知します(つまり、現在のリポジトリは空であることが保証されています)。
+.RE
+.PP
+option update\-shallow {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+新しいrefで必要な場合は、 \&.git/shallow を拡張できるようにします。
+.RE
+.PP
+option pushcert {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+GPG署名プッシュ。
+.RE
+.PP
+option push\-option <string>
+.RS 4
+<string>をプッシュオプションとして送信します。プッシュオプションにはLFまたはNUL文字を含めることはできないため、文字列はエンコードされません。
+.RE
+.PP
+option from\-promisor {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+これらのオブジェクトがpromisorからフェッチされていることを示します。
+.RE
+.PP
+option no\-dependents {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+依存関係ではなく、必要なオブジェクトのみをフェッチする必要があることを示します。
+.RE
+.PP
+option atomic {\fBtrue\fR|\fBfalse\fR}
+.RS 4
+プッシュするときは、リモートサーバーに単一のアトミックトランザクションで参照を更新するように要求します。 成功すると、すべての参照が更新されるか、何も更新されません。 リモート側がこの機能をサポートしていない場合、プッシュは失敗します。
+.RE
+.PP
+option object\-format {\fBtrue\fR|algorithm}
+.RS 4
+\fBtrue\fR
+の場合、呼び出し元がハッシュアルゴリズム情報をリモートから返されることを望んでいることを示します。 このモードは、refをフェッチするときに使用されます。
+.sp
+algorithm に設定されている場合は、発信者がそのアルゴリズムを使用してリモート側と対話することを希望していることを示します。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-remote\fR(1)
+.sp
+\fBgit-remote-ext\fR(1)
+.sp
+\fBgit-remote-fd\fR(1)
+.sp
+\fBgit-fast-import\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

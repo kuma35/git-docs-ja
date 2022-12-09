@@ -1,0 +1,501 @@
+'\" t
+.\"     Title: git-notes
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-NOTES" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-notes \- オブジェクトノートを追加または検査します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit notes\fR [list [<object>]]
+\fIgit notes\fR add [\-f] [\-\-allow\-empty] [\-F <file> | \-m <msg> | (\-c | \-C) <object>] [<object>]
+\fIgit notes\fR copy [\-f] ( \-\-stdin | <from\-object> [<to\-object>] )
+\fIgit notes\fR append [\-\-allow\-empty] [\-F <file> | \-m <msg> | (\-c | \-C) <object>] [<object>]
+\fIgit notes\fR edit [\-\-allow\-empty] [<object>]
+\fIgit notes\fR show [<object>]
+\fIgit notes\fR merge [\-v | \-q] [\-s <strategy> ] <notes\-ref>
+\fIgit notes\fR merge \-\-commit [\-v | \-q]
+\fIgit notes\fR merge \-\-abort [\-v | \-q]
+\fIgit notes\fR remove [\-\-ignore\-missing] [\-\-stdin] [<object>\&...]
+\fIgit notes\fR prune [\-n] [\-v]
+\fIgit notes\fR get\-ref
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+オブジェクト自体に触れることなく、オブジェクトに添付のノートを追加、削除、または読み取ります。
+.sp
+デフォルトでは、ノートは \fBrefs/notes/commits\fR に保存され、そこから読み取られますが、このデフォルトはオーバーライドできます。 以下の「OPTIONS」セクション、「CONFIGURATION」セクション、「ENVIRONMENT」のセクションを参照してください。 このrefが存在しない場合、ノートを保存するために最初に必要になったときに黙って作成されます。
+.sp
+ノートの一般的な使用法は、コミット自体を変更せずにコミットメッセージを補足することです。 ノートは、元のコミットメッセージとともに \fBgit log\fR で表示できます。 コミットオブジェクトに格納されているメッセージと区別するために、ノートはメッセージと同様にインデントされます。インデントされていない行には "Notes (<refname>):" (\fBrefs/notes/commits\fR の場合は "Notes:") と書かれています。
+.sp
+\fB\-\-notes\fR オプションを使用して、 \fBgit format\-patch\fR で作成されたパッチにノートを追加することもできます。 このようなノートは、3つのダッシュの区切り行の後にパッチの解説として追加されます。
+.sp
+\fBgit log\fR で表示されるノートを変更するには、 the section called \(lqCONFIGURATION\(rq の \fBnotes\&.displayRef\fR についての議論を参照してください。
+.sp
+コミットを書き換えるコマンド間でノートを渡す法については、 \fBnotes\&.rewrite\&.<command>\fR 構成を参照してください。
+.SH "SUBCOMMANDS"
+.PP
+list
+.RS 4
+指定のオブジェクトのノートオブジェクトを一覧表示します。 オブジェクトが指定されていない場合は、すべてのノートオブジェクトとそれらが注釈を付けるオブジェクトのリストを表示します("<note object> <annotated object>" 形式)。 サブコマンドが指定されていない場合、これはデフォルトのサブコマンドです。
+.RE
+.PP
+add
+.RS 4
+指定のオブジェクトにメモを追加します(デフォルトはHEAD)。 オブジェクトにすでにノートがある場合は中止(abort)します(既存のノートを上書きするには
+\fB\-f\fR
+を使用します)。 ただし、
+\fBadd\fR
+を対話的に使用している場合(エディタを使用してノートの内容を入力する場合)、中止する代わりに、(\fBedit\fR
+サブコマンドのように、)既存のノートがエディタで開かれます。
+.RE
+.PP
+copy
+.RS 4
+最初のオブジェクトのノートを2番目のオブジェクト(デフォルトはHEAD)にコピーします。 2番目のオブジェクトにすでにノートがある場合、または最初のオブジェクトにノートがない場合は中止(abort)します(\fB\-f\fR
+を使用して2番目のオブジェクトの既存のノートを上書きします)。このサブコマンドは
+\fBgit notes add [\-f] \-C $(git notes list <from\-object>) <to\-object>\fR
+と同等です。
+.sp
+\fB\-\-stdin\fR
+モードでは、以下の形式で行を取得します
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<from\-object> SP <to\-object> [ SP <rest> ] LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+標準入力で、各<from\-object>から対応する<to\-object>にノートをコピーします。 (オプションの
+\fB<rest>\fR
+は無視されるため、コマンドは
+\fBpost\-rewrite\fR
+フックに与えられた入力を読み取ることができます。)
+.RE
+.PP
+append
+.RS 4
+既存のオブジェクトのノートに追加します(デフォルトはHEAD)。 必要に応じて、新しいノートオブジェクトを作成します。
+.RE
+.PP
+edit
+.RS 4
+指定のオブジェクトのノートを編集します(デフォルトはHEAD)。
+.RE
+.PP
+show
+.RS 4
+指定のオブジェクトのノートを表示します(デフォルトはHEAD)。
+.RE
+.PP
+merge
+.RS 4
+指定のノートrefを現在のノートrefにマージします。 これにより、マージベース(存在する場合)以降に指定されたnote参照(「remote」と呼ばれる）によって行われた変更が現在のノートref(「local」と呼ばれる)にマージされます。
+.sp
+競合が発生し、競合するノートを自動的に解決するための戦略(「NOTES MERGE STRATEGIES」セクション参照)が指定されていない場合は、「manual」(手動)リゾルバーが使用されます。 このリゾルバーは、特別なワークツリー(\fB\&.git/NOTES_MERGE_WORKTREE\fR)内の競合するノートをチェックアウトし、そこで競合を手動で解決するようにユーザーに指示します。 完了したら、ユーザーは
+\fBgit notes merge \-\-commit\fR
+を使用してマージを完了するか、
+\fBgit notes merge \-\-abort\fR
+を使用してマージを中止(abort)できます。
+.RE
+.PP
+remove
+.RS 4
+指定のオブジェクトのノートを削除します(デフォルトはHEAD)。 コマンドラインから0個または1個のオブジェクトを指定する場合、これは
+\fBedit\fR
+サブコマンドに空のノートメッセージを指定することと同じです。
+.RE
+.PP
+prune
+.RS 4
+存在しない(non\-existing)/到達できない(unreachable) オブジェクトのすべてのノートを削除します。
+.RE
+.PP
+get\-ref
+.RS 4
+現在のノートを出力します。これにより、現在のノートrefを(スクリプトなどから)簡単に取得する方法が提供されます。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+すでにノートがあるオブジェクトにノートを追加する場合は、(中止するのではなく、)既存のノートを上書きします。
+.RE
+.PP
+\fB\-m <msg>\fR, \fB\-\-message=<msg>\fR
+.RS 4
+(プロンプトを表示する代わりに、)指定のノートメッセージを使用します。 複数の
+\fB\-m\fR
+オプションが指定されている場合、それらの値は個別の段落として連結されます。
+\fB#\fR
+で始まる行と、段落間の1行以外の空行は削除されます。
+.RE
+.PP
+\fB\-F <file>\fR, \fB\-\-file=<file>\fR
+.RS 4
+指定のファイルからメモメッセージを取得します。
+\fB\-\fR
+を使用すると、標準入力からメモメッセージを読み取ります。
+\fB#\fR
+で始まる行と、段落間の1行以外の空行は削除されます。
+.RE
+.PP
+\fB\-C <object>\fR, \fB\-\-reuse\-message=<object>\fR
+.RS 4
+指定のブロブオブジェクト(たとえば、別のノート)をノートメッセージとして受け取ります。 (オブジェクト間でメモをコピーするには、代わりに
+\fBgit notes copy <object>\fR
+を使用してください。)
+.RE
+.PP
+\fB\-c <object>\fR, \fB\-\-reedit\-message=<object>\fR
+.RS 4
+\fI\-C\fR
+と同様ですが、
+\fB\-c\fR
+を使用するとエディタが呼び出されるため、ユーザーはノートメッセージをさらに編集できます。
+.RE
+.PP
+\fB\-\-allow\-empty\fR
+.RS 4
+空のノートオブジェクトを保存できるようにします。 デフォルトの動作では、空のノートは自動的に削除されます。
+.RE
+.PP
+\fB\-\-ref <ref>\fR
+.RS 4
+<ref>のノートツリーを操作します。 これは、
+\fBGIT_NOTES_REF\fR
+と、
+\fBcore\&.notesRef\fR
+構成をオーバーライドします。 refは、
+\fBrefs/notes/\fR
+で始まる完全なref名を指定します。
+\fBnotes/\fR
+で始まる場合、
+\fBrefs/\fR
+が接頭辞として付けられ、それ以外の場合は
+\fBrefs/notes/\fR
+が接頭辞として付けられ、refのフルネームを形成します。
+.RE
+.PP
+\fB\-\-ignore\-missing\fR
+.RS 4
+ノートが添付されていないオブジェクトからノートの削除を要求することをエラーと見なさないでください。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+また、ノートを削除するために標準入力からオブジェクト名を読み取る(コマンドラインからオブジェクト名と組み合わせることができないわけではありません)。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+何も削除しないでください。 ノートが削除されるオブジェクト名を報告するだけです。
+.RE
+.PP
+\fB\-s <strategy>\fR, \fB\-\-strategy=<strategy>\fR
+.RS 4
+ノートをマージするときは、指定の戦略を使用してノートの競合を解決します。 次の戦略が認識されます:
+\fBmanual\fR(デフォルト)、
+\fBours\fR
+、
+\fBtheirs\fR
+、
+\fBunion\fR
+、
+\fBcat_sort_uniq\fR
+。 このオプションは、
+\fBnotes\&.mergeStrategy\fR
+構成設定をオーバーライドします。 各ノートマージ戦略の詳細については、以下の「NOTES MERGE STRATEGIES」セクションを参照してください。
+.RE
+.PP
+\fB\-\-commit\fR
+.RS 4
+進行中の
+\fBgit notes merge\fR
+を完了させます。
+\fB\&.git/NOTES_MERGE_WORKTREE\fR
+に保存されている
+\fBgit notes merge\fR
+の競合を解決した場合は、このオプションを使用します。 これにより、
+\fB\&.git/NOTES_MERGE_WORKTREE\fR
+にノートを追加することで、
+\fBgit notes merge\fR
+(\fB\&.git/NOTES_MERGE_PARTIAL\fR
+に保存)によって作成された部分的なマージコミットが修正されます。
+\fB\&.git/NOTES_MERGE_REF\fR
+symref に保存されているノートrefは、結果のコミットに更新されます。
+.RE
+.PP
+\fB\-\-abort\fR
+.RS 4
+進行中の
+\fBgit notes merge\fR
+を 中止(abort)/リセット します。つまり、ノートのマージは競合を伴います。これにより、ノートのマージに関連するすべてのファイルが削除されます。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+ノートをマージするときは、黙って作業します。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+ノートをマージするときは、よりおしゃべりになります。ノートを刈り込むときは、ノートが削除されたすべてのオブジェクト名を報告してください。
+.RE
+.SH "DISCUSSION"
+.sp
+コミットノートは、オブジェクトに関する追加情報(通常はコミットのメッセージを補足する情報)を含むブロブです。 これらのブロブは、ノートrefから取得されます。 ノートrefは通常、パスが記述されたオブジェクトのオブジェクト名である「ファイル」を含むブランチであり、パフォーマンス上の理由からいくつかのディレクトリ区切り文字が含まれています。 \&\s-2\u[1]\d\s+2
+.sp
+ノートを変更するたびに、指定したノート参照に新しいコミットが作成されます。 したがって、たとえば \fBgit log \-p notes/commits\fR を実行することで、ノートの履歴を調べることができます。 現在のところ、コミットメッセージには更新のきっかけとなった操作が記録されているだけで、コミットの作者は通常のルールに従って決定されます(\fBgit-commit\fR(1) 参照)。 これらの詳細は、将来的に変更される可能性があります。
+.sp
+ノートrefがツリーオブジェクトを直接指すことも許可されています。その場合、ノートの履歴は \fBgit log \-p \-g <refname>\fR で読み取ることができます。
+.SH "NOTES MERGE STRATEGIES"
+.sp
+デフォルトのノートマージ戦略は「manual」です。これは、ノートの競合を解決するために特別な作業ツリー(\fB\&.git/NOTES_MERGE_WORKTREE\fR)で競合するノートをチェックアウトし、そのワークツリーで競合を解決するようにユーザーに指示します。完了したら、ユーザーは \fBgit notes merge \-\-commit\fR を使用してマージを完了するか、 \fBgit notes merge \-\-abort\fR を使用してマージを中止できます。
+.sp
+ユーザーは、\fB\-s\fR/\fB\-\-strategy\fR オプションを使用するか、 notes\&.mergeStrategy を適宜構成して、以下の中から自動マージ戦略を選択できます:
+.sp
+「ours」は、競合するノートを自動的に解決して、ローカルバージョン(つまり、現在のノートref)を優先します。
+.sp
+「theirs」は、リモートバージョンを優先してノートの競合を自動的に解決します(つまり、指定されたノートrefが現在のノートrefにマージされます)。
+.sp
+「union」は、ローカルバージョンとリモートバージョンを連結することにより、ノートの競合を自動的に解決します。
+.sp
+「cat_sort_uniq」は \fBunion\fR に似ていますが、この戦略は、ローカルバージョンとリモートバージョンを連結することに加えて、結果の行を並べ替え、結果から重複する行を削除します。 これは、 \fBcat | sort | uniq\fR シェルパイプラインをローカルバージョンとリモートバージョンに適用するのと同じです。この戦略は、ノートが行ベースの形式に従っていて、マージ結果で行が重複しないようにする場合に役立ちます。 ローカルバージョンまたはリモートバージョンのいずれかにマージ前に既に重複行が含まれている場合、これらもこのノートマージ戦略によって削除されることに注意してください。
+.SH "EXAMPLES"
+.sp
+あなたはノートを使用して、コミットが書き込まれた時点では利用できなかった情報を含む注釈を追加できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git notes add \-m \*(AqTested\-by: Johannes Sixt <j6t@kdbg\&.org>\*(Aq 72a144e2
+$ git show \-s 72a144e
+[\&.\&.\&.]
+    Signed\-off\-by: Junio C Hamano <gitster@pobox\&.com>
+
+Notes:
+    Tested\-by: Johannes Sixt <j6t@kdbg\&.org>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+原則として、ノートは通常のGitブロブであり、あらゆる種類の形式(または非形式)が受け入れられます。 \fBgit hash\-object\fR を使用して、任意のファイルから安全にノートを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cc *\&.c
+$ blob=$(git hash\-object \-w a\&.out)
+$ git notes \-\-ref=built add \-\-allow\-empty \-C "$blob" HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+(これはバイナリセーフ(binary\-safe)ではないため、単純に \fBgit notes \-\-ref=built add \-F a\&.out HEAD\fR を使用することはできません。) もちろん、テキスト形式以外のノートを \fBgit log\fR で表示することはあまり意味がありません。なので、あなたがそのようなノートを使用する場合は、それらを使用して何か便利なことを行うために、あなたはおそらくいくつかの特別な目的のツールを作成する必要があります。
+.SH "CONFIGURATION"
+.PP
+core\&.notesRef
+.RS 4
+\fBrefs/notes/commits\fR
+の代わりに読み取りおよび操作するノートref。省略されていないref名である必要があります。この設定は、環境およびコマンドラインから上書きできます。
+.RE
+.sp
+このセクションのこの行より上にあるものはすべて、 \fBgit-config\fR(1) ドキュメントには含まれていません。 以下の内容に関しては、\fBgit-config\fR(1) ドキュメント にあるものと同一です。
+.PP
+notes\&.mergeStrategy
+.RS 4
+ノートの競合を解決するときにデフォルトで選択するマージ戦略。
+\fBmanual\fR
+、` ours`、
+\fBtheirs\fR、` union` 、\fBcat_sort_uniq\fR
+のいずれかである必要があります。 デフォルトは
+\fBmanual\fR
+です。 各戦略の詳細については、
+\fBgit-notes\fR(1)
+の「NOTES MERGE STRATEGIES」セクションを参照してください。
+.sp
+この設定は、
+\fB\-\-strategy\fR
+オプションを
+\fBgit-notes\fR(1)
+に渡すことでオーバーライドできます。
+.RE
+.PP
+notes\&.<name>\&.mergeStrategy
+.RS 4
+\fBrefs/notes/<name>\fR
+にノートをマージするときに、どのマージ戦略を選択するか。 これは、より一般的な
+\fBnotes\&.mergeStrategy\fR
+をオーバーライドします。 利用可能な戦略の詳細については、
+\fBgit-notes\fR(1)
+の「NOTES MERGE STRATEGIES」セクションを参照してください。
+.RE
+.PP
+notes\&.displayRef
+.RS 4
+\fBgit log\fR
+系のコマンドでコミット・メッセージを表示する際に、
+\fBcore\&.notesRef\fR
+や
+\fBGIT_NOTES_REF\fR
+で設定したデフォルトに加えて、どのref (グロブ、または複数回指定されている場合は複数ref)からノートを読み込むかを指定します。
+.sp
+この設定は、
+\fBGIT_NOTES_DISPLAY_REF\fR
+環境変数でオーバーライドでき、環境変数はコロンで区切られたrefまたはグロブ(glob)のリストである必要があります。
+.sp
+存在しないrefsに対しては警告が発行されますが、どのrefsにもマッチしないグロブは黙って無視されます。
+.sp
+この設定は、コマンドの
+\fBgit log\fR
+系の
+\fB\-\-no\-notes\fR
+オプション、またはこれらのコマンドで受け入れられる
+\fB\-\-notes=<ref>\fR
+オプションによって無効にすることができます。
+.sp
+\fBcore\&.notesRef\fR
+の有効な値(GIT_NOTES_REFによってオーバーライドされる可能性があります)も、表示されるrefのリストに暗黙的に追加されます。
+.RE
+.PP
+notes\&.rewrite\&.<command>
+.RS 4
+<command> (現在は
+\fBamend\fR
+または
+\fBrebase\fR)でコミットを書き換え、 そして、 この変数が
+\fBfalse\fR
+に設定されている場合、git はノートを元のコミットから書き換えられたコミットにコピーしません。 デフォルトは
+\fBtrue\fR
+です。 下記
+\fBnotes\&.rewriteRef\fR
+も参照してください。
+.sp
+この設定は、
+\fBGIT_NOTES_REWRITE_REF\fR
+環境変数でオーバーライドでき、環境変数はコロンで区切られたrefまたはグロブ(glob)のリストである必要があります。
+.RE
+.PP
+notes\&.rewriteMode
+.RS 4
+書き換え時にノートをコピーする場合(\fBnotes\&.rewrite\&.<command>\fR
+オプション参照)、ターゲットコミットにすでにノートがある場合の対処方法を決定します。
+\fBoverwrite\fR
+、
+\fBconcatenate\fR
+、
+\fBcat_sort_uniq\fR
+、
+\fBignore\fR
+のいずれかである必要があります。 デフォルトは
+\fBconcatenate\fR
+です。
+.sp
+この設定は、
+\fBGIT_NOTES_REWRITE_MODE\fR
+環境変数でオーバーライドできます。
+.RE
+.PP
+notes\&.rewriteRef
+.RS 4
+書き換え中にノートをコピーする場合は、ノートをコピーする(完全修飾された)refを指定します。 グロブと見なしたら、マッチするすべてのrefのノートがコピーされます。 この構成を複数回指定することもできます。
+.sp
+デフォルト値はありません。 ノートの書き換えを有効にするには、この変数を構成する必要があります。 デフォルトのコミットノートの書き換えを有効にするには、これを
+\fBrefs/notes/commits\fR
+に設定します。
+.sp
+\fBGIT_NOTES_REWRITE_REF\fR
+環境変数でオーバーライドできます。 その形式の詳細については、上記
+\fBnotes\&.rewrite\&.<command>\fR
+を参照してください。
+.RE
+.SH "ENVIRONMENT"
+.PP
+\fBGIT_NOTES_REF\fR
+.RS 4
+\fBrefs/notes/commits\fR
+の代わりに、どのrefからノートを操作するか。 これは
+\fBcore\&.notesRef\fR
+設定を上書きします。
+.RE
+.PP
+\fBGIT_NOTES_DISPLAY_REF\fR
+.RS 4
+コロンで区切られた ref または glob のリスト。コミットメッセージを表示する際に、デフォルトの
+\fBcore\&.notesRef\fR
+または
+\fBGIT_NOTES_REF\fR
+に加えて、どの ref からノートを読み込むかを指定します。 これは
+\fBnotes\&.displayRef\fR
+の設定よりも優先されます。
+.sp
+存在しないrefに対して警告が発行されますが、どのrefとも一致しないグロブ(glob)は黙って無視されます。
+.RE
+.PP
+\fBGIT_NOTES_REWRITE_MODE\fR
+.RS 4
+書き換え中にノートをコピーするときに、ターゲットコミットにすでにノートがある場合の対処方法。
+\fBoverwrite\fR
+、\fBconcatenate\fR
+、
+\fBcat_sort_uniq\fR
+、\fBignore\fR
+のいずれかである必要があります。 これは
+\fBcore\&.rewriteMode\fR
+設定を上書きします。
+.RE
+.PP
+\fBGIT_NOTES_REWRITE_REF\fR
+.RS 4
+コミットを書き換える場合、元のコミットから書き換えられたコミットにコピーするためのノート。refまたはグロブ(glob)のコロンで区切られたリストである必要があります。
+.sp
+環境で設定されていない場合、コピーするノートのリストは、
+\fBnotes\&.rewrite\&.<command>\fR
+および
+\fBnotes\&.rewriteRef\fR
+の設定によって異なります。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+許可されるパス名の形式は \fBbf/fe/30/.../680d5a...\fR です。2桁の16進数のディレクトリ名のシーケンスそれぞれの後に、残りのオブジェクトIDを含むファイル名が続きます。
+

@@ -1,0 +1,1413 @@
+'\" t
+.\"     Title: git-fetch
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-FETCH" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-fetch \- 別のリポジトリからオブジェクトとrefsをダウンロードします
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit fetch\fR [<options>] [<repository> [<refspec>\&...]]
+\fIgit fetch\fR [<options>] <group>
+\fIgit fetch\fR \-\-multiple [<options>] [(<repository> | <group>)\&...]
+\fIgit fetch\fR \-\-all [<options>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+履歴を完成させるために必要なオブジェクトとともに、1つ以上の他のリポジトリからブランチやタグ(総称して「refs」)を取得します。 リモート追跡ブランチが更新されます(この振る舞いを制御する方法については、以下の <refspec> の説明を参照してください)。
+.sp
+デフォルトでは、フェッチされている履歴を指すタグもフェッチされます。 その効果は、関心のあるブランチを指すタグをフェッチすることです。 このデフォルトの振る舞いは、 \fB\-\-tags\fR または \fB\-\-no\-tags\fR オプションを使用するか、 remote\&.<name>\&.tagOpt を構成することで変更できます。 あなたは、タグを明示的にフェッチするrefspecを使用することで、関心のあるブランチを指していないタグもフェッチできます。
+.sp
+\fBgit fetch\fR は、単一の名前付きリポジトリまたはURLから、あるいは、 <group> が指定され、かつ、構成ファイルに remotes\&.<group> エントリがある場合は、一度に複数のリポジトリからフェッチできます。 (\fBgit-config\fR(1) 参照)。
+.sp
+「リモート」が指定されていない場合、現在のブランチ用にアップストリームブランチが構成されていない限り、デフォルトで \fBorigin\fR リモートが使用されます。
+.sp
+フェッチされたrefの名前は、それらが指すオブジェクト名とともに、 \fB\&.git/FETCH_HEAD\fR に書き込まれます。 この情報は、スクリプトまたは \fBgit-pull\fR(1) などの他のgitコマンドで使用される場合があります。
+.SH "OPTIONS"
+.PP
+\fB\-\-all\fR
+.RS 4
+すべてのリモートをフェッチします。
+.RE
+.PP
+\fB\-a\fR, \fB\-\-append\fR
+.RS 4
+フェッチされた参照の参照名とオブジェクト名を
+\fB\&.git/FETCH_HEAD\fR
+の既存のコンテンツに追加します。 このオプションがないと、
+\fB\&.git/FETCH_HEAD\fR
+の古いデータが上書きされます。
+.RE
+.PP
+\fB\-\-atomic\fR
+.RS 4
+アトミックトランザクションを使用して、ローカル参照を更新します。 すべての参照が更新されるか、あるいは、エラーが発生してすべての参照が新されないか、のいずれかです。
+.RE
+.PP
+\fB\-\-depth=<depth>\fR
+.RS 4
+各リモートブランチ履歴の先端からの指定されたコミット数にフェッチを制限します。
+\fB\-\-depth=<depth>\fR
+オプションを指定して
+\fBgit clone\fR
+によって作成された浅いリポジトリ(shallow repository)からフェッチする場合(\fBgit-clone\fR(1)
+参照)、指定されたコミット数まで履歴を深くするか浅くするかします。
+.RE
+.PP
+\fB\-\-deepen=<depth>\fR
+.RS 4
+\fB\-\-depth\fR
+に似ていますが、各リモートブランチ履歴の先端からではなく、現在の浅い境界(shallow boundary)からのコミット数を指定する点が異なります。
+.RE
+.PP
+\fB\-\-shallow\-since=<date>\fR
+.RS 4
+浅い(shallow)リポジトリの履歴を深くしたり浅くしたりして、<date>以降の到達可能なすべてのコミットを含めます。
+.RE
+.PP
+\fB\-\-shallow\-exclude=<revision>\fR
+.RS 4
+浅いリ(shallow)ポジトリの履歴を深くするか浅くするかして、指定されたリモートブランチまたはタグから到達可能なコミットを除外します。 このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-unshallow\fR
+.RS 4
+ソースリポジトリが完全な場合は、浅いリ(shallow)ポジトリを完全なリポジトリに変換し、浅い(shallow)リポジトリによって課せられるすべての制限を取り除きます。
+.sp
+ソースリポジトリが浅い(shallow)場合は、現在のリポジトリがソースリポジトリと同じ履歴を持つように、可能な限りフェッチします。
+.RE
+.PP
+\fB\-\-update\-shallow\fR
+.RS 4
+デフォルトでは、浅い(shallow)リポジトリからフェッチする場合、
+\fBgit fetch\fR
+は
+\fB\&.git/shallow\fR
+の更新が必要なrefを拒否します。 このオプションは
+\fB\&.git/should\fR
+を更新し、そのようなrefを受け入れます。
+.RE
+.PP
+\fB\-\-negotiation\-tip=<commit|glob>\fR
+.RS 4
+デフォルトでは、Gitは、受信するパックファイルのサイズを縮小するために、すべてのローカルrefから到達可能なコミットをサーバーに報告して、共通のコミットを見つけます。 指定した場合、Gitは指定された先端から到達可能なコミットのみを報告します。 これは、フェッチされるアップストリームrefと共通のコミットを持つ可能性のあるローカルrefがユーザーにわかっている場合に、フェッチを高速化するのに役立ちます。
+.sp
+このオプションは複数回指定できます。 その場合、Gitは指定されたコミットのいずれかから到達可能なコミットを報告します。
+.sp
+このオプションの引数は、ref名またはrefまたはコミットの(おそらく省略された)SHA\-1のグロブである可能性があります。グロブを指定することは、一致するref名ごとに1つずつ、このオプションを複数回指定することと同じです。
+.sp
+\fBgit-config\fR(1)
+に記載されている
+\fBfetch\&.negotiationAlgorithm\fR
+と
+\fBpush\&.negotiate\fR
+構成変数、および、以下の
+\fB\-\-negotiate\-only\fR
+オプションも参照してください。
+.RE
+.PP
+\fB\-\-negotiate\-only\fR
+.RS 4
+サーバーから何もフェッチせず、代わりに、サーバーと共通している、提供された
+\fB\-\-negotiation\-tip=*\fR
+引数の祖先を出力します。
+.sp
+これは
+\fB\-\-recurse\-submodules=[yes|on\-demand]\fR
+と互換性がありません。 内部的には、これは
+\fBpush\&.negotiate\fR
+オプションを実装するために使用されます。
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-dry\-run\fR
+.RS 4
+変更を加えずに、何が行われるかを示します。
+.RE
+.PP
+\fB\-\-[no\-]write\-fetch\-head\fR
+.RS 4
+\fB$GIT_DIR\fR
+のすぐ下の
+\fBFETCH_HEAD\fR
+ファイルにフェッチされたリモートrefのリストを書き込みます。 これがデフォルトです。 コマンドラインから
+\fB\-\-no\-write\-fetch\-head\fR
+を渡すと、Gitにファイルを書き込まないように指示します。
+\fB\-\-dry\-run\fR
+オプションでは、ファイルが書き込まれることはありません。
+.RE
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+\fBgit fetch\fR
+を
+\fB<src>:<dst>\fR
+refspecと一緒に使用すると、既に説明したようにローカルブランチの更新を拒否する場合があります 以下の
+\fB<refspec>\fR
+の部分にあります。 このオプションは、そのチェックをオーバーライドします。
+.RE
+.PP
+\fB\-k\fR, \fB\-\-keep\fR
+.RS 4
+ダウンロードしたパックを保持してください。
+.RE
+.PP
+\fB\-\-multiple\fR
+.RS 4
+複数の<repository>および<group>引数を指定できるようにします。 <refspec>を指定することはできません。
+.RE
+.PP
+\fB\-\-[no\-]auto\-maintenance\fR, \fB\-\-[no\-]auto\-gc\fR
+.RS 4
+最後に
+\fBgit maintenance run \-\-auto\fR
+を実行して、必要に応じて自動リポジトリメンテナンスを実行します。 (\fB\-\-[no\-]auto\-gc\fR
+は同義語です。) これはデフォルトで有効になっています。
+.RE
+.PP
+\fB\-\-[no\-]write\-commit\-graph\fR
+.RS 4
+フェッチ後にコミットグラフ(commit\-graph)を記述します。 これは、構成設定
+\fBfetch\&.writeCommitGraph\fR
+をオーバーライドします。
+.RE
+.PP
+\fB\-\-prefetch\fR
+.RS 4
+構成されたrefspecを変更して、すべてのrefを
+\fBrefs/prefetch/\fR
+名前空間に配置します。
+\fBgit-maintenance\fR(1)の
+\fBprefetch\fR
+タスクを参照してください。
+.RE
+.PP
+\fB\-p\fR, \fB\-\-prune\fR
+.RS 4
+フェッチする前に、リモートに存在しなくなったリモート追跡参照を削除します。 タグは、デフォルトのタグの自動追跡または
+\fB\-\-tags\fR
+オプションのためにのみフェッチされた場合(コマンドラインまたはリモート構成のいずれかで、たとえば、リモートが
+\fB\-\-mirror\fR
+オプションでcloneされた場合)、刈り込み(pruning)の対象にはなりません。 ただし、明示的なrefspecが原因でタグがフェッチされた場合、それらも刈り込み(pruning)の対象になります。
+\fB\-\-prune\-tags\fR
+を指定することは、タグrefspecを提供するための省略形です。
+.sp
+詳細については、下記の「PRUNING」セクションを参照してください。
+.RE
+.PP
+\fB\-P\fR, \fB\-\-prune\-tags\fR
+.RS 4
+\fB\-\-prune\fR
+が有効になっている場合は、フェッチする前に、リモートに存在しなくなったローカルタグをすべて削除します。 このオプションは、
+\fB\-\-prune\fR
+とは異なり、より慎重に使用する必要があります。作成されたローカル参照(ローカルタグ)はすべて削除されます。 このオプションは、明示的なタグrefspecを
+\fB\-\-prune\fR
+とともに提供するための省略形です。これについては、そのドキュメントの説明を参照してください。
+.sp
+詳細については、下記の「PRUNING」セクションを参照してください。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-no\-tags\fR
+.RS 4
+デフォルトでは、リモートリポジトリからダウンロードされたオブジェクトを指すタグがフェッチされ、ローカルに保存されます。このオプションは、この自動タグ追跡を無効にします。 リモートのデフォルトの動作は、
+\fBremote\&.<name>\&.tagOpt\fR
+設定で指定できます。
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-refetch\fR
+.RS 4
+すでにローカルに存在するコミットとその関連オブジェクトの転送を避けるためにサーバーと交渉(negotiate)する代わりに、 このオプションは新しいクローン(fresh clone)のようにすべてのオブジェクトをフェッチします。 これを使用して、構成から部分(partial)クローン・フィルターを再適用するか、または、フィルター定義が変更されたときに
+\fB\-\-filter=\fR
+を使用します。 フェッチ後の自動メンテナンスにより、オブジェクト・データベース・パックの統合が実行され、重複オブジェクトが削除されます。
+.RE
+.PP
+\fB\-\-refmap=<refspec>\fR
+.RS 4
+コマンドラインにリストされているrefをフェッチするときは、リモートリポジトリの
+\fBremote\&.*\&.fetch\fR
+構成変数の値の代わりに、指定されたrefspec(複数回指定可能)を使用してrefをリモート追跡ブランチにマップします。 空の
+\fB<refspec>\fR
+を
+\fB\-\-refmap\fR
+オプションに指定すると、Gitは構成されたrefspecsを無視し、コマンドライン引数として提供されたrefspecsに完全に依存します。 詳細については、「Configured Remote\-tracking Branches」のセクションを参照してください。
+.RE
+.PP
+\fB\-t\fR, \fB\-\-tags\fR
+.RS 4
+他の方法でフェッチされるものに加えて、リモートからすべてのタグをフェッチします(つまり、リモートタグ
+\fBrefs/tags/*\fR
+を同じ名前のローカルタグにフェッチします)。 このオプションを単独で使用しても、
+\fB\-\-prune\fR
+が使用されている場合でも、タグは刈り込み(pruning)の対象にはなりません(ただし、タグが明示的なrefspecの宛先でもある場合は、タグは刈り込み(pruning)される可能性があります。
+\fB\-\-prune\fR
+を参照してください)。
+.RE
+.PP
+\fB\-\-recurse\-submodules[=yes|on\-demand|no]\fR
+.RS 4
+このオプションは、サブモジュールの新しいコミットも取得する必要があるかどうか、およびどのような条件で取得するかを制御します。 サブモジュールを再帰するとき、
+\fBgit fetch\fR
+は常に「変更された」サブモジュール、つまり、新しく取得(fetch)されたスーパープロジェクト・コミットによって参照されるが、ローカル・サブモジュール・クローンにないコミットを持つサブモジュールを取得(fetch)しようとします。 変更されたサブモジュールは、ローカル、たとえば
+\fB$GIT_DIR/modules/\fR
+内に存在する限り取得(fetch)できます(\fBgitsubmodules\fR(7)
+を参照)。 アップストリームが新しいサブモジュールを追加した場合、そのサブモジュールはクローン、たとえば
+\fBgit submodule update\fR
+されるまで取得(fetch)できません。
+.sp
+\fBon\-demand\fR
+に設定すると、 変更されたサブモジュールのみがフェッチされます。
+\fByes\fR
+に設定すると、すべての入力済みサブモジュールと、未入力かつ変更されたサブモジュールが、フェッチされます。
+\fBno\fR
+に設定すると、サブモジュールはフェッチされません。
+.sp
+指定されていない場合、
+\fBfetch\&.recurseSubmodules\fR
+が設定されている場合は
+\fBfetch\&.recurseSubmodules\fR
+の値が使用され(\fBgit-config\fR(1)
+参照)、
+\fBfetch\&.recurseSubmodules\fR
+も設定されていない場合はデフォルトで
+\fBon\-demand\fR
+になります。 このオプションを値なしで使用すると、デフォルトで
+\fByes\fR
+になります。
+.RE
+.PP
+\fB\-j\fR, \fB\-\-jobs=<n>\fR
+.RS 4
+すべての形式のフェッチに使用されるparallel childrenの数。
+.sp
+\fB\-\-multiple\fR
+オプションが指定された場合、異なるリモートが並行してフェッチされます。 複数のサブモジュールがフェッチされる場合、それらは並行してフェッチされます。 それらを個別に制御するには、構成設定
+\fBfetch\&.parallel\fR
+と
+\fBsubmodule\&.fetchJobs\fR
+を使用します(\fBgit-config\fR(1)
+参照)。
+.sp
+通常、並列再帰フェッチとマルチリモートフェッチの方が高速です。デフォルトでは、フェッチは並列ではなく順次実行されます。
+.RE
+.PP
+\fB\-\-no\-recurse\-submodules\fR
+.RS 4
+サブモジュールの再帰的フェッチを無効にします(これは、
+\fB\-\-recurse\-submodules=no\fR
+オプションを使用するのと同一の効果があります)。
+.RE
+.PP
+\fB\-\-set\-upstream\fR
+.RS 4
+リモートが正常にフェッチされた場合は、引数のない
+\fBgit-pull\fR(1)
+およびその他のコマンドで使用されるアップストリーム(追跡)参照を追加します。 詳細については、
+\fBgit-config\fR(1)
+の
+\fBbranch\&.<name>\&.merge\fR
+および
+\fBbranch\&.<name>\&.remote\fR
+を参照してください。
+.RE
+.PP
+\fB\-\-submodule\-prefix=<path>\fR
+.RS 4
+「Fetching submodule foo」などの情報メッセージに出力されるパスの前に<path>を付けます。このオプションは、サブモジュールを再帰的に実行するときに内部的に使用されます。
+.RE
+.PP
+\fB\-\-recurse\-submodules\-default=[yes|on\-demand]\fR
+.RS 4
+このオプションは、
+\fB\-\-recurse\-submodules\fR
+オプションに負でないデフォルト値を一時的に提供するために内部的に使用されます。 フェッチのサブモジュール再帰を構成する他のすべての方法(\fBgitmodules\fR(5)
+や
+\fBgit-config\fR(1)
+の設定など) は、
+\fB\-\-[no\-]recurse\-submodules\fR
+を直接指定する場合と同様に、このオプションをオーバーライドします。
+.RE
+.PP
+\fB\-u\fR, \fB\-\-update\-head\-ok\fR
+.RS 4
+デフォルトでは、
+\fBgit fetch\fR
+は現在のブランチに対応するヘッドの更新を拒否します。 このフラグはそのチェックを無効にします。 これは純粋に
+\fBgit pull\fR
+が
+\fBgit fetch\fR
+と通信するための内部使用のためであり、あなたが独自の磁器コマンドを実装していない限り、あなたがそれを使用することは想定されていません。
+.RE
+.PP
+\fB\-\-upload\-pack <upload\-pack>\fR
+.RS 4
+指定され、フェッチ元のリポジトリが
+\fBgit fetch\-pack\fR
+によって処理されると、
+\fB\-\-exec=<upload\-pack>\fR
+がコマンドに渡され、もう一方の端で実行されるコマンドのデフォルト以外のパスが指定されます。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+\fB\-\-quiet\fR
+を
+\fBgit\-fetch\-pack\fR
+に渡し、内部で使用される他のgitコマンドをすべて静粛にさせます。 進行状況は標準エラーストリームに報告されません。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+おしゃべりにします。
+.RE
+.PP
+\fB\-\-progress\fR
+.RS 4
+\fB\-q\fR
+が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送信されていない場合でも、進行状況を強制します。
+.RE
+.PP
+\fB\-o <option>\fR, \fB\-\-server\-option=<option>\fR
+.RS 4
+プロトコルバージョン2を使用して通信する場合は、指定された文字列をサーバーに送信します。 指定された文字列には、NUL文字またはLF文字を含めることはできません。 不明なオプションを含むサーバーオプションのサーバー処理は、サーバー固有です。 複数の
+\fB\-\-server\-option=<option>\fR
+が指定されている場合、それらはすべてコマンドラインにリストされている順序で相手側に送信されます。
+.RE
+.PP
+\fB\-\-show\-forced\-updates\fR
+.RS 4
+デフォルトでは、gitはフェッチ中にブランチが強制的に更新されるかどうかをチェックします。 これは
+\fBfetch\&.showForcedUpdates\fR
+を介して無効にすることができますが、
+\fB\-\-show\-forced\-updates\fR
+オプションはこのチェックが行われることを保証します。
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-no\-show\-forced\-updates\fR
+.RS 4
+デフォルトでは、gitはフェッチ中にブランチが強制的に更新されるかどうかをチェックします。
+\fB\-\-no\-show\-forced\-updates\fR
+を渡すか、
+\fBfetch\&.showForcedUpdates\fR
+を
+\fBfalse\fR
+に設定して、パフォーマンス上の理由からこのチェックをスキップします。
+\fBgit\-pull\fR
+処理中に使用された場合、
+\fB\-\-ff\-only\fR
+オプションは、早送り(fast\-forward)更新を試行する前に、強制更新をチェックします。
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-4\fR, \fB\-\-ipv4\fR
+.RS 4
+IPv6アドレスを無視して、IPv4アドレスのみを使用します。
+.RE
+.PP
+\fB\-6\fR, \fB\-\-ipv6\fR
+.RS 4
+IPv4アドレスを無視して、IPv6アドレスのみを使用します。
+.RE
+.PP
+<repository>
+.RS 4
+フェッチまたはプル操作のソースである「リモート」リポジトリ。このパラメーターは、URL(以下の
+GIT URLS
+セクションを参照)またはリモートの名前(以下の
+REMOTES
+セクションを参照)のいずれかです。
+.RE
+.PP
+<group>
+.RS 4
+構成ファイル内のリモート。 <group> の値としてリポジトリーのリストを参照する名前。(\fBgit-config\fR(1)
+を参照)。
+.RE
+.PP
+<refspec>
+.RS 4
+フェッチするrefと更新するローカルrefを指定します。コマンドラインに <refspec> がない場合、フェッチするrefは代わりに
+\fBremote\&.<repository>\&.fetch\fR
+変数から読み取られます。 (下記
+CONFIGURED REMOTE\-TRACKING BRANCHES
+参照)
+.sp
+<refspec> パラメータの組織は、オプションのプラス
+\fB+\fR
+に続いて ソースの <src> 、コロン
+\fB:\fR
+宛先refの <dst> の順です。 <dst> が空の場合、コロン(\fB:\fR)は省略できます。 <src> は通常、refですが、フルスペルの16進オブジェクト名にすることもできます。
+.sp
+<refspec> の <src> には、単純なパターン一致を示すための
+\fB*\fR
+が含まれている場合があります。このようなrefspecは、同じプレフィックスを持つ任意のrefに一致するglobのように機能します。パターン<refspec>では、 <src> と <dst> の両方に
+\fB*\fR
+が含まれている必要があります。
+\fB*\fR
+をソースから一致したコンテンツに置き換えることにより、refを宛先にマッピングします。
+.sp
+refspecの前に
+\fB^\fR
+が付いている場合、それはネガティブのrefspecとして解釈されます。このようなrefspecは、フェッチするrefや更新するローカルrefを指定するのではなく、除外するrefを指定します。 refは、少なくとも1つのポジティブ(通常)のrefspecと一致し、ネガティブのrefspecと一致しない場合、一致すると見なされます。ネガティブのrefspecは、特定のrefが含まれないように、パターンrefspecのスコープを制限するのに役立ちます。ネガティブのrefspecは、それ自体がパターンrefspecである可能性があります。 ただし、 <src> のみを含めることができ、 <dst> を指定することはできません。 フルスペルの16進オブジェクト名もサポートされていません。
+.sp
+\fBtag <tag>\fR
+は、
+\fBrefs/tags/<tag>:refs/tags/<tag>\fR
+と同じ意味です。指定されたタグまでのすべてをフェッチするように要求します。
+.sp
+<src> に一致するリモートrefがフェッチされ、 <dst> が空の文字列でない場合は、それに一致するローカルrefを更新しようとします。
+.sp
+その更新が
+\fB\-\-force\fR
+なしで許可されるかどうかは、フェッチ先のref名前空間、フェッチされるオブジェクトのタイプ、および更新がfast\-forwardであると見なされるかどうかによって異なります。一般に、プッシュする場合と同じルールがフェッチに適用されます。それらが何であるかについては、
+\fBgit-push\fR(1)の
+\fB<refspec>\&.\&.\&.\fR
+セクションを参照してください。
+\fIgit fetch\fR
+に固有の例外ルールを以下に示します。
+.sp
+Gitバージョン2\&.20までは、
+\fBgit-push\fR(1)
+でプッシュする場合とは異なり、
+\fBrefs/tags/*\fR
+の更新は、 refspec に
+\fB+\fR
+がなくても(または
+\fB\-\-force\fR
+指定が無くても)受け入れられます。フェッチするとき、リモートからのすべてのタグ更新を強制フェッチとしていました。Gitバージョン2\&.20以降では、
+\fBrefs/tags/*\fR
+を更新するためのフェッチは、プッシュする場合と同じように機能します。 つまり refspecに
+\fB+\fR
+が無い場合(または
+\fB\-\-force\fR
+が無い場合)、更新は拒否されます。
+.sp
+\fBgit-push\fR(1)
+でプッシュするときとは異なり、
+\fBrefs/{tags,heads}/*\fR
+以外の更新は、 refspecに
+\fB+\fR
+がなくても(あるいは
+\fB\-\-force\fR
+指定が無くても)受け付けられます。例えば、ツリーオブジェクトとブロブを交換したり、あるコミットを、祖先を持たない別のコミットと交換したりできます。
+.sp
+\fBgit-push\fR(1)
+でプッシュする場合とは異なり、これらのルールを修正する構成はなく、
+\fBpre\-receive\fR
+フックに類似した
+\fBpre\-fetch\fR
+フックのようなものはありません。
+.sp
+\fBgit-push\fR(1)
+を使用したプッシュと同様に、更新として許可されないものに関する上記のすべてのルールは、refspec先頭にオプションで
+\fB+\fR
+をに追加する(または
+\fB\-\-force\fR
+コマンドラインオプションを使用する)ことでオーバーライドできます。これに対する唯一の例外は、
+\fBrefs/heads/*\fR
+名前空間が非コミットオブジェクトを受け入れるように強制することはないということです。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+フェッチするリモートブランチが定期的に巻き戻されてリベースされることがわかっている場合、その新しい先端は(最後にフェッチしたときにリモートトラッキングブランチに保存された)以前の先端の子孫ではないことが予想されます。あなたは
+\fB+\fR
+記号を使用して、そのようなブランチにnon\-fast\-forwardの更新が必要であることを指示します。この操作でブランチがリポジトリで使用可能になることを決定または宣言する方法はありません。プルするユーザーは、これがブランチの予想される使用パターンであることを知っている必要があります。
+.sp .5v
+.RE
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+引数として提供されているものに加えて、標準入力からrefspecsを1行に1つずつ読み取ります。 「tag <name>」形式はサポートされていません。
+.RE
+.SH "GIT URLS"
+.sp
+一般に、URLには、トランスポートプロトコル、リモートサーバーのアドレス、およびリポジトリへのパスに関する情報が含まれています。トランスポートプロトコルによっては、一部の情報が欠落している場合があります。
+.sp
+Gitはsshとgitとhttpとhttpsプロトコルをサポートします(さらにftpとftpsをフェッチに使用できますが、これは非効率的で非推奨です。使用しないでください)。
+.sp
+ネイティブトランスポート(つまり、 git:// URL)は認証を行わないため、セキュリティで保護されていないネットワークでは注意して使用する必要があります。
+.sp
+以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ssh://[user@]host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+git://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http[s]://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ftp[s]://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+代替のscpのような構文をsshプロトコルで使用することもできます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+[user@]host\&.xz:path/to/repo\&.git/
+.RE
+.sp
+この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカルパスを区別するのに役立ちます。たとえば、ローカルパス \fBfoo:bar\fR を、絶対パスまたは \fB\&./foo:bar\fR として指定して、 ssh url として誤って解釈されないようにすることができます。
+.sp
+sshおよびgitプロトコルは、さらに ~username 拡張をサポートします:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ssh://[user@]host\&.xz[:port]/~[user]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+git://host\&.xz[:port]/~[user]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+[user@]host\&.xz:/~[user]/path/to/repo\&.git/
+.RE
+.sp
+Gitでもネイティブにサポートされているローカルリポジトリの場合、以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file:///path/to/repo\&.git/
+.RE
+.sp
+これらの2つの構文は、前者が \fB\-\-local\fR オプションの機能を含むクローン作成の場合を除いて、ほとんど同等です。 詳細については、 \fBgit-clone\fR(1) を参照してください。
+.sp
+「git clone」と「git fetch」と「git pull」は、「git push」と違って適切なバンドルファイルを受け入れます。 \fBgit-bundle\fR(1) を参照してください。
+.sp
+Gitが特定のトランスポートプロトコルを処理する方法を知らない場合、Gitは \fIremote\-<transport>\fR リモートヘルパー(存在する場合)を使用しようとします。リモートヘルパーを明示的に要求するには、以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<transport>::<address>
+.RE
+.sp
+ここで、 <address> は、パス、サーバーとパス、または呼び出されている特定のリモートヘルパーによって認識される任意のURLのような文字列です。詳細については、 \fBgitremote-helpers\fR(7) を参照してください。
+.sp
+同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "<actual url base>"]
+                insteadOf = <other url base>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例えば、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "git://git\&.host\&.xz/"]
+                insteadOf = host\&.xz:/path/to/
+                insteadOf = work:
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"work:repo\&.git" や "host\&.xz:/path/to/repo\&.git" のようなURLは、任意のコンテキストで、"git://git\&.host\&.xz/repo\&.git" に書き換えられます。
+.sp
+プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "<actual url base>"]
+                pushInsteadOf = <other url base>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例えば、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "ssh://example\&.org/"]
+                pushInsteadOf = git://example\&.org/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"git://example\&.org/path/to/repo\&.git" のようなURLは、プッシュの場合は "ssh://example\&.org/path/to/repo\&.git" に書き換えられますが、プルは引き続き元のURLのままです。
+.SH "REMOTES"
+.sp
+\fB<repository>\fR 引数として、URLの代わりに以下のいずれかの名前を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Git構成ファイル(configuration file)内のリモート(remote)として、
+\fB$GIT_DIR/config\fR
+または
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB$GIT_DIR/remotes\fR
+ディレクトリ内のファイル または
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB$GIT_DIR/branches\fR
+ディレクトリ内のファイル
+.RE
+.sp
+これらはすべて、gitがデフォルトで使用するrefspecをそれぞれ含んでいるため、コマンドラインからrefspecを省略できます。
+.SS "Named remote in configuration file"
+.sp
+あなたは、 \fBgit-remote\fR(1) を使うか、または \fBgit-config\fR(1) を使うか、または \fB$GIT_DIR/config\fR ファイルを手動で編集して、これ以前に構成したリモートの名前から選択できます。このリモートのURLは、リポジトリへのアクセスに使用されます。コマンドラインでrefspecを指定しない場合、このリモートのrefspecがデフォルトで使用されます。構成ファイルのエントリは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [remote "<name>"]
+                url = <URL>
+                pushurl = <pushurl>
+                push = <refspec>
+                fetch = <refspec>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB<pushurl>\fR はプッシュにのみ使用されます。 これはオプションであり、デフォルトは \fB<URL>\fR です。
+.SS "Named file in \fB$GIT_DIR/remotes\fR"
+.sp
+あなたは、 \fB$GIT_DIR/remotes\fR でファイル名を指定できます。このファイルのURLは、リポジトリへのアクセスに使用されます。コマンドラインでrefspecを指定しない場合、このファイルのrefspecがデフォルトとして使用されます。このファイルの形式は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        URL: one of the above URL format
+        Push: <refspec>
+        Pull: <refspec>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBPush:\fR 行は \fBgit push\fR で使用され、 \fBPull:\fR 行は \fBgit pull\fR と \fBgit fetch\fR で使用されます。追加のブランチマッピングのために、複数の \fBPush:\fR および \fBPull:\fR 行を指定できます。
+.SS "Named file in \fB$GIT_DIR/branches\fR"
+.sp
+\fB$GIT_DIR/branches\fR でファイル名を指定できます。このファイルのURLは、リポジトリへのアクセスに使用されます。 このファイルの形式は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        <URL>#<head>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB<URL>\fR は必須です。 \fB#<head>\fR はオプションです。
+.sp
+コマンドラインで指定しない場合、操作に応じて、gitは以下のrefspecのいずれかを使用します。 \fB<branch>\fR は \fB$GIT_DIR/branchs\fR 内のこのファイルの名前であり、 \fB<head>`はデフォルトで `master\fR になります。
+.sp
+git fetch は以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        refs/heads/<head>:refs/heads/<branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+git push は以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        HEAD:refs/heads/<head>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "CONFIGURED REMOTE\-TRACKING BRANCHES"
+.sp
+あなたは、定期的かつ繰り返しフェッチすることで、同じリモートリポジトリとやり取りすることがよくあります。 このようなリモートリポジトリの進行状況を追跡するために、 \fBgit fetch\fR では \fBremote\&.<repository>\&.fetch\fR 構成変数を構成できます。
+.sp
+通常、このような変数は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[remote "origin"]
+        fetch = +refs/heads/*:refs/remotes/origin/*
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この構成は、以下の2つの方法で使用されます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コマンドラインで取得するブランチやタグを指定せずに
+\fBgit fetch\fR
+を実行した場合、例えば
+\fBgit fetch origin\fR
+や
+\fBgit fetch\fR
+では
+\fBremote\&.<repository>\&.fetch\fR
+の値が refspecs として使用され、取得する ref と更新するローカル ref を指定します。 上記の例では、\fBorigin\fR
+に存在するすべてのブランチ(つまり、値の左辺
+\fBrefs/heads/*\fR
+にマッチするすべての ref)を取得し、対応するリモート追跡ブランチを
+\fBrefs/remotes/origin/*\fR
+階層にあるものに更新します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+フェッチするブランチやタグをコマンドラインで明示的に指定して、
+\fBgit fetch\fR
+を実行した場合、 たとえば
+\fBgit fetch origin master\fR
+すると、コマンドラインで指定された<refspec>が何をフェッチするかを決定し(たとえば、この例の
+\fBmaster`は、 `master:\fR
+の省略形で、 「
+\fBmaster\*(Aq ブランチを取得しますが、どのリモート追跡ブランチを更新するかはコマンドラインから明示的に指示しません」を意味します)、サンプルコマンドは「 \*(Aqmaster\*(Aq ブランチのみ」をフェッチします。 `remote\&.<repository>\&.fetch\fR
+値は、更新されるリモート追跡ブランチがある場合はそれを決定します。 このような使い方をすると、
+\fBremote\&.<repository>\&.fetch\fR
+値は、「何をフェッチするか」を決定するのに効果がありません(つまり、コマンドラインにrefspecsがリストされている場合、
+\fBremote\&.<repository>\&.fetch\fR
+値はrefspecsとして使用されません)。 これらは、マッピングとして機能することにより、フェッチされたrefがどこに保存されるかを決定するためにのみ使用されます。
+.RE
+.sp
+後者の \fBremote\&.<repository>\&.fetch\fR 値の使用は、コマンドラインで \fB\-\-refmap=<refspec>\fR パラメーターを指定することでオーバーライドできます。
+.SH "PRUNING"
+.sp
+Gitには、明示的に破棄されない限り、データを保持するというデフォルトの性質があります。 これは、ブランチを削除したリモートのブランチへのローカル参照を保持することにまで及びます。
+.sp
+蓄積したままにしておくと、これらの古い参照は、ブランチの撹拌が多い大きく忙しいリポジトリでパフォーマンスを低下させる可能性があります。 \fBgit branch \-a \-\-contains <commit>\fR のようなコマンドの出力を不必要に冗長にし、既知の参照の完全なセットで機能する他のすべてに影響を与えます。
+.sp
+これらのリモート追跡参照は、1回限りの利用で、以下のいずれかを使用して削除できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# While fetching
+$ git fetch \-\-prune <name>
+
+# Only prune, don\*(Aqt fetch
+$ git remote prune <name>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたの通常の作業フローの一部として参照を刈り込むには、それを実行することを覚えておく必要はありません。設定で \fBfetch\&.prune\fR をグローバルに設定するか、 \fBremote\&.<name>\&.prune\fR をリモート毎に設定します。 \fBgit-config\fR(1) を参照してください。
+.sp
+ここで、物事がトリッキーでより具体的になります。 刈り込み機能は実際にはブランチを気にせず、代わりにリモートのrefspecの関数として \fBlocal <\-\-> remote\-references\fR を刈り込みます( \fB<refspec>\fR および 上記 CONFIGURED REMOTE\-TRACKING BRANCHES 参照)。
+.sp
+したがって、リモートの refspec に、 たとえば \fBrefs/tags/*:refs/tags/*\fR が含まれていたり、 手動でたとえば \fBgit fetch \-\-prune <name> "refs/tags/*:refs/tags/*"\fR を実行したりすると、削除されるのは古いリモート追跡ブランチではなく、リモートには存在しないローカルタグが削除されます。
+.sp
+これはあなたが期待したものではない可能性があります。つまり、リモート \fB<name>\fR を刈り込むだけでなく、そこからタグを明示的にフェッチするため、そこからフェッチするときに、すべてのローカルタグを削除します。 そのほとんどは、そもそも \fB<name>\fR リモートからのものではない可能性があります。
+.sp
+したがって、これを \fBrefs/tags/*:refs/tags/*\fR のようなrefspec、または複数のリモートからの参照を同じローカル名前空間にマップする可能性のある他のrefspecで使用する場合は注意してください。
+.sp
+リモートのブランチとタグの両方を最新に保つことはよくあることなので、 \fB\-\-prune\fR と一緒に \fB\-\-prune\-tags\fR オプションを指定することで、リモートに存在しないローカルタグを削除し、異なるタグを強制更新することができます。 タグの刈り込みは、設定ファイルの \fBfetch\&.pruneTags\fR や \fBremote\&.<name>\&.pruneTags\fR で有効にすることもできます。 \fBgit-config\fR(1) を参照してください。
+.sp
+\fB\-\-prune\-tags\fR オプションは、「リモート」のrefspecsで \fBrefs/tags/*:refs/tags/*\fR を宣言するのと同じです。 これは、一見奇妙な相互作用につながる可能性があります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# These both fetch tags
+$ git fetch \-\-no\-tags origin \*(Aqrefs/tags/*:refs/tags/*\*(Aq
+$ git fetch \-\-no\-tags \-\-prune\-tags origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-\-prune\fR またはその構成変数版なしで提供されたときにエラーにならない理由は、構成変数版の柔軟性と、コマンドラインフラグの機能と構成変数版の機能の間の 一対一 のマッピングを維持するためです。
+.sp
+たとえば、 \fB~/\&.gitconfig\fR で \fBfetch\&.pruneTags=true\fR を構成して、 \fB\-\-prune\fR なしで \fBgit fetch\fR を呼び出すたびにエラーが発生することなく、 \fBgit fetch \-\-prune\fR が実行されるたびにタグが刈り込まれるようにします。
+.sp
+\fB\-\-prune\-tags\fR によるタグの刈り込みは、名前付きリモートの代わりに URL を取得するときにも機能します。 これらはすべて、origin で見つからなかったタグを刈り込みます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch origin \-\-prune \-\-prune\-tags
+$ git fetch origin \-\-prune \*(Aqrefs/tags/*:refs/tags/*\*(Aq
+$ git fetch <url of origin> \-\-prune \-\-prune\-tags
+$ git fetch <url of origin> \-\-prune \*(Aqrefs/tags/*:refs/tags/*\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "OUTPUT"
+.sp
+\fBgit fetch\fR の出力は、使用する転送方法によって異なります。 このセクションでは、Gitプロトコル(ローカルまたはssh経由)およびスマートHTTPプロトコルを介してフェッチする場合の出力について説明します。
+.sp
+フェッチのステータスは表形式で出力され、各行は単一のrefのステータスを表します。 各行の形式は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ <flag> <summary> <from> \-> <to> [<reason>]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+最新のrefのステータスは、 \fB\-\-verbose\fR オプションが使用されている場合にのみ表示されます。
+.sp
+構成変数fetch\&.outputで指定されたコンパクト出力モードでは、他の文字列に \fB<from>\fR または \fB<to>\fR 全体が見つかった場合、他の文字列内では \fB*\fR に置き換えられます。 たとえば、 \fBmaster \-> origin/master\fR は \fBmaster \-> origin/*\fR になります。
+.PP
+flag
+.RS 4
+refのステータスを示す1文字:
+.PP
+(space)
+.RS 4
+フェッチされた早送りの成功
+.RE
+.PP
+\fB+\fR
+.RS 4
+強制更新の成功
+.RE
+.PP
+\fB\-\fR
+.RS 4
+refの刈り込みの成功
+.RE
+.PP
+\fBt\fR
+.RS 4
+タグ更新の成功
+.RE
+.PP
+\fB*\fR
+.RS 4
+新しいrefのフェッチの成功
+.RE
+.PP
+\fB!\fR
+.RS 4
+拒否された、または更新に失敗したref
+.RE
+.PP
+\fB=\fR
+.RS 4
+最新であり、フェッチする必要がなかったref
+.RE
+.RE
+.PP
+summary
+.RS 4
+成功裏にフェッチされたrefの場合、概要には、refの古い値と新しい値が
+\fBgit log\fR
+の引数として使用するのに適した形式で表示されます(これはほとんどの場合
+\fB<old>\&.\&.<new>\fR
+であり、強制的な非早送り(non\-fast\-forward)更新の場合は
+\fB<old>\&.\&.\&.<new>\fR
+です)。
+.RE
+.PP
+from
+.RS 4
+フェッチ元のリモートrefの名前から、その
+\fBrefs/<type>/`プレフィックスを差し引いたもの。 削除の場合、リモートrefの名前は `(none)\fR
+です。
+.RE
+.PP
+to
+.RS 4
+更新されるローカルrefの名前から、その
+\fBrefs/<type>/\fR
+プレフィックスを差し引いたもの。
+.RE
+.PP
+reason
+.RS 4
+人間が読める説明。 正常にフェッチされたrefの場合、説明は必要ありません。 失敗したrefについては、失敗の理由が説明されています。
+.RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+リモートトラッキングブランチを更新します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+上記のコマンドは、 branch\&.<name>\&.fetch オプションを使用してデフォルト以外のrefspecを指定しない限り、すべてのブランチをリモート refs/heads/ 名前空間からコピーし、ローカル refs/remotes/origin/ 名前空間に格納します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+refspecsの明示的な使用:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch origin +seen:seen maint:tmp
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これにより、リモートリポジトリからブランチ
+\fBseen\fR
+と
+\fBmaint\fR
+を(それぞれ)フェッチすることにより、ローカルリポジトリでブランチ
+\fBseen\fR
+と
+\fBtmp\fR
+が更新(または必要に応じて作成)されます。
+.sp
+\fBseen\fR
+ブランチは、接頭辞にプラス記号(\fB+\fR)が付いているため、早送りしなくても更新されます。
+\fBtmp\fR
+はそうしません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+あなたのローカルリポジトリで「リモート」を構成せずに、リモートのブランチをちらっと見ます(peek):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch git://git\&.kernel\&.org/pub/scm/git/git\&.git maint
+$ git log FETCH_HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+最初のコマンドは
+\fBgit://git\&.kernel\&.org/pub/scm/git/git\&.git\fR
+のリポジトリから
+\fBmaint\fR
+ブランチをフェッチし、2番目のコマンドは
+\fBFETCH_HEAD\fR
+を使用して
+\fBgit-log\fR(1)
+でブランチを調べます。 フェッチされたオブジェクトは、最終的にgitの組み込みの家政婦(housekeeping)によって削除されます(\fBgit-gc\fR(1)
+を参照)。
+.RE
+.SH "SECURITY"
+.sp
+フェッチおよびプッシュプロトコルは、共有することを意図していない一方の側が他方のリポジトリからデータを盗むのを防ぐようには設計されていません。悪意のある者から保護する必要のあるプライベートデータがある場合、最善のオプションはそれを別のリポジトリに保存することです。これは、クライアントとサーバーの両方に適用されます。特に、サーバー上の名前空間は、読み取りアクセス制御には効果的ではありません。リポジトリ全体への読み取りアクセスで信頼できるクライアントにのみ、名前空間への読み取りアクセスを許可する必要があります。
+.sp
+既知の攻撃ベクトル(attack vectors)は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+被害者は、明示的に共有することを意図していないオブジェクトのIDをアドバタイズする "have" 行を送信しますが、他にもIDを持っている者が居る場合は、転送を最適化するために使用できます。攻撃者はオブジェクトID Xを選択して盗み、refをXに送信しますが、被害者はすでにXのコンテンツを持っているため、Xのコンテンツを送信する必要はありません。 これで、被害者は攻撃者がXを持っていると信じ、Xのコンテンツを後で攻撃者に送り返します。 (この攻撃は、クライアントがアクセスできる名前空間にXへのrefを作成してフェッチすることにより、クライアントがサーバー上で実行するのが最も簡単です。サーバーがクライアント上で実行する最も可能性の高い方法は、Xをパブリックブランチにマージし、ユーザーがこのブランチで追加の作業を行い、マージに気付かずにサーバーにプッシュバックすることを期待します。)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+#1 と同様に、攻撃者は盗むオブジェクトID Xを選択します。被害者は、攻撃者がすでに持っているオブジェクトYを送信し、攻撃者はYではなくXを持っていると誤って主張するため、被害者はYをXに対するデルタとして送信します。デルタは、攻撃者にYに類似したXの領域を明らかにします。
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+fetch\&.recurseSubmodules
+.RS 4
+このオプションは、
+\fBgit fetch\fR(および
+\fBgit pull\fR
+の基になるフェッチ)が入力されたサブモジュールに再帰的にフェッチするかどうかを制御します。 このオプションは、ブール値または
+\fBon\-demand\fR
+のいずれかに設定できます。 ブール値に設定すると、フェッチとプルの動作が変更され、trueに設定されている場合は無条件にサブモジュールに再帰し、falseに設定されている場合はまったく再帰しません。
+\fBon\-demand\fR
+に設定すると、フェッチとプルは、スーパープロジェクトがサブモジュールの参照を更新するコミットを取得したときにのみ、入力されたサブモジュールに再帰します。 デフォルトは
+\fBon\-demand\fR
+、または
+\fBsubmodule\&.recurse\fR
+が設定されている場合はその値です。
+.RE
+.PP
+fetch\&.fsckObjects
+.RS 4
+trueに設定されている場合、git\-fetch\-packはフェッチされたすべてのオブジェクトをチェックします。 チェックされる内容については、
+\fBtransfer\&.fsckObjects\fR
+を参照してください。 デフォルトはfalseです。 設定されていない場合は、代わりに
+\fBtransfer\&.fsckObjects\fR
+の値が使用されます。
+.RE
+.PP
+fetch\&.fsck\&.<msg\-id>
+.RS 4
+\fBfsck\&.<msg\-id>\fR
+のように機能しますが、
+\fBgit-fsck\fR(1)
+の代わりに
+\fBgit-fetch-pack\fR(1)
+によって使用されます。 詳細については、
+\fBfsck\&.<msg\-id>\fR
+のドキュメントを参照してください。
+.RE
+.PP
+fetch\&.fsck\&.skipList
+.RS 4
+\fBfsck\&.skipList\fR
+のように機能しますが、
+\fBgit-fsck\fR(1)
+の代わりに
+\fBgit-fetch-pack\fR(1)
+によって使用されます。 詳細については、
+\fBfsck\&.skipList\fR
+のドキュメントを参照してください。
+.RE
+.PP
+fetch\&.unpackLimit
+.RS 4
+Gitネイティブ転送を介してフェッチされるオブジェクトの数がこの制限を下回る場合、オブジェクトは緩いオブジェクト(loose object)ファイルに解凍されます。 ただし、受信したオブジェクトの数がこの制限以上の場合、受信したパックは、欠落しているデルタベースを追加した後、パックとして保存されます。 プッシュからパックを保存すると、特に低速のファイルシステムで、プッシュ操作をより速く完了することができます。 これが設定されていない場合は、代わりに
+\fBtransfer\&.unpackLimit\fR
+の値が使用されます。
+.RE
+.PP
+fetch\&.prune
+.RS 4
+trueの場合、fetchはコマンドラインで
+\fB\-\-prune\fR
+オプションが指定されたかのように自動的に動作します。
+\fBremote\&.<name>\&.prune\fR
+および
+\fBgit-fetch\fR(1)
+の「PRUNING」セクションも参照してください。
+.RE
+.PP
+fetch\&.pruneTags
+.RS 4
+trueの場合、フェッチは、まだ設定されていない場合、刈り込み(pruning)時に
+\fBrefs/tags/*:refs/tags/*\fR
+refspecが提供されたかのように自動的に振る舞います。 これにより、このオプションと
+\fBfetch\&.prune\fR
+の両方を設定して、アップストリーム参照への 1=1 マッピングを維持できます。
+\fBremote\&.<name>\&.pruneTags\fR
+および
+\fBgit-fetch\fR(1)
+の「PRUNING」セクションも参照してください。
+.RE
+.PP
+fetch\&.output
+.RS 4
+ref updateステータスの出力方法を制御します。 有効な値は
+\fBfull\fR
+と
+\fBcompact\fR
+です。 デフォルト値は
+\fBfull\fR
+です。 詳細については、
+\fBgit-fetch\fR(1)
+の「OUTPUT」セクションを参照してください。
+.RE
+.PP
+fetch\&.negotiationAlgorithm
+.RS 4
+サーバーによって送信されるパックファイルの内容をネゴシエートするときに、ローカルリポジトリ内のコミットに関する情報がどのように送信されるかを制御します。
+\fBconsecutive\fR
+に設定すると、連続したコミットをそれぞれチェックするアルゴリズムを使用します。
+\fBskipping\fR
+に設定すると、収束を高速化するためにコミットをスキップするアルゴリズムが使用されますが、必要以上の大きさのパックファイルが生成される可能性があります。 または、
+\fBnoop\fR
+に設定して情報をまったく送信しないようにします。これにより、ほぼ確実に必要以上に大きなパックファイルが生成されますが、ネゴシエーション・ステップはスキップされます。
+\fBdefault\fR
+に設定すると、それ以前に行われた設定をオーバーライドしてデフォルトの振る舞いをします。 デフォルトは通常
+\fBconsecutive\fR
+ですが、
+\fBfeature\&.experimental\fR
+が true の場合、デフォルトは
+\fBskipping\fR
+です。 値が不明な場合、
+\fBgit fetch\fR
+でエラーが発生します。
+.sp
+\fBgit-fetch\fR(1)
+の
+\fB\-\-negotiate\-only\fR
+および
+\fB\-\-negotiation\-tip\fR
+オプションも参照してください。
+.RE
+.PP
+fetch\&.showForcedUpdates
+.RS 4
+falseに設定すると、
+\fBgit-fetch\fR(1)
+および
+\fBgit-pull\fR(1)
+コマンドで
+\fB\-\-no\-show\-forced\-updates\fR
+が有効になります。 デフォルトはtrueです。
+.RE
+.PP
+fetch\&.parallel
+.RS 4
+一度に並行して実行されるフェッチ操作の最大数を指定します(サブモジュール、または、\fBgit-fetch\fR(1)
+の
+\fB\-\-multiple\fR
+オプションが有効な場合はリモート)。
+.sp
+値0は、適切なデフォルトを提供します。 設定されていない場合、デフォルトで1になります。
+.sp
+サブモジュールの場合、この設定は、
+\fBsubmodule\&.fetchJobs\fR
+構成設定を使用してオーバーライドできます。
+.RE
+.PP
+fetch\&.writeCommitGraph
+.RS 4
+リモートからパックファイルをダウンロードするすべての
+\fBgit fetch\fR
+コマンドの後でcommit\-graphを書き込むには、trueに設定します。
+\fB\-\-split\fR
+オプションを使用すると、ほとんどの実行で、既存のcommit\-graphファイルの上に非常に小さなcommit\-graphファイルが作成されます。 場合によっては、これらのファイルがマージされ、書き込みに時間がかかることがあります。 更新されたcommit\-graphファイルがあると、
+\fBgit merge\-base\fR
+や
+\fBgit push \-f\fR
+や
+\fBgit log \-\-graph\fR
+などの多くのGitコマンドのパフォーマンス改善に役立ちます。 デフォルトはfalseです。
+.RE
+.SH "BUGS"
+.sp
+\fB\-\-recurse\-submodules\fR を使用すると、ローカルに存在するサブモジュール、たとえば \fB$GIT_DIR/modules/\fR 内の新しいコミットのみを取得(fetch)できます。 アップストリームが新しいサブモジュールを追加した場合、そのサブモジュールは、たとえば \fBgit submodule update\fR によるクローンが作成されるまで取得(fetch)できません。 これは、将来の Git バージョンで修正される予定です。
+.SH "SEE ALSO"
+.sp
+\fBgit-pull\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

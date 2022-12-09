@@ -1,0 +1,143 @@
+'\" t
+.\"     Title: gitformat-chunk
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITFORMAT\-CHUNK" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitformat-chunk \- チャンク・ベースのファイル形式
+.SH "SYNOPSIS"
+.sp
+\fBgitformat-commit-graph\fR(5) や MIDX形式で使用されます(\fBgitformat-pack\fR(5) の「pack format」のドキュメントを参照してください)。
+.SH "DESCRIPTION"
+.sp
+Git の一部のファイル形式では、 「チャンク」という一般的な概念を使用して、ファイルのセクションを記述します。 これにより、小さな「目次」をスキャンして残りのデータを探すことで、 大きなファイルへの構造化されたアクセスが可能になります。 この一般的な形式は、 コミット・グラフ・ファイルとマルチ・パック・インデックス・ファイルで使用されます。チャンクを使用して構造化データを記述する方法については、 \fBgitformat-pack\fR(5) の マルチ・パックインデックス形式と \fBgitformat-commit-graph\fR(5) の コミット・グラフ形式を参照してください。
+.sp
+チャンクベースファイル形式(chunk\-based file format)は、その形式に合わせたヘッダー情報から始まります。 そのヘッダーには、ファイルタイプ、形式バージョン、ファイル内のチャンクの数、を識別するのに十分な情報が含まれている必要があります。 この情報から、そのファイルはチャンクベース領域(chunk\-based region)の開始を決定する事ができます。
+.sp
+チャンクベース領域(chunk\-based region)は、各チャンクの開始と終了を説明する目次(table of contents)で始まります。 これは、各行(row)12バイトの (C+1)行(row)で構成されます。ここで、Cはチャンクの数です。 以下の表をじっくり見やがれしてください。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  | Chunk ID (4 bytes) | Chunk Offset (8 bytes) |
+  |\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-|
+  | ID[0]              | OFFSET[0]              |
+  | \&.\&.\&.                | \&.\&.\&.                    |
+  | ID[C]              | OFFSET[C]              |
+  | 0x0000             | OFFSET[C+1]            |
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+各行(row)は、4バイトのチャンク識別子(ID)と8バイトのオフセットで構成されます。各整数はネットワークバイトオーダーで格納されます。
+.sp
+チャンク識別子 \fBID[i]\fR は、 \fBOFFSET[i]\fR (含む) から \fBOFFSET[i+1]\fR (含まない) (訳注: OFFSET[i] \(la ID[i]のデータ < OFFSET[i+1]) までの、このフィル内に格納されたデータのラベルです。したがって、 \fBi\fR 番目のチャンクのサイズは、\fBOFFSET[i+1]\fR と \fBOFFSET[i]\fR の差に等しくなります(訳注: つまり、サイズ = OFFSET[i+1] \- OFFSET[i])。 このためには、チャンクデータが目次と同じ順序で連続して表れる必要があります。
+.sp
+目次の最後のエントリは、4つのゼロバイトである必要があります。 これにより、目次が終了していることが確認され、チャンクベースのデータの終了のオフセットが提供されます。
+.sp
+注意: チャンクベース形式では、ファイルの \fBOFFSET[C+1]\fR の後に、「少なくとも」末尾のハッシュ(trailing hash)が含まれている必要があります。
+.sp
+チャンクベースのファイル形式を操作するための関数は、 \fBchunk\-format\&.h\fR で宣言されています。 これらのメソッドを使用すると、開発者が新しいファイル形式を作成するときに役立つ追加のチェックが提供されます。
+.SH "WRITING CHUNK\-BASED FILE FORMATS"
+.sp
+チャンクベースファイル形式を作成するには、 \fBinit_chunkfile()_ を呼び出して `struct chunkfile\fR を作成し、 \fBstruct hashfile\fR ポインタを渡します。 呼び出し元は、 \fBhashfile\fR を開き、ヘッダー情報を書き込む責任があります。これにより、チャンクベース形式が始まる前にファイル形式を識別できます。
+.sp
+次に、書き込み用のチャンクごとに \fBadd_chunk()\fR を呼び出します。 これにより、\fBchunkfile\fR に書き込む各チャンクの順序とサイズに関する情報が入力されます。 要求に応じてチャンクデータの書き込みを実行するための \fBchunk_write_fn\fR 関数ポインタを提供します。
+.sp
+\fBwrite_chunkfile()\fR を呼び出して、目次(table of contents)を \fBhashfile\fR に書き込み、その後に各チャンクを書き込みます。 これにより、各チャンクが予想される量のデータを書き込んだことを確認し、目次が正しいことを確認します。
+.sp
+最後に、 \fBfree_chunkfile()\fR を呼び出して、 \fBstructc hunkfile\fR データをクリアします。 呼び出し元は、末尾のハッシュ(trailing hash)を書き込んでファイルを閉じることにより、 \fBhashfile\fR を完成させる責任があります。
+.SH "READING CHUNK\-BASED FILE FORMATS"
+.sp
+チャンクベースファイル形式を読み取るには、ファイルをメモリマップ領域(memory\-mapped region)として開く必要があります。 チャンク形式のAPIは、ファイル全体が連続したメモリ領域としてマップされることを想定しています。
+.sp
+\fBinit_chunkfile(NULL)\fR で \fBstruct chunkfile\fR ポインタを初期化します。
+.sp
+ファイルの先頭からチャンクカウント(chunk count)を含むヘッダー情報を読み取った後、 \fBread_table_of_contents()\fR を呼び出して、 \fBstructc hunkfile\fR にチャンクのリスト、それらのオフセット、およびそれらのサイズを入力します。
+.sp
+\fBpair_chunk()\fR または \fBread_chunk()\fR を使用して、各チャンクのデータ情報を抽出します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpair_chunk()\fR
+は、そのチャンクのオフセットに対応するメモリマップされたファイル(memory\-mapped file)内の場所に特定のポインタを割り当てます。 チャンクが存在しない場合、ポインターは変更されません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBread_chunk()\fR
+は、
+\fBchunk_read_fn\fR
+関数ポインタを受け取り、適切な初期ポインタとサイズ情報を使用して呼び出します。 チャンクが存在しない場合、関数は呼び出されません。 即時パース(immediate parsing)を実行する必要がある場合、またはチャンクのサイズに基づいてロジックを実行する必要がある場合は、このメソッドを使用してチャンクを読み取ります。
+.RE
+.sp
+これらのメソッドを呼び出した後、 \fBfree_chunkfile()\fR を呼び出して \fBstructc hunkfile\fR データをクリアします。 これにより、メモリマップ領域は閉じられません。 呼び出し元は、領域へのポインタが必要とされている間はデータを所有しつづけることが期待されます。
+.SH "EXAMPLES"
+.sp
+これらのファイル形式はチャンク形式のAPIを使用しており、将来の形式の例として使用できます:
+.PP
+commit\-graph
+.RS 4
+\fBgitformat-commit-graph\fR(5)
+の「commit\-graph file format」に記載されているコミット・グラフ・ファイル形式を記述および解析するためにチャンク形式 API を使用する方法については、
+\fBcommit\-graph\&.c\fR
+の
+\fBwrite_commit_graph_file()\fR
+と
+\fBparse_commit_graph()\fR
+を参照してください。
+.RE
+.PP
+multi\-pack\-index
+.RS 4
+\fBgitformat-pack\fR(5)
+の「multi\-pack\-index file format」のセクションに記載されているマルチ・パック・インデックス・ファイル形式を記述および解析するためにチャンク形式 API がどのように使用されるかについては、
+\fBmidx\&.c\fR
+の
+\fBwrite_midx_internal()\fR
+と
+\fBload_multi_pack_index()\fR
+を参照してください。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

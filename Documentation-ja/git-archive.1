@@ -1,0 +1,295 @@
+'\" t
+.\"     Title: git-archive
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-ARCHIVE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-archive \- 名前付きツリーからファイルのアーカイブを作成します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit archive\fR [\-\-format=<fmt>] [\-\-list] [\-\-prefix=<prefix>/] [<extra>]
+              [\-o <file> | \-\-output=<file>] [\-\-worktree\-attributes]
+              [\-\-remote=<repo> [\-\-exec=<git\-upload\-archive>]] <tree\-ish>
+              [<path>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+名前付きツリーのツリー構造を含む指定された形式のアーカイブを作成し、それを標準出力に書き込みます。 <prefix> が指定されている場合、アーカイブ内のファイル名の前に追加されます。
+.sp
+「git archive」は、ツリーIDを指定した場合と、コミットIDまたはタグIDを指定した場合の動作が異なります。ツリーIDを指定した場合は、現在の時刻がアーカイブ内の各ファイルの変更時刻として使用されます。コミットIDまたはタグIDを指定した場合、参照されたコミットオブジェクトに記録されたコミット時間が代わりに使用されます。さらに、tar形式が使用されている場合、コミットIDはグローバル拡張paxヘッダー(global extended pax header)に格納されます。 \fBgit get\-tar\-commit\-id\fR を使用して抽出できます。ZIPファイルでは、ファイルコメントとして保存されます。
+.SH "OPTIONS"
+.PP
+\fB\-\-format=<fmt>\fR
+.RS 4
+結果のアーカイブの形式を指定します。 可能な値は、
+\fBtar\fR
+と
+\fBzip\fR
+と
+\fBtar\&.gz\fR
+と
+\fBtgz\fR
+と、構成オプション
+\fBtar\&.<format>\&.command\fR
+を使用して定義された任意の形式です。
+\fB\-\-format\fR
+が指定されておらず、出力ファイルが指定されている場合、フォーマットは、可能であればファイル名から推測されます(たとえば、
+\fBfoo\&.zip\fR
+に書き込むと、出力は
+\fBzip\fR
+形式になります)。 それ以外の場合、出力形式は
+\fBtar\fR
+です。
+.RE
+.PP
+\fB\-l\fR, \fB\-\-list\fR
+.RS 4
+有効なすべての形式を表示します。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+進捗状況をstderrに報告します。
+.RE
+.PP
+\fB\-\-prefix=<prefix>/\fR
+.RS 4
+\fB<prefix>/\fR
+をアーカイブ内のパスに追加します。 繰り返すことができ、その右端(rightmost)の値が、すべての追跡ファイル(tracked files)で使用されます。
+\fB\-\-add\-file\fR
+と
+\fB\-\-add\-virtual\-file\fR
+で使用される値については下記参照。
+.RE
+.PP
+\fB\-o <file>\fR, \fB\-\-output=<file>\fR
+.RS 4
+アーカイブをstdoutではなく<file>に書き込みます。
+.RE
+.PP
+\fB\-\-add\-file=<file>\fR
+.RS 4
+追跡されていないファイルをアーカイブに追加します。 繰り返すことで複数のファイルを追加する事ができます。 そのファイルのアーカイブ内のパスは、 この
+\fB\-\-add\-file\fR
+の前の最後の
+\fB\-\-prefix\fR
+オプション (存在する場合) の値と <file> のベース名を連結することによって構築されます。
+.RE
+.PP
+\fB\-\-add\-virtual\-file=<path>:<content>\fR
+.RS 4
+指定されたコンテンツをアーカイブに追加します。 複数のファイルを追加するために繰り返すことができます。 ファイルのアーカイブ内のパスは、 この
+\fB\-\-add\-virtual\-file\fR
+の前の最後の
+\fB\-\-prefix\fR
+オプション (存在する場合) の値と
+\fB<path>\fR
+を連結することによって構築されます。
+.sp
+\fB<path>\fR
+引数は二重引用符文字(\fB"\fR)で囲む事ができます。その場合含まれるファイル名は C スタイルの文字列として解釈されます。つまり、バックスラッシュはエスケープ文字として解釈されます。 パスにコロン(\fB:\fR)が含まれている場合、またはパスが二重引用符文字(\fB"\fR)で開始または終了する場合、コロンがパスとコンテンツの間の区切り記号として誤って解釈されないように、パスをクォートする必要があります。
+.sp
+ファイル・モードは通常のファイル(regular file)に制限されており、オプションはプラットフォームに依存するコマンド・ラインの制限を受ける場合があります。 重要なケースでは、未追跡ファイル(untracked file)を作成し、代わりに
+\fB\-\-add\-file\fR
+を使用します。
+.RE
+.PP
+\fB\-\-worktree\-attributes\fR
+.RS 4
+作業ツリーの \&.gitattributes ファイルでも属性を探します(
+the section called \(lqATTRIBUTES\(rq
+参照)。
+.RE
+.PP
+<extra>
+.RS 4
+これは、アーカイババックエンドが理解できる任意のオプションです。次のセクションを参照してください。
+.RE
+.PP
+\fB\-\-remote=<repo>\fR
+.RS 4
+ローカルリポジトリからtarアーカイブを作成する代わりに、リモートリポジトリからtarアーカイブを取得します。リモートリポジトリは、
+\fB<tree\-ish>\fR
+で許可されるsha1式に制限を課す場合があることに注意してください。詳細については、
+\fBgit-upload-archive\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-exec=<git\-upload\-archive>\fR
+.RS 4
+\fB\-\-remote\fR
+とともに使用して、リモート側の「git\-upload\-archive」へのパスを指定します。
+.RE
+.PP
+<tree\-ish>
+.RS 4
+アーカイブを作成するためのツリーまたはコミット。
+.RE
+.PP
+<path>
+.RS 4
+オプションのパスパラメータがない場合、現在の作業ディレクトリのすべてのファイルとサブディレクトリがアーカイブに含まれます。1つ以上のパスが指定されている場合、それらのみが含まれます。
+.RE
+.SH "BACKEND EXTRA OPTIONS"
+.SS "zip"
+.PP
+\fB\-<digit>\fR
+.RS 4
+圧縮レベルを指定します。 値が大きいほど、コマンドはより小さいサイズに圧縮するためにより多くの時間を費やすことができます。 サポートされている値は
+\fB\-0\fR
+(格納のみ) から
+\fB\-9\fR
+(最良の比率) までです。 指定しない場合のデフォルトは
+\fB\-6\fR
+です。
+.RE
+.SS "tar"
+.PP
+\fB\-<number>\fR
+.RS 4
+圧縮レベルを指定します。 この値は、
+\fBtar\&.<format>\&.command\fR
+で設定された圧縮コマンドに渡されます。 サポートされているレベルのリストと、このオプションが指定されていない場合のデフォルトのレベルについては、構成コマンド(configured command)のマニュアル・ページを参照してください。
+.RE
+.SH "CONFIGURATION"
+.PP
+tar\&.umask
+.RS 4
+この変数は、tarアーカイブエントリの許可ビットを制限するために使用できます。 デフォルトは 0002 で、ワールド書き込みビットをオフにします。特別な値「user」は、代わりにアーカイブユーザーのumaskが使用されることを示します。詳細については、 umask(2) を参照してください。
+\fB\-\-remote\fR
+が使用されている場合、リモートリポジトリの設定のみが有効になります。
+.RE
+.PP
+tar\&.<format>\&.command
+.RS 4
+この変数は、
+\fBgit archive\fR
+によって生成されたtar出力をパイプするシェルコマンドを指定します。コマンドは、標準入力から生成されたtarファイル取り込み、シェルを使用して実行され、標準出力に最終出力を生成する必要があります。圧縮レベルのオプションはすべてコマンドに渡されます(例:
+\fB\-9\fR
+)。
+.sp
+\fBtar\&.gz\fR
+および
+\fBtgz\fR
+形式は自動的に定義され、デフォルトで魔法の(magic)コマンド
+\fBgit archive gzip\fR
+を使用します。これにより、 gzip の内部実装が呼び出されます。
+.RE
+.PP
+tar\&.<format>\&.remote
+.RS 4
+trueの場合、
+\fBgit-upload-archive\fR(1)
+を介してリモートクライアントで使用できるように
+\fB<format>\fR
+を有効にします。 ユーザー定義形式の場合、デフォルトは false ですが、
+\fBtar\&.gz\fR
+および
+\fBtgz\fR
+形式の場合は true です。
+.RE
+.SH "ATTRIBUTES"
+.PP
+export\-ignore
+.RS 4
+属性export\-ignoreを持つファイルとディレクトリは、アーカイブファイルに追加されません。 詳細については、
+\fBgitattributes\fR(5)
+を参照してください。
+.RE
+.PP
+export\-subst
+.RS 4
+属性export\-substがファイルに設定されている場合、Gitはこのファイルをアーカイブに追加するときにいくつかのプレースホルダーを展開します。詳細については、
+\fBgitattributes\fR(5)
+を参照してください。
+.RE
+.sp
+注意: デフォルトでは、属性はアーカイブされているツリーの \fB\&.gitattributes\fR ファイルから取得されることに注意してください。事後に出力が生成される方法を微調整したい場合(たとえば、 \fB\&.gitattributes\fR に適切な export\-ignore を追加せずにコミットした場合)、必要に応じてチェックアウトされた \fB\&.gitattributes\fR ファイルを調整して \fB\-\-worktree\-attributes\fR オプションを使用します。 または、 \fB$GIT_DIR/info/attributes\fR ファイルに、ツリーをアーカイブするときに適用する必要のある属性を保持することもできます。
+.SH "EXAMPLES"
+.PP
+\fBgit archive \-\-format=tar \-\-prefix=junk/ HEAD | (cd /var/tmp/ && tar xf \-)\fR
+.RS 4
+現在のブランチの最新のコミットの内容を含むtarアーカイブを作成し、それを
+\fB/var/tmp/junk\fR
+ディレクトリに抽出します。
+.RE
+.PP
+\fBgit archive \-\-format=tar \-\-prefix=git\-1\&.4\&.0/ v1\&.4\&.0 | gzip >git\-1\&.4\&.0\&.tar\&.gz\fR
+.RS 4
+これは、 v1\&.4\&.0リリース用の圧縮tarballを作成します。
+.RE
+.PP
+\fBgit archive \-\-format=tar\&.gz \-\-prefix=git\-1\&.4\&.0/ v1\&.4\&.0 >git\-1\&.4\&.0\&.tar\&.gz\fR
+.RS 4
+これは、上記と同じですが、組み込みのtar\&.gz処理を使用します。
+.RE
+.PP
+\fBgit archive \-\-prefix=git\-1\&.4\&.0/ \-o git\-1\&.4\&.0\&.tar\&.gz v1\&.4\&.0\fR
+.RS 4
+これは上記と同じですが、形式は出力ファイル名から推測されます。
+.RE
+.PP
+\fBgit archive \-\-format=tar \-\-prefix=git\-1\&.4\&.0/ v1\&.4\&.0^{tree} | gzip >git\-1\&.4\&.0\&.tar\&.gz\fR
+.RS 4
+v1\&.4\&.0リリース用の圧縮tarballを作成しますが、グローバル拡張paxヘッダー(global extended pax header)はありません。
+.RE
+.PP
+\fBgit archive \-\-format=zip \-\-prefix=git\-docs/ HEAD:Documentation/ > git\-1\&.4\&.0\-docs\&.zip\fR
+.RS 4
+現在のヘッド のDocumentation/ ディレクトリにあるすべてのものを「git\-1\&.4\&.0\-docs\&.zip」にプレフィックス「git\-docs/」を付けて配置します。
+.RE
+.PP
+\fBgit archive \-o latest\&.zip HEAD\fR
+.RS 4
+現在のブランチの最新のコミットの内容を含むZipアーカイブを作成します。出力形式は、出力ファイルの拡張子によって推測されることに注意してください。
+.RE
+.PP
+\fBgit archive \-o latest\&.tar \-\-prefix=build/ \-\-add\-file=configure \-\-prefix= HEAD\fR
+.RS 4
+プレフィックス無しの現在のブランチの最新のコミットのコンテンツと、プレフィックス
+\fBbuild/\fR
+付きの未追跡ファイル
+\fBconfigure\fR
+を含む tar アーカイブを作成します。
+.RE
+.PP
+\fBgit config tar\&.tar\&.xz\&.command "xz \-c"\fR
+.RS 4
+LZMA圧縮tarファイルを作成するための「tar\&.xz」形式を構成します。
+\fB\-\-format=tar\&.xz\fR
+を指定するか、
+\fB\-o foo\&.tar\&.xz\fR
+のような出力ファイルを作成することで使用できます。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgitattributes\fR(5)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,117 @@
+'\" t
+.\"     Title: git-shell
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-SHELL" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-shell \- GitのみのSSHアクセス用の制限付きログインシェル
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIchsh\fR \-s $(command \-v git\-shell) <user>
+\fIgit clone\fR <user>\fB@localhost:/path/to/repo\&.git\fR
+\fIssh\fR <user>\fB@localhost\fR
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+これは、制限されたGitアクセスを提供するためのSSHアカウントのログインシェルです。プル/プッシュ機能を実装するサーバー側のGitコマンドと、ユーザーのホームディレクトリの \fBgit\-shell\-commands\fR という名前のサブディレクトリにあるカスタムコマンドの実行のみを許可します。
+.SH "COMMANDS"
+.sp
+\fIgit shell\fR は、 \fB\-c\fR オプションの後に以下のコマンドを受け入れます:
+.PP
+\fIgit receive\-pack <argument>\fR, \fIgit upload\-pack <argument>\fR, \fIgit upload\-archive <argument>\fR
+.RS 4
+対応するサーバー側コマンドを呼び出して、クライアントの「git push」または「git fetch」または「git archive \-\-remote」リクエストをサポートします。
+.RE
+.PP
+\fIcvs server\fR
+.RS 4
+CVSサーバーを模倣します。
+\fBgit-cvsserver\fR(1)
+参照。
+.RE
+.sp
+\fB~/git\-shell\-commands\fR ディレクトリが存在する場合、 \fIgit shell\fR は、ユーザーのホームディレクトリから "\fBgit\-shell\-commands/<command> <arguments>\fR" を実行することにより他のカスタムコマンドも処理します。
+.SH "INTERACTIVE USE"
+.sp
+デフォルトでは、上記のコマンドは \fB\-c\fR オプションでのみ実行できます。シェルはインタラクティブではありません。
+.sp
+\fB~/git\-shell\-commands\fR ディレクトリが存在する場合、 \fIgit shell\fR をインタラクティブに実行することもできます(引数なしで)。 \fBhelp\fR コマンドが \fBgit\-shell\-commands\fR ディレクトリにある場合、許可されたアクションの概要をユーザーに提供するために実行されます。次に、 `git> ` プロンプトが表示され、「git\-shell\-commands」ディレクトリから任意のコマンドを入力することができます。「exit」を使用すれば接続を閉じることができます。
+.sp
+通常、このモードは、ユーザーがアクセスできるリポジトリの一覧表示、リポジトリの作成、削除、名前変更、またはリポジトリの説明と権限の変更を可能にする管理インターフェイスとして使用されます。
+.sp
+\fBno\-interactive\-login\fR コマンドが存在する場合、それが実行され、対話型シェルが中止(abort)されます。
+.SH "EXAMPLES"
+.sp
+インタラクティブログインを無効にするには、代わりにgreeting(挨拶)を表示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ chsh \-s /usr/bin/git\-shell
+$ mkdir $HOME/git\-shell\-commands
+$ cat >$HOME/git\-shell\-commands/no\-interactive\-login <<\eEOF
+#!/bin/sh
+printf \*(Aq%s\en\*(Aq "Hi $USER! You\*(Aqve successfully authenticated, but I do not"
+printf \*(Aq%s\en\*(Aq "provide interactive shell access\&."
+exit 128
+EOF
+$ chmod +x $HOME/git\-shell\-commands/no\-interactive\-login
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+git\-cvsserverアクセスを有効にするには(なお、git\-shell\-commandsディレクトリを作成するとインタラクティブログインが可能になるため、通常、上記の「no\-interactive\-login」の例が前提条件として必要です):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat >$HOME/git\-shell\-commands/cvs <<\eEOF
+if ! test $# = 1 && test "$1" = "server"
+then
+        echo >&2 "git\-cvsserver only handles \e"server\e""
+        exit 1
+fi
+exec git cvsserver server
+EOF
+$ chmod +x $HOME/git\-shell\-commands/cvs
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+ssh(1), \fBgit-daemon\fR(1), contrib/git\-shell\-commands/README
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

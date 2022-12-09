@@ -1,0 +1,99 @@
+'\" t
+.\"     Title: git-upload-archive
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-UPLOAD\-ARCHIVE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-upload-archive \- アーカイブを git\-archive に送り返す
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit upload\-archive\fR <directory>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fIgit archive \-\-remote\fR によって呼び出され、生成されたアーカイブをGitプロトコルを介して送信します。
+.sp
+このコマンドは通常、エンドユーザーによって直接呼び出されることはありません。 プロトコルのUIは \fIgit archive\fR 側にあり、プログラムのペアはリモートリポジトリからアーカイブを取得するために使用することを目的としています。
+.SH "SECURITY"
+.sp
+履歴から削除されたが、まだ剪定(prune)されてない可能性のあるオブジェクトのプライバシーを保護するために、 \fBgit\-upload\-archive\fR は、リポジトリのrefから到達できないコミットおよびツリーのアーカイブの提供を回避します。ただし、オブジェクトの到達可能性の計算には計算コストがかかるため、 \fBgit\-upload\-archive\fR は、より厳密でありながらチェックしやすい一連のルールを実装します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+クライアントは、refが直接指すコミットまたはツリーを要求できます。 例:
+\fBgit archive \-\-remote=origin v1\&.0\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+クライアントは、
+\fBref：path\fR
+構文を使用して、コミットまたはツリー内のサブツリーを要求できます。例:
+\fBgit archive \-\-remote=origin v1\&.0:Documentation\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+最終結果に到達できる場合でも、クライアントは他のsha1式を使用できません。 たとえば、refから結果に到達できる場合でも、
+\fBmaster^\fR
+のような相対コミットや
+\fBabcd1234\fR
+のようなリテラルsha1は許可されません。
+.RE
+.sp
+注意: 3番目の規則3は、プライバシーに影響を与えない多くの場合を許可しないことに注意してください。これらのルールはgitの将来のバージョンで変更される可能性があり、 \fBgit archive \-\-remote\fR によってアクセスされるサーバーは、これらの正確なルールに従う場合と従わない場合があります。
+.sp
+構成オプション \fBuploadArchive\&.allowUnreachable\fR がtrueの場合、これらの規則は無視され、クライアントは任意のsha1式を使用できます。これは、到達不能なオブジェクトのプライバシーを気にしない場合、またはオブジェクトデータベースが非スマートhttp経由でアクセスできるようにすでに公開されている場合に役立ちます。
+.SH "OPTIONS"
+.PP
+<directory>
+.RS 4
+tarアーカイブを取得するリポジトリ。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

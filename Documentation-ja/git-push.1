@@ -1,0 +1,1496 @@
+'\" t
+.\"     Title: git-push
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-PUSH" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-push \- 関連するオブジェクトとともにリモートrefを更新します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit push\fR [\-\-all | \-\-mirror | \-\-tags] [\-\-follow\-tags] [\-\-atomic] [\-n | \-\-dry\-run] [\-\-receive\-pack=<git\-receive\-pack>]
+           [\-\-repo=<repository>] [\-f | \-\-force] [\-d | \-\-delete] [\-\-prune] [\-v | \-\-verbose]
+           [\-u | \-\-set\-upstream] [\-o <string> | \-\-push\-option=<string>]
+           [\-\-[no\-]signed|\-\-signed=(true|false|if\-asked)]
+           [\-\-force\-with\-lease[=<refname>[:<expect>]] [\-\-force\-if\-includes]]
+           [\-\-no\-verify] [<repository> [<refspec>\&...]]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+指定のrefを完全にするために必要なオブジェクトを送信により、ローカルrefを使用してリモートrefを更新します。
+.sp
+リポジトリに「フック」を設定することで、あなたがリポジトリにプッシュするたびに興味深いことが起こります。 \fBgit-receive-pack\fR(1) のドキュメントを参照してください。
+.sp
+コマンドラインで \fB<repository>\fR 引数を使用してプッシュする場所が指定されてい無い場合、現在のブランチの \fBbranch\&.*\&.remote\fR 構成を参照して、プッシュする場所を決定します。 \fBbranch\&.*\&.remote\fR 構成が無い場合、デフォルトは \fBorigin\fR になります。
+.sp
+コマンドラインで \fB<refspec>\&.\&.\&.\fR 引数や \fB\-\-all\fR, \fB\-\-mirror\fR, \fB\-\-tags\fR オプションを使って何をプッシュするか指定し無かった場合、コマンドは \fBremote\&.*\&.push\fR 構成を参照してデフォルトの \fB<refspec>\fR を探し、それで見つからなかった場合は \fBpush\&.default\fR 構成に準拠して何をプッシュするか決定します(\fBpush\&.default\fR の意味は \fBgit-config\fR(1) を参照ください)。
+.sp
+コマンドラインと構成のどちらもプッシュする対象を指定しない場合、デフォルトの振る舞いが使用されます。それは、 \fBpush\&.default\fR の \fBsimple\fR 値に対応します。 現在のブランチは対応する上流ブランチにプッシュされますが、安全対策として、上流ブランチがローカルブランチと同じ名前でない場合はプッシュが中断(abort)されます。
+.SH "OPTIONS"
+.PP
+<repository>
+.RS 4
+「リモート」(remote)リポジトリはプッシュ操作の宛先です。 このパラメーターは、URL(下記セクション
+GIT URLS
+参照)、または、リモートの名前(下記セクション
+REMOTES
+参照)のどちらかです。
+.RE
+.PP
+<refspec>\&...
+.RS 4
+どの宛先refをどのソースオブジェクトで更新するかを指定します。 <refspec> パラメータの形式は、オプションのプラス
+\fB+\fR
+、ソースオブジェクト <src> 、コロン
+\fB:\fR
+、宛先ref <dst> の順です。
+.sp
+<src> は、プッシュするブランチの名前であることがよくありますが、
+\fBmaster~4\fR
+とか
+\fBHEAD\fR
+などの任意の「SHA\-1式」にすることができます(\fBgitrevisions\fR(7)
+参照)。
+.sp
+<dst>は、このプッシュでリモート側のどのrefが更新されるかを示します。 ここでは任意の式を使用できません。実際のrefには名前を付ける必要があります。
+\fBgit push [<repository>]\fR
+に
+\fB<refspec>\fR
+引数を指定せず、
+\fBremote\&.<repository>\&.push\fR
+構成変数で
+\fB<src>\fR
+を指定して同一のrefを更新する場合、
+\fB:<dst>\fR
+の部分を省略することができるようになりました \(em このようなプッシュは、コマンドラインで
+\fB<refspec>\fR
+を指定しなくても、
+\fB<src>\fR
+が通常更新するrefを更新することになります。 それ以外の場合、
+\fB:<dst>\fR
+がないということは、\fB<src>\fR
+と同一のrefを更新することを意味します。
+.sp
+<dst> が
+\fBrefs/\fR(例:
+\fBrefs/heads/master\fR)で始まらない場合、プッシュされる <src> の種類と <dst> があいまいかどうかから、それが
+\fBrefs/*\fR
+上のどこに属するか推測しようとします。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<dst> が <repository> リモートのrefを明確に参照している場合は、そのrefにプッシュします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<src>が
+\fBrefs/heads/\fR
+または
+\fBrefs/tags/\fR
+で始まるrefに解決される場合は、その解決されたrefを <dst> の前に追加します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+将来、他のあいまいさの解決策が追加される可能性がありますが、今のところ、他の場合では、試行した内容を示すエラー出力し、そして
+\fBadvice\&.pushUnqualifiedRefname\fR
+構成に応じて、あなたがプッシュしたい
+\fBrefs/\fR
+名前空間を提案します。
+.RE
+.sp
+<src>によって参照されるオブジェクトは、リモート側の<dst>参照を更新するために使用されます。 これが許可されるかどうかは、以下で詳細に説明するように、
+\fBrefs/*\fR
+のどこに<dst>参照が存在するかによって異なります。これらのセクションでは、「更新」(update)とは、削除以外の変更を意味します。
+.sp
+\fBrefs/heads/*\fR
+名前空間はcommitオブジェクトのみを受け入れ、早送り(fast\-forward)できる場合にのみ更新します。
+.sp
+\fBrefs/tags/*\fR
+名前空間は(コミット、ツリー、ブロブにタグを付けることができるため、)あらゆる種類のオブジェクトを受け入れ、それらへの更新は拒否(reject)されます。
+.sp
+\fBrefs/{tags,heads}/*\fR
+の外側の任意の名前空間に任意のタイプのオブジェクトをプッシュすることが可能です。 タグとコミットの場合、更新が許可されるかどうかの判断のために、これらは
+\fBrefs/heads/*\fR
+内のコミットであるかのように扱われます。
+.sp
+つまり、\fBrefs/{tags,heads}/*\fR
+の外部でのコミットやタグの早送りは、早送りされるものがコミットではなく、たまたま置き換えられる最後のタグ(またはコミット)の早送りである新しいコミットを指しているタグオブジェクトであっても、許可されます。 タグを全く別のタグに置き換えることも、同一のコミットを指していれば可能です。また、剥かれたタグ(peeled tag)をプッシュすることもできます。つまり、既存のタグオブジェクトが指しているコミット、または既存のコミットが指している新しいタグオブジェクトをプッシュします。
+.sp
+\fBrefs/{tags,heads}/*\fR
+の外側にあるツリーオブジェクトとブロブオブジェクトは、
+\fBrefs/tags/*\fR
+の内側にある場合と同一の扱いであり、更新は拒否されます。
+.sp
+更新が許可されていないものに関する上記のすべてのルールは、オプションの先頭の
+\fB+\fR
+をrefspecに追加する(または
+\fB\-\-force\fR
+コマンドラインオプションを使用する)ことでオーバーライドできます。 これに対する唯一の例外は、
+\fBrefs/heads/*\fR
+名前空間が非コミットオブジェクトを受け入れるように強制することはないということです。 フックと構成は、これらのルールをオーバーライドまたは修正することもできます。たとえば、
+\fBgit-config\fR(1)
+の
+\fBreceive\&.denyNonFastForwards\fR
+と、
+\fBgithooks\fR(5)
+の
+\fBpre\-receive\fR
+や
+\fBupdate\fR
+を参照してください。
+.sp
+空の <src> をプッシュすると、リモートリポジトリから <dst> ref を削除できます。 構成またはフックによって禁止されている場合を除き、削除は常に refspec の先頭に
+\fB+\fR
+を付けずに受け入れられます(または
+\fB\-\-force\fR)。
+\fBgit-config\fR(1)
+の
+\fBreceive\&.denyDeletes\fR
+と、
+\fBgithooks\fR(5)
+の
+\fBpre\-receive\fR
+や
+\fBupdate\fR
+を参照してください。
+.sp
+特別なrefspec
+\fB:\fR
+(または非早送り更新を許可する場合は
+\fB+:\fR)は、Gitに、「一致する」ブランチをプッシュするように指示します。 ローカル側に存在するすべてのブランチについて、同じ名前のブランチがリモート側にすでに存在する場合、リモート側が更新されます。
+.sp
+\fBtag <tag>\fR
+は、
+\fBrefs/tags/<tag>:refs/tags/<tag>\fR
+と同じ意味です。
+.RE
+.PP
+\fB\-\-all\fR
+.RS 4
+すべてのブランチ(つまり、
+\fBrefs/heads/\fR
+の下のrefs)をプッシュします。 他の<refspec>と一緒に使用することはできません。
+.RE
+.PP
+\fB\-\-prune\fR
+.RS 4
+ローカルに対応するものがないリモートブランチを削除します。 たとえば、同じ名前のローカルブランチがもう存在しない場合、リモートブランチ
+\fBtmp\fR
+は削除されます。 これは refspecs も尊重し、
+\fBgit push \-\-prune remote refs/heads/*:refs/tmp/*\fR
+は、リモートの
+\fBrefs/tmp/foo\fR
+が
+\fBrefs/heads/foo\fR
+が存在しない場合に削除されることを確認するものです。
+.RE
+.PP
+\fB\-\-mirror\fR
+.RS 4
+プッシュする各refに名前を付ける代わりに、
+\fBrefs/\fR
+の下のすべての参照(\fBrefs/heads/\fR
+と
+\fBrefs/remotes/\fR
+と
+\fBrefs/tags/\fR
+を含むがこれらに限定されない)がリモートリポジトリへミラーリングされるように指定します。 新しく作成されたローカルrefはリモートエンドにプッシュされ、ローカルで更新されたrefはリモートエンドで強制的に更新され、削除されたrefはリモートエンドから削除されます。 これは、構成オプション
+\fBremote\&.<remote>\&.mirror\fR
+が設定されている場合のデフォルトです。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+実際に更新を送信する以外はすべて行います。
+.RE
+.PP
+\fB\-\-porcelain\fR
+.RS 4
+機械可読出力を生成します。 各refの出力ステータス行はタブで区切られ、stderrではなくstdoutに送信されます。 refの完全な記号名が表示されます。
+.RE
+.PP
+\fB\-d\fR, \fB\-\-delete\fR
+.RS 4
+リストされているすべてのrefがリモートリポジトリから削除されます。 これは、すべてのrefの前にコロン(\fB:\fR)を付けるのと同一です。
+.RE
+.PP
+\fB\-\-tags\fR
+.RS 4
+コマンドラインに明示的にリストされているrefspecsに加えて、
+\fBrefs/tags\fR
+の下にあるすべてのrefがプッシュされます。
+.RE
+.PP
+\fB\-\-follow\-tags\fR
+.RS 4
+このオプションがなければプッシュされるであろうすべてのrefをプッシュし、さらに
+\fBrefs/tags\fR
+にある、リモートからは見つからないがプッシュされるrefから到達可能なコミットっぽい何かを指す注釈付きタグをプッシュします。 これは、設定変数
+\fBpush\&.followTags\fR
+で指定することもできます。 詳しくは
+\fBgit-config\fR(1)
+にある
+\fBpush\&.followTags\fR
+を参照してください。
+.RE
+.PP
+\fB\-\-[no\-]signed\fR, \fB\-\-signed=(true|false|if\-asked)\fR
+.RS 4
+プッシュ要求をGPG署名して、受信側のrefを更新し、フックでチェックしたり、ログに記録したりできるようにします。
+\fBfalse\fR
+または
+\fB\-\-no\-signed\fR
+の場合、署名は試行されません。
+\fBtrue\fR
+または
+\fB\-\-signed\fR
+の場合、サーバーが署名付きプッシュをサポートしていないと、プッシュは失敗します。
+\fBif\-asked\fR
+に設定されている場合、サーバーが署名されたプッシュをサポートしている場合にのみ署名します。
+\fBgpg \-\-sign\fR
+の実際の呼び出しが失敗した場合も、プッシュは失敗します。 受信側の詳細については、
+\fBgit-receive-pack\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-[no\-]atomic\fR
+.RS 4
+可能な場合は、リモート側でアトミック取引(atomic transaction)を使用します。 すべてのrefが更新されるか、エラーが発生した場合、refは更新されません。 サーバーがアトミックプッシュをサポートしていない場合、プッシュは失敗します。
+.RE
+.PP
+\fB\-o <option>\fR, \fB\-\-push\-option=<option>\fR
+.RS 4
+指定の文字列をサーバーに送信します。サーバーは、それらを受信前(pre\-receive)フックと受信後(post\-receive)フックに渡します。 指定の文字列には、NUL文字またはLF文字を含めることはできません。 複数の
+\fB\-\-push\-option=<option>\fR
+が指定されている場合、それらはすべてコマンドラインにリストされている順序で相手側に送信されます。 コマンドラインで
+\fB\-\-push\-option=<option>\fR
+が指定されていない場合は、代わりに構成変数
+\fBpush\&.pushOption\fR
+の値が使用されます。
+.RE
+.PP
+\fB\-\-receive\-pack=<git\-receive\-pack>\fR, \fB\-\-exec=<git\-receive\-pack>\fR
+.RS 4
+リモート側の
+\fBgit\-receive\-pack\fR
+プログラムへのパス。 sshを介してリモートリポジトリにプッシュするときや、デフォルトの$PATHのディレクトリに当該プログラムが無いときに便利です。
+.RE
+.PP
+\fB\-\-[no\-]force\-with\-lease\fR, \fB\-\-force\-with\-lease=<refname>\fR, \fB\-\-force\-with\-lease=<refname>:<expect>\fR
+.RS 4
+通常、「git push」は、上書きに使用されたローカルrefの祖先ではないリモートrefの更新を拒絶(refuse)します。
+.sp
+リモートrefの現在の値が期待の(expect)値である場合、このオプションはこの制限をオーバーライドします。 それ以外の場合、「git push」は失敗します。
+.sp
+あなたが、すでに公開しているものをリベースする必要があると想像してください。 最初に公開した履歴をリベースされた履歴に置き換えるには、「早送りしなければならない」ルールをバイパスする必要があります。 あなたのリベース作業中に他の誰かがあなたの元の履歴の上に構築した場合、リモートのブランチの先端は彼らのコミットで前進するかもしれません、そして、あなたが
+\fB\-\-force\fR
+を伴って盲目的にプッシュすると彼らの作業内容は失われてしまいます。
+.sp
+このオプションを使用すると、更新している履歴がリベースされ、置き換えたいものであると期待していると言う事ができます。 リモートrefがまだあなたが指定したコミットを指している場合は、誰もrefに対して何もしなかったことの確認になります。 これは、参照を明示的にロックせずに「リース」(lease;賃借権期間)を取得するようなものであり、リモートrefは「リース」がまだ有効な場合にのみ更新されます。
+.sp
+\fB\-\-force\-with\-lease\fR
+単独では、詳細を指定しないため、現在の値がリモート追跡ブランチと同じである必要があり、更新されるすべてのリモートrefを保護します。
+.sp
+\fB\-\-force\-with\-lease=<refname>\fR
+では、期待する値(expected value)を指定しないので、名前付きrefを(単独で)保護します。更新される場合は、現在の値をリモート追跡ブランチと同じにする必要があります。
+.sp
+\fB\-\-force\-with\-lease=<refname>:<expect>\fR
+は、現在の値が指定の値
+\fB<expect>\fR
+と同じである必要があることで、指定のref(単独)を保護します(これは、refnameに対して持っているリモート追跡ブランチとは異なることが許可されています。または、この形式を使用する場合は、そのようなリモート追跡ブランチを持つ必要はありません)。
+\fB<expect>\fR
+が空の文字列である場合、指定のrefはまだ存在していてはなりません。
+.sp
+注意: refの期待される現在の値を明示的に指定する
+\fB\-\-force\-with\-lease=<refname>:<expect>\fR
+以外のすべての形式はまだ実験的であり、この機能の経験を積むにつれてセマンティクスが変わる可能性があることに注意してください。
+.sp
+\fB\-\-no\-force\-with\-lease\fR
+は、コマンドラインでそれ以前に指定した全ての
+\fB\-\-force\-with\-lease\fR
+をキャンセルします。
+.sp
+安全性に関する一般的な注意: このオプションを期待値(expected value)なしに指定すると、たとえば cronjob でリポジトリの
+\fBgit fetch origin\fR
+のように、プッシュ先のリモートで暗黙的に
+\fBgit fetch\fR
+を実行するものと非常に悪い相互作用が発生します。
+.sp
+\fB\-\-force\fR
+に対して提供される保護は、作業の基になっていない後続の変更が破壊されないようにすることですが、バックグラウンドプロセスがバックグラウンドでrefを更新している場合、これは簡単に無効になります。 私達は、あなたには既に分かっているはずの参照をやっつけるヒューリスティックとして使用することができるリモートトラッキング情報以外何も持っていません。
+.sp
+あなたのエディターまたは他のシステムがバックグラウンドで
+\fBgit fetch\fR
+を実行している場合、これを軽減する方法は、単に別のリモートをセットアップすることです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git remote add origin\-push $(git config remote\&.origin\&.url)
+git fetch origin\-push
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これで、バックグラウンドプロセスが
+\fBgit fetch origin\fR
+を実行するときは、
+\fBorigin\-push\fR
+の参照は更新されないため、以下のようにコマンドを実行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git push \-\-force\-with\-lease origin\-push
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは、あなたが手動で
+\fBgit fetch origin\-push\fR
+を実行しない限り、失敗するでしょう。 もちろん、この方法は
+\fBgit fetch \-\-all\fR
+の実行によって完全に破綻します。この場合、あなたはそれを無効にするか、以下のようになもっと退屈なことをする必要があります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git fetch              # update \*(Aqmaster\*(Aq from remote
+git tag base master    # mark our base point
+git rebase \-i master   # rewrite some commits
+git push \-\-force\-with\-lease=master:base master:master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+つまり、上流のコードを見て、上書きしても良いと思ったバージョンの
+\fBbase\fR
+タグを作成し、履歴を書き換え、最後にリモートバージョンがまだ
+\fBbase\fR
+にあれば、ローカルの
+\fBremotes/origin/master\fR
+がバックグラウンドで何を更新したかに関わらず、変更を
+\fBmaster\fR
+に強制的にプッシュします。
+.sp
+あるいは、
+\fB\-\-force\-with\-lease[=<refname>]\fR
+と共に補助オプションとして
+\fB\-\-force\-if\-includes\fR
+を指定すると(つまり、リモート側の ref が正確にどのコミットを指す必要があるか、あるいはリモート側のどの ref を保護しているのかを明示せずに)、 プッシュ時に、バックグラウンドで暗黙的に更新されていたかもしれないリモート追跡 ref からの更新がローカルで統合されているかを、強制更新ができる前に確認することができるようになります。
+.RE
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+通常、コマンドは、上書きに使用されたローカルrefの祖先ではないリモートrefの更新を拒否します。 また、
+\fB\-\-force\-with\-lease\fR
+オプションを使用すると、コマンドは、現在(current)値が期待(expect)値と一致しないリモートrefの更新を拒否します。
+.sp
+このフラグはこれらのチェックを無効にし、リモートリポジトリがコミットを失う原因となる可能性があります。 注意して使用してください。
+.sp
+注意:
+\fB\-\-force`は、プッシュされるすべてのrefに適用されることに注意してください。 したがって、 `push\&.default\fR
+を
+\fBmatching\fR
+に設定したり、
+\fBremote\&.*\&.push\fR
+で構成された複数のプッシュ先で使用すると、現在のブランチ以外のref(リモートの対応物の背後にあるローカル参照を含む)が上書きされる可能性があります。 1つのブランチのみにプッシュを強制するには、 refspecの前に
+\fB+\fR
+を使用してプッシュします(例:
+\fBgit push origin +master\fR
+を使用して、
+\fBmaster\fR
+ブランチにプッシュを強制します)。 詳細については、上記「<refspec>\&...」セクションを参照してください。
+.RE
+.PP
+\fB\-\-[no\-]force\-if\-includes\fR
+.RS 4
+リモート追跡refの先端がローカルに統合されている場合にのみ、更新を強制します。
+.sp
+このオプションを使用すると、リモートトラッキング参照の先端が、書き換えのためにそれに基づいているローカルブランチの「ref log」エントリの1つから到達可能かどうかを確認(verify)するチェックが有効になります。 このチェックでは、リモートからの更新がローカルに取り込まれていない場合、強制更新を拒否することで、更新がローカルに取り込まれていることを確認します。
+.sp
+オプションが
+\fB\-\-force\-with\-lease\fR
+を指定せずに渡された場合、または
+\fB\-\-force\-with\-lease=<refname>:<expect>\fR
+と一緒に指定された場合、それは「何もしません」(no\-op)。
+.sp
+\fB\-\-no\-force\-if\-includes\fR
+を指定すると、この振る舞いが無効になります。
+.RE
+.PP
+\fB\-\-repo=<repository>\fR
+.RS 4
+このオプションは、<repository> 引数と同等です。 両方を指定すると、このオプションではなくコマンドライン引数が優先されます。
+.RE
+.PP
+\fB\-u\fR, \fB\-\-set\-upstream\fR
+.RS 4
+最新の、または正常にプッシュされたすべてのブランチについて、引数のない
+\fBgit-pull\fR(1)
+および その他のコマンドで使用されるアップストリーム(追跡)参照を追加します。 詳細については
+\fBgit-config\fR(1)
+の
+\fBbranch\&.<name>\&.merge\fR
+を参照してください。
+.RE
+.PP
+\fB\-\-[no\-]thin\fR
+.RS 4
+これらのオプションは
+\fBgit-send-pack\fR(1)
+に渡されます。 送信側と受信側が同一オブジェクトを多く共有している場合、thin転送は送信データの量を大幅に削減します。 デフォルトは
+\fB\-\-thin\fR
+です。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+エラーが発生しない限り、更新されたrefのリストを含むすべての出力を抑制します。 進行状況を標準エラーストリームに報告しません。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+おしゃべりな実行を行います。
+.RE
+.PP
+\fB\-\-progress\fR
+.RS 4
+\fB\-q\fR
+が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送信されていない場合でも、進行状況を強制します。
+.RE
+.PP
+\fB\-\-no\-recurse\-submodules\fR, \fB\-\-recurse\-submodules=check|on\-demand|only|no\fR
+.RS 4
+プッシュされるリビジョンによって使用されるすべてのサブモジュールコミットがリモート追跡ブランチで使用可能であることを確認するために使用できます。
+\fBcheck\fR
+が使用されている場合、Gitは、プッシュされるリビジョンで変更されたすべてのサブモジュールコミットが、サブモジュールの少なくとも1つのリモートで使用可能であることを確認します。 コミットが欠落している場合、プッシュは中止され、ゼロ以外のステータスで終了(exit)します。
+\fBon\-demand\fR
+が使用されている場合、プッシュされるリビジョンで変更されたすべてのサブモジュールがプッシュされます。 on\-demand で必要なすべてのリビジョンをプッシュできなかった場合も中止(abort)され、ゼロ以外のステータスで終了(exit)します。
+\fBonly\fR
+が使用されている場合、スーパープロジェクトがプッシュされないままである間、すべてのサブモジュールが再帰的にプッシュされます。 サブモジュールの再帰が必要ない場合は、値
+\fBno\fR
+または
+\fB\-\-no\-recurse\-submodules\fR
+を使用して、
+\fBpush\&.recurseSubmodules\fR
+構成変数をオーバーライドできます。
+.RE
+.PP
+\fB\-\-[no\-]verify\fR
+.RS 4
+pre\-push フックをON/OFFします(\fBgithooks\fR(5)
+参照)。 デフォルトは
+\fB\-\-verify｀ で、フックにプッシュを防ぐ機会を与えます。 `\-\-no\-verify\fR
+を使用すると、フックは完全にバイパスされます。
+.RE
+.PP
+\fB\-4\fR, \fB\-\-ipv4\fR
+.RS 4
+IPv6アドレスを無視して、IPv4アドレスのみを使用します。
+.RE
+.PP
+\fB\-6\fR, \fB\-\-ipv6\fR
+.RS 4
+IPv4アドレスを無視して、IPv6アドレスのみを使用します。
+.RE
+.SH "GIT URLS"
+.sp
+一般に、URLには、トランスポートプロトコル、リモートサーバーのアドレス、およびリポジトリへのパスに関する情報が含まれています。トランスポートプロトコルによっては、一部の情報が欠落している場合があります。
+.sp
+Gitはsshとgitとhttpとhttpsプロトコルをサポートします(さらにftpとftpsをフェッチに使用できますが、これは非効率的で非推奨です。使用しないでください)。
+.sp
+ネイティブトランスポート(つまり、 git:// URL)は認証を行わないため、セキュリティで保護されていないネットワークでは注意して使用する必要があります。
+.sp
+以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ssh://[user@]host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+git://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http[s]://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ftp[s]://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+代替のscpのような構文をsshプロトコルで使用することもできます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+[user@]host\&.xz:path/to/repo\&.git/
+.RE
+.sp
+この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカルパスを区別するのに役立ちます。たとえば、ローカルパス \fBfoo:bar\fR を、絶対パスまたは \fB\&./foo:bar\fR として指定して、 ssh url として誤って解釈されないようにすることができます。
+.sp
+sshおよびgitプロトコルは、さらに ~username 拡張をサポートします:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ssh://[user@]host\&.xz[:port]/~[user]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+git://host\&.xz[:port]/~[user]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+[user@]host\&.xz:/~[user]/path/to/repo\&.git/
+.RE
+.sp
+Gitでもネイティブにサポートされているローカルリポジトリの場合、以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file:///path/to/repo\&.git/
+.RE
+.sp
+これらの2つの構文は、前者が \fB\-\-local\fR オプションの機能を含むクローン作成の場合を除いて、ほとんど同等です。 詳細については、 \fBgit-clone\fR(1) を参照してください。
+.sp
+「git clone」と「git fetch」と「git pull」は、「git push」と違って適切なバンドルファイルを受け入れます。 \fBgit-bundle\fR(1) を参照してください。
+.sp
+Gitが特定のトランスポートプロトコルを処理する方法を知らない場合、Gitは \fIremote\-<transport>\fR リモートヘルパー(存在する場合)を使用しようとします。リモートヘルパーを明示的に要求するには、以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<transport>::<address>
+.RE
+.sp
+ここで、 <address> は、パス、サーバーとパス、または呼び出されている特定のリモートヘルパーによって認識される任意のURLのような文字列です。詳細については、 \fBgitremote-helpers\fR(7) を参照してください。
+.sp
+同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "<actual url base>"]
+                insteadOf = <other url base>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例えば、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "git://git\&.host\&.xz/"]
+                insteadOf = host\&.xz:/path/to/
+                insteadOf = work:
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"work:repo\&.git" や "host\&.xz:/path/to/repo\&.git" のようなURLは、任意のコンテキストで、"git://git\&.host\&.xz/repo\&.git" に書き換えられます。
+.sp
+プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "<actual url base>"]
+                pushInsteadOf = <other url base>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例えば、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "ssh://example\&.org/"]
+                pushInsteadOf = git://example\&.org/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"git://example\&.org/path/to/repo\&.git" のようなURLは、プッシュの場合は "ssh://example\&.org/path/to/repo\&.git" に書き換えられますが、プルは引き続き元のURLのままです。
+.SH "REMOTES"
+.sp
+\fB<repository>\fR 引数として、URLの代わりに以下のいずれかの名前を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Git構成ファイル(configuration file)内のリモート(remote)として、
+\fB$GIT_DIR/config\fR
+または
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB$GIT_DIR/remotes\fR
+ディレクトリ内のファイル または
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB$GIT_DIR/branches\fR
+ディレクトリ内のファイル
+.RE
+.sp
+これらはすべて、gitがデフォルトで使用するrefspecをそれぞれ含んでいるため、コマンドラインからrefspecを省略できます。
+.SS "Named remote in configuration file"
+.sp
+あなたは、 \fBgit-remote\fR(1) を使うか、または \fBgit-config\fR(1) を使うか、または \fB$GIT_DIR/config\fR ファイルを手動で編集して、これ以前に構成したリモートの名前から選択できます。このリモートのURLは、リポジトリへのアクセスに使用されます。コマンドラインでrefspecを指定しない場合、このリモートのrefspecがデフォルトで使用されます。構成ファイルのエントリは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [remote "<name>"]
+                url = <URL>
+                pushurl = <pushurl>
+                push = <refspec>
+                fetch = <refspec>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB<pushurl>\fR はプッシュにのみ使用されます。 これはオプションであり、デフォルトは \fB<URL>\fR です。
+.SS "Named file in \fB$GIT_DIR/remotes\fR"
+.sp
+あなたは、 \fB$GIT_DIR/remotes\fR でファイル名を指定できます。このファイルのURLは、リポジトリへのアクセスに使用されます。コマンドラインでrefspecを指定しない場合、このファイルのrefspecがデフォルトとして使用されます。このファイルの形式は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        URL: one of the above URL format
+        Push: <refspec>
+        Pull: <refspec>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBPush:\fR 行は \fBgit push\fR で使用され、 \fBPull:\fR 行は \fBgit pull\fR と \fBgit fetch\fR で使用されます。追加のブランチマッピングのために、複数の \fBPush:\fR および \fBPull:\fR 行を指定できます。
+.SS "Named file in \fB$GIT_DIR/branches\fR"
+.sp
+\fB$GIT_DIR/branches\fR でファイル名を指定できます。このファイルのURLは、リポジトリへのアクセスに使用されます。 このファイルの形式は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        <URL>#<head>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB<URL>\fR は必須です。 \fB#<head>\fR はオプションです。
+.sp
+コマンドラインで指定しない場合、操作に応じて、gitは以下のrefspecのいずれかを使用します。 \fB<branch>\fR は \fB$GIT_DIR/branchs\fR 内のこのファイルの名前であり、 \fB<head>`はデフォルトで `master\fR になります。
+.sp
+git fetch は以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        refs/heads/<head>:refs/heads/<branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+git push は以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        HEAD:refs/heads/<head>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "OUTPUT"
+.sp
+\fBgit push\fR の出力は、使用する転送方法によって異なります。 このセクションでは、Gitプロトコルで(ローカルまたはssh経由で)プッシュするときの出力について説明します。
+.sp
+プッシュのステータスは表形式で出力され、各行は単一のrefのステータスを表します。 各行の形式は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ <flag> <summary> <from> \-> <to> (<reason>)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-\-porcelain\fR が使用されている場合、出力の各行は以下の形式になります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ <flag> \et <from>:<to> \et <summary> (<reason>)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+最新のrefのステータスは、 \fB\-\-porcelain\fR または \fB\-\-verbose\fR オプションが使用されている場合にのみ表示されます。
+.PP
+flag
+.RS 4
+refのステータスを示す単一の文字:
+.PP
+(space)
+.RS 4
+早送り(fast\-forward)プッシュに成功した
+.RE
+.PP
+\fB+\fR
+.RS 4
+強制更新に成功した
+.RE
+.PP
+\fB\-\fR
+.RS 4
+refの削除に成功した
+.RE
+.PP
+\fB*\fR
+.RS 4
+新しいrefのプッシュに成功した
+.RE
+.PP
+\fB!\fR
+.RS 4
+プッシュが拒否された、またはプッシュに失敗したref
+.RE
+.PP
+\fB=\fR
+.RS 4
+すでに最新でプッシュする必要がなかったref
+.RE
+.RE
+.PP
+summary
+.RS 4
+正常にプッシュされたrefの場合、概要には、refの古い値と新しい値が
+\fBgit log\fR
+の引数として使用するのに適した形式で表示されます(ほとんどの場合は
+\fB<old>\&.\&.<new>\fR
+で、強制的な非早送り更新の場合は
+\fB<old>\&.\&.\&.<new>\fR
+です)。
+.sp
+失敗した更新については、以下の詳細が示されます:
+.PP
+rejected
+.RS 4
+Gitはrefをまったく送信しようと試みませんでした。これは通常、それが早送り(fast\-forward)では無く、かつ、あなたが更新を強制しなかったためです。
+.RE
+.PP
+remote rejected
+.RS 4
+リモートエンドが更新を拒否しました。 通常、リモート側のフックが原因で発生するか、リモートリポジトリで次の安全オプションのいずれかが有効になっていることが原因です:
+\fBreceive\&.denyCurrentBranch\fR
+(チェックアウトされたブランチへのプッシュ用) または
+\fBreceive\&.denyNonFastForwards\fR
+(強制的な非早送り更新用) または
+\fBreceive\&.denyDeletes\fR
+または
+\fBreceive\&.denyDeleteCurrent\fR
+です。
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+remote failure
+.RS 4
+リモート側は、おそらくリモート側での一時的なエラー、または、ネットワーク接続の切断、または、その他の一時的なエラーのために、refの正常な更新を報告しませんでした。
+.RE
+.RE
+.PP
+from
+.RS 4
+プッシュされるローカルrefの名前から、その
+\fBrefs/<type>/\fR
+プレフィックスを取り除いたもの。 削除の場合、ローカルrefの名前は省略されます。
+.RE
+.PP
+to
+.RS 4
+更新されるリモートrefの名前から、
+\fBrefs/<type>/\fR
+プレフィックスを取り除いたもの。
+.RE
+.PP
+reason
+.RS 4
+人間が読める説明。 正常にプッシュされたrefの場合、説明は必要ありません。 失敗したrefについては、失敗の理由が説明されています。
+.RE
+.SH "NOTE ABOUT FAST\-FORWARDS"
+.sp
+更新によって、コミットAをポイントしていたブランチ(またはより一般的にはref)が別のコミットBをポイントするように変更された場合、BがAの子孫である場合に限り、早送り(fast\-forward)更新と呼ばれます。
+.sp
+AからBへの早送り(fast\-forward)更新では、元のコミットA上に構築されたコミットのセットは、新しいコミットB上に構築されたコミットのサブセットです。 したがって、履歴が失われることはありません。
+.sp
+対照的に、非早送り更新は履歴を失います。 たとえば、あなたと他の誰かが同じコミットXで開始し、あなたがコミットBにつながる履歴を作成し、他の人がコミットAにつながる履歴を作成したとします。そうすると履歴は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+      B
+     /
+ \-\-\-X\-\-\-A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+さらに、もう一人が既に A につながる変更を元のリポジトリにプッシュしており、そこからあなたたち二人が元のコミット X を取得したとします。
+.sp
+他の人が行ったプッシュにより、コミットXをポイントしていたブランチがコミットAをポイントするように更新されました。これは早送りです。
+.sp
+しかし、あなたがプッシュしようとすると、コミットBでブランチ(現在はAを指している)を更新しようとします。これは早送りにはなりません。 そうすると、コミットAによって導入された変更は失われます。なぜなら、全員がB上に構築を開始するためです。
+.sp
+このコマンドは、デフォルトでは、このような履歴の損失を防ぐための早送り(fast\-forward)ではない更新を許可していません。
+.sp
+自分の作業(XからBへの履歴)または他の人の作業(XからAへの履歴)を失いたくない場合は、最初にリポジトリから履歴をフェッチし、行われた変更を含む履歴を作成する必要があり、両方の当事者によって行われた変更を含む履歴を作成し、結果をプッシュバックします。
+.sp
+あなたは \fBgit pull\fR を実行し、潜在的な競合を解決して、結果を \fBgit push\fR することができます。 \fBgit pull\fR は、コミットAとBの間にマージコミットCを作成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+      B\-\-\-C
+     /   /
+ \-\-\-X\-\-\-A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+結果のマージコミットでAを更新すると、早送り(fast\-forward)され、そして、プッシュが受け入れられます。
+.sp
+または、あなたは \fBgit pull \-\-rebase\fR を使用して、A上のXとBの間のあなたの変更をリベースし、結果をプッシュバックすることもできます。 リベースは、A上のXとBの間の変更を構築する新しいコミットDを作成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+      B   D
+     /   /
+ \-\-\-X\-\-\-A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+繰り返しになりますが、このコミットでAを更新すると早送り(fast\-forward)され、プッシュが受け入れられます。
+.sp
+プッシュしようとしたときに非早送拒否(non\-fast\-forward rejection)が発生する可能性がある別の一般的な状況があります。これは、他の誰もプッシュしていないリポジトリにプッシュしている場合でも発生する可能性があります。 自分でコミットAをプッシュした後(このセクションの最初の図)、コミットBを生成するために「git commit \-\-amend」に置き換え、すでにAをプッシュしたことを忘れたため、プッシュしようとします。 このような場合、その間に誰も以前のコミットAをフェッチしなかった(そしてその上にビルドを開始した)ことが確実な場合にのみ、「git push \-\-force」を実行して上書きできます。 言い換えれば、「git push \-\-force」は、履歴を失うことを意味する場合のために予約されているメソッドです。
+.SH "EXAMPLES"
+.PP
+\fBgit push\fR
+.RS 4
+\fBgit push <remote>\fR
+のように機能します。ここで、<remote>は現在のブランチのリモート(または、現在のブランチにリモートが構成されていない場合は
+\fBorigin\fR)です。
+.RE
+.PP
+\fBgit push origin\fR
+.RS 4
+追加の構成がない場合、現在のブランチが、構成されたアップストリームの現在のブランチと同一の名前の場合は、現在のブランチを構成されたアップストリーム(\fBbranch\&.<name>\&.merge\fR
+構成値)にプッシュし、それ以外の場合はプッシュせずにエラーになります。
+.sp
+<refspec>が指定されていない場合のこのコマンドのデフォルトの動作は、リモートの
+\fBpush\fR
+オプション、または
+\fBpush\&.default\fR
+構成変数を設定することで構成できます。
+.sp
+たとえば、デフォルトで現在のブランチのみを
+\fBorigin\fR
+にプッシュするには、
+\fBgit config remote\&.origin\&.push HEAD\fR
+を使用します。 有効な <refspec> (以下の例のような)を
+\fBgit push origin\fR
+のデフォルトとして設定できます。
+.RE
+.PP
+\fBgit push origin :\fR
+.RS 4
+「マッチする」ブランチを
+\fBorigin\fR
+にプッシュします。 「マッチする」ブランチの説明については、上記
+OPTIONS
+セクションの <refspec> を参照してください。
+.RE
+.PP
+\fBgit push origin master\fR
+.RS 4
+ソースリポジトリで
+\fBmaster\fR
+に一致するrefを探し(ほとんどの場合
+\fBrefs/heads/master\fR
+を探し)、
+\fBorigin\fR
+リポジトリで同一ref(例:
+\fBrefs/heads/master\fR)を更新します。
+\fBmaster\fR
+がリモートに存在しなかった場合は作成されます。
+.RE
+.PP
+\fBgit push origin HEAD\fR
+.RS 4
+現在のブランチをリモートの同一の名前にプッシュする便利な方法。
+.RE
+.PP
+\fBgit push mothership master:satellite/master dev:satellite/dev\fR
+.RS 4
+\fBmaster\fR
+と一致するソースref(例:
+\fBrefs/heads/master\fR)を使用して、
+\fBmothership\fR
+リポジトリ内の
+\fBsatellite/master\fR(おそらく
+\fBrefs/remotes/satellite/master\fR)と一致するrefを更新します。
+\fBdev\fR
+と
+\fBsatellite/dev\fR
+についても同様にします。
+.sp
+マッチングのセマンティクスの説明については、 上記「<refspec>\&...」について説明しているセクションを参照してください。
+.sp
+これは、
+\fBmothership\fR
+で実行される
+\fBgit fetch\fR
+を、
+\fBsatellite\fR
+での作業を統合するために逆方向に実行される
+\fBgit push\fR
+でエミュレートするもので、一方通行でしか接続できないときによく必要になります(つまり、
+\fBsatellite\fR
+はsshで
+\fBmothership\fR
+に入ることができますが、
+\fBsatellite\fR
+がファイアウォールの背後にあるか、sshdを実行していないため、
+\fBmothership\fR
+は `satellite`への接続を開始できません)。
+.sp
+この
+\fBgit push\fR
+を
+\fBsatellite\fR
+のマシンで実行した後、
+\fBmothership\fR
+に ssh して
+\fBgit merge\fR
+を実行すれば、\fBsatellite\fR
+で行われた変更を
+\fBgit pull\fR
+でプルするエミュレーションが完成します。
+.RE
+.PP
+\fBgit push origin HEAD:master\fR
+.RS 4
+現在のブランチを、
+\fBorigin\fR
+リポジトリ内の
+\fBmaster\fR
+に一致するリモートrefにプッシュします。 この形式は、ローカル名を気にせずに現在のブランチをプッシュするのに便利です。
+.RE
+.PP
+\fBgit push origin master:refs/heads/experimental\fR
+.RS 4
+現在の
+\fBmaster\fR
+ブランチをコピーして、
+\fBorigin\fR
+リポジトリにブランチ
+\fBexperimental\fR
+を作成します。 これは、ローカル名とリモート名が異なる場合に、リモートリポジトリに新しいブランチまたはタグを作成する時のみ必要な形式です。 それ以外の場合は、ref名自体で機能します。
+.RE
+.PP
+\fBgit push origin :experimental\fR
+.RS 4
+\fBorigin\fR
+リポジトリで
+\fBexperimental\fR
+に一致するref(たとえば
+\fBrefs/heads/experimental\fR)を見つけて削除します。
+.RE
+.PP
+\fBgit push origin +dev:master\fR
+.RS 4
+origin リポジトリのmasterブランチをdevブランチで更新し、早送り以外の更新(non\-fast\-forward updates)を可能にします。「これにより、参照されていないコミットがoriginリポジトリにぶら下がる可能性があります。」 早送りが(fast\-forward)不可能な以下の状況を考慮してください:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+            o\-\-\-o\-\-\-o\-\-\-A\-\-\-B  origin/master
+                     \e
+                      X\-\-\-Y\-\-\-Z  dev
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+上記コマンドは、originリポジトリを以下のように変更します
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+                      A\-\-\-B  (unnamed branch)
+                     /
+            o\-\-\-o\-\-\-o\-\-\-X\-\-\-Y\-\-\-Z  master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+コミットAとBは、もはやシンボリック名のブランチに属さなくなるため、到達不能になります。 そのため、これらのコミットは、originリポジトリの
+\fBgit gc\fR
+コマンドによって削除されます。
+.RE
+.SH "SECURITY"
+.sp
+フェッチおよびプッシュプロトコルは、共有することを意図していない一方の側が他方のリポジトリからデータを盗むのを防ぐようには設計されていません。悪意のある者から保護する必要のあるプライベートデータがある場合、最善のオプションはそれを別のリポジトリに保存することです。これは、クライアントとサーバーの両方に適用されます。特に、サーバー上の名前空間は、読み取りアクセス制御には効果的ではありません。リポジトリ全体への読み取りアクセスで信頼できるクライアントにのみ、名前空間への読み取りアクセスを許可する必要があります。
+.sp
+既知の攻撃ベクトル(attack vectors)は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+被害者は、明示的に共有することを意図していないオブジェクトのIDをアドバタイズする "have" 行を送信しますが、他にもIDを持っている者が居る場合は、転送を最適化するために使用できます。攻撃者はオブジェクトID Xを選択して盗み、refをXに送信しますが、被害者はすでにXのコンテンツを持っているため、Xのコンテンツを送信する必要はありません。 これで、被害者は攻撃者がXを持っていると信じ、Xのコンテンツを後で攻撃者に送り返します。 (この攻撃は、クライアントがアクセスできる名前空間にXへのrefを作成してフェッチすることにより、クライアントがサーバー上で実行するのが最も簡単です。サーバーがクライアント上で実行する最も可能性の高い方法は、Xをパブリックブランチにマージし、ユーザーがこのブランチで追加の作業を行い、マージに気付かずにサーバーにプッシュバックすることを期待します。)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+#1 と同様に、攻撃者は盗むオブジェクトID Xを選択します。被害者は、攻撃者がすでに持っているオブジェクトYを送信し、攻撃者はYではなくXを持っていると誤って主張するため、被害者はYをXに対するデルタとして送信します。デルタは、攻撃者にYに類似したXの領域を明らかにします。
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+push\&.autoSetupRemote
+.RS 4
+\fBtrue\fR
+に設定すると、現在のブランチの上流追跡(upstream tracking)が存在しない場合、デフォルトのpushで
+\fB\-\-set\-upstream\fR
+を想定します。 このオプションは、 push\&.default オプションの
+\fBsimple\fR
+や
+\fBupstream\fR
+や
+\fBcurrent\fR
+で有効になります。 (\fBpush\&.default=current\fR
+の振る舞いのように、)デフォルトで新しいブランチをデフォルトのremoteにプッシュしたい場合に便利で、これは、あなたが上流追跡(upstream tracking)も設定したい場合にも便利です。 このオプションの恩恵を受ける可能性が最も高いワークフローは、すべてのブランチがremoteで同じ名前を持つことが期待される「単純な」中央ワークフローです。
+.RE
+.PP
+push\&.default
+.RS 4
+(コマンドライン、構成、またはその他の場所で、)refspecが指定されていない場合に
+\fBgit push\fR
+が実行するアクションを定義します。 特定の作業フローに適するさまざまな値があります。 たとえば、純粋に中央のワークフロー(つまり、フェッチ元がプッシュ先と等しい)では、
+\fBupstream\fR
+がおそらく必要なものです。 可能な値は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnothing\fR
+\- refspecが指定されていない限り、何もプッシュ(エラー出力)しないでください。 これは主に、常に明示的にすることで間違いを避けたい人を対象としています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcurrent\fR
+\- 現在のブランチをプッシュして、受信側で同一の名前のブランチを更新します。 中央作業フローと非中央作業フローの両方で機能します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupstream\fR
+\- 現在のブランチを、通常その変更が現在のブランチに統合されるブランチにプッシュバックします(これを
+\fB@{upstream}\fR
+と呼びます)。 このモードは、通常プルするのと同じリポジトリ(つまり中央ワークフロー)にプッシュする場合にのみ意味があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBtracking\fR
+\- これは
+\fBupstream\fR
+の非推奨の同義語です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsimple\fR
+\- リモートで同一の名前の現在のブランチをプッシュします。
+.sp
+あなたが一元化された作業フロー(あなたのプル元の同一のリポジトリにプッシュする、通常は
+\fBorigin\fR
+)で作業している場合は、あなたは同一の名前でアップストリームブランチを構成する必要があります。
+.sp
+このモードはGit2\&.0以降のデフォルトであり、初心者に適した最も安全なオプションです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmatching\fR
+\- 送信側受信側両方で同一の名前のすべてのブランチをプッシュします。 これにより、プッシュするリポジトリは、プッシュされるブランチのセットを記憶するようになります(たとえば、常に「maint」と「master」をプッシュし、他のブランチがない場合、プッシュするリポジトリには、これら2つのブランチがあり、ローカルの「maint」と「master」がそこにプッシュされます)。
+.sp
+このモードを効果的に使用するには、
+\fBgit push\fR
+を実行する前に、あなたがプッシュしたい「すべてのブランチ」がプッシュされる準備ができていることを確認する必要があります。このモードの要点は、すべてのブランチを一度にプッシュできるようにすることです。通常、1つのブランチのみで作業を終了して結果をプッシュする場合、他のブランチは未完了ですので、このモードは適していません。 また、このモードは、共有中央リポジトリにプッシュするのには適していません。他の人がそこに新しいブランチを追加したり、コントロール外の既存のブランチの先端を更新したりする可能性があるためです。
+.sp
+これは以前はデフォルトでしたが、Git 2\&.0以降ではそうではありません(\fBsimple\fR
+が新しいデフォルトです)。
+.RE
+.RE
+.PP
+push\&.followTags
+.RS 4
+trueに設定されている場合、デフォルトで
+\fB\-\-follow\-tags\fR
+オプションを有効にします。
+\fB\-\-no\-follow\-tags\fR
+を指定することにより、プッシュ時にこの構成をオーバーライドできます。
+.RE
+.PP
+push\&.gpgSign
+.RS 4
+ブール値、または文字列
+\fBif\-asked\fR
+に設定できます。 true値を指定すると、
+\fB\-\-signed\fR
+linkgit:git\-push [1]に渡されたかのように、すべてのプッシュがGPG署名されます。 文字列
+\fBif\-asked\fR
+を指定し、サーバーがサポートしている場合は、
+\fB\-\-signed=if\-asked\fR
+が
+\fBgit push\fR
+に渡されたかのように、プッシュで署名されます。 誤った値は、優先度の低い構成ファイルの値を上書きする可能性があります。 明示的なコマンドラインオプションは、常にこの設定オプションを上書きします。
+.RE
+.PP
+push\&.pushOption
+.RS 4
+コマンドラインから
+\fB\-\-push\-option=<option>\fR
+引数が指定されていない場合、
+\fBgit push\fR
+はこの変数の各<value> が
+\fB\-\-push\-option=<value>\fR
+として指定されているかのように動作します。
+.sp
+これは複数値の変数であり、優先度の高い構成ファイル(リポジトリ内の
+\fB\&.git/config\fR
+など)で空の値を使用して、優先度の低い構成ファイル(\fB$HOME/\&.gitconfig\fR
+など)から継承された値をクリアできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Example:
+
+/etc/gitconfig
+  push\&.pushoption = a
+  push\&.pushoption = b
+
+~/\&.gitconfig
+  push\&.pushoption = c
+
+repo/\&.git/config
+  push\&.pushoption =
+  push\&.pushoption = b
+
+This will result in only b (a and c are cleared)\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+push\&.recurseSubmodules
+.RS 4
+プッシュされるリビジョンで使用されるすべてのサブモジュールコミットがリモートト追跡ブランチで利用可能であることを確認します。 値が
+\fBcheck\fR
+の場合、Gitは、プッシュされるリビジョンで変更されたすべてのサブモジュールコミットが、サブモジュールの少なくとも1つのリモートで使用可能であることを確認します。 コミットが欠落している場合、プッシュは中止(abort)され、ゼロ以外のステータスで終了します。 値が
+\fBon\-demand\fR
+の場合、プッシュされるリビジョンで変更されたすべてのサブモジュールがプッシュされます。 on\-demandで必要なすべてのリビジョンをプッシュできなかった場合も、中止(abort)され、ゼロ以外のステータスで終了します。 値が
+\fBno\fR
+の場合、プッシュ時にサブモジュールを無視するデフォルトの動作が保持されます。
+\fB\-\-recurse\-submodules=check|on\-demand|no\fR
+を指定することにより、プッシュ時にこの構成をオーバーライドできます。 設定されていない場合、
+\fBsubmodule\&.recurse\fR
+が設定されていない限り、デフォルトで
+\fBno\fR
+が使用されます(この場合、
+\fBtrue\fR
+値は
+\fBon\-demand\fR
+を意味します)。
+.RE
+.PP
+push\&.useForceIfIncludes
+.RS 4
+「true」に設定すると、コマンドラインで
+\fBgit-push\fR(1)
+のオプションとして
+\fB\-\-force\-if\-includes\fR
+を指定するのと同じです。 プッシュ時に
+\fB\-\-no\-force\-if\-includes\fR
+を追加すると、この構成設定が上書きされます。
+.RE
+.PP
+push\&.negotiate
+.RS 4
+「true」に設定されている場合は、クライアントとサーバーが共通のコミットを見つけようとするネゴシエーションの段階で送信されるパックファイルのサイズを縮小してみます。 「false」の場合、Gitはサーバーのref広告のみに依存して、共通のコミットを検索します。
+.RE
+.PP
+push\&.useBitmaps
+.RS 4
+\fBfalse\fR
+に設定すると、
+\fBpack\&.useBitmaps\fR
+が
+\fBtrue\fR
+であっても
+\fBgit push\fR
+のビットマップの使用が無効になり、他の git 操作でのビットマップの使用が妨げられません。 デフォルトは
+\fBtrue\fR
+です。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

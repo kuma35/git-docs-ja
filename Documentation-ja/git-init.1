@@ -1,0 +1,264 @@
+'\" t
+.\"     Title: git-init
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-INIT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-init \- 空のGitリポジトリを作成するか、既存のリポジトリを再初期化します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit init\fR [\-q | \-\-quiet] [\-\-bare] [\-\-template=<template\-directory>]
+          [\-\-separate\-git\-dir <git\-dir>] [\-\-object\-format=<format>]
+          [\-b <branch\-name> | \-\-initial\-branch=<branch\-name>]
+          [\-\-shared[=<permissions>]] [<directory>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このコマンドは、空のGitリポジトリを作成します。基本的には、 \fBobjects\fR と \fBrefs/heads\fR と \fBrefs/tags\fR と テンプレートファイルのためのサブディレクトリを持つ \fB\&.git\fR ディレクトリです。コミットのない初期ブランチが作成されます(初期ブランチの名前については、以下の \fB\-\-initial\-branch\fR オプションを参照してください)。
+.sp
+\fB$GIT_DIR\fR 環境変数が設定されている場合、リポジトリのベースに \fB\&./\&.git\fR の代わりに、 \fB$GIT_DIR\fR で指定されたパスを使います。
+.sp
+オブジェクトストレージディレクトリが \fB$GIT_OBJECT_DIRECTORY\fR 環境変数を介して指定されている場合、sha1ディレクトリがその下に作成されます。それ以外の場合は、デフォルトの \fB$GIT_DIR/objects\fR ディレクトリが使用されます。
+.sp
+既存のリポジトリで「git init」を実行しても安全です。すでに存在するものを上書きすることはありません。「git init」を再実行する主な理由は、新しく追加されたテンプレートを取得することです(または、 \fB\-\-separate\-git\-dir\fR が指定されている場合はリポジトリを別の場所に移動します)。
+.SH "OPTIONS"
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+エラーメッセージと警告メッセージのみを出力します。 他のすべての出力は抑制されます。
+.RE
+.PP
+\fB\-\-bare\fR
+.RS 4
+ベア(bare)リポジトリを作成します。
+\fBGIT_DIR\fR
+環境変数が設定されていない場合は、現在の作業ディレクトリに設定されます。
+.RE
+.PP
+\fB\-\-object\-format=<format>\fR
+.RS 4
+リポジトリに設定するブジェクト形式(ハッシュアルゴリズム)を指定します。 有効な値は「sha1」および、(有効な場合、)「sha256」です。「sha1」がデフォルトです。
+.sp
+このオプションは実験的なものです！ SHA\-256のサポートは実験的なものであり、まだ初期段階です。 SHA\-256リポジトリは、通常、「通常の」SHA\-1リポジトリと作業を共有できません。 たとえば、SHA\-256リポジトリに関連するGit内部ファイル形式は、下位互換性のない方法で変更される可能性があると想定する必要があります。テスト目的でのみ
+\fB\-\-object\-format=sha256\fR
+を使用してください。
+.RE
+.PP
+\fB\-\-template=<template\-directory>\fR
+.RS 4
+テンプレートが使用するディレクトリを指定します。 (以下の「TEMPLATE DIRECTORY」セクションを参照してください。)
+.RE
+.PP
+\fB\-\-separate\-git\-dir=<git\-dir>\fR
+.RS 4
+リポジトリをディレクトリとして
+\fB$GIT_DIR\fR
+または
+\fB\&./\&.git/\fR
+に初期化する代わりに、実際のリポジトリへのパスを含むテキストファイルをそこに作成します。 このファイルは、ファイルシステムに依存しない、リポジトリへのGitシンボリックリンクとして機能します。
+.sp
+これが再初期化の場合、リポジトリは指定されたパスに移動されます。
+.RE
+.PP
+\fB\-b <branch\-name>\fR, \fB\-\-initial\-branch=<branch\-name>\fR
+.RS 4
+新しく作成されたリポジトリの最初のブランチには、指定された名前を使用します。 指定しない場合は、デフォルト名にフォールバックします(現在は
+\fBmaster\fR
+ですが、将来変更される可能性があります。名前は
+\fBinit\&.defaultBranch\fR
+構成変数を使用してカスタマイズできます)。
+.RE
+.PP
+\fB\-\-shared[=(false|true|umask|group|all|world|everybody|<perm>)]\fR
+.RS 4
+Gitリポジトリを複数のユーザー間で共有することを指定します。 これにより、同じグループに属するユーザーがそのリポジトリにプッシュできるようになります。 指定すると、構成変数
+\fBcore\&.sharedRepository\fR
+が設定され、
+\fB$GIT_DIR\fR
+の下のファイルとディレクトリが要求された権限で作成されます。 指定しない場合、Gitは umask(2) によって報告された権限を使用します。
+.sp
+オプションには以下の値を指定できます。値が指定されていない場合、デフォルトで
+\fBgroup\fR
+になります。
+.PP
+\fBumask\fR (or \fBfalse\fR)
+.RS 4
+umask(2) によって報告されたアクセス許可を使用します。
+\fB\-\-shared\fR
+が指定されていない場合のデフォルトです。
+.RE
+.PP
+\fBgroup\fR (or \fBtrue\fR)
+.RS 4
+リポジトリをグループ書き込み可能にします(gitグループがすべてのユーザーのプライマリグループではない可能性があるため、
+\fBg+sx\fR
+)。 これは、そうしないでいれば安全な umask(2) 値の権限を緩めるために使用されます。 注意: umaskは他の権限ビットにも適用されることに注意してください(たとえば、umaskが
+\fB0022\fR
+の場合、
+\fBgroup\fR
+を使用しても他の(グループ以外の)ユーザーからの読み取り権限は削除されません)。 リポジトリの権限を正確に指定する方法については、
+\fB0xxx\fR
+を参照してください。
+.RE
+.PP
+\fBall\fR (または \fBworld\fR または \fBeverybody\fR)
+.RS 4
+\fBgroup\fR
+と同じですが、すべてのユーザーからリポジトリを読めるようにします。
+.RE
+.PP
+\fB<perm>\fR
+.RS 4
+各ファイルはモード
+\fB<perm>\fR
+を持ち、
+\fB<perm>\fR
+は、 (訳注:C言語流に、)
+\fB0\fR
+が先頭に付いた 3 桁の 8 進数です。
+\fB<perm>\fR
+は、ユーザーの umask(2) 値を上書きします(\fBgroup\fR
+や
+\fBall\fR
+のように許可を緩めるだけではありません)。
+\fB0640\fR
+は、 グループで読み取り可能であるが、 グループで書き込み可能でなく、 他のユーザーがアクセスできないリポジトリを作成します。
+\fB0660\fR
+は、現在のユーザーとグループが読み書きできるが、 他のユーザーがアクセスできないリポジトリを作成します(ディレクトリと実行可能ファイルは、ユーザーの対応するクラスの
+\fBr\fR
+ビットから
+\fBx\fR
+ビットを取得します)。
+.RE
+.RE
+.sp
+デフォルトでは、共有リポジトリ内で、構成フラグ \fBreceive\&.denyNonFastForwards\fR が有効(ture)になっているため、早送り(fast\-forward)以外のプッシュを強制することはできません。
+.sp
+directory(ディレクトリ)を指定すると、コマンドはその内部で実行されます。指定のディレクトリが存在しない場合は、作成されます。
+.SH "TEMPLATE DIRECTORY"
+.sp
+名前がドット(\fB\&.\fR)で始まらないテンプレートディレクトリ内のファイルとディレクトリは、作成後に \fB$GIT_DIR\fR にコピーされます。
+.sp
+テンプレートディレクトリは、以下のいずれかになります(この優先順位です):
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-template\fR
+オプションで指定された引数
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB$GIT_TEMPLATE_DIR\fR
+環境変数の内容
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBinit\&.templateDir\fR
+構成変数
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+デフォルトのテンプレートディレクトリ:
+\fB/usr/share/git\-core/templates\fR
+.RE
+.sp
+デフォルトのテンプレートディレクトリには、いくつかのディレクトリ構造、推奨される「除外パターン」(exclude patterns)(\fBgitignore\fR(5) 参照)、およびサンプルフックファイルが含まれています。
+.sp
+サンプルフックはデフォルトですべて無効になっています。 サンプルフックを有効にするには、 \fB\&.sample\fR サフィックスを削除して名前を変更します。
+.sp
+フックの実行に関するより一般的な情報については、 \fBgithooks\fR(5) を参照してください。
+.SH "EXAMPLES"
+.PP
+既存のコードベースの新しいGitリポジトリを開始します
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cd /path/to/my/codebase
+$ git init      \fB(1)\fR
+$ git add \&.     \fB(2)\fR
+$ git commit    \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fR/path/to/my/codebase/\&.git ディレクトリを作成します。
+.br
+\fB2. \fR既存のすべてのファイルをインデックスに追加します。
+.br
+\fB3. \fR履歴の最初のコミットとして、初期の状態を記録します。
+.br
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+init\&.templateDir
+.RS 4
+テンプレートのコピー元のディレクトリを指定します。 (\fBgit-init\fR(1)
+の「TEMPLATE DIRECTORY」セクションを参照してください。)
+.RE
+.PP
+init\&.defaultBranch
+.RS 4
+デフォルトのブランチ名を上書きできます。例えば、新しいリポジトリを初期化するとき。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

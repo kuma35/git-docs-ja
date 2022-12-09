@@ -1,0 +1,322 @@
+'\" t
+.\"     Title: git-check-ref-format
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CHECK\-REF\-FOR" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-check-ref-format \- 参照名が整形式であることを確認します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit check\-ref\-format\fR [\-\-normalize]
+       [\-\-[no\-]allow\-onelevel] [\-\-refspec\-pattern]
+       <refname>
+\fIgit check\-ref\-format\fR \-\-branch <branchname\-shorthand>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+指定の refname が受け入れ可能かどうかを確認し、受け入れられない場合はゼロ以外のステータスで終了します。
+.sp
+参照はGitでブランチとタグを指定するために使用されます。ブランチヘッドは \fBrefs/heads\fR 階層に格納され、タグはref名前空間の \fBrefs/tags\fR 階層に格納されます(通常は \fB$GIT_DIR/refs/heads\fR ディレクトリと \fB$GIT_DIR/refs/tags\fR ディレクトリに、または refが \fBgit gc\fR によってパックされている場合はファイル \fB$GIT_DIR/packed\-refs\fR のエントリとしてあります)。
+.sp
+Gitは、参照の命名方法に以下のルールを課しています:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+階層(ディレクトリ)グループ化のためにスラッシュ(\fB/\fR)を含めることができますが、スラッシュで区切られたコンポーネントは、ドット(\fB\&.\fR)で開始したり、シーケンス
+\fB\&.lock\fR
+で終了したりすることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+少なくとも1つのスラッシュ(\fB/\fR)が含まれている必要があります。これにより、
+\fBheads/\fR
+、
+\fBtags/\fR
+などのカテゴリの存在が強制されますが、実際の名前は制限されません。
+\fB\-\-allow\-onelevel\fR
+オプションが使用されている場合、このルールは放棄されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+どこにも2つの連続したドット(\fB\&.\&.\fR)を含めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+ASCII制御文字(つまり、値が \e040 未満のバイト または \e177(\fBDEL\fR))、スペース、チルダ(\fB~\fR)、キャレット(\fB^\fR)、コロン(\fB:\fR)はどこにでも含めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+疑問符(\fB？\fR)、アスタリスク(\fB*\fR)、角かっこ(\fB[\fR)がどこにあってもいけません。この規則の例外については、以下の
+\fB\-\-refspec\-pattern\fR
+オプションを参照してください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+スラッシュ(\fB/\fR)で開始または終了したり、複数の連続したスラッシュを含めることはできません(この規則の例外については、以下の
+\fB\-\-normalize\fR
+オプションを参照してください)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+ドット(\fB\&.\fR)で終わらせることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  8." 4.2
+.\}
+シーケンス
+\fB@{\fR
+を含めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 9.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  9." 4.2
+.\}
+単一の文字
+\fB@\fR
+にすることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'10.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "10." 4.2
+.\}
+\fB\e\fR
+を含めることはできません。
+.RE
+.sp
+これらのルールにより、シェルスクリプトをベースにしたツールで参照名を簡単にパースできるようになり、参照名が(誤って)引用符なしで使われたときにシェルでパス名を展開したり、特定の参照名表現におけるあいまいさを回避することができます(\fBgitrevisions\fR(7) を参照)。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+二重ドット(\fB\&.\&.\fR)は、
+\fBref1\&.\&.ref2\fR
+などとよく使用されます。一部のコンテキストでは、この表記は
+\fB^ref1 ref2\fR
+を意味します(つまり、\fBref1\fR
+に無く かつ
+\fBref2\fR
+にある)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+チルダ(\fB~\fR)とキャレット(\fB^\fR)は、接尾辞
+\fInth parent\fR
+(n番目の親)と
+\fIpeel onion\fR
+(玉ねぎ剥き)操作を導入するために使用されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+コロン(\fB：\fR)は、
+\fBsrcref:dstref\fR
+のように、フェッチおよびプッシュ操作で「srcrefの値を使用してdstrefに格納する」ことを意味するために使用されます。
+\fBgit cat\-file blob v1\&.3\&.3:refs\&.c\fR
+のようにして
+\fBgit cat\-file\fR
+などで特定のオブジェクトを選択するためにも使用できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+at\-open\-brace(\fB@{\fR)は、reflogエントリにアクセスするための表記法として使用されます。
+.RE
+.sp
+\fB\-\-branch\fR オプションを使用すると、コマンドは名前を取得し、それが有効なブランチ名として使用できるかどうかを確認します(たとえば、新しいブランチを作成するとき)。ただし、切り離された(detached)HEAD状態を参照する可能性のある、遡及チェックアウト構文(previous checkout syntax)を使用する場合は注意が必要です。 \fBgit check\-ref\-format \-\-branch $name\fR が実装するルールは、 \fBgit check\-ref\-format refs/heads/$name\fR が言うことよりも厳しい場合があります(たとえば、参照コンポーネントの先頭にダッシュが表示される場合がありますが、ブランチ名の先頭では明示的に禁止されています)。リポジトリで \fB\-\-branch\fR オプションを指定して実行すると、入力は最初に「遡及チェックアウト構文」 \fB@{\-n}\fR 用に展開されます。たとえば、 \fB@{\-1}\fR は、 \fBgit switch\fR または \fBgit checkout\fR 操作を使用して最後にチェックアウトされたものを参照する方法です。磁器コマンドでは、ブランチ名が必要な場所でこの構文を受け入れるために、このオプションを使用する必要があります。これにより、あなたがブランチ名を入力したかのように機能できます。注意: 「遡及チェックアウト操作」では、例外として、チェックアウトされたN番目の最後のものがブランチではなかった場合にコミットオブジェクト名が生成される可能性があることに注意してください。
+.SH "OPTIONS"
+.PP
+\fB\-\-[no\-]allow\-onelevel\fR
+.RS 4
+1レベルのrefnameを受け入れるかどうかを制御します(つまり、複数の
+\fB/\fR
+で区切られたコンポーネントを含まないrefname)。 デフォルトは
+\fB\-\-no\-allow\-onelevel\fR
+です。
+.RE
+.PP
+\fB\-\-refspec\-pattern\fR
+.RS 4
+<refname>を(リモートリポジトリで使用される)refspecの参照名パターンとして解釈します。このオプションを有効にすると、<refname>はrefspecに単一の
+\fB*\fR
+を含めることができます(例:
+\fBfoo/bar*/baz\fR
+または
+\fBfoo/bar*baz/\fR
+はOKですが、
+\fBfoo/bar*/baz*\fR
+はダメです)。
+.RE
+.PP
+\fB\-\-normalize\fR
+.RS 4
+先行スラッシュ(\fB/\fR)文字を削除し、名前コンポーネント間の隣接するスラッシュを1つのスラッシュに折りたたむことにより、
+\fIrefname\fR
+を正規化します。正規化されたrefnameが有効な場合は、それを標準出力に出力し、ステータス0で終了します。それ以外の場合は、ゼロ以外のステータスで終了します。 (
+\fB\-\-print\fR
+は
+\fB\-\-normalize\fR
+を綴る非推奨の方法です。)
+.RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+チェックアウトしたのモノの一つ前のものの名前を印刷します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git check\-ref\-format \-\-branch @{\-1}
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+新しいブランチに使用する参照名を決定します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ref=$(git check\-ref\-format \-\-normalize "refs/heads/$newbranch")||
+{ echo "we do not like \*(Aq$newbranch\*(Aq as a branch name\&." >&2 ; exit 1 ; }
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,1189 @@
+'\" t
+.\"     Title: gitweb.conf
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITWEB\&.CONF" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitweb.conf \- Gitweb(Git Webインターフェイス)構成ファイル
+.SH "SYNOPSIS"
+.sp
+/etc/gitweb\&.conf, /etc/gitweb\-common\&.conf, $GITWEBDIR/gitweb_config\&.perl
+.SH "DESCRIPTION"
+.sp
+Web上でGitリポジトリを表示するためのgitweb CGIスクリプトは、設定ファイルとしてperlスクリプト断片を使用します。 \fBour $variable = value\fR を使用して変数を設定できます。 \fB#\fR 文字から行末までのテキストは無視されます。 詳細については、「perlsyn(1)」を参照してください。
+.sp
+とある例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# gitweb configuration file for http://git\&.example\&.org
+#
+our $projectroot = "/srv/git"; # FHS recommendation
+our $site_name = \*(AqExample\&.org >> Repos\*(Aq;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+構成ファイルは、 \fBgitweb\&.cgi\fR スクリプトが生成されたときにgitwebに組み込み済みのデフォルト設定を上書きするために使用されます。
+.sp
+gitweb CGI自体の構成設定を変更することもできますが、それらの変更はアップグレード時に失われます。構成設定は、デフォルト名が \fBgitweb_config\&.perl\fR のCGIスクリプトと同じディレクトリ内のファイルに配置される場合もあります。これにより、シンボリックリンクを使用して、構成が異なる複数のgitwebインスタンスを作成できます。
+.sp
+注意: 一部の構成は、gitweb全体ではなく、リポジトリごとに制御できることに注意してください。 \fBgitweb\fR(1)の manpage の「Per\-repository gitweb configuration」サブセクションを参照してください。
+.SH "DISCUSSION"
+.sp
+gitwebは、以下のソースから以下の順序で構成データを読み取ります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+組み込み値(ビルド段階で設定されるものもあります)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+共通のシステム全体の構成ファイル(デフォルトは
+\fB/etc/gitweb\-common\&.conf\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+インスタンスごとの構成ファイル(デフォルトでは、インストールされたgitwebと同じディレクトリにある
+\fBgitweb_config\&.perl\fR
+になります)。または、存在しない場合は、システム全体の構成ファイル(デフォルトは
+\fB/etc/gitweb\&.conf\fR)にフォールバックします。
+.RE
+.sp
+後から構成ファイルで得られた値は、上記の順序で先に得られた値を上書きします。
+.sp
+共通のシステム全体の構成ファイルや、フォールバックシステム全体の構成ファイルや、インスタンスごとの構成ファイルの場所は、ビルド時のMakefile構成変数、それぞれ \fBGITWEB_CONFIG_COMMON\fR と \fBGITWEB_CONFIG_SYSTEM\fR と \fBGITWEB_CONFIG\fR を使用して定義されます。
+.sp
+あなたは環境変数 \fBGITWEB_CONFIG_COMMON\fR と \fBGITWEB_CONFIG_SYSTEM\fR と \fBGITWEB_CONFIG\fR を空でない値に設定することにより、実行時にgitweb構成ファイルの場所をオーバーライドすることもできます。
+.sp
+構成ファイルの構文はPerlの構文です。これらのファイルは、Perlコード(gitweb自体が記述されている言語)の断片としてそれらをsourceすることによって処理されるためです。 変数は通常、 (\fBour $variable = <value>;\fR のように) \fBour\fR 修飾子を使用して設定され、新しいバージョンのgitwebがとある変数を使用しなくなったために、とある変数の宣言で停止(stop)する構文エラーを回避します。
+.sp
+あなたは read_config_file() サブルーチンを使用して、他の構成ファイルを含めることができます。たとえば、(Gitリポジトリ管理ツールの1つである)Gitoliteを介してリポジトリを表示するための、アクセス制御に関連するgitweb構成を別のファイルに入れたい場合があります。例えばそれが \fB/etc/gitweb\-gitolite\&.conf\fR にあるとすると、それを含めるには以下のようにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+read_config_file("/etc/gitweb\-gitolite\&.conf");
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これを、使用されているgitweb構成ファイルのどこか、例えばインストールごとのgitweb構成ファイルに置きます。 注意: read_config_file()は、読み取ったファイルが存在することを自分自身でチェックし、見つからない場合は何もしないことに注意してください。 また、インクルードファイルのエラーも処理します。
+.sp
+一部のインストールでは、構成ファイルがまったくないデフォルトの構成が完全に機能する場合があります。それでも、構成ファイルはgitwebの動作をさまざまな方法でカスタマイズまたは微調整するのに役立ち、構成可能な \fB%features\fR 変数を使用して明示的に有効にしない限り、一部のオプション機能は有効になりません(以下の「Configuring gitweb features」セクションも参照)。
+.SH "CONFIGURATION VARIABLES"
+.sp
+設定変数の中には、gitwebのビルド時にデフォルト値が設定されるものがあります(CGIスクリプトに埋め込まれています) \(em その場合は、その事実を記述しています。 gitwebのビルドとインストールについては、gitwebの INSTALL ファイルを参照してください。
+.SS "Location of repositories"
+.sp
+以下で説明する構成変数は、gitwebがGitリポジトリを見つける方法、およびリポジトリが表示およびアクセスされる方法を制御します。
+.sp
+\fBgitweb\fR(1)の manpage の「Repositories」以降のサブセクションも参照してください。
+.PP
+$projectroot
+.RS 4
+プロジェクトパスの前に付加されるファイルシステム絶対パス。リポジトリへのパスは
+\fB$projectroot/$project\fR
+です。 インストール時に
+\fB$GITWEB_PROJECTROOT\fR
+に設定します。gitwebがリポジトリを見つけるには、この変数を正しく設定する必要があります。
+.sp
+たとえば、
+\fB$projectroot\fR
+が
+\fB/srv/git\fR
+に設定されている場合、gitweb構成ファイルに以下のように入力します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+our $projectroot = "/srv/git";
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは以下のようになります
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+http://git\&.example\&.com/gitweb\&.cgi?p=foo/bar\&.git
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+そして以下はpath_infoベースの同等のものです
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+http://git\&.example\&.com/gitweb\&.cgi/foo/bar\&.git
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これはファイルシステムのパス
+\fB/srv/git/foo/bar\&.git\fR
+にマップされます。
+.RE
+.PP
+$projects_list
+.RS 4
+プロジェクトを一覧表示するプレーンテキストファイルの名前、またはプロジェクトをスキャンするディレクトリの名前。
+.sp
+プロジェクトリストファイルには、1行に1つのプロジェクトがリストされ、各行の形式は以下のとおりです
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<URI\-encoded filesystem path to repository> SP <URI\-encoded repository owner>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この変数のデフォルト値は、インストール時に
+\fBGITWEB_LIST\fR
+makefile変数によって決定されます。この変数が空の場合、gitwebはフォールバックして
+\fB$projectroot\fR
+ディレクトリのリポジトリをスキャンします。
+.RE
+.PP
+$project_maxdepth
+.RS 4
+\fB$projects_list\fR
+変数が設定されていない場合、gitwebはファイルシステムを再帰的にスキャンしてGitリポジトリを探します。
+\fB$project_maxdepth\fR
+は、
+\fB$projectroot\fR
+(開始点)を基準にしてトラバーサル深度を制限するために使用されます。 これは、\fB$project_maxdepth\fR
+よりも
+\fB$projectroot\fR
+から離れているディレクトリがスキップされることを意味します。
+.sp
+これは純粋にパフォーマンスの最適化であり、元々は再帰的なディレクトリトラバーサルが遅い MacOS X を対象としています。Gitwebはシンボリックリンクをたどりますが、重複するファイルやディレクトリを無視して循環を検出します。
+.sp
+この変数のデフォルト値は、ビルド時の構成変数
+\fBGITWEB_PROJECT_MAXDEPTH\fR
+によって決定されます。デフォルトは2007です。
+.RE
+.PP
+$export_ok
+.RS 4
+この(変数の値のファイル名の)ファイルが(リポジトリに)存在する場合にのみリポジトリを表示します。この変数がtrueと評価された場合にのみ有効です。
+\fBGITWEB_EXPORT_OK\fR
+を設定することにより、gitwebを構築するときに設定できます。 このパスは
+\fBGIT_DIR\fR
+からの相対パスです。 git\-daemon[1] は、
+\fB\-\-export\-all\fR
+で開始されていない限り、
+\fBgit\-daemon\-export\-ok\fR
+を使用します。デフォルトでは、この変数は設定されていません。つまり、この機能はオフになっています。
+.RE
+.PP
+$export_auth_hook
+.RS 4
+表示するリポジトリを決定するために使用される関数。このサブルーチンは、プロジェクトへのフルパスという1つのパラメーターを受け取る必要があり、trueを返した場合、そのプロジェクトはプロジェクトリストに含まれ、
+\fB$export_ok\fR
+と $\fBprojects_list\fR
+と
+\fB$projects_maxdepth\fR
+とで説明されている他の要件を満たしている限り、gitwebからアクセスできます。例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+our $export_auth_hook = sub { return \-e "$_[0]/git\-daemon\-export\-ok"; };
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+上記は代わりに、以下のように
+\fB$export_ok\fR
+を使用して行うことができますが
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+our $export_ok = "git\-daemon\-export\-ok";
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+設定されていない場合(デフォルト)は、この機能はが無効になっています。
+.sp
+より複雑な例として、
+\fBgitweb\fR(1)
+manpage の「Controlling access to Git repositories」サブセクションも参照してください。
+.RE
+.PP
+$strict_export
+.RS 4
+概要ページにも表示されているリポジトリの表示のみを許可します。これにより、たとえば、
+\fB$ export_ok\fR
+ファイルは、リポジトリが表示されているかどうかだけでなく、リポジトリが使用可能かどうかを判断します。
+\fB$projects_list\fR
+がプロジェクトのリストを含むファイルを指している場合、リストされているリポジトリのみがgitwebで使用できます。
+\fBGITWEB_STRICT_EXPORT\fR
+を介してgitwebの構築中に設定できます。デフォルトでは、この変数は設定されていません。つまり、プロジェクトリストページから非表示になっている(たとえば、 `$projects_listファイルにリストされいない)リポジトリに直接のアクセスができます。
+.RE
+.SS "Finding files"
+.sp
+以下の構成変数は、ファイルの場所をgitwebに指示します。これらの変数の値は、ファイルシステム上のパスです。
+.PP
+$GIT
+.RS 4
+使用するコアgit実行可能ファイル。デフォルトでは
+\fB$GIT_BINDIR/git\fR
+に設定されており、これはデフォルトで
+\fB$(bindir)/git\fR
+に設定されています。バイナリパッケージからインストールされたGitを使用する場合は、通常、これを
+\fB/usr/bin/git\fR
+に設定する必要があります。Webサーバーに適切なPATHが通っている場合、これは単に
+\fBgit\fR
+になる可能性があります。 セキュリティの観点から、gitバイナリへの絶対パスを使用することをお勧めします。複数のGitバージョンがインストールされている場合は、gitバイナリへの絶対パスを使用して、使用するバージョンを選択できます。gitwebが機能するには、(正しく)設定する必要があります。
+.RE
+.PP
+$mimetypes_file
+.RS 4
+\fB/etc/mime\&.types\fR
+を試す前に、(ファイル名拡張子に基づいて)MIMEタイプを推測するために使用するファイル。
+\fBNOTE\fR
+このパスは、相対的である場合、CGIスクリプトではなく、現在のGitリポジトリに相対的であると見なされます。 設定されていない場合、
+\fB/etc/mime\&.types\fR
+のみが使用されます(\fB/etc/mime\&.types\fR
+がファイルシステムに存在する場合)。 mimetypesファイルが見つからない場合、ファイルの拡張子に基づくmimetypeの推測は無効になります。デフォルトでは設定されていません。
+.RE
+.PP
+$highlight_bin
+.RS 4
+使用するhighlight実行可能ファイルのパス(パラメーターと出力に関して仮定してあるため、
+\m[blue]\fBhttp://www\&.andre\-simon\&.de\fR\m[]
+からのものである必要があります)。デフォルトでは
+\fBhighlight\fR
+に設定されています。WebサーバーのPATHが通ったところにインストールされていない場合は、highlight実行可能ファイルへのフルパスを設定します。gitwebが実際に構文の強調表示(syntax highlighting)を使用するには、
+\fBhighlight\fR
+機能を設定する必要があることに注意してください。
+.sp
+\fB注意\fR
+: ファイルを強調表示するには、その構文タイプを検出し、 その構文を
+\fBhighlight\fR
+でサポートする必要があります。 デフォルトの構文検出は最小限であり、 デフォルトで検出されない多くのサポートされている構文タイプがあります。 構文検出を追加するには、3つのオプションがあります。 1番目と2番目の優先順位は
+\fB%highlight_basename\fR
+と
+\fB%highlight_ext\fR
+で、 これらはベース名(完全なファイル名、たとえば
+\fBMakefile\fR)と拡張子(たとえば
+\fBsh\fR)に基づいて検出します。 これらのハッシュのキーはそれぞれベース名と拡張子であり、 指定されたキーの値は、\fB\-\-syntax<syntax>\fR
+を介して
+\fBhighlight\fR
+に渡される構文の名前です。 最後の優先順位は、 ファイルの最初の行に基づいて言語を検出するための
+\fBShebang\fR
+正規表現の
+\fBhighlight\fR
+構成です (たとえば、行
+\fB#!/bin/bash\fR
+とマッチします)。 highlightのドキュメントとデフォルトの設定を参照してください。 詳細については、
+\fB/etc/highlight/filetypes\&.conf\fR
+を参照してください。
+.sp
+たとえば、ホストしているリポジトリがPHPファイルに
+\fBphtml\fR
+拡張子を使用していて、それらのファイルに正しい構文を強調表示したい場合は、gitweb構成に以下を追加できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+our %highlight_ext;
+$highlight_ext{\*(Aqphtml\*(Aq} = \*(Aqphp\*(Aq;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SS "Links and their targets"
+.sp
+以下で説明する構成変数は、いくつかのgitwebリンクを構成します。ターゲットと外観(テキストまたは画像)、およびページの前提条件(スタイルシート、favicon、画像、スクリプト)の場所です。 通常、 \fB@stylesheets\fR 変数を除いて、デフォルト値のままになります。
+.PP
+\fB@stylesheets\fR
+.RS 4
+スタイルシートのURIのリスト(ページのベースURIからの相対パス)。複数のスタイルシートを指定する場合があります。たとえば、
+\fBgitweb\&.css\fR
+をベースとして使用し、サイト固有の変更を別のスタイルシートに追加して、gitwebのアップグレードを容易にします。 たとえば、あなたが
+\fBsite\fR
+スタイルシートを追加するには以下のようにします
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+push @stylesheets, "gitweb\-site\&.css";
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これをgitweb構成ファイルに追加します。相対パスであるこれらの値は、gitwebのベースURIを基準にしています。
+.sp
+このリストには、gitwebの標準スタイルシートのURIが含まれている必要があります。gitwebスタイルシートのデフォルトURIは、ビルド時に
+\fBGITWEB_CSS\fR
+makefile変数を使用して設定できます。デフォルト値は
+\fBstatic/gitweb\&.css\fR
+(または、
+\fBCSSMIN\fR
+変数が定義されている場合、つまり、ビルド中にCSS minifierが使用されている場合は
+\fBstatic/gitweb\&.min\&.css\fR
+) です。
+.sp
+\fB注意\fR: 古いgitwebで使用されていた従来の
+\fB$stylesheet\fR
+構成変数もあります。 `$stylesheet`変数が定義されている場合、 この変数によって指定されたCSSスタイルシートのみがgitwebによって使用されます。
+.RE
+.PP
+$logo
+.RS 4
+Webサーバー上で
+\fBgit\-logo\&.png\fR
+を配置する場所を指定します。または、72x27サイズの汎用ロゴのURIを指します。この画像は、各gitwebページの右上隅に表示され、Atomフィードのロゴとして使用されます。 gitwebのベースURIからの相対パスです。
+\fBGITWEB_LOGO\fR
+変数を使用してgitwebを構築するときに調整できます。デフォルトでは
+\fBstatic/git\-logo\&.png\fR
+に設定されています。
+.RE
+.PP
+$favicon
+.RS 4
+Webサーバー上で
+\fBgit\-favicon\&.png\fR
+を配置する場所を指します。または、
+\fBimage/png\fR
+タイプとして提供されるfaviconの汎用URIを指します。favicon(Webサイトアイコン)をサポートするWebブラウザーは、favicon(Webサイトアイコン)をブラウザーのURLバーに表示し、ブックマークのサイト名の横に表示する場合があります。gitwebのベースURIからの相対パスです。
+\fBGITWEB_FAVICON\fR
+変数を使用してビルド時に調整できます。 デフォルトでは
+\fBstatic/git\-favicon\&.png\fR
+に設定されています。
+.RE
+.PP
+$javascript
+.RS 4
+Webサーバー上で
+\fBgitweb\&.js\fR
+を配置する場所を指します。より一般的には、gitwebで使用されるJavaScriptコードのURIを指します。 gitwebのベースURIを基準にしています。
+\fBGITWEB_JS\fR
+ビルド時構成変数を使用してビルド時に設定できます。
+.sp
+デフォルト値は、
+\fBstatic/gitweb\&.js\fR
+または
+\fBJSMIN\fR
+ビルド変数が定義されている場合、つまりビルド時にJavaScript minifierが使用されている場合は
+\fBstatic/gitweb\&.min\&.js\fR
+です。
+\fB注意\fR
+この単一のファイルは、複数の個別のJavaScriptモジュール達から生成されます。
+.RE
+.PP
+$home_link
+.RS 4
+すべてのページの上部にあるホームリンク(home link)のターゲット(パンくずリスト(breadcrumbs)ビューの最初の部分)。 デフォルトでは、現在のページの絶対URIに設定されます(\fB$my_uri\fR
+変数の値、または
+\fB$my_uri\fR
+が未定義または空の文字列の場合は
+\fB/\fR
+に設定されます)。
+.RE
+.PP
+$home_link_str
+.RS 4
+すべてのページの上部にある「home link」のラベルで、\fB$home_link\fR
+に誘導します(通常、プロジェクトリストを含むメインのgitwebページです)。
+\fB<home link> / <project> / <action>\fR
+は、gitwebの「パンくずリスト」の最初のコンポーネントとして使用されます。
+\fBGITWEB_HOME_LINK_STR\fR
+変数を使用してビルド時に設定できます。このリンクからプロジェクトのリストが表示されるため、デフォルトではラベルは "projects" に設定されています。もう1つの一般的な選択肢は、サイトの名前に設定することです。生のHTMLとして扱われるため、信頼できないソースからは設定しないでください。
+.RE
+.PP
+\fB@extra_breadcrumbs\fR
+.RS 4
+ホームリンクの前のパンくずリスト(breadcrumb trail)の先頭に、gitwebサーバーをホストする組織や部門など、gitwebプロジェクトリストの論理的に「上位」にあたるページに追加される追加のリンク。リストの各要素は配列への参照であり、要素0はリンクテキスト(\fB$home_link_str\fR
+相当)で、要素1はターゲットURL(\fB$home_link\fR
+相当)です。
+.sp
+たとえば、以下の設定では、
+\fBhome/dev/projects/ \&.\&.\&.\fR
+のようなパンくずリストが生成されます。ここで、
+\fBprojects\fR
+はホームリンクです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    our @extra_breadcrumbs = (
+      [ \*(Aqhome\*(Aq => \*(Aqhttps://www\&.example\&.org/\*(Aq ],
+      [ \*(Aqdev\*(Aq  => \*(Aqhttps://dev\&.example\&.org/\*(Aq ],
+    );
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+$logo_url, $logo_label
+.RS 4
+Gitロゴリンク(または、別のロゴ画像を使用することを選択した場合はサイトのロゴ)の、URIとラベル(タイトル)。デフォルトでは、これらは両方ともGitホームページ
+\m[blue]\fBhttps://git\-scm\&.com\fR\m[]
+を参照します。 過去には、
+\m[blue]\fBhttps://www\&.kernel\&.org\fR\m[]
+のGitのドキュメントを参照していました。
+.RE
+.SS "Changing gitweb\(cqs look"
+.sp
+あなたは、以下で説明する変数を使用して、gitwebによって生成されたページの外観を調整できます。サイト名を変更したり、すべてのページに共通のヘッダーとフッターを追加したり、メインページ(プロジェクトリストページ)に、このgitwebインストールの説明を追加したりできます。
+.PP
+$site_name
+.RS 4
+ページタイトルに表示される、サイト名または組織名です。 ブックマークなどを分かりやすくするために、何か説明的なものに設定してください。 この変数が設定されていない場合、あるいは設定されていても、gitweb は
+\fBSERVER_NAME\fR
+CGI環境変数の値を使用して、サイト名を "$SERVER_NAME Git" に設定し、この環境変数が設定されていない場合(例: gitweb がスタンドアローンのスクリプトとして起動している場合など)は "Untitled Git" に設定します。
+.sp
+ビルド時に
+\fBGITWEB_SITENAME\fR
+を使用して設定できます。 デフォルトでは設定されていません。
+.RE
+.PP
+$site_html_head_string
+.RS 4
+各ページの<head>セクションに含まれるHTMLスニペット。ビルド時に
+\fBGITWEB_SITE_HTML_HEAD_STRING\fR
+を使用して設定できます。 デフォルト値はありません。
+.RE
+.PP
+$site_header
+.RS 4
+各ページの先頭にインクルードされるHTMLを記述したファイル名。
+\fBgitweb\&.cgi\fR
+スクリプトを含むディレクトリからの相対パスです。 ビルド時に
+\fBGITWEB_SITE_HEADER\fR
+を使用して設定することができる。デフォルト値はありません。
+.RE
+.PP
+$site_footer
+.RS 4
+各ページの下部にインクルードされるHTMLを含むファイルの名前。
+\fBgitweb\&.cgi\fR
+スクリプトを含むディレクトリに相対的です。ビルド時に
+\fBGITWEB_SITE_FOOTER\fR
+を使用して設定できます。 デフォルト値はありません。
+.RE
+.PP
+$home_text
+.RS 4
+存在すればgitwebプロジェクトの概要ページ(\fBprojects_list\fR
+ビュー)にインクルードされるHTMLファイルの名前。
+\fBgitweb\&.cgi\fR
+スクリプトを含むディレクトリに相対的です。デフォルト値は、
+\fBGITWEB_HOMETEXT\fR
+変数を使用してビルド時に調整できます。デフォルトでは
+\fBindextext\&.html\fR
+に設定されています。
+.RE
+.PP
+$projects_list_description_width
+.RS 4
+プロジェクトリストの「説明」列の幅(文字数)。長い説明は切り捨てられます(単語の境界で切り取ろうと試みます)。完全な説明は、(通常はマウスオーバーで表示される)title属性にあります。デフォルトは25ですが、長いプロジェクトの説明を使用する場合は小さすぎる可能性があります。
+.RE
+.PP
+$default_projects_order
+.RS 4
+プロジェクトリストページでのプロジェクトの順序のデフォルト値。これは、プロジェクトリストを明示的に並べ替えない場合に使用される順序を意味します(URLに
+\fBo\fR
+CGIクエリパラメータがない場合)。 有効な値は、「none」(並べ替えなし)、「project」(プロジェクトはプロジェクト名、つまり「$ projectroot」からのリポジトリへのパス)、「descr」(プロジェクトの説明)、「owner」、「age」(最新のコミットの日付) です。
+.sp
+デフォルト値は
+\fBproject\fR
+です。不明な値は、ソートされていないことを意味します。
+.RE
+.SS "Changing gitweb\(cqs behavior"
+.sp
+これらの構成変数は、gitwebの「内部」動作を制御します。
+.PP
+$default_blob_plain_mimetype
+.RS 4
+mimetypeチェックで他のタイプが生成されない場合の、blob_plain (raw)ビューのデフォルトのmimetype。デフォルトでは "text/plain" です。 Gitwebは、
+\fB$mimetypes_file\fR
+(設定されていてfileが存在する場合)と
+\fB/etc/mime\&.types\fR
+ファイルを使用して、ファイル名の拡張子に基づいて表示するファイルのmimetypeを推測します。( mime\&.types(5) manpage を参照してください。gitwebではファイル名拡張子ルールのみがサポートされています。)
+.RE
+.PP
+$default_text_plain_charset
+.RS 4
+テキストファイルのデフォルトの文字セット。これが設定されていない場合は、Webサーバー構成が使用されます。デフォルトでは設定されていません(unset)。
+.RE
+.PP
+$fallback_encoding
+.RS 4
+行にUTF\-8以外の文字が含まれている場合、Gitwebはこの文字セットを想定します。フォールバックデコードはエラーチェックなしで使用されるため、「utf\-8」にすることもできます。値は有効なエンコーディングである必要があります。 リストについては、 Encoding::Supported (3pm) の manpage を参照してください。デフォルトは「latin1」、別名「iso\-8859\-1」です。
+.RE
+.PP
+\fB@diff_opts\fR
+.RS 4
+git\-diffおよびgit\-diff\-treeの検出オプションの名前を変更します。デフォルトは (\*(Aq\-M\*(Aq) です。コピーも検出するには (\*(Aq\-C\*(Aq) または (\*(Aq\-C\*(Aq, \*(Aq\-C\*(Aq）に設定するか、名前変更を検出したくない場合は () 、つまり空のリストに設定します。
+.sp
+\fB注意\fR
+名前変更(rename)、特にコピーの検出は、CPUにかなりの負荷がかかる可能性があります。 また、Git以外のツールでは、 上記のオプションで生成されたパッチで問題が発生する可能性があることにも注意してください。 特に、ファイルのコピー (\*(Aq\-C\*(Aq) または交差名前変更(criss\-cross renames) (\*(Aq\-B\*(Aq) が含まれる場合はそうです。
+.RE
+.SS "Some optional features and policies"
+.sp
+ほとんどの機能は \fB%feature\fR ハッシュを介して構成されます。ただし、追加のgitweb機能の一部は、以下で説明する変数を使用してオンにして構成できます。gitwebの外観を制御する構成変数の傍にあるこのリストには、gitwebの管理側を構成する変数が含まれています。(例: クロスサイトスクリプティングの防止。ご存知のとおり、これは副作用として「要約」ページの外観や負荷制限に影響します)
+.PP
+\fB@git_base_url_list\fR
+.RS 4
+GitベースURLのリスト。これらのURL群は、プロジェクトの概要ページに表示される、プロジェクトを取得する場所を説明するURLを生成するために使用されます。このリストの各要素の完全なフェッチURLは
+\fB$git_base_url/$project\fR
+です。 複数のベースURLを設定できます(たとえば、1つは
+\fBgit://\fR
+プロトコル用、もう1つは
+\fBhttp://\fR
+プロトコル用)。
+.sp
+注意: リポジトリごとの構成は、
+\fB$GIT_DIR/cloneurl\fR
+ファイルで設定することも、プロジェクト構成の、複数値の
+\fBgitweb\&.url\fR
+構成変数の値として設定することもできます。リポジトリごとの構成は、
+\fB@git_base_url_list\fR
+要素とプロジェクト名で構成される値よりも優先されます。
+.sp
+あなたは
+\fBGITWEB_BASE_URL\fR
+ビルド時構成変数を設定することにより、ビルド時に単一の値(1つの entry/item だけを持つリスト)を設定できます。デフォルトでは、 () 、つまり空のリストに設定されています。これは、gitwebがプロジェクト名から(フェッチのための)プロジェクトURLを作成しようとしないことを意味します。
+.RE
+.PP
+$projects_list_group_categories
+.RS 4
+プロジェクトリストページでカテゴリ別にプロジェクトをグループ化できるようにするかどうか。プロジェクトのカテゴリは、各リポジトリの構成の
+\fB$GIT_DIR/category\fR
+ファイル、または
+\fBgitweb\&.category\fR
+変数によって決定されます。デフォルトでは無効になっています(0に設定)。
+.RE
+.PP
+$project_list_default_category
+.RS 4
+何も指定されていないプロジェクトのデフォルトカテゴリ。 これが空の文字列に設定されている場合、そのようなプロジェクトは未分類のままで、分類されたプロジェクトの上に表示されます。 プロジェクトカテゴリが有効になっている場合、つまり
+\fB$projects_list_group_categories\fR
+がtrueの場合にのみ使用されます。デフォルトでは "" (空文字列)に設定されています。
+.RE
+.PP
+$prevent_xss
+.RS 4
+trueの場合、リポジトリ内のコンテンツがクロスサイトスクリプティング(XSS)攻撃を開始するのを防ぐために、一部のgitweb機能が無効になっています。リポジトリのコンテンツを信頼できない場合は、これをtrueに設定します。デフォルトではFalse(0に設定)。
+.RE
+.PP
+$maxload
+.RS 4
+gitwebクエリに応答する最大負荷を設定するために使用されます。サーバーの負荷がこの値を超えると、gitwebは「503 Service Unavailable」エラーを返します。 gitwebがその値を判別できない場合、サーバーの負荷は0と見なされます。 現在、Linuxでのみ動作し、
+\fB/proc/loadavg\fR
+を使用します。 負荷は、システム上でアクティブなタスクの数 \(em 実際に実行されているプロセス \(em  が最後の1分間に平均化されたものです。
+.sp
+この機能をオフにするには、
+\fB$maxload\fR
+を未定義の値(undef)に設定します。デフォルト値は300です。
+.RE
+.PP
+$omit_age_column
+.RS 4
+trueの場合、プロジェクトリストページの最新のコミットの日付の列を省略します。リポジトリごとに少しのI/Oとフォークを節約できます。
+.RE
+.PP
+$omit_owner
+.RS 4
+trueの場合、リポジトリ所有者に関する情報を表示できなくなります。
+.RE
+.PP
+$per_request_config
+.RS 4
+これがコードへの参照に設定されている場合、リクエストごとに1回実行されます。この方法で、セッションごとに構成の一部を変更設定できます。たとえば、gitweb構成ファイルで以下のコードを使用する場合があります
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+our $per_request_config = sub {
+        $ENV{GL_USER} = $cgi\->remote_user || "gitweb";
+};
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB$per_request_config\fR
+がコードへの参照でない場合、ブール値として解釈されます。trueの場合、gitwebはリクエストごとに1回設定ファイルを処理し、falseの場合、gitwebは実行されるたびに1回だけ設定ファイルを処理します。デフォルトではtrueです(1に設定)。
+.sp
+\fB注意\fR:
+\fB$my_url\fR
+と
+\fB$my_uri\fR
+と
+\fB$base_url\fR
+は、すべてのリクエストの発生前にデフォルト値で上書きされるため、 変更する場合は、必ずこの変数をtrueに設定するか、 必要な変更を行うコードへの参照を設定してください。
+.sp
+この変数は、mod_perl、FastCGI、Plackupなどの単一のgitwebインスタンスを使用して複数のリクエストを処理する永続的なWeb環境を使用する場合にのみ重要です。
+.RE
+.SS "Other variables"
+.sp
+通常、あなたは以下で説明する構成変数を変更(調整)する必要はありません。 それらは正しい値にするために、gitwebが自動で設定する必要があります。
+.PP
+$version
+.RS 4
+Gitwebバージョン。gitweb\&.perlからgitweb\&.cgiを作成するときに自動的に設定されます。たとえば、あなたが変更したgitwebを実行している場合は、変更することをお勧めします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+our $version \&.= " with caching";
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+あなたがキャッシュのサポートがある、変更バージョンのgitwebを実行する場合。この変数は純粋に情報提供用であり、たとえばHTMLヘッダーの「generator」メタヘッダー内で使われます。
+.RE
+.PP
+$my_url, $my_uri
+.RS 4
+gitwebスクリプトの完全なURLと絶対URL。以前のバージョンのgitwebでは、これらの変数を設定する必要があるかもしれませんが、今では設定する必要はありません。 まだ設定する必要がある場合は、
+\fB$per_request_config\fR
+を参照してください。
+.RE
+.PP
+$base_url
+.RS 4
+gitwebによって生成されたページ内の相対URLのベースURL(例えば、相対URLの場合は
+\fI$logo\fR
+、
+\fI$favicon\fR
+、
+\fI@stylesheets\fR)が必要で、空でないPATH_INFOを持つURLに対してのみ
+\fI<base href="$base_url">\fR
+が必要でした。通常、gitwebはその値を正しく設定し、この変数に $my_uri や "/" などを設定する必要はありません。あなたがとにかくそれをオーバーライドする必要がある場合は、
+\fI$per_request_config\fR
+を参照してください。
+.RE
+.SH "CONFIGURING GITWEB FEATURES"
+.sp
+多くのgitweb機能は、 \fB%feature\fR ハッシュ(連想配列)を使用して有効化(または無効化)および構成できます。gitweb機能の名前は、このハッシュのキーです。
+.sp
+各 \fB％feature\fR ハッシュ(連想配列)要素はハッシュへの参照であり、以下の構造を持っています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"<feature_name>" => {
+        "sub" => <feature\-sub (subroutine)>,
+        "override" => <allow\-override (boolean)>,
+        "default" => [ <options>\&.\&.\&. ]
+},
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+一部の機能は、プロジェクトごとにオーバーライドできません。 これらの機能の場合、適切な \fB%feature\fR ハッシュ要素の構造はより単純な形式になります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"<feature_name>" => {
+        "override" => 0,
+        "default" => [ <options>\&.\&.\&. ]
+},
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+上記にはご覧のとおり、\*(Aqsub\*(Aq 要素がありません。
+.sp
+機能構成の各部分の意味を以下に説明します:
+.PP
+default
+.RS 4
+機能パラメータ(存在する場合)のリスト(配列への参照)。特定の機能を切り替える(有効または無効にする)ためにも使用されます。
+.sp
+注意: 機能が構成パラメーターを受け入れない場合でも、現在は常に配列への参照であり、\*(Aqdefault\*(Aq はオンまたはオフにするためにのみ使用されることに注意してください。 このような場合は、この要素を
+\fB[1]\fR
+に設定して機能をオンにし、
+\fB[0]\fR
+に設定して機能を解除します。「Examples例」セクションの「blame」機能に関する一節も参照してください。
+.sp
+パラメータを受け入れる(設定可能な)機能を無効にするには、この要素を空のリスト、つまり
+\fB[]\fR
+に設定する必要があります。
+.RE
+.PP
+override
+.RS 4
+このフィールドにtrue値がある場合、指定の機能はオーバーライド可能です。つまり、リポジトリごとに構成(または 有効/無効 化)できます。
+.sp
+通常、指定の「<feature>」は、リポジトリごとのGit構成ファイルの
+\fBgitweb\&.<feature>\fR
+構成変数を介して構成できます。
+.sp
+\fB注意\fR
+デフォルトではオーバーライド可能な機能はありません。
+.RE
+.PP
+sub
+.RS 4
+実装の内部詳細。重要なのは、このフィールドが存在しない場合、特定の機能のリポジトリごとのオーバーライドはサポートされないということです。
+.sp
+あなたはgitweb構成ファイルでこれを変更する必要はありません。
+.RE
+.SS "Features in \fB%feature\fR"
+.sp
+\fB%feature\fR ハッシュを介して構成可能なgitweb機能を以下に示します。これは完全なリストであるべきですが、最終的に信頼できる完全なリストはgitweb\&.cgiソースコードにあり、機能はそのコメントで説明されています。
+.PP
+blame
+.RS 4
+「blame」および「blame_incremental」ブロブビューを有効にし、各行にそれを変更した最後のコミットを表示します。
+\fBgit-blame\fR(1)
+を参照してください。 これはCPUに非常に負荷がかかる可能性があるため、デフォルトでは無効になっています。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.blame\fR
+構成変数(ブール値)を介してリポジトリごとに構成できます。
+.RE
+.PP
+snapshot
+.RS 4
+「snapshot」アクションを有効にして構成します。これにより、ユーザーは、
+\fBgit-archive\fR(1)
+によって生成され、そして、場合によってはさらに圧縮された、任意のツリーまたはコミットの圧縮アーカイブをダウンロードできます。大規模なプロジェクトがある場合、これにより大量のトラフィックが発生する可能性があります。
+.sp
+\*(Aqdefault\*(Aq の値は、提供するスナップショット形式の名前のリストであり、
+\fB%known_snapshot_formats\fR
+ハッシュで定義されています。サポートされている形式には、"tgz"、"tbz2"、"txz" (gzip/bzip2/xz で圧縮されたtarアーカイブ)、および "zip" が含まれます。完全なリストについては、gitwebのソースを参照してください。 デフォルトでは、"tgz"のみが提供されます。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.snapshot\fR
+構成変数を介してリポジトリごとに構成できます。この変数には、書式のコンマ区切りリストが含まれるか、スナップショットを無効にする場合は
+\fBnone\fR
+が含まれます。不明な値は無視されます。
+.RE
+.PP
+grep
+.RS 4
+grep検索を有効にします。これにより、現在選択されているツリー(ディレクトリ)内で指定の文字列を含むファイルが一覧表示されます。
+\fBgit-grep\fR(1)
+を参照してください。 もちろん、これは潜在的にCPUを集中的に使用する可能性があります。 デフォルトで有効になっています。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.grep\fR
+構成変数(ブール値)を介してリポジトリごとに構成できます。
+.RE
+.PP
+pickaxe
+.RS 4
+いわゆるpickaxe検索を有効にします。これにより、ファイル内の特定の文字列を導入または削除したコミットが一覧表示されます。 これは実用的で、「blame」アクションの非常に高速な代替手段ですが、それでもCPUに負荷がかかる可能性があります。 デフォルトで有効になっています。
+.sp
+pickaxe検索については、
+\fBgit-log\fR(1)
+で説明されています(詳細については
+\fBgitdiffcore\fR(7)
+のpickaxeエントリの
+\fB\-S<string>\fR
+オプションを参照してください)。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.pickaxe\fR
+構成変数(ブール値)を設定することにより、リポジトリごとに構成できます。
+.RE
+.PP
+show\-sizes
+.RS 4
+\fBls \-l\fR
+と同様に、別の列の「ツリー」ビューにブロブ(通常のファイル)のサイズを表示できるようにします。
+\fBgit-ls-tree\fR(1)
+のmanpageにある
+\fB\-l\fR
+オプションの説明を参照してください。これにはちょびっとI/Oコストがかかります。デフォルトで有効になっています。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.showSizes\fR
+構成変数(ブール値)を介してリポジトリごとに構成できます。
+.RE
+.PP
+patches
+.RS 4
+コミットのリストを電子メール(プレーンテキスト)出力形式で表示する「パッチ」ビューを有効にして構成します。
+\fBgit-format-patch\fR(1)
+も参照してください。 この値は、「パッチ」ビューで生成されたパッチセット内のパッチの最大数です。
+\fIdefault\fR
+フィールドを、パッチビューを無効にするための単一の項目を含むリストまたは空のリストに設定するか、制限を削除するために単一の負の数を含むリストに設定します。デフォルト値は16です。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.patches\fR
+構成変数(整数)を介してリポジトリごとに構成できます。
+.RE
+.PP
+avatar
+.RS 4
+アバター(avatar)のサポート。この機能を有効にすると、「shortlog」や「commit」などのビューに、各コミッターと作成者の電子メールに関連付けられたアバターが表示されます。
+.sp
+現在利用可能なプロバイダーは、 gravatar と picon です。 一度に選択できるプロバイダーは1つだけです(「default」は要素1つだけのリストです)。不明なプロバイダーが指定されている場合、この機能は無効になります。
+\fB注意\fR
+一部のプロバイダーでは、追加のPerlパッケージをインストールする必要がある場合があります。 詳細については、
+\fBgitweb/INSTALL\fR
+を参照してください。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.avatar\fR
+構成変数を介してリポジトリごとに構成できます。
+.sp
+アイコンとアバターのピクセルサイズを含む
+\fB%avatar_size\fR
+も参照してください( "default" は "log" や "shortlog" などの1行モノに使用され、 "double" は "commit"、"commitdiff"、"tag" などの2行モノに使用されます)。デフォルトのフォントサイズまたは行の高さが変更された場合は、これらの値を変更すること(たとえば、
+\fB@stylesheets\fR
+にCSSスタイルシートを追加するなど)が適切な場合があります。
+.RE
+.PP
+email\-privacy
+.RS 4
+生成されたHTMLなどのコンテンツの電子メールアドレスを改訂します。これにより、Gitログの作者/コミッターおよびコメントセクションから取得された電子メールアドレスを不明瞭にします。 これは、アドレスを収集して悪用するWebクローラーを妨害することを目的としています。このようなクローラーはrobots\&.txtを尊重しない場合があります。 注意: ユーザーとユーザーツールもアドレスが編集されたものとして表示されることに注意してください。Gitwebがワークフローの最後のステップではない場合、後続のステップは、受け取った情報が編集されているために誤動作する可能性があります。デフォルトでは無効になっています。
+.RE
+.PP
+highlight
+.RS 4
+「ブロブ」ビューでサーバー側構文ハイライトサポートします。\fB$height_bin\fR
+プログラムが使用可能である必要があるため(上記の「構成変数」セクションの、この変数の説明を参照)、デフォルトで無効になっています。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.highlight\fR
+構成変数(ブール値)を介してリポジトリごとに構成できます。
+.RE
+.PP
+remote_heads
+.RS 4
+「ヘッド」リストにリモートヘッド(リモート追跡ブランチ)を表示できるようにします。ほとんどの場合、リモート追跡ブランチのリストは不要な内部プライベート詳細であるため、この機能はデフォルトで無効になっています。
+\fBgit-instaweb\fR(1)
+は、通常、ローカルリポジトリを参照するために使用され、この機能を有効にして使用します。
+.sp
+この機能は、リポジトリの
+\fBgitweb\&.remote_heads\fR
+構成変数(ブール値)を介してリポジトリごとに構成できます。
+.RE
+.sp
+以下の、残りの機能は、プロジェクトごとにオーバーライドすることはできません。
+.PP
+search
+.RS 4
+テキスト検索を有効にします。これにより、作者(author)または、コミッターまたは、コミットテキストが特定の文字列に一致するコミットが一覧表示されます。
+\fBgit-log\fR(1)
+のmanpage にある
+\fB\-\-author\fR
+と
+\fB\-\-committer\fR
+と
+\fB\-\-grep\fR
+オプションの説明を参照してください。デフォルトで有効になっています。
+.sp
+プロジェクト固有のオーバーライドはサポートされていません。
+.RE
+.PP
+forks
+.RS 4
+この機能が有効になっている場合、gitwebは、プロジェクトルート(ベース名)のサブディレクトリ内のプロジェクトを既存のプロジェクトのフォークと見なします。
+\fB$projname\&.git\fR
+プロジェクトごとに、
+\fB$projname/\fR
+ディレクトリ内のプロジェクトとそのサブディレクトリはメインプロジェクトリストに表示されません。代わりに、
+\fB$projname\fR
+の横に
+\fB+\fR
+マークが表示されます。これは、すべてのフォーク(\fB$projname/\fR
+サブディレクトリ内のすべてのプロジェクト)を一覧表示する "forks" ビューにリンクしています。さらに、プロジェクトの「fork」ビューは、プロジェクトの概要ページからリンクされています。
+.sp
+プロジェクトリストがファイルから取得された場合(
+\fB$projects_list\fR
+はファイルを指している)、フォーク(fork)は、そのファイルのメインプロジェクトの後にリストされている場合にのみ認識されます。
+.sp
+プロジェクト固有のオーバーライドはサポートされていません。
+.RE
+.PP
+actions
+.RS 4
+すべてのプロジェクトページのアクションバーへのカスタムリンクを挿入します。これにより、あなたはgitwebに統合されているサードパーティのスクリプトにリンクできます。
+.sp
+「default」値は、
+\fB("<label>", "<link>", "<position>")\fR
+という3要素組形式の、リストで構成されます。ここで、 "position" は、リンクを挿入するラベルです。 "link" はフォーマット文字列で、
+\fB%n\fR
+はプロジェクト名に展開され、
+\fB%f\fR
+はファイルシステム内のプロジェクトパス(つまり "$projectroot/$project")に展開され、
+\fB%h\fR
+は現在のハッシュ(\fBh\fR
+gitwebパラメーター)、
+\fB%b\fR
+は現在のハッシュベース(\fBhb\fR
+\*(Aqgitwebパラメーター) です。\fB%%\fR
+は
+\fB%\fR
+に展開されます。
+.sp
+たとえば、このページが作成された時点で、
+\m[blue]\fBhttp://repo\&.or\&.cz\fR\m[]
+Gitホスティングサイトは、グラフィカルログを有効にするために次のように設定しました(サードパーティツール git\-browser を使用):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$feature{\*(Aqactions\*(Aq}{\*(Aqdefault\*(Aq} =
+        [ (\*(Aqgraphiclog\*(Aq, \*(Aq/git\-browser/by\-commit\&.html?r=%n\*(Aq, \*(Aqsummary\*(Aq)];
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これにより、「summary」リンクの後に「graphiclog」というタイトルのリンクが追加され、クエリパラメータとして
+\fBr=<project>\fR
+を渡して、
+\fBgit\-browser\fR
+スクリプトへ誘導します。
+.sp
+プロジェクト固有のオーバーライドはサポートされていません。
+.RE
+.PP
+timed
+.RS 4
+ページフッター(ページの下部)に各ページを生成して表示するのにかかった時間とGitコマンドの数を表示できるようにします。たとえば、フッターには次のように含まれます。「This page took 6\&.53325 seconds and 13 Git commands to generate\&.」(このページの生成には6\&.53325秒と13のGitコマンドが必要でした。)。デフォルトでは無効になっています。
+.sp
+プロジェクト固有のオーバーライドはサポートされていません。
+.RE
+.PP
+javascript\-timezone
+.RS 4
+JavaScriptを介してgitweb出力の日付の共通タイムゾーンを変更する機能を有効にして構成します。 gitweb出力の日付には、「commit」ビューと「commitdiff」ビューと「log」ビューでのauthordateとcommitterdate、および「tag」ビューでのtaggerdateが含まれます。デフォルトで有効になっています。
+.sp
+値は、3つの値のリストです。デフォルトのタイムゾーン(default time zone)(クライアントが他のタイムゾーンを選択してCookieに保存していない場合)と、選択したタイムゾーンを保存するCookieの名前と、操作の日付をマークアップするために使用されるCSSクラスです。この機能をオフにする場合は、「default」を空のリストに設定します。つまり
+\fB[]\fR
+。
+.sp
+通常のgitweb構成ファイルでは、最初の、(default)タイムゾーンのみを変更し、他の要素はデフォルト値のままにします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$feature{\*(Aqjavascript\-timezone\*(Aq}{\*(Aqdefault\*(Aq}[0] = "utc";
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ここに示されている構成例は、下位互換性と上位互換性が保証されています。
+.sp
+タイムゾーンの値は、 "local"(ブラウザが使用するローカルタイムゾーンの場合)、"utc"(JavaScriptまたは、この機能が無効になっている場合にgitwebが使用するもの)、または "\fB0200" のような "\fR/\-HHMM" 形式の数値のタイムゾーンにすることができます。
+.sp
+プロジェクト固有のオーバーライドはサポートされていません。
+.RE
+.PP
+extra\-branch\-refs
+.RS 4
+"refs" の下にある、ブランチのrefとして使用される追加ディレクトリのリスト。たとえば、gerrit のセットアップで、refs/heads/ 以下のすべてのブランチが公式のもので、push\-after\-review のもの、そして refs/sandbox/, refs/wip, refs/other 以下のブランチはより広いパーミッションを持つユーザーのものである場合、あなたはこの変数を以下のように設定したいと思うことでしょう。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$feature{\*(Aqextra\-branch\-refs\*(Aq}{\*(Aqdefault\*(Aq} =
+        [\*(Aqsandbox\*(Aq, \*(Aqwip\*(Aq, \*(Aqother\*(Aq];
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この機能は、 $feature{\fIextra\-branch\-refs\fR}{\fIoverride\fR} をtrueに設定した後、リポジトリの
+\fBgitweb\&.extraBranchRefs\fR
+構成変数を介して、リポジトリごとに構成できます。これには、スペースで区切られたrefのリストが含まれます。 例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[gitweb]
+        extraBranchRefs = sandbox wip other
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+gitweb\&.extraBranchRefsは実際には複数値の構成変数であるため、以下の例も正しくて、結果は上記のスニペットと同じです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[gitweb]
+        extraBranchRefs = sandbox
+        extraBranchRefs = wip other
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+「gitcheck\-ref\-format」の精査に合格しないrefを指定するとエラーになります。 重複した値はフィルタリングされます。
+.RE
+.SH "EXAMPLES"
+.sp
+blameと、pickaxe検索と、スナップショットのサポート("tar\&.gz" と "zip" のスナップショットを許可)を有効にし、個々のプロジェクトでそれらをオフにできるようにするには、GITWEB_CONFIGファイルに以下のように入力します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$feature{\*(Aqblame\*(Aq}{\*(Aqdefault\*(Aq} = [1];
+$feature{\*(Aqblame\*(Aq}{\*(Aqoverride\*(Aq} = 1;
+
+$feature{\*(Aqpickaxe\*(Aq}{\*(Aqdefault\*(Aq} = [1];
+$feature{\*(Aqpickaxe\*(Aq}{\*(Aqoverride\*(Aq} = 1;
+
+$feature{\*(Aqsnapshot\*(Aq}{\*(Aqdefault\*(Aq} = [\*(Aqzip\*(Aq, \*(Aqtgz\*(Aq];
+$feature{\*(Aqsnapshot\*(Aq}{\*(Aqoverride\*(Aq} = 1;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+スナップショット機能のオーバーライドを許可する場合は、グローバルに無効にするスナップショット形式を指定できます。必要なコマンドラインオプション(圧縮レベルの設定など)を追加することもできます。 たとえば、gitweb構成ファイルに以下の行を追加することで、Zip圧縮スナップショットを無効にし、 gzip(1)をレベル6で実行するように設定できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$known_snapshot_formats{\*(Aqzip\*(Aq}{\*(Aqdisabled\*(Aq} = 1;
+$known_snapshot_formats{\*(Aqtgz\*(Aq}{\*(Aqcompressor\*(Aq} = [\*(Aqgzip\*(Aq,\*(Aq\-6\*(Aq];
+.fi
+.if n \{\
+.RE
+.\}
+.SH "BUGS"
+.sp
+フォールバック構成ファイル(\fB/etc/gitweb\&.conf\fR)とその場所をオーバーライドする環境変数(\fIGITWEB_CONFIG_SYSTEM\fR)に、「fallback」の役割を反映した名前が付いていると、デバッグが容易になります。 現在の名前は、作業セットアップを壊さないように保持されます。
+.SH "ENVIRONMENT"
+.sp
+インスタンスごとおよびシステム全体の構成ファイルの場所は、以下の環境変数を使用してオーバーライドできます:
+.PP
+GITWEB_CONFIG
+.RS 4
+インスタンスごとの構成ファイルの場所を設定します。
+.RE
+.PP
+GITWEB_CONFIG_SYSTEM
+.RS 4
+フォールバックするシステム全体の構成ファイルの場所を設定します。 このファイルは、インスタンスごとのファイルが存在しない場合にのみ読み取られます。
+.RE
+.PP
+GITWEB_CONFIG_COMMON
+.RS 4
+共通のシステム全体の構成ファイルの場所を設定します。
+.RE
+.SH "FILES"
+.PP
+\fBgitweb_config\&.perl\fR
+.RS 4
+これは、インスタンスごとの構成ファイルのデフォルト名です。このファイルの形式は前述のとおりです。
+.RE
+.PP
+\fB/etc/gitweb\&.conf\fR
+.RS 4
+これは、フォールバックするシステム全体の構成ファイルのデフォルト名です。このファイルは、インスタンスごとの構成変数が見つからない場合にのみ使用されます。
+.RE
+.PP
+\fB/etc/gitweb\-common\&.conf\fR
+.RS 4
+これは、共通システム全体の構成ファイルのデフォルト名です。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgitweb\fR(1), \fBgit-instaweb\fR(1)
+.sp
+\fIgitweb/README\fR, \fIgitweb/INSTALL\fR
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

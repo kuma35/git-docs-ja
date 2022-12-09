@@ -1,0 +1,111 @@
+'\" t
+.\"     Title: git-archimport
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-ARCHIMPORT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-archimport \- GNU Arch リポジトリをGitにインポートします
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit archimport\fR [\-h] [\-v] [\-o] [\-a] [\-f] [\-T] [\-D <depth>] [\-t <tempdir>]
+               <archive>/<branch>[:<git\-branch>]\&...
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+1つ以上の GNU Arch リポジトリからプロジェクトをインポートします。これは、提供された <archive>/<branch> パラメーターによって定義された名前空間内のブランチとリポジトリに従います。リモートブランチが見つからない場合は、マージ元から通常のコミットとしてインポートされます。見つかった場合は、可能な限りマージとしてマークします(以下の説明を参照)。
+.sp
+スクリプトは、 \fBinitial import\fR または \fBtag\fR 型のArchコミットからインポートを開始できるキールート(key root)を提供することを想定しています。提供されたルート(root)内の新しいブランチを追跡してインポートします。
+.sp
+1つのプロジェクトのみを扱うことを想定しています。ルート(root)が異なるブランチを検出した場合、実行を拒否します。その場合は、 <archive>/<branch> パラメータを編集して、インポートの範囲を明確に定義します。
+.sp
+\fBgit archimport\fR は、バックグラウンドで \fBtla\fR を広範囲に使用して、Archリポジトリにアクセスします。パス上に利用可能な \fBtla\fR の最新バージョンがあることを確認してください。 \fBtla\fR は、 \fBgit archimport\fR に渡すリポジトリについて知っている必要があります。
+.sp
+最初のインポートでは、 \fBgit archimport\fR は空のディレクトリに自分自身を見つけることをf期待しています。 Archを使用するプロジェクトの開発を追跡するには、最初のインポートと同じパラメーターを使用して「git archimport」を再実行し、増分インポートを実行します。
+.sp
+\fBgit archimport\fR は、インポートするアーカイブに適切なブランチ名を作成しようとしますが、Gitブランチ名を手動で指定することもできます。これを行うには、各 <archive>/<branch> パラメーターの後にコロン(\fB:\fR)で区切ってGitブランチ名を記述します。このようにして、Archブランチ名を短縮し、Arch専門用語をGit専門用語に変換できます。たとえば、「PROJECT\-\-devo\-\-VERSION」ブランチを「master」にマッピングします。
+.sp
+複数のArchブランチを1つのGitブランチに関連付けることができます。 結果は、2番目のブランチが作成された後、最初のブランチに対してコミットが行われない場合にのみ最も意味があります。それでも、これは定期的にローテーションされたArchリポジトリを変換するのに役立ちます。
+.SH "MERGES"
+.sp
+Archからのパッチマージデータは、Gitでのマージをマークするためにも使用されます。 Gitはパッチの追跡についてはあまり気にせず、分岐した時点以降、ブランチにすべてのコミットが組み込まれている場合にのみマージを考慮します。最終的な結果として、Gitはブランチがどこまで分岐したかを把握できます。したがって、インポートプロセスでは、パッチ取引のメタデータが失われます。
+.sp
+幸い、Archからインポートされたブランチをマージしようとすると、Gitは適切なマージベースを見つけ、ブランチ間で順番どおりにトレードされていないパッチを特定できる可能性が高くなります。
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+使い方表示。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+詳細な出力。
+.RE
+.PP
+\fB\-T\fR
+.RS 4
+多くのタグ。Archリポジトリのコミット名を反映して、すべてのコミットにタグを作成します。
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+高速パッチセットインポート戦略(fast patchset import strategy)を使用します。これは、大きなツリーでは大幅に高速化できますが、ディレクトリの名前変更やアクセス許可の変更を処理できません。デフォルトの戦略は遅いけど安全(slow and safe)です。
+.RE
+.PP
+\fB\-o\fR
+.RS 4
+これは、以前のバージョンの「git archimport」で使用されていた古いスタイルのブランチ名との互換性のために使用します。古いスタイルのブランチ名は category\-\-branch でしたが、新しいスタイルのブランチ名は category\-\-branch\-\-version です。 どちらの場合も、コマンドラインで指定された名前が自動生成された名前を上書きします。
+.RE
+.PP
+\fB\-D <depth>\fR
+.RS 4
+マージの祖先に従い、マージされたツリーのインポートを試みます。パッチログが剪定されている場合は、1より大きい深さを指定します。
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+\fBhttp://mirrors\&.sourcecontrol\&.net\fR
+でアーカイブを自動登録してみてください。これは、
+\fB\-D\fR
+オプションを使用すると特に便利です。
+.RE
+.PP
+\fB\-t <tmpdir>\fR
+.RS 4
+デフォルトのtempdirをオーバーライドします。
+.RE
+.PP
+<archive>/<branch>
+.RS 4
+\fBtla log\fR
+が理解できる形式の <archive>/<branch> ID。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,391 @@
+'\" t
+.\"     Title: git-cvsimport
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CVSIMPORT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-cvsimport \- 別の嫌われ者のSCMからあなたのデータを救難救助する
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit cvsimport\fR [\-o <branch\-for\-HEAD>] [\-h] [\-v] [\-d <CVSROOT>]
+              [\-A <author\-conv\-file>] [\-p <options\-for\-cvsps>] [\-P <file>]
+              [\-C <git\-repository>] [\-z <fuzz>] [\-i] [\-k] [\-u] [\-s <subst>]
+              [\-a] [\-m] [\-M <regex>] [\-S <regex>] [\-L <commit\-limit>]
+              [\-r <remote>] [\-R] [<CVS\-module>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+\fBgit cvsimport\fR はcvspsバージョン2を使用しますが、cvspsバージョン2は非推奨とされています。 \fBgit cvsimport\fR はcvspsバージョン3以降では動作しません。 CVSリポジトリのワンショットインポートを実行している場合は、 \m[blue]\fBcvs2git\fR\m[]\&\s-2\u[1]\d\s+2 または \m[blue]\fBcvs\-fast\-export\fR\m[]\&\s-2\u[2]\d\s+2 の使用を検討してください。
+.sp .5v
+.RE
+.sp
+CVSリポジトリをGitにインポートします。新しいリポジトリを作成するか、既存のリポジトリに追加インポートします。
+.sp
+CVSログをパッチセットに分割するには、「cvsps」を使用します。 少なくともバージョン2\&.1が必要です。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+特定の状況では、インポートによって誤った結果が発生します。 詳細については、 ISSUES セクションを参照してください。
+.sp .5v
+.RE
+.sp
+\fBgit cvsimport\fR によって作成されたブランチに対して独自の作業を「絶対に」行ってはいけません。 デフォルトでは、初期インポートにより、自由に操作できるCVSリポジトリのメインブランチから「master」ブランチが作成され、データが入力されます。 その後、自分で増分インポート(incremental imports)またはCVSブランチを \fBgit merge\fR する必要があります。着信ブランチを分離して保護するために、 \fB\-r\fR を介して名前付きリモートを指定することをお勧めします。
+.sp
+すべての開発者が読み取り/書き込みできる共有パブリックリポジトリを設定する場合、または \fBgit-cvsserver\fR(1) を使用する場合は、インポートされたリポジトリのベアクローンを作成し、 共有リポジトリとしてクローンを作成します。 \fBgitcvs-migration\fR(7) を参照してください。
+.SH "OPTIONS"
+.PP
+\fB\-v\fR
+.RS 4
+おしゃべりにします: cvsimportが何をしているかを報告します。
+.RE
+.PP
+\fB\-d <CVSROOT>\fR
+.RS 4
+CVSアーカイブのルート。 ローカル(単純なパス)またはリモートの場合があります。 現在、 :local: と :ext: と :pserver: アクセスメソッドのみがサポートされています。 指定しない場合、
+\fBgit cvsimport\fR
+は
+\fBCVS/Root\fR
+から読み取ろうとします。 そのようなファイルが存在しない場合は、
+\fBCVSROOT\fR
+環境変数をチェックします。
+.RE
+.PP
+<CVS\-module>
+.RS 4
+インポートするCVSモジュール。 <CVSROOT>を基準にしています。 指定しない場合、
+\fBgit cvsimport\fR
+は
+\fBCVS/Repository\fR
+からそれを読み取ろうとします。
+.RE
+.PP
+\fB\-C <target\-dir>\fR
+.RS 4
+インポート先のGitリポジトリ。 ディレクトリが存在しない場合は作成されます。 デフォルトは現在のディレクトリです。
+.RE
+.PP
+\fB\-r <remote>\fR
+.RS 4
+このCVSリポジトリをインポートするGitリモート。
+\fBgit clone\fR
+がデフォルトで
+\fBorigin\fR
+を使用する方法と同様に、すべてのCVSブランチを remotes/<remote>/<branch> に移動します。
+.RE
+.PP
+\fB\-o <branch\-for\-HEAD>\fR
+.RS 4
+(\fB\-r`を介して)リモートが指定されていない場合、CVSからの `HEAD\fR
+ブランチはGitリポジトリ内の
+\fBorigin\fR
+ブランチにインポートされます。 これは、
+\fBHEAD\fR
+がすでにGitに対して特別な意味を持っているためです。 リモートが指定されると、
+\fBHEAD\fR
+ブランチの名前は
+\fBremotes/<remote>/master\fR
+になり、
+\fBgit clone\fR
+の振る舞いを真似します。 別のブランチにインポートする場合は、このオプションを使用します。
+.sp
+\fB\-o master\fR
+を使用すると、古いcvs2gitツールによって最初に実行されたインポートを続行します。
+.RE
+.PP
+\fB\-i\fR
+.RS 4
+インポートのみ: インポート後にチェックアウトを実行しません。 このオプションにより、作業ディレクトリとインデックスは変更されずに残り、存在しない場合は作成されません。
+.RE
+.PP
+\fB\-k\fR
+.RS 4
+排除キーワード(kill keywords): ノイズの多いチェンジセットを回避するために、CVSアーカイブからファイル名に
+\fB\-kk\fR
+が付くファイルを抽出します。 強くお勧めしますが、初期にインポートされたツリーとの互換性を維持するために、デフォルトではオフになっています。
+.RE
+.PP
+\fB\-u\fR
+.RS 4
+タグ名とブランチ名のアンダースコアをドットに変換します。
+.RE
+.PP
+\fB\-s <subst>\fR
+.RS 4
+ブランチ名の文字
+\fB/\fR
+を <subst> に置き換えます
+.RE
+.PP
+\fB\-p <options\-for\-cvsps>\fR
+.RS 4
+cvspsの追加オプション。 オプション
+\fB\-u\fR
+および
+\fB\-A\fR
+は暗黙的であり、ここでは使用しないでください。
+.sp
+複数のオプションを渡す必要がある場合は、それらをコンマ(\fB,\fR)で区切ります。
+.RE
+.PP
+\fB\-z <fuzz>\fR
+.RS 4
+タイムスタンプファズ係数(timestamp fuzz factor)を秒単位でcvspsに渡します。 設定されていない場合、cvspsのデフォルトは300秒です。
+.RE
+.PP
+\fB\-P <cvsps\-output\-file>\fR
+.RS 4
+cvspsを呼び出す代わりに、提供されているcvsps出力ファイルを読み取ります。 デバッグ時や、cvspsがcvsimportの外部で処理されている場合に便利です。
+.RE
+.PP
+\fB\-m\fR
+.RS 4
+コミットメッセージに基づいてマージを検出しようとします。 このオプションは、コミットメッセージからソースブランチ名をキャプチャしようとするデフォルトの正規表現を有効にします。
+.RE
+.PP
+\fB\-M <regex>\fR
+.RS 4
+カスタム正規表現を使用したコミットメッセージに基づいてマージを検出しようとします。
+\fB\-m\fR
+と一緒に使用して、デフォルトの正規表現を有効にすることもできます。スラッシュ(\fB/\fR)をエスケープする必要があります。
+.sp
+正規表現は、ソースブランチ名を$1でキャプチャする必要があります。
+.sp
+このオプションは、複数の検出正規表現を提供するために複数回使用できます。
+.RE
+.PP
+\fB\-S <regex>\fR
+.RS 4
+正規表現にマッチするパスをスキップします。
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+最近のものを含むすべてのコミットをインポートします。 cvsimportはデフォルトで、タイムスタンプが10分未満のコミットをスキップします。
+.RE
+.PP
+\fB\-L <limit>\fR
+.RS 4
+インポートされるコミットの数を制限します。 cvsimportがメモリをリークする場合の回避策です。
+.RE
+.PP
+\fB\-A <author\-conv\-file>\fR
+.RS 4
+CVSは、デフォルトで、コミットログを書き込むときにUnixユーザー名を使用します。 このオプションとauthor\-conv\-fileを使用すると、CVSに記録されている名前が作者名(author)と電子メールアドレス(e\-mail)と、オプションのタイムゾーン(time zone)にマップされます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        exon=Andreas Ericsson <ae@op5\&.se>
+        spawn=Simon Pawn <spawn@frog\-pond\&.org> America/Chicago
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit cvsimport\fR
+は、これらの作者が GIT_AUTHOR_NAME と GIT_AUTHOR_EMAIL を最初から正しく設定していたかのように見せかけます。 タイムゾーンが指定されている場合は、GIT_AUTHOR_DATE に対応するオフセットが適用されます。
+.sp
+便宜上、このデータは
+\fB\-A\fR
+オプションが提供されるたびに
+\fB$GIT_DIR/cvs\-authors\fR
+に保存され、
+\fBgit cvsimport\fR
+が実行されるたびに同じファイルから読み取られます。
+.sp
+後で
+\fBgit cvsexportcommit\fR
+を使用して変更をCVSに再度エクスポートする場合は、この機能を使用することはお勧めしません。
+.RE
+.PP
+\fB\-R\fR
+.RS 4
+CVSリビジョン番号から新しく作成されたGitコミットIDへのマッピングを含む
+\fB$GIT_DIR/cvs\-revisions\fR
+ファイルを生成します。 生成されたファイルには、インポートされた（ファイル名、リビジョン）のペアごとに1行が含まれます。 各行は以下のようになります
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+src/widget\&.c 1\&.1 1d862f173cdc7325b6fa6d2ae1cfd61fd1b512b7
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+追加インポート(incremental imports)を行うときに使用するために、リビジョンデータがすでに存在する場合はファイルに追加されます。
+.sp
+このオプションは、コミットメッセージ、バグ追跡システム、電子メールアーカイブなどにCVSリビジョン番号が保存されている場合に役立つことがあります。
+.RE
+.PP
+\fB\-h\fR
+.RS 4
+短い使用法メッセージを印刷して終了(exit)します。
+.RE
+.SH "OUTPUT"
+.sp
+\fB\-v\fR が指定されている場合、スクリプトは実行内容を報告します。
+.sp
+それ以外の場合、成功はUnixの方法で示されます。つまり、終了ステータスがゼロで終了するだけです。
+.SH "ISSUES"
+.sp
+タイムスタンプ関連の問題:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+CVSリポジトリ内のコミットのタイムスタンプが、コミットの順序付けに使用できるほど安定していない場合、変更が間違った順序で表示される可能性があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+いずれかのファイルが複数回「cvsインポート」された場合(たとえば、複数のベンダーリリースのインポート)、HEADに間違ったコンテンツが含まれています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+異なるファイルのタイムスタンプの順序がコミット一致時間ウィンドウ(commit matching time window)内でリビジョンの順序と交差する場合、コミットの順序が間違っている可能性があります。
+.RE
+.sp
+ブランチ関連の問題:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コミットが行われていないブランチはインポートされません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+分岐点(branching point)からのすべてのファイルは、CVSに追加されていない場合でも、ブランチに追加されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+これは、子ブランチが作成された「後に」ソースブランチに追加されたファイルに適用されます。以前に子ブランチでコミットが行われなかった場合、それらはgitの子ブランチに誤って追加されます。
+.RE
+.sp
+タグ関連の問題:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+同じリビジョンの複数のタグはインポートされません。
+.RE
+.sp
+これらの問題のいずれかがインポートするリポジトリに当てはまると思われる場合は、cvs2gitの使用を検討してください:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+cvs2git (cvs2svnの一部です),
+\fBhttp://subversion\&.apache\&.org/\fR
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+cvs2git
+.RS 4
+\%http://cvs2svn.tigris.org/cvs2git.html
+.RE
+.IP " 2." 4
+cvs-fast-export
+.RS 4
+\%http://www.catb.org/esr/cvs-fast-export/
+.RE

@@ -1,0 +1,489 @@
+'\" t
+.\"     Title: githooks
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITHOOKS" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+githooks \- Gitで使われるフック
+.SH "SYNOPSIS"
+.sp
+$GIT_DIR/hooks/* (or `git config core\&.hooksPath`/*)
+.SH "DESCRIPTION"
+.sp
+フック(hook)は、フックディレクトリ(hooks directory)に配置して、gitの実行の特定の時点でアクションをトリガーできるプログラムです。実行可能ビットが設定されていないフックは無視されます。
+.sp
+デフォルトでは、フックディレクトリ(ooks directory)は \fB$GIT_DIR/hooks\fR ですが、これは \fBcore\&.hooksPath\fR 構成変数を介して変更できます(\fBgit-config\fR(1) を参照)。
+.sp
+Gitはフックを呼び出す前に、ベアリポジトリでは作業ディレクトリを $GIT_DIRに変更し、非ベアリポジトリではの作業ディレクトリを作業ツリーのルートに変更します。例外は、プッシュ中にトリガーされるフック(\fBpre\-receive\fR, \fBupdate\fR, \fBpost\-receive\fR, \fBpost\-update\fR, \fBpush\-to\-checkout\fR)で、常に $GIT_DIR で実行されます。
+.sp
+フックは、環境変数やコマンドライン引数やstdinを介して引数を取得できます。詳細については、以下の各フックのドキュメントを参照してください。
+.sp
+\fBgit init\fR は、その構成に応じて、フックを新しいリポジトリにコピーする場合があります。詳細については、 \fBgit-init\fR(1) の「TEMPLAT EDIRECTORY」セクションを参照してください。このドキュメントの残りの部分で「デフォルトのフック」について言及している場合は、Gitに付属しているデフォルトのテンプレートについて説明しています。
+.sp
+現在サポートされているフックを以下に説明します。
+.SH "HOOKS"
+.SS "applypatch\-msg"
+.sp
+このフックは \fBgit-am\fR(1) によって呼び出されます。単一のパラメータとして、提案するコミットログメッセージを保持するファイルの名前を取ります。ゼロ以外のステータスで終了すると、パッチを適用する前に \fBgit am\fR が中止されます。
+.sp
+フックを使用すると、メッセージファイルを所定の場所で編集でき、メッセージをプロジェクトの標準形式に正規化するために使用できます。 また、メッセージファイルを検査した後にコミットを拒否するために使用することもできます。
+.sp
+デフォルトの \fBapplypatch\-msg\fR フックが有効になっている場合に \fBcommit\-msg\fR フックが有効になっていれば、 \fBcommit\-msg\fR フックを実行します。
+.SS "pre\-applypatch"
+.sp
+このフックは \fBgit-am\fR(1) によって呼び出されます。これはパラメーターを受け取らず、パッチが適用された後、コミットが行われる前に呼び出されます。
+.sp
+これがゼロ以外のステータスで終了する場合、パッチの適用後に作業ツリーはコミットされません。
+.sp
+現在の作業ツリーを検査し、特定のテストに合格しない場合はコミットを拒否するために使用できます。
+.sp
+デフォルトの \fBpre\-applypatch\fR フックが有効になっている場合に \fBpre\-commit\fR フックが有効になっている場合は、 \fBpre\-commit\fR フックが実行されます。
+.SS "post\-applypatch"
+.sp
+このフックは \fBgit-am\fR(1) によって呼び出されます。これはパラメーターを受け取らず、パッチが適用されてコミットが行われた後に呼び出されます。
+.sp
+このフックは主に通知用であり、 \fBgit am\fR の結果に影響を与えることはできません。
+.SS "pre\-commit"
+.sp
+このフックは \fBgit-commit\fR(1) によって呼び出され、 \fB\-\-no\-verify\fR オプションでバイパスできます。パラメータを必要とせず、提案したコミットログメッセージを取得してコミットする前に呼び出されます。このスクリプトをゼロ以外のステータスで終了すると、コミットを作成する前に \fBgit commit\fR コマンドが中止(abort)されます。
+.sp
+デフォルトの \fBpre\-commit\fR フックを有効にすると、末尾に空白がある行の導入をキャッチし、そのような行が見つかるとコミットを中止(abort)します。
+.sp
+すべての \fBgit commit\fR フックは環境変数 $GIT_EDITOR を \fBGIT_EDITOR=:\fR とすれば、 コミットメッセージを変更するためのエディターを起動しません。
+.sp
+デフォルトの \fBpre\-commit\fR フックが有効になっていて、かつ、 \fBhooks\&.allownonascii\fR 構成オプションが設定されていないかfalseに設定されている場合、非ASCIIファイル名の使用を防止します。
+.SS "pre\-merge\-commit"
+.sp
+このフックは \fBgit-merge\fR(1) によって呼び出され、 \fB\-\-no\-verify\fR オプションでバイパスできます。パラメータを必要とせず、マージが正常に実行された後、提案したコミットログメッセージを取得してコミットする前に呼び出されます。このスクリプトをゼロ以外のステータスで終了すると、コミットを作成する前に \fBgit merge\fR コマンドが中止(abort)されます。
+.sp
+デフォルトの \fBpre\-merge\-commit\fR フックが有効になっている場合に \fBpre\-commit\fR フック後者が有効になっている場合は、 \fBpre\-commit\fR フックが実行されます。
+.sp
+このフックは環境変数 $GIT_EDITOR を \fBGIT_EDITOR=:\fR とすれば、 コミットメッセージを変更するためのエディターを起動しません。
+.sp
+マージを自動的に実行できない場合は、競合を解決し、結果を個別にコミットする必要があります(\fBgit-merge\fR(1) 参照)。その時点では、このフックは実行されませんが、 \fBpre\-commit\fR が有効になっている場合は \fBpre\-commit\fR フックが実行されます。
+.SS "prepare\-commit\-msg"
+.sp
+このフックは、デフォルトのログメッセージを準備した直後、エディターを起動する前に、 \fBgit-commit\fR(1) によって呼び出されます。
+.sp
+1つから3つのパラメーターを取ります。 1つ目は、内容がコミットログメッセージであるファイルの名前です。2番目はコミットメッセージのソースであり、\fBmessage\fR(\fB\-m\fR または \fB\-F\fR オプションが指定された場合)、 \fBtemplate\fR( \fB\-t\fR オプションが指定された場合、または構成オプション \fBcommit\&.template\fR が設定されている場合)、 \fBmerge\fR(コミットがマージであるか、 \fB\&.git/MERGE_MSG\fR ファイルが存在する場合)、 \fBsquash\fR( \fB\&.git/SQUASH_MSG\fR ファイルが存在する場合)、または \fBcommit\fR( \fB\-c\fR または \fB\-C\fR または \fB\-\-amend\fR オプションが指定された場合)に続いて(3つ目のパラメータとして) commitオブジェクト名。
+.sp
+終了ステータスがゼロ以外の場合、 \fBgit commit\fR は中止(abort)されます。
+.sp
+フックの目的は、メッセージファイルを所定の位置で編集することであり、 \fB\-\-no\-verify\fR オプションによって抑制されることはありません。ゼロ以外ステータスでの終了は、フックの失敗を意味し、コミットを中止(abort)します。pre\-commitフックの代わりとして使用すべきではありません。
+.sp
+Gitに付属するサンプルの \fBprepare\-commit\-msg\fR フックは、コミットテンプレートのコメント部分にあるヘルプメッセージを削除します。
+.SS "commit\-msg"
+.sp
+このフックは \fBgit-commit\fR(1) と \fBgit-merge\fR(1) によって呼び出され、 \fB\-\-no\-verify\fR オプションでバイパスできます。単一のパラメータとして提案されたコミットログメッセージを保持するファイルの名前を取ります。ゼロ以外のステータスで終了すると、コマンドは中止(abort)されます。
+.sp
+フックを使用すると、メッセージファイルを所定の場所で編集でき、メッセージをプロジェクトの標準形式に正規化するために使用できます。 また、メッセージファイルを検査した後にコミットを拒否するために使用することもできます。
+.sp
+デフォルトの \fBcommit\-msg\fR フックを有効にすると、重複する \fBSigned\-off\-by\fR トレーラーが検出され、見つかった場合はコミットが中止(abort)されます。
+.SS "post\-commit"
+.sp
+このフックは \fBgit-commit\fR(1) によって呼び出されます。パラメータを必要とせず、コミットが行われた後に呼び出されます。
+.sp
+このフックは主に通知用であり、 \fBgit commit\fR の結果に影響を与えることはできません。
+.SS "pre\-rebase"
+.sp
+このフックは \fBgit-rebase\fR(1) によって呼び出され、ブランチがリベースされるのを防ぐために使用できます。フックは、1つまたは2つのパラメーターで呼び出すことができます。最初のパラメーターは、シリーズがフォークされたアップストリームです。2番目のパラメーターは、リベースされるブランチであり、現在のブランチをリベースするときは設定されません。
+.SS "post\-checkout"
+.sp
+このフックは、ワークツリーを更新した後に \fBgit-checkout\fR(1) または \fBgit-switch\fR(1) が実行されたときに呼び出されます。フックには、以前のHEADのref、新しいHEADのref(変更されている場合と変更されていない場合があります)、およびチェックアウトがブランチチェックアウト(ブランチの変更、flag=1)あるいはファイルのチェックアウト(インデックスからファイルを取得、flag=0)のいずれかであるかどうかを示すフラグ、の3つのパラメーターが与えられます。このフックは、フックの終了ステータスがこれら2つのコマンドの終了ステータスになることを除いて、 \fBgit switch\fR または \fBgit checkout\fR の結果に影響を与えることはできません。
+.sp
+これは \fB\-\-no\-checkout\fR (\fB\-n\fR)オプションが使用されていない限り、 \fBgit-clone\fR(1)の後でも実行されます。 フックに指定された最初のパラメーターは null\-refで、2番目は新しいHEADのrefであり、フラグは常に1です。\fB\-\-no\-checkout\fR が使用されていない限り、 \fBgit worktree add\fR についても同様です。
+.sp
+このフックを使用して、リポジトリの有効性チェックを実行したり、以前のHEADとの違いを自動表示したり、作業ディレクトリのメタデータプロパティを設定したりできます。
+.SS "post\-merge"
+.sp
+このフックは \fBgit-merge\fR(1) によって呼び出されます。これは、ローカルリポジトリで \fBgit pull\fR が実行されたときに発生します。フックは単一のパラメーター、つまり、実行されているマージがスカッシュマージ(squash merge)であるかどうかを指定するステータスフラグを受け取ります。このフックは \fBgit merge\fR の結果に影響を与えることはできず、競合が原因でマージが失敗した場合は実行されません。
+.sp
+このフックを対応するpre\-commitフックと組み合わせて使用すると、作業ツリーに関連付けられている任意の形式のメタデータ(たとえば、権限/所有権、ACLSなど)を保存および復元できます。これを行う方法の例については、 contrib/hooks/setgitperms\&.perl を参照してください。
+.SS "pre\-push"
+.sp
+このフックは \fBgit-push\fR(1) によって呼び出され、プッシュが行われないようにするために使用できます。フックは、宛先リモートの名前と場所を提供する2つのパラメーターで呼び出されます。名前付きリモートが使用されていない場合、両方の値は同一になります。
+.sp
+何をプッシュするかについての情報は、フックの標準入力に次の形式の行で提供されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<local ref> SP <local object name> SP <remote ref> SP <remote object name> LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+たとえば、コマンド \fBgit push origin master:foreign\fR を実行すると、フックは以下のような行を受け取ります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+refs/heads/master 67890 refs/heads/foreign 12345
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ただし、完全なオブジェクト名が提供されます。外部参照がまだ存在しない場合、 <remote object name> はすべてゼロのオブジェクト名になります。refを削除する場合は、 <local ref> が \fB(delete)\fR として提供され、 \fB<local object name>\fR がすべてゼロのオブジェクト名になります。ローカルコミットが拡張可能な名前以外の名前(\fBHEAD~\fR やオブジェクト名など)で指定された場合は、最初に指定されたとおりに提供されます。
+.sp
+このフックがゼロ以外のステータスで終了した場合、 \fBgit push\fR は何もプッシュせずに中止(abort)します。プッシュが拒否された理由に関する情報は、標準エラーに書き込むことでユーザーに送信される場合があります。
+.SS "pre\-receive"
+.sp
+このフックは、 \fBgit push\fR に反応し、リポジトリ内の参照を更新するときに、 \fBgit-receive-pack\fR(1) によって呼び出されます。リモートリポジトリのrefの更新を開始する直前に、pre\-receiveフックが呼び出されます。その終了ステータスによって、更新の成功または失敗が決まります。
+.sp
+このフックは、受信操作に対して1回実行されます。引数は必要ありませんが、更新される各refについて、標準入力で以下の形式の行を受け取ります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<old\-value> SP <new\-value> SP <ref\-name> LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ここで、 \fB<old\-value>\fR は、refに保存されている古いオブジェクト名です。 \fB<new\-value>\fR はrefに格納される新しいオブジェクト名です。 \fB<ref\-name>\fR はrefのフルネームです。 新しいrefを作成する場合、 \fB<old\-value>\fR はすべてゼロのオブジェクト名です。
+.sp
+フックがゼロ以外のステータスで終了した場合、どのrefも更新されません。フックがゼロで終了する場合でも、個々のrefの更新は\fBupdate\fRフックによって防ぐことができます。
+.sp
+標準出力と標準エラー出力の両方がもう一方の側の \fBgit send\-pack\fR に転送(forward)されるため、ユーザーにメッセージを \fBecho\fR するだけで済みます。
+.sp
+\fBgit push \-\-push\-option=\&.\&.\&.\fR のコマンドラインで指定された、プッシュオプションの数は環境変数 \fBGIT_PUSH_OPTION_COUNT\fR から読み取ることができ、オプション自体は \fBGIT_PUSH_OPTION_0\fR 、 \fBGIT_PUSH_OPTION_1\fR 、 \&... から読み取る事ができます。プッシュオプションフェーズを使用しないように取り決めた場合、環境変数は設定されません。クライアントがプッシュオプションの使用を選択したが、何も送信しない場合、カウント変数はゼロ、つまり \fBGIT_PUSH_OPTION_COUNT=0\fR に設定されます。
+.sp
+いくつかの注意点については、 \fBgit-receive-pack\fR(1) の「Quarantine Environment」のセクションを参照してください。
+.SS "update"
+.sp
+このフックは、 \fBgit push\fR に反応し、リポジトリ内の参照を更新するときに、 \fBgit-receive-pack\fR(1) によって呼び出されます。リモートリポジトリのrefを更新する直前に、 update フックが呼び出されます。その終了ステータスによって、ref更新の成功または失敗が決まります。
+.sp
+フックは、更新されるrefごとに1回実行され、以下の3つのパラメーターを取ります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+更新されるrefの名前
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+refに保存されている古いオブジェクト名
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+refに格納される新しいオブジェクト名
+.RE
+.sp
+更新フックがゼロステータスで終了すると、refを更新できます。ゼロ以外のステータスで終了すると、 \fBgit receive\-pack\fR はそのrefを更新できなくなります。
+.sp
+このフックは、オブジェクト名が古いオブジェクト名で指定されたコミットオブジェクトの子孫であるコミットオブジェクトであることを確認することにより、特定のrefでの「強制」更新を防ぐために使用できます。つまり、「早送りのみ」(fast\-forward only)のポリシーを適用します。
+.sp
+また、 old\&.\&.new ステータスをログに記録するために使用することもできます。ただし、ブランチのセット全体を認識しているわけではないため、単純に使用すると、refごとに1つの電子メールが送信されることになります。そのためには\fBpost\-receive\fRフックの方が適しています。
+.sp
+ユーザーのアクセスをネットワーク経由のgitコマンドのみに制限する環境では、このフックを使用して、ファイルシステムの所有権やグループメンバーシップに依存せずにアクセス制御を実装できます。ログインシェルを使用してユーザーのアクセスをgitコマンドのみに制限する方法については、 \fBgit-shell\fR(1) を参照してください。
+.sp
+標準出力と標準エラー出力の両方がもう一方の側の \fBgit send\-pack\fR に転送(forward)されるため、ユーザーにメッセージを \fBecho\fR するだけで済みます。
+.sp
+デフォルトの \fBupdate\fR フックが有効になっている場合 \(em および \fBhooks\&.allowunannotated\fR 構成オプションが設定されていないかfalseに設定されている場合 \(em 注釈のないタグ(unannotated tags)がプッシュされるのを防ぎます。
+.SS "proc\-receive"
+.sp
+このフックは \fBgit-receive-pack\fR(1) によって呼び出されます。サーバーが複数値の構成変数 \fBreceive\&.procReceiveRefs\fR を設定し、そして \fBreceive\-pack\fR に送信されるコマンドの参照名が一致する場合、これらのコマンドは、内部の \fBexecute_commands()\fR 関数ではなく、このフックによって実行されます。このフックは、関連する参照を更新し、結果を \fBreceive\-pack\fR に報告する役割を果たします。
+.sp
+このフックは、受信操作に対して1回実行されます。引数は取りませんが、pkt\-line形式のプロトコルを使用して \fBreceive\-pack\fR と通信し、コマンド、プッシュオプションを読み取り、結果を送信します。行かのプロトコルの例では、文字 \fBS\fR は \fBreceive\-pack\fR を表し、文字 \fBH\fR はこのフックを表します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# Version and features negotiation\&.
+S: PKT\-LINE(version=1\e0push\-options atomic\&.\&.\&.)
+S: flush\-pkt
+H: PKT\-LINE(version=1\e0push\-options\&.\&.\&.)
+H: flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# Send commands from server to the hook\&.
+S: PKT\-LINE(<old\-oid> <new\-oid> <ref>)
+S: \&.\&.\&. \&.\&.\&.
+S: flush\-pkt
+# Send push\-options only if the \*(Aqpush\-options\*(Aq feature is enabled\&.
+S: PKT\-LINE(push\-option)
+S: \&.\&.\&. \&.\&.\&.
+S: flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# Receive result from the hook\&.
+# OK, run this command successfully\&.
+H: PKT\-LINE(ok <ref>)
+# NO, I reject it\&.
+H: PKT\-LINE(ng <ref> <reason>)
+# Fall through, let \*(Aqreceive\-pack\*(Aq to execute it\&.
+H: PKT\-LINE(ok <ref>)
+H: PKT\-LINE(option fall\-through)
+# OK, but has an alternate reference\&.  The alternate reference name
+# and other status can be given in option directives\&.
+H: PKT\-LINE(ok <ref>)
+H: PKT\-LINE(option refname <refname>)
+H: PKT\-LINE(option old\-oid <old\-oid>)
+H: PKT\-LINE(option new\-oid <new\-oid>)
+H: PKT\-LINE(option forced\-update)
+H: \&.\&.\&. \&.\&.\&.
+H: flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBproc\-receive\fR フックの各コマンドは、疑似参照(pseudo\-reference)を指す場合があり、そのold\-oidとして常にゼロオールドを持ちます。一方、 \fBproc\-receive\fR フックは代替参照(alternate reference)を更新する可能性があり、代替参照はゼロ以外のold\-oidで既に存在する可能性があります。この場合、このフックは \fBoption\fR ディレクティブを使用して、先頭の \fBok\fR ディレクティブによって指定された参照の拡張属性を報告します。
+.sp
+このフックのコマンドの報告は、入力と同じ順序である必要があります。 \fBproc\-receive\fR フックの終了ステータスは、アトミックプッシュ(atomic push)が使用されていない限り、送信したコマンドグループの成功または失敗のみを決定します。
+.SS "post\-receive"
+.sp
+このフックは、 \fBgit push\fR に反応し、リポジトリ内の参照を更新するときに、 \fBgit-receive-pack\fR(1) によって呼び出されます。すべてのrefが更新された後、リモートリポジトリで実行されます。
+.sp
+このフックは、受信操作に対して1回実行されます。引数は取りませんが、 \fBpre\-receive\fR フックが標準入力で行うのと同じ情報を取得します。
+.sp
+このフックは、実際の作業が完了した後に呼び出されるため、 \fBgit receive\-pack\fR の結果には影響しません。
+.sp
+これは、名前に加えてすべてのrefの古い値と新しい値の両方を取得するという点で、 \fBpost\-update\fR フックに取って代わります。
+.sp
+標準出力と標準エラー出力の両方がもう一方の側の \fBgit send\-pack\fR に転送(forward)されるため、ユーザーにメッセージを \fBecho\fR するだけで済みます。
+.sp
+デフォルトの \fBpost\-receive\fR フックは空ですが、Gitディストリビューションの \fBcontrib/hooks\fR ディレクトリにサンプルスクリプト \fBpost\-receive\-email\fR があり、コミットメールの送信を実装しています。
+.sp
+\fBgit push \-\-push\-option=\&.\&.\&.\fR のコマンドラインで指定された、プッシュオプションの数は環境変数 \fBGIT_PUSH_OPTION_COUNT\fR から読み取ることができ、オプション自体は \fBGIT_PUSH_OPTION_0\fR 、 \fBGIT_PUSH_OPTION_1\fR 、 \&... から読み取る事ができます。プッシュオプションフェーズを使用しないように取り決めた場合、環境変数は設定されません。クライアントがプッシュオプションの使用を選択したが、何も送信しない場合、カウント変数はゼロ、つまり \fBGIT_PUSH_OPTION_COUNT=0\fR に設定されます。
+.SS "post\-update"
+.sp
+このフックは、 \fBgit push\fR に反応し、リポジトリ内の参照を更新するときに、 \fBgit-receive-pack\fR(1) によって呼び出されます。すべてのrefが更新された後、リモートリポジトリで実行されます。
+.sp
+可変数のパラメーターを取ります。各パラメーターは、実際に更新されたrefの名前です。
+.sp
+このフックは主に通知用であり、 \fBgit receive\-pack\fR の結果に影響を与えることはできません。
+.sp
+\fBpost\-update\fR フックは、プッシュされたヘッドが何であるかを知ることができますが、元の値と更新された値が何であるかを知らないため、 logold\&.\&.new を実行するのに適した場所ではありません。 \fBpost\-receive\fRフックは、参照の元の値と更新された値の両方を取得するので、必要に応じて、このフックの代わりに検討することもできます。
+.sp
+有効にすると、デフォルトの \fBpost\-update\fR フックが \fBgit update\-server\-info\fR を実行して、バカ転送(dumb transports)(例:HTTP)で使用される情報を最新の状態に保ちます。 HTTP経由でアクセスできるGitリポジトリを公開している場合は、あなたはおそらくこのフックを有効にする必要があります。
+.sp
+標準出力と標準エラー出力の両方がもう一方の側の \fBgit send\-pack\fR に転送(forward)されるため、ユーザーにメッセージを \fBecho\fR するだけで済みます。
+.SS "reference\-transaction"
+.sp
+このフックは、参照の更新を実行するGitコマンドによって呼び出されます。参照トランザクションが、準備またはコミットまたは中止されるたびに実行されるため、複数回呼び出される可能性があります。このフックはシンボリック参照をカバーしていません(ただし、将来変更される可能性があります)。
+.sp
+フックは引数を1つだけ取りますが、これは指定された参照トランザクションの現在の状態です:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"prepared" : すべての参照更新がトランザクションのキューに入れられ、参照がディスク上でロックされました。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"committed": 参照トランザクションがコミットされ、すべての参照にそれぞれの新しい値が追加されました。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"aborted": 参照トランザクションが中止され、変更は実行されず、ロックが解放されました。
+.RE
+.sp
+トランザクションに追加された参照更新ごとに、フックは標準入力で以下の形式の行を受け取ります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<old\-value> SP <new\-value> SP <ref\-name> LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ここで、 \fB<old\-value>\fR は、参照トランザクションに渡された古いオブジェクト名です。 \fB<new\-value>\fR はrefに格納される新しいオブジェクト名であり、 \fB<ref\-name>\fR はrefのフルネームです。現在の値に関係なく参照を強制的に更新する場合、または参照を新たに作成する場合は、 \fB<old\-value>\fR はすべてゼロのオブジェクト名です。あなたは、これらのケースを区別するために、 \fBgitrev\-parse\fR を介して \fB<ref\-name>\fR の現在の値を調べることができます。
+.sp
+フックの終了ステータスは、「prepared」(準備済み)状態を除くすべての状態で無視されます。「prepared」状態では、ゼロ以外の終了ステータスにより、トランザクションが中止(abort)されます。その場合、フックは「中止」状態で呼び出さることはありません。
+.SS "push\-to\-checkout"
+.sp
+プッシュが現在チェックアウトされているブランチを更新しようと試み、かつ、 \fBreceive\&.denyCurrentBranch\fR 構成変数が \fBupdateInstead\fR に設定されている場合、このフックは、 \fBgit push\fR に反応し、リポジトリ内の参照を更新するときに、 \fBgit-receive-pack\fR(1) によって呼び出されます。作業ツリーとリモートリポジトリのインデックスが現在チェックアウトされているコミットと異なる場合、このようなプッシュはデフォルトで拒否されます。作業ツリーとインデックスの両方が現在のコミットと一致する場合、それらは、ブランチの新しくプッシュされた先端に一致するように更新されます。このフックは、デフォルトの動作をオーバーライドするために使用されます。
+.sp
+フックは、現在のブランチの先端が更新されるコミットを受け取ります。ゼロ以外のステータスで終了してプッシュを拒否できます(そうする場合は、インデックスまたは作業ツリーを変更してはいけません)。または、作業ツリーとインデックスに必要な変更を加えて、現在のブランチの先端が新しいコミットに更新されたときにそれらを目的の状態にし、ゼロステータスで終了することもできます。
+.sp
+例えば、フックは単純に \fBgit read\-tree \-u \-m HEAD "$1"\fR を実行して、\fBgit push\fR と逆方向に実行する \fBgit fetch\fR をエミュレートすることができます。 \fBgit read\-tree \-u \-m\fR の二木形式(two\-tree form)は、ブランチの違いを妨げない範囲で作業ツリー(working tree)のローカル変更を維持しながらブランチを切り替える \fBgit switch\fR や \fBgit checkout\fR と本質的に同じものだからです。
+.SS "pre\-auto\-gc"
+.sp
+このフックは \fBgit gc \-\-auto\fR によって呼び出されます(\fBgit-gc\fR(1) を参照)。パラメータを必要とせず、このスクリプトをゼロ以外のステータスで終了させると、 \fBgit gc \-\-auto\fR が中止(abort)されます。
+.SS "post\-rewrite"
+.sp
+このフックは、commitを書き換えるコマンド(\fB\-\-amend\fR や \fBgit-rebase\fR(1) から呼び出された場合の \fBgit-commit\fR(1) 。ただし、 \fBgit-fast-import\fR(1)や \m[blue]\fBgit\-filter\-repo\fR\m[]\&\s-2\u[1]\d\s+2 などの完全な履歴(再)書き込みツールは通常、呼び出さないでください！)によって呼び出されます。その最初の引数は、それが呼び出されたコマンドを示します。それは現在、\fBamend\fR または \fBrebase\fR のいずれかです。将来、コマンドに依存する引数がさらに渡される可能性があります。
+.sp
+フックは、stdinから、書き換えられたコミットのリストを以下の形式で受け取ります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<old\-object\-name> SP <new\-object\-name> [ SP <extra\-info> ] LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBextra\-info\fR もコマンド依存です。空の場合、先行するSPも省略されます。現在、 \fBextra\-info\fR を渡すコマンドはありません。
+.sp
+フックは常に、自動noteコピー(\fBgit-config\fR(1)の \fBnotes\&.rewrite\&.<command>\fR 参照)が発生した後に実行されるため、フックはこれらのnoteにアクセスできます。
+.sp
+以下のコマンド固有のコメントが適用されます:
+.PP
+rebase
+.RS 4
+\fBsquash\fR
+操作と
+\fBfixup\fR
+操作の場合、スカッシュされたすべてのコミットは、スカッシュされたコミットに書き換えられたものとしてリストされます。これは、同じ「new\-object\-name」を共有する複数の行があることを意味します。
+.sp
+コミットは、リベースによって処理された順序でリストされることが保証されています。
+.RE
+.SS "sendemail\-validate"
+.sp
+このフックは \fBgit-send-email\fR(1) によって呼び出されます。単一のパラメーターとして、送信する電子メールを保持するファイルの名前を取ります。ゼロ以外のステータスで終了すると、電子メールを送信する前に \fBgit send\-email\fR が中止(abort)されます。
+.SS "fsmonitor\-watchman"
+.sp
+このフックは、使用するフックのバージョンに応じて、構成オプション \fBcore\&.fsmonitor\fR が \fB\&.git/hooks/fsmonitor\-watchman\fR または \fB\&.git/hooks/fsmonitor\-watchmanv2\fR に設定されている場合に呼び出されます。
+.sp
+バージョン1は、バージョン(つまり、1)と、1970年1月1日の0:00から経過したナノ秒単位の時間の、2つの引数を取ります。
+.sp
+バージョン2は、バージョン(つまり、2)と、トークン以降の変更を識別するために使用されるトークンの、2つの引数を取ります。ウォッチマン(watchman)の場合、これはクロックID(clock id)になります。このバージョンでは、新しいトークンの後のファイルのリストの前にNULを付けて標準出力しなければなりません。
+.sp
+フックは、要求された時間以降に変更された可能性のある作業ディレクトリ内のすべてのファイルのリストをstdoutに出力する必要があります。潜在的な変更を見逃さないように、ロジックは包括的(inclusive)である必要があります。パスは、作業ディレクトリのルートを基準にして、単一のNULで区切る必要があります。
+.sp
+実際に変更されていないファイルを含めてもかまいません。新しく作成および削除されたファイルを含むすべての変更を含める必要があります。ファイルの名前を変更するときは、古い名前と新しい名前の両方を含める必要があります。
+.sp
+Gitは、指定のパス名に基づいて、変更をチェックするファイルと、追跡されていないファイルをチェックするディレクトリを制限します。
+.sp
+gitに「すべてのファイルが変更されました」と伝えるための最適化された方法は、ファイル名 \fB/\fR を返すことです。
+.sp
+終了ステータスは、gitがフックからのデータを使用して検索を制限するかどうかを決定します。エラーが発生すると、すべてのファイルとフォルダーの検証にフォールバックします。
+.SS "p4\-changelist"
+.sp
+このフックは \fBgit\-p4 submit\fR によって呼び出されます。
+.sp
+\fBp4\-changelist\fR フックは、ユーザーがチェンジリストメッセージ(changelist message)を編集した後に実行されます。 \fB\-\-no\-verify\fR オプションでバイパスできます。提案されたチェンジリストテキストを保持するファイルの名前という単一のパラメータを取ります。ゼロ以外のステータスで終了すると、コマンドは中止(abort)されます。
+.sp
+フックはチェンジリストファイル(changelist file)の編集を許可されており、テキストをプロジェクトの標準形式に正規化するために使用できます。また、メッセージファイルを検査した後に送信を拒否するために使用することもできます。
+.sp
+詳細については、 \fBgit\-p4 submit \-\-help\fR を実行してください。
+.SS "p4\-prepare\-changelist"
+.sp
+このフックは \fBgit\-p4 submit\fR によって呼び出されます。
+.sp
+\fBp4\-prepare\-changelist\fR フックは、デフォルトのチェンジリストメッセージ(changelist message)を準備した直後、エディタが起動する前に実行されます。これは、チェンジリストのテキストを含むファイルの名前という1つのパラメーターを取ります。スクリプトをゼロ以外のステータスで終了すると、プロセスが中止(abort)されます。
+.sp
+フックの目的は、メッセージファイルを所定の位置で編集することであり、\fB\-\-no\-verify\fR オプションによって抑制されることはありません。 このフックは、 \fB\-\-prepare\-p4\-only\fR が設定されている場合でも呼び出されます。
+.sp
+詳細については、 \fBgit\-p4 submit \-\-help\fR を実行してください。
+.SS "p4\-post\-changelist"
+.sp
+このフックは \fBgit\-p4 submit\fR によって呼び出されます。
+.sp
+\fBp4\-post\-changelist\fR フックは、送信(submit)がP4で正常に発生した後に呼び出されます。これはパラメーターを必要とせず、主に通知を目的としており、git p4 submitアクションの結果に影響を与えることはできません。
+.sp
+詳細については、 \fBgit\-p4 submit \-\-help\fR を実行してください。
+.SS "p4\-pre\-submit"
+.sp
+このフックは \fBgit\-p4 submit\fR によって呼び出されます。これはパラメータをとらず、標準入力から何も取りません。このスクリプトをゼロ以外のステータスで終了すると、 \fBgit\-p4 submit\fR の起動を妨げます。 \fB\-\-no\-verify\fR コマンドラインオプションでバイパスできます。詳細については、 \fBgit\-p4 submit \-\-help\fR を実行してください。
+.SS "post\-index\-change"
+.sp
+このフックは、インデックスが read\-cache\&.c の do_write_locked_index に書き込まれるときに呼び出されます。
+.sp
+フックに渡される最初のパラメーターは、更新される作業ディレクトリのインジケーターです。「1」は作業ディレクトリが更新されたことを意味し、「0」は作業ディレクトリが更新されなかったことを意味します。
+.sp
+フックに渡される2番目のパラメーターは、インデックスが更新され、 skip\-worktree ビットが変更された可能性があるかどうかを示すインジケーターです。「1」はskip\-worktreeビットが更新された可能性があることを意味し、「0」は更新されなかったことを意味します。
+.sp
+フックの実行時に "1" に設定するパラメーターは1つだけです。 両方のパラメータを "1" に設定してはいけません。
+.SH "SEE ALSO"
+.sp
+\fBgit-hook\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+git-filter-repo
+.RS 4
+\%https://github.com/newren/git-filter-repo
+.RE

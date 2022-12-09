@@ -1,0 +1,172 @@
+'\" t
+.\"     Title: git-name-rev
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-NAME\-REV" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-name-rev \- 指定のrevのシンボリック名を検索します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit name\-rev\fR [\-\-tags] [\-\-refs=<pattern>]
+               ( \-\-all | \-\-stdin | <commit\-ish>\&... )
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fBgit rev\-parse\fR で解析可能な任意の形式で指定されたリビジョンの、人間にとって読みやすい記号名を検索します。
+.SH "OPTIONS"
+.PP
+\fB\-\-tags\fR
+.RS 4
+ブランチ名は使用せず、コミットに名前を付けるためにタグのみを使用します
+.RE
+.PP
+\fB\-\-refs=<pattern>\fR
+.RS 4
+名前が特定のシェルパターンに一致するrefのみを使用します。 パターンは、ブランチ名、タグ名、または完全修飾ref名のいずれかです。複数回指定する場合は、指定したシェルパターンのいずれかに名前が一致するrefsを使用します。
+\fB\-\-no\-refs\fR
+を使用して、既に指定済のrefパターンをクリアします。
+.RE
+.PP
+\fB\-\-exclude=<pattern>\fR
+.RS 4
+名前が特定のシェルパターンと一致するrefは使用しない。 パターンは、ブランチ名、タグ名、または完全修飾ref名のいずれかです。複数回指定された場合、指定されたパターンのいずれかに一致するrefは除外されます。
+\fB\-\-refs\fR
+と一緒に使用すると、refは少なくとも1つの
+\fB\-\-refs\fR
+パターンに一致し、
+\fB\-\-exclude\fR
+パターンに一致しない場合にのみ一致として使用されます。
+\fB\-\-no\-exclude\fR
+を使用して、除外パターンのリストをクリアします。
+.RE
+.PP
+\fB\-\-all\fR
+.RS 4
+すべてのrefから到達可能なすべてのコミットを一覧表示します
+.RE
+.PP
+\fB\-\-annotate\-stdin\fR
+.RS 4
+16進40文字のSHA\-1($hexとする)をすべて "$hex ($rev_name)" に置き換えて、stdinを変換します。
+\fB\-\-name\-only\fR
+と一緒に使用する場合は、"$rev_name" に置き換えて、 $hex を完全に省略します。
+.sp
+例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat sample\&.txt
+
+An abbreviated revision 2ae0a9cb82 will not be substituted\&.
+The full name after substitution is 2ae0a9cb8298185a94e5998086f380a355dd8907,
+while its tree object is 70d105cc79e63b81cfdcb08a15297c23e60b07ad
+(訳注: 省略されたリビジョン 2ae0a9cb82 は置き換えられません。
+置換後のフル・ネームは 2ae0a9cb8298185a94e5998086f380a355dd8907 で、
+そのツリー・オブジェクトは 70d105cc79e63b81cfdcb08a15297c23e60b07ad です)
+
+$ git name\-rev \-\-annotate\-stdin <sample\&.txt
+
+An abbreviated revision 2ae0a9cb82 will not be substituted\&.
+The full name after substitution is 2ae0a9cb8298185a94e5998086f380a355dd8907 (master),
+while its tree object is 70d105cc79e63b81cfdcb08a15297c23e60b07ad
+
+$ git name\-rev \-\-name\-only \-\-annotate\-stdin <sample\&.txt
+
+An abbreviated revision 2ae0a9cb82 will not be substituted\&.
+The full name after substitution is master,
+while its tree object is 70d105cc79e63b81cfdcb08a15297c23e60b07ad
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+このオプションは非推奨で、
+\fBgit name\-rev \-\-annotate\-stdin\fR
+が採用されています。 これらは機能的に同等です。
+.RE
+.PP
+\fB\-\-name\-only\fR
+.RS 4
+SHA\-1と名前の両方を印刷する代わりに、名前のみを印刷します。
+\fB\-\-tags\fR
+を指定すると、通常のタグプレフィックス "tags/" も名前から省略され、 `git\-describe`の出力とより厳密に一致します。
+.RE
+.PP
+\fB\-\-no\-undefined\fR
+.RS 4
+参照が未定義の場合、
+\fBundefined\fR
+を出力する代わりに、エラーコード != 0 で終了します。
+.RE
+.PP
+\fB\-\-always\fR
+.RS 4
+一意を保つように省略されたコミットオブジェクトをフォールバックとして表示します。
+.RE
+.SH "EXAMPLES"
+.sp
+コミットが与えられたら、そのローカルrefsとの相対的な位置を見つけます。 誰かがその素晴らしいコミット 33db5f4d9027a10e477ccf054b2c1ab94f74c85a についてあなたに述べたとしましょう。もちろん、あなたはそのコミットを調べますが、そこでは何が起こったのかを教えてくれるだけで、文脈は教えてくれません。
+.sp
+\fBgit name\-rev\fR に入力します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+% git name\-rev 33db5f4d9027a10e477ccf054b2c1ab94f74c85a
+33db5f4d9027a10e477ccf054b2c1ab94f74c85a tags/v0\&.99~940
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたは今や、v0\&.99より前に940のリビジョンが発生したことが分かりましたね。
+.sp
+別の方法:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+% git log | git name\-rev \-\-stdin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

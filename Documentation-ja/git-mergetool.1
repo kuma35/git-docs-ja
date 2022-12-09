@@ -1,0 +1,727 @@
+'\" t
+.\"     Title: git-mergetool
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MERGETOOL" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-mergetool \- マージ競合解決ツールを実行して、マージ競合を解決します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit mergetool\fR [\-\-tool=<tool>] [\-y | \-\-[no\-]prompt] [<file>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fBgit mergetool\fR を使用して、いくつかのマージユーティリティの1つを実行し、マージの競合を解決します。通常、 \fBgit merge\fR の後に実行されます。
+.sp
+1つ以上の <file> パラメーターが指定されている場合、マージツールプログラムが実行され、その各ファイルの違いが解決されます(競合のないものはスキップされます)。ディレクトリを指定すると、そのパスにあるすべての未解決のファイルが含まれます。ファイル名が指定されていない場合、 \fBgit mergetool\fR は、マージで競合するすべてのファイルに対してマージツールプログラムを実行します。
+.SH "OPTIONS"
+.PP
+\fB\-t <tool>\fR, \fB\-\-tool=<tool>\fR
+.RS 4
+<tool> で指定したマージ解決プログラムを使用します。 有効な値には emerge、gvimdiff、kdiff3、meld、vimdiff、tortoisemerge が含まれます。有効な <tool> 設定のリストについては、
+\fBgit mergetool \-\-tool\-help\fR
+を実行してください。
+.sp
+マージ解決プログラムが指定されていない場合、
+\fBgit mergetool\fR
+は構成変数
+\fBmerge\&.tool\fR
+を使用します。 構成変数
+\fBmerge\&.tool\fR
+が設定されていない場合、
+\fBgit mergetool\fR
+は適切なデフォルトを選択します。
+.sp
+あなたは構成変数
+\fBmergetool\&.<tool>\&.path\fR
+を設定することにより、ツールへのフルパスを明示的に指定できます。たとえば、
+\fBmergetool\&.kdiff3\&.path\fR
+を設定することにより、kdiff3への絶対パスを構成できます。それ以外の場合、
+\fBgit mergetool\fR
+はツールがPATHで使用可能であると想定します。
+.sp
+既知のマージツールプログラムの1つを実行する代わりに、構成変数
+\fBmergetool\&.<tool>\&.cmd\fR
+で呼び出すコマンドラインを指定することにより、
+\fBgit mergetool\fR
+をカスタマイズして代替プログラムを実行できます。
+.sp
+(
+\fB\-t\fR
+または
+\fB\-\-tool\fR
+または
+\fBmerge\&.tool\fR
+構成変数のいずれかを介して)
+\fBgit mergetool\fR
+をこのツールで呼び出すと、構成されたコマンドラインが呼び出され、
+\fB$BASE\fR
+がマージの共通ベースを含む一時ファイルの名前に設定され、使用可能な場合、
+\fB$LOCAL\fR
+は現在のブランチのファイルの内容を含む一時ファイルの名前に設定され、
+\fB$REMOTE\fR
+はマージされるファイルの内容を含む一時ファイルの名前に設定され、
+\fB$REMOTE\fR
+はマージされるファイルの内容を含む一時ファイルの名前に設定されます。
+.sp
+カスタムマージツールがその終了コードでマージ解決の成功を正確に示している場合、構成変数
+\fBmergetool\&.<tool>\&.trustExitCode\fR
+を
+\fBtrue\fR
+に設定できます。それ以外の場合、
+\fBgit mergetool\fR
+は、カスタムツールが終了した後、解決の成功を示すようにユーザーに促します。
+.RE
+.PP
+\fB\-\-tool\-help\fR
+.RS 4
+\fB\-\-tool\fR
+で使用できるマージツールのリストを出力します。
+.RE
+.PP
+\fB\-y\fR, \fB\-\-no\-prompt\fR
+.RS 4
+マージ解決プログラムを呼び出す前にプロンプトを表示しないでください。これは、マージ解決プログラムが
+\fB\-\-tool\fR
+オプションまたは
+\fBmerge\&.tool\fR
+構成変数で明示的に指定されている場合のデフォルトです。
+.RE
+.PP
+\fB\-\-prompt\fR
+.RS 4
+マージ解決プログラムを呼び出す前にプロンプトを表示して、ユーザーにパス(path)をスキップする機会を与えます。
+.RE
+.PP
+\fB\-g\fR, \fB\-\-gui\fR
+.RS 4
+\fBgit\-mergetool\fR
+が
+\fB\-g\fR
+または
+\fB\-\-gui\fR
+オプションを伴って呼び出されると、デフォルトのマージツールは
+\fBmerge\&.tool\fR
+ではなく設定された
+\fBmerge\&.guitool\fR
+変数から読み取られます。
+\fBmerge\&.guitool\fR
+が設定されていない場合、
+\fBmerge\&.tool\fR
+で構成されたツールにフォールバックします。
+.RE
+.PP
+\fB\-\-no\-gui\fR
+.RS 4
+これにより、以前の
+\fB\-g\fR
+または
+\fB\-\-gui\fR
+設定が上書きされ、デフォルトのマージツールは構成された
+\fBmerge\&.tool\fR
+変数から読み取られます。
+.RE
+.PP
+\fB\-O<orderfile>\fR
+.RS 4
+<orderfile> で指定された順序でファイルを処理します。これには、1行に1つのシェルグロブパターンがあります。 これは
+\fBdiff\&.orderFile\fR
+構成変数をオーバーライドします(\fBgit-config\fR(1)
+を参照)。
+\fBdiff\&.orderFile\fR
+をキャンセルするには、
+\fB\-O/dev/null\fR
+を使用します。
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+mergetool\&.<tool>\&.path
+.RS 4
+指定のツール(<tool>)のパスを上書きします。 これは、ツールがPATH上にない場合に役立ちます。
+.RE
+.PP
+mergetool\&.<tool>\&.cmd
+.RS 4
+指定のマージツール(<tool>)を呼び出すコマンドを指定します。指定されたコマンドは、次の変数を使用してシェルで評価されます:
+\fBBASE\fR
+は、マージされるファイルの共通ベースを含む一時ファイルの名前です(使用可能な場合)。
+\fBLOCAL\fR
+は、現在のブランチのファイルの内容を含む一時ファイルの名前です。
+\fBREMOTE\fR
+は、マージされるブランチのファイルの内容を含む一時ファイルの名前です。
+\fBMERGED\fR
+は、マージツールが正常なマージの結果を書き込むファイルの名前が含まれています。
+.RE
+.PP
+mergetool\&.<tool>\&.hideResolved
+.RS 4
+ユーザーが特定のツール(<tool>)のグローバルな
+\fBmergetool\&.hideResolved\fR
+値をオーバーライドできるようにします。 詳細については、
+\fBmergetool\&.hideResolved\fR
+を参照してください。
+.RE
+.PP
+mergetool\&.<tool>\&.trustExitCode
+.RS 4
+カスタムマージコマンドの場合、マージコマンドの終了コードを使用してマージが成功したかどうかを判断できるかどうかを指定します。 これがtrueで無い場合、マージターゲットファイルのタイムスタンプがチェックされ、ファイルが更新されている場合はマージが成功したと見なされます。そうでない場合、ユーザーはマージの成功を示すように求められます。
+.RE
+.PP
+mergetool\&.meld\&.hasOutput
+.RS 4
+古いバージョンの
+\fBmeld\fR
+は
+\fB\-\-output\fR
+オプションをサポートしていません。 Gitは、
+\fBmeld \-\-help\fR
+の出力を調べることで、
+\fBmeld\fR
+が
+\fB\-\-output\fR
+をサポートしているかどうかを検出しようとします。
+\fBmergetool\&.meld\&.hasOutput\fR
+を設定すると、Gitはこれらのチェックをスキップし、代わりに設定された値を使用します。
+\fBmergetool\&.meld\&.hasOutput\fR
+を
+\fBtrue\fR
+に設定すると、Gitは無条件に
+\fB\-\-output\fR
+オプションを使用するようになり、
+\fBfalse\fR
+は
+\fB\-\-output\fR
+の使用を回避します。
+.RE
+.PP
+mergetool\&.meld\&.useAutoMerge
+.RS 4
+meld は
+\fB\-\-auto\-merge\fR
+が指定されると、競合しないすべての部分を自動的にマージし、競合する部分を強調表示して、ユーザーの決定を待ちます。
+\fBmergetool\&.meld\&.useAutoMerge\fR
+を`true`に設定すると、Gitは
+\fB\-\-auto\-merge\fR
+オプションを
+\fBmeld\fR
+で無条件に使用するようになります。 この値を
+\fBauto\fR
+に設定すると、gitは
+\fB\-\-auto\-merge\fR
+がサポートされているかどうかを検出し、使用可能な場合にのみ
+\fB\-\-auto\-merge\fR
+を使用します。
+\fBfalse\fR
+の値はデフォルト値で、` \-\-auto\-merge` の使用を完全に回避します。
+.RE
+.PP
+mergetool\&.vimdiff\&.layout
+.RS 4
+vimdiff バックエンドはこの変数を使用して、分割されたウィンドウがどのように見えるかを制御します。 マージ・ツールとして Neovim(\fBnvim\fR) または gVim(\fBgvim\fR) を使用している場合でも適用されます。 詳細については、「BACKEND SPECIFIC HINTS」セクションを参照してください。
+.RE
+.PP
+mergetool\&.hideResolved
+.RS 4
+マージ処理中、Gitは可能な限り多くの競合を自動的に解決し、解決できない競合の周りに競合マーカーを含ませた
+\fBMERGED\fR
+ファイルを書き込みます。 「LOCAL」と「REMOTE」は通常、Gitの競合解決前のファイルのバージョンを表します。 この設定により、「LOCAL」と「REMOTE」が上書きされ、未解決の競合のみがマージツールに表示されます。
+\fBmergetool\&.<tool>\&.hideResolved\fR
+構成変数を介してツールごとに構成できます。 デフォルトは
+\fBfalse\fR
+です。
+.RE
+.PP
+mergetool\&.keepBackup
+.RS 4
+マージを実行した後、競合マーカーを含む元のファイルを、拡張子
+\fB\&.orig\fR
+のファイルとして保存できます。 この変数が
+\fBfalse\fR
+に設定されている場合、このファイルは保存されません。 デフォルトは
+\fBtrue\fR
+です(つまり、バックアップファイルを保持します)。
+.RE
+.PP
+mergetool\&.keepTemporaries
+.RS 4
+カスタムマージツールを呼び出すとき、Gitは一時ファイルの組をツールに渡します。 ツールがエラーを返し、この変数が
+\fBtrue\fR
+に設定されている場合、これらの一時ファイルは保持されます。それ以外の場合、ツールの終了後に削除されます。 デフォルトは
+\fBfalse\fR
+です。
+.RE
+.PP
+mergetool\&.writeToTemp
+.RS 4
+Gitは、デフォルトで、競合するファイルの一時的な 「BASE」バージョンと「LOCAL」バージョンと「REMOTE」バージョンをワークツリーに書き込みます。
+\fBtrue\fR
+に設定すると、Gitはこれらのファイルに一時ディレクトリを使用しようとします。 デフォルトは
+\fBfalse\fR
+です。
+.RE
+.PP
+mergetool\&.prompt
+.RS 4
+マージ解決プログラムを呼び出す前にプロンプトを表示します。
+.RE
+.SH "TEMPORARY FILES"
+.sp
+\fBgit mergetool\fR は、マージの解決中に \fB*\&.orig\fR バックアップファイルを作成します。これらは、ファイルがマージされ、その \fBgit mergetool\fR セッションが完了したら安全に削除できます。
+.sp
+\fBmergetool\&.keepBackup\fR 構成変数を \fBfalse\fR に設定すると、ファイルが正常にマージされたときに、 \fBgit mergetool\fR がバックアップを自動的に削除します。
+.SH "BACKEND SPECIFIC HINTS"
+.SS "vimdiff"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBDescription\fR
+.RS 4
+.sp
+\fBgit mergetool\fR で \fB\-\-tool=vimdiff\fR を指定すると、Git は以下のように4つに分割されたウィンドウ・レイアウトで Vim を開きます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|             |           |              |
+|   LOCAL     |   BASE    |   REMOTE     |
+|             |           |              |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|                                        |
+|                MERGED                  |
+|                                        |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+LOCALとBASEとREMOTEは、特定のコミットで競合するファイルの内容を示す読み取り専用バッファーです(それぞれ「マージ先のコミット」と「共通の祖先コミット」と「マージ元のコミット」)。
+.sp
+\fBMERGED\fR は、競合を解決する必要がある書き込み可能なバッファーです(他の読み取り専用バッファーを参照として使用します)。 完了したら、通常どおり Vim を保存して終了します(\fB:wq\fR)。中止する場合は、\fB:cq\fR を使用して終了します。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBLayout configuration\fR
+.RS 4
+.sp
+以下の区切り文字が特別な意味を持つ文字列を受け入れる構成変数 \fBmergetool\&.vimdiff\&.layout\fR を設定することで、 Vim が使用するウィンドウ・レイアウトを変更できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB+\fR
+は「open a new tab」(新しいタブを開く)ために使用されます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB,\fR
+は「open a new vertical split」(上下分割で開く)ために使用されます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB/\fR
+は「open a new horizontal split」(左右分割で開く)ために使用されます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB@\fR
+は、競合を解決した後の最終バージョンを含むファイルを示すために使用されます。 存在しない場合、デフォルトで
+\fBMERGED\fR
+が使用されます。
+.RE
+.sp
+演算子の優先順位は以下のとおりです(括弧(parentheses)を使用して変更できます):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+`@` > `+` > `/` > `,`
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これがどのように機能するかを理解するためにいくつかの例を見てみましょう:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlayout = "(LOCAL,BASE,REMOTE)/MERGED"\fR
+.sp
+これは、すでに見たデフォルトのレイアウトとまったく同一です。
+.sp
+注意:
+\fB/\fR
+は
+\fB,\fR
+よりも優先されるため、この場合は括弧は不要であることに注意してください。 つまり以下のレイアウト定義と同等です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+layout = "LOCAL,BASE,REMOTE / MERGED"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlayout = "LOCAL,MERGED,REMOTE"\fR
+.sp
+これは、もし、何らかの理由で
+\fBBASE\fR
+バッファに関心がない場合です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|             |           |              |
+|             |           |              |
+|   LOCAL     |   MERGED  |   REMOTE     |
+|             |           |              |
+|             |           |              |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlayout = "MERGED"\fR
+.sp
+\fBMERGED\fR
+バッファのみが表示されます。 ただし、他のすべてのものはまだvimにロードされており、
+\fBbuffers\fR
+コマンドでアクセスできることに注意してください。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|                                        |
+|                                        |
+|                 MERGED                 |
+|                                        |
+|                                        |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlayout = "@LOCAL,REMOTE"\fR
+.sp
+\fBMERGED\fR
+がレイアウトに存在しない場合、バッファの 1 つをアスタリスク(\fB*\fR)で「マーク」する必要があります。 これは、競合を解決した後に編集して保存する必要があるバッファーになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|                   |                    |
+|                   |                    |
+|                   |                    |
+|     LOCAL         |    REMOTE          |
+|                   |                    |
+|                   |                    |
+|                   |                    |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlayout = "LOCAL,BASE,REMOTE / MERGED + BASE,LOCAL + BASE,REMOTE"\fR
+.sp
+3つのタブが開かれます: 最初の 1 つはデフォルト・レイアウトのコピーで、残りの 2 つはそれぞれ (\fBBASE\fR
+と
+\fBLOCAL\fR) と (\fBBASE\fR
+と
+\fBREMOTE\fR) の違いのみを示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+| <TAB #1> |  TAB #2  |  TAB #3  |       |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|             |           |              |
+|   LOCAL     |   BASE    |   REMOTE     |
+|             |           |              |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|                                        |
+|                MERGED                  |
+|                                        |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|  TAB #1  | <TAB #2> |  TAB #3  |       |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|                   |                    |
+|                   |                    |
+|                   |                    |
+|     BASE          |    LOCAL           |
+|                   |                    |
+|                   |                    |
+|                   |                    |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|  TAB #1  |  TAB #2  | <TAB #3> |       |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|                   |                    |
+|                   |                    |
+|                   |                    |
+|     BASE          |    REMOTE          |
+|                   |                    |
+|                   |                    |
+|                   |                    |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlayout = "LOCAL,BASE,REMOTE / MERGED + BASE,LOCAL + BASE,REMOTE + (LOCAL/BASE/REMOTE),MERGED"\fR
+.sp
+前の例と同一ですが、最初のタブと同じ情報を持つ 4 番目のタブを別のレイアウトで追加します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|  TAB #1  |  TAB #2  |  TAB #3  | <TAB #4> |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+|       LOCAL         |                     |
+|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-|                     |
+|       BASE          |        MERGED       |
+|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-|                     |
+|       REMOTE        |                     |
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+注意: 3 番目のタブ定義では、括弧を使用して
+\fB,\fR
+を
+\fB/\fR
+よりも優先する必要があることに注意してください。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBVariants\fR
+.RS 4
+.sp
+\fB\-\-tool=vimdiff\fR の代わりに、これらの他の派生のいずれかを使用することもできます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-tool=gvimdiff\fR
+は Vim の代わりに gVim を開きます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-tool=nvimdiff\fR
+は Vim の代わりに Neovim を開きます。
+.RE
+.sp
+これらの派生を使用する場合、カスタム・レイアウトを指定するには、構成変数 \fBmergetool\&.vimdiff\&.layout\fR の代わりに \fBmergetool\&.gvimdiff\&.layout\fR と \fBmergetool\&.nvimdiff\&.layout\fR を設定する必要があります。
+.sp
+さらに、以前の Git バージョンとの後方互換性を保つために、 \fBvimdiff\fR や、その派生 (たとえば \fBvimdiff3\fR 、 \fBnvimdiff1\fR 等) の名前の後ろに \fB1\fR , \fB2\fR , \fB3\fR を追加して、定義済みのレイアウトを使用することも可能です。 言い換えると、 \fB\-\-tool=[g,n,]vimdiffx\fR を使用するということは、 \fB\-\-tool=[g,n,]vimdiff\fR を使用し、かつ、設定変数 \fBmergetool\&.[g,n,]vimdiff\&.layout\fR を以下のように設定するのと同じことです。 (訳注: \fB\-\-tool=[g,n,]vimdiffx\fR \(-> \fB\-\-tool=vimdiff1\fR, \fB\-\-tool=vimdiff2\fR, \fB\-\-tool=vimdiff3\fR, \fB\-\-tool=gvimdiff1\fR, \fB\-\-tool=gvimdiff2\fR, \fB\-\-tool=gvimdiff3\fR, \fB\-\-tool=nvimdiff1\fR, \fB\-\-tool=nvimdiff2\fR, \fB\-\-tool=nvimdiff3\fR)
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBx=1\fR:
+\fB"@LOCAL, REMOTE"\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBx=2\fR:
+\fB"LOCAL, MERGED, REMOTE"\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBx=3\fR:
+\fB"MERGED"\fR
+.RE
+.sp
+例: \fB\-\-tool=gvimdiff2\fR を使用すると、 \fBgvim\fR が 3 つの列 (LOCAL、MERGED、REMOTE) で開きます。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

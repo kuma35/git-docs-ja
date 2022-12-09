@@ -1,0 +1,990 @@
+'\" t
+.\"     Title: git-commit
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-COMMIT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-commit \- 変更をリポジトリへ記録します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit commit\fR [\-a | \-\-interactive | \-\-patch] [\-s] [\-v] [\-u<mode>] [\-\-amend]
+           [\-\-dry\-run] [(\-c | \-C | \-\-squash) <commit> | \-\-fixup [(amend|reword):]<commit>)]
+           [\-F <file> | \-m <msg>] [\-\-reset\-author] [\-\-allow\-empty]
+           [\-\-allow\-empty\-message] [\-\-no\-verify] [\-e] [\-\-author=<author>]
+           [\-\-date=<date>] [\-\-cleanup=<mode>] [\-\-[no\-]status]
+           [\-i | \-o] [\-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]]
+           [(\-\-trailer <token>[(=|:)<value>])\&...] [\-S[<keyid>]]
+           [\-\-] [<pathspec>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+インデックスの現在の内容と変更を説明する指定されたログメッセージを含む新しいコミットを作成します。 新しいコミットはHEADの直接の子であり、通常は現在のブランチの先端であり、ブランチはそれを指すように更新されます(作業ツリーにブランチが関連付けられていない場合は、\fBgit-checkout\fR(1) で説明されているようにHEADが「切り離され」(detached)されます)。
+.sp
+コミットするコンテンツは、いくつかの方法で指定できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBgit-add\fR(1)
+を使用して、「commit」コマンドを使用する前にインデックスに変更を段階的に「追加」(add)します(注: 「変更」されたファイルも「add」コマンドで「追加」するが必要があります)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+再び「commit」コマンドを使用する前に、
+\fBgit-rm\fR(1)
+を使用して、作業ツリーとインデックスからファイルを削除します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+「commit」コマンドの引数としてファイルをリストします(\fB\-\-interactive\fR
+や
+\fB\-\-patch\fR
+スイッチがない場合)。 この場合、そのコミットはインデックスにステージングされた変更を無視し、代わりにリストされたファイル(これらはすでに Git に知られている必要があります)の現在のコンテンツを記録します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+「commit」コマンドで
+\fB\-a\fR
+スイッチを使用して、すべての既知のファイル(つまり、すでにインデックスにリストされているすべてのファイル)からの変更を自動的に「add」(追加)し、作業ツリーから削除されたインデックス内のファイルを自動的に「rm」(削除)してから、実際のコミットを実行します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+「commit」コマンドで
+\fB\-\-interactive\fR
+または
+\fB\-\-patch\fR
+スイッチを使用して、操作を完了する前に、インデックスの内容に加えて、どのファイルまたはハンクをコミットの一部にするかを1つずつ決定します。 これらのモードの操作方法については、
+\fBgit-add\fR(1)の「Interactive Mode」セクションを参照してください。
+.RE
+.sp
+\fB\-\-dry\-run\fR オプションは、同じパラメーターのセット(オプションとパス)を指定することにより、次のコミットにて上記のいずれかに含まれるものの要約を取得するために使用できます。
+.sp
+コミットを行い、その直後に間違いを見つけた場合は、「git reset」を使用してそれから回復できます。
+.SH "OPTIONS"
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+変更および削除されたファイルを自動的にステージングするようにコマンドに指示しますが、Gitに通知していない新しいファイルは影響を受けません。
+.RE
+.PP
+\fB\-p\fR, \fB\-\-patch\fR
+.RS 4
+対話的なパッチ選択インターフェイスを使用して、コミットする変更を選択します。 詳細については、\fBgit-add\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-C <commit>\fR, \fB\-\-reuse\-message=<commit>\fR
+.RS 4
+既存のコミットオブジェクトを取得し、コミットを作成するときにログメッセージと作者情報(タイムスタンプを含む)を再利用します。
+.RE
+.PP
+\fB\-c <commit>\fR, \fB\-\-reedit\-message=<commit>\fR
+.RS 4
+\fI\-C\fR
+と同様ですが、
+\fB\-c\fR
+を使用するとエディターが呼び出されるため、ユーザーはコミットメッセージをさらに編集できます。
+.RE
+.PP
+\fB\-\-fixup=[(amend|reword):]<commit>\fR
+.RS 4
+\fBgit rebase \-\-autosquash\fR
+を適用すると
+\fB<commit>\fR
+を「fixes up」(修正)する新しいコミットを作成します。 プレーンな
+\fB\-\-fixup=<commit>\fR
+は「fixup!」コミットを作成します。 これは
+\fB<commit>\fR
+の内容を変更しますが、ログメッセージは変更されません。
+\fB\-\-fixup=amend:<commit>\fR
+も同様ですが、「amend!」コミットを作成します。 これにより
+\fB<commit>\fR
+のログメッセージも「amend!」コミットのログメッセージに置き換えられます。
+\fB\-\-fixup=reword:<commit>\fR
+は「amend!」コミットを作成します。これは
+\fB<commit>\fR
+のログメッセージを独自のログメッセージに置き換える「amend!」コミットを作成しますが、
+\fB<commit>\fR
+の内容は変更しません。
+.sp
+プレーンな
+\fB\-\-fixup=<commit>\fR
+によって作成されたコミットは、
+\fBfixup!\fR
+に <commit> の件名行が続く件名を作り、これは
+\fBgit rebase \-\-autosquash\fR
+によって特別に認識されます。
+\fB\-m\fR
+オプションは、作成されたコミットのログメッセージを補足するために使用できますが、「fixup!」コミットが
+\fBgit rebase \-\-autosquash\fR
+によって
+\fB<commit>\fR
+に押しつぶされる(squash)と、追加のコメントは破棄されます。
+.sp
+\fB\-\-fixup=amend:<commit>\fR
+によって作成されたコミットは似ていますが、その件名には代わりに
+\fBamend!\fR
+というプレフィックスが付いています。 <commit> のログメッセージが「amend!」コミットのログメッセージにコピーされ、エディターで開いた時に調整できます。
+\fBgit rebase \-\-autosquash\fR
+が「fixup!」を押しつぶす(squash)とき
+\fB<commit>\fR
+にコミットすると、
+\fB<commit>\fR
+のログメッセージは「amend!」コミットからの修正されたログメッセージに置き換えられます。 「amend!」コミットのログメッセージが空であることは、
+\fB\-\-allow\-empty\-message\fR
+が指定されていない限りエラーとなります。
+.sp
+\fB\-\-fixup=reword:<commit>\fR
+は
+\fB\-\-fixup=amend:<commit> \-\-only\fR
+の省略形です。 これはログメッセージのみで「amend!」コミットを作成します(インデックスにステージングされた変更は無視します)。
+\fBgit rebase \-\-autosquash\fR
+によって押しつぶされる(squash)と、他の変更を加えることなく、
+\fB<commit>\fR
+のログメッセージを置き換えます。
+.sp
+「fixup!」や「amend!」といったコミットは、
+\fBgit rebase \-\-autosquash\fR
+で適用したときに
+\fB<commit>\fR
+の作者は変更しません。 詳しくは
+\fBgit-rebase\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-squash=<commit>\fR
+.RS 4
+\fBrebase \-\-autosquash\fR
+で使用するコミットメッセージを作成します。 コミットメッセージの件名行は、プレフィックスが "squash! " と指定されたコミットから取得されます。 追加のコミットメッセージオプション(\fB\-m\fR/\fB\-c\fR/\fB\-C\fR/\fB\-F\fR)とともに使用できます。 詳細については、
+\fBgit-rebase\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-reset\-author\fR
+.RS 4
+\fB\-C\fR/\fB\-c\fR/\fB\-\-amend\fR
+オプションとともに使用する場合、または競合するチェリーピックの後にコミットする場合は、結果のコミットの作者がコミッターに属することを宣言します。これにより、作者のタイムスタンプも更新されます。
+.RE
+.PP
+\fB\-\-short\fR
+.RS 4
+ドライランを行うときに、出力を短い形式で提供します。 詳細については、
+\fBgit-status\fR(1)
+を参照してください。
+\fB\-\-dry\-run\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-\-branch\fR
+.RS 4
+短い形式でもブランチと追跡情報を表示します。
+.RE
+.PP
+\fB\-\-porcelain\fR
+.RS 4
+ドライランを行うときに、磁器コマンド対応の形式で出力を提供します。 詳細については、
+\fBgit-status\fR(1)
+を参照してください。
+\fB\-\-dry\-run\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-\-long\fR
+.RS 4
+ドライランを行うときに、出力を長い形式で提供します。
+\fB\-\-dry\-run\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-z\fR, \fB\-\-null\fR
+.RS 4
+\fBshort\fR
+または
+\fBporcelain\fR
+ステータス出力を表示する場合は、ファイル名をそのまま(verbatim)出力し、LFではなくNULでエントリを終了します。 フォーマットが指定されていない場合は、
+\fB\-\-porcelain\fR
+出力フォーマットを意味します。
+\fB\-z\fR
+オプションを指定しない場合、構成変数
+\fBcore\&.quotePath\fR
+で説明されているように、「異常な」文字を含むファイル名がクォートされます(\fBgit-config\fR(1)
+参照)。
+.RE
+.PP
+\fB\-F <file>\fR, \fB\-\-file=<file>\fR
+.RS 4
+指定されたファイルからコミットメッセージを取得します。<file>に
+\fB\-\fR
+を使用すると、標準入力からメッセージを読み取ります。
+.RE
+.PP
+\fB\-\-author=<author>\fR
+.RS 4
+コミット作者をオーバーライドします。 標準の
+\fBA U Thor <author@example\&.com>\fR
+形式を使用して明示的な作者を指定します。 それ以外の場合、 <author> はパターンであると見なされ、その作者による既存のコミットを検索するために使用され(つまり、
+\fBrev\-list \-\-all \-i \-\-author=<author>\fR)、そして、コミットの作者は、最初に見つかったそのようなコミットからコピーされます。
+.RE
+.PP
+\fB\-\-date=<date>\fR
+.RS 4
+コミットで使用された作者の日付を上書きします。
+.RE
+.PP
+\fB\-m <msg>\fR, \fB\-\-message=<msg>\fR
+.RS 4
+指定された<msg>をコミットメッセージとして使用します。 複数の
+\fB\-m\fR
+オプションが指定されている場合、それらの値は個別の段落として連結されます。
+.sp
+\fB\-m\fR
+オプションは、
+\fB\-c\fR
+、
+\fB\-C\fR
+、
+\fB\-F\fR
+と相互に排他的(mutually exclusive)です。
+.RE
+.PP
+\fB\-t <file>\fR, \fB\-\-template=<file>\fR
+.RS 4
+コミットメッセージを編集するときは、指定されたファイルの内容でエディターを起動します。
+\fBcommit\&.template\fR
+構成変数は、このオプションをコマンドに暗黙的に与えるためによく使用されます。 このメカニズムは、メッセージに何をどの順序で書き込むかについてのヒントを参加者に案内したいプロジェクトで使用できます。 ユーザーがメッセージを編集せずにエディターを終了すると、コミットは中止(abort)されます。 これは、メッセージが他の手段、例えば
+\fB\-m\fR
+または
+\fB\-F\fR
+オプションを使用して提供された場合には効果がありません。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-signoff\fR, \fB\-\-no\-signoff\fR
+.RS 4
+コミットログメッセージの最後に、コミッターによる「Signed\-off\-by」トレーラーを追加します。signoffの意味は、コミットしているプロジェクトによって異なります。たとえば、コミッターがプロジェクトのライセンスに基づいて作品を提出する権利を持っていることを証明したり、開発者の原産地証明書などの寄稿者の代表に同意したりする場合があります。(LinuxカーネルおよびGitプロジェクトで使用されるものについては、http：//developercertificate\&.orgを参照してください)。プロジェクトでsignoffがどのように使用されるかを理解するには、貢献しているプロジェクトのドキュメントまたはリーダーシップ(leadership)を参照してください。
+.sp
+\fB\-\-no\-signoff\fR
+オプションを使用すると、コマンドラインで以前の
+\fB\-\-signoff\fR
+オプションを無効にすることができます。
+.RE
+.PP
+\fB\-\-trailer <token>[(=|:)<value>]\fR
+.RS 4
+トレーラーとして適用する必要がある<token>と<value>のペアを指定します。 (例:
+\fBgit commit \-\-trailer "Signed\-off\-by:C O Mitter \e <committer@example\&.com>" \-\-trailer "Helped\-by:C O Mitter \e <committer@example\&.com>"\fR
+は「コミットメッセージへ「Signed\-off\-by」トレーラーと「Helped\-by」トレーラーを追加します。)）
+\fBtrailer\&.*\fR
+構成変数(\fBgit-interpret-trailers\fR(1))を使用して、重複したトレーラーを省略するかどうか、各トレーラーがトレーラー群の何処に表示されるかや、その他の詳細を定義できます。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-[no\-]verify\fR
+.RS 4
+デフォルトでは、 pre\-commit および commit\-msg フックが実行されます。
+\fB\-\-no\-verify\fR
+または
+\fB\-n\fR
+のいずれかが指定された場合、これらのフックはバイパスされます。
+\fBgithooks\fR(5)
+も参照してください。
+.RE
+.PP
+\fB\-\-allow\-empty\fR
+.RS 4
+通常、唯一の親コミットとまったく同じツリーを持つコミットを記録することは間違いであり、コマンドはそのようなコミットを行うことを防ぎます。 このオプションはその安全装置をバイパスします。主に外部SCMインターフェイススクリプトで使用するためのものです。
+.RE
+.PP
+\fB\-\-allow\-empty\-message\fR
+.RS 4
+\fB\-\-allow\-empty\fR
+と同様に、このコマンドは主に外部SCMインターフェイススクリプトで使用されます。 あなたは
+\fBgit-commit-tree\fR(1)
+のような配管コマンドを使用せずに、空のコミットメッセージでコミットを作成できます。
+.RE
+.PP
+\fB\-\-cleanup=<mode>\fR
+.RS 4
+このオプションは、提供されたコミットメッセージをコミットする前にクリーンアップする方法を決定します。 <mode> は、
+\fBstrip\fR
+または
+\fBwhitespace\fR
+または
+\fBverbatim\fR
+または ` scissors` または
+\fBdefault\fR
+にすることができます。
+.PP
+strip
+.RS 4
+先頭と末尾の空行の削除と、行末の空白を削除と、コメントの削除を行い、連続する空行を折りたたみます。
+.RE
+.PP
+whitespace
+.RS 4
+#コメント が削除されないことを除いて、\fBstrip\fR
+と同一です。
+.RE
+.PP
+verbatim
+.RS 4
+メッセージは一切変更しません。
+.RE
+.PP
+scissors
+.RS 4
+メッセージを編集する場合は、以下の行からの(そしてその行を含む)すべてが切り捨てられることを除いて、
+\fBwhitespace\fR
+と同じです。
+\fB#\fR
+はcore\&.commentCharでカスタマイズできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- >8 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+default
+.RS 4
+メッセージを編集する場合は
+\fBstrip\fR
+と同一です。 それ以外の場合は
+\fBwhitespace\fR
+と同一です。
+.RE
+.sp
+デフォルトは、
+\fBcommit\&.cleanup\fR
+構成変数によって変更できます(\fBgit-config\fR(1)
+参照)。
+.RE
+.PP
+\fB\-e\fR, \fB\-\-edit\fR
+.RS 4
+\fB\-F\fR
+を使用してファイルから取得したメッセージや、
+\fB\-m\fR
+を使用してコマンドラインから取得したメッセージや、
+\fB\-C\fR
+を使用してコミットオブジェクトから取得したメッセージは、通常、編集不可のコミットログメッセージとして使用されます。 このオプションを使用すると、これらのソースから取得したメッセージをさらに編集できます。
+.RE
+.PP
+\fB\-\-no\-edit\fR
+.RS 4
+エディターを起動せずに、選択したコミットメッセージを使用します。 たとえば、
+\fBgit commit \-\-amend \-\-no\-edit\fR
+は、コミットメッセージを変更せずにコミットを修正します。
+.RE
+.PP
+\fB\-\-amend\fR
+.RS 4
+新しいコミットを作成して、現在のブランチの先端を置き換えます。 記録されたツリーは通常どおりに準備され(\fB\-i\fR
+および
+\fB\-o\fR
+オプションと明示的なパススペックの効果を含む)、空のメッセージではなく、元のコミットからのメッセージが開始点として使用されます。 他のメッセージは、コマンドラインから
+\fB\-m\fR,
+\fB\-F\fR,
+\fB\-c\fR
+などのオプションを介して指定します。 新しいコミットには、現在のものと同じ親と作者があります(\fB\-\-reset\-author\fR
+オプションはこれを打ち消すことができます)。
+.sp
+これは、以下とおおむね同じです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        $ git reset \-\-soft HEAD^
+        $ \&.\&.\&. do something else to come up with the right tree \&.\&.\&.
+        $ git commit \-c ORIG_HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ただし、マージコミットを修正(amend)するために使用できます。
+.sp
+すでに公開されているコミットを修正する場合、あなたは履歴の書き換えの影響を理解する必要があります。 (\fBgit-rebase\fR(1)
+の「RECOVERING FROM UPSTREAM REBASE」セクションを参照してください。)
+.RE
+.PP
+\fB\-\-no\-post\-rewrite\fR
+.RS 4
+post\-rewriteフックをバイパスします。
+.RE
+.PP
+\fB\-i\fR, \fB\-\-include\fR
+.RS 4
+これまでにステージングされたコンテンツからコミットを行う前に、コマンドラインで指定されたパスのコンテンツもステージングします。 あなたが競合するマージを終了させるのでない限り、これは通常、あなたが希望することはないでしょう。
+.RE
+.PP
+\fB\-o\fR, \fB\-\-only\fR
+.RS 4
+他のパス用にステージングされたコンテンツを無視して、コマンドラインで指定されたパスの更新された作業ツリーのコンテンツを取得してコミットします。 これは、コマンドラインでパスが指定されている場合の「git commit」のデフォルトの動作モードです。この場合、このオプションは省略できます。 このオプションを`\-\-amend` と一緒に指定する場合、パスを指定する必要はありません。これを使用すると、すでにステージングされている変更をコミットせずに最後のコミットを修正できます。
+\fB\-\-allow\-empty\fR
+パス と一緒に使用する場合もパスは必要ではなく、空のコミットが作成されます。
+.RE
+.PP
+\fB\-\-pathspec\-from\-file=<file>\fR
+.RS 4
+パススペックは、コマンドライン引数の代わりに`<file>\fBで渡されます。 `<file>\fR
+が正確に
+\fB\-\fR
+の場合、標準入力が使用されます。 パススペック要素は、LFまたはCR/LFで区切られます。 パススペック要素は、構成変数
+\fBcore\&.quotePath\fR
+で説明されているようにクォートできます(\fBgit-config\fR(1)
+参照)。
+\fB\-\-pathspec\-file\-nul\fR
+および グローバル
+\fB\-\-literal\-pathspecs\fR
+も参照してください。
+.RE
+.PP
+\fB\-\-pathspec\-file\-nul\fR
+.RS 4
+\fB\-\-pathspec\-from\-file\fR
+指定時のみ意味があります。 パススペック要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
+.RE
+.PP
+\fB\-u[<mode>]\fR, \fB\-\-untracked\-files[=<mode>]\fR
+.RS 4
+追跡されていないファイル(untracked files)を表示します。
+.sp
+modeパラメーターはオプション(デフォルトは「all」)であり、追跡されていないファイルの処理を指定するために使用されます。
+\fB\-u\fR
+を使用しない場合、デフォルトは「normal」です。つまり、追跡されていないファイルとディレクトリを表示します。
+.sp
+可能なオプションは以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no \- 追跡されていないファイルを表示します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+normal \- 追跡されていないファイルとディレクトリを表示します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+all \- 追跡されてないディレクトリ内の個々のファイルも表示します。
+.RE
+.sp
+デフォルトは、
+\fBgit-config\fR(1)
+に記載されている status\&.showUntrackedFiles 構成変数を使用して変更できます。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+HEADコミットとコミットメッセージテンプレートの下部にコミットされる内容とのunified diffを表示して、ユーザーがコミットの変更内容を思い出させることでコミットを説明できるようにします。 注意: このdiff出力には、接頭辞
+\fB#\fR
+が付いた行がないことに注意してください。 このdiffは、コミットメッセージの一部にはなりません。
+\fBgit-config\fR(1)
+の
+\fBcommit\&.verbose\fR
+構成変数を参照してください。
+.sp
+2回指定した場合は、コミットされるものとワークツリーファイルの間のunified diff、 つまり、追跡されたファイルへのステージングされていない変更を追加で表示します。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+コミット要約メッセージを抑制します。
+.RE
+.PP
+\fB\-\-dry\-run\fR
+.RS 4
+コミットを作成しません。ただし、コミットされるパス、コミットされないままになるローカル変更のあるパス、および追跡されないパスのリストを表示します。
+.RE
+.PP
+\fB\-\-status\fR
+.RS 4
+エディターを使用してコミットメッセージを準備する場合は、
+\fBgit-status\fR(1)
+の出力をコミットメッセージテンプレートに含めます。 デフォルトはオンではありますが、 構成変数 commit\&.status での指定をオーバーライドするために使用できます。
+.RE
+.PP
+\fB\-\-no\-status\fR
+.RS 4
+エディターを使用してデフォルトのコミットメッセージを準備する場合は、
+\fBgit-status\fR(1)
+の出力をコミットメッセージテンプレートに含めません。
+.RE
+.PP
+\fB\-S[<keyid>]\fR, \fB\-\-gpg\-sign[=<keyid>]\fR, \fB\-\-no\-gpg\-sign\fR
+.RS 4
+GPG署名コミット。
+\fBkeyid\fR
+引数はオプションであり、デフォルトでコミッターIDになります。 指定する場合は、スペースなしでオプションに固定する必要があります。
+\fB\-\-no\-gpg\-sign\fR
+は、\fBcommit\&.gpgSign\fR
+構成変数と、これより前で指定された
+\fB\-\-gpg\-sign\fR
+の両方を打ち消すのに役立ちます。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+これ以降の引数をオプションとして解釈しないでください。
+.RE
+.PP
+<pathspec>\&...
+.RS 4
+コマンドラインでパススペックが指定されている場合、インデックスにすでに追加されている変更を記録せずに、パススペックにマッチするファイルの内容をコミットします。 これらのファイルの内容は、これより前にステージングされたものに加えて、次のコミットのためにもステージングされます。
+.sp
+詳細については、
+\fBgitglossary\fR(7)の「pathspec」エントリを参照してください。
+.RE
+.SH "EXAMPLES"
+.sp
+自分の作業を記録する場合、作業ツリー内の変更されたファイルの内容は、「git add」を使用して「インデックス」と呼ばれるステージング領域に一時的に保存されます。 ファイルは、インデックス内でのみ、作業ツリー内ではなく、 \fBgit restore \-\-staged <file>\fR を使用して最後のコミットのファイルに戻すことができます。これにより、 \fBgit add\fR が効果的に元に戻され、このファイルへの変更を次のコミットに関わらわせないようにします。 これらのコマンドを使用して増加的にコミットする状態を構築した後、 \fBgit commit\fR (パス名パラメーターなし)を使用して、これまでにステージングされたものを記録します。 これは、このコマンドの最も基本的な形式です。 例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit hello\&.c
+$ git rm goodbye\&.c
+$ git add hello\&.c
+$ git commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+個々の変更の後にファイルをステージングする代わりに、作業ツリーで内容が追跡されているファイルへの変更を通知し、対応する \fBgit add\fR と \fBgit rm\fR を実行するように`gitcommit`に指示できます。 つまり、以下の例は、作業ツリーに他の変更がない場合、上記の例と同じように機能します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit hello\&.c
+$ rm goodbye\&.c
+$ git commit \-a
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+コマンド \fBgit commit \-a\fR は、最初にあなたの作業ツリーを調べ、 あなたが \fBhello\&.c\fR を変更して \fBgoodbye\&.c\fR を削除したことを認識し、 必要な \fBgit add\fR と \fBgit rm\fR を実行します。
+.sp
+多くのファイルに変更をステージングした後、 \fBgit commit\fR にパス名を指定することで、変更が記録される順序を変更できます。 パス名が指定されると、コマンドは、指定されたパスに加えられた変更のみを記録するコミットを行います:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit hello\&.c hello\&.h
+$ git add hello\&.c hello\&.h
+$ edit Makefile
+$ git commit Makefile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、\fBMakefile`への変更を記録するコミットが行われます。 `hello\&.c\fR と \fBhello\&.h\fR に対してステージングされた変更は、結果のコミットには含まれません。 ただし、それらの変更は失われません。それらはいまだステージングに留まっているだけです。上記シーケンスの後、あなたが以下のようにした場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この2番目のコミットは、期待どおりに \fBhello\&.c\fR と \fBhello\&.h\fR への変更を記録します。
+.sp
+競合が原因でマージ(「git merge」または「git pull」によって開始）が停止(stop)した後では、クリーンにマージされたパスはすでにステージングされてコミットされ、競合したパスはマージされていない状態のままになります。 最初に、「git status」で、どのパスが競合しているかを確認する必要があります。あなたの作業ツリーで手動で修正した後、通常どおり「git add」を使用して結果をステージングします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git status | grep unmerged
+unmerged: hello\&.c
+$ edit hello\&.c
+$ git add hello\&.c
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+競合を解決して結果をステージングした後、 \fBgit ls\-files \-u\fR は競合するパスへの言及を停止します。 完了したら、 \fBgit commit\fR を実行して、最終的にマージを記録します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+独自の変更を記録する場合と同様に、 \fB\-a\fR オプションを使用して入力を保存できます。 一つ違うのは、マージの解決中にパス名を伴って \fBgit commit\fR を使用して、変更がコミットされる順序を変更できないことです。これは、マージが単一のコミットとして記録される必要があるためです。 実際、パス名が指定されている場合、コマンドは実行を拒否します(ただし、 \fB\-i\fR オプションも参照してください)。
+.SH "COMMIT INFORMATION"
+.sp
+作者とコミッターの情報は、以下の環境変数から取得されます(設定されてる場合):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+GIT_AUTHOR_NAME
+GIT_AUTHOR_EMAIL
+GIT_AUTHOR_DATE
+GIT_COMMITTER_NAME
+GIT_COMMITTER_EMAIL
+GIT_COMMITTER_DATE
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+(注: "<" と ">" と "\en" は取り除きます)
+.sp
+作者とコミッター名は、慣例により、個人名(つまり、他の人間があなたを参照する名前)の形式ですが、Gitは特定の形式を強制または要求しません。 上記の制約に従って、任意のUnicodeを使用できます。 この名前は認証には影響しません。認証には影響させるためには、 \fBgit-config\fR(1)の \fBcredential\&.username\fR 変数を参照してください。
+.sp
+これらの環境変数(の一部)が設定されていない場合、情報は構成アイテム \fBuser\&.name\fR および \fBuser\&.email\fR から取得され、それが存在しない場合は、環境変数EMAILから取得され、それが設定されてない場合は、 システムユーザー名や送信メールに使用されるホスト名(\fB/etc/mailname\fR から取得され、そのファイルが存在しない場合は完全修飾ホスト名にフォールバックします)から取得されます。
+.sp
+\fBauthor\&.name\fR と \fBcommitter\&.name\fR と、それらに対応する電子メールオプションは、 設定されている場合はそれぞれ \fBuser\&.name\fR と \fBuser\&.email\fR をオーバーライドし、環境変数によってオーバーライドされます。
+.sp
+一般的な使用法は、 \fBuser\&.name\fR 変数と \fBuser\&.email\fR 変数のみを設定することです。 他のオプションは、より複雑なユースケースのために提供されています。
+.SH "DATE FORMATS"
+.sp
+\fBGIT_AUTHOR_DATE\fR と \fBGIT_COMMITTER_DATE\fR 環境変数は、以下の日付形式をサポートします:
+.PP
+Git internal format
+.RS 4
+これは
+\fB<unix\-timestamp> <time\-zone\-offset>\fR
+ここで、
+\fB<unix\-timestamp>\fR
+UNIXエポックからの秒数です。
+\fB<time\-zone\-offset>\fR
+はUTCからの正または負のオフセットです。 たとえば、CET(UTCより1時間進んでいます)は
+\fB+0100\fR
+です。
+.RE
+.PP
+RFC 2822
+.RS 4
+RFC 2822で説明されている標準の電子メール形式。たとえば、
+\fBThu, 07 Apr 2005 22:13:13 +0200\fR
+。
+.RE
+.PP
+ISO 8601
+.RS 4
+ISO 8601規格で指定されている日時(例:
+\fB2005\-04\-07T22:13:13\fR)。パーサは、
+\fBT\fR
+文字の代わりにスペースも受け入れます。秒の小数部分は無視されます。たとえば、
+\fB2005\-04\-07T22:13:13\&.019\fR
+は
+\fB2005\-04\-07T22:13:13\fR
+として扱われます。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+日付部分は、上記に加えて、
+\fBYYYY\&.MM\&.DD\fR
+または
+\fBMM/DD/YYYY\fR
+または
+\fBDD\&.MM\&.YYYY\fR
+形式が受け入れられます。
+.sp .5v
+.RE
+.RE
+.sp
+上記のすべての日付形式を認識することに加えて、 \fB\-\-date\fR オプションは、 "yesterday" や "last Friday at noon" など、より人間よりの日付形式も理解しようとします。
+.SH "DISCUSSION"
+.sp
+必須ではありませんが、変更を要約した1行の短い(50文字未満の)行でコミットメッセージを開始し、その後に空行を続け、さらに詳細な説明を続けることをお勧めします。 コミットメッセージの最初の空行までのテキストはコミットタイトルとして扱われ、そのタイトルはGit全体で使用されます。 たとえば、 \fBgit-format-patch\fR(1) はコミットを電子メールに変換し、コミットタイトルをメール件名に使い、残りのコミットメッセージをメール本文に使います。
+.sp
+Gitは、ある程度までは文字エンコードに依存しません。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ブロブオブジェクトの内容は、解釈されていないバイトのシーケンスです。コアレベルでのエンコーディング変換はありません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パス名はUTF\-8正規化形式C(UTF\-8 normalization form C)でエンコードされます。これは、ツリーオブジェクト、インデックスファイル、ref名、およびコマンドライン引数、環境変数、構成ファイル(
+\fB\&.git/config\fR
+(\fBgit-config\fR(1)
+参照) と
+\fBgitignore\fR(5)
+と
+\fBgitattributes\fR(5)
+と
+\fBgitmodules\fR(5)) のパス名に適用されます。
+.sp
+コアレベルのGitは、パス名を単に非NULバイトのシーケンスとして扱い、パス名をエンコードする変換はありません(MacとWindowsを除く)。したがって、非ASCIIパス名の使用は、レガシー拡張ASCIIエンコーディングを使用するプラットフォームやファイルシステムでもほとんど機能します。ただし、そのようなシステムで作成されたリポジトリは、UTF\-8ベースのシステム(Linux、Mac、Windowsなど)では正しく機能しません。その逆も同様です。さらに、多くのGitベースのツールは、パス名がUTF\-8であると単純に想定しており、他のエンコーディングを正しく表示できません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コミットログメッセージは通常UTF\-8でエンコードされますが、他の拡張ASCIIエンコードもサポートされています。これには、ISO\-8859\-x、CP125xなどが含まれますが、UTF\-16/32、EBCDIC、およびCJKマルチバイトエンコーディング(GBK、Shift\-JIS、Big5、EUC\-x、CP9xxなど)は含まれません。
+.RE
+.sp
+我々はコミットログメッセージをUTF\-8でエンコードすることをお勧めしますが、コアとGit Porcelainはどちらも、プロジェクトでUTF\-8を強制しないように設計されています。特定のプロジェクトのすべての参加者がレガシーエンコーディングを使用する方が便利だと感じた場合、Gitはそれを禁止しません。 ただし、覚えておくべきことがいくつかあります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBgit commit\fR
+と
+\fBgit commit\-tree\fR
+は、プロジェクトがレガシーエンコーディングを使用していることを明示的に指定しない限り、与えられたコミットログメッセージが有効なUTF\-8文字列のように見えない場合に警告を発します。明示的に指定する方法は、以下のように、
+\fB\&.git/config\fR
+ファイルに
+\fBi18n\&.commitEncoding\fR
+を含めることです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[i18n]
+        commitEncoding = ISO\-8859\-1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+上記の設定で作成されたコミットオブジェクトは、
+\fBencoding\fR
+ヘッダーに
+\fBi18n\&.commitEncoding\fR
+の値を記録します。 これは、後でそれらを見る他の人々を助けるためです。このヘッダーがないということは、コミットログメッセージがUTF\-8でエンコードされていることを意味します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+\fBgit log\fR
+や
+\fBgit show\fR
+や
+\fBgit blame\fR
+とその仲間たちは、コミットオブジェクトの
+\fBencoding\fR
+ヘッダーを見て、特に指定がない限り、ログメッセージをUTF\-8に再コーディングしようとします。あなたは以下のように、
+\fB\&.git/config\fR
+ファイルの
+\fBi18n\&.logOutputEncoding\fR
+を使用して目的の出力エンコーディングを指定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[i18n]
+        logOutputEncoding = ISO\-8859\-1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この構成変数がない場合は、代わりに
+\fBi18n\&.commitEncoding\fR
+の値が使用されます。
+.RE
+.sp
+UTF\-8への再コーディングは必ずしも可逆的な操作ではないため、我々はコミットが行われたときにコミットログメッセージを再コーディングしないことを意図的に選択したことに注意してください。
+.SH "ENVIRONMENT AND CONFIGURATION VARIABLES"
+.sp
+コミットログメッセージの編集に使用されるエディターは、 \fBGIT_EDITOR\fR 環境変数 または core\&.editor 構成変数 または \fBVISUAL\fR 環境変数 または \fBEDITOR\fR 環境変数から(この順序で)選択されます。 詳細については、 \fBgit-var\fR(1) を参照してください。
+.sp
+このセクションのこの行より上にあるものはすべて、 \fBgit-config\fR(1) ドキュメントには含まれていません。 以下の内容に関しては、\fBgit-config\fR(1) ドキュメント にあるものと同一です。
+.PP
+commit\&.cleanup
+.RS 4
+この設定は、
+\fBgit commit\fR
+の
+\fB\-\-cleanup\fR
+オプションのデフォルトを上書きします。 詳細については、
+\fBgit-commit\fR(1)
+を参照してください。 デフォルトを変更すると、コメント文字
+\fB#\fR
+で始まる行をログメッセージに常に残しておきたい場合に役立ちます。その場合は、
+\fBgit config commit\&.cleanup whitespace\fR
+を実行します(注意:これを行う場合は、コミットログテンプレートの
+\fB#\fR
+で始まるヘルプ行を自分で削除する必要があることに注意してください)。
+.RE
+.PP
+commit\&.gpgSign
+.RS 4
+すべてのコミットをGPG署名する必要があるかどうかを指定するブール値。 リベースなどの操作を行うときにこのオプションを使用すると、多数のコミットが署名される可能性があります。 エージェントを使用して、GPGパスフレーズの入力を省略するようにすると便利な場合があります。
+.RE
+.PP
+commit\&.status
+.RS 4
+エディタを使用してコミットメッセージを準備するときに、コミットメッセージテンプレートにステータス情報を含めることを有効/無効にするブール値。 デフォルトはtrueです。
+.RE
+.PP
+commit\&.template
+.RS 4
+新しいコミットメッセージのテンプレートとして使用するファイルのパス名を指定します。
+.RE
+.PP
+commit\&.verbose
+.RS 4
+\fBgit commit\fR
+でverboseレベルを指定するブール値またはint。
+\fBgit-commit\fR(1)
+を参照してください。
+.RE
+.SH "HOOKS"
+.sp
+このコマンドは、 \fBcommit\-msg\fR フックと、 \fBprepare\-commit\-msg\fR フックと、 \fBpre\-commit\fR フックと、 \fBpost\-commit\fR フックと、 \fBpost\-rewrite\fR フック を実行できます。 詳細については、 \fBgithooks\fR(5) を参照してください。
+.SH "FILES"
+.PP
+\fB$GIT_DIR/COMMIT_EDITMSG\fR
+.RS 4
+このファイルには、進行中のコミットのコミットメッセージが含まれています。 コミットを作成する前にエラーが原因で
+\fBgitc ommit\fR
+が終了した場合、ユーザーによって提供されたコミットメッセージ(エディターセッションなど)は全てこのファイルに残りますが、次の
+\fBgit commit\fR
+の呼び出しによって上書きされます。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-add\fR(1), \fBgit-rm\fR(1), \fBgit-mv\fR(1), \fBgit-merge\fR(1), \fBgit-commit-tree\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

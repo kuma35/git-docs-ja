@@ -1,0 +1,726 @@
+'\" t
+.\"     Title: git-branch
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-BRANCH" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-branch \- ブランチを、一覧表示または作成または削除します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit branch\fR [\-\-color[=<when>] | \-\-no\-color] [\-\-show\-current]
+        [\-v [\-\-abbrev=<n> | \-\-no\-abbrev]]
+        [\-\-column[=<options>] | \-\-no\-column] [\-\-sort=<key>]
+        [\-\-merged [<commit>]] [\-\-no\-merged [<commit>]]
+        [\-\-contains [<commit>]] [\-\-no\-contains [<commit>]]
+        [\-\-points\-at <object>] [\-\-format=<format>]
+        [(\-r | \-\-remotes) | (\-a | \-\-all)]
+        [\-\-list] [<pattern>\&...]
+\fIgit branch\fR [\-\-track[=(direct|inherit)] | \-\-no\-track] [\-f]
+        [\-\-recurse\-submodules] <branchname> [<start\-point>]
+\fIgit branch\fR (\-\-set\-upstream\-to=<upstream> | \-u <upstream>) [<branchname>]
+\fIgit branch\fR \-\-unset\-upstream [<branchname>]
+\fIgit branch\fR (\-m | \-M) [<oldbranch>] <newbranch>
+\fIgit branch\fR (\-c | \-C) [<oldbranch>] <newbranch>
+\fIgit branch\fR (\-d | \-D) [\-r] <branchname>\&...
+\fIgit branch\fR \-\-edit\-description [<branchname>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fB\-\-list\fR が指定されている場合、またはオプション以外の引数がない場合は、既存のブランチが一覧表示されます。 現在のブランチは緑色(green)で強調表示され、アスタリスク(\fB*\fR)でマークされます。 リンクされたワークツリーでチェックアウトされたブランチは、シアン(cyan)で強調表示され、プラス記号(\fB+\fR)でマークされます。 オプション \fB\-r\fR を指定すると、リモート追跡ブランチが一覧表示され、オプション \fB\-a\fR はローカルブランチとリモートブランチの両方を表示します。
+.sp
+\fB<pattern>\fR が指定されている場合、出力を、マッチするブランチに制限するためのシェルワイルドカードとして使用されます。 複数のパターンが指定されている場合、いずれかのパターンに一致するとブランチが表示されます。
+.sp
+\fB<pattern>\fR を提供するときは、 \fB\-\-list\fR を使用する必要があることに注意してください。 そうしないと、コマンドがブランチの作成として解釈される可能性があります。
+.sp
+\fB\-\-contains\fR を使用すると、名前付きコミットを含むブランチ(つまり、先端コミットが名前付きコミットの子孫であるブランチ)のみが表示され、 \fB\-\-no\-contains\fR はそれを反転します。 \fB\-\-merged\fR を使用すると、指定されたコミットにマージされたブランチ(つまり、指定されたコミットから先端コミットに到達できるブランチ)のみが一覧表示されます。 \fB\-\-no\-merged\fR を使用すると、指定されたコミットにマージされていないブランチのみが一覧表示されます。 <commit> 引数が欠落している場合、デフォルトで \fBHEAD\fR (つまり、現在のブランチの先端)になります。
+.sp
+コマンドの2番目の形式は、現在の \fBHEAD\fR 、または、指定されている場合は <start\-point> を指す <branchname> という名前の新しいブランチヘッドを作成します。 特殊なケースとして、 <start\-point> について、マージベースが1つしかない場合は、\fBA\fR と \fBB\fR のマージベースのショートカットとして \fBA\&.\&.\&.B\fR を使用できます。 最大で \fBA\fR と \fBB\fR のいずれかを省略できます。その場合、デフォルトで \fBHEAD\fR になります。
+.sp
+注意: これにより新しいブランチが作成されますが、作業ツリーはそれに切り替わりません。 \fBgit switch <newbranch>\fR を使用して、新しいブランチに切り替えます。
+.sp
+ローカルブランチがリモート追跡ブランチから開始されると、Gitはブランチ(具体的には \fBbranch\&.<name>\&.remote\fR と \fBbranch\&.<name>\&.merge\fR の構成エントリ)をセットアップし、 \fBgit pull\fR でリモート追跡ブランチから適切にマージするようにします。 この動作は、グローバルな \fBbranch\&.autoSetupMerge\fR 構成フラグを介して変更できます。 この設定は、 \fB\-\-track\fR および \fB\-\-no\-track\fR オプションを使用してオーバーライドでき、後で \fBgit branch \-\-set\-upstream\-to\fR を使用して変更できます。
+.sp
+\fB\-m\fR または \fB\-M\fR オプションを使用すると、 <oldbranch> の名前を <newbranch> に名前変更します。 <oldbranch> に対応するreflogがある場合は、 <newbranch> に一致するように名前変更され、ブランチの名前変更を記憶するためにreflogエントリが作成されます。 <newbranch> が存在する場合は、 \fB\-M\fR を使用して名前の変更を強制する必要があります。
+.sp
+\fB\-c\fR および \fB\-C\fR オプションは、 \fB\-m\fR および \fB\-M\fR とまったく同一の意図(semantics)ですが、ブランチの名前が変更される代わりに、configおよびreflogとともに新しい名前にコピーされます。
+.sp
+\fB\-d\fR または \fB\-D\fR オプションを使用すると、 \fB<branchname>\fR が削除されます。 削除するブランチを複数指定できます。 現在、ブランチがreflogを持っている場合、reflogも削除されます。
+.sp
+\fB\-r\fR を \fB\-d\fR と一緒に使用して、リモート追跡ブランチを削除します。 リモート追跡ブランチを削除するのは、リモートリポジトリに存在しなくなった場合、または \fBgit fetch\fR が再度フェッチしないように構成されている場合にのみ意味があることに注意してください。 廃止されたすべてのリモート追跡ブランチをクリーンアップする方法については、 \fBgit-remote\fR(1) の「prune」サブコマンドも参照してください。
+.SH "OPTIONS"
+.PP
+\fB\-d\fR, \fB\-\-delete\fR
+.RS 4
+ブランチを削除します。 ブランチは、アップストリームブランチで完全にマージする必要があります。アップストリームが
+\fB\-\-track\fR
+または
+\fB\-\-set\-upstream\-to\fR
+で設定されていない場合は、\fBHEAD\fR
+でマージする必要があります。
+.RE
+.PP
+\fB\-D\fR
+.RS 4
+\fB\-\-delete \-\-force\fR
+のショートカットです。
+.RE
+.PP
+\fB\-\-create\-reflog\fR
+.RS 4
+ブランチのreflogを作成します。 これにより、ブランチrefに加えられたすべての変更の記録がアクティブになり、
+\fB<branchname>@\e{yesterday}\fR
+などの日付ベースのsha1式を使用できるようになります。 非ベアリポジトリでは、通常、reflogはデフォルトで
+\fBcore\&.logAllRefUpdates\fR
+設定オプションによって有効になっていることに注意してください。 否定形式
+\fB\-\-no\-create\-reflog\fR
+は、それ以前の
+\fB\-\-create\-reflog\fR
+をオーバーライドするだけですが、現在のところ
+\fBcore\&.logAllRefUpdates\fR
+の設定を否定しません。
+.RE
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+<branchname> がすでに存在する場合でも、 <branchname> を <startpoint> にリセットします。
+\fB\-f\fR
+がないと、
+\fBgit branch\fR
+は既存のブランチの変更を拒否します。
+\fB\-d\fR(または
+\fB\-\-delete\fR)と組み合わせて、マージされたステータスに関係なく、または有効なコミットを指しているかどうかに関係なく、ブランチを削除できるようにします。
+\fB\-m\fR(または
+\fB\-\-move\fR)と組み合わせて、新しいブランチ名がすでに存在する場合でもブランチの名前を変更できるようにします。同じことが
+\fB\-c\fR(または
+\fB\-\-copy\fR)にも当てはまります。
+.RE
+.PP
+\fB\-m\fR, \fB\-\-move\fR
+.RS 4
+ブランチを、その構成や reflog とともに 移動/名前変更 します。
+.RE
+.PP
+\fB\-M\fR
+.RS 4
+\fB\-\-move \-\-force\fR
+のショートカットです。
+.RE
+.PP
+\fB\-c\fR, \fB\-\-copy\fR
+.RS 4
+ブランチを、その構成や reflog とともにコピーします。
+.RE
+.PP
+\fB\-C\fR
+.RS 4
+\fB\-\-copy \-\-force\fR
+のショートカットです。
+.RE
+.PP
+\fB\-\-color[=<when>]\fR
+.RS 4
+現在のブランチと、ローカルブランチと、リモート追跡ブランチを強調表示するためにブランチに色を付けます。値は always (デフォルト) または never または auto でなければなりません。
+.RE
+.PP
+\fB\-\-no\-color\fR
+.RS 4
+構成ファイルでデフォルトのカラー出力が指定されている場合でも、ブランチの色付けをオフにします。
+\fB\-\-color=never\fR
+と同じです。
+.RE
+.PP
+\fB\-i\fR, \fB\-\-ignore\-case\fR
+.RS 4
+ブランチの並べ替えとフィルタリングでは英大文字小文字を区別しません(case insensitive)。
+.RE
+.PP
+\fB\-\-column[=<options>]\fR, \fB\-\-no\-column\fR
+.RS 4
+ブランチの一覧表示を複数列に表示します。 オプションの構文については、構成変数
+\fBcolumn\&.branch\fR
+を参照してください。 オプションのない
+\fB\-\-column\fR
+と
+\fB\-\-no\-column\fR
+は、それぞれ
+\fBalways\fR
+と
+\fBnever\fR
+と同等です。
+.sp
+このオプションは、非おしゃべりモード(non\-verbose mode)でのみ適用できます。
+.RE
+.PP
+\fB\-r\fR, \fB\-\-remotes\fR
+.RS 4
+リモートトラッキングブランチを一覧表示または削除(\fB\-d\fR
+とともに使用する場合)します。 オプションのパターンに一致するように
+\fB\-\-list\fR
+と組み合わせます。
+.RE
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+リモートトラッキングブランチとローカルブランチの両方を一覧表示します。
+\fB\-\-list\fR
+と組み合わせて、オプションのパターンにマッチさせます。
+.RE
+.PP
+\fB\-l\fR, \fB\-\-list\fR
+.RS 4
+ブランチを一覧表示します。 オプションの`<pattern>\&...\fBを使用します。 例: `git branch \-\-list \*(Aqmaint\-*\*(Aq\fR
+パターンにマッチするブランチのみをリストします。
+.RE
+.PP
+\fB\-\-show\-current\fR
+.RS 4
+現在のブランチの名前を出力します。 HEADを切り離した(detached HEAD)状態では、何も出力されません。
+.RE
+.PP
+\fB\-v\fR, \fB\-vv\fR, \fB\-\-verbose\fR
+.RS 4
+リストモード(list mode)の場合は、sha1を表示し、各ヘッドの件名と、(存在する場合、)アップストリームブランチとの関係をコミットします。 2回指定した場合は、リンクされたワークツリーのパス(存在する場合)とアップストリームブランチの名前も出力します(\fBgit remote show <remote>\fR
+も参照)。 現在のワークツリーのHEADにはパスが出力されないことに注意してください(常に現在のディレクトリになります)。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+エラー以外のメッセージを抑制して、ブランチを作成または削除するときはもっと静かにしてください。
+.RE
+.PP
+\fB\-\-abbrev=<n>\fR
+.RS 4
+コミットオブジェクト名を示す詳細リストで、オブジェクトを一意に参照する、少なくとも16進数
+\fI<n>\fR
+桁の長さの最短のプレフィックスを表示します。 デフォルト値は 7 で、
+\fBcore\&.abbrev\fR
+構成オプションでオーバーライドできます。
+.RE
+.PP
+\fB\-\-no\-abbrev\fR
+.RS 4
+省略せずに、出力リストに完全なsha1を表示します。
+.RE
+.PP
+\fB\-t\fR, \fB\-\-track[=(direct|inherit)]\fR
+.RS 4
+新しいブランチを作成するときは、
+\fBbranch\&.<name>\&.remote\fR
+および
+\fBbranch\&.<name>\&.merge\fR
+構成エントリをセットアップして、新しいブランチの「上流」追跡構成(upstream tracking configuration)を設定します。 この構成は、
+\fBgit status\fR
+と
+\fBgit branch \-v\fR
+で、2つのブランチの間の関係を表示するようにgitに指示します。 さらに、引数なしで
+\fBgit pull\fR
+に、新しいブランチがチェックアウトされたときに上流(upstream)からプルするように指示します。
+.sp
+オプションの引数に応じて、正確な上流(upstream)ブランチが選択されます。
+\fB\-t\fR
+または
+\fB\-\-track\fR
+または
+\fB\-\-track=direct\fR
+は、起点(start\-point)ブランチ自体を上流として使用することを意味します。 `\-\-track=inherit｀ は、起点ブランチの上流構成(upstream configuration)をコピーすることを意味します。
+.sp
+branch\&.autoSetupMerge 構成変数は、\fB\-\-track\fR
+も
+\fB\-\-no\-track\fR
+も指定されていない場合に、
+\fBgit switch\fR
+や
+\fBgit checkout\fR
+や
+\fBgit branch\fR
+がどのように振る舞うかを指定します:
+.sp
+デフォルトのオプション
+\fBtrue\fR
+は、起点(start\-point)がリモート追跡ブランチである場合はいつでも
+\fB\-\-track=direct\fR
+が指定されたかのように振る舞います。
+\fBfalse\fR
+は、\fB\-\-no\-track\fR
+が指定されたかのように振る舞います。
+\fBalways\fR
+は、\fB\-\-track=direct\fR
+が指定されたかのように振る舞います。
+\fBinherit\fR
+は
+\fB\-\-track=inherit\fR
+が与えられたかのように振る舞います。
+\fBsimple\fR
+は、起点がリモート追跡ブランチであり、新しいブランチがリモート・ブランチと同じ名前を持つ場合にのみ、
+\fB\-\-track=direct\fR
+が指定されたかのように振る舞います。
+.sp
+\fBbranch\&.<name>\&.remote\fR
+および
+\fBbranch\&.<name>\&.merge\fR
+オプションの使用方法に関する追加の説明については、
+\fBgit-pull\fR(1)
+および
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-no\-track\fR
+.RS 4
+branch\&.autoSetupMerge構成変数がセットされている場合でも、「upstream」構成をセットアップしないでください。
+.RE
+.PP
+\fB\-\-recurse\-submodules\fR
+.RS 4
+このオプションは実験的機能です!
+\fBsubmodule\&.propagateBranches\fR
+が有効になっている場合、現在のコマンドをサブモジュール内でも再帰させます。
+\fBgit-config\fR(1)
+の
+\fBsubmodule\&.propagateBranches\fR
+を参照してください。 現在、ブランチの作成のみがサポートされています。
+.sp
+ブランチの作成で使用すると、新しいブランチ <branchname> がスーパープロジェクトに作成され、すべてのサブモジュールがスーパープロジェクトの <start\-point> に作成されます。 サブモジュールでは、ブランチはスーパープロジェクトの <start\-point> でサブモジュールのコミットを指しますが、ブランチの追跡情報はサブモジュールのブランチとremoteに基づいて設定されます。 例えば
+\fBgit branch \-\-recurse\-submodules topic origin/main\fR
+は、スーパープロジェクトの
+\fBorigin/main\fR
+内のサブモジュール・コミットを指すサブモジュール・ブランチ
+\fBtopic\fR
+を作成しますが、サブモジュールの
+\fBorigin/main\fR
+を追跡します。
+.RE
+.PP
+\fB\-\-set\-upstream\fR
+.RS 4
+このオプションは構文がわかりにくいため、サポートされなくなりました。 代わりに
+\fB\-\-track\fR
+または
+\fB\-\-set\-upstream\-to\fR
+を使用してください。
+.RE
+.PP
+\fB\-u <upstream>\fR, \fB\-\-set\-upstream\-to=<upstream>\fR
+.RS 4
+<branchname> の追跡情報を設定して、<upstream> が <branchname> のアップストリームブランチと見なされるようにします。 <branchname> が指定されていない場合、デフォルトで現在のブランチになります。
+.RE
+.PP
+\fB\-\-unset\-upstream\fR
+.RS 4
+<branchname> のアップストリーム情報を削除します。 ブランチが指定されていない場合、デフォルトで現在のブランチになります。
+.RE
+.PP
+\fB\-\-edit\-description\fR
+.RS 4
+エディタを開き、テキストを編集して、ブランチの目的を説明し、他のさまざまなコマンド(\fBformat\-patch\fR
+、` request\-pull` 、
+\fBmerge\fR
+(有効な場合) など)で使用できるようにします。 複数行の説明を使用できます。
+.RE
+.PP
+\fB\-\-contains [<commit>]\fR
+.RS 4
+指定されたコミットを含むブランチのみをリストします(指定されていない場合はHEAD)。
+\fB\-\-list\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-\-no\-contains [<commit>]\fR
+.RS 4
+指定されたコミットを含まないブランチのみをリストします(指定されていない場合はHEAD)。
+\fB\-\-list\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-\-merged [<commit>]\fR
+.RS 4
+指定されたコミットから先端に到達できるブランチのみをリストします(指定されていない場合はHEAD)。
+\fB\-\-list\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-\-no\-merged [<commit>]\fR
+.RS 4
+指定されたコミットから先端に到達できないブランチのみをリストします(指定されていない場合はHEAD)。
+\fB\-\-list\fR
+の指定を含んでいます。
+.RE
+.PP
+<branchname>
+.RS 4
+作成または削除するブランチの名前。 新しいブランチ名は、
+\fBgit-check-ref-format\fR(1)
+で定義されているすべてのチェックに合格する必要があります。 これらのチェックの一部は、ブランチ名で許可される文字を制限する場合があります。
+.RE
+.PP
+<start\-point>
+.RS 4
+新しいブランチヘッドはこのコミットを指します。 ブランチ名 または commit\-id または タグ として指定できます。 このオプションを省略すると、代わりに現在のHEADが使用されます。
+.RE
+.PP
+<oldbranch>
+.RS 4
+名前を変更する既存のブランチの名前。
+.RE
+.PP
+<newbranch>
+.RS 4
+既存のブランチの新しい名前。 <branchname> と同じ制限が適用されます。
+.RE
+.PP
+\fB\-\-sort=<key>\fR
+.RS 4
+指定されたキーに基づいて並べ替えます。 プレフィックス
+\fB\-\fR
+を使用して、値の降順で並べ替えます。
+\fB\-\-sort=<key>\fR
+オプションを複数回使用できます。その場合、最後のキーが主キーになります。 サポートされているキーは、
+\fBgitfor\-each\-ref\fR
+のキーと同じです。 ソート順は、デフォルトで、
+\fBbranch\&.sort\fR
+変数が存在する場合はその値に設定されているか、完全なrefname (\fBrefs/\&.\&.\&.\fR
+プレフィックスを含む)に基づいてソートされます。 これにより、切り離されたHEAD(detached HEAD)(存在する場合)が最初にリストされ、次にローカルブランチ、最後にリモート追跡ブランチがリストされます。
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-points\-at <object>\fR
+.RS 4
+指定されたオブジェクトのブランチのみを一覧表示します。
+.RE
+.PP
+\fB\-\-format <format>\fR
+.RS 4
+表示されているブランチrefとそれが指すオブジェクトを
+\fB%(fieldname)\fR
+によって差し込みする書式文字列。 形式は\fBgit-for-each-ref\fR(1)
+の形式と同じです。
+.RE
+.SH "CONFIGURATION"
+.sp
+\fBpager\&.branch\fR は、ブランチを一覧表示する場合、 つまり \fB\-\-list\fR が使用または暗示されている場合にのみ尊重されます。 デフォルトでは、ページャーを使用します。 \fBgit-config\fR(1) を参照してください。
+.sp
+このセクションのこの行より上にあるものはすべて、 \fBgit-config\fR(1) ドキュメントには含まれていません。 以下の内容に関しては、\fBgit-config\fR(1) ドキュメント にあるものと同一です。
+.PP
+branch\&.autoSetupMerge
+.RS 4
+\fBgit-pull\fR(1)
+が開始点ブランチから適切にマージされるように、
+\fBgit branch\fR
+や
+\fBgit switch\fR
+や
+\fBgit checkout\fR
+に新しいブランチを設定するように指示します。 このオプションが設定されていない場合でも、この動作は、
+\fB\-\-track\fR
+や
+\fB\-\-no\-track\fR
+オプションを使用してブランチごとに選択できることに注意してください。 有効な設定は次のとおりです:
+\fBfalse\fR \(em  自動セットアップは行われません。
+\fBtrue\fR \(em 開始点がリモート追跡ブランチの場合、自動セットアップが実行されます。
+\fBalways\fR \(em  自動セットアップは、開始点がローカルブランチまたはリモート追跡ブランチのいずれかである場合に実行されます。 このオプションのデフォルトはtrueです。
+\fBinherit\fR \(em 開始点に追跡構成(tracking configuration)がある場合、それは新しいブランチにコピーされます。
+\fBsimple\fR \(em  自動セットアップは、開始点がリモート追跡ブランチであり、新しいブランチがリモート・ブランチと同じ名前を持つ場合にのみ実行されます。 このオプションのデフォルトは true です。
+.RE
+.PP
+branch\&.autoSetupRebase
+.RS 4
+別のブランチを追跡する
+\fBgit branch\fR
+または
+\fBgit switch\fR
+または
+\fBgit checkout\fR
+を使用して新しいブランチが作成されると、この変数はGitにマージではなくリベースするプルを設定するように指示します(\fBbranch\&.<name>\&.rebase\fR
+参照)。
+\fBnever\fR
+の場合、リベースが自動的にtrueに設定されることはありません。
+\fBlocal\fR
+の場合、他のローカルブランチの追跡されたブランチに対してリベースがtrueに設定されます。
+\fBremote\fR
+の場合、リモート追跡ブランチの追跡されたブランチに対してリベースがtrueに設定されます。
+\fBalways\fR
+の場合、リベースはすべての追跡ブランチに対してtrueに設定されます。 別のブランチを追跡するためにブランチを設定する方法の詳細については、
+\fBbranch\&.autoSetupMerge\fR
+を参照してください。 このオプションのデフォルトは
+\fBnever\fR
+です。
+.RE
+.PP
+branch\&.sort
+.RS 4
+この変数は、
+\fBgit-branch\fR(1)
+によって表示されるときのブランチの並べ替え順序を制御します。
+\fB\-\-sort=<value>\fR
+オプションが指定されていない場合、この変数の値がデフォルトとして使用されます。 有効な値については、
+\fBgit-for-each-ref\fR(1)
+のfield namesを参照してください。
+.RE
+.PP
+branch\&.<name>\&.remote
+.RS 4
+ブランチ<name>にいる場合、フェッチ元/プッシュ先 のremoteを
+\fBgit fetch\fR
+と
+\fBgit push\fR
+に通知します。 プッシュ先のremoteは、 (全ブランチ用の)
+\fBremote\&.pushDefault\fR
+でオーバーライドできます。 現在のブランチの場合、プッシュ先のremoteは、
+\fBbranch\&.<name>\&.pushRemote\fR
+によってさらにオーバーライドされる可能性があります。 remoteが構成されていない場合、または、どのブランチにも属しておらずリポジトリに複数のremoteが定義されている場合、フェッチの場合は
+\fBorigin\fR
+に、プッシュの場合は
+\fBremote\&.pushDefault\fR
+にデフォルト設定されます。 さらに、
+\fB\&.\fR
+(ピリオド)は現在のローカルリポジトリ(ドットリポジトリ)です。下記
+\fBbranch\&.<name>\&.merge\fR
+の最後の注意を参照してください。
+.RE
+.PP
+branch\&.<name>\&.pushRemote
+.RS 4
+ブランチ<name>にいる場合、プッシュするための
+\fBbranch\&.<name>\&.remote\fR
+をオーバーライドします。 また、ブランチ<name>からプッシュするための
+\fBremote\&.pushDefault\fR
+をオーバーライドします。 ある場所(あなたのアップストリームなど)から別の場所(独自の公開リポジトリなど)にプッシュする場合は、
+\fBremote\&.pushDefault\fR
+を設定して、すべてのブランチにプッシュするリモートを指定し、そして、このオプションを使用して 特定のブランチに対してオーバーライドします。
+.RE
+.PP
+branch\&.<name>\&.merge
+.RS 4
+branch\&.<name>\&.remote とともに、指定されたブランチのアップストリームブランチを定義します。 マージするブランチを
+\fBgit fetch\fR/\fBgit pull\fR/\fBgit rebase\fR
+に通知し、
+\fBgit push\fR
+にも影響を与える可能性があります(push\&.default参照)。 ブランチ<name>にいる場合、FETCH_HEADでマージするためにマークされるデフォルトのrefspecを
+\fBgit fetch\fR
+に指示します。 値はrefspecのリモート部分のように処理され、
+\fBbranch\&.<name>\&.remote ` で指定されたリモートからフェッチされたrefと一致する必要があります。 マージ情報は、マージのためにデフォルトのブランチを検索するために `git pull\fR
+(最初に
+\fBgit fetch\fR
+を呼び出します)によって使用されます。 このオプションがない場合、
+\fBgit pull\fR
+はデフォルトで、フェッチされた最初のrefspecをマージします。 octopusマージを取得するには、複数値を指定します。 あなたがローカルリポジトリ内の別のブランチから<name>にマージされるように
+\fBgit pull\fR
+を設定したい場合は、branch\&.<name>\&.mergeが目的をブランチを指すようにして、そして、 branch\&.<name>\&.remote に相対パス設定
+\fB\&.\fR
+(ピリオド)を使用できます。
+.RE
+.PP
+branch\&.<name>\&.mergeOptions
+.RS 4
+ブランチ<name>にマージするためのデフォルトオプションを設定します。 構文とサポートされているオプションは
+\fBgit-merge\fR(1)
+のものと同じですが、空白文字を含むオプション値は現在サポートされていません。
+.RE
+.PP
+branch\&.<name>\&.rebase
+.RS 4
+trueの場合、
+\fBgit pull\fR
+の実行時にデフォルトのリモートからデフォルトのブランチをマージするのではなく、フェッチされたブランチの上にブランチ<name>をリベースします。 ブランチ固有ではない方法でこれを行うには、
+\fBpull\&.rebase\fR
+を参照してください。
+.sp
+\fBmerges\fR
+(または単に
+\fBm\fR) の場合、
+\fB\-\-rebase\-merges\fR
+オプションを
+\fBgit rebase\fR
+に渡して、ローカル・マージ・コミットがリベースに含まれるようにします (詳細については
+\fBgit-rebase\fR(1)
+を参照してください)。
+.sp
+値が
+\fBinteractive\fR
+(または単に
+\fBi\fR)の場合、リベースは対話モードで実行されます。
+.sp
+\fB注意\fR: これはおそらく危険な操作です。 あなたが影響を理解していない限り、使用しないでください (詳細については、
+\fBgit-rebase\fR(1)
+を参照してください)。
+.RE
+.PP
+branch\&.<name>\&.description
+.RS 4
+ブランチの説明は、
+\fBgit branch \-\-edit\-description\fR
+で編集できます。 ブランチの説明は、format\-patchのカバーレターまたはrequest\-pullの概要に自動的に追加されます。
+.RE
+.SH "EXAMPLES"
+.PP
+Start development from a known tag
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone git://git\&.kernel\&.org/pub/scm/\&.\&.\&./linux\-2\&.6 my2\&.6
+$ cd my2\&.6
+$ git branch my2\&.6\&.14 v2\&.6\&.14   \fB(1)\fR
+$ git switch my2\&.6\&.14
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRこのステップと次のステップは、
+\fBcheckout \-b my2\&.6\&.14 v2\&.6\&.14\fR
+を使用して1つのステップに組み合わせることができます。
+.br
+.RE
+.PP
+Delete an unneeded branch
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone git://git\&.kernel\&.org/\&.\&.\&./git\&.git my\&.git
+$ cd my\&.git
+$ git branch \-d \-r origin/todo origin/html origin/man   \fB(1)\fR
+$ git branch \-D test                                    \fB(2)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRリモート追跡ブランチ「todo」と「html」と「man」を削除します。 この後の
+\fBfetch\fR
+または
+\fBpull\fR
+は、あなたが構成しないように構成しない限り、それらを再度作成します。
+\fBgit-fetch\fR(1)
+を参照してください。
+.br
+\fB2. \fR「master」ブランチ(または現在チェックアウトされているブランチ)にtestブランチからのすべてのコミットがない場合でも、「test」ブランチを削除します。
+.br
+.RE
+.PP
+Listing branches from a specific remote
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch \-r \-l \*(Aq<remote>/<pattern>\*(Aq                 \fB(1)\fR
+$ git for\-each\-ref \*(Aqrefs/remotes/<remote>/<pattern>\*(Aq    \fB(2)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fR\fB\-a\fR
+を使用すると、<remote>が、同じ<remote>パターンのプレフィックスが付いているローカルブランチと混同されます。
+.br
+\fB2. \fR\fBfor\-each\-ref\fR
+は幅広いオプションをとることができます。
+\fBgit-for-each-ref\fR(1)
+を参照してください
+.br
+.RE
+.sp
+通常、パターンにはクォートが必要です。
+.SH "NOTES"
+.sp
+すぐに切り替えたいブランチを作成する場合は、 \fBgit switch\fR コマンドとその \fB\-c\fR オプションを使用して、1つのコマンドで同じことを行う方が簡単です。
+.sp
+オプション \fB\-\-contains\fR と ` \-\-no\-contains` と \fB\-\-merged\fR と \fB\-\-no\-merged\fR は、4つの関連しているが異なる目的を果たします:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-contains <commit>\fR
+は、<commit>がリベースまたは修正された場合に特別な注意が必要なすべてのブランチを検索するために使用されます。これらのブランチには、指定された<commit>が含まれているためです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-no\-contains <commit>\fR
+はその逆です。つまり、指定された<commit>を含まないブランチです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-merged\fR
+は、安全に削除できるすべてのブランチを検索するために使用されます。これらのブランチはHEADに完全に含まれているためです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-no\-merged\fR
+は、HEADにマージする候補となるブランチを見つけるために使用されます。これらのブランチは、HEADに完全には含まれていないためです。
+.RE
+.sp
+複数の \fB\-\-contains\fR フィルターと \fB\-\-no\-contains\fR フィルターを組み合わせる場合、少なくとも1つの \fB\-\-contains\fR コミットを含み、 \fB\-\-no\-contains\fR コミットを含まない参照のみが表示されます。
+.sp
+複数の \fB\-\-merged\fR フィルターと \fB\-\-no\-merged\fR フィルターを組み合わせると、少なくとも1つの \fB\-\-merged\fR コミットから到達可能で、 \fB\-\-no\-merged\fR コミットのいずれからも到達できない参照のみが表示されます。
+.SH "SEE ALSO"
+.sp
+\fBgit-check-ref-format\fR(1), \fBgit-fetch\fR(1), \fBgit-remote\fR(1), \m[blue]\fB\(lqUnderstanding history: What is a branch?\(rq\fR\m[]\&\s-2\u[1]\d\s+2 in the Git User\(cqs Manual\&.
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+\(lqUnderstanding history: What is a branch?\(rq
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html#what-is-a-branch
+.RE

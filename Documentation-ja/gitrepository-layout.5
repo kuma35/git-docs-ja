@@ -1,0 +1,497 @@
+'\" t
+.\"     Title: gitrepository-layout
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITREPOSITORY\-LAYOU" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitrepository-layout \- Gitリポジトリの間取り
+.SH "SYNOPSIS"
+.sp
+$GIT_DIR/*
+.SH "DESCRIPTION"
+.sp
+Gitリポジトリには2つの風味があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+作業ツリーのルートにある
+\fB\&.git\fR
+ディレクトリ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+bare(裸の)リポジトリである(つまり、独自の作業ツリーがない)「<project>\&.git」ディレクトリ。通常、このディレクトリにプッシュしてフェッチすることにより、他のユーザーと履歴を交換するために使用されます。
+.RE
+.sp
+\fB注\fR: また、作業ツリーのルートにプレーンテキストファイル \fB\&.git\fR を作成できます。 このファイルには、リポジトリがある実際のディレクトリを指す \fBgitdir: <path>\fR が含まれています。 このメカニズムは、サブモジュールチェックアウトの作業ツリーによく使用され、 サブモジュールを含むスーパープロジェクトで、 サブモジュールを持たないブランチを「git checkout」できるようにします。 \fBcheckout\fR は、サブモジュールリポジトリを失うことなく、 サブモジュール作業ツリー全体を削除する必要があります。
+.sp
+以下のものがGitリポジトリに存在する可能性があります。
+.PP
+objects
+.RS 4
+このリポジトリに関連付けられているオブジェクトストア。通常、オブジェクトストアは自給自足です(つまり、そこにあるオブジェクトによって参照されるすべてのオブジェクトもそこにあります)が、それに違反する方法はいくつかあります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+浅いクローン(shallow clone)を作成することにより、不完全であるがローカルで使用可能なリポジトリを作成できます。
+\fBgit-clone\fR(1)
+を参照してください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+\fBobjects/info/alternates\fR
+または
+\fB$GIT_ALTERNATE_OBJECT_DIRECTORIES\fR
+メカニズムを使用して、他のオブジェクトストアからオブジェクトを「借用」(borrow)することができます。この種の不完全なオブジェクトストアを持つリポジトリは、馬鹿プロトコル(dumb transport)で使用するために公開するのには適していませんが、それ以外の場合は「objects/info/alternates」が借用するオブジェクトストアを指している限り問題ありません。
+.sp
+$GIT_COMMON_DIR が設定されている場合、このディレクトリは無視され、代わりに「$GIT_COMMON_DIR/objects」が使用されます。
+.RE
+.RE
+.PP
+objects/[0\-9a\-f][0\-9a\-f]
+.RS 4
+新しく作成されたオブジェクトは、独自のファイルに保存されます。オブジェクトは、sha1オブジェクト名の最初の2文字を使用して、256個のサブディレクトリに分散され、
+\fBobjects\fR
+自体のディレクトリエントリの数を管理可能な数に保ちます。ここにあるオブジェクトは、「アンパックオブジェクト」(unpacked obuject)(または「ルーズオブジェクト」(loose object))と呼ばれることがよくあります。
+.RE
+.PP
+objects/pack
+.RS 4
+パック(多くのオブジェクトを圧縮形式で格納するファイルと、ランダムにアクセスできるようにするためのインデックスファイル)は、このディレクトリにあります。
+.RE
+.PP
+objects/info
+.RS 4
+オブジェクトストアに関する追加情報は、このディレクトリに記録されます。
+.RE
+.PP
+objects/info/packs
+.RS 4
+このファイルは、馬鹿プロトコルがこのオブジェクトストアで使用可能なパックを検出するのに役立ちます。リポジトリが馬鹿プロトコル用に公開されている場合は、パックを追加または削除するたびに、
+\fBgit update\-server\-info\fR
+を実行して、このファイルを最新の状態に保つ必要があります。
+\fIgit repack\fR
+はデフォルトでこれを行います。
+.RE
+.PP
+objects/info/alternates
+.RS 4
+このファイルは、このオブジェクトストアがオブジェクトを借用(borrow)する代替オブジェクトストアへのパスを、1行に1つのパス名で記録します。ネイティブGitツールがローカルで使用するだけでなく、HTTP fetcher もリモートで使用しようとすることに注意してください。これは通常、代替ファイルに相対パス(リポジトリではなくオブジェクトデータベースに対して！)がある場合は機能しますが、ファイルシステムとWeb URLの絶対パスが同じでない限り、絶対パスを使用する場合は機能しません。
+\fBobjects/info/http\-alternates\fR
+も参照してください。
+.RE
+.PP
+objects/info/http\-alternates
+.RS 4
+このファイルは、このオブジェクトストアがオブジェクトを借用(borrow)する代替オブジェクトストアへのURLを記録し、リポジトリがHTTP経由でフェッチされるときに使用されます。
+.RE
+.PP
+refs
+.RS 4
+参照(reference)は、このディレクトリのサブディレクトリに保存されます。
+\fIgit prune\fR
+コマンドは、このディレクトリとそのサブディレクトリに見つかったrefsから到達可能なオブジェクトを認識し保持します。$GIT_COMMON_DIRが設定されていて、代わりに「$GIT_COMMON_DIR/refs」が使用される場合、このディレクトリは無視されます(refs/bisectとrefs/rewrittenとrefs/worktreeを除く)。
+.RE
+.PP
+refs/heads/\fBname\fR
+.RS 4
+ブランチ
+\fBname\fR
+のツリーの先端(tip\-of\-the\-tree)のコミットオブジェクトを記録します
+.RE
+.PP
+refs/tags/\fBname\fR
+.RS 4
+オブジェクト名を記録します(必ずしもコミットオブジェクト、またはコミットオブジェクトを指すタグオブジェクトである必要はありません)。
+.RE
+.PP
+refs/remotes/\fBname\fR
+.RS 4
+リモートリポジトリからコピーされたブランチのツリーの先端(tip\-of\-the\-tree)のコミットオブジェクトを記録します。
+.RE
+.PP
+refs/replace/\fB<obj\-sha1>\fR
+.RS 4
+\fB<obj\-sha1>\fR
+を置き換えるオブジェクトのSHA\-1を記録します。これはinfo/graftsに似ており、
+\fBgit-replace\fR(1)
+によって内部的に使用および保守されます。 このようなrefsはリポジトリ間で交換できますが、graftsは交換できません。
+.RE
+.PP
+packed\-refs
+.RS 4
+refs/heads/ や refs/tags/ と同じ情報を記録し、そして friends がより効率的な方法で記録します。
+\fBgit-pack-refs\fR(1)
+を参照してください。 $GIT_COMMON_DIR が設定されている場合、このファイルは無視され、代わりに「$GIT_COMMON_DIR/packed\-refs」が使用されます。
+.RE
+.PP
+HEAD
+.RS 4
+現在アクティブなブランチを説明する
+\fBrefs/heads/\fR
+名前空間へのシンボリックref(symref;glossaryを参照)。リポジトリが作業ツリーに関連付けられていない場合(つまり、ベアリポジトリの場合)はあまり意味がありませんが、有効なGitリポジトリにはHEADファイルが「必要」です。一部の磁器コマンドは、これを使用して、リポジトリの指定された「デフォルト」ブランチ(通常は「master」)を推測する場合があります。名前付きブランチ
+\fIname\fR
+が(まだ)存在しない場合も合法です。一部のレガシー設定では、現在のブランチを指すシンボリックref(symref)ではなくシンボリックリンクです。
+.sp
+HEADは、現在のブランチを指すシンボリックref(symref)である代わりに、特定のコミットを直接記録することもできます。このような状態は「detached HEAD」と呼ばれることがよくあります。詳細については
+\fBgit-checkout\fR(1)を参照してください。
+.RE
+.PP
+config
+.RS 4
+リポジトリ固有の構成ファイル。 $GIT_COMMON_DIR が設定されている場合、このファイルは無視され、代わりに「$GIT_COMMON_DIR/config」が使用されます。
+.RE
+.PP
+config\&.worktree
+.RS 4
+複数の作業ディレクトリ設定の、メイン作業ディレクトリための、作業ディレクトリ固有の構成ファイル(\fBgit-worktree\fR(1)
+を参照)。
+.RE
+.PP
+branches
+.RS 4
+\fIgit fetch\fR
+や
+\fIgit pull\fR
+や
+\fIgit push\fR
+へのURLを指定するために使用される短縮形を格納するための、少々非推奨の方法。ファイルは
+\fBbranches/<name>\fR
+として保存でき、
+\fIrepository\fR
+引数の代わりに
+\fIname\fR
+をこれらのコマンドに指定できます。詳細については、
+\fBgit-fetch\fR(1)
+の REMOTES セクションを参照してください。この機構はレガシーであり、最新のリポジトリには見られない可能性があります。 $GIT_COMMON_DIR が設定されている場合、このディレクトリは無視され、代わりに「$GIT_COMMON_DIR/branches」が使用されます。
+.RE
+.PP
+hooks
+.RS 4
+フックは、さまざまなGitコマンドで使用されるカスタマイズスクリプトです。
+\fIgit init\fR
+を実行すると、いくつかのサンプルフックがインストールされますが、デフォルトではすべて無効になっています。有効にするには、ファイル名から
+\fB\&.sample\fR
+サフィックスを削除して名前を変更する必要があります。各フックの詳細については、
+\fBgithooks\fR(5)
+をお読みください。 $GIT_COMMON_DIR が設定されている場合、このディレクトリは無視され、代わりに「$GIT_COMMON_DIR/hooks」が使用されます。
+.RE
+.PP
+common
+.RS 4
+複数の作業ツリーが使用されている場合、 $GIT_DIR 内のほとんどのファイルは、いくつかの既知の例外を除いて、各作業ツリー毎とにありますです。ただし、「common」の下にあるすべてのファイルは、すべての作業ツリー間で共有されます。
+.RE
+.PP
+index
+.RS 4
+リポジトリの現在のインデックスファイル。通常、ベアリポジトリには見つかりません。
+.RE
+.PP
+sharedindex\&.<SHA\-1>
+.RS 4
+$GIT_DIR/indexおよびその他の一時(temporary)インデックスファイルによって参照される共有インデックス部分。スプリットインデックスモード(split index mode)でのみ有効です。
+.RE
+.PP
+info
+.RS 4
+リポジトリに関する追加情報は、このディレクトリに記録されます。 $GIT_COMMON_DIR が設定されている場合、このディレクトリは無視され、代わりに「$GIT_COMMON_DIR/info」が使用されます。
+.RE
+.PP
+info/refs
+.RS 4
+このファイルは、馬鹿プロトコル(dumb transports)がこのリポジトリで使用可能なrefsを検出するのに役立ちます。リポジトリが馬鹿プロトコル(dumb transports)用に公開されている場合、このファイルは、タグまたはブランチが作成または変更されるたびに、「git update\-server\-info」によって再生成される必要があります。これは通常、リポジトリに「git push」したときに「git\-receive\-pack」コマンドによって実行される「hooks/update」フックから実行されます。
+.RE
+.PP
+info/grafts
+.RS 4
+このファイルは、コミットが実際に作成された方法とは異なる親のセットを装うために、偽のコミットの祖先情報を記録します。1行に1つのレコードは、スペースで区切られ、改行で終了する40バイトの16進オブジェクト名をリストすることにより、コミットとその偽の親を記述します。
+.sp
+graftsメカニズムは古臭く、リポジトリ間でオブジェクトを転送する際に問題が発生する可能性があることに注意してください。 同じことを行うためのより柔軟で堅牢なシステムについては、
+\fBgit-replace\fR(1)
+を参照してください。
+.RE
+.PP
+info/exclude
+.RS 4
+このファイルは、磁器コマンドの慣例により、除外パターンリストを格納します。
+\fB\&.gitignore\fR
+は、ディレクトリごとの無視ファイルです。「git status」、「git add」、「git rm」、「git clean」はこの除外パターンリストを調べますが、コアGitコマンドはこの除外パターンリストを調べません。
+\fBgitignore\fR(5)
+も参照してください。
+.RE
+.PP
+info/attributes
+.RS 4
+ディレクトリごとの
+\fB\&.gitattributes\fR
+ファイルと同様に、パスに割り当てる属性を定義します。
+\fBgitattributes\fR(5)
+も参照してください。
+.RE
+.PP
+info/sparse\-checkout
+.RS 4
+このファイルには、スパースチェックアウトパターン(sparse checkout patterns)が格納されています。
+\fBgit-read-tree\fR(1)
+も参照してください。
+.RE
+.PP
+remotes
+.RS 4
+\fIgit fetch\fR
+と
+\fIgit pull\fR
+と
+\fIgit push\fR
+コマンドを介してリモートリポジトリと対話するときに使用するURLの省略形とデフォルトのref名を格納します。詳細については、
+\fBgit-fetch\fR(1)のREMOTESセクションを参照してください。このメカニズムはレガシーであり、最新のリポジトリには見られない可能性があります。 $GIT_COMMON_DIR が設定されている場合、このディレクトリは無視され、代わりに「$GIT_COMMON_DIR/remotes」が使用されます。
+.RE
+.PP
+logs
+.RS 4
+refに加えられた変更の記録は、このディレクトリに保存されます。詳細については、
+\fBgit-update-ref\fR(1)
+を参照してください。 $GIT_COMMON_DIRが設定されていて、代わりに「$GIT_COMMON_DIR/logs」が使用される場合、このディレクトリは無視されます(但し、logs/HEADを除く)。
+.RE
+.PP
+logs/refs/heads/\fBname\fR
+.RS 4
+\fBname\fR
+という名前のブランチ先端(branch tip)に加えられたすべての変更を記録します。
+.RE
+.PP
+logs/refs/tags/\fBname\fR
+.RS 4
+\fBname\fR
+という名前のタグに加えられたすべての変更を記録します。
+.RE
+.PP
+shallow
+.RS 4
+これは
+\fBinfo/grafts\fR
+に似ていますが、内部的に使用され、浅いクローンメカニズム(shallow clone mechanism)によって維持されます。
+\fBgit-clone\fR(1)
+と
+\fBgit-fetch\fR(1)
+の
+\fB\-\-depth\fR
+オプションを参照してください。 $GIT_COMMON_DIRが設定されている場合、このファイルは無視され、代わりに「$GIT_COMMON_DIR/shallow」が使用されます。
+.RE
+.PP
+commondir
+.RS 4
+このファイルが存在する場合、明示的に設定されていなければ、 $GIT_COMMON_DIR (\fBgit\fR(1)
+を参照)はこのファイルで指定されたパスに設定されます。指定されたパスが相対パスの場合、それは$GIT_DIRからの相対パスです。commondirのあるリポジトリは、「commondir」が指すリポジトリがないと不完全です。
+.RE
+.PP
+modules
+.RS 4
+サブモジュールのgitリポジトリが含まれています。
+.RE
+.PP
+worktrees
+.RS 4
+リンクされた作業ツリー(linked working trees)の管理データが含まれています。各サブディレクトリには、リンクされた作業ツリーの作業ツリー関連部分が含まれています。 $GIT_COMMON_DIRが設定されている場合、このディレクトリは無視され、代わりに「$GIT_COMMON_DIR/worktrees」が使用されます。
+.RE
+.PP
+worktrees/<id>/gitdir
+.RS 4
+ここを指す \&.git ファイルに戻る絶対パスを含むテキストファイル。これは、リンクされたリポジトリが手動で削除されているかどうかを確認するために使用され、このディレクトリをこれ以上保持する必要はありません。 このファイルのmtimeは、リンクされたリポジトリにアクセスするたびに更新する必要があります。
+.RE
+.PP
+worktrees/<id>/locked
+.RS 4
+このファイルが存在する場合、リンクされた作業ツリーがポータブルデバイス上にあり、使用できない可能性があります。このファイルが存在すると、
+\fBgit worktree prune\fR
+によって
+\fBworktrees/<id>\fR
+が自動または手動で剪定(prune)されるのを防ぎます。ファイルには、リポジトリがロックされている理由を説明する文字列が含まれている場合があります。
+.RE
+.PP
+worktrees/<id>/config\&.worktree
+.RS 4
+作業ディレクトリ固有の構成ファイル。
+.RE
+.SH "GIT REPOSITORY FORMAT VERSIONS"
+.sp
+すべてのgitリポジトリは、その \fBconfig\fR ファイルの \fBcore\&.repositoryformatversion\fR キーに、バージョン数値が印されています。このバージョン数値は、ディスク上のリポジトリデータを操作するためのルールを指定します。 ディスク上のリポジトリから告知された特定のバージョンを理解しないgitの実装は、そのリポジトリで動作してはなりません。そうすることは、間違った結果を生み出すだけでなく、実際にデータを失うリスクがあります。
+.sp
+このルールのため、バージョンアップは最小限に抑える必要があります。代わりに、我々は一般的に以下の戦略を好みます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+個々のデータファイル(インデックス、パックファイルなど)のフォーマットバージョン番号をバージョンアップします。これにより、非互換性がそれらのファイルのみに制限されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+古いクライアントで使用すると正常に機能制限される(gracefully degrade)新しいデータを導入します(たとえば、パックビットマップファイルは古いクライアントでは無視され、提供される最適化を利用しません)。
+.RE
+.sp
+リポジトリ全体の形式のバージョンアップは、個別にバージョン管理できない部分だけにするべきです。たとえば、オブジェクトの到達可能性ルール、またはrefをロックするためのルールを変更する場合、リポジトリ形式バージョンのバージョンアップが必要になります。
+.sp
+注意: これは、リポジトリのディスクコンテンツに直接アクセスする場合にのみ適用されることに注意してください。 フォーマット \fB0\fR のみを理解する古いクライアントは、サーバープロセスがフォーマット \fB1\fR を理解している限り、フォーマット \fB1\fR を使用して \fBgit://\fR を介してリポジトリに接続できます。
+.sp
+バージョンアップをお披露目するための推奨される戦略(リポジトリ全体または単一ファイル)は、gitに新しい形式を読み取るように教え、(実験用または古いgitとの下位互換性については気にしないでいいように)構成スイッチまたはコマンドラインオプションを使用して新しい形式を記述できるようにすることです。その後、読み取り機能が一般的になるまでの長い期間の後、デフォルトを新しい形式の書き込みに切り替える場合があります。
+.sp
+現在定義されているフォーマットバージョンは以下のとおりです:
+.SS "Version \fB0\fR"
+.sp
+これは、gitの初期バージョンで定義されている形式であり、リポジトリディレクトリ、リポジトリ構成ファイル、オブジェクトおよびrefストレージの形式が含まれま すが、これらに限定されません。gitの完全な動作を記述することは、このドキュメントの役割ではありません。
+.SS "Version \fB1\fR"
+.sp
+この形式は、以下の例外を除いて、バージョン `0`と同じです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBcore\&.repositoryformatversion\fR
+変数を読み取る場合、バージョン1をサポートするgit実装は、構成ファイルの
+\fBextensions\fR
+セクションにある構成キーも読み取る必要があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+バージョン1リポジトリが、実行中のgitが実装していない
+\fBextensions\&.*\fR
+キーを指定している場合、操作の続行は禁止です。同様に、既知のキーの値が実装によって理解されない場合、操作の続行は禁止です。
+.RE
+.sp
+注意: 設定ファイルに拡張機能(extension)の指定が無い場合は、 \fBcore\&.repositoryformatversion\fR を \fB0\fR に設定する必要があります(`1`に設定してもメリットはなく、リポジトリはgitの古い実装と互換性がなくなります)。
+.sp
+このドキュメントは、拡張機能のマスターリストとして機能します。新しい拡張機能を定義したい実装は、名前を主張するために、ここにそれを書き留めておく必要があります。
+.sp
+定義されている拡張機能は以下のとおりです:
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBnoop\fR
+.RS 4
+.sp
+この拡張機能は、gitの動作をまったく変更しません。 これは、フォーマット1の互換性をテストする場合にのみ役立ちます。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBpreciousObjects\fR
+.RS 4
+.sp
+設定キー \fBextensions\&.preciousObjects\fR が \fBtrue\fR に設定されている場合、リポジトリ内のオブジェクトを削除してはなりません(たとえば、 \fBgit\-prune\fR または \fBgit repack \-d\fR など)。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBpartialclone\fR
+.RS 4
+.sp
+設定キー \fBextensions\&.partialclone\fR が設定されている場合、リポジトリが部分クローンで作成された(または後で部分フェッチを実行した)こと、およびリモートが特定の不要なオブジェクトの送信を省略した可能性があることを示します。 このようなリモートはpromisor remoteと呼ばれ、将来、このような省略されたオブジェクトをすべてフェッチできることを約束します。
+.sp
+このキーの値は、promisor remoteの名前です。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBworktreeConfig\fR
+.RS 4
+.sp
+設定されている場合、デフォルトでは、「git config」はGIT_DIRの「config」ファイルと「config\&.worktree」ファイルの両方からこの順序で読み取ります。複数の作業ディレクトリモードでは、「config\&.worktree」が作業ディレクトリごとにある間（つまり、 GIT_COMMON_DIR/worktrees/<id>/config\&.worktree にあります)、「config」ファイルは共有されます。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-init\fR(1), \fBgit-clone\fR(1), \fBgit-fetch\fR(1), \fBgit-pack-refs\fR(1), \fBgit-gc\fR(1), \fBgit-checkout\fR(1), \fBgitglossary\fR(7), \m[blue]\fBThe Git User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+The Git User\(cqs Manual
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html
+.RE

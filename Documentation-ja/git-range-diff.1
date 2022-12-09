@@ -1,0 +1,366 @@
+'\" t
+.\"     Title: git-range-diff
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-RANGE\-DIFF" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-range-diff \- 2つのコミット範囲(例: ブランチの2つのバージョン)を比較します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit range\-diff\fR [\-\-color=[<when>]] [\-\-no\-color] [<diff\-options>]
+        [\-\-no\-dual\-color] [\-\-creation\-factor=<factor>]
+        [\-\-left\-only | \-\-right\-only]
+        ( <range1> <range2> | <rev1>\&...<rev2> | <base> <rev1> <rev2> )
+        [[\-\-] <path>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このコマンドは、パッチシリーズの2つのバージョン、またはより一般的には2つのコミット範囲(マージコミットは無視)の違いを表示します。
+.sp
+\fB<path>\fR 引数が存在する場合、これらのコミット範囲はそれに応じて制限されます。
+.sp
+そのために、最初に、互いに対応する両方のコミット範囲からコミットのペアを見つけます。 2つのコミットは、パッチ間の差分(つまり、作者情報、コミットメッセージ、およびコミット差分)がパッチのサイズと比較して適度に小さい場合に一致していると言われます。 詳細については、下記「Algorithm」を参照してください。
+.sp
+最後に、一致するコミットのリストが2番目のコミット範囲の順序で表示され、すべての祖先が表示された直後に一致しないコミットが挿入されます。
+.sp
+コミット範囲を指定するには、以下の3つの方法があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB<range1> <range2>\fR
+: どちらのコミット範囲も
+\fB<base>\&.\&.<rev>\fR
+または
+\fB<rev>^!\fR
+または
+\fB<rev>^\-<n>\fR
+形式にすることができます。 詳細については、
+\fBgitrevisions\fR(7)の「SPECIFYING RANGES」を参照してください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB<rev1>\&.\&.\&.<rev2>\fR
+: これは、
+\fB<rev2>\&.\&.<rev1> <rev1>\&.\&.<rev2>\fR
+と同じです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB<base> <rev1> <rev2>\fR
+: これは
+\fB<base>\&.\&.<rev1> <base>\&.\&.<rev2>\fR
+と同じです。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-\-no\-dual\-color\fR
+.RS 4
+コミットdiffが異なる場合、
+\fBgit range\-diff\fR
+は元の差分の色付けを再現し、例えば、追加された正確な行に変更があったとき、背景が 赤/緑 である外側の \-/+ 差分マーカーを追加して見やすくします。
+.sp
+さらに、最初のコミット範囲にのみ存在するコミット差分行は「薄暗く」(dimmed)表示され(これは、
+\fBcolor\&.diff\&.<slot>\fR
+構成設定を使用してオーバーライドできます。ここで、
+\fB<slot>\fR
+は
+\fBcontextDimmed\fR
+と
+\fBoldDimmed\fR
+と
+\fBnewDimmed\fR
+のうちの1つです)、2番目のコミット範囲にのみ存在するコミット差分行は太字(bold)で示されています(これは、構成設定
+\fBcolor\&.diff\&.<slot>\fR
+を使用してオーバーライドできます。\fB<slot>\fR
+は
+\fBcontextBold\fR
+または
+\fBoldBold\fR
+または
+\fBnewBold\fR
+のいずれかです)。
+.sp
+これは
+\fBrange\-diff\fR
+のための「dual coloring」として知られています。
+\fB\-\-no\-dual\-color\fR
+を使用すると、外側のdiffマーカーに従ってすべての行の色を反転します(色に関しては内側のdiffを完全に無視します)。
+.RE
+.PP
+\fB\-\-creation\-factor=<percent>\fR
+.RS 4
+作成/削除 コストのファッジ係数を
+\fB<percent>\fR
+に設定します。 デフォルトは60です。
+\fBgit range\-diff\fR
+が誤って大きな変更を全体の書き換え(1つのコミットの削除と別のコミットの追加)と見なす場合は大きな値を試し、逆の場合は小さな値を試してください。 これが必要な理由の説明については、下記「Algorithm」セクションを参照してください。
+.RE
+.PP
+\fB\-\-left\-only\fR
+.RS 4
+最初に指定された範囲(または
+\fB<rev1>\&.\&.\&.<rev2>\fR
+形式を使用する場合は「左範囲」(left range)）から欠落しているコミットを隠し(suppress)ます。
+.RE
+.PP
+\fB\-\-right\-only\fR
+.RS 4
+2番目に指定された範囲(または
+\fB<rev1>\&.\&.\&.<rev2>\fR
+形式を使用する場合は「右範囲」(right range)）から欠落しているコミットを隠し(supprss)ます。
+.RE
+.PP
+\fB\-\-[no\-]notes[=<ref>]\fR
+.RS 4
+このフラグは、パッチを生成する
+\fBgit log\fR
+プログラム(\fBgit-log\fR(1)
+参照)に渡されます。
+.RE
+.PP
+<range1> <range2>
+.RS 4
+2つの範囲で指定されたコミットを比較します。ここで、
+\fB<range1>\fR
+は
+\fB<range2>\fR
+の古いバージョンと見なされます。
+.RE
+.PP
+<rev1>\&...<rev2>
+.RS 4
+\fB<rev2>\&.\&.<rev1>\fR
+と
+\fB<rev1>\&.\&.<rev2>\fR
+を渡すのと同じです。
+.RE
+.PP
+<base> <rev1> <rev2>
+.RS 4
+\fB<base>\&.\&.<rev1>\fR
+と
+\fB<base>\&.\&.<rev2>\fR
+を渡すのと同じです。
+\fB<base>\fR
+は分岐の正確な分岐点である必要はないことに注意してください。 例: ブランチ
+\fBmy\-topic\fR
+をリベースした後、
+\fBgit range\-diff my\-topic@{u} my\-topic@{1} my\-topic\fR
+は、リベースによって導入された違いを示します。
+.RE
+.sp
+\fBgit range\-diff\fR は、通常のdiffオプション(\fBgit-diff\fR(1) 参照)、特に \fB\-\-color=[<when>]\fR および \fB\-\-no\-color\fR オプションも受け入れます。 これらのオプションは、「パッチ間の差分」を生成するときに使用されます。つまり、作者、コミットメッセージ、および対応する 古い/新しい コミットの差分を比較します。 現在、これらのパッチを生成するときに \fBgit log\fR に渡されるdiffオプションのほとんどは微調整する手段がありません。
+.SH "OUTPUT STABILITY"
+.sp
+\fBrange\-diff\fR コマンドの出力は変更される可能性があります。 これは人間が読める磁器コマンドの出力であり、Gitのバージョン間でテキスト的に安定した \fBrange\-diff\fR を取得するために使用できるものではありません(\fBgit-patch-id\fR(1) の \fB\-\-stable\fR オプションのようなものとは対照的です)。 \fBrange\-diff\fR には \fBgit-apply\fR(1) に相当するものもありません。出力は、プログラムで読み取ること(machine\-readable)は意図されていません。
+.sp
+これは特に diff オプションを渡すときに当てはまります。現在、 \fB\-\-stat\fR のようないくつかのオプションは、 \fBrange\-diff\fR のコンテキストでは全く役に立たない出力を生成することがあります。将来のバージョンの \fBrange\-diff\fR では、このようなオプションを \fBrange\-diff\fR 固有の方法で解釈するようになるかもしれません (例えば、 \fB\-\-stat\fR は diffstat がどのように変化したかをまとめた、人間が読めるような出力を生成します)。
+.SH "CONFIGURATION"
+.sp
+このコマンドは、 \fBdiff\&.color\&.*\fR および \fBpager\&.range\-diff\fR 設定を使用します(後者はデフォルトでオンになっています)。 \fBgit-config\fR(1) を参照してください。
+.SH "EXAMPLES"
+.sp
+リベースでマージの競合を解決する必要がある場合は、以下のコマンドを使用して、リベースによって導入された変更をその直後に比較します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git range\-diff @{u} @{1} @
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBgit range\-diff\fR の典型的な出力は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-:  \-\-\-\-\-\-\- > 1:  0ddba11 Prepare for the inevitable!
+1:  c0debee = 2:  cab005e Add a helpful message at the start
+2:  f00dbal ! 3:  decafe1 Describe a bug
+    @@ \-1,3 +1,3 @@
+     Author: A U Thor <author@example\&.com>
+
+    \-TODO: Describe a bug
+    +Describe a bug
+    @@ \-324,5 +324,6
+      This is expected\&.
+
+    \-+What is unexpected is that it will also crash\&.
+    ++Unexpectedly, it also crashes\&. This is a bug, and the jury is
+    ++still out there how to fix it best\&. See ticket #314 for details\&.
+
+      Contact
+3:  bedead < \-:  \-\-\-\-\-\-\- TO\-UNDO
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この例では、3つの古いコミットと3つの新しいコミットがあり、開発者は3番目を削除し、最初の2つの前に新しいコミットを追加し、2番目のコミットのコミットメッセージとその差分を変更しました。
+.sp
+出力が端末に送られるとき、通常の \fBgit diff\fR の出力と同じように、デフォルトで色分けされています。 さらに、最初の行(コミットの追加)は緑、最後の行(コミットの削除)は赤、2番目の行(完全一致)は \fBgit show\fR の出力のコミットヘッダーのように黄色で、 3行目は、古いコミットを赤、新しいコミットを緑、残りを \fBgit show\fR のコミットヘッダーのように色付けします。
+.sp
+ただし、単純な色分けされた「diffのdiff」は、行全体を赤または緑に色付けするため、実際には少し読みにくいです。 たとえば、古いコミットで「予期しないもの」を追加した行は、古いコミットの目的が何かを追加することであったとしても、完全に赤くなります。
+.sp
+これを助けるために、 \fBrange\fR はデフォルトで \fB\-\-dual\-color\fR モードを使用します。 このモードでは、「diffのdiff」は元のdiffの色を保持し、行の前に「背景」が赤または緑の \-/+ マーカーを付けて、diff自体がどのように変化したかをより明確にします。
+.SH "ALGORITHM"
+.sp
+一般的な考え方は次のとおりです: 両方のコミット範囲のコミット間にコストマトリックスを生成してから、最小コストの割り当てを解決します。
+.sp
+コストマトリックスはこのように入力されます: コミットのペアごとに、両方のdiffが生成され、3つのコンテキスト行で「diffのdiff」が生成され、そのdiffの行数がコストとして使用されます。
+.sp
+誤検知(たとえば、パッチが削除され、同じパッチシリーズの2つの反復の間に無関係のパッチが追加された場合)を回避するために、一括 削除/追加 の固定費エントリを追加することにより、コストマトリックスが拡張されて誤検知の回避が可能になります。
+.sp
+例: コミット \fB1\-\-2\fR をパッチシリーズの最初の反復とし、 \fBA\-\-C\fR を2番目の反復とします。 \fBA\fR は \fB2\fR のチェリーピックであり、 \fBC\fR は \fB1\fR のチェリーピックですが、わずかな変更(たとえば、タイプミス修正)があると仮定します。 コミットを二部グラフ(bipartite graph)として視覚化する:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    1            A
+
+    2            B
+
+                 C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+私たちは、新しい系列を古い系列の観点から「最適」に「説明」(explanation)することを求めています。「説明」はグラフの辺として表現することができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    1            A
+               /
+    2 \-\-\-\-\-\-\-\-\*(Aq  B
+
+                 C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この「説明」(explanation)は、変更がなかったため、「無料」で提供されます。 同様に、 \fBC\fR は \fB1\fR を使用して「説明」できますが、変更のために「c>0」のコストがかかります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    1 \-\-\-\-\&.      A
+          |    /
+    2 \-\-\-\-+\-\-\-\*(Aq  B
+          |
+          `\-\-\-\-\- C
+          c>0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+数学的に言えば、私たちが探しているのは、ある種の最小コストの二部マッチング(bipartite matching)です。 \fB1\fR は、いくらかのコストで \fBC\fR と一致します。基礎となるグラフは、実際には完全2部グラフです。 すべてのエッジに関連するコストは、2つのコミットのパッチ間の差分のサイズです。 新しいコミットについても説明するために、両側にダミーノードを導入します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    1 \-\-\-\-\&.      A
+          |    /
+    2 \-\-\-\-+\-\-\-\*(Aq  B
+          |
+    o     `\-\-\-\-\- C
+          c>0
+    o            o
+
+    o            o
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+エッジ \fBo\-\-C\fR のコストは、 \fBC\fR の差分のサイズであり、100％未満である必要があるファッジ係数(fudge factor)によって変更されます。 エッジ \fBo\-\-o\fR のコストは無料です。 ファッジ係数が必要なのは、たとえ \fB1\fR と \fBC\fR に共通点がなくても、空行などがいくつか共有され、 \fB1\-\-C\fR 、 \fBo\-\-o\fR の代入が \fB1\-\-o\fR 、 \fBo\-\-C\fR よりもわずかにコストが安くなる可能性があるためです。ファッジ係数を使用すると、パッチを対応するものと見なすためには、はるかに大きな共通部分が必要になります。
+.sp
+このアルゴリズムの計算に必要な全体の時間は、パッチの、n+mコミットdiff と n*m diff の計算に必要な時間に加えて、nとmのdiff間の最小コストの割り当ての計算に必要な時間です。 Gitは、Jonker\-Volgenantアルゴリズムの実装を使用して、実行時の複雑さが3次である割り当ての問題を解決します。 この場合に見つかった一致は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    1 \-\-\-\-\&.      A
+          |    /
+    2 \-\-\-\-+\-\-\-\*(Aq  B
+       \&.\-\-+\-\-\-\-\-\*(Aq
+    o \-\*(Aq  `\-\-\-\-\- C
+          c>0
+    o \-\-\-\-\-\-\-\-\-\- o
+
+    o \-\-\-\-\-\-\-\-\-\- o
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBgit-log\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

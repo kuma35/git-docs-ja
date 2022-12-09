@@ -1,0 +1,414 @@
+'\" t
+.\"     Title: gitformat-signature
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITFORMAT\-SIGNATURE" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitformat-signature \- Git 暗号署名形式
+.SH "SYNOPSIS"
+.sp
+.nf
+<[tag|commit] object header(s)>
+<over\-the\-wire protocol>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+Gitはさまざまな場所で暗号署名を使用します。現在、オブジェクト(タグ、コミット、マージタグ)と取引(transactions)(プッシュ)です。 いずれの場合も、オブジェクトまたは取引を作成しようとしているコマンドは、そこからペイロードを決定し、gpgを呼び出してペイロードの分離署名(detached signature)を取得し(\fBgpg \-bsa\fR)、その署名をオブジェクトまたは取引に埋め込みます。
+.sp
+gpgが \fBSIGNATURE\fR の代わりに \fBMESSAGE\fR を使用するRFC1991署名を生成するように指示されていない限り、署名は常に \fB\-\-\-\-\-BEGIN PGP SIGNATURE\-\-\-\-\-\fR で始まり、 \fB\-\-\-\-\-END PGP SIGNATURE\-\-\-\-\-\fR で終わります。
+.sp
+署名は、 通常のペイロードの一部として表示される場合もあれば(たとえば、署名されたタグには、 署名が適用されるペイロードの後に署名ブロックが追加されています)、 オブジェクト・ヘッダーの値として表示される場合もあります(たとえば、 署名されたタグをマージしたマージ・コミットは、その \fBmergetag\fR ヘッダーにタグの内容全体を持ちます)。 後者の場合、オブジェクト・ヘッダーの通常の複数行書式設定規則が適用され、つまり、 2 行目以降の行には、 その行が前の行から継続していることを示すために、 SP が前に付けられます。
+.sp
+これは、もともとの空行にも当てはまります。 以下の例では、空白(whitespace)文字で終わる行末が \fB$\fR 記号で強調表示されています。 これらの例を手作業で再現しようとしている場合は、 それらをカット・アンド・ペーストしないでください。 \(em これらは主に、行末の余分な空白を強調するために存在します。
+.sp
+署名されたペイロードと署名の埋め込み方法は、オブジェクト応答タイプや取引に依存します。
+.SH "TAG SIGNATURES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+作成方法:
+\fBgit tag \-s\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ペイロード: annotated tag object
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+埋め込み: 署名されていないタグオブジェクトに署名を追加します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example: 件名が
+\fBsignedtag\fR
+のタグ
+\fBsignedtag\fR
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+object 04b871796dc0420f8e7561a895b52484b701d51a
+type commit
+tag signedtag
+tagger C O Mitter <committer@example\&.com> 1465981006 +0000
+
+signed tag
+
+signed tag message body
+\-\-\-\-\-BEGIN PGP SIGNATURE\-\-\-\-\-
+Version: GnuPG v1
+
+iQEcBAABAgAGBQJXYRhOAAoJEGEJLoW3InGJklkIAIcnhL7RwEb/+QeX9enkXhxn
+rxfdqrvWd1K80sl2TOt8Bg/NYwrUBw/RWJ+sg/hhHp4WtvE1HDGHlkEz3y11Lkuh
+8tSxS3qKTxXUGozyPGuE90sJfExhZlW4knIQ1wt/yWqM+33E9pN4hzPqLwyrdods
+q8FWEqPPUbSJXoMbRPw04S5jrLtZSsUWbRYjmJCHzlhSfFWW4eFd37uquIaLUBS0
+rkC3Jrx7420jkIpgFcTI2s60uhSQLzgcCwdA2ukSYIRnjg/zDkj8+3h/GaROJ72x
+lZyI6HWixKJkWw8lE9aAOD9TmTW9sFJwcVAzmAuFX2kUreDUKMZduGcoRYGpD7E=
+=jpXa
+\-\-\-\-\-END PGP SIGNATURE\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+検証方法:
+\fBgit verify\-tag [\-v]\fR
+または
+\fBgit tag \-v\fR
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gpg: Signature made Wed Jun 15 10:56:46 2016 CEST using RSA key ID B7227189
+gpg: Good signature from "Eris Discordia <discord@example\&.net>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner\&.
+Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+object 04b871796dc0420f8e7561a895b52484b701d51a
+type commit
+tag signedtag
+tagger C O Mitter <committer@example\&.com> 1465981006 +0000
+
+signed tag
+
+signed tag message body
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "COMMIT SIGNATURES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+作成方法:
+\fBgit commit \-S\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ペイロード: commit object
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+埋め込み: ヘッダーエントリ
+\fBgpgsig\fR
+(コンテンツの前にスペースがあります)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example: 件名`signed commit` を伴ってコミット
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+tree eebfed94e75e7760540d1485c740902590a00332
+parent 04b871796dc0420f8e7561a895b52484b701d51a
+author A U Thor <author@example\&.com> 1465981137 +0000
+committer C O Mitter <committer@example\&.com> 1465981137 +0000
+gpgsig \-\-\-\-\-BEGIN PGP SIGNATURE\-\-\-\-\-
+ Version: GnuPG v1
+ $
+ iQEcBAABAgAGBQJXYRjRAAoJEGEJLoW3InGJ3IwIAIY4SA6GxY3BjL60YyvsJPh/
+ HRCJwH+w7wt3Yc/9/bW2F+gF72kdHOOs2jfv+OZhq0q4OAN6fvVSczISY/82LpS7
+ DVdMQj2/YcHDT4xrDNBnXnviDO9G7am/9OE77kEbXrp7QPxvhjkicHNwy2rEflAA
+ zn075rtEERDHr8nRYiDh8eVrefSO7D+bdQ7gv+7GsYMsd2auJWi1dHOSfTr9HIF4
+ HJhWXT9d2f8W+diRYXGh4X0wYiGg6na/soXc+vdtDYBzIxanRqjg8jCAeo1eOTk1
+ EdTwhcTZlI0x5pvJ3H0+4hA2jtldVtmPM4OTB0cTrEWBad7XV6YgiyuII73Ve3I=
+ =jKHM
+ \-\-\-\-\-END PGP SIGNATURE\-\-\-\-\-
+
+signed commit
+
+signed commit message body
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+検証方法:
+\fBgit verify\-commit [\-v]\fR
+(または
+\fBgit show \-\-show\-signature\fR)
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gpg: Signature made Wed Jun 15 10:58:57 2016 CEST using RSA key ID B7227189
+gpg: Good signature from "Eris Discordia <discord@example\&.net>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner\&.
+Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+tree eebfed94e75e7760540d1485c740902590a00332
+parent 04b871796dc0420f8e7561a895b52484b701d51a
+author A U Thor <author@example\&.com> 1465981137 +0000
+committer C O Mitter <committer@example\&.com> 1465981137 +0000
+
+signed commit
+
+signed commit message body
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "MERGETAG SIGNATURES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+作成方法: 署名されたタグ上で
+\fBgit merge\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ペイロード/埋め込み: 署名されたタグオブジェクト全体が、ヘッダーエントリ
+\fBmergetag\fR
+として(マージ)コミットオブジェクトに埋め込まれます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example: 上記のように署名されたタグ
+\fBsignedtag\fR
+のマージ
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+tree c7b1cff039a93f3600a1d18b82d26688668c7dea
+parent c33429be94b5f2d3ee9b0adad223f877f174b05d
+parent 04b871796dc0420f8e7561a895b52484b701d51a
+author A U Thor <author@example\&.com> 1465982009 +0000
+committer C O Mitter <committer@example\&.com> 1465982009 +0000
+mergetag object 04b871796dc0420f8e7561a895b52484b701d51a
+ type commit
+ tag signedtag
+ tagger C O Mitter <committer@example\&.com> 1465981006 +0000
+ $
+ signed tag
+ $
+ signed tag message body
+ \-\-\-\-\-BEGIN PGP SIGNATURE\-\-\-\-\-
+ Version: GnuPG v1
+ $
+ iQEcBAABAgAGBQJXYRhOAAoJEGEJLoW3InGJklkIAIcnhL7RwEb/+QeX9enkXhxn
+ rxfdqrvWd1K80sl2TOt8Bg/NYwrUBw/RWJ+sg/hhHp4WtvE1HDGHlkEz3y11Lkuh
+ 8tSxS3qKTxXUGozyPGuE90sJfExhZlW4knIQ1wt/yWqM+33E9pN4hzPqLwyrdods
+ q8FWEqPPUbSJXoMbRPw04S5jrLtZSsUWbRYjmJCHzlhSfFWW4eFd37uquIaLUBS0
+ rkC3Jrx7420jkIpgFcTI2s60uhSQLzgcCwdA2ukSYIRnjg/zDkj8+3h/GaROJ72x
+ lZyI6HWixKJkWw8lE9aAOD9TmTW9sFJwcVAzmAuFX2kUreDUKMZduGcoRYGpD7E=
+ =jpXa
+ \-\-\-\-\-END PGP SIGNATURE\-\-\-\-\-
+
+Merge tag \*(Aqsignedtag\*(Aq into downstream
+
+signed tag
+
+signed tag message body
+
+# gpg: Signature made Wed Jun 15 08:56:46 2016 UTC using RSA key ID B7227189
+# gpg: Good signature from "Eris Discordia <discord@example\&.net>"
+# gpg: WARNING: This key is not certified with a trusted signature!
+# gpg:          There is no indication that the signature belongs to the owner\&.
+# Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+検証方法: 検証は、デフォルトでマージコミットメッセージに埋め込まれています。 代替手段として
+\fBgit show \-\-show\-signature\fR
+を使用します:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+commit 9863f0c76ff78712b6800e199a46aa56afbcbd49
+merged tag \*(Aqsignedtag\*(Aq
+gpg: Signature made Wed Jun 15 10:56:46 2016 CEST using RSA key ID B7227189
+gpg: Good signature from "Eris Discordia <discord@example\&.net>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner\&.
+Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+Merge: c33429b 04b8717
+Author: A U Thor <author@example\&.com>
+Date:   Wed Jun 15 09:13:29 2016 +0000
+
+    Merge tag \*(Aqsignedtag\*(Aq into downstream
+
+    signed tag
+
+    signed tag message body
+
+    # gpg: Signature made Wed Jun 15 08:56:46 2016 UTC using RSA key ID B7227189
+    # gpg: Good signature from "Eris Discordia <discord@example\&.net>"
+    # gpg: WARNING: This key is not certified with a trusted signature!
+    # gpg:          There is no indication that the signature belongs to the owner\&.
+    # Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

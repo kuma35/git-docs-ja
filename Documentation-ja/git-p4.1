@@ -1,0 +1,1069 @@
+'\" t
+.\"     Title: git-p4
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-P4" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-p4 \- Perforceリポジトリからのインポートと、Perforceリポジトリへのsubmit
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit p4 clone\fR [<sync\-options>] [<clone\-options>] <p4\-depot\-path>\&...
+\fIgit p4 sync\fR [<sync\-options>] [<p4\-depot\-path>\&...]
+\fIgit p4 rebase\fR
+\fIgit p4 submit\fR [<submit\-options>] [<master\-branch\-name>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このコマンドは、Gitを使用してp4リポジトリと対話する方法を提供します。
+.sp
+\fBgit p4 clone\fR を使用して既存のp4リポジトリから新しいGitリポジトリを作成し、1つ以上のp4デポパス(depot path)を指定します。 \fBgit p4sync\fR を使用してp4の変更からの新しいコミットを組み込みます。 \fBsync\fR コマンドは、他のp4デポパスからの新しいブランチを含めるためにも使用されます。 \fBgit p4 submit\fR を使用してGitの変更をp4に送信します。 コマンド \fBgit p4 rebase\fR は同期を実行し、現在のブランチを更新されたp4リモートブランチにリベースします。
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+リポジトリをクローンします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 clone //depot/path/project
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+新しく作成されたGitリポジトリでいくつかの作業を行います:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cd project
+$ vi foo\&.h
+$ git commit \-a \-m "edited foo\&.h"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+p4からの最近の変更でGitリポジトリを更新し、あなたの作業ツリーにリベースします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 rebase
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+あなたのコミットを送信しp4へ戻します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 submit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "COMMANDS"
+.SS "Clone"
+.sp
+通常、 \fBgit p4 clone\fR は、既存のp4リポジトリから新しいGitディレクトリを作成するために使用されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 clone //depot/path/project
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは以下の事を行います:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBproject\fR
+というサブディレクトリに空のGitリポジトリを作成します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+指定されたp4デポパス(p4 depot path)からGitブランチ
+\fBrefs/remotes/p4/master\fR
+の単一のコミットにヘッドリビジョンの全内容をインポートします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+このリモートからローカルブランチ
+\fBmaster\fR
+を作成し、チェックアウトします。
+.RE
+.sp
+Gitでp4履歴全体を再現するには、デポパス(dept path)で \fB@all\fR 修飾子を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 clone //depot/path/project@all
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SS "Sync"
+.sp
+p4リポジトリで開発が継続されていて、それらの変更をGitリポジトリに取り込むには以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 sync
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このコマンドは、p4の新しい変更を検出し、Gitがコミットするときにそれらをインポートします。
+.sp
+P4リポジトリは、 \fBgit p4 sync\fR を使用して既存のGitリポジトリに追加することもできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ mkdir repo\-git
+$ cd repo\-git
+$ git init
+$ git p4 sync //path/in/your/perforce/depot
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、指定したデポが既存のGitリポジトリの \fBrefs/remotes/p4/master\fR にインポートされます。 \fB\-\-branch\fR オプションを使用して、p4コンテンツに使用する別のブランチを指定することも可能です。
+.sp
+Gitリポジトリにブランチ \fBrefs/remotes/origin/p4\fR が含まれている場合、これらは \fBgit p4 sync\fR 実行中に最初にフェッチされて調べ(consult)られます。p4から直接インポートするのは、Gitリモートから変更をプルするよりもかなり遅いため、これは複数開発者環境(multi\-developer environment)で役立ちます。
+.sp
+複数のブランチがある場合、 \fBgit p4 sync\fR を実行すると、「BRANCH DETECTION」アルゴリズムが自動的に使用され、新しい変更を適切なブランチに分割しようとします。 これを \fB\-\-branch\fR オプションでオーバーライドして、更新するブランチを1つだけ指定できます。
+.SS "Rebase"
+.sp
+一般的な動作パターンは、p4デポから最新の変更をフェッチし、それらをローカルのコミットされていない変更とマージすることです。多くの場合、p4リポジトリはすべてのコードの最終的な場所であるため、リベース作業フローは理にかなっています。このコマンドは、 \fBgit p4 sync\fR に続いて \fBgit rebase\fR を実行して、更新されたp4の変更に加えてローカルコミットを移動します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 rebase
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SS "Submit"
+.sp
+Gitリポジトリからp4リポジトリに変更を送信するには、別のp4クライアントワークスペース(p4 client workspace)が必要です。 これは、 \fBP4CLIENT\fR 環境変数またはGit構成変数 \fBgit\-p4\&.client\fR を使用して指定する必要があります。p4クライアントは存在する必要がありますが、クライアントルート(client root)がまだ存在しない場合は、クライアントルートが作成されて入力されます。
+.sp
+現在のGitブランチにはあるが、 \fBp4/master\fR ブランチにはないすべての変更を送信するには、以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 submit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+現在のブランチ以外のブランチを指定するには、以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 submit topicbranch
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+単一のコミットまたはコミットの範囲を指定するには、以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 submit \-\-commit <sha1>
+$ git p4 submit \-\-commit <sha1\&.\&.sha1>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+アップストリーム参照は一般的には \fBrefs/remotes/p4/master\fR ですが、 \fB\-\-origin=\fR コマンドラインオプションを使用してオーバーライドできます。
+.sp
+p4の変更は、ユーザーが \fBgit p4 submit\fR を呼び出すと作成されます。 \fB\-\-preserve\-user\fR オプションを使用すると、Gitコミットの作者(author)に応じて所有権が変更されます。このオプションには、 \fBp4 protect\fR を使用して付与できるp4の管理者権限が必要です。
+.sp
+送信する代わりに変更を保存するには、以下のように \fB\-\-shelve\fR と \fB\-\-update\-shelve\fR を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 submit \-\-shelve
+$ git p4 submit \-\-update\-shelve 1234 \-\-update\-shelve 2345
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SS "Unshelve"
+.sp
+Unshelvingは、棚上げされたP4チェンジリスト(shelved P4 changelist)を取得し、ブランチ refs/remotes/p4\-unshelved/<changelist> で同等のgit commitを生成します。
+.sp
+git commitは、現在のoriginリビジョン(デフォルトではHEAD)を基準にして作成されます。親コミットはoriginに基づいて作成され、次にunshelveコミットはそれに基づいて作成されます。
+.sp
+originリビジョンは、 \fB\-\-origin\fR オプションで変更できます。
+.sp
+refs/remotes/p4\-unshelved のターゲットブランチがすでに存在する場合、古いブランチの名前が変更されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git p4 sync
+$ git p4 unshelve 12345
+$ git show p4\-unshelved/12345
+<submit more changes via p4 to the same files>
+$ git p4 unshelve 12345
+<refuses to unshelve until git is in sync with p4 again>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "OPTIONS"
+.SS "General options"
+.sp
+cloneを除くすべてのコマンドは、これらのオプションを受け入れます。
+.PP
+\fB\-\-git\-dir <dir>\fR
+.RS 4
+\fBGIT_DIR\fR
+環境変数を設定します。
+\fBgit\fR(1)
+参照。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+より多くの進捗情報を提供します。
+.RE
+.SS "Sync options"
+.sp
+これらのオプションは、最初の「クローン」(clone)操作と後続の「同期」(sync)操作で使用できます。
+.PP
+\fB\-\-branch <ref>\fR
+.RS 4
+変更を
+\fBrefs/remotes/p4/master\fR
+ではなく <ref> にインポートします。 <ref>が
+\fBrefs/\fR
+で始まる場合は、そのまま使用されます。それ以外の場合、
+\fBp4/\fR
+で始まらない場合は、その接頭辞が追加されます。
+.sp
+デフォルトでは、
+\fBrefs/\fR
+で始まらない<ref>は、リモート追跡ブランチの名前として扱われます(\fBrefs/remotes/\fR
+の下)。この動作は、
+\fB\-\-import\-local\fR
+オプションを使用して変更できます。
+.sp
+<ref> のデフォルトは "master" です。
+.sp
+この例では、新しい remote "p4/proj2" を既存のGitリポジトリにインポートします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ git init
+    $ git p4 sync \-\-branch=refs/remotes/p4/proj2 //depot/proj2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fB\-\-detect\-branches\fR
+.RS 4
+ブランチ検出アルゴリズムを使用して、p4の新しいパスを見つけます。 これは、以下の「BRANCH DETECTION」で解説してあります。
+.RE
+.PP
+\fB\-\-changesfile <file>\fR
+.RS 4
+<file> にリストされているp4変更番号(p4 change numbers)を1行に1つずつ正確にインポートします。 通常、
+\fBgit p4\fR
+は、現在のp4リポジトリの状態を検査し、インポートする必要のある変更を検出します。
+.RE
+.PP
+\fB\-\-silent\fR
+.RS 4
+進捗情報を出力しません。
+.RE
+.PP
+\fB\-\-detect\-labels\fR
+.RS 4
+デポパス(depot paths)に関連付けられているラベルをp4に問い合わせ、Gitにタグとして追加します。新しいチェンジリストに関連付けられたラベルのみをインポートするため、有用性は限られています。非推奨です。
+.RE
+.PP
+\fB\-\-import\-labels\fR
+.RS 4
+p4からGitにラベルをインポートします。
+.RE
+.PP
+\fB\-\-import\-local\fR
+.RS 4
+デフォルトでは、p4ブランチは
+\fBrefs/remotes/p4/\fR
+に保存され、
+\fBgit-branch\fR(1)
+およびその他のコマンドによってリモート追跡ブランチとして扱われます。 このオプションは、代わりにp4ブランチを
+\fBrefs/heads/p4/\fR
+に配置します。このオプション使用後、今後の同期操作では、
+\fBrefs/heads\fR
+でp4ブランチを見つけることができるように、
+\fB\-\-import\-local\fR
+も指定する必要があることに注意してください。
+.RE
+.PP
+\fB\-\-max\-changes <n>\fR
+.RS 4
+指定されたリビジョン指定子(revision specifier)に含まれる変更の全範囲ではなく、最大で <n> 個の変更をインポートします。通常の使用法は、リビジョン指定子として
+\fB@all\fR
+を使用しますが、
+\fB\-\-max\-changes 1000\fR
+を使用して、リビジョン履歴全体ではなく、最後の1000リビジョンのみをインポートします。
+.RE
+.PP
+\fB\-\-changes\-block\-size <n>\fR
+.RS 4
+\fB@all\fR
+などのリビジョン指定子を特定の変更番号のリストに変換するときに使用する内部ブロックサイズ。変換の変更の完全なリストを見つけるために
+\fBp4 changes\fR
+への単一の呼び出しを使用する代わりに、
+\fBp4 changes \-m\fR
+への一連の呼び出しがあり、それぞれが指定のサイズの変更の1ブロックを要求します。デフォルトのブロックサイズは500で、通常はこれが適切です。
+.RE
+.PP
+\fB\-\-keep\-path\fR
+.RS 4
+デフォルトでは、p4デポパスからGitへのファイル名のマッピングには、デポパス全体の削除が含まれます。このオプションを使用すると、完全なp4デポパスがGitに保持されます。 たとえば、パス
+\fB//depot/main/foo/bar\&.c\fR
+は、
+\fB//depot/main/\fR
+からインポートすると、
+\fBfoo/bar\&.c\fR
+になります。
+\fB\-\-keep\-path`を使用すると、Gitパスは代わりに `depot/main/foo/bar\&.c\fR
+になります。
+.RE
+.PP
+\fB\-\-use\-client\-spec\fR
+.RS 4
+クライアント仕様(client spec)を使用して、p4でinterestingファイルのリストを見つけます。以下の「CLIENT SPEC」セクションを参照してください。
+.RE
+.PP
+\fB\-/ <path>\fR
+.RS 4
+クローン作成または同期時に、選択したデポパスを除外します。
+.RE
+.SS "Clone options"
+.sp
+これらのオプションは、上記の「sync」オプションとともに、最初の「clone」で使用できます。
+.PP
+\fB\-\-destination <directory>\fR
+.RS 4
+Gitリポジトリを作成する場所。 指定しない場合、p4デポパス(p4 depot path)の最後のコンポーネントを使用して新しいディレクトリを作成します。
+.RE
+.PP
+\fB\-\-bare\fR
+.RS 4
+ベアクローン(bare clone)を実行します。
+\fBgit-clone\fR(1)
+を参照してください。
+.RE
+.SS "Submit options"
+.sp
+これらのオプションを使用して、「git p4 submit」の動作を変更できます。
+.PP
+\fB\-\-origin <commit>\fR
+.RS 4
+p4に送信するコミットが識別される上流の場所。デフォルトでは、これは
+\fBHEAD\fR
+から到達可能な最新のp4コミットです。
+.RE
+.PP
+\fB\-M\fR
+.RS 4
+名前の変更(renames)を検出します。
+\fBgit-diff\fR(1)
+を参照してください。名前の変更は、p4ででは明示的な「移動」操作を使用して表されます。コピーを検出するための対応するオプションはありませんが、移動とコピーの両方に変数があります。
+.RE
+.PP
+\fB\-\-preserve\-user\fR
+.RS 4
+p4に送信する前に、p4の変更を再作成(re\-author)してください。このオプションには、p4管理者権限が必要です。
+.RE
+.PP
+\fB\-\-export\-labels\fR
+.RS 4
+Gitからタグをp4ラベルとしてエクスポートします。Gitで見つかったタグは、perforce 作業ディレクトリに適用されます。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+どのコミットがp4に送信されるかだけを表示します。Gitまたはp4の状態を変更しないでください。
+.RE
+.PP
+\fB\-\-prepare\-p4\-only\fR
+.RS 4
+通常の送信操作と同様に、p4ワークスペースにコミットを適用し、p4でファイルを開いたり、追加したり、削除したりします。 最後の「p4送信」を発行しません。代わりに、手動で送信する方法または元に戻す方法に関するメッセージを表示します。このオプションは、最初の(最も古い)コミット後に常に停止(stop)します。Gitタグはp4にエクスポートされません。
+.RE
+.PP
+\fB\-\-shelve\fR
+.RS 4
+送信する代わりに、一連の棚上げされたチェンジリスト(shelved changelists)を作成します。各シェルフ(shelve)を作成した後、関連するファイルは元に戻され(revert)/削除(delete)されます。保留中のコミットが複数ある場合は、複数のシェルフが作成されます。
+.RE
+.PP
+\fB\-\-update\-shelve CHANGELIST\fR
+.RS 4
+このコミットで既存の棚上げされたチェンジリスト(shelved changelist)を更新します。
+\fB\-\-shelve\fR
+の指定を含んでいます。複数の棚上げされたチェンジリストに対して繰り返します。
+.RE
+.PP
+\fB\-\-conflict=(ask|skip|quit)\fR
+.RS 4
+p4にコミットを適用すると、競合が発生する可能性があります。 これが発生した場合、デフォルトの動作("ask")は、このコミットをスキップして続行するか、終了するかを尋ねる動作です。このオプションを使用すると、プロンプトをバイパスして、競合するコミットを自動的にスキップしたり、プロンプトを表示せずにコミットの適用を中止(quit)したりできます。
+.RE
+.PP
+\fB\-\-branch <branch>\fR
+.RS 4
+送信後、デフォルトの p4/master の代わりに、この名前付きブランチを同期します。詳細については、上記の「Sync options」セクションを参照してください。
+.RE
+.PP
+\fB\-\-commit (<sha1>|<sha1>\&.\&.<sha1>)\fR
+.RS 4
+現在のGitブランチにある変更の完全なリストではなく、指定されたコミットまたはコミットの範囲のみを送信します。
+.RE
+.PP
+\fB\-\-disable\-rebase\fR
+.RS 4
+すべてのコミットが正常に送信された後の自動リベースを無効にします。 git\-p4\&.disableRebase で設定することもできます。
+.RE
+.PP
+\fB\-\-disable\-p4sync\fR
+.RS 4
+コミットが送信された後、Perforceからのp4/masterの自動同期を無効にします。
+\fB\-\-disable\-rebase\fR
+の指定を含んでいます。git\-p4\&.disableP4Sync で設定することもできます。 可能であれば、 origin/master との同期は引き続き続行されます。
+.RE
+.SH "HOOKS FOR SUBMIT"
+.SS "p4\-pre\-submit"
+.sp
+\fBp4\-pre\-submit\fR フックが存在し、実行可能である場合に実行されます。フックはパラメータを受け取らず、標準入力からも何も受け取りません。このスクリプトをゼロ以外のステータスで終了すると、 \fBgit\-p4 submit\fR が起動しなくなります。 \fB\-\-no\-verify\fR コマンドラインオプションでバイパスできます。
+.sp
+使用シナリオの１つは、フックで単体テストを実行することです。
+.SS "p4\-prepare\-changelist"
+.sp
+\fBp4\-prepare\-changelist\fR フックは、デフォルトのチェンジリストメッセージを準備した直後、エディタが起動する前に実行されます。 これは、変更リストのテキストを含むファイルの名前という1つのパラメーターを取ります。スクリプトをゼロ以外のステータスで終了すると、プロセスが中止(abort)されます。
+.sp
+フックの目的は、メッセージファイルをその場で編集することであり、 \fB\-\-no\-verify\fR オプションによって抑制されることはありません。このフックは、 \fB\-\-prepare\-p4\-only\fR が設定されている場合でも呼び出されます。
+.SS "p4\-changelist"
+.sp
+\fBp4\-changelist\fR フックは、ユーザーがチェンジリストメッセージを編集した後に実行されます。 \fB\-\-no\-verify\fR オプションでバイパスできます。提案されたチェンジリストテキストを保持するファイルの名前という単一のパラメータを取ります。ゼロ以外のステータスで終了すると、コマンドは中止(abort)されます。
+.sp
+フックはチェンジリストファイルの編集を許可されており、テキストをプロジェクトの標準形式に正規化するために使用できます。 また、メッセージファイルを検査した後に送信を拒否するために使用することもできます。
+.SS "p4\-post\-changelist"
+.sp
+\fBp4\-post\-changelist\fR フックは、submitがP4で正常に発生した後に呼び出されます。 これはパラメーターを必要とせず、主に通知を目的としており、git p4 submitアクションの結果に影響を与えることはできません。
+.SS "Rebase options"
+.sp
+これらのオプションを使用して、「git p4 rebase」の動作を変更できます。
+.PP
+\fB\-\-import\-labels\fR
+.RS 4
+p4ラベルのインポート。
+.RE
+.SS "Unshelve options"
+.PP
+\fB\-\-origin\fR
+.RS 4
+棚上げされたP4チェンジリスト(shelved P4 changelist)が比較される git refspec を設定します。デフォルトは p4/master です。
+.RE
+.SH "DEPOT PATH SYNTAX"
+.sp
+\fBgit p4 sync\fR と \fBgitp4 clone\fR へのp4デポパス引数は、1つ以上のスペースで区切られたp4デポパスにすることができ、最後にオプションのp4リビジョン指定子があります:
+.PP
+"//depot/my/project"
+.RS 4
+そのツリーの下の「#head」変更内のすべてのファイルを含む1つのコミットをインポートします。
+.RE
+.PP
+"//depot/my/project@all"
+.RS 4
+そのデポパスの履歴の変更ごとに1つのコミットをインポートします。
+.RE
+.PP
+"//depot/my/project@1,6"
+.RS 4
+1から6の変更のみをインポートする。
+.RE
+.PP
+"//depot/proj1@all //depot/proj2@all"
+.RS 4
+両方の名前付きのデポパスからのすべての変更を単一のリポジトリにインポートします。これらのディレクトリの下にあるファイルのみが含まれます。 Gitには、「proj1」と「proj2」ごとのサブディレクトリはありません。複数のデポパスを指定する場合は、\fB\-\-destination\fR
+オプションを使用する必要があります。 リビジョン指定子は、各デポパスで同じように指定する必要があります。 同じ名前のファイルがデポパスにある場合、ファイルの最新バージョンのパスがGitに表示されるパスになります。
+.RE
+.sp
+p4リビジョン指定子の完全な構文については、「p4 help revisions」を参照してください。
+.SH "CLIENT SPEC"
+.sp
+p4クライアントの仕様は、 \fBp4 client\fR コマンドで維持され、他のフィールドの中でも、デポがクライアントリポジトリにマップされる方法を指定するビューが含まれています。 \fBclone\fR と \fBsync`コマンドは、 `\-\-use\-client\-spec\fR オプションが指定されているか、または useClientSpec 変数がtrueの場合に、クライアント仕様(client spec)を参照できます。 \fBgit p4 clone\fR の後、useClientSpec変数がリポジトリ構成ファイルに自動的に設定されます。これにより、将来の \fBgit p4 submit\fR コマンドが正しく機能するようになります。 submitコマンドは変数のみを調べ、コマンドラインオプションはありません。
+.sp
+p4ビューの完全な構文は、「p4 help views」に記載されています。 \fBgit p4\fR は、ビュー構文のサブセットのみを認識します。 複数行のマッピング、「+」のオーバーレイ、「\-」の除外、空白の前後の二重引用符(\fB"\fR)を理解します。可能なワイルドカードのうち、 \fBgit p4\fR は \fB\&.\&.\&.\fR のみを処理し、パスの最後にある場合にのみ処理します。 \fBgit p4\fR は、未実装のワイルドカードに遭遇すると文句を言います。
+.sp
+バグ: オーバーラップマッピングの実装にはバグがあります。複数のデポパスがオーバーレイを介してリポジトリ内の同じ場所にマップされる場合、 \fBgit p4\fR は間違ったパスを選択する可能性があります。 これは、 \fBgit p4\fR 専用のクライアント仕様を使用せずに解決するのは困難です。
+.sp
+クライアントの名前は、複数の方法で \fBgit p4\fR に指定できます。 変数 \fBgit\-p4\&.client\fR が存在する場合は、それが優先されます。 それ以外の場合は、クライアントを決定する通常のp4メカニズムが使用されます。それは、環境変数 \fBP4CLIENT\fR または`P4CONFIG` によって参照されるファイル または ローカルホスト名 です。
+.SH "BRANCH DETECTION"
+.sp
+P4には、Gitと同じブランチの概念はありません。代わりに、p4はそのコンテンツをディレクトリツリーとして編成します。慣例により、さまざまな論理ブランチがツリー内のさまざまな場所にあります。 \fBp4 branch\fR コマンドは、ツリー内の異なる領域間のマッピングを維持し、関連するコンテンツを示すために使用されます。 \fBgit p4\fR は、これらのマッピングを使用してブランチの関係を判別できます。
+.sp
+対象のすべてのブランチが単一のデポパスのサブディレクトリとして存在するリポジトリがある場合、クローン作成または同期時に \fB\-\-detect\-branches\fR を使用して、 \fBgit p4\fR がp4内のサブディレクトリを自動的に検出し、これらをGitのブランチとして生成できます。
+.sp
+たとえば、P4リポジトリ構造が以下の場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//depot/main/\&.\&.\&.
+//depot/branch1/\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そして、 \fBp4 branch \-o branch1\fR は、以下のようなビューライン(View line)を表示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//depot/main/\&.\&.\&. //depot/branch1/\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、以下の \fBgit p4 clone\fR コマンドを実行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git p4 clone \-\-detect\-branches //depot@all
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBrefs/remotes/p4/\fR には \fB//depot/main\fR 用の \fBmaster\fR というブランチと \fB//depot/branch1\fR 用の \fBdepot/branch1\fR というブランチが別々に作成されることになります。
+.sp
+ただし、ブランチのように使用できるようにするために、p4でブランチを作成する必要はありません。ブランチ関係を自動的に推測することは難しいため、Git構成設定 \fBgit\-p4\&.branchList\fR を使用して、ブランチ関係を明示的に識別することができます。これは、単純なp4ブランチ仕様のような "source:destination" ペアのリストであり、 "source" と "destination" はp4リポジトリ内のパス要素です。上記の例は、p4ブランチの存在に依存していました。 p4ブランチがない場合、同じ結果が以下の場合に発生します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git init depot
+cd depot
+git config git\-p4\&.branchList main:branch1
+git p4 clone \-\-detect\-branches //depot@all \&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "PERFORMANCE"
+.sp
+\fBgit p4\fR で使用される高速インポートメカニズムは、 \fBgit p4 sync\fR の呼び出しごとに1つのパックファイルを作成します。通常、Gitガベージ圧縮(\fBgit-gc\fR(1))は、これらをより少ないパックファイルに自動的に圧縮しますが、 \fBgit repack \-adf\fR を明示的に呼び出すと、パフォーマンスが向上する場合があります。
+.SH "CONFIGURATION VARIABLES"
+.sp
+以下の構成設定を使用して、 \fBgit p4\fR の振る舞いを変更できます。全てを見たい時は「git\-p4」セクションを参照してください。
+.SS "General variables"
+.PP
+git\-p4\&.user
+.RS 4
+すべてのp4コマンドのオプションとして、
+\fB\-u <user>\fR
+で指定されるユーザー。代わりに環境変数
+\fBP4USER\fR
+を使用することができます。
+.RE
+.PP
+git\-p4\&.password
+.RS 4
+すべてのp4コマンドのオプションとして、
+\fB\-P <password>\fR
+で指定されるパスワード。代わりに環境変数
+\fBP4PASS\fR
+を使用することができます。
+.RE
+.PP
+git\-p4\&.port
+.RS 4
+すべてのp4コマンドのオプションとして
+\fB\-p <port>\fR
+で指定されるポート。代わりに、環境変数
+\fBP4PORT\fR
+を使用することができます。
+.RE
+.PP
+git\-p4\&.host
+.RS 4
+全てのp4コマンドのオプションとして
+\fB\-h <host>\fR
+で指定されるホスト。代わりに環境変数
+\fBP4HOST\fR
+を使用することができます。
+.RE
+.PP
+git\-p4\&.client
+.RS 4
+全てのp4コマンドのオプションとして
+\fB\-c <client>\fR
+で指定されるクライアント。クライアントスペック(client spec)を含んでいます。
+.RE
+.PP
+git\-p4\&.retries
+.RS 4
+ネットワークがタイムアウトした場合にp4コマンド(特に
+\fBp4 sync\fR)を再試行する回数を指定します。デフォルト値は 3 です。再試行を無効にする場合、またはp4バージョンが再試行をサポートしていない場合(2012\&.2より前)は、値を0に設定します。
+.RE
+.SS "Clone and sync variables"
+.PP
+git\-p4\&.syncFromOrigin
+.RS 4
+他のGitリポジトリからコミットをインポートする方がp4からインポートするよりもはるかに高速であるため、Gitのリモートで最初にp4の変更を見つけるメカニズムが存在します。
+\fBrefs/remote/origin/p4\fR
+の下にブランチが存在する場合、それらはp4から同期するときにフェッチされて使用されます。 この変数を
+\fBfalse\fR
+に設定して、この動作を無効にすることができます。
+.RE
+.PP
+git\-p4\&.branchUser
+.RS 4
+ブランチ検出のフェーズの一つでは、p4ブランチを調べて、インポートする新しいブランチを見つけます。デフォルトでは、すべてのブランチが検査されます。 このオプションは、検索を、変数で指定した単一のユーザーが所有するものだけに制限します。
+.RE
+.PP
+git\-p4\&.branchList
+.RS 4
+ブランチ検出が有効になっている場合にインポートされるブランチのリスト。各エントリは、コロン(\fB:\fR)で区切られたブランチ名のペアである必要があります。以下の例では、branchAとbranchBの両方がmainから作成されたことを宣言しています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git config       git\-p4\&.branchList main:branchA
+git config \-\-add git\-p4\&.branchList main:branchB
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+git\-p4\&.ignoredP4Labels
+.RS 4
+無視するp4ラベルのリスト。これは、インポートできないラベルが検出されると自動的に作成されます。
+.RE
+.PP
+git\-p4\&.importLabels
+.RS 4
+\fB\-\-import\-labels\fR
+に従って、p4ラベルをgitにインポートします。
+.RE
+.PP
+git\-p4\&.labelImportRegexp
+.RS 4
+この正規表現にマッチするp4ラベルのみがインポートされます。 デフォルト値は
+\fB[a\-zA\-Z0\-9_\e\-\&.]+$\fR
+です。
+.RE
+.PP
+git\-p4\&.useClientSpec
+.RS 4
+対象のp4デポパスを識別するためにp4クライアント仕様(p4 client spec)を使用する必要があることを指定します。これは、オプション
+\fB\-\-use\-client\-spec\fR
+を指定するのと同じです。上記の「CLIENT SPEC」セクションを参照してください。 この変数はブール値であり、p4クライアントの名前ではありません。
+.RE
+.PP
+git\-p4\&.pathEncoding
+.RS 4
+Perforceは、元のOSによって指定されたパスのエンコーディングを保持します。 Gitは、UTF\-8としてエンコードされたパスを想定しています。 この設定を使用して、 PERFORCEがパスに使用したエンコーディングをgit\-p4に通知します。 このエンコーディングは、 パスのエンコーディングをUTF\-8に変換するために使用されます。 例として、 Windows上のPerforceは、 パス名をエンコードするために
+\fBcp1252\fR
+を使用することがよくあります。 このオプションが p4 clone リクエストに渡されると、 生成された新しい git リポジトリで永続化されます。
+.RE
+.PP
+git\-p4\&.metadataDecodingStrategy
+.RS 4
+Perforce は、 changelistの説明とユーザーのフル・ネームのエンコーディングを、指定の OS 上のクライアントによって保存されたままにします。 p4v クライアントは OS ローカル・エンコーディングを使用するため、さまざまなユーザーが、さまざまなchangelistの説明やユーザーのフル・ネームをさまざまなエンコーディングで同じデポに保存することになります。 Git は、コミット・メッセージと作者名の 一貫性のない/不適切な エンコーディングを許容はしますが、 utf\-8 で指定することを想定しています。 git\-p4 は、 Perforce でエンコーディングの不確実性を処理する際に、3 つの異なるデコーディング戦略を使用できます。
+\fBpassthrough\fR
+は、元のバイトを Perforce から git に渡すだけです。 Perforce データが utf\-8 以外でエンコードされている場合に、使用可能であるが正しくエンコードされていないデータが作成されます。
+\fBstrict\fR
+は、Perforce データが utf\-8 としてエンコードされることを想定しており、これが正しくない場合、インポートに失敗します。
+\fBfallback\fR
+は、データを utf\-8 として解釈しようとします。それ以外の場合は、セカンダリ・エンコーディング(デフォルトでは一般的な Windows エンコーディング
+\fBcp\-1252\fR)を使用するようにフォールバックします。フォールバック・エンコーディングでのデコードも失敗した場合は、上位範囲(upper\-range)のバイトがエスケープされます。 歴史的な理由から、 python2 ではデフォルトの戦略は
+\fBpassthrough\fR
+であり、 python3 ではデフォルトは
+\fBfallback\fR
+です。
+\fBstrict\fR
+が選択され、デコードが失敗した場合、エラー・メッセージでは回避策としてこの構成パラメーターを変更することを提案します。 このオプションが p4 clone リクエストに渡されると、 生成された新しい git リポジトリで永続化されます。
+.RE
+.PP
+git\-p4\&.metadataFallbackEncoding
+.RS 4
+\fBfallback\fR
+戦略を使用して Perforce 作者名とchangelistの説明をデコードするときに使用するフォールバック・エンコーディングを指定します(git\-p4\&.metadataDecodingStrategy 参照)。 フォールバック・エンコーディングは、 utf\-8 としてデコードするのに失敗した場合にのみ使用されます。 このオプションのデフォルトは、一般的な Windows エンコーディングである
+\fBcp1252\fR
+です。 このオプションが p4 clone リクエストに渡されると、 生成された新しい git リポジトリで永続化されます。
+.RE
+.PP
+git\-p4\&.largeFileSystem
+.RS 4
+大きな(バイナリ)ファイルに使用されるシステムを指定します。ラージファイルシステム(large file systems)は
+\fBgit p4 submit\fR
+コマンドをサポートしていないことに注意してください。 現在、Git LFSのみが実装されています(詳細については、
+\m[blue]\fBhttps://git\-lfs\&.github\&.com/\fR\m[]
+を参照してください)。このオプションを使用して以下のように構成するには、Git LFSコマンドライン拡張機能をダウンロードしてインストールします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git config       git\-p4\&.largeFileSystem GitLFS
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+git\-p4\&.largeFileExtensions
+.RS 4
+リスト内のファイル拡張子に一致するすべてのファイルは、ラージファイルシステムによって処理されます。 拡張子の前に
+\fB\&.\fR
+を付けないでください。
+.RE
+.PP
+git\-p4\&.largeFileThreshold
+.RS 4
+非圧縮サイズがしきい値を超えるすべてのファイルは、ラージファイルシステム(large file system)によって処理されます。デフォルトでは、しきい値はバイト単位で定義されています。 単位を変更するには、接尾辞k、m、gを追加します。
+.RE
+.PP
+git\-p4\&.largeFileCompressedThreshold
+.RS 4
+圧縮サイズがしきい値を超えるすべてのファイルは、ラージファイルシステム(large file system)によって処理されます。このオプションを使用すると、クローン/同期プロセスの速度が低下する可能性があります。デフォルトでは、しきい値はバイト単位で定義されています。 単位を変更するには、接尾辞k、m、gを追加します。
+.RE
+.PP
+git\-p4\&.largeFilePush
+.RS 4
+大きなファイルをサーバーに自動的にプッシュするかどうかを定義するブール変数。
+.RE
+.PP
+git\-p4\&.keepEmptyCommits
+.RS 4
+このブールオプションがtrueに設定されている場合、除外されたファイルのみを含むチェンジリストは空のコミットとしてインポートされます。
+.RE
+.PP
+git\-p4\&.mapUser
+.RS 4
+P4 user をGitのnameとemail addressにマッピングします。以下の形式の文字列を使用して、マッピングを作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git config \-\-add git\-p4\&.mapUser "p4user = First Last <mail@address\&.com>"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+マッピングは、P4からのユーザー情報を上書きします。複数のP4ユーザーのマッピングを定義できます。
+.RE
+.SS "Submit variables"
+.PP
+git\-p4\&.detectRenames
+.RS 4
+名前の変更(renames)を検出します。\fBgit-diff\fR(1)
+を参照してください。 これは、true または、false または
+\fBgit diff \-M\fR
+で期待されるスコアになります。
+.RE
+.PP
+git\-p4\&.detectCopies
+.RS 4
+コピーを検出します。
+\fBgit-diff\fR(1)
+を参照してください。 これは、true または false または
+\fBgit diff \-C\fR
+で期待されるスコアになります。
+.RE
+.PP
+git\-p4\&.detectCopiesHarder
+.RS 4
+コピーをより厳しく検出します。
+\fBgit-diff\fR(1)
+を参照してください。 ブール値です。
+.RE
+.PP
+git\-p4\&.preserveUser
+.RS 4
+送信時に、誰が
+\fBgit p4 submit\fR
+を呼び出したかに関係なく、Git作者(author)を反映するように変更を再作成(re\-author)します。
+.RE
+.PP
+git\-p4\&.allowMissingP4Users
+.RS 4
+\fBpreserveUser\fR
+がtrueの場合、
+\fBgit p4\fR
+は通常、p4ユーザーマップで作者(author)が見つからない場合に停止(die)します。この設定は、それを気にせずに変更を送信します。
+.RE
+.PP
+git\-p4\&.skipSubmitEdit
+.RS 4
+送信プロセスは、各p4変更が送信される前にエディタを呼び出します。ただし、この設定がtrueの場合、編集手順はスキップされます。
+.RE
+.PP
+git\-p4\&.skipSubmitEditCheck
+.RS 4
+p4変更メッセージを編集した後、
+\fBgit p4\fR
+は、ファイルの変更時刻を調べて、説明が実際に変更されたことを確認します。このオプションは、その変更時刻を調べるテストを無効にします。
+.RE
+.PP
+git\-p4\&.allowSubmit
+.RS 4
+デフォルトでは、任意のブランチを
+\fBgit p4 submit\fR
+操作のソースとして使用できます。 この構成変数が設定されている場合、指定されたブランチのみを送信ソースとして使用できます。ブランチ名は短い名前(\fBrefs/heads/\fR
+は不可)である必要があり、スペースを入れずにコンマ(\fB,\fR)で区切る必要があります。
+.RE
+.PP
+git\-p4\&.skipUserNameCheck
+.RS 4
+\fBgit p4 submit\fR
+を実行しているユーザーがp4ユーザーマップに存在しない場合、
+\fBgit p4\fR
+は終了(exit)します。このオプションは、関係なく送信を強制するために使用できます。
+.RE
+.PP
+git\-p4\&.attemptRCSCleanup
+.RS 4
+有効にすると、
+\fBgit p4submit\fR
+はRCSキーワード($Header$ など)のクリーンアップを試みます。そうしないと、マージの競合が発生し、送信が続行できなくなります。 このオプションは、現時点では実験的なものと見なす必要があります。
+.RE
+.PP
+git\-p4\&.exportLabels
+.RS 4
+\fB\-\-export\-labels\fR
+に従って、Gitタグをp4ラベルにエクスポートします。
+.RE
+.PP
+git\-p4\&.labelExportRegexp
+.RS 4
+この正規表現にマッチするp4ラベルのみがエクスポートされます。 デフォルト値は
+\fB[a\-zA\-Z0\-9_\e\-\&.]+$\fR
+です。
+.RE
+.PP
+git\-p4\&.conflict
+.RS 4
+\fB\-\-conflict\fR
+に従って、p4との競合が見つかった場合の送信動作を指定します。デフォルトの動作は「ask」です。
+.RE
+.PP
+git\-p4\&.disableRebase
+.RS 4
+送信後に p4/master に対してツリーをリベースしないでください。
+.RE
+.PP
+git\-p4\&.disableP4Sync
+.RS 4
+送信後に p4/master を Perforce と同期しないでください。 git\-p4\&.disableRebase の指定を含んでいます。
+.RE
+.SH "IMPLEMENTATION DETAILS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+p4からのチェンジセットは、Git fast\-import を使用してインポートされます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+クローン作成または同期には、p4クライアントは必要ありません。ファイルの内容は
+\fBp4 print\fR
+を使用して収集されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+送信するには、Gitリポジトリと同じ場所にないp4クライアントが必要です。パッチは、このp4クライアントに一度に1つずつ適用され、そこから送信されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit p4\fR
+によってインポートされた各コミットには、ログメッセージの最後にp4デポの場所と変更番号を示す行があります。 この行は、後の
+\fBgit p4 sync\fR
+操作で、どのp4の変更が新しいかを知るために使用されます。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

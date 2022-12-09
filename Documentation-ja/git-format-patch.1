@@ -1,0 +1,1647 @@
+'\" t
+.\"     Title: git-format-patch
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-FORMAT\-PATCH" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-format-patch \- 電子メール送信用のパッチを準備します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit format\-patch\fR [\-k] [(\-o|\-\-output\-directory) <dir> | \-\-stdout]
+                   [\-\-no\-thread | \-\-thread[=<style>]]
+                   [(\-\-attach|\-\-inline)[=<boundary>] | \-\-no\-attach]
+                   [\-s | \-\-signoff]
+                   [\-\-signature=<signature> | \-\-no\-signature]
+                   [\-\-signature\-file=<file>]
+                   [\-n | \-\-numbered | \-N | \-\-no\-numbered]
+                   [\-\-start\-number <n>] [\-\-numbered\-files]
+                   [\-\-in\-reply\-to=<message id>] [\-\-suffix=\&.<sfx>]
+                   [\-\-ignore\-if\-in\-upstream] [\-\-always]
+                   [\-\-cover\-from\-description=<mode>]
+                   [\-\-rfc] [\-\-subject\-prefix=<subject prefix>]
+                   [(\-\-reroll\-count|\-v) <n>]
+                   [\-\-to=<email>] [\-\-cc=<email>]
+                   [\-\-[no\-]cover\-letter] [\-\-quiet]
+                   [\-\-[no\-]encode\-email\-headers]
+                   [\-\-no\-notes | \-\-notes[=<ref>]]
+                   [\-\-interdiff=<previous>]
+                   [\-\-range\-diff=<previous> [\-\-creation\-factor=<percent>]]
+                   [\-\-filename\-max\-length=<n>]
+                   [\-\-progress]
+                   [<common diff options>]
+                   [ <since> | <revision range> ]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+UNIXメールボックスに似た形式で、コミットごとに1つの「メッセージ」に「パッチ」を含む各非マージコミットを準備します。このコマンドの出力は、電子メールの送信や「git am」での使用に便利です。
+.sp
+コマンドによって生成される「メッセージ」は、以下の3つの部分で構成されます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+短いメタデータヘッダー。「file(1)」などのプログラムが、ファイルがこのコマンドからの出力であることを認識できるように「From <commit>」と、固定の日付スタンプ「Mon Sep 17 00:00:00 2001」で始まり、 作者ID(author identity)や作者の日付(author date)や変更のタイトル(title of the change)(コミットログメッセージの最初の段落から取得)が記入されたフィールドがあります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コミットログメッセージの2番目以降の段落。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コミットとその親の間の
+\fBdiff \-p \-\-stat\fR
+出力(linkgit: git\-diff[1] 参照)である「パッチ」。
+.RE
+.sp
+ログメッセージとパッチは、3本のダッシュ(\fB\-\-\-\fR)で区切られています。
+.sp
+操作するコミットを指定する方法は2つあります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+単一のコミット<since>は、現在のブランチの先端につながるコミットで、<since>が出力される履歴にないことを指定します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+一般的な <revision range> 評価式 (\fBgitrevisions\fR(7)
+の「SPECIFYING REVISIONS」セクション参照)は、指定された範囲でのコミットを意味します。
+.RE
+.sp
+単一の <commit> の場合、最初のルールが優先されます。2番目のルールを適用する、つまり、履歴の開始から <commit> までのすべてをフォーマットするには、 \fB\-\-root\fR オプションを使用します: \fBgit format\-patch \-\-root <commit>\fR とします。あなたが <commit> 自体のみをフォーマットしたい場合は、 \fBgit format\-patch \-1 <commit>\fR を使用して行うことができます。
+.sp
+デフォルトでは、各出力ファイルには1から順番に番号が付けられ、ファイル名としてコミットメッセージの最初の行(パス名の安全のためにもみもみ(massage)れます)が使用されます。 \fB\-\-numbered\-files\fR オプションを使用すると、出力ファイル名は数字のみになり、コミットの最初の行は追加されません。 `\-\-stdout`オプションが指定されていない限り、出力ファイル名が標準出力に出力されます。
+.sp
+\fB\-o\fR を指定すると、出力ファイルは <dir> に作成されます。それ以外の場合は、現在の作業ディレクトリに作成されます。デフォルトのパスは、\fBformat\&.outputDirectory\fR 構成オプションで設定できます。 \fB\-o\fR オプションは \fBformat\&.outputDirectory\fR よりも優先されます。 \fBformat\&.outputDirectory\fR が他の場所を指している場合でも、パッチを現在の作業ディレクトリに保存したいときは、\fB\-o\&.\fR を使用します。すべてのディレクトリコンポーネントが作成されます。
+.sp
+デフォルトでは、単一のパッチの件名は "[PATCH] " で、その後に、コミットメッセージから最初の空白行までの行が連結されます (\fBgit-commit\fR(1)の DISCUSSION セクション参照)。
+.sp
+複数のパッチが出力される場合、件名のプレフィックスは "[PATCH n/m] " になります。 1つのパッチに 1/1 を強制的に追加するには \fB\-n\fR を使用します。件名からパッチ番号を省略するには \fB\-N\fR を使用します。
+.sp
+\fB\-\-thread\fR を指定すると、 \fBgit\-format\-patch\fR は \fBIn\-Reply\-To\fR ヘッダーと \fBReferences\fR ヘッダーを生成し、2番目以降のパッチメールを最初のメールへの返信として表示します。 これにより、参照する \fBMessage\-Id\fR ヘッダーも生成されます。
+.SH "OPTIONS"
+.PP
+\fB\-p\fR, \fB\-\-no\-stat\fR
+.RS 4
+diffstatsなしでプレーンパッチを生成します。
+.RE
+.PP
+\fB\-U<n>\fR, \fB\-\-unified=<n>\fR
+.RS 4
+通常の3行ではなく、<n> 行の内容でdiffを生成します。
+.RE
+.PP
+\fB\-\-output=<file>\fR
+.RS 4
+stdout ではなく指定のファイルに出力します。
+.RE
+.PP
+\fB\-\-output\-indicator\-new=<char>\fR, \fB\-\-output\-indicator\-old=<char>\fR, \fB\-\-output\-indicator\-context=<char>\fR
+.RS 4
+生成されたパッチの新しい行、古い行、またはコンテキスト行を示すために使用される文字を指定します。 通常、それらはそれぞれ "+"、 "\-"、 " " です。
+.RE
+.PP
+\fB\-\-indent\-heuristic\fR
+.RS 4
+diffハンクの境界をずらす(shift)ヒューリスティックを有効にして、パッチを読みやすくします。 これがデフォルトです。
+.RE
+.PP
+\fB\-\-no\-indent\-heuristic\fR
+.RS 4
+インデントヒューリスティック(indent heuristic)を無効にします。
+.RE
+.PP
+\fB\-\-minimal\fR
+.RS 4
+より多くの時間を費やして、可能な限り最小のdiffが生成されるようにします。
+.RE
+.PP
+\fB\-\-patience\fR
+.RS 4
+"patience diff" アルゴリズムを使用してdiffを生成します。
+.RE
+.PP
+\fB\-\-histogram\fR
+.RS 4
+"histogram diff" アルゴリズムを使用してdiffを生成します。
+.RE
+.PP
+\fB\-\-anchored=<text>\fR
+.RS 4
+"anchored diff" アルゴリズムを使用してdiffを生成します。
+.sp
+このオプションは複数回指定できます。
+.sp
+行がソースと宛先の両方に存在し、1回だけ存在し、このテキストで始まる場合、このアルゴリズムは、その行が出力に削除または追加として表示されないようにします。内部で "patience diff" アルゴリズムを使用します。
+.RE
+.PP
+\fB\-\-diff\-algorithm={patience|minimal|histogram|myers}\fR
+.RS 4
+diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+.PP
+\fBdefault\fR, \fBmyers\fR
+.RS 4
+基本的な貪欲な差分アルゴリズム(greedy diff algorithm)。現在、これがデフォルトです。
+.RE
+.PP
+\fBminimal\fR
+.RS 4
+より多くの時間を費やして、可能な限り最小のdiffが生成されるようにします。
+.RE
+.PP
+\fBpatience\fR
+.RS 4
+パッチを生成する時に "patience diff" アルゴリズムを使います。
+.RE
+.PP
+\fBhistogram\fR
+.RS 4
+このアルゴリズムは、忍耐アルゴリズム(patience algorithm)を拡張して、「発生率の低い共通要素をサポート」(support low\-occurrence common elements)します。
+.RE
+.sp
+たとえば、 あなたが
+\fBdiff\&.algorithm\fR
+変数をデフォルト以外の値に設定した上で、それでもデフォルト値を使用する場合は、\fB\-\-diff\-algorithm=default\fR
+オプションを使用する必要があります。
+.RE
+.PP
+\fB\-\-stat[=<width>[,<name\-width>[,<count>]]]\fR
+.RS 4
+diffstatを生成します。 デフォルトでは、必要なだけのスペースがファイル名部分に使用され、残りはグラフ部分に使用されます。最大幅はデフォルトで端末幅、または端末に接続されていない場合は80桁であり、
+\fB<width>\fR
+で上書きできます。ファイル名部分の幅は、コンマの後に別の幅
+\fB<name\-width>\fR
+を指定することで制限できます。グラフ部分の幅は、
+\fB\-\-stat\-graph\-width=<width>\fR
+(統計グラフを生成するすべてのコマンドに影響します)を使用するか、
+\fBdiff\&.statGraphWidth=<width>\fR
+(
+\fBgit format\-patch\fR
+に影響しません)を設定することによって制限できます。3番目のパラメータ
+\fB<count>\fR
+を指定することにより、出力を最初の
+\fB<count>\fR
+行に制限し、それに
+\fB\&.\&.\&.\fR
+が続く形にできます。
+.sp
+これらのパラメータは、
+\fB\-\-stat\-width=<width>\fR
+と
+\fB\-\-stat\-name\-width=<name\-width>\fR
+と
+\fB\-\-stat\-count=<count>\fR
+を使用して個別に設定することもできます。
+.RE
+.PP
+\fB\-\-compact\-summary\fR
+.RS 4
+ファイルの作成や削除( "new" または "gone" 。オプションでシンボリックリンクの場合は "+l" )、diffstatのモード変更(実行可能ビットを追加または削除する場合は、それぞれ "+x" または "\-x" )など、拡張ヘッダー情報の要約を出力します。情報はファイル名部分とグラフ部分の間に置かれます。本機能は
+\fB\-\-stat\fR
+の機能を含んでいます。
+.RE
+.PP
+\fB\-\-numstat\fR
+.RS 4
+\fB\-\-stat\fR
+に似ていますが、プログラムで処理しやすい(machine friendly)ように、追加および削除された行数を10進表記とパス名で省略形なしで表示します。バイナリファイルの場合、
+\fB0 0\fR
+の代わりに2つの
+\fB\-\fR
+を出力します。
+.RE
+.PP
+\fB\-\-shortstat\fR
+.RS 4
+変更されたファイルの総数と、追加および削除された行の数を含む
+\fB\-\-stat\fR
+形式の最後の行のみを出力します。
+.RE
+.PP
+\fB\-X[<param1,param2,\&.\&.\&.>]\fR, \fB\-\-dirstat[=<param1,param2,\&.\&.\&.>]\fR
+.RS 4
+各サブディレクトリの相対的な変更量の分布を出力します。
+\fB\-\-dirstat\fR
+の動作は、パラメータのコンマ区切りリストを渡すことでカスタマイズできます。デフォルトは、
+\fBdiff\&.dirstat\fR
+構成変数によって制御されます(\fBgit-config\fR(1)
+参照)。以下のパラメータを使用できます:
+.PP
+\fBchanges\fR
+.RS 4
+ソースから削除された、または宛先に追加された行をカウントして、dirstat数を計算します。これは、ファイル内の純粋なコード移動の量を無視します。つまり、ファイル内の行の再配置は、他の変更ほどカウントされません。これは、パラメーターが指定されていない場合のデフォルトの動作です。
+.RE
+.PP
+\fBlines\fR
+.RS 4
+通常の行ベースのdiff分析を実行し、削除/追加された行数を合計して、dirstat数を計算します。 (バイナリファイルの場合、バイナリファイルには行の概念がないため、代わりに64バイトのチャンクをカウントします)。 これは
+\fBchanges\fR
+動作よりも高価な
+\fB\-\-dirstat\fR
+動作ですが、他の変更と同じようにファイル内の再配置された行をカウントします。結果の出力は、他の
+\fB\-\-*stat\fR
+オプションから得られるものと一致しています。
+.RE
+.PP
+\fBfiles\fR
+.RS 4
+変更されたファイルの数を数えて、dirstat数を計算します。変更された各ファイルは、dirstat分析で等しくカウントされます。これは、ファイルの内容をまったく調べる必要がないため、計算コストが最もかからない
+\fB\-\-dirstat\fR
+の動作です。
+.RE
+.PP
+\fBcumulative\fR
+.RS 4
+親ディレクトリの子ディレクトリの変更も同様にカウントします。
+\fBcumulative\fR(累積的) を使用する場合、報告されるパーセンテージの合計が100%を超える場合があることに注意してください。デフォルトの(非累積的な)動作は、\fBnoncumulative\fR
+パラメーターで指定できます。
+.RE
+.PP
+<limit>
+.RS 4
+整数パラメーターは、カットオフパーセント(デフォルトでは3%)を指定します。指定の割合より少ないディレクトリは、出力に表示されません。
+.RE
+.sp
+例: 変更されたファイルの総数の10%未満のディレクトリを無視し、親ディレクトリに子ディレクトリの数を累積しながら、変更されたファイルをカウント:
+\fB\-\-dirstat=files,10,cumulative\fR
+.RE
+.PP
+\fB\-\-cumulative\fR
+.RS 4
+\fB\-\-dirstat=cumulative\fR
+と同義語
+.RE
+.PP
+\fB\-\-dirstat\-by\-file[=<param1,param2>\&.\&.\&.]\fR
+.RS 4
+\fB\-\-dirstat=files,param1,param2\&.\&.\&.\fR
+と同義語
+.RE
+.PP
+\fB\-\-summary\fR
+.RS 4
+作成、名前変更、モード変更などの拡張ヘッダー情報の短い要約(condensed summary)を出力します。
+.RE
+.PP
+\fB\-\-no\-renames\fR
+.RS 4
+構成ファイルにデフォルトで指定されている場合でも、名前変更の検出をオフにします。
+.RE
+.PP
+\fB\-\-[no\-]rename\-empty\fR
+.RS 4
+名前変更ソースとして空のブロブを使用するかどうか。
+.RE
+.PP
+\fB\-\-full\-index\fR
+.RS 4
+パッチ形式の出力を生成するときは、最初の一握りの文字(first handful of characters)の代わりに、「インデックス」行にイメージ前およびイメージ後の完全ブロブオブジェクト名を表示します。
+.RE
+.PP
+\fB\-\-binary\fR
+.RS 4
+\fB\-\-full\-index\fR
+に加えて、
+\fBgit\-apply\fR
+で適用できるバイナリ差分を出力します。
+.RE
+.PP
+\fB\-\-abbrev[=<n>]\fR
+.RS 4
+完全な40バイトの16進オブジェクト名をdiff\-raw形式の出力とdiff\-treeヘッダー行に表示する代わりに、オブジェクトを一意に参照する、少なくとも <n> 桁の16進数の長さの最短のプレフィックスを表示します。diffパッチ出力形式では、
+\fB\-\-full\-index\fR
+が優先されます。つまり、
+\fB\-\-full\-index\fR
+が指定されている場合、
+\fB\-\-abbrev\fR
+に関係なく、完全なブロブ名が表示されます。デフォルト以外の桁数は、
+\fB\-\-abbrev=<n>\fR
+で指定できます。
+.RE
+.PP
+\fB\-B[<n>][/<m>]\fR, \fB\-\-break\-rewrites[=[<n>][/<m>]]\fR
+.RS 4
+完全な書き換えの変更を削除と作成のペアに分割します。これには以下の2つの目的があります:
+.sp
+これは、ファイルの完全な書き換えに相当する変更が、コンテキストとしてテキストで一致する非常に少数の行と混合された一連の削除と挿入としてではなく、古いものすべての単一の削除とそれに続く すべての新しいものを1回挿入し、数値
+\fBm\fR
+が \-B オプションのこの側面を制御します(デフォルトは60%)。
+\fB\-B/70%\fR
+は、Gitがそれを完全な書き換えと見なすために、元の30%未満が結果に残る必要があることを指定します(つまり、結果のパッチは、コンテキスト行と混合された一連の削除と挿入になります)。
+.sp
+\-M と一緒に使用すると、完全に書き換えられたファイルも名前変更のソースと見なされ(通常、 \-M は、消えたファイルのみを名前変更のソースと見なします)、数
+\fBn\fR
+が \-Bオプションのこの側面を制御します(デフォルトは50%)。
+\fB\-B20%\fR
+は、ファイルのサイズの20%以上と比較して、追加および削除を伴う変更が、別のファイルへの名前変更の可能なソースとして取得される資格があることを指定します。
+.RE
+.PP
+\fB\-M[<n>]\fR, \fB\-\-find\-renames[=<n>]\fR
+.RS 4
+名前の変更(renames)を検知する。
+\fBn\fR
+が指定されている場合、それは類似性インデックスのしきい値です (つまり、ファイルのサイズと比較した追加/削除の量)。 たとえば、
+\fB\-M90%\fR
+は、ファイルの90%以上が変更されていない場合、 Gitが削除/追加のペアを名前変更と見なす必要があることを意味します。
+\fB%\fR
+記号がない場合、数値は小数として読み取られ、その前に小数点が付きます。 つまり、
+\fB\-M5\fR
+は0\&.5になるため、\fB\-M50%\fR
+と同じになります。 同様に、
+\fB\-M05\fR
+は
+\fB\-M5%\fR
+と同じです。 検出を正確な名前変更に制限するには、
+\fB\-M100%\fR
+を使用します。 デフォルトの類似性インデックスは50%です。
+.RE
+.PP
+\fB\-C[<n>]\fR, \fB\-\-find\-copies[=<n>]\fR
+.RS 4
+名前と同様コピーを検出します。
+\fB\-\-find\-copies\-harder\fR
+\fBも参照してください。 `n\fR
+を指定すると、
+\fB\-M<n>\fR
+と同じ意味になります。
+.RE
+.PP
+\fB\-\-find\-copies\-harder\fR
+.RS 4
+パフォーマンス上の理由から、デフォルトでは、
+\fB\-C\fR
+オプションは、コピーの元のファイルが同じ変更組(changeset)で変更された場合にのみコピーを検索します。このフラグにより、コマンドは変更されていないファイルをコピー元の候補として検査します。これは大規模なプロジェクトでは非常にコストのかかる操作であるため、注意して使用してください。 複数の
+\fB\-C\fR
+オプションを指定しても同じ効果があります。
+.RE
+.PP
+\fB\-D\fR, \fB\-\-irreversible\-delete\fR
+.RS 4
+削除するプレイメージ(preimage)を省略します。つまり、ヘッダーのみを出力し、プレイメージと
+\fB/dev/null\fR
+の差分は出力しません。結果のパッチは、
+\fBpatch\fR
+または
+\fBgit apply\fR
+で適用されることを意図していません。これは、変更後にテキストを確認することに集中したい人のためだけのものです。さらに、出力には明らかに、そのようなパッチを手動でも逆に適用するのに十分な情報が不足しているため、オプションの名前が付けられています。
+.sp
+\fB\-B\fR
+と併用する場合は、削除/作成ペアの削除部分のプリイメージ(preimage)も省略してください。
+.RE
+.PP
+\fB\-l<num>\fR
+.RS 4
+\fB\-M\fR
+および
+\fB\-C\fR
+オプションには、名前変更/コピーのサブセットを安価に検出できるいくつかの準備手順が含まれ、その後に、残りのすべてのペアになっていない宛先をすべての関連ソースと比較する徹底的なフォールバック部分が続きます。(名前の変更の場合、残りのペアになっていないソースのみが関係します。コピーの場合、すべての元のソースが関係します)。Nのソースと宛先の場合、この徹底的なチェックのコストは O(N^2) です。このオプションは、関係するソース/宛先ファイルの数が指定された数を超えた場合に、名前変更/コピー検出の完全な部分が実行されないようにします。デフォルトは diff\&.renameLimit です。 値0は無制限として扱われることに注意してください。
+.RE
+.PP
+\fB\-O<orderfile>\fR
+.RS 4
+ファイルが出力に表示される順序を制御します。これは
+\fBdiff\&.orderFile\fR
+構成変数をオーバーライドします(\fBgit-config\fR(1)
+参照)。
+\fBdiff\&.orderFile\fR
+をキャンセルするには、
+\fB\-O/dev/null\fR
+を使用します。
+.sp
+出力順序は、 <orderfile> 内のglobパターンの順序によって決定されます。最初のパターンに一致するパス名を持つすべてのファイルが最初に出力され、2番目のパターンに一致する(ただし最初のパターンには一致しない)パス名を持つすべてのファイルが次に出力されます。パス名がどのパターンとも一致しないすべてのファイルは、ファイルの最後に暗黙のすべて一致パターンがあるかのように、最後に出力されます。複数のパス名のランクが同じである場合(同じパターンに一致するが、以前のパターンには一致しない)、相互の出力順序は通常の順序です。
+.sp
+<orderfile> は以下のとおりパースされます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+空白行は無視されるため、読みやすくするための区切りとして使用できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ハッシュ ("\fB#\fR") で始まる行は無視されるため、コメントに使用できます。 パターンがハッシュで始まる場合は、パターンの先頭にバックスラッシュ(訳注:日本では環境により円記号)("\fB\e\fR") を追加します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+他の各行には、単一のパターンが含まれています。
+.RE
+.sp
+パターンは、 FNM_PATHNAME フラグなしで fnmatch(3) に使用されるパターンと同じ構文とセマンティクスを持ちますが、最終的なパス名コンポーネントをいくつも削除するとパターンと一致する場合、パス名もパターンと一致する点が異なります。 たとえば、パターン "\fBfoo*bar\fR" は、 "\fBfooasdfbar\fR" および "\fBfoo/bar/baz/asdf\fR" と一致しますが、 "\fBfoobarx\fR" とは一致しません。
+.RE
+.PP
+\fB\-\-skip\-to=<file>\fR, \fB\-\-rotate\-to=<file>\fR
+.RS 4
+名前付き <file> の前のファイルを出力から破棄するか(スキップして)、出力の最後に移動させます(ローテーションさせます)。 これらは主に
+\fBgit difftool\fR
+コマンドを使用するために考案されたものであり、それ以外の場合はあまり役に立たない可能性があります。
+.RE
+.PP
+\fB\-\-relative[=<path>]\fR, \fB\-\-no\-relative\fR
+.RS 4
+プロジェクトのサブディレクトリから実行する場合、このオプションを使用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示するように指示できます。サブディレクトリ(ベアリポジトリなど)にいない場合は、引数として <path> を指定することで、出力を作成するサブディレクトリに名前を付けることができます。
+\fB\-\-no\-relative`は、 `diff\&.relative\fR
+設定オプションと以前の
+\fB\-\-relative\fR
+の両方を打ち消すために使用できます。
+.RE
+.PP
+\fB\-a\fR, \fB\-\-text\fR
+.RS 4
+すべてのファイルをテキストとして扱います。
+.RE
+.PP
+\fB\-\-ignore\-cr\-at\-eol\fR
+.RS 4
+比較を行うときは、行末のキャリッジリターン(carriage\-return)を無視します。
+.RE
+.PP
+\fB\-\-ignore\-space\-at\-eol\fR
+.RS 4
+行末(EOL)での空白(whitespace)の変更を無視します。
+.RE
+.PP
+\fB\-b\fR, \fB\-\-ignore\-space\-change\fR
+.RS 4
+空白(whitespace)の数の変更は無視してください。これは、行末の空白(whitespace)を無視し、1つ以上の空白文字(whitespace characters)の他のすべてのシーケンスを同等と見なします。
+.RE
+.PP
+\fB\-w\fR, \fB\-\-ignore\-all\-space\fR
+.RS 4
+行を比較するときは空白を無視します。 これにより、一方の行に空白があり、もう一方の行に空白がない場合でも、違いは無視されます。
+.RE
+.PP
+\fB\-\-ignore\-blank\-lines\fR
+.RS 4
+全て空白の行の変更は無視します。
+.RE
+.PP
+\fB\-I<regex>\fR, \fB\-\-ignore\-matching\-lines=<regex>\fR
+.RS 4
+すべての行が <regex> にマッチする変更を無視します。このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-inter\-hunk\-context=<lines>\fR
+.RS 4
+指定された行数までの差分ハンク間のコンテキストを表示し、それによって互いに近いハンクを融合します。デフォルトは
+\fBdiff\&.interHunkContext\fR
+で、設定オプションが設定されていない場合は0です。
+.RE
+.PP
+\fB\-W\fR, \fB\-\-function\-context\fR
+.RS 4
+関数全体を各変更のコンテキスト行として表示します。関数名は、
+\fBgit diff\fR
+がパッチハンクヘッダーを処理するのと同じ方法で決定されます(\fBgitattributes\fR(5)
+の「Defining a custom hunk\-header」参照)。
+.RE
+.PP
+\fB\-\-ext\-diff\fR
+.RS 4
+外部diffヘルパーの実行を許可します。
+\fBgitattributes\fR(5)
+を使用して外部diffドライバーを設定する場合は、
+\fBgit-log\fR(1)
+およびその仲間と一緒にこのオプションを使用する必要があります。
+.RE
+.PP
+\fB\-\-no\-ext\-diff\fR
+.RS 4
+外部diffドライバーを禁止します。
+.RE
+.PP
+\fB\-\-textconv\fR, \fB\-\-no\-textconv\fR
+.RS 4
+バイナリファイルを比較するときに、外部テキスト変換フィルターの実行を許可(または禁止)します。 詳細については、
+\fBgitattributes\fR(5)
+を参照してください。textconvフィルターは通常、一方向の変換であるため、結果のdiffは人間の消費に適していますが、適用(apply)することはできません。このため、textconvフィルターは、
+\fBgit-diff\fR(1)
+および
+\fBgit-log\fR(1)
+に対してのみデフォルトで有効になりますが、
+\fBgit-format-patch\fR(1)
+またはdiff配管コマンドに対しては有効になりません。
+.RE
+.PP
+\fB\-\-ignore\-submodules[=<when>]\fR
+.RS 4
+diff生成のサブモジュールへの変更を無視します。 <when> は、 none・untracked・dirty・allのいずれかになります。これがデフォルトです。noneを使用すると、追跡されていないファイルまたは変更されたファイルが含まれている場合、またはそのHEADがスーパープロジェクトに記録されているコミットと異なる場合にサブモジュールが変更されたと見なされ、
+\fBgit-config\fR(1)
+または
+\fBgitmodules\fR(5)
+の ignoreオプションの設定をオーバーライドするために使用できます。untrackedが使用されている場合、サブモジュールには追跡されていないコンテンツのみが含まれている場合、サブモジュールはダーティとは見なされません(ただし、変更されたコンテンツはスキャンされます)。「dirty」を使用すると、サブモジュールの作業ツリーへのすべての変更が無視され、スーパープロジェクトに格納されているコミットへの変更のみが表示されます(これは1\&.7\&.0までの動作でした)。「all」を使用すると、サブモジュールへのすべての変更が非表示になります。
+.RE
+.PP
+\fB\-\-src\-prefix=<prefix>\fR
+.RS 4
+"a/" の代わりに、与えられたソースプレフィックス(source prefix)を表示します。
+.RE
+.PP
+\fB\-\-dst\-prefix=<prefix>\fR
+.RS 4
+"b/" の代わりに、指定された宛先プレフィックス(destination prefix)を表示します。
+.RE
+.PP
+\fB\-\-no\-prefix\fR
+.RS 4
+送信元(source)または宛先(destination)のプレフィックスを表示しません。
+.RE
+.PP
+\fB\-\-line\-prefix=<prefix>\fR
+.RS 4
+出力のすべての行に追加のプレフィックスを付加します。
+.RE
+.PP
+\fB\-\-ita\-invisible\-in\-index\fR
+.RS 4
+デフォルトでは、 "git add \-N" によって追加されたエントリは、 "git diff" に既存の空のファイルとして表示され、 "git diff \-\-cached" に新しいファイルとして表示されます。このオプションを使用すると、エントリは "git diff" では新しいファイルとして表示され、 "git diff \-\-cached" では存在しません。このオプションは、
+\fB\-\-ita\-visible\-in\-index\fR
+で元に戻すことができます。どちらのオプションも実験的なものであり、将来削除される可能性があります。
+.RE
+.sp
+これらの一般的なオプションの詳細については、 \fBgitdiffcore\fR(7) も参照してください。
+.PP
+\fB\-<n>\fR
+.RS 4
+最上位から見て <n> 個目のコミットからパッチを準備します。
+.RE
+.PP
+\fB\-o <dir>\fR, \fB\-\-output\-directory <dir>\fR
+.RS 4
+現在の作業ディレクトリの代わりに、 <dir> を使用して結果のファイルを保存します。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-numbered\fR
+.RS 4
+単一のパッチでも、
+\fB[PATCH n/m]\fR
+形式で名前を出力します。
+.RE
+.PP
+\fB\-N\fR, \fB\-\-no\-numbered\fR
+.RS 4
+\fB[PATCH]\fR
+形式 で名前を出力します。
+.RE
+.PP
+\fB\-\-start\-number <n>\fR
+.RS 4
+パッチの番号付けを1ではなく<n>から開始します。
+.RE
+.PP
+\fB\-\-numbered\-files\fR
+.RS 4
+出力ファイル名群は、コミットのデフォルトの最初の行が追加されていない単純な一連番号になります。
+.RE
+.PP
+\fB\-k\fR, \fB\-\-keep\-subject\fR
+.RS 4
+コミットログメッセージの最初の行から
+\fB[PATCH]\fR
+を削除/追加 しないでください。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-signoff\fR
+.RS 4
+あなた自身ののコミッターIDを使用して、コミットメッセージに
+\fBSigned\-off\-by\fR
+トレーラーを追加します。詳細については、
+\fBgit-commit\fR(1)の signoff オフオプションを参照してください。
+.RE
+.PP
+\fB\-\-stdout\fR
+.RS 4
+コミットごとにファイルを作成するのではなく、すべてのコミットをmbox形式で標準出力に出力します。
+.RE
+.PP
+\fB\-\-attach[=<boundary>]\fR
+.RS 4
+マルチパート/混合の添付(multipart/mixed attachment)を作成します。最初の部分はコミットメッセージで、2番目の部分はパッチ自体です。
+\fBContent\-Disposition: attachment\fR
+を使用します。
+.RE
+.PP
+\fB\-\-no\-attach\fR
+.RS 4
+添付ファイルの作成を無効にして、構成設定を上書きします。
+.RE
+.PP
+\fB\-\-inline[=<boundary>]\fR
+.RS 4
+マルチパート/混合の添付(multipart/mixed attachment)を作成します。最初の部分はコミットメッセージで、2番目の部分はパッチ自体です。
+\fBContent\-Disposition: inline\fR
+を使用します。
+.RE
+.PP
+\fB\-\-thread[=<style>]\fR, \fB\-\-no\-thread\fR
+.RS 4
+\fBIn\-Reply\-To\fR
+ヘッダーと
+\fBReferences\fR
+ヘッダーの追加を制御して、2番目以降のメールを最初のメールへの返信として表示します。 また、参照する
+\fBMessage\-Id\fR
+ヘッダーの生成を制御します。
+.sp
+オプションの <style> 引数は、
+\fBshallow\fR
+または
+\fBdeep\fR
+のいずれかです。 「shallow」スレッドは、すべてのメールをシリーズの先頭に返信します。先頭は、送付状と
+\fB\-\-in\-reply\-to\fR
+と最初のパッチメールからこの順序で選択されます。「deep」スレッドは、すべてのメールを前のメールへの返信にします。
+.sp
+\fBformat\&.thread\fR
+構成が設定されていない限り、デフォルトは
+\fB\-\-no\-thread\fR
+です。
+\fB\-\-thread\fR
+がスタイルなしで指定された場合、デフォルトで
+\fBformat\&.thread\fR
+で指定されたスタイル、でなければ、 スタイルは
+\fBshallow\fR
+になります。
+.sp
+\fBgit send\-email\fR
+のデフォルトが、電子メール自体をスレッド化することであることに注意してください。
+\fBgit format\-patch\fR
+でスレッド化を処理する場合は、
+\fBgit send\-email\fR
+でスレッド化が無効になっていることを確認する必要があります。
+.RE
+.PP
+\fB\-\-in\-reply\-to=<message id>\fR
+.RS 4
+最初のメール(または
+\fB\-\-no\-thread\fR
+を含むすべてのメール)を、指定の <message id> への応答として表示します。これにより、スレッドが壊れて新しいパッチシリーズが提供されるのを防ぎます。
+.RE
+.PP
+\fB\-\-ignore\-if\-in\-upstream\fR
+.RS 4
+\fB<until>\&.\&.<since>\fR
+のコミットに一致するパッチを含めないでください。 これにより、<since>から到達可能で、<until>からは到達できないすべてのパッチが調べられ、生成されているパッチと比較されます。一致するパッチはすべて無視されます。
+.RE
+.PP
+\fB\-\-always\fR
+.RS 4
+デフォルトでは省略されている、変更を導入しないコミットのパッチを含めます。
+.RE
+.PP
+\fB\-\-cover\-from\-description=<mode>\fR
+.RS 4
+ブランチの説明を使用して、送付状のどの部分に自動的に入力されるかを制御します。
+.sp
+\fB<mode>\fR
+が
+\fBmessage\fR
+または
+\fBdefault\fR
+の場合、送付状の件名にプレースホルダーテキストが入力されます。送付状の本文には、ブランチの説明が入力されます。 これは、構成またはコマンドラインオプションが指定されていない場合のデフォルトモードです。
+.sp
+\fB<mode>\fR
+が
+\fBsubject\fR
+の場合、ブランチの説明の最初の段落を送付状の件名に入力します。ブランチの説明の残りの部分は、送付状の本文に入力されます。
+.sp
+\fB<mode>\fR
+が
+\fBauto\fR
+の場合、 ブランチの説明の最初の段落 > 100バイト なら、モードは
+\fBmessage\fR
+になり、そうでない場合は
+\fBsubject\fR
+が使用されます。
+.sp
+\fB<mode>\fR
+が
+\fBnone\fR
+の場合、送付状の件名と本文の両方にプレースホルダーテキストが入力されます。
+.RE
+.PP
+\fB\-\-subject\-prefix=<subject prefix>\fR
+.RS 4
+件名の標準の
+\fB[PATCH]\fR
+プレフィックスの代わりに、
+\fB[<subjectprefix>]\fR
+を使用してください。これにより、パッチシリーズの有用な命名が可能になり、
+\fB\-\-numbered\fR
+オプションと組み合わせることができます。
+.RE
+.PP
+\fB\-\-filename\-max\-length=<n>\fR
+.RS 4
+標準の64バイトの代わりに、生成された出力ファイル名を約
+\fB<n>\fR
+バイトに切り捨て(短すぎると、値が適切な長さに黙って引き上げられます)。 デフォルトは
+\fBformat\&.filenameMaxLength\fR
+構成変数の値、または構成されていない場合は64です。
+.RE
+.PP
+\fB\-\-rfc\fR
+.RS 4
+\fB\-\-subject\-prefix="RFC PATCH"\fR
+のエイリアス。 RFCは「Request For Comments」を意味します。アプリケーションではなく、議論のために実験的なパッチを送信するときにこれを使用します。
+.RE
+.PP
+\fB\-v <n>\fR, \fB\-\-reroll\-count=<n>\fR
+.RS 4
+そのシリーズをトピックの <n> 番目の反復としてマークします。出力ファイル名には
+\fBv<n>\fR
+が付加され、件名接頭辞(デフォルトでは
+\fBPATCH\fR
+ですが、
+\fB\-\-subject\-prefix\fR
+オプションで構成可能)には
+\fBv<n>\fR
+が付加されます。例えば、
+\fB\-\-reroll\-count=4\fR
+は、
+\fBSubject: [PATCH v4 1/20] Add makefile\fR
+を含む
+\fBv4\-0001\-add\-makefile\&.patch\fR
+ファイルを生成します。\fB<n>\fR
+は整数である必要はありませんが（たとえば、
+\fB\-\-reroll\-count=4\&.4\fR
+とか
+\fB\-\-reroll\-count= 4rev2\fR
+とかでもOK)、このようなreroll\-countを使用することの欠点は、以前のバージョンとの range\-diff/interdiff で、新しい相互作用(new interation)がどのバージョンと比較されるかを正確に表示できなくなります。
+.RE
+.PP
+\fB\-\-to=<email>\fR
+.RS 4
+メールヘッダーに
+\fBTo:\fR
+ヘッダーを追加します。 これは、任意の構成済みのヘッダー群に追加されるものであり、複数回使用される場合があります。 否定形式の
+\fB\-\-no\-to\fR
+は、これまでに追加されたすべての
+\fBTo:\fR
+ヘッダーを(構成またはコマンドラインから)破棄します。
+.RE
+.PP
+\fB\-\-cc=<email>\fR
+.RS 4
+メールヘッダーに
+\fBCc:\fR
+ヘッダーを追加します。 これは、任意の構成済みのヘッダー群に追加されるものであり、複数回使用される場合があります。 否定形式の
+\fB\-\-no\-cc\fR
+は、これまでに追加されたすべての
+\fBCc:\fR
+ヘッダーを(構成またはコマンドラインから)破棄します。
+.RE
+.PP
+\fB\-\-from\fR, \fB\-\-from=<ident>\fR
+.RS 4
+各コミットメールの
+\fBFrom:\fR
+ヘッダーで <ident> を使用します。 コミットの作成者IDが、提供された <ident> とテキストで同一でない場合は、元の作成者とのメッセージの本文に
+\fBFrom:\fR
+ヘッダーを配置します。 <ident> が指定されていない場合は、コミッターIDを使用します。
+.sp
+注意: このオプションは、実際にメールを送信していて、自分を送信者として識別したいが、元の作成者を保持したい場合にのみ役立ちます(そして、
+\fBgit am\fR
+は本文のヘッダーを正しく取得します)。 また、
+\fBgit send\-email\fR
+はすでにこの変換を処理するようになっているため、結果を
+\fBgit send\-email\fR
+にフィードする場合は、このオプションを使用しないでください。
+.RE
+.PP
+\fB\-\-[no\-]force\-in\-body\-from\fR
+.RS 4
+\fB\-\-from\fR
+オプションで電子メールの送信者を指定すると、デフォルトでは、作者と送信者が異なる場合、コミットの実際の作者を識別するための本文内の
+\fBFrom:\fR
+がコミット・ログ・メッセージの先頭に追加されます。 このオプションを使用すると、送信者と作者が同じ名前とアドレスを持っている場合でも、本文内の
+\fBFrom:\fR
+が追加されます。これは、メーリング・リスト・ソフトウェアが送信者の身元を解読する場合に役立ちます。 デフォルトは
+\fBformat\&.forceInBodyFrom\fR
+構成変数の値です。
+.RE
+.PP
+\fB\-\-add\-header=<header>\fR
+.RS 4
+電子メールヘッダーに任意のヘッダーを追加します。これは、構成済みのヘッダーに追加されるものであり、複数回使用される場合があります。 たとえば、
+\fB\-\-add\-header="Organization: git\-foo"\fR
+です。 否定形式の
+\fB\-\-no\-add\-header\fR
+は、構成またはコマンドラインからこれまでに追加された「すべての」(\fBTo:\fR
+と
+\fBCc:\fR
+と カスタム)ヘッダーを破棄します。
+.RE
+.PP
+\fB\-\-[no\-]cover\-letter\fR
+.RS 4
+パッチに加えて、ブランチの説明、ショートログ、および全体的なdiffstatを含むカバーレターファイルを生成します。あなたは、送信する前に、ファイルに説明を入力できます。
+.RE
+.PP
+\fB\-\-encode\-email\-headers\fR, \fB\-\-no\-encode\-email\-headers\fR
+.RS 4
+ヘッダーをそのまま(verbatim)出力する代わりに、非ASCII文字を含む電子メールヘッダーを
+\fBQ\-encoding\fR
+(RFC 2047で説明)でエンコードします。 デフォルトは、
+\fBformat\&.encodeEmailHeaders\fR
+構成変数の値です。
+.RE
+.PP
+\fB\-\-interdiff=<previous>\fR
+.RS 4
+レビュアーの補助として、カバーレターに、あるいは1パッチシリーズの単独パッチの解説として、パッチシリーズの前のバージョンと現在フォーマットされているシリーズとの違いを示す interdiff を挿入してください。
+\fBprevious\fR
+は、フォーマット中のシリーズと共通のベースを持つ、前のシリーズの先端を示す単一のリビジョンです(例えば、
+\fBgit format\-patch \-\-cover\-letter \-\-interdiff=feature/v1 \-3 feature/v2\fR
+)。
+.RE
+.PP
+\fB\-\-range\-diff=<previous>\fR
+.RS 4
+レビューの補助として、カバーレターに range\-diff (\fBgit-range-diff\fR(1)
+参照) を挿入するか、1パッチシリーズの単独パッチの解説として、そのパッチシリーズの前のバージョンと現在フォーマットされているシリーズとの相違を示します。 前バージョンは、フォーマットされるシリーズと共通のベースがある場合、前のシリーズの先端を示す単一のリビジョン(例えば
+\fBgit format\-patch \-\-cover\-letter \-\-range\-diff=feature/v1 \-3 feature/v2\fR
+)、またはシリーズの二つのバージョンが分離している場合、リビジョンレンジ(例えば
+\fBgit format\-patch \-\-cover\-letter \-\-range\-diff=feature/v1~3\&.\&.feature/v1 \-3 feature/v2\fR
+)が使用されます。
+.sp
+注意: コマンドに渡される diff オプションは、
+\fBformat\-patch\fR
+の基本製造物の生成方法に影響し、カバーレターの実体を生成するために使用される基礎となる
+\fBrange\-diff\fR
+機構には渡されないことに注意してください(これは将来変更される可能性があります)。
+.RE
+.PP
+\fB\-\-creation\-factor=<percent>\fR
+.RS 4
+\fB\-\-range\-diff\fR
+とともに使用すると、 作成/削除 のコストファッジ係数(cost fudge factor)を調整することにより、以前の一連のパッチと現在の一連のパッチの間でコミットを一致させるヒューリスティックを微調整します。 詳細については、
+\fBgit-range-diff\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-notes[=<ref>]\fR, \fB\-\-no\-notes\fR
+.RS 4
+3つの破線(\fB\-\-\-\fR)行の後に、コミットのnotes (linkgit: git\-notes[1] を参照)を追加します。
+.sp
+この場合、コミットログメッセージに属さないコミットの説明を書いて、パッチを送信する際に添付することが期待されます。これらの説明は、単に
+\fBformat\-patch\fR
+を実行した後で送信する前に書くこともできますが、Git notes として残しておくと、パッチシリーズのバージョン間でそれらを維持することができます(ただし、この作業フローを使用するには
+\fBgit-notes\fR(1)
+の
+\fBnotes\&.rewrite\fR
+設定オプションに関するdiscussionを参照してください)。
+.sp
+\fBformat\&.notes\fR
+構成が設定されていない限り、デフォルトは
+\fB\-\-no\-notes\fR
+です。
+.RE
+.PP
+\fB\-\-[no\-]signature=<signature>\fR
+.RS 4
+生成された各メッセージに署名を追加します。 RFC 3676に従い、署名は `\-\- ` が付いた行で本文から区切られています。署名オプションを省略した場合、署名はデフォルトでGitバージョン番号になります。
+.RE
+.PP
+\fB\-\-signature\-file=<file>\fR
+.RS 4
+署名がファイルから読み取られることを除いて、
+\fB\-\-signature\fR
+と同じように機能します。
+.RE
+.PP
+\fB\-\-suffix=\&.<sfx>\fR
+.RS 4
+生成されたファイル名のサフィックスとして
+\fB\&.patch\fR
+を使用する代わりに、指定されたサフィックスを使用します。 一般的な代替手段は
+\fB\-\-suffix=\&.txt\fR
+です。 これを空のままにすると、
+\fB\&.patch\fR
+サフィックスが削除されます。
+.sp
+注意: 先行する文字はドット(\fB\&.\fR)である必要はないことに注意してください。 たとえば、
+\fB\-\-suffix=\-patch\fR
+を使用して
+\fB0001\-description\-of\-my\-change\-patch\fR
+とかすることができます。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+生成されたファイルの名前を標準出力に出力しないでください。
+.RE
+.PP
+\fB\-\-no\-binary\fR
+.RS 4
+バイナリファイルの変更内容を出力せず、代わりにそれらのファイルが変更されたという通知を表示します。このオプションを使用して生成されたパッチは適切に適用できませんが、コードレビューには役立ちます。
+.RE
+.PP
+\fB\-\-zero\-commit\fR
+.RS 4
+コミットのハッシュの代わりに、各パッチのFromヘッダーにすべてゼロのハッシュを出力します。
+.RE
+.PP
+\fB\-\-[no\-]base[=<commit>]\fR
+.RS 4
+ベースツリー情報を記録して、パッチシリーズが適用される状態を特定します。 詳細については、下記「BASE TREE INFORMATION」セクションを参照してください。 <commit> が
+\fBauto\fR
+の場合、ベースコミットが自動的に選択されます。
+\fB\-\-no\-base\fR
+オプションは、
+\fBformat\&.useAutoBase\fR
+構成をオーバーライドします。
+.RE
+.PP
+\fB\-\-root\fR
+.RS 4
+単一のコミットであっても、リビジョン引数を <revision range> として扱います(通常は <since> として扱われます)。 指定された範囲に含まれるルートコミットは、このフラグとは関係なく、常に作成パッチとしてフォーマットされることに注意してください。
+.RE
+.PP
+\fB\-\-progress\fR
+.RS 4
+パッチが生成されるときに、stderrへ進捗レポートを表示します。
+.RE
+.SH "CONFIGURATION"
+.sp
+あなたは、各メッセージに追加するメールヘッダー行の指定、件名のプレフィックスとファイルのサフィックスのデフォルト、複数のパッチを出力する場合のパッチ番号の指定、 \fBTo:\fR または \fBCc:\fR ヘッダーの追加、添付ファイルの設定、パッチ出力ディレクトリの変更、設定変数によるパッチのサインオフ、が可能です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[format]
+        headers = "Organization: git\-foo\en"
+        subjectPrefix = CHANGE
+        suffix = \&.txt
+        numbered = auto
+        to = <email>
+        cc = <email>
+        attach [ = mime\-boundary\-string ]
+        signOff = true
+        outputDirectory = <directory>
+        coverLetter = auto
+        coverFromDescription = auto
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "DISCUSSION"
+.sp
+\fBgit format\-patch\fR によって生成されたパッチはUNIXメールボックス形式であり、ファイルが実際のメールボックスではなくformat\-patchから出力されることを示す固定の「魔法の」タイムスタンプ(fixed "magic" time stamp)が付いています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+From 8f72bad1baf19a53459661343e21d6491c3908d3 Mon Sep 17 00:00:00 2001
+From: Tony Luck <tony\&.luck@intel\&.com>
+Date: Tue, 13 Jul 2010 11:42:54 \-0700
+Subject: [PATCH] =?UTF\-8?q?[IA64]=20Put=20ia64=20config=20files=20on=20the=20?=
+ =?UTF\-8?q?Uwe=20Kleine\-K=C3=B6nig=20diet?=
+MIME\-Version: 1\&.0
+Content\-Type: text/plain; charset=UTF\-8
+Content\-Transfer\-Encoding: 8bit
+
+arch/arm config files were slimmed down using a python script
+(See commit c2330e286f68f1c408b4aa6515ba49d57f05beae comment)
+
+Do the same for ia64 so we can have sleek & trim looking
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+通常、MUAの下書きフォルダに配置され、タイムリーなコメントを追加するように編集されます。このコメントは、3つのダッシュ(\fB\-\-\-\fR)の後に変更ログに記録されないように編集され、メッセージとして送信されます。この例では、本文は \fBarch/arm config files were\&.\&.\&.\fR です。受信側では、読者は興味あるパッチをUNIXメールボックスに保存し、 \fBgit-am\fR(1) を使用してそれらを適用できます。
+.sp
+パッチが進行中の議論の一部である場合、 \fBgit format\-patch\fR によって生成されたパッチは、\fBgit am \-\-scissors\fR 機能を利用するように調整できます。議論への応答の後に、\fB\-\- >8 \-\-\fR （訳注: \fB>8\fR は、ハサミを横にしたアスキーアート(?))のみで構成される行があり、その後に不要なヘッダーフィールドが削除されたパッチが続きます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\&.\&.\&.
+> So we should do such\-and\-such\&.
+
+Makes sense to me\&.  How about this patch?
+
+\-\- >8 \-\-
+Subject: [IA64] Put ia64 config files on the Uwe Kleine\-K\(:onig diet
+
+arch/arm config files were slimmed down using a python script
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この方法でパッチを送信する場合、ほとんどの場合、独自のパッチを送信するため、 \fBFrom $SHA1 $magic_timestamp\fR マーカーに加えて、パッチファイルから \fBFrom:\fR と \fBDate:\fR 行を省略する必要があります。パッチのタイトルは、パッチが、応答するディスカッションの主題とは異なる可能性が高いため、上記の例のように、 \fBSubject:\fR 行を保持する必要がある可能性があります。
+.SS "パッチの破損のチェック"
+.sp
+多くのメーラーは、適切に設定されていないと空白(whitespace)を破損します。破損の一般的な2つのタイプは以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+どの空白(whitespace)もない空のコンテキスト行。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+先頭に1つの余分な空白(whitespace)がある空でないコンテキスト行。
+.RE
+.sp
+あなたのMUAが正しく設定されているかどうかをテストする方法のひとつは以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+リストとメンテナのアドレスを含まない To: 行 と Cc: 行 を除き、全く同じ方法で、パッチを自分自身に送信します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+そのパッチをUNIXメールボックス形式のファイルに保存します。それを a\&.patch と呼ぶことにしましょう。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+それをapplyします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch <project> master:test\-apply
+$ git switch test\-apply
+$ git restore \-\-source=HEAD \-\-staged \-\-worktree :/
+$ git am a\&.patch
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+これが正しく適用されない場合、さまざまな理由が考えられます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パッチ自体はきれいに適用されません。それは悪いことですが、しかしあなたのMUAとはあまり関係がありません。この場合、パッチを再生成する前に、
+\fBgit-rebase\fR(1)
+を使用してパッチをリベースすることをお勧めします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+MUAがあなたのパッチ破損させました。
+\fBam\fR
+は、パッチが適用されないと文句を言います。 \&.git/rebase\-apply/ サブディレクトリを調べて、
+\fBpatch\fR
+ファイルに含まれているものを確認し、上記の一般的な破損パターンを確認します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+そのとき、
+\fBinfo\fR
+ファイルと
+\fBfinal\-commit\fR
+ファイルも確認してください。
+\fBfinal\-commit\fR
+にあるものが、コミットログメッセージに表示したいものと正確に一致しない場合、パッチを適用するときに受信者がログメッセージを手作業で編集してしまう可能性が非常に高くなります。 パッチの電子メールの "Hi, this is my first patch\&.\en" のようなものは、コミットメッセージの終わりを示す3本の破線(\fB\-\-\-\fR)の後に来るはずです。
+.RE
+.SH "MUA\-SPECIFIC HINTS"
+.sp
+さまざまなメーラーを使用してパッチをインラインで正常に送信する方法に関するヒントをいくつか。
+.SS "GMail"
+.sp
+Gmailには、Webインターフェイスでの行の折り返しをオフにする方法がないため、送信するすべての電子メールが破損します。 ただし、 \fBgit send\-email\fR を使用して、GMail SMTPサーバーを介してパッチを送信するか、任意のIMAPメールクライアントを使用してgoogle IMAPサーバーに接続し、それを介してメールを転送することができます。
+.sp
+\fBgit send\-email\fR を使用して GMail SMTP サーバーを介してパッチを送信するためのヒントについては、 \fBgit-send-email\fR(1) のEXAMPLEセクションを参照してください。
+.sp
+IMAPインターフェースを使用した送信のヒントについては、 \fBgit-imap-send\fR(1) の EXAMPLE セクションを参照してください。
+.SS "Thunderbird"
+.sp
+デフォルトでは、Thunderbirdはメールの行を折り返す(wrap)だけでなく、 \fBformat=flowed\fR としてフラグを立てます。このため、結果のメールはGitで使用できなくなります。
+.sp
+3つの異なるアプローチがあります: アドオンを使用して行の折り返し(line wraps)をオフにする、またはパッチを切り刻まないようにThunderbirdを構成する、または外部エディターを使用してThunderbirdがパッチを切り刻まないようにします。
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBApproach #1 (add-on)\fR
+.RS 4
+.sp
+\m[blue]\fBhttps://addons\&.mozilla\&.org/thunderbird/addon/toggle\-word\-wrap/\fR\m[] から Toggle Word Wrap アドオンをインストールします。これは、コンポーザーの「オプション」メニューに「Enable Word Wrap」というメニュー項目を追加し、チェックを入れることができるようにします。これで、他の方法と同じようにメッセージを作成することができますが(カット＆ペースト、 \fBgit format\-patch | git imap\-send\fR など)、入力したテキストには手動で改行を挿入する必要があります。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBApproach #2 (configuration)\fR
+.RS 4
+.sp
+3ステップ:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+メールサーバーの構成をプレーンテキストとして構成します。 [Edit\&...Account Settings\&...Composition & Addressing] で、 [Compose Messages in HTML] のチェックを外します(訳注:手元のThunderBird 91\&.7\&.0(64ビット)では、メールごとの[アカウント設定\&...編集とアドレス入力\&...編集][HTML形式でメッセージを編集する\(co])
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+行の折返しをしないように、あなたの一般作文ウィンドウ(general composition window)を設定します。
+.sp
+Thunderbird 2: [Edit\&.\&.Preferences\&.\&.Composition] で、 [wrap plain text messages] を 0 にセットする。
+.sp
+Thunderbird 3 : [Edit\&.\&.Preferences\&.\&.Advanced\&.\&.ConfigEditor] で "mail\&.wrap_long_lines" を検索します。 それをトグルして
+\fBfalse\fR
+に設定されていることを確認します。 また、
+\fBmailnews\&.wraplength\fR
+を検索し、値を0に設定します(訳注: ThunderBird 91\&.7\&.0(64ビット) 全体の設定\&...一般\&...の一番下にある[設定エディター\&...\(co]ボタン押下して「高度な設定」タブを開く。後は上記と一緒です)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+format=flowed の使用を無効にします: [Edit\&.\&.Preferences\&.\&.Advanced\&.\&.Config Editor](訳注:上記[設定エディター\&...\(co]参照) "mailnews\&.send_plaintext_flowed" を検索します。トグルして
+\fBfalse\fR
+に設定されていることを確認します。
+.RE
+.sp
+これで今後は、あなたは他の方法(カット＆ペーストや \fBgit format\-patch | git imap\-send\fR など)で電子メールを作成できるようになり、パッチが破損することはありません。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBApproach #3 (external editor)\fR
+.RS 4
+.sp
+Thunderbird拡張機能が必要です： AboutConfig ( \m[blue]\fBhttp://aboutconfig\&.mozdev\&.org/\fR\m[] ) と External Editor (\m[blue]\fBhttp://globs\&.org/articles\&.php?lng=en&pg=8\fR\m[]) です。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+あなたが選択した方法を使用して、パッチをテキストファイルとして準備します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+作文ウィンドウ(compose window)を開く前に、 [Edit\&...Account] を使用して、パッチの送信に使用するアカウントの[Composition & Addressing]パネルの[Compose messages in HTML format]設定のチェックを外します(訳注:手元のThunderBird 91\&.7\&.0(64ビット)では、メールごとの[アカウント設定\&...編集とアドレス入力\&...編集][HTML形式でメッセージを編集する\(co])。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Thunderbirdのメインウィンドウで、パッチの作成ウィンドウを開く前に、 [Tools]\(-> [about:config] を使用して、以下を指定された値に設定します(訳注: ThunderBird 91\&.7\&.0(64ビット) 設定\&...一般\&...の一番下にある[設定エディター\&...\(co]ボタン押下して「高度な設定」タブを開く):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        mailnews\&.send_plaintext_flowed  => false
+        mailnews\&.wraplength             => 0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+作文ウィンドウを開き、外部エディターアイコンをクリックします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+外部エディタウィンドウで、パッチファイルを読み込み、通常どおりエディタを終了します。
+.RE
+.sp
+補足: aboutconfig と以下の設定を使用して 手順2 を実行できる場合がありますが、まだ誰も試していません。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        mail\&.html_compose                       => false
+        mail\&.identity\&.default\&.compose_html      => false
+        mail\&.identity\&.id?\&.compose_html          => false
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+contrib/thunderbird\-patch\-inline には、あなたがThunderbirdにパッチを簡単にインクルードするのに役立つスクリプトがあります。これを使用するには、上記の手順を実行してから、スクリプトを外部エディターとして使用します。
+.RE
+.SS "KMail"
+.sp
+これは、KMailを使用してパッチをインラインで送信するのに役立ちます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+パッチをテキストファイルとして準備します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+「New Mail」をクリックします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Composer ウィンドウの [Options] の下に移動し、[Word wrap] が設定されていないことを確認します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Use Message \(-> Insert file して、パッチを挿入します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+作文ウィンドウに戻ります。メッセージに他のテキストを追加し、アドレス指定フィールドと件名フィールドに入力して、送信を押します。
+.RE
+.SH "BASE TREE INFORMATION"
+.sp
+ベースツリー情報ブロックは、メンテナやサードパーティテスタが、パッチシリーズが適用される正確な状態を知るために使用されます。ベースツリー情報ブロックは、「ベースコミット」（プロジェクトの安定した歴史の一部であり、他のすべての人がそれを元に作業する）と、ゼロ個以上の「前提条件パッチ」(ベースコミットにまだ含まれない、よく知られたパッチで、パッチを適用する前にベースコミットにトポロジカルに追加する必要があります)で構成されています。
+.sp
+「ベースコミット」は、 \fBbase\-commit: ` の後にコミットオブジェクト名の40進数が続くものとして表示されます。 `prerequisite patch\fR は \fBprerequisite\-patch\-id: ` の後に40\-hexの `patch id\fR として表示されます。これは、パッチを \fBgit patch\-id \-\-stable\fR コマンドに渡すことで取得できます。
+.sp
+パブリックコミットPに加えて、他の誰かからのよく知られたパッチ X、Y、Z を適用し、3つのパッチシリーズ A、B、C を作成したと想像してください。その履歴は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-P\-\-\-X\-\-\-Y\-\-\-Z\-\-\-A\-\-\-B\-\-\-C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit format\-patch \-\-base=P \-3 C\fR (またはその変形、たとえば \fB\-\-cover\-letter\fR または \fB\-3C\fR の代わりに \fBZ\&.\&.C\fR を使用して範囲を指定する)、 ベースツリー情報ブロックは、コマンドが出力する最初のメッセージ(最初のパッチまたはカバーレターのいずれか)の最後に、以下のように表示されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+base\-commit: P
+prerequisite\-patch\-id: X
+prerequisite\-patch\-id: Y
+prerequisite\-patch\-id: Z
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+以下のようなのような非線形トポロジーの場合
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-P\-\-\-X\-\-\-A\-\-\-M\-\-\-C
+    \e         /
+     Y\-\-\-Z\-\-\-B
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit format\-patch \-\-base=P \-3 C\fR を使用して A、B、C のパッチを生成することもできます。そして P、X、Y、Z の識別子が最初のメッセージの最後に追加されます。
+.sp
+cmdline で \fB\-\-base=auto\fR を設定すると、cmdline で指定されたリモート追跡ブランチとリビジョン範囲の先端コミットのマージ・ベースとしてベース・コミットが自動的に計算されます。 ローカルブランチの場合、このオプションを使用する前に、 \fBgitbranch \-\-set\-upstream\-to\fR でリモートブランチを追跡する必要があります。
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+リビジョンR1とR2の間のコミットを抽出します。そして、 それらをチェリーピックするために
+\fBgit am\fR
+を使用して現在のブランチの先頭にそれらを適用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch \-k \-\-stdout R1\&.\&.R2 | git am \-3 \-k
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在のブランチにはあるが、元のブランチにはないすべてのコミットを抽出します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+コミットごとに、現在のディレクトリに個別のファイルが作成されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+プロジェクトの開始以降で
+\fBorigin\fR
+につながるすべてのコミットを抽出します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch \-\-root origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+以下は上記と同一です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch \-M \-B origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+さらに、名前変更を検出して処理し、名前変更パッチを生成するためにインテリジェントに書き換えを完了します。 名前の変更パッチは、テキスト出力の量を減らし、一般的にレビューを容易にします。 Git以外の「パッチ」プログラムはパッチの名前変更を理解しないため、受信者がGitを使用してパッチを適用していることがわかっている場合にのみ使用してください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在のブランチの先頭から3つのコミットを抽出し、それらを電子メールで送信可能なパッチとしてフォーマットします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch \-3
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "CAVEATS"
+.sp
+注意: `format\-patch`は、要求された範囲の一部であっても、出力からマージコミットを省略します。単純な「パッチ」には、受信側が同じマージコミットを再現するための十分な情報が含まれていません。
+.SH "SEE ALSO"
+.sp
+\fBgit-am\fR(1), \fBgit-send-email\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

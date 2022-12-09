@@ -1,0 +1,227 @@
+'\" t
+.\"     Title: gitcvs-migration
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITCVS\-MIGRATION" "7" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitcvs-migration \- CVSユーザー向けGit
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit cvsimport\fR *
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+GitはCVSとは異なり、すべての作業ツリーにはプロジェクト履歴の完全なコピーを含むリポジトリが含まれており、他のどのリポジトリよりも決定的に重要であるリポジトリなどというものはありません。ただし、あなたはユーザーが同期できる単一の共有リポジトリを指定することで、CVSモデルをエミュレートできます。このドキュメントでは、その方法について説明します。
+.sp
+Gitに関する基本的な知識が必要ですが、 \fBgittutorial\fR(7) と \fBgitglossary\fR(7) を理解しておけば十分です。
+.SH "共有リポジトリに対面する開発"
+.sp
+ホスト foo\&.com の /pub/repo\&.git に共有リポジトリが設定されているとします。次に、個々のコミッターは、以下コマンドを使用してssh経由で共有リポジトリのクローンを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone foo\&.com:/pub/repo\&.git/ my\-project
+$ cd my\-project
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そしてハックハックします。 \fBcvs update\fR に相当するものは以下です
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git pull origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、クローン操作以降に他の人が行った可能性のあるすべての作業をマージします。作業ツリーにコミットされていない変更がある場合は、まずは \fBgit pull\fR を実行する前にコミットしてください。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+\fBpull\fR コマンドは、最初の \fBgit clone\fR コマンドによって設定された構成変数によって、更新をどこから取得するかを認識しています。詳細については、 \fBgit config \-l\fR および \fBgit-config\fR(1) のマニュアルページを参照してください。
+.sp .5v
+.RE
+.sp
+まずあなたの変更をコミットしてから、その後 \fBgit push\fR コマンドを使用することで、あなたの変更を採用して共有リポジトリを更新できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git push origin master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+それらのコミットを共有リポジトリに「プッシュ」します。他の誰かが最近リポジトリを更新した場合、「cvs commit」のように「git push」が文句を言います。その場合、プッシュを再試行する前に変更をプルする必要があります。
+.sp
+上記の \fBgit push\fR コマンドで、更新するリモートブランチの名前(\fBmaster\fR)を指定します。これを省略した場合、 \fBgit push\fR は、ローカルリポジトリ内のブランチと同じ名前を持つリモートリポジトリ内のブランチを更新しようとします。したがって、最後の「プッシュ」は以下のいずれかで実行できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git push origin
+$ git push foo\&.com:/pub/project\&.git/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+上記は共有リポジトリに \fBmaster\fR 以外のブランチがない限りは動作します。
+.SH "SETTING UP A SHARED REPOSITORY"
+.sp
+私達は、プロジェクトのGitリポジトリをすでに作成しているか、または最初からまたはtarballから作成したか(\fBgittutorial\fR(7) を参照)、または既存のCVSリポジトリからインポートした(次のセクションを参照)と想定しします。
+.sp
+あなたの既存のリポジトリが /home/alice/myproject にあると想定します。新しい「ベア」リポジトリ(作業ツリーのないリポジトリ)を作成し、あなたのプロジェクトをそのリポジトリにフェッチします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ mkdir /pub/my\-repo\&.git
+$ cd /pub/my\-repo\&.git
+$ git \-\-bare init \-\-shared
+$ git \-\-bare fetch /home/alice/myproject master:master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、すべてのチームメンバーにこのリポジトリへの読み取り/書き込みアクセスを許可します。これを行う簡単な方法の1つは、すべてのチームメンバーにリポジトリがホストされているマシンへのsshアクセスを許可することです。マシン上で完全なシェルを提供したくない場合は、ユーザーがGitのプッシュとプルのみを実行できる制限付きシェルがあります。 \fBgit-shell\fR(1) を参照してください。
+.sp
+コミッター全員を同じグループに入れ、リポジトリをそのグループで書き込み可能にします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ chgrp \-R $group /pub/my\-repo\&.git
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+コミッターが作成するディレクトリが他のグループメンバーによって書き込みおよび検索できるように、コミッターのumaskが027であることを確認してください。
+.SH "IMPORTING A CVS ARCHIVE"
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+これらの手順では、gitに付属している \fBgit\-cvsimport\fR スクリプトを使用しますが、他のインポーターがより良い結果を提供する場合があります。他のオプションについては、 \fBgit-cvsimport\fR(1) のthe noteを参照してください。
+.sp .5v
+.RE
+.sp
+まず、 \m[blue]\fBhttps://github\&.com/andreyvit/cvsps\fR\m[] からバージョン2\&.1以降のcvspsをインストールし、あなたの $PATH に含まれていることを確認します。次に、あなたが関心を持っているプロジェクトのチェックアウトされたCVS作業ディレクトリにcdして、 \fBgit-cvsimport\fR(1) を実行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cvsimport \-C <destination> <module>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、指定されたCVSモジュールのGitアーカイブがディレクトリ <destination> に必要に応じて作成され、配置されます。
+.sp
+インポートは、すべてのファイルのすべてのリビジョンをCVSからチェックアウトします。聞いた限りでは、cvsimportは1秒あたり平均約20個のリビジョンを処理できるので、中規模のプロジェクトの場合、これには数分以上かかることはありません。大規模なプロジェクトやリモートリポジトリには時間がかかる場合があります。
+.sp
+メインtrunkは \fBorigin\fR という名前のGitブランチに保存され、追加のCVSブランチは同じ名前のGitブランチに保存されます。メインtrunkの最新バージョンも `master`ブランチにチェックアウトされたままなので、すぐにあなた独自の変更を追加し始めることができます。
+.sp
+インポートはインクリメンタルであるため、来月再度呼び出すと、その間に行われたCVS更新がフェッチされます。これが機能するためには、インポートされたブランチを変更してはなりません。代わりに、独自の変更のために新しいブランチを作成し、必要に応じてインポートされたブランチをマージします。
+.sp
+あなたが共有リポジトリが必要な場合は、上記のように、あなたはインポートされたディレクトリのベアクローンを作成する必要があります。次に、増分インポートをマージするために、インポートされたディレクトリを別の開発クローンとして扱います。
+.SH "ADVANCED SHARED REPOSITORY MANAGEMENT"
+.sp
+Gitでは、特定の箇所で実行される「フック」(hooks)と呼ばれるスクリプトを指定できます。これらを使用して、たとえば、共有リポジトリへのすべてのコミットをメーリングリストに送信することができます。 \fBgithooks\fR(5) を参照してください。
+.sp
+更新フックを使用して、よりきめ細かいアクセス許可を適用できます。 \m[blue]\fBControlling access to branches using update hooks\fR\m[]\&\s-2\u[1]\d\s+2 (更新フックを使用したブランチへのアクセスの制御) を参照してください。
+.SH "PROVIDING CVS ACCESS TO A GIT REPOSITORY"
+.sp
+開発者が引き続きCVSを使用できるように、Gitリポジトリへの真のCVSアクセスを提供することも可能です。詳細については、 \fBgit-cvsserver\fR(1) を参照してください。
+.SH "ALTERNATIVE DEVELOPMENT MODELS"
+.sp
+CVSユーザーは、開発者のグループに共通のリポジトリへのコミットアクセスを与えることに慣れています。これまで見てきたように、これはGitでも可能です。ただし、Gitの分散性により、他の開発モデルが利用可能になるため、最初に、そのうちのどれがプロジェクトにより適しているかどうかを検討することをお勧めします。
+.sp
+たとえば、プロジェクトのプライマリ公開リポジトリを保守するために1人の人を選択できます。次に、他の開発者がこのリポジトリのクローンを作成し、それぞれが独自のクローンで作業します。満足のいく一連の変更がある場合、変更を含むブランチからプルするように保守者に依頼します。保守者は変更を確認し、プライマリリポジトリにプルします。プライマリリポジトリは、他の開発者が調整を維持するために必要に応じてプルします。 Linuxカーネルおよびその他のプロジェクトは、このモデルのバリエーションを使用します。
+.sp
+少人数のグループでは、開発者は中央の保守者を必要とせずに、互いのリポジトリから変更をプルするだけで済みます。
+.SH "SEE ALSO"
+.sp
+\fBgittutorial\fR(7), \fBgittutorial-2\fR(7), \fBgitcore-tutorial\fR(7), \fBgitglossary\fR(7), \fBgiteveryday\fR(7), \m[blue]\fBThe Git User\(cqs Manual\fR\m[]\&\s-2\u[2]\d\s+2
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+Controlling access to branches using update hooks
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/howto/update-hook-example.html
+.RE
+.IP " 2." 4
+The Git User\(cqs Manual
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html
+.RE

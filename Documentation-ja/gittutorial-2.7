@@ -1,0 +1,559 @@
+'\" t
+.\"     Title: gittutorial-2
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITTUTORIAL\-2" "7" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gittutorial-2 \- Git入門パート2
+.SH "SYNOPSIS"
+.sp
+.nf
+git *
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このGit入門パート2を読む前に、 \fBgittutorial\fR(7) (Git入門)を読んで下さい。
+.sp
+この入門の目的は、Gitのアーキテクチャの2つの基本的な部分(オブジェクトデータベースとインデックスファイル)を紹介し、残りのGit文書を理解するために必要なすべてのものを読者に提供することです。
+.SH "THE GIT OBJECT DATABASE"
+.sp
+新しいプロジェクトを開始して、履歴を少々作成しましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ mkdir test\-project
+$ cd test\-project
+$ git init
+Initialized empty Git repository in \&.git/
+$ echo \*(Aqhello world\*(Aq > file\&.txt
+$ git add \&.
+$ git commit \-a \-m "initial commit"
+[master (root\-commit) 54196cc] initial commit
+ 1 file changed, 1 insertion(+)
+ create mode 100644 file\&.txt
+$ echo \*(Aqhello world!\*(Aq >file\&.txt
+$ git commit \-a \-m "add emphasis"
+[master c4d59f3] add emphasis
+ 1 file changed, 1 insertion(+), 1 deletion(\-)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+さて、ここで、Gitがコミットで返してきた7桁の16進数は一体何でしょうか？
+.sp
+入門のパート1で、コミットには名前が付いていることがわかりました。Git履歴内のすべてのオブジェクトは、40桁の16進名で保存されていることがわかりました。その名前は、オブジェクトの内容のSHA\-1ハッシュです。特に、これにより、Gitが同じデータを2回保存することはなく(同一のデータには同一のSHA\-1名が付けられるため)、Gitオブジェクトの内容が変更されることはありません(オブジェクトの名前も変更されるため)。ここでの7文字の16進文字列は、このような40文字の長さの文字列の略語です。 略語は、明確である限り(訳注:その環境で一意になる限り)、40文字の16進文字列を使用できるすべての場所で使用できます。
+.sp
+上記の例に従って作成したコミットオブジェクトのコンテンツは、コミットオブジェクトが作成された時刻とコミットを実行した人の名前を記録するため、上記とは異なるSHA\-1ハッシュを生成することが期待されます。
+.sp
+\fBcat\-file\fR コマンドを使用して、この特定のオブジェクトについてGitに問い合わせることができます。上記の例から40桁の16進数をコピーするのではなく、あなたの手元で実行したバージョンの16進数を使用してください。40桁すべての16進数を入力する手間を省くために、数文字に短縮できることに注目です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cat\-file \-t 54196cc2
+commit
+$ git cat\-file commit 54196cc2
+tree 92b8b694ffb1675e5975148e1121810081dbdffe
+author J\&. Bruce Fields <bfields@puzzle\&.fieldses\&.org> 1143414668 \-0500
+committer J\&. Bruce Fields <bfields@puzzle\&.fieldses\&.org> 1143414668 \-0500
+
+initial commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ツリーは、それぞれがファイルに対応する、1つ以上のブロブ(blob)オブジェクトを参照できます。さらに、ツリーは他のツリーオブジェクトを参照することもできるため、ディレクトリ階層が作成されます。 ls\-tree を使用して任意のツリーの内容を調べることができます(その際、SHA\-1の最初の部分を指定するだけで十分なことを忘れないでください)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-tree 92b8b694
+100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad    file\&.txt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これで、このツリーには1つのファイルが含まれていることがわかります。SHA\-1ハッシュは、そのファイルのデータへの参照(reference)です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cat\-file \-t 3b18e512
+blob
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+「blob」は単なるファイルデータであり、cat\-fileで調べることもできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cat\-file blob 3b18e512
+hello world
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: これは古いファイルデータであることに注意してください。つまり、Gitが最初のツリーに対する応答で名付けたオブジェクトは、最初のコミットで記録されたディレクトリ状態のスナップショットを持つツリーです。
+.sp
+これらのオブジェクトはすべて、Gitディレクトリ内部にSHA\-1名で保存されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ find \&.git/objects/
+\&.git/objects/
+\&.git/objects/pack
+\&.git/objects/info
+\&.git/objects/3b
+\&.git/objects/3b/18e512dba79e4c8300dd08aeb37f8e728b8dad
+\&.git/objects/92
+\&.git/objects/92/b8b694ffb1675e5975148e1121810081dbdffe
+\&.git/objects/54
+\&.git/objects/54/196cc2703dc165cbd373a65a4dcf22d50ae7f7
+\&.git/objects/a0
+\&.git/objects/a0/423896973644771497bdc03eb99d5281615b51
+\&.git/objects/d0
+\&.git/objects/d0/492b368b66bdabf2ac1fd8c92b39d3db916e59
+\&.git/objects/c4
+\&.git/objects/c4/d59f390b9cfd4318117afde11d601c1085f241
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そして、これらのファイルの内容は、圧縮されたデータに加えて、ファイルの長さとタイプを識別するヘッダーだけです。 タイプは、blob、tree、commit、tag のいずれかです。
+.sp
+見つけるのが最も簡単なコミットはHEADコミットで、これは \&.git/HEAD から見つけることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat \&.git/HEAD
+ref: refs/heads/master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ご覧のとおり、これにより、現在どのブランチを使用しているかがわかります。 \fB\&.git\fR ディレクトリの下にあるファイルに名前を付ける事でこれを私達に知らせます。このディレクトリ自体には、コミットオブジェクトを参照するSHA\-1名が含まれていて、 cat\-file で調べることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat \&.git/refs/heads/master
+c4d59f390b9cfd4318117afde11d601c1085f241
+$ git cat\-file \-t c4d59f39
+commit
+$ git cat\-file commit c4d59f39
+tree d0492b368b66bdabf2ac1fd8c92b39d3db916e59
+parent 54196cc2703dc165cbd373a65a4dcf22d50ae7f7
+author J\&. Bruce Fields <bfields@puzzle\&.fieldses\&.org> 1143418702 \-0500
+committer J\&. Bruce Fields <bfields@puzzle\&.fieldses\&.org> 1143418702 \-0500
+
+add emphasis
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ここでの「tree」オブジェクトは、ツリーの新しい状態を指します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-tree d0492b36
+100644 blob a0423896973644771497bdc03eb99d5281615b51    file\&.txt
+$ git cat\-file blob a0423896
+hello world!
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そして「親」オブジェクトは前のコミットを参照します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cat\-file commit 54196cc2
+tree 92b8b694ffb1675e5975148e1121810081dbdffe
+author J\&. Bruce Fields <bfields@puzzle\&.fieldses\&.org> 1143414668 \-0500
+committer J\&. Bruce Fields <bfields@puzzle\&.fieldses\&.org> 1143414668 \-0500
+
+initial commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そのツリーオブジェクトは最初に調べたツリーであり、このコミットには親がないという点でレアです。
+.sp
+多くのコミットでは親が1つしかないですが、 複数の親を持つコミットも割とあります。 その場合、コミットはマージを表し、 親参照はマージされたブランチのヘッドを指します。
+.sp
+ブロブ・ツリー・コミット以外に残っているオブジェクトのタイプは「タグ」だけです。これについてはここでは説明しません。 詳細については、 \fBgit-tag\fR(1) を参照してください。
+.sp
+これで、Gitがオブジェクトデータベースを使用してプロジェクトの履歴を表す方法がわかりました:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「コミット」オブジェクトは、履歴の特定のポイントでのディレクトリツリーのスナップショットを表す「ツリー」オブジェクトを指し、「親」コミットを、プロジェクト履歴にどのように接続されているかを示すために参照します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「ツリー」オブジェクトは単一のディレクトリの状態を表し、ディレクトリ名をファイルデータを含む「ブロブ」オブジェクトとサブディレクトリ情報を含む「ツリー」オブジェクトに関連付けます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「ブロブ」オブジェクトには、他の構造でないファイルデータが含まれています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+各ブランチのヘッドにあるコミットオブジェクトへの参照は、 \&.git/refs/heads/ の下のファイルに保存されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在のブランチの名前は \&.git/HEAD に保存されます。
+.RE
+.sp
+注意: ちなみに、多くのコマンドは引数としてツリーを使用することに注意してください。 しかし、上で見ることができるように、ツリーは多くの異なる方法(そのツリーのSHA\-1名、そのツリーを参照するコミットの名前、そのツリーを参照するヘッドを持つブランチの名前など)で参照できます。そのツリーのSHA\-1名、ツリーを参照するコミットの名前、ヘッドが参照するブランチの名前 そのツリーなどに\-そしてそのようなコマンドのほとんどはこれらの名前のいずれかを受け入れることができます。
+.sp
+コマンドの概要では、「tree\-ish」(ツリーっぽい)という単語がそのような引数を示すために使用されることがあります。
+.SH "THE INDEX FILE"
+.sp
+コミットを作成するために使用している主なツールは \fBgit\-commit \-a\fR です。これは、作業ツリーに加えたすべての変更を含むコミットを作成します。しかし、特定のファイルの変更のみをコミットしたい場合はどうでしょうか？ または、特定のファイルの特定(一部の)の変更のみをコミットしたい場合はどうでしょうか？
+.sp
+コミット作成の秘密を知れば、コミットを作成するより柔軟な方法があることがわかります。
+.sp
+我々のテストプロジェクトを続けて、file\&.txt を再び変更しましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo "hello world, again" >>file\&.txt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+しかし、今回はすぐにコミットするのではなく、中間のステップを踏んで、何が起こっているかを追跡するために途中でdiffを要求しましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff
+\-\-\- a/file\&.txt
++++ b/file\&.txt
+@@ \-1 +1,2 @@
+ hello world!
++hello world, again
+$ git add file\&.txt
+$ git diff
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+最後の差分は空ですが、新しいコミットは行われておらず、ヘッドにはまだ新しい行が含まれていないからです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff HEAD
+diff \-\-git a/file\&.txt b/file\&.txt
+index a042389\&.\&.513feba 100644
+\-\-\- a/file\&.txt
++++ b/file\&.txt
+@@ \-1 +1,2 @@
+ hello world!
++hello world, again
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+つまり、「git diff」はヘッド以外のものと比較しているのです。比較しているのは、実際にはインデックスファイルです。これはバイナリ形式で \&.git/index に保存されていますが、その内容はls\-filesで調べることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-files \-\-stage
+100644 513feba2e53ebbd2532419ded848ba19de88ba00 0       file\&.txt
+$ git cat\-file \-t 513feba2
+blob
+$ git cat\-file blob 513feba2
+hello world!
+hello world, again
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+したがって、「git add」が行ったことは、新しいブロブを格納し、それへの参照をインデックスファイルに配置することでした。ファイルを再度変更すると、新しい変更が「git diff」出力に反映されていることがわかります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo \*(Aqagain?\*(Aq >>file\&.txt
+$ git diff
+index 513feba\&.\&.ba3da7b 100644
+\-\-\- a/file\&.txt
++++ b/file\&.txt
+@@ \-1,2 +1,3 @@
+ hello world!
+ hello world, again
++again?
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+正しい引数を使用すると、 \fIgit diff\fR は、作業ディレクトリと最後のコミットの違い、またはインデックスと最後のコミットの違いを示すこともできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff HEAD
+diff \-\-git a/file\&.txt b/file\&.txt
+index a042389\&.\&.ba3da7b 100644
+\-\-\- a/file\&.txt
++++ b/file\&.txt
+@@ \-1 +1,3 @@
+ hello world!
++hello world, again
++again?
+$ git diff \-\-cached
+diff \-\-git a/file\&.txt b/file\&.txt
+index a042389\&.\&.513feba 100644
+\-\-\- a/file\&.txt
++++ b/file\&.txt
+@@ \-1 +1,2 @@
+ hello world!
++hello world, again
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+何度でも私達は「git commit」( \fB\-a\fR オプションなし）を使用して新しいコミットを作成することができ、コミットされた状態にはインデックスファイルに保存されている変更のみが含まれ、作業ツリーにのみ残っている追加の変更が含まれていないことを確認できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit \-m "repeat"
+$ git diff HEAD
+diff \-\-git a/file\&.txt b/file\&.txt
+index 513feba\&.\&.ba3da7b 100644
+\-\-\- a/file\&.txt
++++ b/file\&.txt
+@@ \-1,2 +1,3 @@
+ hello world!
+ hello world, again
++again?
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+つまり、デフォルトでは、「git commit」は、作業ツリーではなく、インデックスを使用してコミットを作成します。 コミットでの \fB\-a\fR オプションの指定は、最初に作業ツリーのすべての変更をインデックスに反映するように指示します。
+.sp
+最後に、インデックスファイルに対する「git add」の効果を確認しておきましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo "goodbye, world" >closing\&.txt
+$ git add closing\&.txt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fIgit add\fR の効果は、インデックスファイルに1つのエントリを追加することでした:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-files \-\-stage
+100644 8b9743b20d4b15be3955fc8d5cd2b09cd2336138 0       closing\&.txt
+100644 513feba2e53ebbd2532419ded848ba19de88ba00 0       file\&.txt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そして、 cat\-file でわかるように、この新しいエントリはファイルの現在の内容を参照しています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cat\-file blob 8b9743b2
+goodbye, world
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+「status」コマンドは、状況の概要をすばやく取得するための便利な方法です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git status
+ブランチ master
+コミット予定の変更点:
+  (use "git restore \-\-staged <file>\&.\&.\&." to unstage)
+
+        new file:   closing\&.txt
+
+Changes not staged for commit:
+  (use "git add <file>\&.\&.\&." to update what will be committed)
+  (use "git restore <file>\&.\&.\&." to discard changes in working directory)
+
+        modified:   file\&.txt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+closeing\&.txtの現在の状態はインデックスファイルにキャッシュされているため、「コミット予定の変更点」(Changes to be committed)としてリストされます。 file\&.txtには、インデックスに反映されていない作業ディレクトリの変更があるため、「Changes not staged for commit」とマークされています。 この時点で、「git commit」を実行すると、（新しいコンテンツを含む)closeing\&.txtが追加されたコミットが作成されますが、file\&.txtは変更されませんでした。
+.sp
+また、裸の \fBgit diff\fR はfile\&.txtへの変更を示しますが、closeing\&.txtの追加は示しません。これは、インデックスファイルのcloseing\&.txtのバージョンが作業ディレクトリのバージョンと同じであるためです。
+.sp
+インデックスファイルは、新しいコミットのステージング領域であることに加えて、ブランチをチェックアウトするときにオブジェクトデータベースからも入力され、マージ操作に関係するツリーを保持するためにも使用されます。詳細については、 \fBgitcore-tutorial\fR(7) および関連するマニュアルページを参照してください。
+.SH "WHAT NEXT?"
+.sp
+この期に及んでは、あなたはgitコマンドのマニュアルページを読むために必要なすべてを知っている必要があります。それを始めるのに適した場所の1つは、 \fBgiteveryday\fR(7) に記載されているコマンドを使用することです。また、あなたは \fBgitglossary\fR(7) で不明な専門用語を調べる事もできます。
+.sp
+\m[blue]\fBGit User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2 は、Gitのより包括的な紹介を提供します。
+.sp
+\fBgitcvs-migration\fR(7) は、CVSリポジトリをGitにインポートする方法を説明し、CVSのような方法でGitを使用する方法を示しています。
+.sp
+Gitの使用に関する興味深い例については、 \m[blue]\fBhowtos\fR\m[]\&\s-2\u[2]\d\s+2 を参照してください。
+.sp
+Git開発者向けに、 \fBgitcore-tutorial\fR(7) で、新しいコミットの作成などに関連する低レベルのGitメカニズムについて詳しく説明しています。
+.SH "SEE ALSO"
+.sp
+\fBgittutorial\fR(7), \fBgitcvs-migration\fR(7), \fBgitcore-tutorial\fR(7), \fBgitglossary\fR(7), \fBgit-help\fR(1), \fBgiteveryday\fR(7), \m[blue]\fBThe Git User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+Git User\(cqs Manual
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html
+.RE
+.IP " 2." 4
+howtos
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/howto-index.html
+.RE

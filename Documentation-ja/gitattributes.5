@@ -1,0 +1,1809 @@
+'\" t
+.\"     Title: gitattributes
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITATTRIBUTES" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitattributes \- パスごとの属性の定義
+.SH "SYNOPSIS"
+.sp
+$GIT_DIR/info/attributes, \&.gitattributes
+.SH "DESCRIPTION"
+.sp
+\fBgitattributes\fR ファイルは、パス名に属性(attributes)を与える単純なテキストファイルです。
+.sp
+\fBgitattributes\fR ファイルの各行は以下の形式です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+pattern attr1 attr2 \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+つまり、パターンの後に空白(whitespaces)で区切られた属性リストが続きます。先頭と末尾の空白は無視されます。 \fB#\fR で始まる行は無視されます。 二重引用符(\fB"\fR)で始まるパターンは、Cスタイルでクォートされます。パターンが問題のパスと一致すると、その行にリストされている属性がそのパスに与えられます。
+.sp
+各属性は、特定のパスに対して以下のいずれかの状態になる可能性があります:
+.PP
+set(設定)
+.RS 4
+パスには、特別な値
+\fBtrue\fR
+を持つ属性があります。これは、属性リストにその属性の名前のみをリストすることによって指定されます。
+.RE
+.PP
+unset(設定解除)
+.RS 4
+パスには、特別な値
+\fBfalse\fR
+を持つ属性があります。 これは、属性リストにダッシュ
+\fB\-\fR
+で始まる属性の名前をリストすることによって指定されます。
+.RE
+.PP
+Set to a value(値を設定)
+.RS 4
+パスには、指定の文字列値を持つ属性があります。これは、属性の名前の後に等号
+\fB=\fR
+とその値を、属性リストにリストすることによって指定されます。
+.RE
+.PP
+unspecified(未指定)
+.RS 4
+パスに一致するパターンはなく、パスに属性があるかどうかはわかりません。パスの属性は未指定(unspecified)であると言われます。
+.RE
+.sp
+複数のパターンがパスに一致する場合、後の行が前の行をオーバーライドします。このオーバーライドは属性ごとに行われます。
+.sp
+パターンがパスと一致するルールは、以下のいくつかの例外を除いて、 \fB\&.gitignore\fR ファイル(\fBgitignore\fR(5) 参照)と同じです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+否定パターンは使えません
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ディレクトリに一致するパターンは、そのディレクトリ内のパスに再帰的に一致しません(したがって、属性ファイルで末尾のスラッシュの
+\fBpath/\fR
+構文を使用しても意味がありません。代わりに
+\fBpath/**\fR
+を使用してください)
+.RE
+.sp
+パスに割り当てる属性を決定するとき、Gitは、(優先順位が最も高い) \fB$GIT_DIR/info/attributes\fR ファイルと、問題のパスと同じディレクトリにある \fB\&.gitattributes\fR ファイルと、作業ツリーの最上位までその親ディレクトリを参照します(\fB\&.gitattributes\fR を含むディレクトリが問題のパスから離れるほど、優先順位は低くなります)。最後に、(優先順位が最も低い)グローバルファイルとシステム全体のファイルが考慮されます。
+.sp
+\fB\&.gitattributes\fR ファイルが作業ツリーにない場合、インデックス内のパスがフォールバックとして使用されます。チェックアウト処理では、インデックスの \fB\&.gitattributes\fR が使用され、作業ツリーのファイルがフォールバックとして使用されます。
+.sp
+単一のリポジトリのみに影響を与えたい(つまり、そのリポジトリの1人のユーザーのワークフローに固有のファイルに属性を割り当てる)場合は、属性を \fB$GIT_DIR/info/attributes\fR ファイルに配置する必要があります。バージョン管理して他のリポジトリに配布する必要がある属性(つまり、すべてのユーザーが関心を持つ属性)は、 \fB\&.gitattributes\fR ファイルに入れる必要があります(\fBgit-config\fR(1) を参照)。 あるユーザーのすべてのリポジトリに影響を与える属性は、 \fBcore\&.attributesFile\fR 構成オプションで指定されたファイルに配置する必要があり、そのデフォルト値は $XDG_CONFIG_HOME/git/attributes です。 $XDG_CONFIG_HOME が設定されていないか空の場合、代わりに $HOME/\&.config/git/attributes が使用されます。システム上のすべてのユーザーの属性は、 \fB$(prefix)/etc/gitattributes\fR ファイルに配置する必要があります。
+.sp
+しばしばあなたは、 Unspecified(未指定)状態へのパスの属性の設定をオーバーライドする必要があります。これは、感嘆符 \fB!\fR が前に付いた属性の名前をリストすることで行えます。
+.SH "EFFECTS"
+.sp
+Gitによる特定の操作は、特定の属性をパスに割り当てることによって影響を受ける可能性があります。 現在、以下の操作は属性対応(attributes\-aware)です。
+.SS "Checking\-out and checking\-in"
+.sp
+これらの属性は、 \fBgit switch\fR や \fBgit checkout\fR や \fBgit merge\fR などのコマンドが実行されたときに、リポジトリに保存されているコンテンツが作業ツリーファイルにコピーされる方法に影響します。 また、Gitが \fBgit add\fR や \fBgit commit\fR する時に準備したコンテンツをリポジトリの作業ツリーに保存する方法にも影響します。
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBtext\fR
+.RS 4
+.sp
+この属性は、行末の正規化を有効にして制御します。テキストファイルが正規化されると、その行末はリポジトリ内でLFに変換されます。作業ディレクトリ内で使用される行末スタイルを制御するには、単一のファイルには \fBeol\fR 属性を使用し、すべてのテキストファイルには \fBcore\&.eol\fR 構成変数を使用します。 \fBcore\&.autocrlf\fR を \fBtrue\fR または \fBinput\fR に設定すると、 \fBcore\&.eol\fR がオーバーライドされることに注意してください(\fBgit-config\fR(1) のこれらのオプションの定義を参照してください)。
+.PP
+set(設定)
+.RS 4
+パスに
+\fBtext\fR
+属性を設定すると、行末の正規化が有効になり、パスがテキストファイルとしてマークされます。行末変換は、コンテンツタイプを推測せずに行われます。
+.RE
+.PP
+unset(設定解除)
+.RS 4
+パスの
+\fBtext\fR
+属性を設定解除(unset)すると、チェックインまたはチェックアウト時に行末変換を試行しないようにGitに指示します。
+.RE
+.PP
+Set to string value "auto"
+.RS 4
+\fBtext\fR
+の値が "auto" に設定されている場合、パスは自動行末変換用にマークされます。Gitがコンテンツがテキストであると判断した場合、その行末はチェックイン時にLFに変換されます。ファイルがCRLFでコミットされている場合、変換は行われません。
+.RE
+.PP
+unspecified(未指定)
+.RS 4
+\fBtext\fR
+属性が指定されていない場合、Gitは
+\fBcore\&.autocrlf\fR
+構成変数を使用してファイルを変換する必要があるかどうかを判断します。
+.RE
+.sp
+その他の値の場合、Gitは \fBtext\fR が未指定(unspecified)であるかのように動作します。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBeol\fR
+.RS 4
+.sp
+この属性は、 作業ディレクトリで使用される特定の行末スタイルを設定します。 この属性は、 \fBtext\fR 属性が設定されているか指定されていない場合にのみ有効です。 また、 \fBauto\fR に設定されている場合、 ファイルはテキストとして検出され、 末尾 LF でインデックスに保存されます。 CRLF 行末を持つインデックス内のパスにこの属性を設定すると、 \fBtext=auto\fR が設定されていない限り、パスがダーティと見なされる可能性があることに注意してください。 パスをインデックスに再度追加すると、 インデックスの行末が正規化されます。
+.PP
+文字列値 "crlf" を設定
+.RS 4
+この設定により、Gitはチェックイン時にこのファイルの行末を正規化し、ファイルがチェックアウトされるときにCRLFに変換します。
+.RE
+.PP
+文字列値 "lf" を設定
+.RS 4
+この設定により、Gitはチェックイン時に行末をLFに正規化し、ファイルがチェックアウトされたときにCRLFに変換されないようにします。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBcrlf 属性との下位互換性\fR
+.RS 4
+.sp
+下位互換性のために、 \fBcrlf\fR 属性は以下のように解釈されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+crlf            text
+\-crlf           \-text
+crlf=input      eol=lf
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fB行末変換\fR
+.RS 4
+.sp
+Gitは通常、ファイルの内容をそのままにしますが、リポジトリ内で行末をLFに正規化し、オプションで、ファイルがチェックアウトされたときにCRLFに変換するように構成できます。
+.sp
+あなたが作業しているリポジトリに関係なく、あなたの作業ディレクトリ内でCRLF行末を設定したいだけの場合は、属性を使用せずに構成変数 \fBcore\&.autocrlf\fR を設定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[core]
+        autocrlf = true
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、テキストファイルの正規化は強制されませんが、リポジトリに導入するテキストファイルの行末は、追加時にLFに正規化され、リポジトリですでに正規化されているファイルは正規化されたままになります。
+.sp
+貢献者(contributor)がリポジトリに導入するテキストファイルの行末が正規化されていることを確認する場合は、「全て」のファイルに対して \fBtext\fR 属性を "auto" に設定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*       text=auto
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+属性を使用すると、行末の変換方法をきめ細かく制御できます。以下は、Gitが \fB\&.txt\fR と、\fB\&.vcproj\fR と \fB\&.sh\fR ファイルを正規化し、 \fB\&.vcproj\fR ファイルがCRLFを持ち、 \fB\&.sh\fR ファイルが作業ディレクトリでLFを持っていることを確認し、\fB\&.jpg\fR ファイルがその内容に関係なく正規化されないようにする例です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*               text=auto
+*\&.txt           text
+*\&.vcproj        text eol=crlf
+*\&.sh            text eol=lf
+*\&.jpg           \-text
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+中央リポジトリへのプッシュとプルを使用してクロスプラットフォームプロジェクトで \fBtext = auto\fR 変換が有効になっている場合、CRLFを含むテキストファイルを正規化する必要があります。
+.sp .5v
+.RE
+.sp
+クリーンな作業ディレクトリから始めます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo "* text=auto" >\&.gitattributes
+$ git add \-\-renormalize \&.
+$ git status        # 正規化されるファイルを表示
+$ git commit \-m "Introduce end\-of\-line normalization"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+正規化してはならないファイルが \fBgit status\fR に表示される場合は、 \fBgit add \-u\fR を実行する前に、以下のように \fBtext\fR 属性の設定を解除してください。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+manual\&.pdf      \-text
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+逆に、Gitが検出しないテキストファイルは、以下のように正規化を手動で有効にすることができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+weirdchars\&.txt  text
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBcore\&.safecrlf\fR が "true" または "warn" に設定されている場合、Gitは変換が \fBcore\&.autocrlf\fR の現在の設定に対して可逆的であるかどうかを確認します。 "true" の場合、Gitは不可逆的な変換を拒否します。 "warn" の場合、Gitは警告を出力するだけで、元に戻せない変換を受け入れます。作業ツリー内のファイルに対してこのような変換が行われるのを防ぐための安全トリガーがありますが、いくつかの例外がありますが、しかし\&...
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit add\fR
+自体は作業ツリー内のファイルに影響を与えません。その次に行うチェックアウトは影響を与えるため、セーフティーがトリガーされます:
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パッチでテキストファイルを更新するための
+\fBgit apply\fR
+は作業ツリー内のファイルに影響を与えますが、操作はテキストファイルに関するものであり、CRLF変換は行末の不整合の修正に関するものであるため、セーフティーはトリガーされません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit diff\fR
+自体は作業ツリー内のファイルに影響を与えません。多くの場合、次に
+\fBgit add\fR
+する予定の変更を検査するために実行されます。潜在的な問題を早期に発見するために、セーフティーがトリガーされます。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBworking-tree-encoding\fR
+.RS 4
+.sp
+Gitは、ASCIIまたはそのスーパーセットの1つ(UTF\-8、ISO\-8859\-1など)でエンコードされたファイルをテキストファイルとして認識します。他の特定のエンコーディング(UTF\-16など)でエンコードされたファイルはバイナリとして解釈されるため、組み込みのGitテキスト処理ツール(\fBgit diff\fR など)や、ほとんどのGitWebフロントエンドはデフォルトでこれらのファイルのコンテンツを視覚化しません 。
+.sp
+このような場合、 \fBworking\-tree\-encoding\fR 属性を使用して作業ディレクトリ内のファイルのエンコーディングをGitに指示できます。この属性を持つファイルがGitに追加されると、Gitは指定されたエンコーディングからUTF\-8にコンテンツを再エンコードします。最後に、GitはUTF\-8でエンコードされたコンテンツを内部データ構造(「インデックス」と呼ばれます)に格納します。チェックアウト時に、コンテンツは指定されたエンコーディングに再エンコードされます。
+.sp
+注意: \fBworking\-tree\-encoding\fR 属性を使用すると、いくつかの落とし穴があることに注意してください:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+(2018年3月現在、)代替のGit実装(JGitやlibgit2など)やGit古いバージョンは、
+\fBworking\-tree\-encoding\fR
+属性をサポートしていません。リポジトリで
+\fBworking\-tree\-encoding\fR
+属性を使用する場合は、リポジトリを使用するすべてのクライアントがそれをサポートしていることを確認することを強くお勧めします。
+.sp
+たとえば、Microsoft Visual Studio リソースファイル(\fB*\&.rc\fR)またはPowerShellスクリプトファイル(\fB*\&.ps1\fR)は、UTF\-16でエンコードされる場合があります。
+\fB*\&.ps1\fR
+をUTF\-16のファイルとして宣言し、
+\fBworking\-tree\-encoding\fR
+が有効なGitクライアントで
+\fBfoo\&.ps1\fR
+を追加すると、
+\fBfoo\&.ps1\fR
+はUTF\-8として内部に保存されます。
+\fBworking\-tree\-encoding\fR
+をサポートしていないクライアントは、
+\fBfoo\&.ps1\fR
+をUTF\-8でエンコードされたファイルとしてチェックアウトします。これは通常、このファイルのユーザーに問題を引き起こします。
+.sp
+\fBworking\-tree\-encoding\fR
+属性をサポートしないGitクライアントが新しいファイル
+\fBbar\&.ps1\fR
+を追加した場合、
+\fBbar\&.ps1`は内部に「現状のまま」(この例ではおそらくUTF\-16として)保存されます。そしてそれに対して、 `working\-tree\-encoding\fR
+をサポートするクライアントは、内部コンテンツをUTF\-8として解釈し、チェックアウト時にUTF\-16に変換しようとします。その操作は失敗し、エラーが発生します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コンテンツを非UTFエンコーディングに再エンコードすると、変換がUTF\-8ラウンドトリップセーフではない可能性があるため、エラーが発生する可能性があります。 エンコーディングがラウンドトリップセーフではないと思われる場合は、それを
+\fBcore\&.checkRoundtripEncoding\fR
+に追加して、Gitにラウンドトリップエンコーディングをチェックさせます(\fBgit-config\fR(1)
+を参照)。 SHIFT\-JIS(日本語文字セット)はUTF\-8でラウンドトリップ問題があることが知られており、デフォルトでチェックされています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コンテンツを再エンコードするには、計算機資源が必要なため、特定のGit操作(\fBgit checkout\fR
+や
+\fBgit add\fR
+など)の速度を低下させる可能性があります。
+.RE
+.sp
+\fBworking\-tree\-encoding\fR 属性は、ファイルをUTF\-8エンコーディングで保存できない場合や、Gitでコンテンツをテキストとして処理できるようにする場合にのみ使用してください。
+.sp
+例として、 あなたの \fB*\&.ps1\fR ファイルがバイトオーダーマーク(BOM)付きでUTF\-16エンコードされており、Gitであなたのプラットフォームに基づいて自動行末変換を実行する場合、以下の属性を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.ps1           text working\-tree\-encoding=UTF\-16
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたの \fB* \&.ps1\fR ファイルがBOMなしでUTF\-16リトルエンディアンでエンコードされており、Gitで作業ディレクトリのWindows行末を使用する場合は、以下の属性を使用します(BOMを使用したUTF\-16リトルエンディアンが必要な場合、 \fBUTF\-16LE\fR の代わりに \fBUTF\-16LE\-BOM\fR を使用します)。あいまいさを避けるために \fBworking\-tree\-encoding\fR 属性を使用する場合は、行末を \fBeol\fR で明示的に定義することを強くお勧めします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.ps1           text working\-tree\-encoding=UTF\-16LE eol=CRLF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたは以下のコマンドを使用して、あなたのプラットフォームで使用可能なすべてのエンコーディングのリストを取得できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+iconv \-\-list
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ファイルのエンコーディングがわからない場合、あなたは \fBfile\fR コマンドを使用してエンコーディングを推測できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+file foo\&.ps1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBident\fR
+.RS 4
+.sp
+パスに属性 \fBident\fR が設定されている場合、Gitはチェックアウト時にブロブオブジェクト内の \fB$Id$\fR を \fB$Id:\fR に置き換え、その後に40文字の16進ブロブオブジェクト名が続き、その後にドル記号 \fB$\fR が続きます。ワークツリーファイルで \fB$Id:\fR で始まり、 \fB$\fR で終わるバイトシーケンスは、チェックイン時に \fB$Id$\fR に置き換えられます。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBfilter\fR
+.RS 4
+.sp
+filter` 属性には、構成で指定されたフィルタドライバの名前を文字列で指定することができます。
+.sp
+フィルタドライバは、 \fBclean\fR コマンドと \fBsmudge\fR コマンドで構成されており、どちらも指定しないでおくことができます。チェックアウト時に、 \fBsmudge\fR コマンドが指定されると、コマンドはその標準入力からブロブオブジェクトを供給され、その標準出力はワークツリーファイルを更新するために使用されます。同様に、 \fBclean\fR コマンドはチェックイン時にワークツリーファイルの内容を変換するために使用されます。デフォルトでは、これらのコマンドは単一のブロブのみを処理して終了します。長時間実行される \fBprocess\fR フィルターが \fBclean\fR および/または \fBsmudge\fR フィルターの代わりに使用される場合、Gitは単一のGitコマンドの存続期間中、単一のフィルターコマンド呼び出しですべてのブロブを処理できます。例えば \fBgit \-\-all\fR を追加します。長時間実行される \fBprocess\fR フィルターが構成されている場合、構成された単一のブロブフィルターよりも常に優先されます。 \fBprocess\fR フィルターとの通信に使用されるプロトコルの説明については、以下のセクションを参照してください。
+.sp
+コンテンツフィルタリングの用途の1つは、プラットフォームやファイルシステムやユーザーが使用しやすい形にコンテンツをもみもみ(massage)することです。この操作モードでは、ここでのキーワードは「より便利」であり、「使用できないものを使用可能にする」ではありません。 つまり、誰かがフィルタードライバーの定義を設定解除した場合、または適切なフィルタープログラムを持っていない場合でも、プロジェクトは引き続き使用可能である必要があります。
+.sp
+コンテンツフィルタリングのもう1つの用途は、リポジトリに直接使用できないコンテンツ(Gitの外部に保存されている実際のコンテンツを参照するUUIDや暗号化されたコンテンツなど)を保存し、チェックアウト時に使用可能な形式に変換することです(例: 外部コンテンツをダウンロードする、または暗号化されたコンテンツを復号化する)。
+.sp
+これらの2つのフィルターの振る舞い異なり、デフォルトでは、フィルターは前者と見なされ、コンテンツをより便利な形にもみもみ(massage)します。構成にフィルタードライバー定義がないか、ゼロ以外のステータスで終了するフィルタードライバーはエラーではありませんが、フィルターを無操作パススルーにします。
+.sp
+filter\&.<driver>\&.required 構成変数を \fBtrue\fR に設定することにより、フィルター自体が使用できないコンテンツを使用可能なコンテンツに変換することを宣言できます。
+.sp
+注意: clean フィルターを変更するたびに、リポジトリを再正規化する必要があります: $ git add \-\-renormalize
+.sp
+たとえば、 \fB\&.gitattributes\fR で、あなたはパスに \fBfilter\fR 属性を割り当てるとします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.c     filter=indent
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、あなたは以下のように \fB\&.git/config\fR で \fBfilter\&.indent\&.clean\fR と \fBfilter\&.indent\&.smudge\fR 構成を定義して、ソースファイルがチェックインされたとき(\fBclean\fR が実行されます)と、チェックアウトされたとき(コマンドが \fBcat\fR であるため、変更は行われません)、にCプログラムの内容を変更するコマンドのペアを指定します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[filter "indent"]
+        clean = indent
+        smudge = cat
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+最良の結果を得るには、 \fBclean\fR を2回実行しても出力を変更しないでください("clean\(->clean" は "clean" と同等である必要があります)。また、複数の \fBsmudge\fR コマンドで \fBclean\fR の出力を変更しないでください("smudge\(->smudge\(->clean" は "clean\(rq と同等である必要があります)。 以下のmergingセクションを参照してください。
+.sp
+"indent" フィルターは、この点で適切に動作します。すでに正しくインデントされている入力は変更されません。この場合、smudgeフィルターがないということは、cleanフィルターが自身の出力を変更せずに受け入れる必要があることを意味します。
+.sp
+保存されたコンテンツを使用可能にするためにフィルターが成功する必要がある場合は、構成でフィルターが \fBrequired\fR (必須)であることを宣言できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[filter "crypt"]
+        clean = openssl enc \&.\&.\&.
+        smudge = openssl enc \-d \&.\&.\&.
+        required
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+フィルタコマンドラインのシーケンス \fB%f\fR は、フィルタが機能しているファイルの名前に置き換えられます。フィルタはこれをキーワード置換で使用する場合があります。例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[filter "p4"]
+        clean = git\-p4\-filter \-\-clean %f
+        smudge = git\-p4\-filter \-\-smudge %f
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: \fB%f\fR は、作業中のパスの名前であることに注意してください。フィルタリングされているバージョンによっては、ディスク上の対応するファイルが存在しないか、内容が異なる場合があります。したがって、smudgeおよびcleanコマンドは、ディスク上のファイルにアクセスしようとするのではなく、標準入力で提供されるコンテンツのフィルターとしてのみ機能する必要があります。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBLong Running Filter Process\fR
+.RS 4
+.sp
+フィルタコマンド(文字列値)が \fBfilter\&.<driver>\&.process\fR を介して定義されている場合、Gitは単一のGitコマンドの存続期間中、単一のフィルタ呼び出しですべてのブロブを処理できます。 これは、長時間実行プロセスプロトコル( technical/long\-running\-process\-protocol\&.txt にて説明)を使用して実現されます。
+.sp
+Gitは、クリーニング(cleaned)またはスマッジング(smudged)が必要な最初のファイルを検出すると、フィルターを開始してハンドシェイクを実行します。ハンドシェイクでは、Gitによって送信されるウェルカムメッセージは "git\-filter\-client" であり、プロトコルバージョン2("version=2")のみがサポートされ、サポートされる機能は "clean" と "smudge" と \(rqdelay" です。
+.sp
+その後、Gitはフラッシュパケットで終了する "key=value" ペアのリストを送信します。リストには、少なくとも(サポートされている機能に基づく)フィルターコマンドと、リポジトリルートを基準にしてフィルタリングするファイルのパス名が含まれます。フラッシュパケットの直後に、Gitはコンテンツを0個以上のpkt\-lineパケットに分割して送信し、フラッシュパケットを送信してコンテンツを終了します。フィルタは、コンテンツと最終的なフラッシュパケットを受信する前に、応答を送信してはならないことに注意してください。 また、 "key=value" ペアの「value」には「=」文字を含めることができますが、キーには含めることはできません。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git> command=smudge
+packet:          git> pathname=path/testfile\&.dat
+packet:          git> 0000
+packet:          git> CONTENT
+packet:          git> 0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+フィルタは、フラッシュパケットで終了する "key=value" ペアのリストで応答することが期待されます。フィルタで問題が発生しない場合は、リストに "success" ステータスが含まれている必要があります。これらのパケットの直後に、フィルターはコンテンツを0個以上のpkt\-lineパケットで送信し、最後にフラッシュパケットを送信することが期待されます。最後に、フラッシュパケットで終了する "key=value" ペアの2番目のリストが必要です。フィルタは、2番目のリストのステータスを変更したり、空のリストでステータスをそのまま維持したりできます。空のリストは、フラッシュパケットで終了する必要があることに注意してください。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git< status=success
+packet:          git< 0000
+packet:          git< SMUDGED_CONTENT
+packet:          git< 0000
+packet:          git< 0000  # empty list, keep "status=success" unchanged!
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+結果のコンテンツが空の場合、フィルターは "success" ステータスとフラッシュパケットで応答して、空のコンテンツを通知することが期待されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git< status=success
+packet:          git< 0000
+packet:          git< 0000  # empty content!
+packet:          git< 0000  # empty list, keep "status=success" unchanged!
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+フィルタがコンテンツを処理できない、または処理したくない場合は、 "error" ステータスで応答することが期待されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git< status=error
+packet:          git< 0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+フィルタの処理中にエラーが発生した場合、コンテンツが(部分的または完全に)送信された後、ステータス "error" を送信できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git< status=success
+packet:          git< 0000
+packet:          git< HALF_WRITTEN_ERRONEOUS_CONTENT
+packet:          git< 0000
+packet:          git< status=error
+packet:          git< 0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+フィルタがGitプロセスの存続期間中、コンテンツと将来のコンテンツを処理できない、または処理したくない場合は、プロトコルの任意の時点で "abort" ステータスで応答することが期待されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git< status=abort
+packet:          git< 0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"error"/"abort" ステータスが設定されている場合、Gitはフィルタープロセスを停止も再開もしません。 ただし、Gitは \fBfilter\&.<driver>\&.required`フラグに従って終了コードを設定し、 `filter\&.<driver>\&.clean\fR / \fBfilter\&.<driver>\&.smudge\fR メカニズムの振る舞いを真似っこします。
+.sp
+通信中にフィルターが停止した場合、またはプロトコルに準拠していない場合、Gitはフィルタープロセスを停止し、処理が必要な次のファイルでフィルターを再開します。 \fBfilter\&.<driver>\&.required\fR フラグの設定によっては、Gitはそれをエラーとして解釈します。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBDelay\fR
+.RS 4
+.sp
+フィルタが "delay" 機能をサポートしている場合、Gitはフィルタコマンドとパス名の後にフラグ "can\-delay" を送信できます。このフラグは、コンテンツなしでステータス "delayed" とフラッシュパケットで応答することにより、フィルターが現在のブロブのフィルタリングを遅らせることができることを示します(たとえば、ネットワーク遅延を補正するため)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git> command=smudge
+packet:          git> pathname=path/testfile\&.dat
+packet:          git> can\-delay=1
+packet:          git> 0000
+packet:          git> CONTENT
+packet:          git> 0000
+packet:          git< status=delayed
+packet:          git< 0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+フィルタが "delay" 機能をサポートしている場合は、 "list_available_blobs" コマンドをサポートしている必要があります。Gitがこのコマンドを送信すると、フィルターは、以前に遅延されて現在使用可能なブロブを表すパス名のリストを返すことが期待されます。リストはフラッシュパケットで終了する必要があり、その後に "success" ステータスが続き、これもフラッシュパケットで終了します。 遅延パスのブロブがまだ利用できない場合、フィルターは少なくとも1つのブロブが利用可能になるまで応答をブロックすることが期待されます。フィルタは、空のリストを送信することで、遅延ブロブがなくなったことをGitに伝えることができます。フィルタが空のリストで応答するとすぐに、Gitは質問を停止します。この時点でGitが受信していないすべてのブロブは欠落していると見なされ、エラーが発生します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git> command=list_available_blobs
+packet:          git> 0000
+packet:          git< pathname=path/testfile\&.dat
+packet:          git< pathname=path/otherfile\&.dat
+packet:          git< 0000
+packet:          git< status=success
+packet:          git< 0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+Gitはパス名を受け取った後、対応するブロブを再度要求します。これらのリクエストには、パス名と空のコンテンツセクションが含まれています。フィルターは、上記で説明した通常の方法で汚れたコンテンツ(smudged content)に応答することが期待されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+packet:          git> command=smudge
+packet:          git> pathname=path/testfile\&.dat
+packet:          git> 0000
+packet:          git> 0000  # empty content!
+packet:          git< status=success
+packet:          git< 0000
+packet:          git< SMUDGED_CONTENT
+packet:          git< 0000
+packet:          git< 0000  # empty list, keep "status=success" unchanged!
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample\fR
+.RS 4
+.sp
+長時間実行されるフィルターのデモの実装は、Gitコアリポジトリにある \fBcontrib/long\-running\-filter/example\&.pl\fR にあります。 独自の長時間実行フィルタープロセスを開発する場合は、 \fBGIT_TRACE_PACKET\fR 環境変数がデバッグに非常に役立ちます(\fBgit\fR(1) を参照)。
+.sp
+既存の \fBfilter\&.<driver>\&.clean\fR や \fBfilter\&.<driver>\&.smudge\fR コマンドを \fBfilter\&.<driver>\&.process\fR で使用できないことに注意してください。前者は後者とは異なるプロセス間通信プロトコルを使用するからです。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBチェックイン/チェックアウト属性間の相互作用\fR
+.RS 4
+.sp
+チェックインのコードの流れでは、ワークツリーファイルは最初に(指定され、対応するドライバーが定義されている場合、) \fBfilter\fR ドライバーで変換され、次に結果が(指定されている場合) `ident`で処理され、最後に(指定されて適用可能な場合) `text`で処理されます。
+.sp
+チェックアウトのコードの流れでは、ブロブコンテンツは最初に \fBtext\fR で変換され、次に \fBident\fR で変換され、 \fBfilter\fR に送られます。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBチェックイン/チェックアウト属性が異なるブランチをマージする\fR
+.RS 4
+.sp
+clean/smudge フィルターや text/eol/ident 属性の追加など、そのファイルの正規リポジトリ形式を変更する属性をファイルに追加した場合、属性が配置されていない場所で何かをマージすると、通常、マージの競合が発生します。
+.sp
+これらの不必要なマージの競合を防ぐために、Gitは、 \fBmerge\&.renormalize\fR 構成変数を設定することにより、3方向マージを解決するときに、ファイルの3つのステージすべての仮想チェックアウトとチェックインを実行するように指示できます。これにより、チェックイン変換によって引き起こされた変更によって、変換されたファイルが変換されていないファイルとマージされるときに、誤ったマージの競合が発生するのを防ぐことができます。
+.sp
+「smudge\(->clean」の結果がすでに汚されている(smudged)ファイルでも「clean」と同じ出力になる限り、この戦略はすべてのフィルター関連の競合を自動的に解決します。このように機能しないフィルターは、手動で解決する必要がある追加のマージ競合を引き起こす可能性があります。
+.RE
+.SS "Generating diff text"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBdiff\fR
+.RS 4
+.sp
+属性 \fBdiff\fR は、Gitが特定のファイルのdiffを生成する方法に影響を与えます。パスのテキストパッチを生成するか、パスをバイナリファイルとして扱うかをGitに指示できます。 また、ハンクヘッダーの \fB@@ \-k,l +n,m @@\fR 行に表示される行に影響を与えたり、外部コマンドを使用して差分を生成するようにGitに指示したり、差分を生成する前にバイナリファイルをテキスト形式に変換するようにGitに依頼したりすることもできます。
+.PP
+set(設定)
+.RS 4
+\fBdiff\fR
+属性が設定されているパスは、NULなどのテキストファイルには通常表示されないバイト値が含まれている場合でも、テキストとして扱われます。
+.RE
+.PP
+unset(設定解除)
+.RS 4
+\fBdiff\fR
+属性が設定されていないパスは、
+\fBBinary files differ\fR
+(バイナリファイル差分) (または、バイナリパッチが有効になっている場合、バイナリパッチ) を生成します。
+.RE
+.PP
+unspecified(未指定)
+.RS 4
+\fBdiff\fR
+属性が指定されていないパスは、最初にその内容が検査され、テキストのように見え、 core\&.bigFileThreshold よりも小さい場合は、テキストとして扱われます。さもなければ
+\fBBinary files differ\fR
+(バイナリファイル差分) が生成されます。
+.RE
+.PP
+String(文字列値)
+.RS 4
+指定されたdiffドライバーを使用してdiffが表示されます。以下のセクションで説明するように、各ドライバーは1つ以上のオプションを指定できます。diffドライバー「foo」のオプションは、Git構成ファイルの「diff\&.foo」セクションの構成変数によって定義されます。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fB外部diffドライバーの定義\fR
+.RS 4
+.sp
+diffドライバの定義は \fBgitattributes\fR ファイルではなく \fBgitconfig\fR で行われるため、厳密に言えば、このマニュアルページはそれについて話すのには間違った場所はありますが\&...
+.sp
+外部diffドライバー \fBjcdiff\fR を定義するには、以下のように \fB$GIT_DIR/config\fR ファイル(または \fB$HOME/\&.gitconfig\fR ファイル)にセクションを追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[diff "jcdiff"]
+        command = j\-c\-diff
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+Git は \fBdiff\fR 属性が \fBjcdiff\fR に設定されているパスの diff を表示する必要がある場合、上記の設定で指定したコマンド、つまり \fBj\-c\-diff\fR を 7 つのパラメータで、 \fBGIT_EXTERNAL_DIFF\fR プログラムが呼ばれるのと同じように呼び出します。 詳しくは \fBgit\fR(1) を参照してください。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBDefining a custom hunk-header\fR
+.RS 4
+.sp
+テキストdiff出力の変更の各グループ(ハンク(hunk)と呼ばれます)には、以下の形式の行が接頭辞として付けられます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+@@ \-k,l +n,m @@ TEXT
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これはハンクヘッダー(hunk header)と呼ばれます。 "TEXT" の部分は、デフォルトでは、アルファベットまたは、アンダースコア(\fB_\fR)または、ドル記号(\fB$\fR)で始まる行です。 これは、GNU \fBdiff \-p\fR 出力が使用するものとマッチします。ただし、このデフォルトの選択は一部のコンテンツには適していないため、カスタマイズされたパターンを使用して選択を行うことができます。
+.sp
+最初に、 \&.gitattributesで、パスに \fBdiff\fR 属性を割り当てます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.tex   diff=tex
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、 \fBdiff\&.tex\&.xfuncname\fR 構成を定義して、ハンクヘッダー "TEXT" として表示する行にマッチする正規表現を指定します。以下のように、 \fB$GIT_DIR/config\fR ファイル(または \fB$HOME/\&.gitconfig\fR ファイル)にセクションを追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[diff "tex"]
+        xfuncname = "^(\e\e\e\e(sub)*section\e\e{\&.*)$"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: 単一レベルのバックスラッシュは構成ファイルパーサーによって使用されるため、バックスラッシュを2重にする必要があります。 上記のパターンは、バックスラッシュで始まり、行の終わりまで、 \fBsub\fR 、 \fBsection\fR 、 \fB{\fR の順に0回以上出現する行を選択します。
+.sp
+これを簡単にするための組み込みパターンがいくつかあり、 \fBtex\fR はその1つであるため、構成ファイルに上記を書き込む必要はありません(これは、 \fB\&.gitattributes\fR を介して属性メカニズムで有効にする必要があります)。以下の組み込みパターンを使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBada\fR
+はAda言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbash\fR
+はBourne\-Againシェル言語(bash)のソースコードに適しています。POSIXシェル関数定義のスーパーセットをカバーしています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbibtex\fR
+はBibTeXでコード化されたリファレンスを持つファイルに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcpp\fR
+はC言語とC++言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcsharp\fR
+はC#言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcss\fR
+はCSS(cascading style sheets)に適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBdts\fR
+は devicetree (DTS) ファイルに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBelixir\fR
+はElixir言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBfortran\fR
+はFORTRAN言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBfountain\fR
+はFountain文書に適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgolang\fR
+はGo言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBhtml\fR
+は HTML/XHTML 文書に適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBjava\fR
+はJava言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBkotlin\fR
+はKotlin言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmarkdown\fR
+はMarkdown文書に適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmatlab\fR
+はMATLABとOctave言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBobjc\fR
+はObjective\-C言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpascal\fR
+は Pascal/Delphi 言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBperl\fR
+はPerl言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBphp\fR
+はPHP言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpython\fR
+はPython言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBruby\fR
+はRuby言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBrust\fR
+はRust言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBscheme\fR
+はScheme言語のソースコードに適しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBtex\fR
+はLaTeX文書のソースコードに適しています。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCustomizing word diff\fR
+.RS 4
+.sp
+\fBdiff\&.*\&.wordRegex\fR 構成変数で適切な正規表現を指定することにより、 \fBgit diff \-\-word\-diff\fR が単語を1行に分割するために使用するルールをカスタマイズできます。たとえば、TeXでは、バックスラッシュとそれに続く一連の文字がコマンドを形成しますが、そのようなコマンドのいくつかは、空白を介さずに一緒に実行できます。それらを分離するには、以下のように \fB$GIT_DIR/config\fR ファイル(または \fB$HOME/\&.gitconfig\fR ファイル)で正規表現を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[diff "tex"]
+        wordRegex = "\e\e\e\e[a\-zA\-Z]+|[{}]|\e\e\e\e\&.|[^\e\e{}[:space:]]+"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+前のセクションにリストされているすべての言語には組み込みのパターンが用意されています。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBバイナリファイルのテキスト差分の取得\fR
+.RS 4
+.sp
+一部のバイナリファイルのテキスト変換バージョンの差分を確認することが望ましい場合があります。たとえば、ワードプロセッサ文書をASCIIテキスト表現に変換し、テキストの差分を表示することができます。この変換によって一部の情報が失われますが、結果のdiffは人間が見るのに役立ちます(ただし、直接適用(apply)することはできません)。
+.sp
+\fBtextconv\fR configオプションは、そのような変換を実行するためのプログラムを定義するために使用されます。プログラムは、変換するファイルの名前である単一の引数を取り、結果のテキストをstdoutに生成する必要があります。
+.sp
+たとえば、バイナリ情報の代わりにファイルのexif情報の差分を表示するには(exifツールがインストールされていると仮定して)、以下のセクションを \fB$GIT_DIR/config\fR ファイル(または `$HOME/\&.gitconfig ファイル)に追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[diff "jpg"]
+        textconv = exif
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+テキスト変換は通常、一方向の変換です。この例では、実際の画像コンテンツを失い、テキストデータのみに焦点を当てています。これは、textconvによって生成されたdiffが適用(apply)に適していないことを意味します。このため、テキスト変換を実行するのは、 \fBgit diff\fR と \fBgit log\fR ファミリーのコマンド(つまり、log、whatchanged、show)のみです。 \fBgit format\-patch\fR はこの出力を生成しません。バイナリファイルのテキスト変換された差分を誰かに送信したい場合(たとえば、行った変更をすばやく伝達するため)、それを別個に生成し、送信する通常のバイナリ差分に加えてコメントとして送信する必要があります。
+.sp .5v
+.RE
+.sp
+特に \fBgit log \-p\fR を使用して大量のテキスト変換を行う場合、テキスト変換が遅くなる可能性があるため、Gitは出力をキャッシュし、将来の差分で使用するメカニズムを提供します。 キャッシュを有効にするには、diffドライバーの構成で「cachetextconv」変数を設定します。 例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[diff "jpg"]
+        textconv = exif
+        cachetextconv = true
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、各ブロブで「exif」を実行した結果が無期限にキャッシュされます。diffドライバーのtextconv構成変数を変更すると、Gitはキャッシュエントリを自動的に無効にし、textconvフィルターを再実行します。キャッシュを手動で無効にしたい場合(たとえば、「exif」のバージョンが更新され、より良い出力が生成されようになった等)、 \fBgit update\-ref \-d refs/notes/textconv/jpg\fR を使用してキャッシュを手動で削除できます( ここで、「jpg」は上記の例のように、diffドライバーの名前です)。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBtextconvと外部diffの選択\fR
+.RS 4
+.sp
+あなたがリポジトリ内のバイナリまたは特別にフォーマットされたブロブの違いを表示したい場合は、外部のdiffコマンドを使用するか、textconvを使用してそれらを差分可能(diff\-able)なテキストフォーマットに変換するかを選択できます。どちらの方法を選択するかは、状況に完全に依存します。
+.sp
+外部diffコマンドを使用する利点は、柔軟性です。行指向の変更を見つける必要はありません。また、出力が統一されたdiff(unified diff)に似ている必要もありません。あなたはあなたのデータ形式に最も適した方法で変更を自由に見つけて報告できます。
+.sp
+それと比較すると、textconvははるかに制限的です。データを行指向のテキスト形式に変換すると、Gitは通常のdiffツールを使用して出力を生成します。この方法を選択することにはいくつかの利点があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+容易に使えます。多くの場合、独自の差分を実行するよりも、バイナリからテキストへの変換を作成する方がはるかに簡単です。多くの場合、既存のプログラム(つまり exif や odt2txt)をtextconvフィルターとして使用できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Gitのdiff機能。変換ステップのみを自分で実行することで、カラー化、単語diff、マージ用の複合diffなど、Gitのdiff機能の多くを引き続き利用できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+キャッシュ機能。 textconvキャッシングは、
+\fBgit log \-p\fR
+を実行してトリガーするような、繰り返されるdiffを高速化できます。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBファイルをバイナリとしてマークする\fR
+.RS 4
+.sp
+Gitは通常、コンテンツの先頭を調べることで、ブロブにテキストデータとバイナリデータのどちらが含まれているかを正しく推測します。ただし、ブロブにファイルの後半にバイナリデータが含まれている、またはコンテンツが技術的にはテキスト文字で構成されているものの、人間の読者には不明瞭であるために、あなたは、その推測を上書きしたい場合があります。たとえば、多くのポストスクリプトファイルにはASCII文字しか含まれていません(つまりテキストデータです)が、ノイズが多く意味のないdiffが生成されます。
+.sp
+ファイルをバイナリとしてマークする最も簡単な方法は、 \fB\&.gitattributes\fR ファイルでdiff属性を設定解除(unset)することです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.ps \-diff
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、Gitは通常の差分ではなく \fBBinary files differ\fR (バイナリファイルの差分)(またはバイナリパッチが有効になっている場合はバイナリパッチ)を生成します。
+.sp
+しかしながら、他のdiffドライバー属性を指定することもできます。 たとえば、 \fBtextconv\fR を使用してポストスクリプトファイルをASCII表現に変換し、人間が表示できるようにしたい場合があるけども、それ以外の場合はバイナリファイルとして扱いたいとします。 \fB\-diff\fR 属性 と \fBdiff=ps\fR 属性の両方を指定することはできません。 解決策は、 \fBdiff\&.*\&.binary\fR 構成オプションを使用することです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[diff "ps"]
+  textconv = ps2ascii
+  binary = true
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SS "Performing a three\-way merge"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBmerge\fR
+.RS 4
+.sp
+属性 \fBmerge\fR は、 \fBgit merge\fR 中にファイルレベルのマージが必要な場合にファイルの3つのバージョンをマージする方法や、 \fBgitr evert\fR や \fBgit cherry\-pick\fR などの他のコマンドに、影響します。
+.PP
+set(設定)
+.RS 4
+組み込みの３方向マージドライバーは、
+\fBRCS\fR
+スイートの
+\fBmerge\fR
+コマンドと同様の方法でコンテンツをマージするために使用されます。これは通常のテキストファイルに適しています。
+.RE
+.PP
+unset(設定解除)
+.RS 4
+現在のブランチのバージョンを暫定的なマージ結果として取得し、マージに競合があることを宣言します。これは、明確に定義されたマージセマンティクスを持たないバイナリファイルに適しています。
+.RE
+.PP
+unspecified(未指定)
+.RS 4
+デフォルトでは、これは
+\fBmerge\fR
+属性が設定されている場合と同じ組み込みの３方向マージドライバーを使用します。 ただし、
+\fBmerge\&.default\fR
+構成変数は、
+\fBmerge\fR
+属性未指定(unspecified)のパスで使用される別のマージドライバーに名前を付けることができます。
+.RE
+.PP
+String(文字列値)
+.RS 4
+3方向マージは、指定のカスタムマージドライバーを使用して実行されます。組み込みの3方向マージドライバーは、「text」ドライバーを要求することで明示的に指定できます。 現在のブランチを取得する組み込みドライバーは、「binary」を要求することで指定できます。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBBuilt-in merge drivers\fR
+.RS 4
+.sp
+\fBmerge\fR 属性を介して要求できる、いくつかの組み込みの低レベルのマージドライバーが定義されています。
+.PP
+text
+.RS 4
+テキストファイルの通常の3方向ファイルレベルのマージ。 競合する領域は、競合マーカー
+\fB<<<<<<<\fR
+と
+\fB=======\fR
+と
+\fB>>>>>>>\fR
+でマークされます。ブランチのバージョンは
+\fB=======\fR
+マーカーの前に表示され、マージされたブランチのバージョンは
+\fB=======\fR
+マーカーの後に表示されます。
+.RE
+.PP
+binary
+.RS 4
+ブランチのバージョンを作業ツリーに保持しますが、ユーザーが整理できるようにパスを競合状態のままにします。
+.RE
+.PP
+union
+.RS 4
+テキストファイルに対して3方向のファイルレベルのマージを実行しますが、競合マーカーを残すのではなく、両方のバージョンから行を取得します。これにより、結果のファイルに追加された行がランダムな順序で残る傾向があり、ユーザーは結果を確認すべきです。影響を理解していない場合は、これを使用してはいけません。
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBDefining a custom merge driver\fR
+.RS 4
+.sp
+マージドライバの定義は、 \fBgitattributes\fR ファイルではなく \fB\&.git/config\fR ファイルで行われるため、厳密に言えば、このマニュアルページはそれについて話すのに間違った場所ではありますが\&...
+.sp
+カスタムマージドライバー \fBfilfre\fR を定義するには、以下のように \fB$GIT_DIR/config\fR ファイル(または \fB$HOME/\&.gitconfig\fR ファイル)にセクションを追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[merge "filfre"]
+        name = feel\-free merge driver
+        driver = filfre %O %A %B %L %P
+        recursive = binary
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBmerge\&.*\&.name\fR 変数は、ドライバーに人間が読める名前を付けます。
+.sp
+\fBmerge\&.*\&.driver\fR 変数の値は、祖先のバージョン(\fB%O\fR)と、現在のバージョン(\fB%A\fR)と、他のブランチのバージョン(\fB%B\fR)をマージするために実行するコマンドを作成するために使用されます。これらの3つのトークンは、コマンドラインの構築時にこれらのバージョンの内容を保持する一時ファイルの名前に置き換えられます。さらに、 \fB%L\fR は競合マーカーのサイズに置き換えられます(以下を参照)。
+.sp
+マージドライバーは、マージの結果を \fB%A\fR という名前のファイルに上書きして残し、それらを正常にマージできた場合はゼロステータスで終了し、競合があった場合は非ゼロで終了することが期待されます。
+.sp
+\fBmerge\&.*\&.recursive\fR 変数は、複数の祖先が存在する場合に、共通の祖先間の内部マージのためにマージドライバーが呼び出されるときに使用する他のマージドライバーを指定します。指定しない場合、ドライバー自体が内部マージと最終マージの両方に使用されます。
+.sp
+マージドライバーは、プレースホルダー \fB%P\fR を介して、マージされた結果が格納されるパス名を知ります。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBconflict-marker-size\fR
+.RS 4
+.sp
+この属性は、競合するマージ中に作業ツリーファイルに残る競合マーカーの長さを制御します。値を正の整数に設定するだけで、意味のある効果があります。
+.sp
+たとえば、 ファイル \fBDocumentation/git\-merge\&.txt\fR の結果をマージすると競合するときに、\fB\&.gitattributes\fR で(通常の7文字の長さではなく)はるかに長い競合マーカーを残すようにマージ機構に指示できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Documentation/git\-merge\&.txt     conflict\-marker\-size=32
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SS "Checking whitespace errors"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBwhitespace\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ `core\&.whitespace` 設定変数を使用すると、プロジェクト内のすべてのパスに対して `diff` と `apply`
+が空白エラー(whitespace errors)をどうみなすかを定義します(linkgit:git\-config[1]
+を参照)。この属性では、あなたはパスごとに細かく制御できます。
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+set(設定)
+.RS 4
+Gitでチェックできる全てのタイプの潜在的な空白エラーを通知します。タブ幅は
+\fBcore\&.whitespace\fR
+構成変数の値から取得されます。
+.RE
+.PP
+unset(設定解除)
+.RS 4
+何もエラーとして通知しません。
+.RE
+.PP
+unspecified(未指定)
+.RS 4
+\fBcore\&.whitespace\fR
+構成変数の値を使用して、エラーとして通知する内容を決定します。
+.RE
+.PP
+String(文字列値)
+.RS 4
+\fBcore\&.whitespace\fR
+構成変数と同じ形式で、通知すべき一般的な空白の問題のコンマ区切りリストを指定します。
+.RE
+.RE
+.SS "Creating an archive"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBexport-ignore\fR
+.RS 4
+.sp
+属性 \fBexport\-ignore\fR を持つファイルとディレクトリはアーカイブファイルに追加されません。
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBexport-subst\fR
+.RS 4
+.sp
+属性 \fBexport\-subst\fR がファイルに設定されている場合、Gitはこのファイルをアーカイブに追加するときにいくつかのプレースホルダーを展開します。展開は、コミットIDの可用性に依存します。たとえば \fBgit-archive\fR(1) にコミットやタグの代わりにツリーが与えられている場合、置換は行われません。プレースホルダーは、 \fBgit-log\fR(1) のオプション \fB\-\-pretty=format:\fR のプレースホルダーと同じですが、ファイル内で \fB$Format:PLACEHOLDERS$\fR のようにラップする必要がある点が異なります。 例えば、 文字列 \fB$Format:%H$\fR は、コミットハッシュに置き換えられます。ただし、DoS攻撃(denial\-of\-service attacks)を回避するために、アーカイブごとに1つの \fB%(describe)\fR プレースホルダーのみが展開されます。
+.RE
+.SS "Packing objects"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBdelta\fR
+.RS 4
+.sp
+属性 \fBdelta\fR がfalseに設定されているパスのブロブに対して、デルタ圧縮は試行されません。
+.RE
+.SS "Viewing files in GUI tools"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBencoding\fR
+.RS 4
+.sp
+この属性の値は、関連するファイルの内容を表示するためにGUIツール(\fBgitk\fR(1) や \fBgit-gui\fR(1) など)で使用される文字エンコードを指定します。注意: パフォーマンス上の考慮事項により、 \fBgitk\fR(1) は、オプションでファイルごとのエンコーディングを手動で有効にしない限り、この属性を使用しないことに注意してください。
+.sp
+この属性が設定されていないか、値が無効な場合は、代わりに \fBgui\&.encoding\fR 構成変数の値が使用されます(\fBgit-config\fR(1) を参照)。
+.RE
+.SH "USING MACRO ATTRIBUTES"
+.sp
+追跡中のバイナリファイルに、行末変換を適用したり、テキストの差分を作成したりする必要はありません。あなたは、たとえば以下のように指定する必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.jpg \-text \-diff
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+しかし、多くの属性がある場合、これはめんどくさいです。マクロ属性を使用すると、あなたは設定時に他の多くの属性を同時に設定または設定解除する属性を定義できます。システムは、組み込みのマクロ属性 \fBbinary\fR を認識します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.jpg binary
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+「binary」属性を設定すると、上記のように「text」属性と「diff」属性の設定も解除されます。マクロ属性は「set」のみであることに注意してください。ただし、1つを設定すると、他の属性をsetまたはunsetしたり、他の属性を「Unspecified」状態に戻したりする事があります。
+.SH "DEFINING MACRO ATTRIBUTES"
+.sp
+カスタムマクロ属性は、最上位のgitattributesファイル(\fB$GIT_DIR/info/attributes\fR または、作業ツリーの最上位にある ` \&.gitattributes` ファイルまたは、グローバルgitattributesファイルまたは、システム全体のgitattributesファイル)でのみ定義でき、作業ツリーサブディレクトリの \fB\&.gitattributes\fR ファイルでは定義できません。 組み込みのマクロ属性「binary」は、以下のものと同等です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[attr]binary \-diff \-merge \-text
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "NOTES"
+.sp
+作業ツリーの \fB\&.gitattributes\fR ファイルにアクセスするとき、Gitはシンボリックリンクをたどりません。 これにより、ファイルシステムからではなく、インデックスまたはツリーからファイルにアクセスする場合の動作の一貫性が保たれます。
+.SH "EXAMPLES"
+.sp
+これらの以下の3つの \fBgitattributes\fR ファイルがある場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+(in $GIT_DIR/info/attributes)
+
+a*      foo !bar \-baz
+
+(in \&.gitattributes)
+abc     foo bar baz
+
+(in t/\&.gitattributes)
+ab*     merge=filfre
+abc     \-foo \-bar
+*\&.c     frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+パス \fBt/abc\fR に与えられる属性は、以下のように計算されます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+(問題のパスと同じディレクトリにある)
+\fBt/\&.gitattributes\fR
+を調べることにより、Gitは最初の行が一致することを検出します。
+\fBmerge\fR
+属性が設定されます。 また、2行目が一致し、属性
+\fBfoo\fR
+と `bar`が設定解除(unseet)されていることもわかります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+次に (親ディレクトリにある)
+\fB\&.gitattributes\fR
+を調べ、最初の行がマッチすることを確認します。しかし、
+\fBt/\&.gitattributes\fR
+ファイルでは、このパスに対して
+\fBmerge\fR
+や
+\fBfoo\fR
+や
+\fBbar\fR
+属性をどのように与えるべきかを既に決めているので、\fBfoo\fR
+と
+\fBbar\fR
+は設定解除(unset)のままにしています。属性
+\fBbaz\fR
+がsetされます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+最後に、
+\fB$GIT_DIR/info/attributes\fR
+を調べます。このファイルは、ツリー内の設定を上書きするために使用されます。最初の行がマッチして
+\fBfoo\fR
+がsetされ、
+\fBbar\fR
+が指定解除(unset)の状態に戻され、
+\fBbaz\fR
+が設定解除(unset)されます。
+.RE
+.sp
+その結果、 \fBt/abc\fR への属性の割り当ては以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+foo     set to true
+bar     unspecified
+baz     set to false
+merge   set to string value "filfre"
+frotz   unspecified
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBgit-check-attr\fR(1)\&.
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

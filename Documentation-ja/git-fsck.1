@@ -1,0 +1,275 @@
+'\" t
+.\"     Title: git-fsck
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-FSCK" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-fsck \- データベース内のオブジェクトの接続性(connectivity)と有効性(validity)を検証します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit fsck\fR [\-\-tags] [\-\-root] [\-\-unreachable] [\-\-cache] [\-\-no\-reflogs]
+         [\-\-[no\-]full] [\-\-strict] [\-\-verbose] [\-\-lost\-found]
+         [\-\-[no\-]dangling] [\-\-[no\-]progress] [\-\-connectivity\-only]
+         [\-\-[no\-]name\-objects] [<object>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+データベース内のオブジェクトの接続性(connectivity)と有効性(validity)を検証します
+.SH "OPTIONS"
+.PP
+<object>
+.RS 4
+到達不能追跡のheadとして扱うオブジェクト。
+.sp
+オブジェクトが指定されていない場合、
+\fBgit fsck\fR
+はデフォルトでインデックスファイルと、
+\fBrefs\fR
+名前空間内のすべてのSHA\-1参照と、(\fB\-\-no\-reflogs\fR
+が与えられて無い場合)すべてのreflogsを、headとして使用します。
+.RE
+.PP
+\fB\-\-unreachable\fR
+.RS 4
+存在するが、どの参照ノードからも到達できないオブジェクトを印刷します。
+.RE
+.PP
+\fB\-\-[no\-]dangling\fR
+.RS 4
+存在するが「直接」使用されることのないオブジェクトを印刷します(デフォルト)。
+\fB\-\-no\-dangling\fR
+を使用して、この情報を出力から省略することができます。
+.RE
+.PP
+\fB\-\-root\fR
+.RS 4
+ルートノードを報告します。
+.RE
+.PP
+\fB\-\-tags\fR
+.RS 4
+タグを報告します。
+.RE
+.PP
+\fB\-\-cache\fR
+.RS 4
+インデックスに記録されているオブジェクトを、到達不能追跡のheadノードとしても考慮します。
+.RE
+.PP
+\fB\-\-no\-reflogs\fR
+.RS 4
+reflogのエントリによってのみ参照されるコミットが到達可能であるとは見なさないようにします。このオプションは、以前はrefに含まれていたが、現在は含まれていないが、対応するreflogに残っているコミットを検索することのみを目的としています。
+.RE
+.PP
+\fB\-\-full\fR
+.RS 4
+GIT_OBJECT_DIRECTORY（$GIT_DIR/objects) 内のオブジェクトだけでなく、GIT_ALTERNATE_OBJECT_DIRECTORIES または $GIT_DIR/objects/info/alternates にリストされている代替オブジェクトプール、および $GIT_DIR/objects/pack にあるパックされたGitアーカイブにあるオブジェクトもチェックします。サブディレクトリを代替オブジェクトプールにパックします。いまやこれがデフォルトになりました。
+\fB\-\-no\-full\fR
+でオフにできます。
+.RE
+.PP
+\fB\-\-connectivity\-only\fR
+.RS 4
+到達可能なオブジェクトの接続のみをチェックし、到達可能なタグ、コミット、またはツリーによって参照されるオブジェクトが存在することを確認します。これにより、ブロブの読み取りを完全に回避することで操作が高速化されます(ただし、参照されたブロブが存在するかどうかは引き続きチェックされます)。 これにより、コミットとツリーの破損が検出されますが、セマンティックチェック(フォーマットエラーなど)は行われません。ブロブオブジェクトの破損はまったく検出されません。
+.sp
+到達不能なタグ、コミット、およびツリーにもアクセスして、履歴のぶら下がっているセグメントのヒントを見つけることができます。この出力を気にせず、さらに高速化したい場合は、
+\fB\-\-no\-dangling\fR
+を使用してください。
+.RE
+.PP
+\fB\-\-strict\fR
+.RS 4
+より厳密なチェックを有効にします。つまり、古いバージョンのGitによって作成された g+w ビットセットで記録されたファイルモードをキャッチします。Linuxカーネル、Git自体、スパースリポジトリなどの既存のリポジトリには、このチェックをトリガーする古いオブジェクトがありますが、このフラグを使用して新しいプロジェクトをチェックすることをお勧めします。
+.RE
+.PP
+\fB\-\-verbose\fR
+.RS 4
+おしゃべりになります。
+.RE
+.PP
+\fB\-\-lost\-found\fR
+.RS 4
+タイプに応じて、ぶら下がっているオブジェクトを \&.git/lost\-found/commit/ または \&.git/lost\-found/other/ に書き込みます。オブジェクトがブロブの場合、コンテンツはそのオブジェクト名ではなくファイルに書き込まれます。
+.RE
+.PP
+\fB\-\-name\-objects\fR
+.RS 4
+到達可能なオブジェクトの名前を表示する場合、SHA\-1に加えて、それらがどのように到達可能であるかを説明する名前も表示します。
+\fBgit-rev-parse\fR(1)
+と互換性があります。 例えば
+\fBHEAD@{1234567890}~25^2:src/\fR
+.RE
+.PP
+\fB\-\-[no\-]progress\fR
+.RS 4
+\fB\-\-no\-progress\fR
+または
+\fB\-\-verbose\fR
+が指定されていない限り、進行状況ステータスは、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。
+\fB\-\-progress\fR
+は、標準エラーストリームが端末に送信されていない場合でも、進行状況出力を強制します。
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+fsck\&.<msg\-id>
+.RS 4
+fsck中に、gitは、現在のバージョンのgitでは生成されず、
+\fBtransfer\&.fsckObjects\fR
+が設定されている場合はネットワーク経由で送信されない、レガシーデータの問題を検出する場合があります。この機能は、そのようなデータを含むレガシーリポジトリの操作をサポートすることを目的としています。
+.sp
+\fBfsck\&.<msg\-id>\fR
+設定は、
+\fBgit-fsck\fR(1)
+によって取得されますが、代わりに、そのようなデータセット
+\fBreceive\&.fsck\&.<msg\-id>\fR
+のプッシュを受け入れるか、または、クローンまたはフェッチのセットである
+\fBfetch\&.fsck\&.<msg\-id>\fR
+を使用します。
+.sp
+この文書の残りの部分では、簡潔にするために
+\fBfsck\&.*\fR
+変数について説明していますが、対応する
+\fBreceive\&.fsck\&.*\fR
+変数と
+\fBfetch\&.<msg\-id>\&.*\fR
+変数にも同じことが当てはまります。
+.sp
+\fBcolor\&.ui\fR
+や
+\fBcore\&.editor\fR
+のような変数とは異なり、
+\fBreceive\&.fsck\&.<msg\-id>\fR
+と
+\fBfetch\&.fsck\&.<msg\-id>\fR
+変数は、設定されていない場合、
+\fBfsck\&.<msg\-id>\fR
+構成にフォールバックしません。さまざまな状況で同じfsck設定を均一に構成するには、3つすべてを同じ値に設定する必要があります。
+.sp
+\fBfsck\&.<msg\-id>\fR
+が設定されている場合、
+\fBfsck\&.<msg\-id>\fR
+の値を
+\fBerror\fR
+、
+\fBwarn\fR
+、\fBignore\fR
+のいずれか一つとすることにより、エラーを警告に切り替える事もでき、その逆も可能です。そして
+\fB<msg\-id>\fR
+の部分はメッセージIDです。便利なように、fsckはエラー/警告メッセージの前にメッセージIDを付けます。たとえば「missingEmail: invalid author/committer line \- missing email」は、
+\fBfsck\&.missingEmail = ignore\fR
+を設定するとその問題が非表示になることを意味します。
+.sp
+一般に、これらの問題のあるオブジェクトが共有する破損の種類をリストして無視するのではなく、
+\fBfsck\&.skipList\fR
+に問題のある既存のオブジェクトを列挙することをお勧めします。前者を実行すると、同じ破損の新しいインスタンスが見過ごされる可能性があります。
+.sp
+不明な
+\fBfsck\&.<msg\-id>\fR
+値を設定すると、fsckが停止(die)しますが、
+\fBreceive\&.fsck\&.<msg\-id>\fR
+や
+\fBfetch\&.fsck\&.<msg\-id>\fR
+に対して同じことを行うと、gitは単に警告するだけです。
+.RE
+.PP
+fsck\&.skipList
+.RS 4
+非致命的な理由により既に壊れている(broken)ことが分かっているため無視する必要があるオブジェクト名(1行につき1つの省略されてないSHA\-1)のリストへのパス。Git 2\&.20 以降では、コメント(\fB#\fR)文字から行末までと、空行と、先頭と末尾の空白(whitespace)は無視されます。それより古いバージョンでは1行につき1つのSHA\-1以外は全てエラーになります。
+.sp
+この機能は、無効なコミッターの電子メールアドレスなど、初期のコミットにもかかわらず、安全に無視できるエラーを含む、確立されたプロジェクトを受け入れる必要がある場合に役立ちます。 注意: この設定では、corruptオブジェクトをスキップすることはできません。
+.sp
+\fBfsck\&.<msg\-id>\fR
+と同様に、この変数に対応する
+\fBreceive\&.fsck\&.skipList\fR
+派生と
+\fBfetch\&.fsck\&.skipList\fR
+派生があります。
+.sp
+\fBcolor\&.ui\fR
+や
+\fBcore\&.editor\fR
+のような変数とは異なり、
+\fBreceive\&.fsck\&.skipList\fR
+変数と
+\fBfetch\&.fsck\&.skipList\fR
+変数は、設定されていない場合、
+\fBfsck\&.skipList\fR
+構成にフォールバックしません。さまざまな状況で同じfsck設定を均一に構成するには、3つすべてを同じ値に設定する必要があります。
+.sp
+古いバージョンのGit(2\&.20より前)では、オブジェクト名リストを並べ替える必要があることが文書化されています。これは必須ではなく、オブジェクト名は任意の順序で表示できますが、リストを読み取るときに、内部バイナリ検索実装の目的でリストが並べ替えられているかどうかを追跡しました。これにより、既に並べ替えられたリストでは作業を節約できます。膨大なリストがない限り、リストを事前に並べ替える必要はありませんでした。 Gitバージョン2\&.20以降では、代わりにハッシュ実装が使用されるため、リストを事前に並べ替える必要はありません。
+.RE
+.SH "DISCUSSION"
+.sp
+git\-fsckは、SHA\-1と一般的なオブジェクトの健全性をテストし、結果として得られる到達可能性とその他すべてを完全に追跡します。検出した破損(オブジェクトの欠落または不良)を出力し、 \fB\-\-unreachable\fR フラグを使用すると、存在するが指定されたheadノード(または上記デフォルト達)のいずれからも到達できないオブジェクトも出力します。
+.sp
+つまり、それは、あなたのバックアップや、他のアーカイブで見つけなければならない破損したオブジェクトです(つまり、あなたは、それらを削除して、他の誰かが破損したオブジェクトを持っていることを期待して、他のサイトと「rsync」を実行できます)。
+.sp
+core\&.commitGraph が true の場合、 commit\-graph ファイルも「git commit\-graph verify」を使用して検査されます。 \fBgit-commit-graph\fR(1) を参照してください。
+.SH "EXTRACTED DIAGNOSTICS"
+.PP
+unreachable <type> <object>
+.RS 4
+<type> というタイプである <object> というオブジェクトは、表示されるツリーまたはコミットのいずれにおいても、実際には直接または間接的に参照されていません。これは、指定していない別のルートノードがあるか、ツリーが破損していることを意味している可能性があります。ルートノードを見逃していない場合は、到達不能なノードは使用できないため、削除することをお勧めします。
+.RE
+.PP
+missing <type> <object>
+.RS 4
+この <type> というタイプの <object> というオブジェクトは参照されていますが、データベースに存在しません。
+.RE
+.PP
+dangling <type> <object>
+.RS 4
+この <type> タイプの <object> というオブジェクトはデータベースに存在しますが、「直接」使用されることはありません。 ぶら下がっているコミットはルートノードである可能性があります。
+.RE
+.PP
+hash mismatch <object>
+.RS 4
+データベースに、ハッシュがオブジェクトデータベースの値と一致しないオブジェクトがあります。これは、深刻なデータ整合性の問題を示しています。
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+GIT_OBJECT_DIRECTORY
+.RS 4
+オブジェクトデータベースのルート(通常は $GIT_DIR/objects )を指定するために使用されます
+.RE
+.PP
+GIT_INDEX_FILE
+.RS 4
+インデックスのインデックスファイルを指定するために使用されます
+.RE
+.PP
+GIT_ALTERNATE_OBJECT_DIRECTORIES
+.RS 4
+追加のオブジェクトデータベースルートを指定するために使用されます(通常は未設定)
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

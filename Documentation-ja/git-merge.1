@@ -1,0 +1,1289 @@
+'\" t
+.\"     Title: git-merge
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MERGE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-merge \- 2つまたはそれ以上の開発履歴を結合します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit merge\fR [\-n] [\-\-stat] [\-\-no\-commit] [\-\-squash] [\-\-[no\-]edit]
+        [\-\-no\-verify] [\-s <strategy>] [\-X <strategy\-option>] [\-S[<keyid>]]
+        [\-\-[no\-]allow\-unrelated\-histories]
+        [\-\-[no\-]rerere\-autoupdate] [\-m <msg>] [\-F <file>]
+        [\-\-into\-name <branch>] [<commit>\&...]
+\fIgit merge\fR (\-\-continue | \-\-abort | \-\-quit)
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+名前付きのコミット(その履歴が現在のブランチから分岐した時点以降のもの)からの変更を現在のブランチに取り込みます。 このコマンドは、別のリポジトリからの変更を組み込むために \fBgit pull\fR によって使用され、そして、あるブランチから別のブランチに変更をマージするために手動で使用できます。
+.sp
+以下の履歴が存在し、現在のブランチが \fBmaster\fR であるとします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+          A\-\-\-B\-\-\-C topic
+         /
+    D\-\-\-E\-\-\-F\-\-\-G master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+次に、\fBgit merge topic\fR は、 \fBmaster\fR から分岐(ここでは \fBE\fR)してから、\fBtopic\fR ブランチの現在のコミット(\fBC\fR)まで \fBtopic`ブランチに加えられた変更を `master\fR 上で再生(replay)します。 その結果を、2つの親コミットの名前と、変更を説明するユーザーからのログメッセージとともに、新しいコミットに記録します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+          A\-\-\-B\-\-\-C topic
+         /         \e
+    D\-\-\-E\-\-\-F\-\-\-G\-\-\-H master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+2番目の構文(\fBgit merge \-\-abort\fR)は、マージによって競合が発生した後にのみ実行できます。 \fBgit merge \-\-abort`はマージ処理を中止し、マージ前の状態を再構築しようとします。 ただし、マージの開始時にコミットされていない変更があった場合(特に、マージの開始後にそれらの変更がさらに変更された場合)、 `git merge \-\-abort\fR は、元の(マージ前の)変更を再構築できない場合があります。つまり以下の事が言えます:
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+自明でない未コミットの変更に対して \fBgit merge\fR を実行することは推奨されません。 可能ではありますが、 競合が発生した場合に元に戻すのが難しい状態になる可能性があります。
+.sp .5v
+.RE
+.sp
+3番目の構文(\fBgit merge \-\-continue\fR)は、マージによって競合が発生した後にのみ実行できます。
+.SH "OPTIONS"
+.PP
+\fB\-\-commit\fR, \fB\-\-no\-commit\fR
+.RS 4
+マージを実行し、結果をコミットします。 このオプションは、
+\fB\-\-no\-commit\fR
+をオーバーライドするために使用できます。
+.sp
+\fB\-\-no\-commit\fR
+を使用すると、マージを実行し、マージコミットを作成する直前に停止して、ユーザーに、コミットする前にマージ結果を検査し、さらに微調整する機会を提供します。
+.sp
+注意: 早送り(fast\-forward)更新はマージコミットを作成しないため、
+\fB\-\-no\-commit\fR
+を使用してこれらのマージを停止する方法はないことに注意してください。 したがって、mergeコマンドによってブランチが変更または更新されないようにする場合は、
+\fB\-\-no\-ff\fR
+と
+\fB\-\-no\-commit\fR
+を使用します。
+.RE
+.PP
+\fB\-\-edit\fR, \fB\-e\fR, \fB\-\-no\-edit\fR
+.RS 4
+機械的マージがを成功する前にエディターを呼び出して、自動生成されたマージメッセージをさらに編集し、ユーザーがマージについて説明して正当化できるようにします。
+\fB\-\-no\-edit\fR
+オプションを使用して、自動生成されたメッセージを受け入れることができます(これは一般的には推奨されていません)。
+\fB\-\-edit\fR(または
+\fB\-e\fR) オプションは、あなたがコマンドラインから
+\fB\-m\fR
+オプションで与えた下書きメッセージをエディタで編集したい場合にも便利です。
+.sp
+古いスクリプトは、ユーザーがマージログメッセージを編集できないようにするという過去の動作に依存している可能性があります。 そのような場合は
+\fBgit merge\fR
+を実行すると、エディターを開く事になります。 このようなスクリプトを簡単に最新の挙動に合わせるために、環境変数
+\fBGIT_MERGE_AUTOEDIT\fR
+をスクリプトの先頭で
+\fBno\fR
+に設定できます。
+.RE
+.PP
+\fB\-\-cleanup=<mode>\fR
+.RS 4
+このオプションは、コミットする前にマージメッセージをクリーンアップする方法を決定します。 詳細については、
+\fBgit-commit\fR(1)を参照してください。 加えて、
+\fB<mode>\fR
+に
+\fBscissors\fR
+値が指定されている場合、マージの競合が発生した時に、切り取り線(scissors)はコミット機構に渡される前に
+\fBMERGE_MSG\fR
+に追加されます。
+.RE
+.PP
+\fB\-\-ff\fR, \fB\-\-no\-ff\fR, \fB\-\-ff\-only\fR
+.RS 4
+マージされた履歴がすでに現在の履歴の子孫である場合に、マージがどのように処理されるかを指定します。
+\fB\-\-ff\fR
+は、
+\fBrefs/tags/\fR
+階層の自然な場所に格納されていない注釈付き(および場合によっては署名済み)タグをマージしない限り、デフォルトです。マージする場合は、\fB\-\-no\-ff\fR
+が想定されます。
+.sp
+\fB\-\-ff\fR
+を使用すると、可能であれば、マージを早送り(fast\-forward)(マージされたブランチに一致するようにブランチポインタを更新するだけです。マージコミットは作成しません)として解決します。 不可能な場合(マージされた履歴が現在の履歴の子孫ではない場合)は、マージコミットを作成します。
+.sp
+\fB\-\-no\-ff\fR
+を使用すると、マージが早送り(fast\-forward)として解決できる場合でも、すべての場合にマージコミットを作成します。
+.sp
+\fB\-\-ff\-only\fR
+を使用して、可能な場合はマージを早送り(fast\-forward)として解決します。不可能な場合は、マージを拒否し、ゼロ以外のステータスで終了します。
+.RE
+.PP
+\fB\-S[<keyid>]\fR, \fB\-\-gpg\-sign[=<keyid>]\fR, \fB\-\-no\-gpg\-sign\fR
+.RS 4
+マージコミット結果にGPG署名します。
+\fBkeyid\fR
+引数はオプションであり、デフォルトでコミッターIDになります。 指定する場合は、スペースなしでオプションに串刺しする必要があります。
+\fB\-\-no\-gpg\-sign\fR
+は、
+\fBcommit\&.gpgSign\fR
+構成変数と、これ以前に指定した
+\fB\-\-gpg\-sign\fR
+の両方を打ち消すのに役立ちます。
+.RE
+.PP
+\fB\-\-log[=<n>]\fR, \fB\-\-no\-log\fR
+.RS 4
+ブランチ名に加えて、マージされている実際のコミットから最大<n>個のコミットの1行説明をログメッセージに入力します。
+\fBgit-fmt-merge-msg\fR(1)
+も参照してください。
+.sp
+\fB\-\-no\-log\fR
+を使用すると、マージされる実際のコミットからの1行説明が一覧表示されません。
+.RE
+.PP
+\fB\-\-signoff\fR, \fB\-\-no\-signoff\fR
+.RS 4
+コミットログメッセージの最後に、コミッターによる「Signed\-off\-by」トレーラーを追加します。signoffの意味は、コミットしているプロジェクトによって異なります。たとえば、コミッターがプロジェクトのライセンスに基づいて作品を提出する権利を持っていることを証明したり、開発者の原産地証明書などの寄稿者の代表に同意したりする場合があります。(LinuxカーネルおよびGitプロジェクトで使用されるものについては、http：//developercertificate\&.orgを参照してください)。プロジェクトでsignoffがどのように使用されるかを理解するには、貢献しているプロジェクトのドキュメントまたはリーダーシップ(leadership)を参照してください。
+.sp
+\fB\-\-no\-signoff\fR
+オプションを使用すると、コマンドラインで以前の
+\fB\-\-signoff\fR
+オプションを無効にすることができます。
+.RE
+.PP
+\fB\-\-stat\fR, \fB\-n\fR, \fB\-\-no\-stat\fR
+.RS 4
+マージの最後にdiffstatを表示します。 diffstatは、構成オプションmerge\&.statによっても制御されます。
+.sp
+\fB\-n\fR
+または
+\fB\-\-no\-stat\fR
+を使用すると、マージの最後に diffstat が表示されません。
+.RE
+.PP
+\fB\-\-squash\fR, \fB\-\-no\-squash\fR
+.RS 4
+(マージ情報を除く)実際のマージが発生したかのように作業ツリーとインデックスの状態を生成しますが、実際にコミットしたり、
+\fBHEAD\fR
+を移動したり、 (次の
+\fBgit commit\fR
+コマンドでマージコミットを作成する、)
+\fB$GIT_DIR/MERGE_HEAD\fR
+を記録したりしないでください。 これにより、現在のブランチの上に単一のコミットを作成できます。その効果は、別のブランチ(または octopusの場合はそれ以上)をマージするのと同じです。
+.sp
+\fB\-\-no\-squash\fR
+を使用してマージを実行し、結果をコミットします。 このオプションは、
+\fB\-\-squash\fR
+をオーバーライドするために使用できます。
+.sp
+\fB\-\-squash\fR
+を使用すると、
+\fB\-\-commit\fR
+は許可されず、失敗します。
+.RE
+.PP
+\fB\-\-[no\-]verify\fR
+.RS 4
+デフォルトでは、 pre\-merge フックと commit\-msg フックが実行されます。
+\fB\-\-no\-verify\fR
+が指定されている場合、これらはバイパスされます。
+\fBgithooks\fR(5)
+も参照してください。
+.RE
+.PP
+\fB\-s <strategy>\fR, \fB\-\-strategy=<strategy>\fR
+.RS 4
+指定されたマージ戦略を使用します。 試行する順序を指定するために、複数回指定できます。
+\fB\-s\fR
+オプションがない場合は、代わりに組み込みの戦略リストが使用されます(単一のヘッドをマージする場合は
+\fBort\fR、それ以外の場合は
+\fBoctopus\fR)。
+.RE
+.PP
+\fB\-X <option>\fR, \fB\-\-strategy\-option=<option>\fR
+.RS 4
+マージ戦略固有のオプションをマージ戦略に渡します。
+.RE
+.PP
+\fB\-\-verify\-signatures\fR, \fB\-\-no\-verify\-signatures\fR
+.RS 4
+マージされるサイドブランチの先端コミットが有効なキー、つまり有効なuidを持つキーで署名されていることを確認します。デフォルトの信頼モデルでは、これは署名キーが信頼できるキーによって署名されていることを意味します。サイドブランチの先端コミットが有効なキーで署名されていない場合、マージは中止されます。
+.RE
+.PP
+\fB\-\-summary\fR, \fB\-\-no\-summary\fR
+.RS 4
+\fB\-\-stat\fR
+および
+\fB\-\-no\-stat\fR
+の同義語。 これらは非推奨であり、将来削除される予定です。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+静かに実行します。
+\fB\-\-no\-progress\fR
+の指定を含んでいます。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+にぎやかにします。
+.RE
+.PP
+\fB\-\-progress\fR, \fB\-\-no\-progress\fR
+.RS 4
+進行状況を明示的にオン/オフにします。 どちらも指定されていない場合、標準エラーが端末に接続されていれば進行状況が表示されます。 すべてのマージ戦略が進捗レポートをサポートしているわけではないことに注意してください。
+.RE
+.PP
+\fB\-\-autostash\fR, \fB\-\-no\-autostash\fR
+.RS 4
+操作を開始する前に一時的なスタッシュエントリを自動的に作成し、それを特別なref
+\fBMERGE_AUTOSTASH\fR
+に記録し、操作の終了後にapplyします。 これは、ダーティワークツリーで操作を実行できることを意味します。 ただし、注意して使用してください。マージが成功した後の最後のstashアプリケーションは、深刻な競合を引き起こす可能性があります。
+.RE
+.PP
+\fB\-\-allow\-unrelated\-histories\fR
+.RS 4
+デフォルトでは、
+\fBgit merge\fR
+コマンドは、共通の祖先を共有しない履歴のマージを拒否します。 このオプションは、独立して産まれた2つのプロジェクトの履歴をマージするときにこのセーフティを無効にするために使用できます。 これは非常にまれなケースであるため、これをデフォルトで有効にする構成変数は存在せず、今後も追加されません。
+.RE
+.PP
+\fB\-m <msg>\fR
+.RS 4
+マージコミットに使用するコミットメッセージを設定します(マージコミットが作成された場合)。
+.sp
+\fB\-\-log\fR
+が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。
+.sp
+\fBgit fmt\-merge\-msg\fR
+コマンドを使用して、自動化された
+\fBgit merge\fR
+呼び出しに適切なデフォルトを与えることができます。 自動メッセージには、ブランチの説明を含めることができます。
+.RE
+.PP
+\fB\-\-into\-name <branch>\fR
+.RS 4
+マージ先の実際のブランチの名前ではなく、ブランチ
+\fB<branch>\fR
+にマージするかのように、デフォルトのマージ・メッセージを準備します。
+.RE
+.PP
+\fB\-F <file>\fR, \fB\-\-file=<file>\fR
+.RS 4
+マージコミットに使用されるコミットメッセージを読み取ります(マージコミットが作成された場合)。
+.sp
+\fB\-\-log\fR
+が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。
+.RE
+.PP
+\fB\-\-rerere\-autoupdate\fR, \fB\-\-no\-rerere\-autoupdate\fR
+.RS 4
+rerere メカニズムが現在の競合で記録された解決を再利用して作業ツリー内のファイルを更新した後、解決の結果でインデックスも更新できるようにします。
+\fB\-\-no\-rerere\-autoupdate\fR
+は、別の
+\fBgit add\fR
+で結果をインデックスにコミットする前に、「rerere」が行ったことを再確認し、潜在的な間違いマージ(mismerges)を捉える良い方法です。
+.RE
+.PP
+\fB\-\-overwrite\-ignore\fR, \fB\-\-no\-overwrite\-ignore\fR
+.RS 4
+マージ結果から無視されたファイルを黙って上書きします。 これがデフォルトの動作です。 中止(abort)するには、
+\fB\-\-no\-overwrite\-ignore\fR
+を使用します。
+.RE
+.PP
+\fB\-\-abort\fR
+.RS 4
+現在の競合解決プロセスを中止(abort)し、マージ前の状態を再構築してみてください。 自動スタッシュエントリが存在する場合は、それをワークツリーに適用します。
+.sp
+マージの開始時にコミットされていないワークツリーの変更が存在した場合、
+\fBgit merge \-\-abort\fR
+は、これらの変更を再構築できない場合があります。 したがって、
+\fBgit merge\fR
+を実行する前に、常にあなたの変更をコミット、またはスタッシュしておくことをお勧めします。
+.sp
+\fBgit merge \-\-abort\fR
+は、
+\fBMERGE_HEAD\fR
+がある場合は
+\fBgit reset \-\-merge\fR
+と同じです。ただし
+\fBMERGE_AUTOSTASH\fR
+もある場合は
+\fBgit merge \-\-abort\fR
+はスタッシュエントリをワークツリーに適用しますが、
+\fBgit reset \-\-merge\fR
+は スタッシュリストにスタッシュした変更を保持したままにします。
+.RE
+.PP
+\fB\-\-quit\fR
+.RS 4
+進行中の現在のマージを忘れさせます。 インデックスと作業ツリーはそのままにしておきます。
+\fBMERGE_AUTOSTASH\fR
+が存在する場合、スタッシュエントリはスタッシュリストに保存されます。
+.RE
+.PP
+\fB\-\-continue\fR
+.RS 4
+競合が原因で
+\fBgit merge\fR
+が停止(stop)した後で、
+\fBgit merge \-\-continue\fR
+を実行してマージを終了できます(下記「HOW TO RESOLVE CONFLICTS」セクション参照)。
+.RE
+.PP
+<commit>\&...
+.RS 4
+私たちのブランチにマージするコミットです。通常は他のブランチヘッドです。 複数のコミットを指定すると、3つ以上の親とのマージが作成されます(Octopusマージという愛称で親しまれています)。
+.sp
+コマンドラインからコミットが指定されていない場合は、現在のブランチがアップストリームとして使用するように構成されているリモート追跡ブランチをマージします。 このマニュアルページの構成(configuration)セクションも参照してください。
+.sp
+FETCH_HEAD` が指定された場合(他のコミットは指定しない場合)、直前の
+\fBgit fetch\fR
+によるマージによって
+\fB\&.git/FETCH_HEAD\fR
+ファイルに記録されたブランチは、現在のブランチにマージされます。
+.RE
+.SH "PRE\-MERGE CHECKS"
+.sp
+外部の変更を適用する前に、自分の作業を良好な状態にしてローカルでコミットしとく必要があります。これにより、競合が発生した場合に作業が中断されることはなくなります。 \fBgit-stash\fR(1) も参照してください。 \fBgit pull\fR/\fBgit merge\fR は、ローカルのコミットされていない変更が \fBgit pull\fR/\fBgit merge\fR の更新が必要なファイルと重複する場合、何もせずに停止(stop)します。
+.sp
+マージコミットに無関係な変更が記録されないようにするために、 \fBHEAD\fR コミットに関連する変更がインデックスに登録されている場合、 \fBgit pull\fR と \fBgit merge\fR も中止(abort)されます。 (使用されているマージ戦略によっては、このルールに対する特別な狭い例外が存在する場合がありますが、通常、インデックスはHEADと一致する必要があります。)
+.sp
+すべての名前付きコミットがすでに \fBHEAD\fR の祖先である場合、\fBgit merge\fR は "Already up to date\&." (既に最新です)というメッセージで早期に終了(exit)します。
+.SH "FAST\-FORWARD MERGE"
+.sp
+多くの場合、現在のブランチヘッドは、指定のコミットの祖先です。 これは、特に \fBgit pull\fR から呼び出された場合に最も一般的なケースです: 例えば、あなたはアップストリームリポジトリを追跡していて、ローカルの変更をコミットしていないので、新しいアップストリームリビジョンに更新する必要があります。 この場合、結合された履歴を保存するために新しいコミットは必要ありませんが、代わりに、「HEAD」（およびインデックス）は、追加のマージコミットを作成せずに、指定のコミットを指すように更新されます。
+.sp
+この振る舞いは、\fB\-\-no\-ff\fR オプションで抑制できます。
+.SH "TRUE MERGE"
+.sp
+早送りマージ(fast\-forward merge)(上記参照)を除いて、マージされるブランチは、両方を親として持つマージコミットによって結合する必要があります。
+.sp
+マージされるすべてのブランチの変更を調整したマージバージョンがコミットされ、\fBHEAD\fR、インデックス、作業ツリーがそのコミットに更新されます。 作業ツリーには、重ならない限りは変更を加えることができます。
+.sp
+変更を調停する方法が明確でない場合、以下のようになります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBHEAD\fR
+ポインタは同一のままです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+\fBMERGE_HEAD\fR
+ref は、他方のブランチヘッド(the other branch head)を指すように設定されています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+正常にマージされたパスは、インデックスファイルとあなたの作業ツリーの両方で更新されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+競合するパスの場合、インデックスファイルには最大3つのバージョンが記録されます: ステージ1は、共通の祖先からのバージョンを格納し、ステージ2 は
+\fBHEAD\fR
+からのバージョン、 ステージ3 は
+\fBMERGE_HEAD\fR
+からのバージョンです(あなたは
+\fBgit ls\-files \-u\fR
+でステージを検査できます)。 作業ツリーファイルには、「マージ」プログラムの結果が含まれています。 つまり、おなじみの競合マーカー
+\fB<<<\fR
+\fB===\fR
+\fB>>>\fR
+を使用した3方向マージの結果です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+その他の変更は行われません。 特に、マージを開始する前に行ったローカルの変更は同じままであり、それらのインデックスエントリはそのまま、つまり「HEAD」と一致します。
+.RE
+.sp
+試しにマージした結果、複雑な競合が発生してしまったのでやり直したいという場合は、 \fBgit merge \-\-abort\fR で回復(recover)することができます。
+.SH "MERGING TAG"
+.sp
+注釈付きの(可能ならば署名された)タグをマージする場合、早送りマージが可能であっても、Gitは常にマージコミットを作成し、コミットメッセージテンプレートはタグメッセージ付きで準備されます。 さらに、タグが署名されている場合、シグネチャチェックはメッセージテンプレートのコメントとして報告されます。 \fBgit-tag\fR(1) も参照してください。
+.sp
+たまたまタグ付けされたコミットにつながる作業と統合し、例えば、アップストリームのリリースポイントと同期したい場合、あなたは不要なマージコミットを作成したくない場合があります。
+.sp
+このような場合、タグを \fBgit merge\fR にフィードする前に自分で「包装を解く」(unwrap)か、自分で作業を行わない場合は \fB\-\-ff\-only\fR を渡すことができます。 例えば以下ようにします
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git fetch origin
+git merge v1\&.2\&.3^0
+git merge \-\-ff\-only v1\&.2\&.3
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "HOW CONFLICTS ARE PRESENTED"
+.sp
+マージ中に、作業ツリーのファイルが更新されてマージの結果が反映されます。 共通の祖先のバージョンに加えられた変更の中で、重複しないもの(つまり、ファイルの領域を変更し、反対側がその領域をそのままにしておく、またはその逆)が最終結果にそのまま組み込まれます。 ただし、両方の側が同じ領域に変更を加えた場合、Gitは一方の側をもう一方の側からランダムに選択することはできず、両方の側がその領域に行ったことをファイルに残してあなたに解決するように求めます。
+.sp
+デフォルトでは、GitはRCSスイートの「マージ」プログラムで使用されるものと同じスタイルを使用して、以下のように競合するハンクを表示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed,
+or cleanly resolved because both sides changed the same way\&.
+<<<<<<< yours:sample\&.txt
+Conflict resolution is hard;
+let\*(Aqs go shopping\&.
+=======
+Git makes conflict resolution easy\&.
+>>>>>>> theirs:sample\&.txt
+And here is another line that is cleanly resolved or unmodified\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+競合する変更のペアが発生した領域は、マーカー \fB<<<<<<<\fR 、 \fB=======\fR 、 \fB>>>>>>>\fR でマークされます。 \fB=======\fR の前の部分は通常あなた側(your side)であり、後の部分は通常彼ら側(their side)です。
+.sp
+デフォルトの形式では、競合している部分でオリジナルが何を言っているのかは分かりません。 自分側の何行が削除され、バービー人形の発言に置き換えられているのかは分かりません。 唯一わかるのは、あなた側(your side)は大変だから買い物に行きたいと言いたいのに、相手側(the other size)は簡単だと主張したいということです。
+.sp
+\fBmerge\&.conflictStyle\fR 構成変数を \fBdiff3\fR または \fBzdiff3\fR に設定することで、別のスタイルを使用できます。 \fBdiff3\fR スタイルでは、上記の競合は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed,
+<<<<<<< yours:sample\&.txt
+or cleanly resolved because both sides changed the same way\&.
+Conflict resolution is hard;
+let\*(Aqs go shopping\&.
+||||||| base:sample\&.txt
+or cleanly resolved because both sides changed identically\&.
+Conflict resolution is hard\&.
+=======
+or cleanly resolved because both sides changed the same way\&.
+Git makes conflict resolution easy\&.
+>>>>>>> theirs:sample\&.txt
+And here is another line that is cleanly resolved or unmodified\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBzdiff3\fR スタイルでは、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed,
+or cleanly resolved because both sides changed the same way\&.
+<<<<<<< yours:sample\&.txt
+Conflict resolution is hard;
+let\*(Aqs go shopping\&.
+||||||| base:sample\&.txt
+or cleanly resolved because both sides changed identically\&.
+Conflict resolution is hard\&.
+=======
+Git makes conflict resolution easy\&.
+>>>>>>> theirs:sample\&.txt
+And here is another line that is cleanly resolved or unmodified\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB<<<<<<<\fR 、 \fB=======\fR 、 \fB>>>>>>>\fR マーカーに加えて、\fB|||||||\fR マーカーにオリジナルのテキストが続きます。 オリジナルは事実を述べただけであり、あなたの側(your side)は単にその声明に屈して諦めたのに対し、他の側(the oter side)はより前向きな態度をとろうとしたことがわかります。 オリジナルを表示することで、より良い解決策を思い付くことができる場合があります。
+.SH "HOW TO RESOLVE CONFLICTS"
+.sp
+競合を目にした後、あなたは以下の2つのことができます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+マージしないことを決定します。 必要なクリーンアップは、インデックスファイルを
+\fBHEAD\fR
+コミットにリセットして (2) をリバースし、 (2) と (3) によって行われた作業ツリーの変更をクリーンアップすることだけです。 これには
+\fBgit merge \-\-abort\fR
+を使用できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+競合を解決します。 Gitは、作業ツリーの競合をマークします。 ファイルを編集して形にし、\fBgit add\fR
+してインデックスに追加します。
+\fBgit commit\fR
+または
+\fBgit merge \-\-continue\fR
+を使用して、取引を成立させます。 後者のコマンドは、
+\fBgit commit\fR
+を呼び出す前に、進行中の(中断(interrupted)された)マージがあるかどうかをチェックします。
+.RE
+.sp
+あなたはいくつかの道具を使用して、競合を解決できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+mergetoolの利用。 あなたが
+\fBgit mergetool\fR
+を実行すると、グラフィカルな mergetool が起動し、マージ作業を行えます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+diffを見てください。
+\fBgit diff\fR
+は3方向の差分を表示し、\fBHEAD\fR
+バージョンと
+\fBMERGE_HEAD\fR
+バージョンの両方からの変更を強調表示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+各ブランチからのdiffを見てください。
+\fBgit log \-\-merge \-p <path>\fR
+は、最初に
+\fBHEAD\fR
+バージョンの差分を表示し、次に
+\fBMERGE_HEAD\fR
+バージョンを表示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+オリジナルを見てください。
+\fBgit show :1:filename\fR
+は共通の祖先を示し、
+\fBgit show :2:filename\fR
+は
+\fBHEAD\fR
+バージョンを示し、
+\fBgit show :3:filename\fR
+は
+\fBMERGE_HEAD\fR
+バージョンを示します。
+.RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在のブランチにブランチ
+\fBfixes\fR
+と
+\fBenhancements\fR
+をマージし、octopusマージします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git merge fixes enhancements
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBours\fR
+マージ戦略を使用して、ブランチ
+\fBobsolete\fR
+を現在のブランチにマージします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git merge \-s ours obsolete
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ブランチ
+\fBmaint\fR
+を現在のブランチにマージしますが、新しいコミットを自動的に行わないでください:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git merge \-\-no\-commit maint
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは、マージにさらに変更を加えたい場合、または独自のマージコミットメッセージを作成したい場合に使用できます。
+.sp
+大幅な変更をマージコミットに忍び込ませるために、このオプションを悪用することは控えてください。 bumping release(微修正)/version name(バージョン名変更) のような小さな修正は許容されます。
+.RE
+.SH "MERGE STRATEGIES"
+.sp
+マージ機構(\fBgit merge\fR と \fBgit pull\fR コマンド)では、バックエンドの「マージ戦略」を \fB\-s\fR オプションで選択することができます。 いくつかの戦略では、独自のオプションを指定することができます。これは、 \fBgit merge\fR や \fBgit pull\fR に \fB\-X<option>\fR 引数として渡すことができます。
+.PP
+ort
+.RS 4
+これは、1つのブランチをプルまたはマージするときのデフォルトのマージ戦略です。この戦略では、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。これにより、Linux 2\&.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。さらに、この戦略では、名前の変更を伴うマージを検出して処理できます。検出されたコピーは使用しません。このアルゴリズムの名前は "Ostensibly Recursive\(cqs Twin" (表面上は再帰の双子)の頭文字を取ったものであり、以前のデフォルトのアルゴリズムである「recursive」の代わりとして作成されたという事実に由来しています。
+.sp
+\fBort\fR
+戦略は、以下のオプションを取ることができます:
+.PP
+ours
+.RS 4
+このオプションは、「our」バージョンを優先することにより、競合するハンクをクリーンに自動解決するように強制します。 our側と競合しない他のツリーからの変更は、マージ結果に反映されます。 バイナリファイルの場合、内容全体がour側から取得されます。
+.sp
+これを「ours」マージ戦略と混同しないでください。この戦略では、他のツリーに何が含まれているのかさえまったく調べません。それは他のツリーが行ったすべてを破棄し、「our」履歴にはその中で起こったすべてが含まれていると宣言します。
+.RE
+.PP
+theirs
+.RS 4
+これは「ours」の反対です。 「ours」とは異なり、このmergeオプションを混同する「theirs」マージ戦略はないことに注意してください。
+.RE
+.PP
+ignore\-space\-change, ignore\-all\-space, ignore\-space\-at\-eol, ignore\-cr\-at\-eol
+.RS 4
+指示されたタイプの空白(whitespace)の変更を含む行を、3方向マージのために変更されていないものとして扱います。行に対する、他の変更と空白(whitespace)の変更との混合は、無視されません。
+\fBgit-diff\fR(1)
+の
+\fB\-b\fR
+と
+\fB\-w\fR
+と
+\fB\-\-ignore\-space\-at\-eol\fR
+と
+\fB\-\-ignore\-cr\-at\-eol\fR
+も参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「their」バージョンが行に空白の変更のみを導入する場合、「our」バージョンが使用されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「our」バージョンで空白の変更が導入されたが、「their」バージョンに大幅な変更が含まれている場合は、「their」バージョンが使用されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+それ以外の場合、マージは通常の方法で進行します。
+.RE
+.RE
+.PP
+renormalize
+.RS 4
+これにより、3方向マージを解決するときに、ファイルの3つのステージすべての仮想チェックアウトとチェックインが実行されます。このオプションは、ブランチをさまざまなクリーンフィルターまたは行末正規化ルールとマージするときに使用することを目的としています。詳細については、
+\fBgitattributes\fR(5)
+の「Merging branches with differing checkin/checkout attributes」(チェックイン/チェックアウト属性が異なるブランチのマージ)を参照してください。
+.RE
+.PP
+no\-renormalize
+.RS 4
+\fBrenormalize\fR
+オプションを無効にします。 これは、
+\fBmerge\&.renormalize\fR
+構成変数をオーバーライドします。
+.RE
+.PP
+find\-renames[=<n>]
+.RS 4
+名前変更(rename)の検出をオンにし、オプションで類似性のしきい値(similarity threshold)を設定します。これがデフォルトです。 これは、
+\fBmerge\&.renames\fR
+構成変数をオーバーライドします。
+\fBgit-diff\fR(1)
+の
+\fB\-\-find\-renames\fR
+も参照してください。
+.RE
+.PP
+rename\-threshold=<n>
+.RS 4
+\fBfind\-renames=<n>\fR
+の非推奨の同義語。
+.RE
+.PP
+subtree[=<path>]
+.RS 4
+このオプションは「subtree」戦略をさらに発展させたもので、2つの木をマージする際に、どのようにずらせば互いにマッチするかを推測するものである。その代わり、指定されたパスは、2つの木の形が一致するように前置される(または、最初から取り除かれる)。
+.RE
+.RE
+.PP
+recursive
+.RS 4
+これは、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。 これにより、Linux 2\&.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。 さらに、これにより、名前変更を含むマージを検出して処理できます。 検出されたコピーは使用しません。 これは、Git v0\&.99\&.9k 〜 v2\&.33\&.0 まで、2つのヘッドを解決するためのデフォルトの戦略でした。
+.sp
+「recursive」(再帰的)戦略は「ort」と同じオプションを取る。 しかし、「ort」が無視する3つのオプション(上記には書かれていない)があり、 「recursive」戦略で有用となる可能性がある:
+.PP
+patience
+.RS 4
+\fBdiff\-algorithm=patience\fR
+の非推奨の同義語。
+.RE
+.PP
+diff\-algorithm=[patience|minimal|histogram|myers]
+.RS 4
+マージ中に別の差分アルゴリズムを使用すると、重要でない一致行(異なる関数の中括弧など)が原因で発生するミスマージを回避できます。
+\fBgit-diff\fR(1)
+\fB\-\-diff\-algorithm\fR
+も参照してください。注意: 特に、「ort」は
+\fBdiff\-algorithm=histogram\fR
+を使用しますが、「recursive」はデフォルトで 「diff\&.algorithm」 設定を使う事に注意して下さい。
+.RE
+.PP
+no\-renames
+.RS 4
+名前変更(rename)の検出をオフにします。 これは、\fBmerge\&.renames\fR
+構成変数をオーバーライドします。
+\fBgit-diff\fR(1)
+の
+\fB\-\-no\-renames\fR
+も参照してください。
+.RE
+.RE
+.PP
+resolve
+.RS 4
+これは、3方向マージアルゴリズムを使用して、2つのヘッド（つまり、現在のブランチとプルした別のブランチ）のみを解決できます。 交差マージ(criss\-cross merge)のあいまいさを注意深く検出しようとします。 名前の変更は処理しません。
+.RE
+.PP
+octopus
+.RS 4
+これにより、3つ以上のヘッドを持つケースが解決されますが、手動解決が必要な複雑なマージの実行は拒否されます。これは主に、トピックの分岐ヘッドを纏めるために使用されることを意図しています。これは、複数のブランチをプルまたはマージする場合のデフォルトのマージ戦略です。
+.RE
+.PP
+ours
+.RS 4
+これにより、任意の数のヘッドが解決されますが、結果として得られるマージのツリーは常に現在のブランチヘッドのツリーであり、他のすべてのブランチからのすべての変更を事実上無視します。 これは、サイドブランチの古い開発履歴に取って代わるために使用されることを意図しています。 これは、「recursive」マージ戦略の
+\fB\-Xours\fR
+オプションとは異なることに注意してください。
+.RE
+.PP
+subtree
+.RS 4
+これは改造された「ort」戦略です。 ツリーAとBをマージするとき、BがAのサブツリーに対応する場合、同じレベルのツリーを読み取るのではなく、Bは最初にAのツリー構造に一致するように調整されます。 この調整は、共通の祖先ツリーに対しても行われます。
+.RE
+.sp
+3方向マージ(デフォルトの「ort」を含む)を使用する戦略では、両方のブランチで変更が行われたが、後で一方のブランチで元に戻された場合、その変更はマージされた結果に表示されます。一部の人々は、この振る舞いを混乱させると感じています。これは、個々のコミットではなく、ヘッドとマージベースのみがマージの実行時に考慮されるために発生します。したがって、マージアルゴリズムは、元に戻された変更をまったく変更なしと見なし、代わりに変更されたバージョンに置き換えます。
+.SH "CONFIGURATION"
+.PP
+branch\&.<name>\&.mergeOptions
+.RS 4
+ブランチ <name> にマージするためのデフォルトオプションを設定します。 構文とサポートされているオプションは
+\fBgit merge\fR
+のものと同じですが、空白文字を含むオプション値は現在サポートされていません。
+.RE
+.sp
+このセクションのこの行より上にあるものはすべて、 \fBgit-config\fR(1) ドキュメントには含まれていません。 以下の内容に関しては、\fBgit-config\fR(1) ドキュメント にあるものと同一です。
+.PP
+merge\&.conflictStyle
+.RS 4
+マージ時に競合するハンクが作業ツリーファイルに書き出されるスタイルを指定します。 デフォルトは
+\fBmerge`です。これは、 `<<<<<<<\fR
+競合マーカー、一方の側で行われた変更、
+\fB=======\fR
+マーカー、もう一方の側で行われた変更、そして
+\fB>>>>>>>\fR
+マーカーというスタイルです。 別のスタイル「diff3」は、
+\fB|||||||\fR
+マーカーと元のテキストを
+\fB=======\fR
+マーカーの前に追加します。
+\fBmerge\fR
+スタイルは、元のテキストの除外と、行のサブセットが、両側で一致する場合に競合領域から引き抜かれるため、
+\fBdiff3\fR
+よりも小さな競合領域を生成する傾向があります。 もう 1 つの代替スタイル
+\fBzdiff3\fR
+は
+\fBdiff3\fR
+に似ていますが、 両側で一致する行が競合領域の開始または最後近くに現れる場合、競合領域から削除します。
+.RE
+.PP
+merge\&.defaultToUpstream
+.RS 4
+コミット引数なしでmergeが呼び出された場合は、リモート追跡ブランチに格納されている最後に観測された値を使用して、現在のブランチ用に構成されたアップストリームブランチをマージします。
+\fBbranch\&.<currentbranch>\&.remote\fR
+によって指定されたリモートのブランチに名前を付ける
+\fBbranch\&.<currentbranch>\&.merge\fR
+の値が参照され、次に、それらは
+\fBremote\&.<remote>\&.fetch\fR
+を介して対応するリモート追跡ブランチにマッピングされ、そして、これらの追跡ブランチの先端がマージされます。 デフォルトはtrueです。
+.RE
+.PP
+merge\&.ff
+.RS 4
+デフォルトでは、Gitは、現在のコミットの子孫であるコミットをマージするときに、追加のマージコミットを作成しません。 代わりに、現在のブランチの先端が早送り(fast\-forward)されます。
+\fBfalse\fR
+に設定すると、この変数はGitにそのような場合に追加のマージコミットを作成するように指示します(コマンドラインから
+\fB\-\-no\-ff\fR
+オプションを指定するのと同じです)。
+\fBonly\fR
+に設定すると、そのような早送りマージのみが許可されます(コマンドラインから
+\fB\-\-ff\-only\fR
+オプションを指定するのと同じです)。
+.RE
+.PP
+merge\&.verifySignatures
+.RS 4
+trueの場合、これは
+\fB\-\-verify\-signatures\fR
+コマンドラインオプションと同等です。 詳細については、
+\fBgit-merge\fR(1)
+を参照してください。
+.RE
+.PP
+merge\&.branchdesc
+.RS 4
+ブランチ名に加えて、それらに関連付けられたブランチの説明テキストをログメッセージに入力します。デフォルトはfalseです。
+.RE
+.PP
+merge\&.log
+.RS 4
+ブランチ名に加えて、マージされる実際のコミットからの最大「指定の数」の親コミットの1行説明をログメッセージに入力します。デフォルトはfalseで、trueは20の同義語です。
+.RE
+.PP
+merge\&.suppressDest
+.RS 4
+統合ブランチの名前に一致するグロブをこの複数値の構成変数(multi\-valued configuration variable)に追加することにより、これらの統合ブランチへのマージに対して計算されるデフォルトのマージメッセージは、タイトルから「into <branch name>」を省略します。
+.sp
+空の値を持つ要素を使用して、以前の構成エントリから蓄積されたグロブのリストをクリアできます。
+\fBmerge\&.suppressDest\fR
+変数が定義されていない場合、下位互換性のためにデフォルト値の
+\fBmaster\fR
+が使用されます。
+.RE
+.PP
+merge\&.renameLimit
+.RS 4
+マージ処理中に名前変更検出の網羅的な部分で考慮するファイルの数。 指定されない場合、デフォルトは diff\&.renameLimit の値です。 merge\&.renameLimit と diff\&.renameLimit の両方が指定されていない場合、現在のデフォルトは 7000 です。 この設定は、名前変更検出がオフの場合は効果がありません。
+.RE
+.PP
+merge\&.renames
+.RS 4
+Gitが名前の変更を検出するかどうか。 「false」に設定すると、名前変更の検出が無効になります。 「true」に設定すると、基本的な名前変更の検出が有効になります。 デフォルトは diff\&.renames の値です。
+.RE
+.PP
+merge\&.directoryRenames
+.RS 4
+Gitがディレクトリの名前変更を検出するかどうか。これは、履歴の一方の側でディレクトリが名前変更されたときに、もう一方の側で追加された新しいファイルがマージ時にどうなるのかに影響します。 merge\&.directoryRenames を
+\fBfalse\fR
+に設定すると、ディレクトリの名前変更の検出は無効になります。つまり、そのような新しいファイルは古いディレクトリに残されます。
+\fBtrue\fR
+に設定すると、ディレクトリの名前変更検出が有効になり、そのような新しいファイルは新しいディレクトリに移動されることを意味します。
+\fBconflict\fR
+に設定すると、そのようなパスに対して競合が報告されます。 merge\&.renames が false の場合、merge\&.directoryRenames は無視され、false として扱われます。 デフォルトは
+\fBconflict\fR
+です。
+.RE
+.PP
+merge\&.renormalize
+.RS 4
+リポジトリ内のファイルの標準の表現が時間の経過とともに変更されたことをGitに伝えます(たとえば、以前はCRLF行末のレコードテキストファイルをコミットしていましたが、最近のファイルはLF行末を使用している)。 このようなリポジトリでは、Gitは、不必要な競合を減らすために、マージを実行する前に、コミットに記録されたデータを標準形式に変換できます。 詳細については、\fBgitattributes\fR(5)
+の「Merging branches with differing checkin/checkout attributes」(チェックイン/チェックアウト属性が異なるブランチのマージ)のセクションを参照してください。
+.RE
+.PP
+merge\&.stat
+.RS 4
+マージの最後にORIG_HEADとマージ結果の間のdiffstatを出力するかどうか。 デフォルトではtrue。
+.RE
+.PP
+merge\&.autoStash
+.RS 4
+trueに設定すると、操作を開始する前に一時的なstashエントリを自動的に作成し、操作の終了後に適用します。 これは、ダーティ作業ツリーでマージを実行できることを意味します。 ただし、注意して使用してください。マージが成功した後の最後のstashアプリケーションは、重要な競合を引き起こす可能性があります。 このオプションは、
+\fBgit-merge\fR(1)の
+\fB\-\-no\-autostash\fR
+および
+\fB\-\-autostash\fR
+オプションでオーバーライドできます。 デフォルトはfalseです。
+.RE
+.PP
+merge\&.tool
+.RS 4
+\fBgit-mergetool\fR(1)
+が使用するマージツールを制御します。 以下のリストは、有効な組み込み値を示しています。その他の値はカスタムマージツールとして扱われ、対応する mergetool\&.<tool>\&.cmd 変数が定義されている必要があります。
+.RE
+.PP
+merge\&.guitool
+.RS 4
+\fB\-g\fR/\fB\-\-gui\fR
+フラグが指定されている場合に、
+\fBgit-mergetool\fR(1)
+が使用するマージツールを制御します。以下のリストは、有効な組み込み値を示しています。 その他の値はカスタムマージツールとして扱われ、対応する mergetool\&.<guitool>\&.cmd 変数が定義されている必要があります。
+.PP
+\fBaraxis\fR
+.RS 4
+Use Araxis Merge (requires a graphical session)
+.RE
+.PP
+\fBbc\fR
+.RS 4
+Use Beyond Compare (requires a graphical session)
+.RE
+.PP
+\fBbc3\fR
+.RS 4
+Use Beyond Compare (requires a graphical session)
+.RE
+.PP
+\fBbc4\fR
+.RS 4
+Use Beyond Compare (requires a graphical session)
+.RE
+.PP
+\fBcodecompare\fR
+.RS 4
+Use Code Compare (requires a graphical session)
+.RE
+.PP
+\fBdeltawalker\fR
+.RS 4
+Use DeltaWalker (requires a graphical session)
+.RE
+.PP
+\fBdiffmerge\fR
+.RS 4
+Use DiffMerge (requires a graphical session)
+.RE
+.PP
+\fBdiffuse\fR
+.RS 4
+Use Diffuse (requires a graphical session)
+.RE
+.PP
+\fBecmerge\fR
+.RS 4
+Use ECMerge (requires a graphical session)
+.RE
+.PP
+\fBemerge\fR
+.RS 4
+Use Emacs\*(Aq Emerge
+.RE
+.PP
+\fBexamdiff\fR
+.RS 4
+Use ExamDiff Pro (requires a graphical session)
+.RE
+.PP
+\fBguiffy\fR
+.RS 4
+Use Guiffy\(cqs Diff Tool (requires a graphical session)
+.RE
+.PP
+\fBgvimdiff\fR
+.RS 4
+Use gVim (requires a graphical session) with a custom layout (see
+\fBgit help mergetool\fR\*(Aqs
+\fBBACKEND SPECIFIC HINTS\fR
+section)
+.RE
+.PP
+\fBgvimdiff1\fR
+.RS 4
+Use gVim (requires a graphical session) with a 2 panes layout (LOCAL and REMOTE)
+.RE
+.PP
+\fBgvimdiff2\fR
+.RS 4
+Use gVim (requires a graphical session) with a 3 panes layout (LOCAL, MERGED and REMOTE)
+.RE
+.PP
+\fBgvimdiff3\fR
+.RS 4
+Use gVim (requires a graphical session) where only the MERGED file is shown
+.RE
+.PP
+\fBkdiff3\fR
+.RS 4
+Use KDiff3 (requires a graphical session)
+.RE
+.PP
+\fBmeld\fR
+.RS 4
+Use Meld (requires a graphical session) with optional
+\fBauto merge\fR
+(see
+\fBgit help mergetool\fR\*(Aqs
+\fBCONFIGURATION\fR
+section)
+.RE
+.PP
+\fBnvimdiff\fR
+.RS 4
+Use Neovim with a custom layout (see
+\fBgit help mergetool\fR\*(Aqs
+\fBBACKEND SPECIFIC HINTS\fR
+section)
+.RE
+.PP
+\fBnvimdiff1\fR
+.RS 4
+Use Neovim with a 2 panes layout (LOCAL and REMOTE)
+.RE
+.PP
+\fBnvimdiff2\fR
+.RS 4
+Use Neovim with a 3 panes layout (LOCAL, MERGED and REMOTE)
+.RE
+.PP
+\fBnvimdiff3\fR
+.RS 4
+Use Neovim where only the MERGED file is shown
+.RE
+.PP
+\fBopendiff\fR
+.RS 4
+Use FileMerge (requires a graphical session)
+.RE
+.PP
+\fBp4merge\fR
+.RS 4
+Use HelixCore P4Merge (requires a graphical session)
+.RE
+.PP
+\fBsmerge\fR
+.RS 4
+Use Sublime Merge (requires a graphical session)
+.RE
+.PP
+\fBtkdiff\fR
+.RS 4
+Use TkDiff (requires a graphical session)
+.RE
+.PP
+\fBtortoisemerge\fR
+.RS 4
+Use TortoiseMerge (requires a graphical session)
+.RE
+.PP
+\fBvimdiff\fR
+.RS 4
+Use Vim with a custom layout (see
+\fBgit help mergetool\fR\*(Aqs
+\fBBACKEND SPECIFIC HINTS\fR
+section)
+.RE
+.PP
+\fBvimdiff1\fR
+.RS 4
+Use Vim with a 2 panes layout (LOCAL and REMOTE)
+.RE
+.PP
+\fBvimdiff2\fR
+.RS 4
+Use Vim with a 3 panes layout (LOCAL, MERGED and REMOTE)
+.RE
+.PP
+\fBvimdiff3\fR
+.RS 4
+Use Vim where only the MERGED file is shown
+.RE
+.PP
+\fBwinmerge\fR
+.RS 4
+Use WinMerge (requires a graphical session)
+.RE
+.PP
+\fBxxdiff\fR
+.RS 4
+Use xxdiff (requires a graphical session)
+.RE
+.RE
+.PP
+merge\&.verbosity
+.RS 4
+再帰的マージ戦略によって示される出力の量を制御します。 レベル0は、競合が検出された場合の最終エラーメッセージ以外は何も出力しません。 レベル1は競合のみを出力し、レベル2は競合とファイル変更を出力します。 レベル5以上はデバッグ情報を出力します。 デフォルトはレベル2です。
+\fBGIT_MERGE_VERBOSITY\fR
+環境変数でオーバーライドできます。
+.RE
+.PP
+merge\&.<driver>\&.name
+.RS 4
+カスタムの低レベルマージドライバーの人間が読める名前を定義します。 詳細については、
+\fBgitattributes\fR(5)
+を参照してください。
+.RE
+.PP
+merge\&.<driver>\&.driver
+.RS 4
+カスタムの低レベルのマージドライバーを実装するコマンドを定義します。 詳細については、
+\fBgitattributes\fR(5)
+を参照してください。
+.RE
+.PP
+merge\&.<driver>\&.recursive
+.RS 4
+共通の祖先間で内部マージを実行するときに使用される低レベルのマージドライバーに名前を付けます。 詳細については、
+\fBgitattributes\fR(5)
+を参照してください。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-fmt-merge-msg\fR(1), \fBgit-pull\fR(1), \fBgitattributes\fR(5), \fBgit-reset\fR(1), \fBgit-diff\fR(1), \fBgit-ls-files\fR(1), \fBgit-add\fR(1), \fBgit-rm\fR(1), \fBgit-mergetool\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

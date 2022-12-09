@@ -1,0 +1,1385 @@
+'\" t
+.\"     Title: git-rev-parse
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-REV\-PARSE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-rev-parse \- パラメータを選択してもみもみします。
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit rev\-parse\fR [<options>] <args>\&...
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+多くのGit磁器コマンドは、内部で使用されベースとなる \fBgit rev\-list\fR コマンド用のフラグとパラメーターの組み合わせと、 \fBgit rev\-list\fR の下流で使用する他のコマンドのフラグとパラメーターの組み合わせを使用します。このコマンドは、それらを識別するために使用されます。
+.SH "OPTIONS"
+.SS "Operation Modes"
+.sp
+これらの各オプションは、コマンドラインの最初にある必要があります。
+.PP
+\fB\-\-parseopt\fR
+.RS 4
+オプション解析モードで
+\fBgit rev\-parse\fR
+を使用します(以下の PARSEOPT セクションを参照)。
+.RE
+.PP
+\fB\-\-sq\-quote\fR
+.RS 4
+シェルクォートモードで
+\fIgit rev\-parse\fR
+を使用します(以下の SQ\-QUOTE セクションを参照)。以下の
+\fB\-\-sq\fR
+オプションとは対照的に、このモードはクォートのみを実行します。コマンド入力に対して他に何も行われません。
+.RE
+.SS "Options for \fB\-\-parseopt\fR"
+.PP
+\fB\-\-keep\-dashdash\fR
+.RS 4
+\fB\-\-parseopt\fR
+モードでのみ意味があります。 オプションパーサーに、最初に出会った
+\fB\-\-\fR
+をスキップするのではなく、エコー出力(echo out)するように指示します。
+.RE
+.PP
+\fB\-\-stop\-at\-non\-option\fR
+.RS 4
+\fB\-\-parseopt\fR
+モードでのみ意味があります。オプションパーサーを最初の非オプション引数で停止させます。これは、オプション自体を受け取るサブコマンドを解析するために使用できます。
+.RE
+.PP
+\fB\-\-stuck\-long\fR
+.RS 4
+\fB\-\-parseopt\fR
+モードでのみ意味があります。可能な場合は長い形式でオプションを出力し、それらの引数を固定(stick)します。
+.RE
+.SS "Options for Filtering"
+.PP
+\fB\-\-revs\-only\fR
+.RS 4
+\fBgit rev\-list\fR
+コマンド用ではないフラグやパラメーターを出力しないでください。
+.RE
+.PP
+\fB\-\-no\-revs\fR
+.RS 4
+\fBgit rev\-list\fR
+コマンド用のフラグとパラメーターを出力しないでください。
+.RE
+.PP
+\fB\-\-flags\fR
+.RS 4
+非フラグパラメータを出力しないでください。
+.RE
+.PP
+\fB\-\-no\-flags\fR
+.RS 4
+フラグパラメータを出力しないでください。
+.RE
+.SS "Options for Output"
+.PP
+\fB\-\-default <arg>\fR
+.RS 4
+ユーザーが指定したパラメーターがない場合は、代わりに
+\fB<arg>\fR
+を使用してください。
+.RE
+.PP
+\fB\-\-prefix <arg>\fR
+.RS 4
+\fBgit rev\-parse\fR
+が作業ツリーの
+\fB<arg>\fR
+サブディレクトリから呼び出されたかのように動作します。相対ファイル名は、接頭辞が
+\fB<arg>\fR
+であるかのように解決され、その形式で出力されます。
+.sp
+これを使用して、引数をサブディレクトリで実行されるコマンドに変換し、リポジトリの最上位に移動した後も使用できるようにすることができます。 例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+prefix=$(git rev\-parse \-\-show\-prefix)
+cd "$(git rev\-parse \-\-show\-toplevel)"
+# rev\-parse provides the \-\- needed for \*(Aqset\*(Aq
+eval "set $(git rev\-parse \-\-sq \-\-prefix "$prefix" \-\- "$@")"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fB\-\-verify\fR
+.RS 4
+正確に1つのパラメーターが提供されていること、およびそれがオブジェクト・データベースへのアクセスに使用できる生の20バイトのSHA\-1に変換できることを検証します。もしそうなら、それを標準出力に出力します。それ以外の場合は、エラー出力になります。
+.sp
+出力が実際にオブジェクトデータベース内のオブジェクトに名前を付けていること、および/または必要な特定のタイプのオブジェクトとして使用できることを確認したい場合は、パラメータに
+\fB^{type}\fR
+皮むき演算子(peeling operator)を追加できます。 たとえば、
+\fBgit rev\-parse "$VAR^{commit}"\fR
+は、
+\fB$VAR\fR
+がコミットっぽい既存のオブジェクト(つまりコミット、またはコミットを指す注釈付きタグ)に名前を付けることを確認します。
+\fB$VAR\fR
+が任意のタイプの既存のオブジェクトに名前を付けるようにするには、
+\fBgit rev\-parse "$VAR^{object}"\fR
+を使用できます。
+.sp
+注意: 信頼できないソースからの名前を検証(verify)する場合は、name引数が別のオプションと間違えられないように、
+\fB\-\-end\-of\-options\fR
+の使用が賢明です。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+\fB\-\-verify\fR
+モードでのみ意味があります。最初の引数が有効なオブジェクト名でない場合は、エラーメッセージを出力しないでください。代わりに、ゼロ以外のステータスで黙って終了(exit)します。有効なオブジェクト名のSHA\-1は、成功するとstdoutに出力されます。
+.RE
+.PP
+\fB\-\-sq\fR
+.RS 4
+通常、出力はフラグとパラメータごとに1行になります。このオプションは、シェルによって消費されるための適切に引用された1行の出力を作成します。パラメータに空白と改行が含まれていると予想される場合に便利です(たとえば、 pickaxe
+\fB\-S\fR
+with
+\fIgit diff\-*\fR
+)。
+\fB\-\-sq\-quote\fR
+オプションとは対照的に、コマンド入力は通常どおり解釈されます。
+.RE
+.PP
+\fB\-\-short[=length]\fR
+.RS 4
+\fB\-\-verify\fR
+と同じですが、オブジェクト名を少なくとも
+\fBlength\fR
+文字の一意のプレフィックスに短縮します。最小の長さは4で、デフォルトは
+\fBcore\&.abbrev\fR
+構成変数の有効な値です(\fBgit-config\fR(1)を参照)。
+.RE
+.PP
+\fB\-\-not\fR
+.RS 4
+オブジェクト名を表示するときは、それらに
+\fB{caret}\fR
+というプレフィックスを付け、逆に既に、
+\fB{caret}\fR
+プレフィックスを持っているオブジェクト名からは
+\fB{caret}\fR
+プレフィックスを削除します。
+.RE
+.PP
+\fB\-\-abbrev\-ref[=(strict|loose)]\fR
+.RS 4
+オブジェクト名のあいまいでない短い名前。オプション core\&.warnAmbiguousRefs は、厳密な省略形モードを選択するために使用されます。
+.RE
+.PP
+\fB\-\-symbolic\fR
+.RS 4
+通常、オブジェクト名はSHA\-1形式で出力されます(可能な場合は
+\fB{caret}\fR
+プレフィックス付き)。このオプションを使用すると、入力されたオリジナルにできるだけ近い形式で出力されます。
+.RE
+.PP
+\fB\-\-symbolic\-full\-name\fR
+.RS 4
+これは
+\fB\-\-symbolic\fR
+に似ていますが、ref(つまり、ブランチ名とタグ名。または、残念ながら
+\fBmaster\fR
+と名付けられたタグがあるとき
+\fBmaster\fR
+ブランチに名前を付けたい場合はより明確な
+\fBheads/master\fR
+形式である)ではない入力を省略し、完全なrefname(例: "refs/heads/master")として表示します。
+.RE
+.SS "Options for Objects"
+.PP
+\fB\-\-all\fR
+.RS 4
+\fBrefs/\fR
+で見つかったすべての参照を表示します。
+.RE
+.PP
+\fB\-\-branches[=pattern]\fR, \fB\-\-tags[=pattern]\fR, \fB\-\-remotes[=pattern]\fR
+.RS 4
+すべてのブランチまたはタグまたはリモートトラッキングブランチをそれぞれ表示します(つまり、それぞれ
+\fBrefs/heads\fR
+または
+\fBrefs/tags\fR
+または
+\fBrefs/remotes\fR
+で見つかったref)。
+.sp
+\fBpattern\fR
+が指定されている場合、指定されたシェルグロブに一致するrefのみが表示されます。パターンにグロビング文字(\fB?\fR
+または
+\fB*\fR
+または
+\fB[\fR)が含まれていない場合は、
+\fB/*\fR
+を追加することでプレフィックス一致に変換されます。
+.RE
+.PP
+\fB\-\-glob=pattern\fR
+.RS 4
+シェルグロブパターン
+\fBpattern\fR
+に一致するすべてのrefを表示します。 パターンが
+\fBrefs/\fR
+で始まらない場合、自動的に先頭に追加されます。パターンにグロビング文字(\fB?\fR
+または
+\fB*\fR
+または
+\fB[\fR)が含まれていない場合は、
+\fB/*\fR
+を追加することでプレフィックス一致に変換されます。
+.RE
+.PP
+\fB\-\-exclude=<glob\-pattern>\fR
+.RS 4
+このオプションに続く
+\fB\-\-all\fR
+または
+\fB\-\-branches\fR
+または
+\fB\-\-tags\fR
+または
+\fB\-\-remotes\fR
+または
+\fB\-\-glob\fR
+がそれぞれ考慮する
+\fI<glob\-pattern>\fR
+に一致するrefを含めないでください。このオプションを繰り返すと、次の
+\fB\-\-all\fR
+または
+\fB\-\-branches\fR
+または
+\fB\-\-tags\fR
+または
+\fB\-\-remotes\fR
+または
+\fB\-\-glob\fR
+オプションまで除外パターンが蓄積されます(他のオプションや引数は蓄積されたパターンをクリアしませんされません)。
+.sp
+与えられたパターンは、それぞれ
+\fB\-\-branches\fR
+または
+\fB\-\-tags\fR
+または
+\fB\-\-remotes\fR
+に適用される場合、それぞれ
+\fBrefs/heads\fR
+、
+\fBrefs/tags\fR
+、\fBrefs/remotes\fR
+で始まるべきではありません。
+\fB\-\-glob\fR
+または
+\fB\-\-all\fR
+に適用する場合は、
+\fBrefs/\fR
+で始める必要があります。末尾の
+\fI/*\fR
+を意図している場合は、それを明示的に指定する必要があります。
+.RE
+.PP
+\fB\-\-disambiguate=<prefix>\fR
+.RS 4
+名前が、指定されたプレフィックスで始まるすべてのオブジェクトを表示します。 <prefix> は、リポジトリ内のすべてのオブジェクトを誤ってリストしないように、少なくとも4桁の16進数である必要があります。
+.RE
+.SS "Options for Files"
+.PP
+\fB\-\-local\-env\-vars\fR
+.RS 4
+リポジトリローカルな GIT_* 環境変数を一覧表示します(例: GIT_DIRまたはGIT_WORK_TREE、ただしGIT_EDITORは除く)。 変数が設定されている場合でも、変数の名前のみがリストされ、値はリストされません。
+.RE
+.PP
+\fB\-\-path\-format=(absolute|relative)\fR
+.RS 4
+他の特定のオプションの動作を制御します。absolute(絶対)を指定すると、これらのオプションによって出力されるパスは絶対パスかつ正規化されます。relative(相対)を指定すると、可能であれば、パスは現在の作業ディレクトリからの相対パスになります。デフォルトは対象の、他の特定のオプションそれぞれ固有です。
+.sp
+このオプションは複数回指定でき、コマンドラインの最後か、またはこのオプションの次のインスタンスかの、いずれかに続くコマンドラインの引数にのみ影響します。
+.RE
+.sp
+以下のオプションは \fB\-\-path\-format\fR による変更対象です:
+.PP
+\fB\-\-git\-dir\fR
+.RS 4
+定義されている場合は
+\fB$GIT_DIR\fR
+を表示します。それ以外の場合は、
+\fB\&.git\fR
+ディレクトリへのパスを表示します。表示されているパスは、相対の場合、現在の作業ディレクトリからの相対パスです。
+.sp
+\fB$GIT_DIR\fR
+が定義されておらず、現在のディレクトリがGitリポジトリまたは作業ツリーにあることが検出されない場合は、標準エラー出力にメッセージを出力し、ゼロ以外のステータスで終了(exit)します。
+.RE
+.PP
+\fB\-\-git\-common\-dir\fR
+.RS 4
+定義されている場合は
+\fB$GIT_COMMON_DIR\fR
+を表示し、そうでない場合は
+\fB$GIT_DIR\fR
+を表示します。
+.RE
+.PP
+\fB\-\-resolve\-git\-dir <path>\fR
+.RS 4
+<path> が有効なリポジトリまたは有効なリポジトリを指す gitfile であるかどうかを確認し、リポジトリの場所を出力します。 <path> が gitfile の場合、実際のリポジトリへの解決されたパス(resoluved path)が出力されます。
+.RE
+.PP
+\fB\-\-git\-path <path>\fR
+.RS 4
+\fB$GIT_DIR/<path>\fR
+を解決し、 $GIT_OBJECT_DIRECTORY、$GIT_INDEX_FILE\&...などの他のパス再配置変数を考慮に入れます。 たとえば、 $GIT_OBJECT_DIRECTORY が
+\fB/foo/bar\fR
+に設定されている場合、
+\fBgit rev\-parse \-\-git\-path objects/abc\fR
+は
+\fB/foo/bar/abc\fR
+を返します。
+.RE
+.PP
+\fB\-\-show\-toplevel\fR
+.RS 4
+作業ツリーの最上位ディレクトリの(デフォルトでは絶対)パスを表示します。作業ツリーがない場合は、エラーを報告します。
+.RE
+.PP
+\fB\-\-show\-superproject\-working\-tree\fR
+.RS 4
+現在のリポジトリをサブモジュールとして使用するスーパープロジェクトの作業ツリー(存在する場合)のルート(root)の絶対パスを表示します。現在のリポジトリがどのプロジェクトでもサブモジュールとして使用されていない場合は、何も出力しません。
+.RE
+.PP
+\fB\-\-shared\-index\-path\fR
+.RS 4
+共有インデックスファイル(shared index file)へのパスを分割インデックスモード(split index mode)で表示します。分割インデックスモードで無い場合は空です。
+.RE
+.sp
+以下のオプションは、 \fB\-\-path\-format\fR の影響を受けません:
+.PP
+\fB\-\-absolute\-git\-dir\fR
+.RS 4
+\fB\-\-git\-dir\fR
+に似ていますが、その出力は常に正規化された絶対パスです。
+.RE
+.PP
+\fB\-\-is\-inside\-git\-dir\fR
+.RS 4
+現在の作業ディレクトリがリポジトリディレクトリ(訳注: 通常
+\fB\&.git\fR
+ディレクトリ)の下にある場合は
+\fBtrue\fR
+、それ以外の場合は
+\fBfalse\fR
+と出力します。
+.RE
+.PP
+\fB\-\-is\-inside\-work\-tree\fR
+.RS 4
+現在の作業ディレクトリがリポジトリの作業ツリー内にある場合は
+\fBtrue\fR
+、それ以外の場合は
+\fBfalse\fR
+と出力します。(訳注
+\fB\&.git\fR
+ディレクトリ内では
+\fBfalse\fR)
+.RE
+.PP
+\fB\-\-is\-bare\-repository\fR
+.RS 4
+ベアリポジトリの場合は
+\fBtrue\fR
+、それ以外の場合は
+\fBfalse\fR
+を出力。
+.RE
+.PP
+\fB\-\-is\-shallow\-repository\fR
+.RS 4
+shallowリポジトリの場合は
+\fBtrue\fR
+、そうでない場合は
+\fBfalse\fR
+を出力します。
+.RE
+.PP
+\fB\-\-show\-cdup\fR
+.RS 4
+コマンドがサブディレクトリから呼び出された場合は、現在のディレクトリを基準にした最上位ディレクトリのパスを表示します(通常は
+\fB\&.\&./\fR
+のシーケンスまたは空の文字列)。(訳注:作業ディレクトリ内じゃない時はエラー)
+.RE
+.PP
+\fB\-\-show\-prefix\fR
+.RS 4
+コマンドがサブディレクトリから呼び出された場合は、最上位ディレクトリを基準にした現在のディレクトリのパスを表示します。(訳注:作業ディレクトリ内じゃない時はエラー)
+.RE
+.PP
+\fB\-\-show\-object\-format[=(storage|input|output)]\fR
+.RS 4
+\fB\&.git\fR
+ディレクトリ内でリポジトリのために使われるストレージ(storage)、または入力(input)、または出力(output)に使われるオブジェクト形式(ハッシュアルゴリズム)を表示します。入力(input)の場合、複数のアルゴリズムがスペースで区切られて出力される場合があります。形式を指定しない場合、デフォルトは
+\fBstorage\fR
+です。
+.RE
+.SS "Other Options"
+.PP
+\fB\-\-since=datestring\fR, \fB\-\-after=datestring\fR
+.RS 4
+日付文字列をパースし、
+\fBgit rev\-list\fR
+に対応する
+\fB\-max\-age=\fR
+パラメーターを出力します。
+.RE
+.PP
+\fB\-\-until=datestring\fR, \fB\-\-before=datestring\fR
+.RS 4
+日付文字列をパースし、
+\fBgit rev\-list\fR
+に対応する
+\fB\-\-min\-age=\fR
+パラメーターを出力します。
+.RE
+.PP
+<args>\&...
+.RS 4
+パースされるフラグとパラメーター。
+.RE
+.SH "SPECIFYING REVISIONS"
+.sp
+リビジョンパラメータ \fB<rev>\fR は必ずしもそうとは限りませんが、通常はコミットオブジェクトに名前を付けます。これは、いわゆる「拡張SHA\-1」構文を使用します。 オブジェクト名を綴るにはさまざまな方法があります。このリストの終わり近くにリストされているものは、コミットに含まれているツリーとブロブに名前を付けています。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+この文書は、gitで見られる「生の」構文を示しています。シェルおよびその他のUIでは、特殊文字を保護し、単語の分割を回避するために、追加の引用符が必要になる場合があります。
+.sp .5v
+.RE
+.PP
+\fB<sha1>\fR 例: \fBdae86e1950b1277e545cee180551750029cfe735\fR, \fBdae86e\fR
+.RS 4
+完全なSHA\-1オブジェクト名(40バイトの16進文字列)、またはリポジトリ内で一意の先頭のsubstring。例えば dae86e1950b1277e545cee180551750029cfe735 と dae86e はどちらも、リポジトリ内にオブジェクト名が dae86e で始まる他のオブジェクトがない場合、全く同じコミットオブジェクトに名前を付けます。
+.RE
+.PP
+\fB<describeOutput>\fR 例: \fBv1\&.7\&.4\&.2\-679\-g3bee7fb\fR
+.RS 4
+\fBgit describe\fR
+からの出力。つまり、現在のコミットから最も近いタグ。オプションで、ダッシュ(\-)とそのタグ以降現在のコミットが何番目になるかの数が続き、その後にダッシュ(\-)、「g」、および省略されたオブジェクト名が続きます。
+.RE
+.PP
+\fB<refname>\fR 例: \fBmaster\fR, \fBheads/master\fR, \fBrefs/heads/master\fR
+.RS 4
+シンボリックref名。例えば
+\fBmaster\fR
+は通常、
+\fBrefs/heads/master\fR
+によって参照されるコミットオブジェクトを意味します。
+\fBheads/master\fR
+と
+\fBtags/master\fR
+の両方がある場合は、あなたは
+\fBheads/master\fR
+と明示的に指定して、どちらを意味するかをGitに伝えることができます。 あいまいな場合、
+\fB<refname>\fR
+は、以下のルールに従い最初の一致を採用ことで明確になります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+もし
+\fB$GIT_DIR/<refname>\fR
+が存在するならば、それはあなたが指定した通りのものです(これは通常、\fBHEAD\fR
+と
+\fBFETCH_HEAD\fR
+と
+\fBORIG_HEAD\fR
+と
+\fBMERGE_HEAD\fR
+と
+\fBCHERRY_PICK_HEAD\fR
+のみで役に立ちます)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+でなければ
+\fBrefs/<refname>\fR
+が存在すればそれを採用します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+でなければ
+\fBrefs/tags/<refname>\fR
+が存在すればそれを採用します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+でなければ
+\fBrefs/heads/<refname>\fR
+が存在すればそれを採用します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+でなければ
+\fBrefs/remotes/<refname>\fR
+が存在すればそれを採用します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+でなければ
+\fBrefs/remotes/<refname>/HEAD\fR
+が存在すればそれを採用します。
+.sp
+\fBHEAD\fR
+は、作業ツリーの変更に基づいたコミットに名前を付けます。
+\fBFETCH_HEAD\fR
+は、最後の
+\fBgit fetch\fR
+呼び出しでリモートリポジトリからフェッチしたブランチを記録します。
+\fBORIG_HEAD\fR
+は、
+\fBHEAD\fR
+を大幅に移動するコマンドによって作成され、操作前の
+\fBHEAD\fR
+の位置を記録します。これにより、ブランチの先端を実行前の状態に簡単に戻すことができます。
+\fBMERGE_HEAD\fR
+は、
+\fBgit merge\fR
+を実行するときにブランチにマージするコミットを記録します。
+\fBCHERRY_PICK_HEAD\fR
+は、
+\fBgit cherry\-pick\fR
+を実行したときにチェリーピックしているコミットを記録します。
+.sp
+注意: 上記の
+\fBrefs/*\fR
+の場合、
+\fB$GIT_DIR/refs\fR
+ディレクトリまたは
+\fB$GIT_DIR/packed\-refs\fR
+ファイルのいずれかから発生する可能性があることに注意してください。ref名のエンコードは指定されていませんが、一部の出力処理ではUTF\-8でref名を想定する場合があるため、UTF\-8が推奨されます。
+.RE
+.RE
+.PP
+\fB@\fR
+.RS 4
+\fB@\fR
+単独では
+\fBHEAD\fR
+のショートカットを意味します。
+.RE
+.PP
+\fB[<refname>]@{<date>}\fR 例: \fBmaster@{yesterday}\fR, \fBHEAD@{5 minutes ago}\fR
+.RS 4
+refの後に接尾辞
+\fB@\fR
+が続き、日付指定が中括弧のペアで囲まれています(例:
+\fB{yesterday}\fR
+、
+\fB{1 month 2 weeks 3 days 1 hour 1 second ago}\fR
+、\fB{1979\-02\-26 18:30:00}\fR
+)。これは以前の時点でのrefの値を指定します。この接尾辞は、ref名の直後にのみ使用でき、refには既存のログ(
+\fB$GIT_DIR/logs/<ref>\fR
+)が必要です。これは、特定の時点での
+\fBローカル\fR
+refの状態を検索することに注意してください。たとえば、先週ローカルの
+\fBmaster\fR
+ブランチに何があったか、です。特定の時間に行われたコミットを確認する場合は、
+\fB\-\-since\fR
+と
+\fB\-\-until\fR
+を参照してください。
+.RE
+.PP
+\fB<refname>@{<n>}\fR 例: \fBmaster@{1}\fR
+.RS 4
+refの後に接尾辞
+\fB@\fR
+が続き、数の指定が中括弧のペアで囲まれている場合(たとえば
+\fB{1}\fR,
+\fB{15}\fR)、そのrefのn個前の値を指定します。たとえば
+\fBmaster@{1}\fR
+は
+\fBmaster\fR
+の直前の値であり、
+\fBmaster@{5}\fR
+は
+\fBmaster\fR
+の5個前の値です。この接頭辞は、ref名の直後にのみ使用でき、refには既存のログ(
+\fB$GIT_DIR/logs/<refname>\fR
+)が必要です。
+.RE
+.PP
+\fB@{<n>}\fR 例: \fB@{1}\fR
+.RS 4
+空のref部分で
+\fB@\fR
+コンストラクトを使用して、現在のブランチのreflogエントリを取得できます。たとえば、あなたがブランチ
+\fBblabla\fR
+を使用している場合、
+\fB@{1}\fR
+は
+\fBblabla@{1}\fR
+と同じ意味になります。
+.RE
+.PP
+\fB@{\-<n>}\fR 例: \fB@{\-1}\fR
+.RS 4
+構成
+\fB@{\-<n>}\fR
+は、現在のブランチ/コミットの前にチェックアウトされた<n>番目のブランチ/コミットを意味します。
+.RE
+.PP
+\fB[<branchname>]@{upstream}\fR 例: \fBmaster@{upstream}\fR, \fB@{u}\fR
+.RS 4
+ブランチ B は、 リモート R (\fBbranch\&.<name>\&.remote\fR
+で構成)で、ブランチ X (\fBbranch\&.<name>\&.merge\fR
+で構成)の上に構築するようにセットアップできます。
+\fBB@{u}\fR
+は、リモート R から取られたブランチ X のリモート追跡ブランチを参照し、 通常は
+\fBrefs/remotes/R/X\fR
+にあります。
+.RE
+.PP
+\fB[<branchname>]@{push}\fR 例: \fBmaster@{push}\fR, \fB@{push}\fR
+.RS 4
+接尾辞
+\fB@\e{push}\fR
+は、
+\fBbranchname\fR
+がチェックアウトされているときに
+\fBgit push\fR
+が実行された場合(またはブランチ名が指定されていない場合は現在の
+\fBHEAD\fR
+)、「プッシュ先」のブランチを報告します。
+\fB@\e{upstream\e}\fR
+の場合と同様に、リモートのブランチに対応するリモート・トラッキング・ブランチを報告します。
+.sp
+ここで、よりはっきり分かる例を以下に示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config push\&.default current
+$ git config remote\&.pushdefault myfork
+$ git switch \-c mybranch origin/master
+
+$ git rev\-parse \-\-symbolic\-full\-name @{upstream}
+refs/remotes/origin/master
+
+$ git rev\-parse \-\-symbolic\-full\-name @{push}
+refs/remotes/myfork/mybranch
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+注意: この例では、ある場所からプルして別の場所にプッシュする三角形のワークフローを設定していることに注意してください。非三角形のワークフローでは、
+\fB@\e{push}\fR
+は
+\fB@\e{upstream}\fR
+と同じであり、このようなことをする必要はありません。
+.sp
+この接尾辞は大文字で綴る場合にも受け入れられ、大文字と小文字を問わず同じことを意味します。
+.RE
+.PP
+\fB<rev>^[<n>]\fR 例: \fBHEAD^, v1\&.5\&.1^0\fR
+.RS 4
+リビジョンパラメータの接尾辞
+\fB^\fR
+は、そのコミットオブジェクトの最初の親を意味します。
+\fB^<n>\fR
+は <n> 番目の親を意味します(つまり、
+\fB<rev>^\fR
+は
+\fB<rev>^1\fR
+と同じです)。特別ルールとして、
+\fB<rev>^0\fR
+はコミット自体を意味し、
+\fB<rev>\fR
+がコミットオブジェクトを参照するタグオブジェクトのオブジェクト名である場合に使用されます。
+.RE
+.PP
+\fB<rev>~[<n>]\fR 例: \fBHEAD~, master~3\fR
+.RS 4
+リビジョンパラメータの接尾辞
+\fB~\fR
+は、そのコミットオブジェクトの最初の親を意味します。リビジョンパラメータの接尾辞
+\fB~<n>\fR
+は、最初の親のみに続く、指定されたコミットオブジェクトの <n> 世代の祖先であるコミットオブジェクトを意味します。つまり、
+\fB<rev>~3\fR
+は
+\fB<rev>^^^\fR
+と同じで、するってぇと
+\fB<rev>^1^1^1\fR
+と同じということです。この形式については以下の図を参照してください。
+.RE
+.PP
+\fB<rev>^{<type>}\fR 例: \fBv0\&.99\&.8^{commit}\fR
+.RS 4
+接尾辞
+\fB^\fR
+の後に中括弧のペアで囲まれたオブジェクトタイプ名が続くということは、タイプ
+\fB<type>\fR
+のオブジェクトが見つかるか、オブジェクトを逆参照できなくなるまで、
+\fB<rev>\fR
+でオブジェクトを再帰的に逆参照する(この場合は、いろいろ一旦飲み込んでしまったのを吐きもどすような感じだぬ)ことを意味します。 たとえば、
+\fB<rev>\fR
+がコミットっぽい場合、
+\fB<rev>^{commit}\fR
+は対応するコミットオブジェクトを記述します。同様に、
+\fB<rev>\fR
+がツリーっぽい場合、
+\fB<rev>^{tree}\fR
+は対応するツリーオブジェクトを記述します。
+\fB<rev>^0\fR
+は
+\fB<rev>^{commit}\fR
+の省略形です。
+.sp
+\fB<rev>^{object}\fR
+を使用すると、
+\fB<rev>\fR
+がタグである必要がなく、
+\fB<rev>\fR
+を逆参照することなく、
+\fB<rev>\fR
+が存在するオブジェクトに名前を付けることができます。なお、タグはすでにオブジェクトであるため、オブジェクトに到達するために一度も逆参照する必要はありません。
+.sp
+\fB<rev>^{tag}\fR
+を使用して、
+\fB<rev>\fR
+が既存のタグオブジェクトを確実に識別することができます。
+.RE
+.PP
+\fB<rev>^{}\fR 例: \fBv0\&.99\&.8^{}\fR
+.RS 4
+接尾辞
+\fB^\fR
+の後に空のブレースペアが続くということは、オブジェクトがタグである可能性があることを意味し、タグ以外のオブジェクトが見つかるまでタグを再帰的に逆参照します。
+.RE
+.PP
+\fB<rev>^{/<text>}\fR 例: \fBHEAD^{/fix nasty bug}\fR
+.RS 4
+リビジョンパラメータの接尾辞
+\fB^\fR
+と、それに続くスラッシュで始まるテキストを含む中括弧のペアは、以下の
+\fB:/fix nasty bug\fR
+構文と同じですが、
+\fB^\fR
+の前の
+\fB<rev>\fR
+から到達可能な一致する最も若いコミットを返す点が異なります。
+.RE
+.PP
+\fB:/<text>\fR 例: \fB:/fix nasty bug\fR
+.RS 4
+コロンに続いてスラッシュそしてそれに続くテキストは、コミットメッセージが指定された正規表現と一致するコミットを示します。この名前は、HEADを含む任意のrefから到達可能な最も若い一致するコミットを返します。正規表現は、コミットメッセージの任意の部分に一致できます。文字列で始まるメッセージを照合するには、たとえば、
+\fB:/^foo\fR
+とします。特別なシーケンス
+\fB:/!\fR
+はマッチングの修飾子用に予約されています。ます。
+\fB:/!\-foo\fR
+は一致の否定を実行し、
+\fB:/!!foo\fR
+はリテラル
+\fB!\fR
+後に
+\fBfoo\fR
+が続く文字列とマッチします。
+\fB:/!\fR
+で始まるその他のシーケンスは今のところ予約されています。指定されたテキストによっては、シェルにより追加の引用符が必要になる場合があります。
+.RE
+.PP
+\fB<rev>:<path>\fR 例: \fBHEAD:README\fR, \fBmaster:\&./README\fR
+.RS 4
+接尾辞
+\fB:\fR
+の後にパス(path)を続けると、コロンの前の部分によって名前が付けられたツリー風のオブジェクト内の、指定されたパスにあるブロブまたはツリーに名前が付けられます。
+\fB\&./\fR
+または
+\fB\&.\&./\fR
+で始まるパスは、現在の作業ディレクトリからの相対パスです。指定のパスは、作業ツリーのルートディレクトリからの相対パスに変換されます。これは、作業ツリーと同じツリー構造を持つコミットまたはツリーからブロブまたはツリーをアドレス指定するのに最も役立ちます。
+.RE
+.PP
+\fB:[<n>:]<path>\fR 例: \fB:0:README\fR, \fB:README\fR
+.RS 4
+コロンに、オプションでステージ番号(0〜3)とコロンが続き、それにパスが続くと、指定されたパスのインデックス内のブロブオブジェクトに名前を付けます。ステージ番号省略(およびそれに続くコロン)は、ステージ0エントリーを示します。マージ作業中、ステージ1は共通の祖先、ステージ2はターゲットブランチのバージョン(通常は現在のブランチ)、ステージ3はマージされるブランチのバージョンです。
+.RE
+.sp
+以下はJon Loeligerによる図解です。コミットノードBとCはどちらもコミットノードAの親です。親コミットは左から右に順序付けられます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+G   H   I   J
+ \e /     \e /
+  D   E   F
+   \e  |  / \e
+    \e | /   |
+     \e|/    |
+      B     C
+       \e   /
+        \e /
+         A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+A =      = A^0
+B = A^   = A^1     = A~1
+C =      = A^2
+D = A^^  = A^1^1   = A~2
+E = B^2  = A^^2
+F = B^3  = A^^3
+G = A^^^ = A^1^1^1 = A~3
+H = D^2  = B^^2    = A^^^2  = A~2^2
+I = F^   = B^3^    = A^^3^
+J = F^2  = B^3^2   = A^^3^2
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SPECIFYING RANGES"
+.sp
+\fBgit log\fR などの履歴トラバースコマンドは、単一のコミットだけでなく、一連のコミットで動作します。
+.sp
+これらのコマンドの場合、前のセクションで説明した表記法を使用して単一のリビジョンを指定することは、指定のコミットから「到達可能」なコミットの組を意味します。
+.sp
+複数のリビジョンを指定するということは、指定のコミットのいずれかから到達可能なコミットの組を意味します。
+.sp
+コミットの到達可能な組は、コミット自体とその祖先チェーン内のコミットです。
+.sp
+以下に示すように、接続されたコミット(connected commits)の組(「リビジョン範囲」(revision range)と呼ばれる)を指定するためのいくつかの表記法があります。
+.SS "Commit Exclusions"
+.PP
+\fB^<rev>\fR (カレット)記法
+.RS 4
+とある到達可能なコミットをコミット達から除外するには、接頭辞
+\fB^\fR
+表記を使用します。 例えば
+\fB^r1 r2\fR
+は
+\fBr2\fR
+から到達可能なコミットだけども、
+\fBr1\fR
+から到達可能なコミット(つまり
+\fBr1\fR
+とその祖先)は除外する事を意味します。
+.RE
+.SS "Dotted Range Notations"
+.PP
+\fB\&.\&.\fR (2ドット)範囲記法
+.RS 4
+\fB^r1 r2\fR
+操作は頻繁に表示されるため、省略形があります。(上記の SPECIFYING REVISIONS で説明されている構文に従って名前が付けられている)2つのコミット
+\fBr1\fR
+と
+\fBr2\fR
+がある場合、あなたは
+\fB^r1 r2\fR
+によってr1から到達可能なコミットを取り除き、r2から到達可能なコミットを要求できます。そしてこれは
+\fBr1\&.\&.r2\fR
+と書くことができます。
+.RE
+.PP
+\fB\&.\&.\&.\fR (3ドット)対称差記法
+.RS 4
+似た表記
+\fBr1\&.\&.\&.r2\fR
+は
+\fBr1\fR
+と
+\fBr2\fR
+の対称差と呼ばれ、
+\fBr1 r2 \-\-not $(git merge\-base \-\-all r1 r2)\fR
+として定義されます。 これは、
+\fBr1\fR
+(左側)または
+\fBr2\fR
+(右側)のいずれかから到達可能であるが、両方からは到達できないコミットの組です。
+.RE
+.sp
+これらの2つの省略表記では、一方の端を省略して、デフォルトでHEADにすることができます。たとえば、 \fBorigin\&.\&.\fR は \fBorigin\&.\&.HEAD\fR の省略形であり、「originブランチから分岐(fork)してから何をしましたか？」と尋ねます。 同様に、 \fB\&.\&.origin\fR は \fBHEAD\&.\&.origin\fR の省略形であり、「私がそれらから分岐してから、originは何をしましたか？」と尋ねます。 \fB\&.\&.\fR は \fBHEAD\&.\&.HEAD\fR を意味することに注意してください。これは、HEADから到達可能および到達不能の両方の空の範囲です。
+.sp
+2つの異なる範囲を取るように特別に設計されたコマンド(たとえば、2つの範囲を比較するための "git range\-diff R1 R2" ) は存在しますが、それらは例外です。特に明記されていない限り、一連のコミットを操作するすべての "git" コマンドは、単一のリビジョン範囲で機能します。言い換えると、2つの「2ドット範囲表記」を隣り合わせに記述します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log A\&.\&.B C\&.\&.D
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ほとんどのコマンドでは2つのリビジョン範囲を指定しません。代わりに、接続された単一のコミットの組、つまりBまたはDのいずれかから到達可能であるが、AまたはCのどちらからも到達可能でないコミットの組に名前を付けます。線形履歴では、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-A\-\-\-B\-\-\-o\-\-\-o\-\-\-C\-\-\-D
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+AとBはCから到達可能であるため、これら2つの2ドット範囲記法で指定されたリビジョン範囲は単一のコミットDです。
+.SS "Other <rev>^ Parent Shorthand Notations"
+.sp
+コミットとその親コミットによって形成される組に名前を付けるために、マージコミットに特に役立つ他の3つの省略形が存在します。
+.sp
+\fBr1^@\fR 表記は、 \fBr1\fR のすべての親を意味します。
+.sp
+\fBr1^!\fR 表記には コミット \fBr1\fR が含まれますが、そのすべての親は除外されます。この表記自体は、単一のコミット \fBr1\fR を示します。
+.sp
+\fB<rev>^\-[<n>]\fR 表記には \fB<rev>\fR が含まれますが、 <n> 番目の親(つまり、 \fB<rev>^<n>\&.\&.<rev>\fR の省略形)は除外されます。 <n> が指定されていない場合は \fB<n>\fR = 1 とみなします。これは通常、 \fB<commit>^\-\fR を渡すだけで、マージコミット \fB<commit>\fR(\fB<commit>\fR 自体を含む)でマージされたブランチ内のすべてのコミットを取得できるマージコミットに役立ちます。
+.sp
+\fB<rev>^<n>\fR は単一のコミット親を指定することに関するものでしたが、これらの3つの表記はその親も考慮します。たとえば、 \fBHEAD^2^@\fR と言うことはできますが、 \fBHEAD^@^2\fR と言うことはできません。
+.SH "REVISION RANGE SUMMARY"
+.PP
+\fB<rev>\fR
+.RS 4
+<rev> から到達可能なコミット(つまり <rev> とその祖先)を含めます。
+.RE
+.PP
+\fB^<rev>\fR
+.RS 4
+<rev> から到達可能なコミット(つまり <rev> とその祖先)を除外します。
+.RE
+.PP
+\fB<rev1>\&.\&.<rev2>\fR
+.RS 4
+<rev2> から到達可能なコミットを含めますが、 <rev1> から到達可能なコミットは除外します。 <rev1> または <rev2> のいずれかを省略すると、それらはそれぞれデフォルトで
+\fBHEAD\fR
+になります。
+.RE
+.PP
+\fB<rev1>\&.\&.\&.<rev2>\fR
+.RS 4
+<rev1> または <rev2> のいずれかから到達可能なコミットを含めますが、両方から到達可能なコミットは除外します。 <rev1> または <rev2> のいずれかを省略すると、それらはそれぞれデフォルトで
+\fBHEAD\fR
+になります。
+.RE
+.PP
+\fB<rev>^@\fR 例: \fBHEAD^@\fR
+.RS 4
+接尾辞
+\fB^\fR
+の後にアットマーク(\fB@\fR)を付けることは、
+\fB<rev>\fR
+のすべての親をリストすることと同じです(つまり、親から到達可能なものはすべて含まれますが、コミット自体は含まれません)。
+.RE
+.PP
+\fB<rev>^!\fR 例: \fBHEAD^!\fR
+.RS 4
+接尾辞
+\fB^\fR
+の後に感嘆符(\fB!\fR)を付けることは、コミット
+\fB<rev>\fR
+を指定し、そのすべての親の前に
+\fB^\fR
+を付けてそれら(およびその祖先)を除外することと同じです。
+.RE
+.PP
+\fB<rev>^\-<n>\fR 例: \fBHEAD^\-, HEAD^\-2\fR
+.RS 4
+\fB<rev>^<n>\&.\&.<rev>\fR
+と同等であり、
+\fB<n>\fR
+が指定されていない場合は
+\fB<n>\fR
+= 1 です。
+.RE
+.sp
+上記のLoeliger図解を使用したいくつかの例を以下に示します。表記の拡張と選択は、それぞれ段階が分かるようステップを踏んで説明してあります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   Args   Expanded arguments    Selected commits
+   D                            G H D
+   D F                          G H I J D F
+   ^G D                         H D
+   ^D B                         E I J F B
+   ^D B C                       E I J F B C
+   C                            I J F C
+   B\&.\&.C   = ^B C                C
+   B\&.\&.\&.C  = B ^F C              G H D E B C
+   B^\-    = B^\&.\&.B
+          = ^B^1 B              E I J F B
+   C^@    = C^1
+          = F                   I J F
+   B^@    = B^1 B^2 B^3
+          = D E F               D G H E F I J
+   C^!    = C ^C^@
+          = C ^C^1
+          = C ^F                C
+   B^!    = B ^B^@
+          = B ^B^1 ^B^2 ^B^3
+          = B ^D ^E ^F          B
+   F^! D  = F ^I ^J D           G H D F
+.fi
+.if n \{\
+.RE
+.\}
+.SH "PARSEOPT"
+.sp
+\fB\-\-parseopt\fR モードでは、 \fBgit rev\-parse\fR は、オプションをもみもみして、Cビルトインと同じ機能をシェルスクリプトにもたらすのに役立ちます。これは、 \fBgetopt(1)\fR と少し似た、オプションの正規化機能です(たとえば、単一のスイッチの集合を分割します)。
+.sp
+パースおよび理解できるオプションの仕様を標準入力で受け取り、引数を正規化されたものに置き換えるために、\fBsh(1)\fR \fBeval\fR に適した文字列をエコーします。エラーが発生した場合は、標準エラーストリームで使用状況を出力し、コード129で終了します。
+.sp
+注: 結果を \fBeval\fR に渡すときは、必ず引用符で囲んでください。例については、以下を参照してください。
+.SS "Input Format"
+.sp
+\fBgit rev\-parse \-\-parseopt\fR 入力形式は完全にテキストベースです。 \fB\-\-\fR のみを含む行で区切られた2つの部分から構成されます。セパレーターの前の行(1つ以上である必要があります)が使用例に使用されます。区切り文字の後の行は、オプションを示しています。
+.sp
+オプションの各行の形式はいかのとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<opt\-spec><flags>*<arg\-hint>? SP+ help LF
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fB<opt\-spec>\fR
+.RS 4
+この形式は、短いオプション1文字で、続いてコンマ(\fI,\fR)で区切り、そして長いオプション名があります。少なくとも短長のうち1つは必要ですが、両方揃ってなくてもいいです。
+\fB<flags>\fR
+文字を含めることはできません。
+\fBh,help\fR
+や
+\fBdry\-run\fR
+や
+\fBf\fR
+は正しい
+\fB<opt\-spec>\fR
+の例です。
+.RE
+.PP
+\fB<flags>\fR
+.RS 4
+\fB<flags>\fR
+とは
+\fB*\fR
+または
+\fB=\fR
+または
+\fB?\fR
+または
+\fB!\fR
+です。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+オプションが引数を取る場合は、
+\fB=\fR
+を使用します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB?\fR
+の使用は、オプションがオプションの引数を取ることを意味します。オプションの引数を明確に解析できるようにするには、おそらく
+\fB\-\-stuck\-long\fR
+モードを使用する必要があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB*\fR
+を使用すると、このオプションが
+\fB\-h\fR
+引数に対して生成された使用法にリストされてはならないことを意味します。
+\fBgitcli\fR(7)
+に記載されているように、
+\fB\-\-help\-all\fR
+には表示されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB！\fR
+を使用すると、対応する否定されたlongオプションを使用可能にしません。
+.RE
+.RE
+.PP
+\fB<arg\-hint>\fR
+.RS 4
+\fB<arg\-hint>\fR
+は、指定された場合、引数を取るオプションのヘルプ出力で引数の名前として使用されます。
+\fB<arg\-hint>\fR
+は最初の空白で終了します。複数単語の引数ヒントで単語を区切りたい時は、ダッシュを使う通例です。
+.RE
+.sp
+スペースを取り除いた後の行の残りの部分は、オプションに関連付けられたヘルプとして使用されます。
+.sp
+空白行は無視され、この仕様に一致しない行はオプショングループヘッダーとして使用されます(意図的にそのような行を作成するためにはスペースで行を開始します)。
+.SS "Example"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+OPTS_SPEC="\e
+some\-command [<options>] <args>\&.\&.\&.
+
+some\-command does foo and bar!
+\-\-
+h,help    show the help
+
+foo       some nifty option \-\-foo
+bar=      some cool option \-\-bar with an argument
+baz=arg   another cool option \-\-baz with a named argument
+qux?path  qux may take a path argument but has meaning by itself
+
+  An option group Header
+C?        option C with an optional argument"
+
+eval "$(echo "$OPTS_SPEC" | git rev\-parse \-\-parseopt \-\- "$@" || echo exit $?)"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SS "Usage text"
+.sp
+上記の例で \fB"$@"\fR が \fB\-h\fR または \fB\-\-help\fR の場合、以下の使用法テキストが表示されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+usage: some\-command [<options>] <args>\&.\&.\&.
+
+    some\-command does foo and bar!
+
+    \-h, \-\-help            show the help
+    \-\-foo                 some nifty option \-\-foo
+    \-\-bar \&.\&.\&.             some cool option \-\-bar with an argument
+    \-\-baz <arg>           another cool option \-\-baz with a named argument
+    \-\-qux[=<path>]        qux may take a path argument but has meaning by itself
+
+An option group Header
+    \-C[\&.\&.\&.]               option C with an optional argument
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SQ\-QUOTE"
+.sp
+\fB\-\-sq\-quote\fR モードでは、 \fBgit rev\-parse\fR は、 \fBsh(1)\fR \fBeval\fR に適した1行を標準出力にエコーします。この行は、 \fB\-\-sq\-quote\fR に続く引数を正規化することによって作成されます。引数をクォートする以外に何も行いません。
+.sp
+出力がシェル引用符で囲まれる前に、コマンド入力を \fBgit rev\-parse\fR によって通常どおりに解釈するには \fB\-\-sq\fR オプションを参照してください。
+.SS "Example"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat >your\-git\-script\&.sh <<\eEOF
+#!/bin/sh
+args=$(git rev\-parse \-\-sq\-quote "$@")   # quote user\-supplied arguments
+command="git frotz \-n24 $args"          # and use it inside a handcrafted
+                                        # command line
+eval "$command"
+EOF
+
+$ sh your\-git\-script\&.sh "a b\*(Aqc"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+現在のコミットのオブジェクト名を出力します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git rev\-parse \-\-verify HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+$REV シェル変数のリビジョンからコミットオブジェクト名を出力します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git rev\-parse \-\-verify \-\-end\-of\-options $REV^{commit}
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+$REV が空であるか、有効なリビジョンでない場合エラーになります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+上記と同様ですが\&...:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git rev\-parse \-\-default master \-\-verify \-\-end\-of\-options $REV
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは、 $REV が空の場合、masterからのコミットオブジェクト名が出力されます。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

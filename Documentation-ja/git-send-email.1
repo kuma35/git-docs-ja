@@ -1,0 +1,1088 @@
+'\" t
+.\"     Title: git-send-email
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-SEND\-EMAIL" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-send-email \- パッチの集まりを電子メールとして送信します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit send\-email\fR [<options>] <file|directory>\&...
+\fIgit send\-email\fR [<options>] <format\-patch options>
+\fIgit send\-email\fR \-\-dump\-aliases
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+コマンドラインで指定されたパッチを取得し、電子メールで送信します。 パッチは、ファイルまたは、ディレクトリ(ディレクトリ内のすべてのファイルを送信します)または、リビジョンリストとして直接指定できます。 SYNOPSISの最後のケースでは、\fBgit-format-patch\fR(1) によって受け入れられる任意のフォーマットと、\fBgit-format-patch\fR(1) によって理解されるオプションを「git send\-email」に渡すことができます。
+.sp
+電子メールのヘッダーは、コマンドラインオプションを使用して構成できます。 コマンドラインで指定されていない場合、ReadLine対応のインターフェイスでユーザーが必要な情報を提供するためのプロンプトが表示されます。
+.sp
+パッチファイルに使用できる形式は2つあります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+mbox形式ファイル
+.sp
+これは、
+\fBgit-format-patch\fR(1)
+が生成するものです。 ほとんどのヘッダーとMIMEフォーマットは無視されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Greg Kroah\-Hartman の
+\fBsend_lots_of_email\&.pl\fR
+スクリプトで使用されたオリジナル形式
+.sp
+この形式では、ファイルの1行目に「Cc:」値が含まれ、2行目としてメッセージの「Subject:」が含まれている必要があります。
+.RE
+.SH "OPTIONS"
+.SS "電子メール作成"
+.PP
+\fB\-\-annotate\fR
+.RS 4
+送信しようとしている各パッチを確認して編集します。 デフォルトは
+\fBsendemail\&.annotate\fR
+の値です。 `sendemail\&.multiEdit`の「CONFIGURATION」セクションを参照してください。
+.RE
+.PP
+\fB\-\-bcc=<address>,\&.\&.\&.\fR
+.RS 4
+メールごとに「Bcc:」の値を指定します。 デフォルトは
+\fBsendemail\&.bcc\fR
+の値です。
+.sp
+このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-cc=<address>,\&.\&.\&.\fR
+.RS 4
+各電子メールの開始「Cc:」値(starting "Cc:" value)を指定します。 デフォルトは
+\fBsendemail\&.cc\fR
+の値です。
+.sp
+このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-compose\fR
+.RS 4
+テキストエディタ(\fBgit-var\fR(1)の GIT_EDITOR 参照)を呼び出して、パッチシリーズの紹介メッセージ(introductory message)を編集します。
+.sp
+\fB\-\-compose\fR
+が使用されている場合、
+\fBgit send\-email\fR
+は、メッセージで指定されているFromとSubjectとIn\-Reply\-Toヘッダーを使用します。 メッセージの本文(ヘッダーと空行の後に入力するもの)に空行(または Git: プレフィックス)のみが含まれている場合、要約は送信されませんが、FromとSubjectとIn\-Reply\-Toヘッダーは削除されない限り使用されます。
+.sp
+From ヘッダー または In\-Reply\-To ヘッダーが無い時はプロンプトが表示されます。
+.sp
+\fBsendemail\&.multiEdit\fR
+の「CONFIGURATION」セクションを参照してください。
+.RE
+.PP
+\fB\-\-from=<address>\fR
+.RS 4
+電子メールの送信者(sender)を指定します。 コマンドラインで指定されていない場合は、\fBsendemail\&.from\fR
+構成オプションの値が使用されます。 コマンドラインオプションも
+\fBsendemail\&.from\fR
+も設定されていない場合、ユーザーは値の入力を求められます。 そのプロンプトのデフォルトは、
+\fBgit var \-l\fR
+によって返される、GIT_AUTHOR_IDENTの値、または、GIT_AUTHOR_IDENTが設定されていない場合はGIT_COMMITTER_IDENTの値になります。
+.RE
+.PP
+\fB\-\-reply\-to=<address>\fR
+.RS 4
+受信者からの返信先(reply)のアドレスを指定します。 メッセージへの応答(reply)が
+\fB\-\-from\fR
+パラメーターで指定されたものとは別のアドレスに送信される必要がある場合は、これを使用します。
+.RE
+.PP
+\fB\-\-in\-reply\-to=<identifier>\fR
+.RS 4
+最初のメール(または
+\fB\-\-no\-thread\fR
+指定の全てのメール)を、指定の Message\-Id への応答(reply)として表示します。これにより、スレッドが壊れて新しいパッチシリーズが提供されるのを防ぎます。 2回目以降のメールは、
+\fB\-\-[no\-]chain\-reply\-to\fR
+設定に従って返信(reply)として送信されます。
+.sp
+そのため、例えば
+\fB\-\-thread\fR
+と
+\fB\-\-no\-chain\-reply\-to\fR
+を指定すると、以下のように
+\fB[PATCH v2 0/3]\fR
+が
+\fB[PATCH 0/2]\fR
+に対する返信になるように、2番目以降のパッチは最初のパッチへの返信になります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[PATCH 0/2] Here is what I did\&.\&.\&.
+  [PATCH 1/2] Clean up and tests
+  [PATCH 2/2] Implementation
+  [PATCH v2 0/3] Here is a reroll
+    [PATCH v2 1/3] Clean up
+    [PATCH v2 2/3] New tests
+    [PATCH v2 3/3] Implementation
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB\-\-compose\fR
+も設定されている場合のみ必要です。
+\fB\-\-compose\fR
+が設定されていない場合は、プロンプトが表示されます。
+.RE
+.PP
+\fB\-\-subject=<string>\fR
+.RS 4
+メールスレッドの最初の件名を指定します。
+\fB\-\-compose\fR
+も設定されている場合にのみ必要です。
+\fB\-\-compose\fR
+が設定されていない場合、これはプロンプトが表示されます。
+.RE
+.PP
+\fB\-\-to=<address>,\&.\&.\&.\fR
+.RS 4
+生成された電子メールの主な受信者(primary recipient)を指定します。 通常、これは関連するプロジェクトの上流のメンテナになります。 デフォルトは、
+\fBsendemail\&.to\fR
+構成値の値です。 それが指定されておらず、
+\fB\-\-to\-cmd\fR
+が指定されていない場合、プロンプトが表示されます。
+.sp
+このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-8bit\-encoding=<encoding>\fR
+.RS 4
+エンコードを宣言していない非ASCIIメッセージまたは件名に遭遇した場合は、 ヘッダー/引用符 を追加して、<encoding>でエンコードされていることを示します。 デフォルトは
+\fBsendemail\&.assume8bitEncoding\fR
+の値です。 それが指定されていない場合に非ASCIIファイルが検出された場合はプロンプトが表示されます。
+.sp
+注意:エンコーディングを検証する試みは一切行われないことに注意してください。
+.RE
+.PP
+\fB\-\-compose\-encoding=<encoding>\fR
+.RS 4
+作成するッセージのエンコードを指定します。 デフォルトは
+\fBsendemail\&.composeencoding\fR
+の値です。 それが指定されていない場合は、UTF\-8 を想定されます。
+.RE
+.PP
+\fB\-\-transfer\-encoding=(7bit|8bit|quoted\-printable|base64|auto)\fR
+.RS 4
+SMTP経由でメッセージを送信するために使用する転送エンコーディングを指定します。 非ASCIIメッセージに遭遇すると、
+\fB7bit\fR
+は失敗します。
+\fBquoted\-printable\fR
+は、リポジトリにキャリッジリターンを含むファイルが含まれている場合に役立ちますが、生のパッチ電子メールファイル(MUAで保存されたもの)を手動で検査するのがとても難しくなります。
+\fBbase64\fR
+はさらに確実ですが、さらに不透明です。
+\fBauto\fR
+は、可能な場合は8ビットを使用し、それ以外の場合は
+\fBquoted\-printable\fR
+を使用します。
+.sp
+デフォルトは、\fBsendemail\&.transferEncoding\fR
+構成値です。 それが指定されていない場合、デフォルトは
+\fBauto\fR
+です。
+.RE
+.PP
+\fB\-\-xmailer\fR, \fB\-\-no\-xmailer\fR
+.RS 4
+\fBX\-Mailer:\fR
+ヘッダーを追加(または追加を防止)します。 デフォルトでは追加されますが、
+\fBsendemail\&.xmailer\fR
+構成変数を
+\fBfalse\fR
+に設定することでオフにできます。
+.RE
+.SS "電子メール送信"
+.PP
+\fB\-\-envelope\-sender=<address>\fR
+.RS 4
+メールの送信に使用するエンベロープ(envelope)の送信者を指定します。 これは、デフォルトのメールアドレスがメーリングリストに申し込まれているメールアドレスではない場合に役立ちます。
+\fBFrom\fR
+アドレスを使用するには、値を
+\fBauto\fR
+」に設定します。 sendmailバイナリを使用する場合は、
+\fB\-f\fR
+パラメータに適切な権限が必要です。 デフォルトは、
+\fBsendemail\&.envelopeSender\fR
+構成変数の値です。 それが指定されていない場合、エンベロープ送信者の選択はMTAに任されています。
+.RE
+.PP
+\fB\-\-sendmail\-cmd=<command>\fR
+.RS 4
+電子メールを送信するために実行するコマンドを指定します。 コマンドはsendmailのようなものでなければなりません。 具体的には、
+\fB\-i\fR
+オプションをサポートする必要があります。 コマンドは、必要に応じてシェルで実行されます。 デフォルトは
+\fBsendemail\&.sendmailcmd\fR
+構成の値です。
+\fBsendemail\&.sendmailcmd\fR
+構成の値が指定されていない場合、かつ、
+\fB\-\-smtp\-server\fR
+も指定されていない場合、
+\fBgit\-send\-email\fR
+は
+\fB/usr/sbin\fR
+と
+\fB/usr/lib\fR
+と $PATH で
+\fBsendmail\fR
+を検索します。
+.RE
+.PP
+\fB\-\-smtp\-encryption=<encryption>\fR
+.RS 4
+使用する暗号化を
+\fBssl\fR
+または
+\fBtls\fR
+のどちらかで指定します。その他の値は平文SMTPに戻します。 デフォルトは
+\fBsendemail\&.smtpEncryption\fR
+の値です。
+.RE
+.PP
+\fB\-\-smtp\-domain=<FQDN>\fR
+.RS 4
+SMTPサーバーへの HELO/EHLO コマンドで使用される完全修飾ドメイン名(FQDN)を指定します。 一部のサーバーでは、FQDNがIPアドレスと一致する必要があります。 設定されていない場合、
+\fBgit send\-email\fR
+はFQDNを自動的に判別しようとします。 デフォルトは
+\fBsendemail\&.smtpDomain\fR
+の値です。
+.RE
+.PP
+\fB\-\-smtp\-auth=<mechanisms>\fR
+.RS 4
+許可されたSMTP\-AUTHメカニズムの空白で区切られた(Whitespace\-separated)リスト。 この設定は、リストされたメカニズムのみを使用するように強制します。 例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git send\-email \-\-smtp\-auth="PLAIN LOGIN GSSAPI" \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+指定されたメカニズムの少なくとも1つがSMTPサーバによって宣伝(advertise)されたメカニズムと一致し、利用されるSASLライブラリによってサポートされている場合、そのメカニズムが認証に使用されます。
+\fBsendemail\&.smtpAuth\fR
+と
+\fB\-\-smtp\-auth\fR
+のどちらも指定されない場合、SASL ライブラリでサポートされているすべてのメカニズムが使用される可能性があります。 特別な値として
+\fBnone\fR
+を指定すると、
+\fB\-\-smtp\-user\fR
+と独立して認証を完全に無効にすることができます。
+.RE
+.PP
+\fB\-\-smtp\-pass[=<password>]\fR
+.RS 4
+SMTP\-AUTHのパスワード。 引数はオプションです。引数が指定されていない場合は、空の文字列がパスワードとして使用されます。 デフォルトは
+\fBsendemail\&.smtpPass\fR
+の値ですが、
+\fB\-\-smtp\-pass\fR
+は常に
+\fBsendemail\&.smtpPass\fR
+の値を上書きします。
+.sp
+さらに、パスワードを構成ファイルまたはコマンドラインで指定する必要はありません。 ユーザー名が指定されている(\fB\-\-smtp\-user\fR
+または
+\fBsendemail\&.smtpUser\fR
+を使用)が、パスワードが指定されていない(\fB\-\-smtp\-pass\fR
+または
+\fBsendemail\&.smtpPass\fR
+を使用)場合、パスワード
+\fBgit\-credential\fR
+を使用して取得されます。
+.RE
+.PP
+\fB\-\-no\-smtp\-auth\fR
+.RS 4
+SMTP認証を無効にします。
+\fB\-\-smtp\-auth=none\fR
+の省略形
+.RE
+.PP
+\fB\-\-smtp\-server=<host>\fR
+.RS 4
+設定されている場合、使用する送信SMTPサーバを指定します(例:
+\fBsmtp\&.example\&.com\fR
+または生のIPアドレス)。 これが未指定の場合で、かつ、
+\fB\-\-sendmail\-cmd\fR
+も未指定の場合、デフォルトでは
+\fB/usr/sbin\fR
+と
+\fB/usr/lib\fR
+と $PATH にある
+\fBsendmail\fR
+を探します。それが存在しなければ
+\fBlocalhost\fR
+にフォールバックされます。
+.sp
+下位互換性のために、このオプションでは、代わりにsendmailのようなプログラムの絶対パス名を指定することもできます。 プログラムは
+\fB\-i\fR
+オプションをサポートする必要があります。 このメソッドは、引数の受け渡しや平文コマンド名の使用をサポートしていません。 これらの場合には、代わりに
+\fB\-\-sendmail\-cmd\fR
+の使用を検討してください。
+.RE
+.PP
+\fB\-\-smtp\-server\-port=<port>\fR
+.RS 4
+デフォルトのポートとは異なるポートを指定します(SMTPサーバーは通常smtpポート25をリッスンしますが、送信ポート587または共通のSSL smtpポート465もリッスンする場合があります)。 シンボリックポート名(たとえば、587ではなく "submission")も受け入れられます。 ポートは、
+\fBsendemail\&.smtpServerPort\fR
+構成変数を使用して設定することもできます。
+.RE
+.PP
+\fB\-\-smtp\-server\-option=<option>\fR
+.RS 4
+設定されている場合、使用する送信SMTPサーバーオプションを指定します。 デフォルト値は、
+\fBsendemail\&.smtpServerOption\fR
+構成オプションで指定できます。
+.sp
+\fB\-\-smtp\-server\-option\fR
+オプションは、サーバーに渡すオプションごとに繰り返す必要があります。 同様に、構成ファイルではオプションごとに異なる行を使用する必要があります。
+.RE
+.PP
+\fB\-\-smtp\-ssl\fR
+.RS 4
+\fB\-\-smtp\-encryptionssl\fR
+の、大昔からのエイリアス。
+.RE
+.PP
+\fB\-\-smtp\-ssl\-cert\-path\fR
+.RS 4
+SMTP SSL/TLS 証明書検証用の信頼できるCA証明書のストアへのパス(\fBc_rehash\fR
+によって処理されたディレクトリ、または1つ以上のPEM形式の証明書が連結された単一のファイル: これらの詳細については、 verify(1) の
+\fB\-CAfile\fR
+と
+\fB\-CApath\fR
+を参照してください)。 証明書の検証を無効にするには、空の文字列に設定します。 デフォルトは、設定されている場合は
+\fBsendemail\&.smtpsslcertpath\fR
+構成変数の値、それ以外の場合はバッキングSSLライブラリのコンパイル済みデフォルト(ほとんどのプラットフォームで最良の選択)です。
+.RE
+.PP
+\fB\-\-smtp\-user=<user>\fR
+.RS 4
+SMTP\-AUTHのユーザー名。 デフォルトは
+\fBsendemail\&.smtpUser\fR
+の値です。 (\fB\-\-smtp\-user\fR
+または
+\fBsendemail\&.smtpUser\fR
+で)ユーザー名が指定されていない場合、認証は試行されません。
+.RE
+.PP
+\fB\-\-smtp\-debug=0|1\fR
+.RS 4
+デバッグ出力を有効(1)または無効(0)にします。 有効にすると、SMTPコマンドとその応答が出力されます。 TLS接続と認証の問題をデバッグするのに役立ちます。
+.RE
+.PP
+\fB\-\-batch\-size=<num>\fR
+.RS 4
+一部の電子メールサーバー(たとえば smtp\&.163\&.com)では、セッション(または接続)ごとに送信される電子メールの数が制限されているため、多くのメッセージを送信すると失敗します。 このオプションを使用すると、\fBsend\-email\fR
+は <num> メッセージの送信後に切断され、数秒待って(\fB\-\-relogin\-delay\fR
+参照)、再接続して、このような制限を回避します。 これが発生するたびにパスワードを再入力する必要がないように、何らかの形式のクレデンシャルヘルパーを使用することをお勧めします。 デフォルトは
+\fBsendemail\&.smtpBatchSize\fR
+構成変数です。
+.RE
+.PP
+\fB\-\-relogin\-delay=<int>\fR
+.RS 4
+SMTPサーバーに再接続する前に <int> 秒待機します。
+\fB\-\-batch\-size\fR
+オプションと一緒に使用します。 デフォルトは
+\fBsendemail\&.smtpReloginDelay\fR
+構成変数です。
+.RE
+.SS "自動化"
+.PP
+\fB\-\-no\-[to|cc|bcc]\fR
+.RS 4
+configで以前に設定した "To:" と "Cc:" と "Bcc:" アドレスのリストをすべてクリアします。
+.RE
+.PP
+\fB\-\-no\-identity\fR
+.RS 4
+configで設定された
+\fBsendemail\&.identity\fR
+から読み取られた値があるならば、その値をクリアします。
+.RE
+.PP
+\fB\-\-to\-cmd=<command>\fR
+.RS 4
+パッチファイルごとに1回実行するコマンドを指定し、パッチファイル固有の
+\fBTo:\fR
+エントリーを生成するようにします。 このコマンドの出力は、1行に1つの電子メールアドレスでなければなりません。 デフォルトは、設定値
+\fBsendemail\&.tocmd\fR
+の値です。
+.RE
+.PP
+\fB\-\-cc\-cmd=<command>\fR
+.RS 4
+パッチファイルごとに1回実行するコマンドを指定し、パッチファイル固有の
+\fBCc:\fR
+エントリを生成するようにします。 このコマンドの出力は、1行に1つの電子メールアドレスでなければなりません。 デフォルトは
+\fBsendemail\&.ccCmd\fR
+設定値の値です。
+.RE
+.PP
+\fB\-\-[no\-]chain\-reply\-to\fR
+.RS 4
+これが設定されている場合、各メールは前に送信されたメールへの返信として送信されます。
+\fB\-\-no\-chain\-reply\-to\fR
+で無効にすると、最初の電子メール以降のすべての電子メールが、最初に送信された電子メールへの返信として送信されます。 これを使用する場合、最初のファイルはパッチシリーズ全体の概要であることが推奨されます。 デフォルトでは無効になっていますが、
+\fBsendemail\&.chainReplyTo\fR
+構成変数を使用して有効にすることができます。
+.RE
+.PP
+\fB\-\-identity=<identity>\fR
+.RS 4
+構成ID。 指定すると、
+\fBsendemail\&.<identity>\fR
+サブセクションの値が
+\fBsendemail\fR
+セクションの値よりも優先されます。 デフォルトのIDは、 `sendemail\&.identity`の値です。
+.RE
+.PP
+\fB\-\-[no\-]signed\-off\-by\-cc\fR
+.RS 4
+これが設定されている場合は、
+\fBSigned\-off\-by\fR
+トレーラーまたは
+\fBCc:\fR
+行にある電子メールアドレスをccリストに追加します。 デフォルトは
+\fBsendemail\&.signedoffbycc\fR
+構成変数の値です。
+\fBsendemail\&.signedoffbycc\fR
+構成変数が指定されていない場合、デフォルトは
+\fB\-\-signed\-off\-by\-cc\fR
+です。
+.RE
+.PP
+\fB\-\-[no\-]cc\-cover\fR
+.RS 4
+これが設定されている場合、シリーズの最初のパッチ(通常はカバーレター)の
+\fBCc:\fR
+ヘッダー達で見つかった電子メールアドレスが、各電子メールアドレスのセットのccリストに追加されます。 デフォルトは、
+\fBsendemail\&.cccover\fR
+構成の値です。
+\fBsendemail\&.cccover\fR
+構成が指定されていない場合、デフォルトは
+\fB\-\-no\-cc\-cover\fR
+です。
+.RE
+.PP
+\fB\-\-[no\-]to\-cover\fR
+.RS 4
+これが設定されている場合、シリーズの最初のパッチ(通常はカバーレター)の
+\fBTo:\fR
+ヘッダー達で見つかった電子メールアドレスが、各電子メールアドレスのセットのtoリストに追加されます。 デフォルトは、
+\fBsendemail\&.tocover\fR
+構成の値です。
+\fBsendemail\&.tocover\fR
+構成の値が指定されていない場合、デフォルトで
+\fB\-\-no\-to\-cover\fR
+になります。
+.RE
+.PP
+\fB\-\-suppress\-cc=<category>\fR
+.RS 4
+自動CC(auto\-cc)を抑制するために、以下の追加受信者カテゴリを指定します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBauthor\fR
+は、パッチの作者を含めないようにします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBself\fR
+は送信者を含めないようにします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcc\fR
+は、
+\fBself\fR
+を指定した場合を除き、Cc行で言及されている人をパッチヘッダーに含めないようにします(含めたいなら
+\fBself\fR
+を使用します)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbodycc\fR
+は、
+\fBself\fR
+を指定した場合を除き、 パッチ本体(コミットメッセージ)にCc行で言及されている人を含めないようにします(含めたい場合は
+\fBself\fR
+を使います)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsob\fR
+は、
+\fBself\fR
+を指定している場合を除き、 Signed\-off\-by に記載されている人を含めないようにします(含めたい場合は
+\fBself\fR
+を使用します)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmisc\-by\fR
+は、
+\fBSigned\-off\-by\fR
+(\fBsob\fR
+を使用)を除いて、パッチ本体に Acked\-byや、Reviewed\-byや、Tested\-byや、その他の
+\fB\-by\fR
+行で言及されているのを含めないようにします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcccmd\fR
+は、
+\fB\-\-cc\-cmd\fR
+の実行を回避します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbody\fR
+は
+\fBsob\fR
++
+\fBbodycc\fR
++
+\fBmisc\-by\fR
+と同じです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBall\fR
+は、すべての自動cc値を抑制します。
+.RE
+.sp
+デフォルトは
+\fBsendemail\&.suppresscc\fR
+構成の値です。
+\fBsendemail\&.suppresscc\fR
+構成が指定されていない場合に、
+\fB\-\-suppress\-from\fR
+が指定されている場合はデフォルトで
+\fBself\fR
+になり、
+\fB\-\-no\-signed\-off\-cc\fR
+が指定されている場合は
+\fBbody\fR
+になります。
+.RE
+.PP
+\fB\-\-[no\-]suppress\-from\fR
+.RS 4
+これが設定されている場合は、
+\fBFrom:\fR
+アドレス を
+\fBcc:\fR
+リストに追加しないでください。 デフォルトは
+\fBsendemail\&.suppressFrom\fR
+構成の値です。
+\fBsendemail\&.suppressFrom\fR
+構成が指定されていない場合、デフォルトは
+\fB\-\-no\-suppress\-from\fR
+です。
+.RE
+.PP
+\fB\-\-[no\-]thread\fR
+.RS 4
+これが設定されている場合、In\-Reply\-To と References ヘッダー達は送信される各メールアドレスに追加されます。 各メールが前のメールを参照するのか(\fBgit format\-patch\fR
+の文言に従った「深い」(deep)スレッディング)、最初のメールを参照するのか(「浅い」(shallow)スレッディング)については
+\fB\-\-[no\-]chain\-reply\-to\fR
+で制御されます。
+.sp
+\fB\-\-no\-thread\fR
+で無効にすると、それらのヘッダーは追加されません(\fB\-\-in\-reply\-to\fR
+で指定されていない限り)。 デフォルトは、
+\fBsendemail\&.thread\fR
+構成の値です。
+\fBsendemail\&.thread\fR
+構成が指定されていない場合、デフォルトは
+\fB\-\-thread\fR
+です。
+.sp
+\fBgit send\-email\fR
+が In\-Reply\-To ヘッダを追加するように要求したときに、すでにそのヘッダが存在しないことを確認するのはユーザー側です((特に
+\fBgit format\-patch\fR
+がスレッド化するように設定されている場合は注意が必要です)。 これを怠ると、受信者の MUA で期待通りの結果が得られないことがあります。
+.RE
+.SS "管理"
+.PP
+\fB\-\-confirm=<mode>\fR
+.RS 4
+送信する直前に確認(confirm)します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBalways\fR
+は送信前に常に確認します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnever\fR
+は送信する前に確認すること決してありません
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcc\fR
+は、send\-emailがパッチからCcリストにアドレスを自動的に追加したときは、送信前に確認します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcompose\fR
+は、
+\fB\-\-compose\fR
+を使用した時に、最初のメッセージを送信する前に確認します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBauto\fR
+は
+\fBcc\fR+
+\fBcompose\fR
+と同じです
+.RE
+.sp
+デフォルトは
+\fBsendemail\&.confirm\fR
+構成の値です。
+\fBsendemail\&.confirm\fR
+構成が指定されていない場合、抑制オプション(suppress options)のいずれかが指定されていない限り、デフォルトは
+\fBauto\fR
+になります。抑制オプションのいずれかが指定されている場合は、デフォルトで `compose`になります。
+.RE
+.PP
+\fB\-\-dry\-run\fR
+.RS 4
+実際にメールを送信する以外はすべて行います。
+.RE
+.PP
+\fB\-\-[no\-]format\-patch\fR
+.RS 4
+引数が参照またはファイル名として理解される場合は、それをformat\-patch引数(\fB\-\-format\-patch\fR)またはファイル名(\fB\-\-no\-format\-patch\fR)として理解することを選択します。 デフォルトでは、このような競合が発生すると、
+\fBgit send\-email\fR
+は失敗します。
+.RE
+.PP
+\fB\-\-quiet\fR
+.RS 4
+git\-send\-emailのおしゃべりを減らします。 電子メール１通につき1行出力するだけにします。
+.RE
+.PP
+\fB\-\-[no\-]validate\fR
+.RS 4
+パッチの健全性チェックを実行します。 現状、検証(validation)とは以下のことを意味します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+sendemail\-validate フックが存在する場合はそれを呼び出します(\fBgithooks\fR(5)
+参照)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+適切な転送エンコーディング(\fBauto\fR
+または
+\fBbase64\fR
+または
+\fBquoted\-printable\fR)が使用されていない時は、998文字より長い行を含むパッチについて警告します。 これは、
+\m[blue]\fBhttp://www\&.ietf\&.org/rfc/rfc5322\&.txt\fR\m[]
+で説明されているSMTPの制限によるものです。
+.RE
+.sp
+デフォルトは
+\fBsendemail\&.validate\fR
+の値です。 これが設定されていない場合、デフォルトは
+\fB\-\-validate\fR
+になります。
+.RE
+.PP
+\fB\-\-force\fR
+.RS 4
+安全チェックで防止できる場合でも、電子メールを送信してください。
+.RE
+.SS "情報"
+.PP
+\fB\-\-dump\-aliases\fR
+.RS 4
+通常の操作の代わりに、構成されたエイリアスファイルからアルファベット順に1行に1つずつ短縮エイリアス名をダンプします。 これにはエイリアス名のみが含まれ、拡張された電子メールアドレスは含まれないことに注意してください。 エイリアスの詳細については、
+\fBsendemail\&.aliasesfile\fR
+を参照してください。
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+sendemail\&.identity
+.RS 4
+構成ID。 指定すると、
+\fBsendemail\&.<identity>\fR
+サブセクションの値が
+\fBsendemail\fR
+セクションの値よりも優先されます。 デフォルトのIDは、 `sendemail\&.identity`の値です。
+.RE
+.PP
+sendemail\&.smtpEncryption
+.RS 4
+説明については、
+\fBgit-send-email\fR(1)
+を参照してください。 注意: この設定は
+\fBidentity\fR
+メカニズムの対象ではないことに注意してください。
+.RE
+.PP
+sendemail\&.smtpsslcertpath
+.RS 4
+ca\-certificatesへのパス(ディレクトリまたは単一ファイルのどちらか)。 証明書の検証を無効にするには、空の文字列に設定します。
+.RE
+.PP
+sendemail\&.<identity>\&.*
+.RS 4
+以下の
+\fBsendemail\&.*\fR
+パラメータのID固有のバージョン。コマンドラインまたは
+\fBsendemail\&.identity\fR
+のいずれかを使用して、このIDが選択された場合のパラメータよりも優先されます。
+.RE
+.PP
+sendemail\&.multiEdit
+.RS 4
+true (デフォルト) の場合、編集する必要があるファイルを編集するために単一のエディター・インスタンスが生成されます(\fB\-\-annotate\fR
+が使用されている場合はパッチ、
+\fB\-\-compose\fR
+が使用されている場合は要約)。 false の場合、ファイルは次々に編集され、そのたびに新しいエディター・インスタンスが生成されます。
+.RE
+.PP
+sendemail\&.confirm
+.RS 4
+送信前に確認するかどうかのデフォルトを設定します。
+\fBalways\fR
+または
+\fBnever\fR
+または
+\fBcc\fR
+または
+\fBcompose\fR
+または
+\fBauto\fR
+のいずれかでなければなりません。 これらの値の意味については、
+\fBgit-send-email\fR(1)
+ドキュメントの
+\fB\-\-confirm\fR
+を参照してください。
+.RE
+.PP
+sendemail\&.aliasesFile
+.RS 4
+長い電子メール・アドレスのタイピングを回避するには、1 つまたは複数の電子メール・エイリアス・ファイルを指定します。
+\fBsendemail\&.aliasFileType\fR
+も指定する必要があります。
+.RE
+.PP
+sendemail\&.aliasFileType
+.RS 4
+\fBsendemail\&.aliasesFile\fR
+で指定されたファイルの形式。
+\fBmutt\fR,
+\fBmailrc\fR,
+\fBpine\fR,
+\fBelm\fR,
+\fBgnus\fR,
+\fBsendmail\fR
+のいずれかでなければなりません。
+.sp
+各形式のエイリアス・ファイルがどのようなものかは、同名の電子メール・プログラムのドキュメントに記載されています。 標準フォーマットとの相違点と制限事項は以下のとおりです:
+.PP
+sendmail
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+引用エイリアス(quoted aliases)と引用アドレス(quoted addresses)はサポートされていません。
+\fB"\fR
+記号を含む行は無視されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ファイル(\fB/path/name\fR)またはパイプ(\fB|command\fR)へのリダイレクトはサポートされていません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ファイル・インクルード(\fB:include: /path/name\fR)はサポートされていません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+明示的にサポートされていない構造(constructs)、およびパーサーによって認識されないその他の行については、警告が標準エラー出力に出力されます。
+.RE
+.RE
+.RE
+.PP
+sendemail\&.annotate, sendemail\&.bcc, sendemail\&.cc, sendemail\&.ccCmd, sendemail\&.chainReplyTo, sendemail\&.envelopeSender, sendemail\&.from, sendemail\&.signedoffbycc, sendemail\&.smtpPass, sendemail\&.suppresscc, sendemail\&.suppressFrom, sendemail\&.to, sendemail\&.tocmd, sendemail\&.smtpDomain, sendemail\&.smtpServer, sendemail\&.smtpServerPort, sendemail\&.smtpServerOption, sendemail\&.smtpUser, sendemail\&.thread, sendemail\&.transferEncoding, sendemail\&.validate, sendemail\&.xmailer
+.RS 4
+これらの構成変数はすべて、\fBgit-send-email\fR(1)
+コマンドライン・オプションのデフォルトを提供します。 詳細については、そのドキュメントを参照してください。
+.RE
+.PP
+sendemail\&.signedoffcc (非推奨)
+.RS 4
+\fBsendemail\&.signedoffbycc\fR
+の非推奨のエイリアス。
+.RE
+.PP
+sendemail\&.smtpBatchSize
+.RS 4
+接続ごとに送信されるメッセージの数。その後、再ログインが発生します。 値が0または未定義の場合、すべてのメッセージを1つの接続で送信します。
+\fBgit-send-email\fR(1)
+の
+\fB\-\-batch\-size\fR
+オプションも参照してください。
+.RE
+.PP
+sendemail\&.smtpReloginDelay
+.RS 4
+SMTPサーバーに再接続する前に指定の秒数待機します。
+\fBgit-send-email\fR(1)の
+\fB\-\-relogin\-delay\fR
+オプションも参照してください。
+.RE
+.PP
+sendemail\&.forbidSendmailVariables
+.RS 4
+一般的な設定ミスを回避するために、
+\fBgit-send-email\fR(1)
+は、
+\fBsendmail\fR
+の設定オプションが存在する場合、警告とともに中止します。 チェックをバイパスするには、この変数を設定します。
+.RE
+.SH "EXAMPLES"
+.SS "Use gmail as the smtp server"
+.sp
+\fBgit send\-email\fR を使用してGMail SMTPサーバーを介してパッチを送信するには、 \fB~/\&.gitconfig\fR を編集してあなたのアカウント設定を指定します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[sendemail]
+        smtpEncryption = tls
+        smtpServer = smtp\&.gmail\&.com
+        smtpUser = yourname@gmail\&.com
+        smtpServerPort = 587
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+Gmailアカウントで多要素認証を設定している場合は、 \fBgit send\-email\fR で使用するアプリ固有のパスワード(アプリ パスワード)を生成する必要があります。 \m[blue]\fBhttps://security\&.google\&.com/settings/security/apppasswords\fR\m[] にアクセスして作成します。
+.sp
+Gmailアカウントで多要素認証を設定していない場合、「安全性の低いアプリのアクセス」を許可する必要があります。 \m[blue]\fBhttps://myaccount\&.google\&.com/lesssecureapps\fR\m[] にアクセスして有効にします。
+.sp
+あなたのコミットをメーリングリストに送信する準備ができたら、以下のコマンドを実行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch \-\-cover\-letter \-M origin/master \-o outgoing/
+$ edit outgoing/0000\-*
+$ git send\-email outgoing/*
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+初めて実行すると、資格情報の入力を求められます。 必要に応じて、アプリ固有のパスワードまたは通常のパスワードを入力します。 クレデンシャルヘルパーを構成している場合(\fBgit-credential\fR(1) 参照)、パスワードはクレデンシャルストアに保存されるため、次回入力する必要はありません。
+.sp
+注意: Perlのディストリビューションとともにインストールできる次のコアPerlモジュールが必要です: \fBMIME::Base64\fR と \fBMIME::QuotedPrint\fR と \fBNet::Domain\fR と \fBNet::SMTP\fR 。 また、次の追加のPerlモジュールも必要です: \fBAuthen::SASL\fR と \fBMail::Address\fR 。
+.SH "SEE ALSO"
+.sp
+\fBgit-format-patch\fR(1), \fBgit-imap-send\fR(1), mbox(5)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

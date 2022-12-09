@@ -1,0 +1,250 @@
+'\" t
+.\"     Title: git-check-attr
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CHECK\-ATTR" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-check-attr \- gitattributes情報を表示
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit check\-attr\fR [\-a | \-\-all | <attr>\&...] [\-\-] <pathname>\&...
+\fIgit check\-attr\fR \-\-stdin [\-z] [\-a | \-\-all | <attr>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このコマンドは、すべてのパス名について、gitattributesとしての各属性を \fBunspecified\fR(未指定)または \fBset\fR または \fBunset\fR であるかどうか一覧表示します。
+.SH "OPTIONS"
+.PP
+\fB\-a, \-\-all\fR
+.RS 4
+指定されたパスに関連付けられているすべての属性を一覧表示します。 このオプションを使用すると、
+\fIunspecified\fR
+(指定されていない)属性は出力に含まれません。
+.RE
+.PP
+\fB\-\-cached\fR
+.RS 4
+作業ツリーを無視して、インデックス内のみに対して
+\fB\&.gitattributes\fR
+を考慮してください。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+コマンドラインからではなく、標準入力から1行に1つずつパス名を読み取ります。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+出力形式は、マシンで解析できるように変更されます。
+\fB\-\-stdin\fR
+も指定されている場合、入力パスは改行文字ではなくNUL文字で区切ります。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+先行するすべての引数を属性として解釈し、後続のすべての引数をパス名として解釈します。
+.RE
+.sp
+\fB\-\-stdin\fR と \fB\-\-all\fR と \fB\-\-\fR のいずれも使用されていない場合、最初の引数は属性として扱われ、残りの引数はパス名として扱われます。
+.SH "OUTPUT"
+.sp
+出力形式: <path> COLON SP <attribute> COLON SP <info> LF
+.sp
+\fB\-z\fR が有効の場合はNULが区切り文字として使用されます: <path> NUL <attribute> NUL <info> NUL
+.sp
+<path>はクエリ対象のファイルのパス、 <attribute> はクエリ対象の属性、 <info> は行かのいずれかになります:
+.PP
+\fBunspecified\fR
+.RS 4
+(未指定)パスにその属性が定義されていない場合。
+.RE
+.PP
+\fBunset\fR
+.RS 4
+属性がfalseとして定義されている場合。
+.RE
+.PP
+\fBset\fR
+.RS 4
+属性がtrueとして定義されている場合。
+.RE
+.PP
+<value>
+.RS 4
+属性に値が割り当てられたとき。
+.RE
+.sp
+バッファリングは、 \fBgit\fR(1) の \fBGIT_FLUSH\fR オプションに記載されているように行われます。呼び出し元は、入力バッファーのオーバーフィル(overfilling)または空の出力バッファーからの読み取りによって引き起こされるデッドロックを回避する責任があります。
+.SH "EXAMPLES"
+.sp
+これらの例では、以下の \fB\&.gitattributes\fR ファイルが使用されています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+*\&.java diff=java \-crlf myAttr
+NoMyAttr\&.java !myAttr
+README caveat=unspecified
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+単一の属性のリスト:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git check\-attr diff org/example/MyClass\&.java
+org/example/MyClass\&.java: diff: java
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ファイルの複数の属性の一覧表示:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git check\-attr crlf diff myAttr \-\- org/example/MyClass\&.java
+org/example/MyClass\&.java: crlf: unset
+org/example/MyClass\&.java: diff: java
+org/example/MyClass\&.java: myAttr: set
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ファイルのすべての属性を一覧表示:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git check\-attr \-\-all \-\- org/example/MyClass\&.java
+org/example/MyClass\&.java: diff: java
+org/example/MyClass\&.java: myAttr: set
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+複数のファイルの属性を一覧表示:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git check\-attr myAttr \-\- org/example/MyClass\&.java org/example/NoMyAttr\&.java
+org/example/MyClass\&.java: myAttr: set
+org/example/NoMyAttr\&.java: myAttr: unspecified
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+すべての値が等しく明確であるわけではありません:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git check\-attr caveat README
+README: caveat: unspecified
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBgitattributes\fR(5)\&.
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

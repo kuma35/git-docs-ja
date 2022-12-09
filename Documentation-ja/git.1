@@ -1,0 +1,2205 @@
+'\" t
+.\"     Title: git
+.\"    Author: [see the "Authors" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git \- くだらないコンテンツトラッカー
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit\fR [\-v | \-\-version] [\-h | \-\-help] [\-C <path>] [\-c <name>=<value>]
+    [\-\-exec\-path[=<path>]] [\-\-html\-path] [\-\-man\-path] [\-\-info\-path]
+    [\-p|\-\-paginate|\-P|\-\-no\-pager] [\-\-no\-replace\-objects] [\-\-bare]
+    [\-\-git\-dir=<path>] [\-\-work\-tree=<path>] [\-\-namespace=<name>]
+    [\-\-super\-prefix=<path>] [\-\-config\-env=<name>=<envvar>]
+    <command> [<args>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+Gitは、高速でスケーラブルな分散型リビジョン管理システムであり、高レベルの操作と内部へのフルアクセスの両方を提供する非常に豊富なコマンドセットを備えています。
+.sp
+始めは \fBgittutorial\fR(7) を参照してください。次に、便利な最小限のコマンドセットについては \fBgiteveryday\fR(7) を参照してください。 \m[blue]\fBGit User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2 には、より詳細な紹介があります。
+.sp
+あなたが基本的な概念をマスターしたら、このページに戻ってGitが提供するコマンドを学ぶことができます。「git help command」を使用して、個々のGitコマンドについて詳しく知ることができます。 \fBgitcli\fR(7) のマニュアルページには、コマンドラインコマンド構文の概要が記載されています。
+.sp
+最新のGitドキュメントの、フォーマットされ、ハイパーリンクされたコピーは、 \m[blue]\fBhttps://git\&.github\&.io/htmldocs/git\&.html\fR\m[] または \m[blue]\fBhttps://git\-scm\&.com/docs\fR\m[] で表示できます。
+.SH "OPTIONS"
+.PP
+\fB\-v\fR, \fB\-\-version\fR
+.RS 4
+\fBgit\fR
+プログラムの元となったGitスイートのバージョンを出力します。
+.sp
+このオプションは内部で
+\fBgit version \&.\&.\&.\fR
+に変換されるので、
+\fBgit-version\fR(1)
+コマンドと同じオプションを受け入れます。
+\fB\-\-help\fR
+も指定されている場合は
+\fB\-\-version\fR
+よりも優先されます。
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+概要と、最も一般的に使用されるコマンドのリストを出力します。 オプション
+\fB\-\-all\fR
+または
+\fB\-a\fR
+を指定すると、使用可能なすべてのコマンドが出力されます。Gitコマンドが明示された場合、このオプションはそのコマンドのマニュアルページを表示します。
+.sp
+マニュアルページの表示方法を制御するために、他のオプションを使用できます。\fBgit \-\-help \&.\&.\&.\fR
+は内部で
+\fBgit help \&.\&.\&.\fR
+に変換されるため、詳細については
+\fBgit-help\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-C <path>\fR
+.RS 4
+現在の作業ディレクトリではなく、
+\fB<path>\fR
+でgitが開始されたかのように実行します。 複数の
+\fB\-C\fR
+オプションが指定されている場合、後続の「非絶対(non\-absolute)
+\fB\-C <path>\fR
+」は、それぞれ先行する
+\fB\-C <path>\fR
+に関連して解釈されます。
+\fB<path>\fR
+は存在するが空の場合(例:
+\fB\-C" "\fR)の場合、 現在の作業ディレクトリは変更されません。
+.sp
+このオプションは、パス名の解釈が
+\fB\-C\fR
+オプションによって引き起こされる作業ディレクトリに対して行われるという点で、
+\fB\-\-git\-dir\fR
+や
+\fB\-\-work\-tree\fR
+のようなパス名を期待するオプションに影響します。たとえば、以下の2つの呼び出しは同等です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git \-\-git\-dir=a\&.git \-\-work\-tree=b \-C c status
+git \-\-git\-dir=c/a\&.git \-\-work\-tree=c/b status
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fB\-c <name>=<value>\fR
+.RS 4
+構成パラメーターをコマンドに渡します。指定された値は、構成ファイルの値を上書きします。 <name>は、「git config」(ドットで区切られたサブキー)でリストされているものと同じ形式である必要があります。
+.sp
+\fBgit \-c foo\&.bar \&.\&.\&.\fR
+で
+\fB=\fR
+を省略することは許可されており、その場合
+\fBfoo\&.bar\fR
+を(設定ファイルの
+\fB[foo]bar\fR
+と同様に)ブール値のtrueに設定することに注意してください。等号と空の値(\fBgit \-c foo\&.bar= \&.\&.\&.\fR
+など)を含むと、
+\fBfoo\&.bar\fR
+が空の文字列に設定されます。
+\fBgit config \-\-type=bool\fR
+ではこれを
+\fBfalse\fR
+に変換します。
+.RE
+.PP
+\fB\-\-config\-env=<name>=<envvar>\fR
+.RS 4
+\fB\-c <name>=<value>\fR
+と同様に、構成変数
+\fB<name>\fR
+に値を指定します。ここで、 <envvar> は、値を取得する環境変数の名前です。
+\fB\-c\fR
+とは異なり、値を空の文字列に直接設定するためのショートカットはありません。代わりに、環境変数自体を空の文字列に設定する必要があります。
+\fB<envvar>\fR
+が環境に存在しない場合はエラーになります。
+\fB<envvar>\fR
+には等号を含めることはできません。これは、
+\fB<name>\fR
+に等号が含まれている場合のあいまいさを避けるためです。
+.sp
+これは、あなたが一時的な構成オプションをgitに渡したいが、他のプロセスで、あなたのコマンドライン(たとえば
+\fB/proc/self/cmdline\fR)は読み取れるが、あなたの環境(たとえば
+\fB/proc/self/environ\fR)は読み取れない可能性があるOS上で作業している場合に役立ちます。この動作はLinuxのデフォルトですが、あなたのシステムでは設定されてない場合があります。
+.sp
+注意:これにより、機密情報が値の一部である
+\fBhttp\&.extraHeader\fR
+などの変数のセキュリティが追加される可能性がありますが、機密情報をキーの一部にすることができるモノ、例えば
+\fBurl\&.<base>\&.insteadOf\fR
+は使用できません。
+.RE
+.PP
+\fB\-\-exec\-path[=<path>]\fR
+.RS 4
+あなたのコアGitプログラムがインストールされている場所へのパス。これは、 GIT_EXEC_PATH 環境変数を設定することによっても制御できます。パスが指定されていない場合、「git」は現在の設定を出力して終了します。
+.RE
+.PP
+\fB\-\-html\-path\fR
+.RS 4
+GitのHTMLドキュメントがインストールされているパスを末尾のスラッシュなしで印刷し、終了します。
+.RE
+.PP
+\fB\-\-man\-path\fR
+.RS 4
+このバージョンのGitのマニュアルページのmanpath(\fBman(1)\fR
+参照)を印刷して終了します。
+.RE
+.PP
+\fB\-\-info\-path\fR
+.RS 4
+このバージョンのGitを文書化したInfoファイルがインストールされているパスを印刷して終了します。
+.RE
+.PP
+\fB\-p\fR, \fB\-\-paginate\fR
+.RS 4
+標準出力が端末の場合は、すべての出力を
+\fBless\fR
+(または設定されている場合は $PAGER )にパイプします。これにより、
+\fBpager\&.<cmd>\fR
+構成オプションが上書きされます(以下の「Configuration Mechanism」セクションを参照)。
+.RE
+.PP
+\fB\-P\fR, \fB\-\-no\-pager\fR
+.RS 4
+Git出力をページャーにパイプしないでください。
+.RE
+.PP
+\fB\-\-git\-dir=<path>\fR
+.RS 4
+リポジトリ("\&.git" ディレクトリ)へのパスを設定します。これは、
+\fBGIT_DIR\fR
+環境変数を設定することによっても制御できます。現在の作業ディレクトリへの絶対パスまたは相対パスにすることができます。
+.sp
+このオプションを使用して
+\fB\&.git\fR
+ディレクトリの場所を指定すると、 (リポジトリとトップレベルの作業ツリーを検出できる、)
+\fB\&.git\fR
+サブディレクトリを持つディレクトリを検索しようとするリポジトリ検出機能がオフになり、あなたが作業ツリーの最上位にいるとGitに通知します。あなたが作業ツリーの最上位ディレクトリにいない場合は、
+\fB\-\-work\-tree=<path>\fR
+オプション(または
+\fBGIT_WORK_TREE\fR
+環境変数)を使用して、作業ツリーの最上位がどこにあるかをGitに通知する必要があります。
+.sp
+\fB<path>\fR
+で開始されたかのようにgitを実行したい場合は、
+\fBgit \-C <path>\fR
+を使用します。
+.RE
+.PP
+\fB\-\-work\-tree=<path>\fR
+.RS 4
+作業ツリーへのパスを設定します。絶対パスまたは現在の作業ディレクトリからの相対パスにすることができます。これは、 GIT_WORK_TREE環境変数とcore\&.worktree構成変数を設定することによっても制御できます(詳細については、
+\fBgit-config\fR(1)
+の core\&.worktree を参照してください)。
+.RE
+.PP
+\fB\-\-namespace=<path>\fR
+.RS 4
+Git名前空間を設定します。詳細については linkgit: gitnamespaces[7] を参照してください。
+\fBGIT_NAMESPACE\fR
+環境変数を設定するのと同じです。
+.RE
+.PP
+\fB\-\-super\-prefix=<path>\fR
+.RS 4
+現在、内部使用のみです。リポジトリの上位からそのリポジトリのルートまでのパスを与えるプレフィックスを設定します。1つの使用法は、サブモジュールに、それを呼び出したスーパープロジェクトに関するコンテキストを与えることです。
+.RE
+.PP
+\fB\-\-bare\fR
+.RS 4
+リポジトリをベアリポジトリとして扱います。GIT_DIR環境が設定されていない場合は、現在の作業ディレクトリに設定されます。
+.RE
+.PP
+\fB\-\-no\-replace\-objects\fR
+.RS 4
+Gitオブジェクトを置き換えるための置換refを使用しません。 詳細については
+\fBgit-replace\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-literal\-pathspecs\fR
+.RS 4
+パススペックを文字通り扱います(つまり globbing 無し、 pathspec magic 無しです)。 これは、
+\fBGIT_LITERAL_PATHSPECS\fR
+環境変数を
+\fB1\fR
+に設定するのと同じです。
+.RE
+.PP
+\fB\-\-glob\-pathspecs\fR
+.RS 4
+すべてのパススペックにグロブマジック(glob magic)を追加します。 これは、
+\fBGIT_GLOB_PATHSPECS\fR
+環境変数を
+\fB1\fR
+に設定するのと同じです。 個々のパススペックで globbing を無効にするには、パススペックマジック
+\fB:(literal)\fR
+を使用します。
+.RE
+.PP
+\fB\-\-noglob\-pathspecs\fR
+.RS 4
+すべてのパススペックにリテラルマジック(literal magic)を追加します。これは、
+\fBGIT_NOGLOB_PATHSPECS\fR
+環境変数を
+\fB1\fR
+に設定するのと同じです。個々のパススペックでグロブを有効にするには、パススペックマジック
+\fB:(glob)\fR
+を使用します。
+.RE
+.PP
+\fB\-\-icase\-pathspecs\fR
+.RS 4
+すべてのパススペックに icase magic を追加します。 これは、
+\fBGIT_ICASE_PATHSPECS\fR
+環境変数を
+\fB1\fR
+に設定するのと同じです。
+.RE
+.PP
+\fB\-\-no\-optional\-locks\fR
+.RS 4
+ロック(lock)を必要とするオプションの操作は実行しないでください。これは、
+\fBGIT_OPTIONAL_LOCKS\fR
+を
+\fB0\fR
+に設定するのと同じです。
+.RE
+.PP
+\fB\-\-list\-cmds=group[,group\&.\&.\&.]\fR
+.RS 4
+コマンドをグループ別に一覧表示します。これは 内部/実験的 なオプションであり、将来変更または削除される可能性があります。サポートされているグループは、builtins、parseopt(parse\-optionsを使用するbuiltinコマンド)、main(libexecディレクトリ内のすべてのコマンド)、その他(git\-プレフィックスを持つ
+\fB$PATH\fR
+内の他のすべてのコマンド)、list\-<category> (command\-list\&.txt 内の categories を参照)、nohelpers(ヘルパーコマンドを除く)、alias、config(構成変数 completion\&.commands から取得したコマンドリスト)、です。
+.RE
+.SH "GIT COMMANDS"
+.sp
+私達はGitを、高レベル(porcelain;磁器)コマンドと低レベル(plumbing;配管)コマンドに分けています。
+.SH "HIGH\-LEVEL COMMANDS (PORCELAIN)"
+.sp
+磁器コマンドは、メインコマンド群といくつかの補助ユーティリティに分けられます。
+.SS "Main porcelain commands"
+.PP
+\fBgit-add\fR(1)
+.RS 4
+ファイルの内容をインデックスに追加します\&.
+.RE
+.PP
+\fBgit-am\fR(1)
+.RS 4
+メールボックスから一連のパッチを適用します\&.
+.RE
+.PP
+\fBgit-archive\fR(1)
+.RS 4
+名前付きツリーからファイルのアーカイブを作成します\&.
+.RE
+.PP
+\fBgit-bisect\fR(1)
+.RS 4
+二分木検索を使用して、バグを引き起こしたコミットを見つけます\&.
+.RE
+.PP
+\fBgit-branch\fR(1)
+.RS 4
+ブランチを、一覧表示または作成または削除します\&.
+.RE
+.PP
+\fBgit-bundle\fR(1)
+.RS 4
+アーカイブごとにオブジェクトとrefを移動します\&.
+.RE
+.PP
+\fBgit-checkout\fR(1)
+.RS 4
+ブランチの切り替え、または作業ツリーファイルの復元を行います。\&.
+.RE
+.PP
+\fBgit-cherry-pick\fR(1)
+.RS 4
+いくつかの既存のコミットによって導入された変更を適用します\&.
+.RE
+.PP
+\fBgit-citool\fR(1)
+.RS 4
+git\-commitのグラフィカルな代替手段\&.
+.RE
+.PP
+\fBgit-clean\fR(1)
+.RS 4
+作業ツリーから追跡されていないファイルを削除する\&.
+.RE
+.PP
+\fBgit-clone\fR(1)
+.RS 4
+リポジトリを新しいディレクトリにクローン(複製)します\&.
+.RE
+.PP
+\fBgit-commit\fR(1)
+.RS 4
+変更をリポジトリへ記録します\&.
+.RE
+.PP
+\fBgit-describe\fR(1)
+.RS 4
+有効なrefに基づいて、オブジェクトに人間が読める形式の名前を付けます\&.
+.RE
+.PP
+\fBgit-diff\fR(1)
+.RS 4
+コミット、コミット、作業ツリーなどの間の変更を表示する\&.
+.RE
+.PP
+\fBgit-fetch\fR(1)
+.RS 4
+別のリポジトリからオブジェクトとrefsをダウンロードします\&.
+.RE
+.PP
+\fBgit-format-patch\fR(1)
+.RS 4
+電子メール送信用のパッチを準備します\&.
+.RE
+.PP
+\fBgit-gc\fR(1)
+.RS 4
+不要なファイルをクリーンアップし、ローカルリポジトリを最適化する\&.
+.RE
+.PP
+\fBgit-grep\fR(1)
+.RS 4
+パターンにマッチする行を出力します\&.
+.RE
+.PP
+\fBgit-gui\fR(1)
+.RS 4
+Gitのための移植性の高いGUI\&.
+.RE
+.PP
+\fBgit-init\fR(1)
+.RS 4
+空のGitリポジトリを作成するか、既存のリポジトリを再初期化します\&.
+.RE
+.PP
+\fBgit-log\fR(1)
+.RS 4
+コミットのログを表示\&.
+.RE
+.PP
+\fBgit-maintenance\fR(1)
+.RS 4
+Gitリポジトリのデータを最適化するためのタスクの実行\&.
+.RE
+.PP
+\fBgit-merge\fR(1)
+.RS 4
+2つまたはそれ以上の開発履歴を結合します\&.
+.RE
+.PP
+\fBgit-mv\fR(1)
+.RS 4
+ファイルまたはディレクトリまたはシンボリックリンクを移動(move)または名前変更(rename)します\&.
+.RE
+.PP
+\fBgit-notes\fR(1)
+.RS 4
+オブジェクトノートを追加または検査します\&.
+.RE
+.PP
+\fBgit-pull\fR(1)
+.RS 4
+別のリポジトリまたはローカルブランチから取得して統合する\&.
+.RE
+.PP
+\fBgit-push\fR(1)
+.RS 4
+関連するオブジェクトとともにリモートrefを更新します\&.
+.RE
+.PP
+\fBgit-range-diff\fR(1)
+.RS 4
+2つのコミット範囲(例: ブランチの2つのバージョン)を比較します\&.
+.RE
+.PP
+\fBgit-rebase\fR(1)
+.RS 4
+別のベース先端の上にコミットを再適用します\&.
+.RE
+.PP
+\fBgit-reset\fR(1)
+.RS 4
+現在のHEADを指定の状態にリセットします\&.
+.RE
+.PP
+\fBgit-restore\fR(1)
+.RS 4
+作業ツリーファイルを復元します\&.
+.RE
+.PP
+\fBgit-revert\fR(1)
+.RS 4
+いくつかの既存のコミットを元に戻します\&.
+.RE
+.PP
+\fBgit-rm\fR(1)
+.RS 4
+作業ツリーとインデックスからファイルを削除します\&.
+.RE
+.PP
+\fBgit-shortlog\fR(1)
+.RS 4
+「git log」の出力を要約します。\&.
+.RE
+.PP
+\fBgit-show\fR(1)
+.RS 4
+さまざまなタイプのオブジェクトを表示\&.
+.RE
+.PP
+\fBgit-sparse-checkout\fR(1)
+.RS 4
+あなたの作業ツリーを追跡ファイルのサブセットのために縮小します\&.
+.RE
+.PP
+\fBgit-stash\fR(1)
+.RS 4
+汚い作業ディレクトリの変更を隠します\&.
+.RE
+.PP
+\fBgit-status\fR(1)
+.RS 4
+作業ツリーの状態を表示します\&.
+.RE
+.PP
+\fBgit-submodule\fR(1)
+.RS 4
+サブモジュールを初期化、更新、または検査します\&.
+.RE
+.PP
+\fBgit-switch\fR(1)
+.RS 4
+ブランチを切り替える\&.
+.RE
+.PP
+\fBgit-tag\fR(1)
+.RS 4
+GPG署名されたタグオブジェクトを作成、一覧表示、削除、検証します\&.
+.RE
+.PP
+\fBgit-worktree\fR(1)
+.RS 4
+複数の作業ツリー(working tree)を管理します\&.
+.RE
+.PP
+\fBgitk\fR(1)
+.RS 4
+Gitリポジトリブラウザ\&.
+.RE
+.PP
+scalar
+.RS 4
+大規模 Git リポジトリ管理ツール\&.
+.RE
+.SS "Ancillary Commands(補助コマンド)"
+.sp
+操作コマンド:
+.PP
+\fBgit-config\fR(1)
+.RS 4
+リポジトリオプションまたはグローバルオプションを、取得および設定する\&.
+.RE
+.PP
+\fBgit-fast-export\fR(1)
+.RS 4
+Gitデータエクスポーター\&.
+.RE
+.PP
+\fBgit-fast-import\fR(1)
+.RS 4
+高速Gitデータインポーターのバックエンド\&.
+.RE
+.PP
+\fBgit-filter-branch\fR(1)
+.RS 4
+ブランチを書き換えます\&.
+.RE
+.PP
+\fBgit-mergetool\fR(1)
+.RS 4
+マージ競合解決ツールを実行して、マージ競合を解決します\&.
+.RE
+.PP
+\fBgit-pack-refs\fR(1)
+.RS 4
+効率的なリポジトリアクセスのためにヘッド(heads)とタグ(tags)をパックします\&.
+.RE
+.PP
+\fBgit-prune\fR(1)
+.RS 4
+オブジェクトデータベースで、到達不能なすべてのオブジェクトを剪定(prune)します\&.
+.RE
+.PP
+\fBgit-reflog\fR(1)
+.RS 4
+reflog情報を管理します\&.
+.RE
+.PP
+\fBgit-remote\fR(1)
+.RS 4
+追跡中のリポジトリの組を管理します\&.
+.RE
+.PP
+\fBgit-repack\fR(1)
+.RS 4
+リポジトリ内のアンパックオブジェクトをパックする\&.
+.RE
+.PP
+\fBgit-replace\fR(1)
+.RS 4
+オブジェクトを置き換えるためのrefsの作成、一覧表示、削除\&.
+.RE
+.sp
+問合せコマンド:
+.PP
+\fBgit-annotate\fR(1)
+.RS 4
+指定ファイルの各行のコミット情報を表示\&.
+.RE
+.PP
+\fBgit-blame\fR(1)
+.RS 4
+ファイルの各行を最後に変更したリビジョンと作者を表示する\&.
+.RE
+.PP
+\fBgit-bugreport\fR(1)
+.RS 4
+ユーザーがバグ報告を提出するための情報を収集する\&.
+.RE
+.PP
+\fBgit-count-objects\fR(1)
+.RS 4
+パックされていない(unpack)オブジェクトの数とそのディスク消費量を計量します\&.
+.RE
+.PP
+\fBgit-diagnose\fR(1)
+.RS 4
+診断情報の zip アーカイブを生成する\&.
+.RE
+.PP
+\fBgit-difftool\fR(1)
+.RS 4
+一般的なdiffツールを使用して変更を表示します\&.
+.RE
+.PP
+\fBgit-fsck\fR(1)
+.RS 4
+データベース内のオブジェクトの接続性(connectivity)と有効性(validity)を検証します\&.
+.RE
+.PP
+\fBgit-help\fR(1)
+.RS 4
+Gitに関するヘルプ情報を表示します\&.
+.RE
+.PP
+\fBgit-instaweb\fR(1)
+.RS 4
+gitwebで作業リポジトリをインスタントにブラウズします\&.
+.RE
+.PP
+\fBgit-merge-tree\fR(1)
+.RS 4
+インデックスまたは作業ツリーにに触れずに(without touching)マージを実行する\&.
+.RE
+.PP
+\fBgit-rerere\fR(1)
+.RS 4
+競合するマージの記録された競合解決決定を再利用する\&.
+.RE
+.PP
+\fBgit-show-branch\fR(1)
+.RS 4
+ブランチとそのコミットを表示します\&.
+.RE
+.PP
+\fBgit-verify-commit\fR(1)
+.RS 4
+コミットのGPG署名を確認します。\&.
+.RE
+.PP
+\fBgit-verify-tag\fR(1)
+.RS 4
+タグのGPG署名を確認する\&.
+.RE
+.PP
+\fBgit-version\fR(1)
+.RS 4
+Gitに関するバージョン情報を表示する\&.
+.RE
+.PP
+\fBgit-whatchanged\fR(1)
+.RS 4
+各コミットでの差分のログを表示\&.
+.RE
+.PP
+\fBgitweb\fR(1)
+.RS 4
+Git Webインターフェイス(GitリポジトリのためのWebフロントエンド)\&.
+.RE
+.SS "Interacting with Others(他者との交流)"
+.sp
+これらのコマンドは、電子メールを利用したパッチを介して、他のSCMや人々と対話するためのものです。
+.PP
+\fBgit-archimport\fR(1)
+.RS 4
+GNU Arch リポジトリをGitにインポートします\&.
+.RE
+.PP
+\fBgit-cvsexportcommit\fR(1)
+.RS 4
+単一のコミットをCVSチェックアウトにエクスポートします\&.
+.RE
+.PP
+\fBgit-cvsimport\fR(1)
+.RS 4
+別の嫌われ者のSCMからあなたのデータを救難救助する\&.
+.RE
+.PP
+\fBgit-cvsserver\fR(1)
+.RS 4
+Git用のCVSサーバーエミュレーター\&.
+.RE
+.PP
+\fBgit-imap-send\fR(1)
+.RS 4
+標準入力からIMAPフォルダへパッチのコレクションを送信します\&.
+.RE
+.PP
+\fBgit-p4\fR(1)
+.RS 4
+Perforceリポジトリからのインポートと、Perforceリポジトリへのsubmit\&.
+.RE
+.PP
+\fBgit-quiltimport\fR(1)
+.RS 4
+quilt(キルト)パッチセットを現在のブランチに適用します\&.
+.RE
+.PP
+\fBgit-request-pull\fR(1)
+.RS 4
+保留中の変更の概要を生成します\&.
+.RE
+.PP
+\fBgit-send-email\fR(1)
+.RS 4
+パッチの集まりを電子メールとして送信します\&.
+.RE
+.PP
+\fBgit-svn\fR(1)
+.RS 4
+SubversionリポジトリとGit間の双方向操作\&.
+.RE
+.SS "Reset, restore and revert"
+.sp
+同様の名前の3つのコマンドがあります。それは \fBgit reset\fR と \fBgit restore\fR と \fBgit revert\fR です。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit-revert\fR(1)
+は、他のコミットによって行われた変更を元に戻す新しいコミットを作成することです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit-restore\fR(1)
+は、インデックスまたは別のコミットから作業ツリー内のファイルを復元することです。このコマンドはブランチを更新しません。このコマンドを使用して、別のコミットからインデックス内のファイルを復元することもできます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit-reset\fR(1)
+は、ブランチを更新し、ブランチにコミットを追加または削除するために先端ポインタが指し示す先端(tip)を移動させることです。この操作により、コミット履歴が変更されます。
+.sp
+\fBgit restore\fR
+と重複しますが、
+\fBgit reset\fR
+はインデックスを復元するためにも使用できます。
+.RE
+.SH "LOW\-LEVEL COMMANDS (PLUMBING)"
+.sp
+Gitには独自の磁器コマンドレイヤーが含まれていますが、代替磁器コマンドの開発をサポートするには、その低レベルのコマンドで十分です。このような磁器コマンドの開発者は \fBgit-update-index\fR(1) と \fBgit-read-tree\fR(1) を読むことから始めるといいでしょう。
+.sp
+これらの低レベルコマンドへのインターフェイス(入力、出力、オプションのセット、セマンティクス)は、これらのコマンドが主にスクリプトで使用されるため、磁器レベルのコマンドよりもはるかに安定していることを意味します。 一方、磁器コマンドへのインターフェースは、エンドユーザーエクスペリエンスを向上させるために変更される可能性があります。
+.sp
+以下の説明では、低レベルのコマンドを、オブジェクト(リポジトリ、インデックス、作業ツリー内)を操作するコマンドと、オブジェクトに問い合わせて比較するコマンドと、リポジトリ間でオブジェクトと参照を移動するコマンドに、分けています。
+.SS "Manipulation commands(操作コマンド)"
+.PP
+\fBgit-apply\fR(1)
+.RS 4
+パッチをファイルやインデックスに適用します\&.
+.RE
+.PP
+\fBgit-checkout-index\fR(1)
+.RS 4
+インデックスから作業ツリーにファイルをコピー\&.
+.RE
+.PP
+\fBgit-commit-graph\fR(1)
+.RS 4
+Gitコミットグラフファイル(commit\-graph file)の書き出しと検証(verify)\&.
+.RE
+.PP
+\fBgit-commit-tree\fR(1)
+.RS 4
+新しいコミットオブジェクトを作成します\&.
+.RE
+.PP
+\fBgit-hash-object\fR(1)
+.RS 4
+オブジェクトIDを計算し、オプションでファイルからブロブを作成する\&.
+.RE
+.PP
+\fBgit-index-pack\fR(1)
+.RS 4
+既存のパックされたアーカイブのパックインデックスファイル構築\&.
+.RE
+.PP
+\fBgit-merge-file\fR(1)
+.RS 4
+3方向ファイルマージを実行する\&.
+.RE
+.PP
+\fBgit-merge-index\fR(1)
+.RS 4
+マージが必要なファイルのマージを実行します\&.
+.RE
+.PP
+\fBgit-mktag\fR(1)
+.RS 4
+追加の検証(extra validation)でタグオブジェクトを作成します\&.
+.RE
+.PP
+\fBgit-mktree\fR(1)
+.RS 4
+ls\-tree形式のテキストからツリーオブジェクトを構築する\&.
+.RE
+.PP
+\fBgit-multi-pack-index\fR(1)
+.RS 4
+multi\-pack\-indexを書き出し・検証します\&.
+.RE
+.PP
+\fBgit-pack-objects\fR(1)
+.RS 4
+オブジェクトのパックされたアーカイブを作成する\&.
+.RE
+.PP
+\fBgit-prune-packed\fR(1)
+.RS 4
+すでにパックファイルにある余分なオブジェクトを削除します\&.
+.RE
+.PP
+\fBgit-read-tree\fR(1)
+.RS 4
+ツリー情報をインデックスに読み込みます\&.
+.RE
+.PP
+\fBgit-symbolic-ref\fR(1)
+.RS 4
+シンボリックrefの読み取り、変更、および削除\&.
+.RE
+.PP
+\fBgit-unpack-objects\fR(1)
+.RS 4
+パックされたアーカイブからオブジェクトを取り出します\&.
+.RE
+.PP
+\fBgit-update-index\fR(1)
+.RS 4
+作業ツリーのファイルの内容をインデックスに登録します\&.
+.RE
+.PP
+\fBgit-update-ref\fR(1)
+.RS 4
+refに保存されているオブジェクト名を安全に更新します\&.
+.RE
+.PP
+\fBgit-write-tree\fR(1)
+.RS 4
+現在のインデックスからツリーオブジェクトを作成します\&.
+.RE
+.SS "Interrogation commands(問合せコマンド)"
+.PP
+\fBgit-cat-file\fR(1)
+.RS 4
+リポジトリオブジェクトのコンテンツまたはタイプとサイズの情報を提供します\&.
+.RE
+.PP
+\fBgit-cherry\fR(1)
+.RS 4
+アップストリームにまだ適用されていないコミットを検索する\&.
+.RE
+.PP
+\fBgit-diff-files\fR(1)
+.RS 4
+作業ツリーとインデックス内のファイルを比較します\&.
+.RE
+.PP
+\fBgit-diff-index\fR(1)
+.RS 4
+ツリーを作業ツリーまたはインデックスと比較します\&.
+.RE
+.PP
+\fBgit-diff-tree\fR(1)
+.RS 4
+2つのツリーオブジェクト間で、ブロブの内容とモードを比較します\&.
+.RE
+.PP
+\fBgit-for-each-ref\fR(1)
+.RS 4
+各refに関する情報を出力します\&.
+.RE
+.PP
+\fBgit-for-each-repo\fR(1)
+.RS 4
+リポジトリのリストでGitコマンドを実行します\&.
+.RE
+.PP
+\fBgit-get-tar-commit-id\fR(1)
+.RS 4
+git\-archiveを使用して作成されたアーカイブからコミットIDを抽出します\&.
+.RE
+.PP
+\fBgit-ls-files\fR(1)
+.RS 4
+インデックスと作業ツリーのファイルに関する情報を表示する\&.
+.RE
+.PP
+\fBgit-ls-remote\fR(1)
+.RS 4
+リモートリポジトリの参照を一覧表示する\&.
+.RE
+.PP
+\fBgit-ls-tree\fR(1)
+.RS 4
+ツリーオブジェクトの内容を一覧表示します\&.
+.RE
+.PP
+\fBgit-merge-base\fR(1)
+.RS 4
+マージのために可能な限り良い共通の祖先を見つけます\&.
+.RE
+.PP
+\fBgit-name-rev\fR(1)
+.RS 4
+指定のrevのシンボリック名を検索します\&.
+.RE
+.PP
+\fBgit-pack-redundant\fR(1)
+.RS 4
+無駄なパックファイルを探す\&.
+.RE
+.PP
+\fBgit-rev-list\fR(1)
+.RS 4
+コミットオブジェクトを新しい順に一覧表示します\&.
+.RE
+.PP
+\fBgit-rev-parse\fR(1)
+.RS 4
+パラメータを選択してもみもみします。\&.
+.RE
+.PP
+\fBgit-show-index\fR(1)
+.RS 4
+パックされたアーカイブインデックスを表示する\&.
+.RE
+.PP
+\fBgit-show-ref\fR(1)
+.RS 4
+ローカルリポジトリ内の参照を一覧表示します\&.
+.RE
+.PP
+\fBgit-unpack-file\fR(1)
+.RS 4
+ブロブの内容を含む一時(temporary)ファイルを作成します\&.
+.RE
+.PP
+\fBgit-var\fR(1)
+.RS 4
+Git論理変数を表示します\&.
+.RE
+.PP
+\fBgit-verify-pack\fR(1)
+.RS 4
+パックされたGitアーカイブファイルを検証する\&.
+.RE
+.sp
+一般に、問い合わせコマンドは作業ツリー内のファイルには影響しません。
+.SS "Syncing repositories(リポジトリの同期)"
+.PP
+\fBgit-daemon\fR(1)
+.RS 4
+Gitリポジトリ用のほんまにシンプルなサーバー\&.
+.RE
+.PP
+\fBgit-fetch-pack\fR(1)
+.RS 4
+別のリポジトリから不足しているオブジェクトを受け取ります\&.
+.RE
+.PP
+\fBgit-http-backend\fR(1)
+.RS 4
+Git over HTTP のサーバー側実装\&.
+.RE
+.PP
+\fBgit-send-pack\fR(1)
+.RS 4
+Gitプロトコルを介してオブジェクトを別のリポジトリにプッシュする\&.
+.RE
+.PP
+\fBgit-update-server-info\fR(1)
+.RS 4
+ダムサーバー(dumb servers)を支援するために補助情報ファイル(auxiliary info\&.
+.RE
+.sp
+以下は、上記で使用されるヘルパーコマンドです。エンドユーザーは通常、これらを直接使用することはありません。
+.PP
+\fBgit-http-fetch\fR(1)
+.RS 4
+HTTPでリモートGitリポジトリからダウンロード\&.
+.RE
+.PP
+\fBgit-http-push\fR(1)
+.RS 4
+HTTP/DAV を介してオブジェクトを別のリポジトリにプッシュする\&.
+.RE
+.PP
+\fBgit-receive-pack\fR(1)
+.RS 4
+リポジトリにプッシュされたものを受信します\&.
+.RE
+.PP
+\fBgit-shell\fR(1)
+.RS 4
+GitのみのSSHアクセス用の制限付きログインシェル\&.
+.RE
+.PP
+\fBgit-upload-archive\fR(1)
+.RS 4
+アーカイブを git\-archive に送り返す\&.
+.RE
+.PP
+\fBgit-upload-pack\fR(1)
+.RS 4
+パックされたオブジェクトをgit\-fetch\-packに送り返す\&.
+.RE
+.SS "Internal helper commands(内部ヘルパーコマンド)"
+.sp
+これらは、他のコマンドで使用される内部ヘルパーコマンドです。エンドユーザーは通常、これらを直接使用することはありません。
+.PP
+\fBgit-check-attr\fR(1)
+.RS 4
+gitattributes情報を表示\&.
+.RE
+.PP
+\fBgit-check-ignore\fR(1)
+.RS 4
+gitignoreや除外ファイルのデバッグ\&.
+.RE
+.PP
+\fBgit-check-mailmap\fR(1)
+.RS 4
+連絡先(contacts)の、正式な名前と電子メールアドレスを表示\&.
+.RE
+.PP
+\fBgit-check-ref-format\fR(1)
+.RS 4
+参照名が整形式であることを確認します\&.
+.RE
+.PP
+\fBgit-column\fR(1)
+.RS 4
+データを複数列表示する\&.
+.RE
+.PP
+\fBgit-credential\fR(1)
+.RS 4
+ユーザー資格情報の取得と保存\&.
+.RE
+.PP
+\fBgit-credential-cache\fR(1)
+.RS 4
+パスワードを一時的にメモリに保存するヘルパー\&.
+.RE
+.PP
+\fBgit-credential-store\fR(1)
+.RS 4
+資格情報をディスクに保存するヘルパー\&.
+.RE
+.PP
+\fBgit-fmt-merge-msg\fR(1)
+.RS 4
+git\-fmt\-merge\-msg\-マージコミットメッセージを生成します\&.
+.RE
+.PP
+\fBgit-hook\fR(1)
+.RS 4
+gitフックの実行\&.
+.RE
+.PP
+\fBgit-interpret-trailers\fR(1)
+.RS 4
+コミットメッセージの構造化情報を追加またはパースします\&.
+.RE
+.PP
+\fBgit-mailinfo\fR(1)
+.RS 4
+単一の電子メールメッセージからパッチと作成者を抽出します\&.
+.RE
+.PP
+\fBgit-mailsplit\fR(1)
+.RS 4
+簡易 UNIX mbox 分割プログラム\&.
+.RE
+.PP
+\fBgit-merge-one-file\fR(1)
+.RS 4
+git\-merge\-indexで使用する標準のヘルパープログラム\&.
+.RE
+.PP
+\fBgit-patch-id\fR(1)
+.RS 4
+パッチの一意のIDを計算します\&.
+.RE
+.PP
+\fBgit-sh-i18n\fR(1)
+.RS 4
+シェルスクリプトのためのGit用i18nセットアップコード\&.
+.RE
+.PP
+\fBgit-sh-setup\fR(1)
+.RS 4
+一般的なGitシェルスクリプトのセットアップコード\&.
+.RE
+.PP
+\fBgit-stripspace\fR(1)
+.RS 4
+不要な空白(whitespace)を削除します\&.
+.RE
+.SH "GUIDES(ガイド)"
+.sp
+以下のドキュメントページ群は、Gitの概念に関するガイドです。
+.PP
+\fBgitcore-tutorial\fR(7)
+.RS 4
+開発者のためのGit coreチュートリアル\&.
+.RE
+.PP
+\fBgitcredentials\fR(7)
+.RS 4
+Gitにユーザー名とパスワードを提供する\&.
+.RE
+.PP
+\fBgitcvs-migration\fR(7)
+.RS 4
+CVSユーザー向けGit\&.
+.RE
+.PP
+\fBgitdiffcore\fR(7)
+.RS 4
+diff出力の微調整\&.
+.RE
+.PP
+\fBgiteveryday\fR(7)
+.RS 4
+Git日常利用に役立つ最小限のコマンドセット\&.
+.RE
+.PP
+\fBgitfaq\fR(7)
+.RS 4
+Gitの使用に関するよくある質問(FAQ)\&.
+.RE
+.PP
+\fBgitglossary\fR(7)
+.RS 4
+Git用語集\&.
+.RE
+.PP
+\fBgitnamespaces\fR(7)
+.RS 4
+Git名前空間\&.
+.RE
+.PP
+\fBgitremote-helpers\fR(7)
+.RS 4
+リモートリポジトリと対話するためのヘルパープログラム群\&.
+.RE
+.PP
+\fBgitsubmodules\fR(7)
+.RS 4
+あるリポジトリを別のリポジトリ内にマウントする\&.
+.RE
+.PP
+\fBgittutorial\fR(7)
+.RS 4
+Git入門\&.
+.RE
+.PP
+\fBgittutorial-2\fR(7)
+.RS 4
+Git入門パート2\&.
+.RE
+.PP
+\fBgitworkflows\fR(7)
+.RS 4
+Gitで推奨の作業手順の概要\&.
+.RE
+.SH "REPOSITORY, COMMAND AND FILE INTERFACES"
+.sp
+このドキュメントでは、ユーザーが直接操作する必要があるリポジトリとコマンド・インターフェイスについて説明します。 詳細については、 \fBgit-help\fR(1) の \fB\-\-user\-formats\fR を参照してください(訳注: \fB\-\-user\-interfaces\fR の誤記?)。
+.PP
+\fBgitattributes\fR(5)
+.RS 4
+パスごとの属性の定義\&.
+.RE
+.PP
+\fBgitcli\fR(7)
+.RS 4
+Gitコマンドラインのインターフェイスと規則\&.
+.RE
+.PP
+\fBgithooks\fR(5)
+.RS 4
+Gitで使われるフック\&.
+.RE
+.PP
+\fBgitignore\fR(5)
+.RS 4
+無視する、意図的に追跡しないファイルを指定します\&.
+.RE
+.PP
+\fBgitmailmap\fR(5)
+.RS 4
+作者(author)/コミッター(committer) および/または 電子メールアドレス(E\-Mail\&.
+.RE
+.PP
+\fBgitmodules\fR(5)
+.RS 4
+サブモジュールプロパティの定義\&.
+.RE
+.PP
+\fBgitrepository-layout\fR(5)
+.RS 4
+Gitリポジトリの間取り\&.
+.RE
+.PP
+\fBgitrevisions\fR(7)
+.RS 4
+Gitのリビジョンと範囲を指定する\&.
+.RE
+.SH "FILE FORMATS, PROTOCOLS AND OTHER DEVELOPER INTERFACES"
+.sp
+このドキュメントでは、ファイル形式や通信プロトコルやの他の git 開発者インターフェイスについて説明します。 \fBgit-help\fR(1) の \fB\-\-developer\-interfaces\fR を参照してください。
+.PP
+\fBgitformat-bundle\fR(5)
+.RS 4
+バンドル・ファイル形式\&.
+.RE
+.PP
+\fBgitformat-chunk\fR(5)
+.RS 4
+チャンク・ベースのファイル形式\&.
+.RE
+.PP
+\fBgitformat-commit-graph\fR(5)
+.RS 4
+Git コミット・グラフ形式\&.
+.RE
+.PP
+\fBgitformat-index\fR(5)
+.RS 4
+Git インデックス形式\&.
+.RE
+.PP
+\fBgitformat-pack\fR(5)
+.RS 4
+Gitパック形式\&.
+.RE
+.PP
+\fBgitformat-signature\fR(5)
+.RS 4
+Git 暗号署名形式\&.
+.RE
+.PP
+\fBgitprotocol-capabilities\fR(5)
+.RS 4
+プロトコル v0 と v1 の機能\&.
+.RE
+.PP
+\fBgitprotocol-common\fR(5)
+.RS 4
+各種プロトコルの共通事項\&.
+.RE
+.PP
+\fBgitprotocol-http\fR(5)
+.RS 4
+Git HTTPベース・プロトコル\&.
+.RE
+.PP
+\fBgitprotocol-pack\fR(5)
+.RS 4
+パックが通信(over\-the\-wire)で転送される方法\&.
+.RE
+.PP
+\fBgitprotocol-v2\fR(5)
+.RS 4
+Git通信プロトコル・バージョン 2\&.
+.RE
+.SH "CONFIGURATION MECHANISM(構成メカニズム)"
+.sp
+Gitは、単純なテキスト形式を使用して、リポジトリごとおよびユーザーごとのカスタマイズを保存します。 このような構成ファイルは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#
+# A \*(Aq#\*(Aq or \*(Aq;\*(Aq character indicates a comment\&.
+#
+
+; core variables
+[core]
+        ; Don\*(Aqt trust file modes
+        filemode = false
+
+; user identity
+[user]
+        name = "Junio C Hamano"
+        email = "gitster@pobox\&.com"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+さまざまなコマンドが構成ファイルから読み取られ、それに応じて操作が調整されます。構成メカニズムのリストと詳細については、 \fBgit-config\fR(1) を参照してください。
+.SH "IDENTIFIER TERMINOLOGY(識別子の用語)"
+.PP
+<object>
+.RS 4
+任意のタイプのオブジェクトのオブジェクト名を現します。
+.RE
+.PP
+<blob>
+.RS 4
+BLOBオブジェクト名を現します。
+.RE
+.PP
+<tree>
+.RS 4
+ツリーオブジェクト名を示します。
+.RE
+.PP
+<commit>
+.RS 4
+コミットオブジェクト名を示します。
+.RE
+.PP
+<tree\-ish>
+.RS 4
+ツリーまたはコミットまたはタグオブジェクト名を示します。 <tree\-ish> 引数を取るコマンドは、最終的には <tree> オブジェクトを操作したいので、 <tree> を指す <commit> オブジェクトと <tag> オブジェクトは自動的に逆参照(dereference)されます。(訳注: tree\-ish;ツリーっぽいナニかの意)
+.RE
+.PP
+<commit\-ish>
+.RS 4
+コミットまたはタグオブジェクト名を示します。 <commit\-ish> 引数を取るコマンドは、最終的には <commit> オブジェクトを操作したいので、 <commit> を指す <tag>オブジェクトを自動的に逆参照します。
+.RE
+.PP
+<type>
+.RS 4
+オブジェクトタイプが必要であることを示します。 現在、
+\fBblob\fR
+または
+\fBtree\fR
+または
+\fBcommit\fR
+または
+\fBtag\fR
+のいずれかです。
+.RE
+.PP
+<file>
+.RS 4
+ファイル名を示します。ほとんどの場合、
+\fBGIT_INDEX_FILE\fR
+が記述するツリー構造のルートを基準にしています。
+.RE
+.SH "SYMBOLIC IDENTIFIERS"
+.sp
+<object> を受け入れるGitコマンドでは、以下の記号表記も使用できます:
+.PP
+HEAD
+.RS 4
+現在のブランチのヘッドを現します。
+.RE
+.PP
+<tag>
+.RS 4
+有効なタグ名(つまり
+\fBrefs/tags/<tag>\fR
+ref)。
+.RE
+.PP
+<head>
+.RS 4
+有効なhead名(つまり
+\fBrefs/heads/<head>\fR
+ref)。
+.RE
+.sp
+オブジェクト名のスペルのより完全なリストについては、 \fBgitrevisions\fR(7) の「SPECIFYING REVISIONS」セクションを参照してください。
+.SH "FILE/DIRECTORY STRUCTURE"
+.sp
+\fBgitrepository-layout\fR(5) 文書を参照してください。
+.sp
+各フックの詳細については \fBgithooks\fR(5) をご覧下さい。
+.sp
+高レベルのSCMは、 \fB$GIT_DIR\fR で追加情報を提供および管理する場合があります。
+.SH "TERMINOLOGY(用語)"
+.sp
+\fBgitglossary\fR(7) を参照してください。
+.SH "ENVIRONMENT VARIABLES(環境変数)"
+.sp
+さまざまなGitコマンドは、以下の環境変数を使用します:
+.SS "The Git Repository"
+.sp
+これらの環境変数は、「すべての」コアGitコマンドに適用されます。 Nb: Gitの上位にあるSCMSによって 使用/オーバーライド される可能性があることに注意してください。したがって、外部のフロントエンドを使用する場合は注意が必要です。
+.PP
+\fBGIT_INDEX_FILE\fR
+.RS 4
+この環境変数は、代替インデックスファイルを指定できます。指定しない場合、デフォルトの
+\fB$GIT_DIR/index\fR
+が使用されます。
+.RE
+.PP
+\fBGIT_INDEX_VERSION\fR
+.RS 4
+この環境変数を使用すると、新しいリポジトリのインデックスバージョンを指定できます。「既存のインデックスファイルには影響しません」。デフォルトでは、バージョン2または3のインデックスファイルが使用されます。詳細については、
+\fBgit-update-index\fR(1)
+を参照してください。
+.RE
+.PP
+\fBGIT_OBJECT_DIRECTORY\fR
+.RS 4
+オブジェクトストレージディレクトリがこの環境変数を介して指定されている場合、 sha1 ディレクトリがその下に作成されます。それ以外の場合は、デフォルトの
+\fB$GIT_DIR/objects\fR
+ディレクトリが使用されます。
+.RE
+.PP
+\fBGIT_ALTERNATE_OBJECT_DIRECTORIES\fR
+.RS 4
+Gitオブジェクトは不変であるため、古いオブジェクトを共有の読み取り専用ディレクトリにアーカイブできます。この変数は、Gitオブジェクトの検索に使用できるGitオブジェクトディレクトリの
+\fB:\fR
+で区切られた(Windowsでは
+\fB;\fR
+で区切られた)リストを指定します。新しいオブジェクトはこれらのディレクトリに書き込まれません。
+.sp
+\fB"\fR
+(二重引用符;\ex22)で始まるエントリは、Cスタイルの引用符で囲まれたパスとして解釈され、先頭と末尾の二重引用符が削除され、バックスラッシュ(\fB\e\fR
+\fB\ex5c\fR);のエスケープが尊重されます。たとえば、値
+\fB"path\-with\-\e"\-and\-:\-in\-it":vanilla\-path\fR
+には
+\fBpath\-with\-"\-and\-:\-in\-it\fR
+と
+\fBvanilla\-path\fR
+の2つのパスがあります。
+.RE
+.PP
+\fBGIT_DIR\fR
+.RS 4
+\fBGIT_DIR\fR
+環境変数が設定されている場合、リポジトリのベースにデフォルトの
+\fB\&.git\fR
+の代わりに使用するパスを指定します。
+\fB\-\-git\-dir\fR
+コマンドラインオプションもこの値を設定します。
+.RE
+.PP
+\fBGIT_WORK_TREE\fR
+.RS 4
+作業ツリーのルートへのパスを設定します。 これは、
+\fB\-\-work\-tree\fR
+コマンドラインオプションと core\&.worktree 構成変数でも制御できます。
+.RE
+.PP
+\fBGIT_NAMESPACE\fR
+.RS 4
+Git名前空間(Git namespace)を設定します。詳細については、
+\fBgitnamespaces\fR(7)
+を参照してください。
+\fB\-\-namespace\fR
+コマンドラインオプションもこの値を設定します。
+.RE
+.PP
+\fBGIT_CEILING_DIRECTORIES\fR
+.RS 4
+これは、コロン(\fB:\fR)で区切られた絶対パスのリストである必要があります。設定されている場合、これは、リポジトリディレクトリを探すときにGitがchdirを実行してはいけないディレクトリのリストです(読み込みの遅いネットワークディレクトリを除外する場合に便利です)。コマンドラインまたは環境で設定されている現在の作業ディレクトリまたはGIT_DIRは除外されません。通常、Gitはこのリストのエントリを読み取り、現在のディレクトリと比較するために存在する可能性のあるシンボリックリンクを解決する必要があります。ただし、このアクセスが遅い場合でも、リストに空のエントリを追加して、後続のエントリがシンボリックリンクではなく、解決する必要がないことをGitに通知できます。 例:
+\fBGIT_CEILING_DIRECTORIES=/maybe/symlink::/very/slow/non/symlink\fR
+.RE
+.PP
+\fBGIT_DISCOVERY_ACROSS_FILESYSTEM\fR
+.RS 4
+\fB\&.git\fR
+リポジトリディレクトリがないディレクトリで実行すると、Gitはそれより親のディレクトリでそのようなディレクトリを見つけて作業ツリーの最上位を見つけようとしますが、デフォルトではファイルシステムの境界を越えません。この環境変数をtrueに設定して、ファイルシステムの境界で停止しないようにGitに指示できます。
+\fBGIT_CEILING_DIRECTORIES\fR
+と同様に、これは
+\fBGIT_DIR\fR
+またはコマンドラインで設定された明示的なリポジトリディレクトリには影響しません。
+.RE
+.PP
+\fBGIT_COMMON_DIR\fR
+.RS 4
+この変数にパスが設定されている場合、通常は $GIT_DIR にある非ワークツリーファイルが、代わりにこのパスから取得されます。HEADやインデックスなどのワークツリー固有のファイルは $GIT_DIR から取得されます。詳細については、
+\fBgitrepository-layout\fR(5)
+と
+\fBgit-worktree\fR(1)
+を参照してください。この変数は GIT_INDEX_FILE や GIT_OBJECT_DIRECTORY などの他のパス変数よりも優先順位が低くなります。
+.RE
+.PP
+\fBGIT_DEFAULT_HASH\fR
+.RS 4
+この変数が設定されている場合、新しいリポジトリのデフォルトのハッシュアルゴリズムはこの値に設定されます。 現在、この値はクローン作成時は無視され、代わりに、リモートリポジトリの設定が使用されます。デフォルトは「sha1」です。この変数は実験的です！(「THIS VARIABLE IS EXPERIMENTAL!」)
+\fBgit-init\fR(1)
+の
+\fB\-\-object\-format\fR
+を参照してください。
+.RE
+.SS "Git Commits"
+.PP
+\fBGIT_AUTHOR_NAME\fR
+.RS 4
+コミットまたはタグオブジェクトを作成するとき、またはreflogを書き込むときに、作者IDで使用される、人間が読める名前。
+\fBuser\&.name\fR
+と
+\fBauthor\&.name\fR
+の構成設定を上書きします。
+.RE
+.PP
+\fBGIT_AUTHOR_EMAIL\fR
+.RS 4
+コミットまたはタグオブジェクトを作成するとき、またはreflogを書き込むときに作者IDで使用される電子メールアドレス。
+\fBuser\&.email\fR
+と
+\fBauthor\&.email\fR
+の設定を上書きします。
+.RE
+.PP
+\fBGIT_AUTHOR_DATE\fR
+.RS 4
+commitまたはtagオブジェクトを作成するとき、またはreflogを書き込むときに作者IDに使用される日付。有効な形式については、
+\fBgit-commit\fR(1)
+を参照してください。
+.RE
+.PP
+\fBGIT_COMMITTER_NAME\fR
+.RS 4
+コミットオブジェクトまたはタグオブジェクトを作成するとき、またはreflogを書き込むときに、コミッターIDで使用される、人間が読める形式の名前。
+\fBuser\&.name\fR
+と
+\fBcommitter\&.name\fR
+の設定を上書きします。
+.RE
+.PP
+\fBGIT_COMMITTER_EMAIL\fR
+.RS 4
+コミットまたはタグオブジェクトを作成するとき、またはreflogを書き込むときに作者IDで使用される電子メールアドレス。
+\fBuser\&.email\fR
+と
+\fBcommitter\&.email\fR
+の設定を上書きします。
+.RE
+.PP
+\fBGIT_COMMITTER_DATE\fR
+.RS 4
+コミットオブジェクトまたはタグオブジェクトを作成するとき、またはreflogを書き込むときにコミッターIDに使用される日付。有効な形式については、
+\fBgit-commit\fR(1)
+を参照してください。
+.RE
+.PP
+\fBEMAIL\fR
+.RS 4
+他の関連する環境変数または構成設定が設定されていない場合に、作者とコミッターのIDで使用される電子メールアドレス。
+.RE
+.SS "Git Diffs"
+.PP
+\fBGIT_DIFF_OPTS\fR
+.RS 4
+有効な設定は、統一された差分(unified diff)が作成されたときに表示されるコンテキスト行の数を設定するための
+\fB\-\-unified=??\fR
+または
+\fB\-u??\fR
+だけです。これは、Git diff コマンドラインで渡される
+\fB\-U\fR
+または
+\fB\-\-unified\fR
+のオプション値よりも優先されます。
+.RE
+.PP
+\fBGIT_EXTERNAL_DIFF\fR
+.RS 4
+環境変数
+\fBGIT_EXTERNAL_DIFF\fR
+が設定されている場合、それによって指定されたプログラムが呼び出されてdiffが生成され、Gitは組み込みのdiff機構を使用しません。 追加または削除または変更されたパスの場合、
+\fBGIT_EXTERNAL_DIFF\fR
+は以下の7つのパラメーターで呼び出されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+path old\-file old\-hex old\-mode new\-file new\-hex new\-mode
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは:
+.RE
+.PP
+<old|new>\-file
+.RS 4
+GIT_EXTERNAL_DIFF が <old|new> の内容を読み取るために 使用できるファイルです。
+.RE
+.PP
+<old|new>\-hex
+.RS 4
+16進40桁のSHA\-1ハッシュです。
+.RE
+.PP
+<old|new>\-mode
+.RS 4
+8進数で表現されたファイルモードです。
+.sp
+ファイルパラメータは、ユーザーの作業ファイル(たとえば "git\-diff\-files" の
+\fBnew\-file\fR
+)、または
+\fB/dev/null\fR
+(たとえば、新しいファイルが追加されたときの
+\fBold\-file\fR
+)、または一時ファイル(たとえば インデックスの
+\fBold\-file\fR) を指し示す事ができます。
+\fBGIT_EXTERNAL_DIFF\fR
+は、一時ファイルの削除(unlink)を心配する必要はありません。一時ファイルは
+\fBGIT_EXTERNAL_DIFF\fR
+の指定したプログラムの呼び出しが終了すると削除されます。
+.sp
+パスがマージされていない場合、
+\fBGIT_EXTERNAL_DIFF\fR
+は1つのパラメーター <path> で呼び出されます。
+.sp
+パス
+\fBGIT_EXTERNAL_DIFF\fR
+が呼び出されるたびに、
+\fBGIT_DIFF_PATH_COUNTER\fR
+と
+\fBGIT_DIFF_PATH_TOTAL\fR
+の2つの環境変数が設定されます。
+.RE
+.PP
+\fBGIT_DIFF_PATH_COUNTER\fR
+.RS 4
+パスごとに1ずつインクリメントされる1で始まるカウンター。
+.RE
+.PP
+\fBGIT_DIFF_PATH_TOTAL\fR
+.RS 4
+パスの総数。
+.RE
+.SS "other"
+.PP
+\fBGIT_MERGE_VERBOSITY\fR
+.RS 4
+再帰的マージ戦略(recursive merge strategy)によって表示される出力の量を制御する数値。 merge\&.verbosity をオーバーライドします。
+\fBgit-merge\fR(1)
+を参照してください
+.RE
+.PP
+\fBGIT_PAGER\fR
+.RS 4
+この環境変数は
+\fB$PAGER\fR
+をオーバーライドします。 空の文字列または値 "cat"に設定されている場合、Gitはページャーを起動しません。
+\fBgit-config\fR(1)
+の
+\fBcore\&.pager\fR
+オプションも参照してください。
+.RE
+.PP
+\fBGIT_PROGRESS_DELAY\fR
+.RS 4
+オプションの進行状況インジケーターを表示する前に遅延する秒数を制御する数値。デフォルトは2です。
+.RE
+.PP
+\fBGIT_EDITOR\fR
+.RS 4
+この環境変数は、
+\fB$EDITOR\fR
+と
+\fB$VISUAL\fR
+をオーバーライドします。インタラクティブモードでエディタを起動するときに、いくつかのGitコマンドで使用されます。
+\fBgit-var\fR(1)
+と
+\fBgit-config\fR(1)
+の
+\fBcore\&.editor\fR
+オプションも参照してください。
+.RE
+.PP
+\fBGIT_SEQUENCE_EDITOR\fR
+.RS 4
+この環境変数は、インタラクティブリベース(interactive rebase)のtodoリストを編集するときに、構成されたGitエディタをオーバーライドします。
+\fBgit-rebase\fR(1)
+と
+\fBgit-config\fR(1)
+の
+\fBsequence\&.editor\fR
+オプションも参照してください。
+.RE
+.PP
+\fBGIT_SSH\fR, \fBGIT_SSH_COMMAND\fR
+.RS 4
+これらの環境変数のいずれかが設定されている場合、
+\fBgit fetch\fR
+と
+\fBgit push\fR
+は、リモートシステムに接続する必要があるときに、
+\fBssh\fR
+の代わりに指定されたコマンドを使用します。設定されたコマンドに渡されるコマンドラインパラメータは、 ssh\&.variant によって決定されます。詳細については、
+\fBgit-config\fR(1)
+の
+\fBssh\&.variant\fR
+オプションを参照してください。
+.sp
+\fB$GIT_SSH_COMMAND\fR
+は
+\fB$GIT_SSH\fR
+よりも優先され、シェルによって解釈されます。これにより、追加の引数を含めることができます。 一方、
+\fB$GIT_SSH\fR
+は、プログラムへのパスである必要があります(追加の引数が必要な場合は、ラッパーシェルスクリプトにすることができます)。
+.sp
+通常、個人の
+\fB\&.ssh/config\fR
+ファイルを使用して必要なオプションを設定する方が簡単です。詳細については、あなたのお手元のsshのドキュメントを参照してください。
+.RE
+.PP
+\fBGIT_SSH_VARIANT\fR
+.RS 4
+この環境変数が設定されている場合、
+\fBGIT_SSH\fR
+・ ` GIT_SSH_COMMAND` ・
+\fBcore\&.sshCommand\fR
+が OpenSSH・plink・tortoiseplinkのいずれを参照しているかにかかわらず、Gitの自動検出をオーバーライドします。この変数は、同じ目的を果たす構成設定
+\fBssh\&.variant\fR
+をオーバーライドします。
+.RE
+.PP
+\fBGIT_ASKPASS\fR
+.RS 4
+この環境変数が設定されている場合、パスワードまたはパスフレーズを取得する必要があるGitコマンド(HTTPまたはIMAP認証など)は、コマンドライン引数として適切なプロンプトを使用してこのプログラムを呼び出し、そのプログラムの標準出力からパスワードを読み取ります。
+\fBgit-config\fR(1)の
+\fBcore\&.askPass\fR
+オプションも参照してください。
+.RE
+.PP
+\fBGIT_TERMINAL_PROMPT\fR
+.RS 4
+この環境変数が
+\fB0\fR
+に設定されている場合、gitは端末でプロンプトを表示しません(たとえば、HTTP認証を要求する場合)。
+.RE
+.PP
+\fBGIT_CONFIG_GLOBAL\fR, \fBGIT_CONFIG_SYSTEM\fR
+.RS 4
+グローバルまたはシステムレベルの構成ファイルからではなく、指定されたファイルから構成を取得します。
+\fBGIT_CONFIG_SYSTEM\fR
+が設定されている場合、ビルド時に定義されたシステム構成ファイル(通常は
+\fB/etc/gitconfig\fR)は読み取られません。同様に、
+\fBGIT_CONFIG_GLOBAL\fR
+が設定されている場合、
+\fB$HOME/\&.gitconfig\fR
+も
+\fB$XDG_CONFIG_HOME/git/config\fR
+も読み取られません。
+\fB/dev/null\fR
+に設定すると、それぞれのレベルの構成ファイルの読み取りをスキップできます。
+.RE
+.PP
+\fBGIT_CONFIG_NOSYSTEM\fR
+.RS 4
+システム全体の
+\fB$(prefix)/etc/gitconfig\fR
+ファイルからの設定の読み取りをスキップするかどうか。 この環境変数を
+\fB$HOME\fR
+や
+\fB$XDG_CONFIG_HOME\fR
+と一緒に使用して、厄介なスクリプトの予測可能な環境を作成するか、または、バグのある
+\fB/etc/gitconfig\fR
+ファイルを使用しないように一時的に設定して、十分な権限を持つ誰かが修正するのを待つこともできます。
+.RE
+.PP
+\fBGIT_FLUSH\fR
+.RS 4
+この環境変数が
+\fB1\fR
+に設定されている場合、
+\fBgit blame\fR
+(インクリメンタルモード)、
+\fBgit rev\-list\fR
+、
+\fBgit log\fR
+、
+\fBgit check\-attr\fR
+、
+\fBgit check\-ignore\fR
+などのコマンドは、 各レコードがフラッシュされた後に出力ストリームを強制的にフラッシュします。 この変数が
+\fB0\fR
+に設定されている場合、 これらのコマンドの出力は、完全にバッファリングされた入出力を使用して実行されます。 この環境変数が設定されていない場合、 Gitは、標準出力がファイルにリダイレクトされているように見えるかどうかに基づいて、 バッファリングするか、またはレコード指向のフラッシュを選択します。
+.RE
+.PP
+\fBGIT_TRACE\fR
+.RS 4
+一般的なトレースメッセージを有効にします。例えば、エイリアス拡張や、組み込みコマンド実行や、外部コマンド実行 においてです。
+.sp
+この変数が
+\fB1\fR
+または
+\fB2\fR
+または
+\fBtrue\fR
+に設定されている場合(比較では英大文字小文字は区別されません)、トレースメッセージがstderrに出力されます。
+.sp
+変数が2より大きく10より小さい整数値(訳注:つまり 2 < 変数 < 10)に設定されている場合、(厳密には、)Gitはこの値を、開いているファイルデスクリプターとして解釈し、トレースメッセージをこのファイルデスクリプターに書き込もうとします。
+.sp
+または、 変数が絶対パス(\fB/\fR
+文字で始まる)に設定されている場合、 Gitはこれをファイル・パスとして解釈し、 トレース・メッセージをそのファイルに追加しようとします。
+.sp
+変数の設定を解除(unset)するか、空(empty) または
+\fB0\fR
+または
+\fBfalse\fR
+(英大文字小文字を区別しない)に設定すると、トレースメッセージが無効になります。
+.RE
+.PP
+\fBGIT_TRACE_FSMONITOR\fR
+.RS 4
+ファイルシステムモニター拡張機能(filesystem monitor extension)のトレースメッセージを有効にします。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_PACK_ACCESS\fR
+.RS 4
+任意のパックへのすべてのアクセスに対してトレースメッセージを有効にします。アクセスごとに、パックファイル名とパック内のオフセットが記録されます。これは、パック関連のパフォーマンスの問題のトラブルシューティングに役立つ場合があります。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_PACKET\fR
+.RS 4
+特定のプログラムに出入りするすべてのパケットのトレースメッセージを有効にします。これは、オブジェクトネゴシエーションまたはその他のプロトコルの問題のデバッグに役立ちます。 "PACK" で始まるパケットではトレースがオフになります(ただし、以下の
+\fBGIT_TRACE_PACKFILE\fR
+を参照してください)。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_PACKFILE\fR
+.RS 4
+特定のプログラムによって送受信されたパックファイルのトレースを有効にします。他のトレース出力とは異なり、このトレースは垂れ流しです。ヘッダーやバイナリデータの引用はありません。あなたはこれを、ファイルを端末に表示したり、他のトレース出力と混合したりするのではなく、ほぼ確実に、ファイル(たとえば、
+\fBGIT_TRACE_PACKFILE=/tmp/my\&.pack\fR
+)に転送する必要があります。
+.sp
+注意: これは現在、クローンとフェッチのクライアント側にのみ実装されていることに注意してください。
+.RE
+.PP
+\fBGIT_TRACE_PERFORMANCE\fR
+.RS 4
+パフォーマンス関連のトレースメッセージを有効にします。例えば、各Gitコマンドの合計実行時間です。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_REFS\fR
+.RS 4
+refデータベースでの操作のトレースメッセージを有効にします。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_SETUP\fR
+.RS 4
+Gitがセットアップフェーズを完了した後、\fB\&.git\fR
+と作業ツリーと現在の作業ディレクトリを出力するトレースメッセージを有効にします。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_SHALLOW\fR
+.RS 4
+浅い(shallow)リポジトリの フェッチ/クローン のデバッグに役立つトレースメッセージを有効にします。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_CURL\fR
+.RS 4
+gitトランスポートプロトコルのすべての着信および発信データ(descriptive information;説明情報を含む)のcurlフルトレースダンプを有効にします。これは、コマンドラインで curl
+\fB\-\-trace\-ascii\fR
+を実行するのと似ています。使用可能なトレース出力オプションについては、
+\fBGIT_TRACE\fR
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_CURL_NO_DATA\fR
+.RS 4
+curlトレースが有効になっている場合(上記の
+\fBGIT_TRACE_CURL\fR
+を参照)、データをダンプしないでください(つまり、情報行とヘッダー(info lines and headers)のみをダンプします)。
+.RE
+.PP
+\fBGIT_TRACE2\fR
+.RS 4
+「trace2」ライブラリからのより詳細なトレースメッセージを有効にします。
+\fBGIT_TRACE2\fR
+からの出力は、人間が読みやすいように単純なテキストベースの形式です。
+.sp
+この変数が
+\fB1\fR
+または
+\fB2\fR
+または
+\fBtrue\fR
+に設定されている場合(比較では英大文字小文字は区別されません)、トレースメッセージがstderrに出力されます。
+.sp
+変数が2より大きく10より小さい整数値(訳注:つまり 2 < 変数 < 10)に設定されている場合、(厳密には、)Gitはこの値を、開いているファイルデスクリプターとして解釈し、トレースメッセージをこのファイルデスクリプターに書き込もうとします。
+.sp
+あるいは、変数が絶対パス(`/`文字で始まる)に設定されている場合、Gitはこれをファイルパスとして解釈し、トレースメッセージをそのファイルに追加しようとします。パスがすでに存在し、ディレクトリである場合、トレースメッセージは、SIDの最後のコンポーネントと(ファイル名の衝突を回避するための)オプションのカウンタに従って名前が付けられた、そのディレクトリ内のファイル(プロセスごとに1つ)に書き込まれます。
+.sp
+加えて、変数が
+\fBaf_unix:[<socket_type>:]<absolute\-pathname>\fR
+に設定されている場合、GitはパスをUnixドメインソケットとして開こうとします。ソケットタイプは、
+\fBstream\fR
+または
+\fBdgram\fR
+のいずれかです。
+.sp
+変数の設定を解除(unset)するか、空(empty) または
+\fB0\fR
+または
+\fBfalse\fR
+(英大文字小文字を区別しない)に設定すると、トレースメッセージが無効になります。
+.sp
+完全な詳細については
+\m[blue]\fBTrace2 documentation\fR\m[]\&\s-2\u[2]\d\s+2
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE2_EVENT\fR
+.RS 4
+この設定は、ソフトウェア処理(machine interpretation)に適したJSONベースの形式で書き込みます。利用可能なトレース出力オプションについては
+\fBGIT_TRACE2\fR
+を、詳細については
+\m[blue]\fBTrace2 documentation\fR\m[]\&\s-2\u[2]\d\s+2
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE2_PERF\fR
+.RS 4
+\fBGIT_TRACE2\fR
+で利用可能なテキストベースのメッセージに加えて、この設定はネスト領域(nesting regions)を理解するための列ベース(column\-based)のフォーマットを書き込みます。利用可能なトレース出力オプションについては
+\fBGIT_TRACE2\fR
+を、完全な詳細については
+\m[blue]\fBTrace2 documentation\fR\m[]\&\s-2\u[2]\d\s+2
+を参照してください。
+.RE
+.PP
+\fBGIT_TRACE_REDACT\fR
+.RS 4
+デフォルトでは、 トレースがアクティブ化されると、Git は クッキーと
+\fBAuthorization:\fR
+ヘッダーと
+\fBProxy\-Authorization:\fR
+ヘッダーとパックファイル URI の値を編集します。 この編集を防ぐには、この変数を
+\fB0\fR
+に設定します。
+.RE
+.PP
+\fBGIT_LITERAL_PATHSPECS\fR
+.RS 4
+この変数を
+\fB1\fR
+に設定すると、Gitはすべてのパススペックをグロブパターンとしてではなく文字通りに処理します。たとえば、
+\fBGIT_LITERAL_PATHSPECS=1 git log \-\- \*(Aq*\&.c\*(Aq\fR
+を実行すると、グロブ
+\fB*\&.c\fR
+が一致するパスではなく、パス
+\fB*\&.c\fR
+に接触するコミットが検索されます。リテラルパスをGitにフィードする場合(たとえば、以前に
+\fBgit ls\-tree\fR
+や
+\fB\-\-raw\fR
+diff output などによって与えられたパス)にこれが必要になる場合があります。
+.RE
+.PP
+\fBGIT_GLOB_PATHSPECS\fR
+.RS 4
+この変数を
+\fB1\fR
+に設定すると、Gitはすべてのパススペックをグロブパターン(別名 グロブマジック(glob magic))として扱います。
+.RE
+.PP
+\fBGIT_NOGLOB_PATHSPECS\fR
+.RS 4
+この変数を
+\fB1\fR
+に設定すると、Gitはすべてのパススペックをリテラル(別名 リテラルマジック(literal magic))として扱います。
+.RE
+.PP
+\fBGIT_ICASE_PATHSPECS\fR
+.RS 4
+この変数を
+\fB1\fR
+に設定すると、Gitはすべてのパススペックの英大文字小文字を区別しないものとして扱います。
+.RE
+.PP
+\fBGIT_REFLOG_ACTION\fR
+.RS 4
+refが更新されると、reflogエントリが作成され、refの新旧の値に加えて、refが更新された理由(通常はrefを更新した高レベルコマンドの名前)を追跡します。スクリプト化された磁器コマンドは、
+\fBgit\-sh\-setup\fR
+のset_reflog_actionヘルパー関数を使用して、エンドユーザーがトップレベルコマンドとして呼び出したときにその名前をこの変数に設定して、reflogの本文(body)に記録できます。
+.RE
+.PP
+\fBGIT_REF_PARANOIA\fR
+.RS 4
+\fB0\fR
+に設定すると、 ref のリストを繰り返し処理するときに、 壊れたref や 不適切な名前の ref を無視します。 通常、 Git はそのような ref をインクルードしようと試みますが、 一部の操作が失敗する可能性があります。 これは、 破壊的な操作（たとえば
+\fBgit-prune\fR(1)）を行う可能性がある場合、 壊れたrefを無視するよりも(そしてそれが指す履歴を保存する価値がないとするよりも)、 中断(abort)したほうが良いからです。 デフォルト値は
+\fB1\fR
+です(つまり、 偏執狂的に全ての操作で(壊れたrefを)検出して中止(abort)するようにします)。 通常、 これを
+\fB0\fR
+に設定する必要はありませんが、 破損したリポジトリからデータを回収しようとする場合に役立つ場合があります。
+.RE
+.PP
+\fBGIT_ALLOW_PROTOCOL\fR
+.RS 4
+コロン(\fB:\fR)で区切られたプロトコルのリストが設定されている場合、
+\fBprotocol\&.allow\fR
+が
+\fBnever\fR
+に設定され、リストされた各プロトコルでは、
+\fBprotocol\&.<name>\&.allow\fR
+が
+\fBalways\fR
+に設定されているかのように振る舞います(既存の構成をオーバーライドします)。 詳細については、
+\fBgit-config\fR(1)
+の
+\fBprotocol\&.allow\fR
+の説明を参照してください。
+.RE
+.PP
+\fBGIT_PROTOCOL_FROM_USER\fR
+.RS 4
+\fBuser\fR
+状態に構成されている fetch/push/clone によって使用されるプロトコルを妨げるには、
+\fB0\fR
+に設定します。これは、信頼できないリポジトリからの再帰的なサブモジュールの初期化を制限したり、信頼できない可能性のあるURLをgitコマンドにフィードするプログラムに役立ちます。詳細については、
+\fBgit-config\fR(1)
+を参照してください。
+.RE
+.PP
+\fBGIT_PROTOCOL\fR
+.RS 4
+内部使用のみ。ワイヤープロトコルのハンドシェイクで使用されます。オプションで値
+\fBkey[=value]\fR
+を持つ、 コロン(\fB:\fR)で区切られたリストを含んでいます。不明なキーと値は無視する必要があります。
+.sp
+注意:この変数が一部のトランスポートを通過できるようにサーバーを構成する必要がある場合があることに注意してください。ローカルリポジトリ(つまり、
+\fBfile://\fR
+またはファイルシステムパス)にアクセスするとき、および
+\fBgit://\fR
+プロトコルを介して自動的に伝播されます。 git\-over\-http の場合、ほとんどの構成で自動的に機能するはずですが、
+\fBgit-http-backend\fR(1)
+の説明を参照してください。 git\-over\-ssh の場合、クライアントがこの変数を渡すことができるようにsshサーバーを構成する必要がある場合があります(たとえば、OpenSSHで
+\fBAcceptEnv GIT_PROTOCOL\fR
+を使用することにより)。
+.sp
+この構成はオプションです。変数が伝播されない場合、クライアントは元の "v0" プロトコルにフォールバックします(ただし、パフォーマンスの向上や機能の一部を見逃す可能性があります)。この変数は現在、cloneとfetchにのみ影響します。pushにはまだ使用されていません(ただし、将来的に使用される可能性があります)。
+.RE
+.PP
+\fBGIT_OPTIONAL_LOCKS\fR
+.RS 4
+\fB0\fR
+に設定すると、Gitは、ロックを取得する必要のあるオプションのサブ操作を実行せずに、要求された操作を完了します。たとえば、これにより、\fBgit status\fR
+が副作用としてインデックスを更新するのを防ぐことができます。これは、リポジトリ上の他の操作とのロック競合を引き起こしたくない、バックグラウンドで実行されているプロセスに役立ちます。デフォルトは
+\fB1\fR
+です。
+.RE
+.PP
+\fBGIT_REDIRECT_STDIN\fR, \fBGIT_REDIRECT_STDOUT\fR, \fBGIT_REDIRECT_STDERR\fR
+.RS 4
+Windowsのみ: 標準の入力/出力/エラーハンドルを環境変数で指定されたパスにリダイレクトできるようにします。これは、
+\fBCreateProcess()\fR
+を介して標準ハンドルを渡す標準的な方法がオプションではないマルチスレッドアプリケーションで特に役立ちます。これは、ハンドルを継承可能としてマークする必要があるためです(したがって、生成された「すべて」のプロセスがそれらを継承し、通常のGit操作をブロックする可能性があります)。主な使用目的は、通信に名前付きパイプを使用することです(例:
+\fB\e\e\&.\epipe\emy\-git\-stdin\-123\fR)。
+.sp
+2つの特別な値がサポートされています。\fBoff\fR
+は対応する標準ハンドルを閉じるだけです。そして、
+\fBGIT_REDIRECT_STDERR\fR
+が
+\fB2>&1\fR
+の場合、標準エラーは標準出力と同じハンドルにリダイレクトされます。
+.RE
+.PP
+\fBGIT_PRINT_SHA1_ELLIPSIS\fR (deprecated)
+.RS 4
+(非推奨):
+\fByes\fR
+に設定されている場合、(省略形の)SHA\-1値の後に省略記号を出力します。これは、切り離されたHEAD(detached HEAD)の表示(\fBgit-checkout\fR(1))と生のdiff出力(\fBgit-diff\fR(1))に影響します。上記の場合に省略記号を印刷することはもはや適切であるとは見なされておらず、そのサポートは(この変数と一緒に)近い将来削除される可能性があります。
+.RE
+.SH "DISCUSSION"
+.sp
+以下の詳細については、 \m[blue]\fBGit concepts chapter of the user\-manual\fR\m[]\&\s-2\u[3]\d\s+2 および \fBgitcore-tutorial\fR(7) から入手できます。
+.sp
+Gitプロジェクトは通常、最上位に \fB\&.git\fR サブディレクトリがある作業ディレクトリで構成されます。 \fB\&.git\fR ディレクトリには、プロジェクトの完全な履歴を表す圧縮オブジェクトデータベース、その履歴を作業ツリーの現在のコンテンツにリンクする「インデックス」ファイル、タグやブランチヘッドなど、その履歴への名前付きポインタが含まれています。
+.sp
+オブジェクトデータベースには、主に3つのタイプのオブジェクトが含まれています。ファイルデータを保持するブロブ(blob)。ディレクトリ階層を構築するためのブロブやその他のツリーを指すツリー(tree)。そしてコミット(commit)は、それぞれが単一のツリーといくつかの親コミットを参照します。
+.sp
+コミットは、他のシステムが「チェンジセット」または「バージョン」と呼ぶものと同等であり、プロジェクトの履歴のステップを表し、各親は直前のステップを表します。複数の親とのコミットは、それぞれ独立していた開発ラインの統合(マージ;merge)を表します。
+.sp
+すべてのオブジェクトは、その内容のSHA\-1ハッシュによって名前が付けられ、通常は40桁の16進数の文字列として記述されます。このような名前はグローバルに一意です。コミットに至るまでの履歴全体は、そのコミットだけに署名することで保証できます。この目的のために、4番目のオブジェクトタイプであるタグ(tag)が提供されます。
+.sp
+最初に作成されたとき、オブジェクトは個々のファイルに保存されますが、効率を上げるために、後で「パックファイル」にまとめて圧縮される場合があります。
+.sp
+ref(refs)と呼ばれる名前付きポインターは、履歴の中で興味深い点を指し示しています。refには、オブジェクトのSHA\-1名または別のrefの名前を含めることができます。名前が \fBref/head/\fR で始まるrefには、開発中のブランチの最新のコミット(または「head」)のSHA\-1名が含まれます。対象のタグのSHA\-1名は、 \fBref/tags/\fR の下に保存されます。 \fBHEAD\fR という名前の特別な参照には、現在チェックアウトされているブランチの名前が含まれています。
+.sp
+インデックスファイルは、すべてのパスのリストと、パスごとのブロブオブジェクトと属性のセットで初期化されます。ブロブオブジェクトは、現在のブランチの先端にあるファイルの内容を表します。属性(最終変更時刻、サイズなど)は、作業ツリー内の対応するファイルから取得されます。作業ツリーへのその後の変更は、これらの属性を比較することで見つけることができます。インデックスは新しいコンテンツで更新される可能性があり、新しいコミットはインデックスに保存されているコンテンツから作成される可能性があります。
+.sp
+インデックスは、特定のパス名の複数のエントリ(「ステージ」と呼ばれる)を格納することもできます。これらのステージは、マージの進行中に、マージされていないさまざまなバージョンのファイルを保持するために使用されます。
+.SH "FURTHER DOCUMENTATION"
+.sp
+Gitの使用を開始するには、「description」セクションのリファレンスを参照してください。 以下は、初めてのユーザーにとっては、おそらく必要以上に詳細です。
+.sp
+\m[blue]\fBGit concepts chapter of the user\-manual\fR\m[]\&\s-2\u[3]\d\s+2 と \fBgitcore-tutorial\fR(7) はどちらも、基盤となるGitアーキテクチャの概要を示しています。
+.sp
+おすすめの作業手順の概要については \fBgitworkflows\fR(7) を参照してください。
+.sp
+いくつかの便利な実例について \m[blue]\fBhowto\fR\m[]\&\s-2\u[4]\d\s+2 文書もご覧下さい。
+.sp
+Git内部については \m[blue]\fBGit API documentation\fR\m[]\&\s-2\u[5]\d\s+2 に記載されています。
+.sp
+CVSから移行するユーザーには \fBgitcvs-migration\fR(7) も読んで欲しいです。
+.SH "AUTHORS"
+.sp
+GitはLinus Torvalds(リーナス トーバルズ)によって開始され、現在はJunio C Hamano(濱野 純)によって保守されています。Gitメーリングリスト <\m[blue]\fBgit@vger\&.kernel\&.org\fR\m[]\&\s-2\u[6]\d\s+2> から多くの貢献がありました。 \m[blue]\fBhttp://www\&.openhub\&.net/p/git/contributors/summary\fR\m[] は、貢献者のより完全なリストを提供します。
+.sp
+あなたが git\&.git 自体のクローンを持っている場合、 \fBgit-shortlog\fR(1) と \fBgit-blame\fR(1) の出力は、プロジェクトの特定の部分の作者を表示することができます。
+.SH "REPORTING BUGS"
+.sp
+開発とメンテナンスが主に行われるGitメーリングリスト <\m[blue]\fBgit@vger\&.kernel\&.org\fR\m[]\&\s-2\u[6]\d\s+2> にバグを報告してください。そこにメッセージを送信するためにリストに登録する必要はありません。以前のバグレポートやその他の議論については、 \m[blue]\fBhttps://lore\&.kernel\&.org/git\fR\m[] メーリングリストアーカイブを参照してください。
+.sp
+セキュリティに関連する問題は、Gitセキュリティメーリングリスト <\m[blue]\fBgit\-security@googlegroups\&.com\fR\m[]\&\s-2\u[7]\d\s+2> に非公開で投稿する必要があります。
+.SH "SEE ALSO"
+.sp
+\fBgittutorial\fR(7), \fBgittutorial-2\fR(7), \fBgiteveryday\fR(7), \fBgitcvs-migration\fR(7), \fBgitglossary\fR(7), \fBgitcore-tutorial\fR(7), \fBgitcli\fR(7), \m[blue]\fBThe Git User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2, \fBgitworkflows\fR(7)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+Git User\(cqs Manual
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html
+.RE
+.IP " 2." 4
+Trace2 documentation
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/technical/api-trace2.html
+.RE
+.IP " 3." 4
+Git concepts chapter of the user-manual
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html#git-concepts
+.RE
+.IP " 4." 4
+howto
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/howto-index.html
+.RE
+.IP " 5." 4
+Git API documentation
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/technical/api-index.html
+.RE
+.IP " 6." 4
+git@vger.kernel.org
+.RS 4
+\%mailto:git@vger.kernel.org
+.RE
+.IP " 7." 4
+git-security@googlegroups.com
+.RS 4
+\%mailto:git-security@googlegroups.com
+.RE

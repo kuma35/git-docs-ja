@@ -1,0 +1,227 @@
+'\" t
+.\"     Title: git-show-ref
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-SHOW\-REF" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-show-ref \- ローカルリポジトリ内の参照を一覧表示します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit show\-ref\fR [\-q|\-\-quiet] [\-\-verify] [\-\-head] [\-d|\-\-dereference]
+             [\-s|\-\-hash[=<n>]] [\-\-abbrev[=<n>]] [\-\-tags]
+             [\-\-heads] [\-\-] [<pattern>\&...]
+\fIgit show\-ref\fR \-\-exclude\-existing[=<pattern>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+ローカルリポジトリで使用可能な参照を、関連するコミットIDとともに表示します。結果はパターンを使用してフィルタリングでき、タグはオブジェクトIDに逆参照できます。さらに、特定のrefが存在するかどうかをテストするために使用できます。
+.sp
+デフォルトでは、タグとヘッドとリモートrefを表示します。
+.sp
+\fB\-\-exclude\-existing\fR 形式は、逆を行うフィルターです。 stdinから1行に1つのrefを読み取り、ローカルリポジトリに存在しないものを表示します。
+.sp
+\fB\&.git\fR ディレクトリの下のファイルに直接アクセスするために、このユーティリティの使用をお勧めします。
+.SH "OPTIONS"
+.PP
+\fB\-\-head\fR
+.RS 4
+通常は検索除外される場合でも、HEAD参照を表示します。
+.RE
+.PP
+\fB\-\-heads\fR, \fB\-\-tags\fR
+.RS 4
+それぞれ「refs/heads」と「refs/tags」に制限します。これらのオプションは相互に排他的ではありません。 両方を指定すると、「refs/heads」と「refs/tags」に保存されている参照が表示されます。
+.RE
+.PP
+\fB\-d\fR, \fB\-\-dereference\fR
+.RS 4
+タグをオブジェクトIDにも逆参照します。
+\fB{caret}{}\fR
+が追加されて表示されます。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-hash[=<n>]\fR
+.RS 4
+参照名ではなく、SHA\-1ハッシュのみを表示します。
+\fB\-\-dereference\fR
+と組み合わせると、逆参照されたタグがSHA\-1の後に依然として表示されます。
+.RE
+.PP
+\fB\-\-verify\fR
+.RS 4
+正確な参照パスを要求することにより、より厳密な参照チェックを有効にします。エラーコード1を返す以外に、
+\fB\-\-quiet\fR
+が指定されていない場合はエラーメッセージも出力します。
+.RE
+.PP
+\fB\-\-abbrev[=<n>]\fR
+.RS 4
+オブジェクト名を省略します。
+\fB\-\-hash\fR
+を使用する場合は
+\fB\-\-hash \-\-abbrev\fR
+と言う必要はなく、
+\fB\-\-hash=n\fR
+で十分です。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+結果をstdoutに出力しないでください。
+\fB\-\-verify\fR
+と組み合わせると、参照が存在するかどうかをサイレントにチェックするために使用できます。
+.RE
+.PP
+\fB\-\-exclude\-existing[=<pattern>]\fR
+.RS 4
+"\fB^(?:<anything>\es)?<refname>(?:\e^{})?$\fR" 形式でstdinからrefを読み取り、そのそれぞれに対して以下のアクションを実行するフィルターとして
+\fIgit show\-ref\fR
+を使います: (1) 行末の
+\fB{caret}{}\fR
+を削除します (2) パターンが指定されていて、refnameとヘッドが一致(head\-match)しない場合は無視 (3) refnameが整形式(well\-formed)のrefnameでない場合は警告し、スキップします (4) refnameがローカルリポジトリに存在するrefである場合は無視 (5) それ以外の場合は、行を出力します。
+.RE
+.PP
+<pattern>\&...
+.RS 4
+1つ以上のパターンに一致する参照を表示します。パターンはフルネームの末尾から一致し、完全な部品のみが一致します。 「master」は「refs/heads/master」や「refs/remotes/origin/master」や「refs/tags/jedi/master」と一致しますが、「refs/heads/mymaster」とか「refs/remotes/master/jedi」とは一致しません 。
+.RE
+.SH "OUTPUT"
+.sp
+出力形式: <SHA\-1 ID><空白><参照名>
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show\-ref \-\-head \-\-dereference
+832e76a9899f560a90ffd62ae2ce83bbeff58f54 HEAD
+832e76a9899f560a90ffd62ae2ce83bbeff58f54 refs/heads/master
+832e76a9899f560a90ffd62ae2ce83bbeff58f54 refs/heads/origin
+3521017556c5de4159da4615a39fa4d5d2c279b5 refs/tags/v0\&.99\&.9c
+6ddc0964034342519a87fe013781abf31c6db6ad refs/tags/v0\&.99\&.9c^{}
+055e4ae3ae6eb344cbabf2a5256a49ea66040131 refs/tags/v1\&.0rc4
+423325a2d24638ddcc82ce47be5e40be550f4507 refs/tags/v1\&.0rc4^{}
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+( \fB\-\-dereference\fR ではなく) \fB\-\-hash\fR を使用する場合の出力形式: <SHA\-1 ID>
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show\-ref \-\-heads \-\-hash
+2e3ba0114a1f52b47df29743d6915d056be13278
+185008ae97960c8d551adcd9e23565194651b5d1
+03adf42c988195b50e1a1935ba5fcbc39b2b029b
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "EXAMPLES"
+.sp
+タグやヘッドなど、「master」と呼ばれるすべての参照を表示するには、参照の名前付け階層の深さに関係なく、以下を使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git show\-ref master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これには、「refs/heads/master」だけでなく、「refs/remote/other\-repo/master」も表示されます(そのような参照が存在する場合)。
+.sp
+\fB\-\-verify\fR フラグを使用する場合、コマンドには正確なパスが必要です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git show\-ref \-\-verify refs/heads/master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは「master」と呼ばれる正確なブランチにのみ一致します。
+.sp
+一致するものがない場合、「git show\-ref」はエラーコード1を返し、検証の場合はエラーメッセージを表示します。
+.sp
+スクリプトの場合は、 \fB\-\-quiet\fR フラグを使用して静かにするように要求できます。これにより、以下のようにできます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git show\-ref \-\-quiet \-\-verify \-\- "refs/heads/$headname" ||
+                echo "$headname is not a valid branch"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、特定のブランチが存在するかどうかを確認します(実際には結果を表示したくないので、あいまいな部分一致で問題が発生しないように、完全なrefnameを使用します)。
+.sp
+タグのみ、または適切なブランチヘッドのみを表示するには、それぞれ「\-\-tags」かつ/または「\-\-heads」を使用します(両方を使用すると、タグとヘッドが表示されますが、 refs/ サブディレクトリの下にある他のランダムな参照は表示されません)。
+.sp
+タグオブジェクトの自動逆参照を行うには、「\-d」または「\-\-dereference」フラグを使用して、以下のことができるようにします
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git show\-ref \-\-tags \-\-dereference
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、すべてのタグのリストを、それらが逆参照するものと一緒に取得します。
+.SH "FILES"
+.sp
+\fB\&.git/refs/*\fR, \fB\&.git/packed\-refs\fR
+.SH "SEE ALSO"
+.sp
+\fBgit-for-each-ref\fR(1), \fBgit-ls-remote\fR(1), \fBgit-update-ref\fR(1), \fBgitrepository-layout\fR(5)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,796 @@
+'\" t
+.\"     Title: git-clone
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CLONE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-clone \- リポジトリを新しいディレクトリにクローン(複製)します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit clone\fR [\-\-template=<template\-directory>]
+          [\-l] [\-s] [\-\-no\-hardlinks] [\-q] [\-n] [\-\-bare] [\-\-mirror]
+          [\-o <name>] [\-b <name>] [\-u <upload\-pack>] [\-\-reference <repository>]
+          [\-\-dissociate] [\-\-separate\-git\-dir <git\-dir>]
+          [\-\-depth <depth>] [\-\-[no\-]single\-branch] [\-\-no\-tags]
+          [\-\-recurse\-submodules[=<pathspec>]] [\-\-[no\-]shallow\-submodules]
+          [\-\-[no\-]remote\-submodules] [\-\-jobs <n>] [\-\-sparse] [\-\-[no\-]reject\-shallow]
+          [\-\-filter=<filter> [\-\-also\-filter\-submodules]] [\-\-] <repository>
+          [<directory>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+リポジトリを新しく作成されたディレクトリにクローン(clone;複製)し、複製されたリポジトリ内の各ブランチのリモート追跡ブランチを作成し(\fBgit branch \-\-remotes\fR を使用して表示できます)、複製されたリポジトリの現在アクティブなブランチからフォークされた初期ブランチを作成してチェックアウトします。
+.sp
+クローン後、引数のない \fBgit fetch\fR は、すべてのリモート追跡ブランチを更新し、加えて、引数のない \fBgit pull\fR は、存在する場合、リモートのmasterブランチを現在のmasterブランチにマージします（これは、 \fB\-\-single\-branch\fR が指定されている場合は当てはまりません。以下参照)。
+.sp
+このデフォルト設定は、 \fBrefs/remotes/origin\fR の下にリモートブランチヘッドへの参照を作成し、\fBremote\&.origin\&.url\fR と \fBremote\&.origin\&.fetch\fR 設定変数を初期化することによって実現されます。
+.SH "OPTIONS"
+.PP
+\fB\-l\fR, \fB\-\-local\fR
+.RS 4
+複製元のリポジトリがローカルマシン上にある場合、このフラグは通常の 「Git対応」転送メカニズムをバイパスし、オブジェクトおよびrefsディレクトリの下にあるHEADおよびすべてのコピーを作成することでリポジトリを複製します。
+\fB\&.git/objects/\fR
+ディレクトリの下のファイルは、可能な場合はスペースを節約するためにハードリンクされています。
+.sp
+リポジトリがローカルパス(例:
+\fB/path/to/repo\fR)として指定されている場合、これがデフォルトであり、
+\fB\-\-local\fR
+は基本的に何も操作しません(no\-op)です。 リポジトリがURLとして指定されている場合、このフラグは無視されます(ローカル最適化は使用されません)。
+\fB\-\-no\-local\fR
+を指定すると、
+\fB/path/to/repo\fR
+が指定されたときデフォルトが上書きされ、代わりに通常のGit転送が使用されます。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+この操作は、
+\fBsrc\fR
+を変更しながら
+\fBcp \-r src dst\fR
+を実行するのと同様に、ソースリポジトリへの同時変更と競合する可能性があります。
+.sp .5v
+.RE
+.RE
+.PP
+\fB\-\-no\-hardlinks\fR
+.RS 4
+ハードリンクを使用する代わりに、ローカルファイルシステム上のリポジトリからのクローン作成プロセスで、ファイルを
+\fB\&.git/objects\fR
+ディレクトリの下にコピーするように強制します。 これは、リポジトリのバックアップを作成しようとしている場合に望ましい場合があります。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shared\fR
+.RS 4
+クローンを作成するリポジトリがローカルマシン上にある場合、ハードリンクを使用する代わりに、オブジェクトをソースリポジトリと共有するように
+\fB\&.git/objects/info/alternates\fR
+を自動的に設定します。 結果のリポジトリは、独自のオブジェクトなしで開始されます。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+これは危険な操作になり得ます。あなたが、それが何をするのか理解していない限り、使用してはいけません。 このオプションを使用してリポジトリのクローンを作成してから、ソースリポジトリ内のブランチを削除する(または既存のコミットを参照しないようにする他のGitコマンドを使用する)と、一部のオブジェクトが参照されなくなる(unreferenced)(または宙ぶらりん(dangling)になる)可能性があります。 そうしたオブジェクトは、
+\fBgit maintenance run \-\-auto\fR
+を自動的に呼び出す通常のGit操作(\fBgit commit\fR
+など)によって削除される場合があります(\fBgit-maintenance\fR(1)
+参照)。 これらのオブジェクトが削除され、クローンされたリポジトリーによって参照された場合、クローンされたリポジトリーは破損します。
+.sp .5v
+.RE
+注意:
+\fB\-\-shared\fR
+でクローンされたリポジトリで
+\fB\-\-local\fR
+オプションなしで
+\fBgit repack\fR
+を実行すると、オブジェクトがソースリポジトリからクローンされたリポジトリのパックにコピーされ、
+\fBclone \-\-shared\fR
+によるディスクスペースの節約はなくなります。 ただし、デフォルトで
+\fB\-\-local\fR
+オプションを使用する
+\fBgit gc\fR
+を実行するのは安全です。
+.sp
+\fB\-\-shared\fR
+でクローンされたリポジトリのソースリポジトリへの依存関係を解消したい場合、
+\fBgit repack \-a\fR
+を実行するだけで、すべてのオブジェクトをソースリポジトリから、クローンされたリポジトリのパックにコピーできます。
+.RE
+.PP
+\fB\-\-reference[\-if\-able] <repository>\fR
+.RS 4
+参照リポジトリがローカルマシン上にある場合は、参照リポジトリからオブジェクトを取得するように
+\fB\&.git/objects/info/alternates\fR
+を自動的に設定します。 既存のリポジトリをalternateとして使用すると、クローンされるリポジトリからコピーする必要のあるオブジェクトが少なくなり、ネットワークとローカルのストレージコストが削減されます。
+\fB\-\-reference\-if\-able\fR
+を使用すると、存在しないディレクトリはクローンを中断する代わりに警告を出してスキップします。
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+\fB\-\-shared\fR
+オプションと
+\fB\-\-dissociate\fR
+オプションについては「NOTE」を参照してください。
+.sp .5v
+.RE
+.RE
+.PP
+\fB\-\-dissociate\fR
+.RS 4
+ネットワーク転送を減らすために
+\fB\-\-reference\fR
+オプションで指定された参照リポジトリからオブジェクトを借用しクローン作成後に、借用したオブジェクトの必要なローカルコピーを作成し、借用を停止(stop)します。 このオプションは、すでに他のリポジトリからオブジェクトを借りているリポジトリからローカルにクローンを作成するときにも使用できます\(em新しいリポジトリは同一のリポジトリからオブジェクトを借りますが、このオプションを使用して借用を停止できます。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+静かにします。進行状況は標準エラーストリームに報告されません。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+賑やかにします。標準エラーストリームへの進行状況のレポートには影響しません。
+.RE
+.PP
+\fB\-\-progress\fR
+.RS 4
+\fB\-\-quiet\fR
+が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送信されていない場合でも、進行状況を強制します。
+.RE
+.PP
+\fB\-\-server\-option=<option>\fR
+.RS 4
+プロトコルバージョン2を使用して通信する場合、指定の文字列をサーバーに送信します。指定の文字列には、NULまたはLF文字を含めることはできません。 不明なオプションを含むサーバーオプションのサーバー処理は、サーバー固有です。 複数の
+\fB\-\-server\-option=<option>\fR
+が指定されている場合、それらはすべてコマンドラインにリストされている順序で相手側に送信されます。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-no\-checkout\fR
+.RS 4
+クローンの完了後、HEADのチェックアウトは実行されません。
+.RE
+.PP
+\fB\-\-[no\-]reject\-shallow\fR
+.RS 4
+ソースリポジトリが浅い(shallow)リポジトリの場合は失敗します。
+\fBclone\&.rejectShallow\fR
+構成変数を使用して、デフォルトを指定できます。
+.RE
+.PP
+\fB\-\-bare\fR
+.RS 4
+「ベア」(bare=裸の)Gitリポジトリを作成します。 つまり、
+\fB<directory>\fR
+を作成して管理ファイルを
+\fB<directory>/\&.git\fR
+に配置する代わりに、
+\fB<directory>\fR
+自体を
+\fB$GIT_DIR\fR
+にします。 作業ツリーをチェックアウトする場所がないため、これは明らかに
+\fB\-\-no\-checkout\fR
+を意味します。 また、リモートのブランチヘッドは、
+\fBrefs/remotes/origin/\fR
+にマッピングせずに、対応するローカルブランチヘッドに直接コピーされます。 このオプションを使用すると、リモート追跡ブランチも関連する構成変数も作成されません。
+.RE
+.PP
+\fB\-\-sparse\fR
+.RS 4
+最上位ディレクトリ内のファイルのみが最初に存在するスパース・チェックアウトを採用します。
+\fBgit-sparse-checkout\fR(1)
+コマンドを使用して、必要に応じて作業ディレクトリを拡張できます。
+.RE
+.PP
+\fB\-\-filter=<filter\-spec>\fR
+.RS 4
+部分クローン(partial clone)機能を使用して、サーバーが特定のオブジェクトフィルターに従って到達可能なオブジェクトのサブセットを送信するように要求します。
+\fB\-\-filter\fR
+を使用する場合、提供された
+\fB<filter\-spec>\fR
+が部分クローンフィルターに使用されます。 たとえば、
+\fB\-\-filter=blob:none\fR
+は、Gitで必要になるまで、すべてのブロブ(ファイルの内容)を除外します。 また、
+\fB\-\-filter=blob:limit=<size>\fR
+は、少なくとも
+\fB<size>\fR
+のサイズのすべてのブロブを除外します。 フィルタ仕様の詳細については、
+\fBgit-rev-list\fR(1)
+の
+\fB\-\-filter\fR
+オプションを参照してください。
+.RE
+.PP
+\fB\-\-also\-filter\-submodules\fR
+.RS 4
+また、リポジトリ内のすべてのサブモジュールに部分クローン・フィルタ(partial clone filter)を適用します。
+\fB\-\-filter\fR
+と
+\fB\-\-recurse\-submodules\fR
+が必要です。 これは、
+\fBclone\&.filterSubmodules\fR
+設定オプションを設定することで、デフォルトでオンにすることができます。
+.RE
+.PP
+\fB\-\-mirror\fR
+.RS 4
+ソースリポジトリのミラーを設定します。 これは
+\fB\-\-bare\fR
+を意味します。
+\fB\-\-bare\fR
+と比較して、
+\fB\-\-mirror\fR
+は、ソースのローカルブランチをターゲットのローカルブランチにマップするだけでなく、すべての参照(リモート追跡ブランチ、noteなどを含む)をマップし、以下のようなrefspec構成をセットアップします。 これらのすべての参照は、ターゲットリポジトリ内の
+\fBgit remote update\fR
+によって上書きされます。
+.RE
+.PP
+\fB\-o <name>\fR, \fB\-\-origin <name>\fR
+.RS 4
+リモート名
+\fBorigin\fR
+を使用してアップストリームリポジトリを追跡する代わりに、\fB<name>\fR
+を使用します。 構成(config)の
+\fBclone\&.defaultRemoteName\fR
+をオーバーライドします。
+.RE
+.PP
+\fB\-b <name>\fR, \fB\-\-branch <name>\fR
+.RS 4
+新しく作成されたHEADを、複製されたリポジトリのHEADが指すブランチにポイントする代わりに、代わりに
+\fB<name>\fR
+ブランチをポイントします。 非ベアリポジトリでは、これはチェックアウトされるブランチです。
+\fB\-\-branch\fR
+はタグを取得し、結果のリポジトリでそのコミット時にHEADを切り離す(detach)こともできます。
+.RE
+.PP
+\fB\-u <upload\-pack>\fR, \fB\-\-upload\-pack <upload\-pack>\fR
+.RS 4
+これが指定され、クローンを作成するリポジトリにssh経由でアクセスする場合、これは、通信相手側(the other end)で実行されるコマンドのデフォルト以外のパスを指定します。
+.RE
+.PP
+\fB\-\-template=<template\-directory>\fR
+.RS 4
+テンプレートを使用するディレクトリを指定します。 (\fBgit-init\fR(1)
+の「TEMPLATE DIRECTORY」セクションを参照してください。)
+.RE
+.PP
+\fB\-c <key>=<value>\fR, \fB\-\-config <key>=<value>\fR
+.RS 4
+新しく作成されたリポジトリに構成変数を設定します。 これは、リポジトリが初期化された直後または、リモート履歴がフェッチされる前または、ファイルがチェックアウトされる前に有効になります。 キーは、
+\fBgit-config\fR(1)
+で期待されるものと同じ形式です(例:
+\fBcore\&.eol=true\fR)。 同じキーに複数値が指定されている場合、各値は構成ファイルに書き込まれます。 これにより、たとえば、originのリモートにフェッチrefspecを追加しても安全になります。
+.sp
+現在の実装の制限により、一部の構成変数は、最初のフェッチとチェックアウトが完了するまで有効になりません。 有効にならないことがわかっている構成変数は、
+\fBremote\&.<name>\&.mirror\fR
+と
+\fBremote\&.<name>\&.tagOpt\fR
+です。 代わりに、対応する
+\fB\-\-mirror\fR
+および
+\fB\-\-no\-tags\fR
+オプションを使用してください。
+.RE
+.PP
+\fB\-\-depth <depth>\fR
+.RS 4
+指定されたコミット数に切り捨てられた履歴を持つ「浅い」クローン(shallow clone)を作成します。 すべてのブランチの先端近くの履歴をフェッチするために
+\fB\-\-no\-single\-branch\fR
+が指定されていない限り、
+\fB\-\-single\-branch\fR
+を意味します。 サブモジュールを浅くクローンする場合は、
+\fB\-\-shallow\-submodules\fR
+も渡します。
+.RE
+.PP
+\fB\-\-shallow\-since=<date>\fR
+.RS 4
+指定した日時以降の履歴を持つ浅いクローン(shallow clone)を作成します。
+.RE
+.PP
+\fB\-\-shallow\-exclude=<revision>\fR
+.RS 4
+指定のリモートブランチまたはタグから到達可能なコミットを除外して、履歴を持つ浅いクローン(shallow clone)を作成します。 このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-[no\-]single\-branch\fR
+.RS 4
+\fB\-\-branch\fR
+オプションで指定された、またはリモートのプライマリブランチの
+\fBHEAD\fR
+が指す単一のブランチの先端につながる履歴のみをクローンします。 結果のリポジトリにさらにフェッチすると、このオプションが最初のクローン作成に使用されたブランチのリモート追跡ブランチのみが更新されます。
+\fB\-\-single\-branch\fR
+クローンが作成されたときに、リモートのHEADがどのブランチも指さなかった場合、リモート追跡ブランチは作成されません。
+.RE
+.PP
+\fB\-\-no\-tags\fR
+.RS 4
+タグのクローンを作成せず、構成に
+\fBremote\&.<remote>\&.tagOpt=\-\-no\-tags\fR
+を設定して、今後の
+\fBgit pull\fR
+および
+\fBgit fetch\fR
+操作がタグに従わないようにします。 指定後も明示的なタグフェッチは引き続き機能します(\fBgit-fetch\fR(1)
+参照)。
+.sp
+\fB\-\-single\-branch\fR
+と組み合わせて使用すると、単一のクローンされたブランチ以外の参照なしでブランチをクローンおよび維持できます。 検索インデックス作成のために、一部のリポジトリのデフォルトブランチの最小限のクローンを維持するので便利です。
+.RE
+.PP
+\fB\-\-recurse\-submodules[=<pathspec>]\fR
+.RS 4
+クローンが作成されたら、提供されたパススペックに基づいてサブモジュールを初期化し、クローンを作成します。 パススペックが指定されていない場合、すべてのサブモジュールが初期化され、クローン化されます。 このオプションは、複数のエントリで構成されるパススペックに対して複数回指定できます。 結果として得られるクローンには
+\fBsubmodule\&.active\fR
+が指定され、パス指定がない場合は
+\fB\&.\fR
+(すべてのサブモジュールを意味します) が設定されます。
+.sp
+サブモジュールは、デフォルト設定を使用して初期化およびクローン化されます。 これは、クローンが終了した直後に
+\fBgit submodule update \-\-init \-\-recursive <pathspec>\fR
+を実行するのと同じです。 クローンされたリポジトリに ワークツリー/チェックアウト がない場合(つまり、
+\fB\-\-no\-checkout\fR/\fB\-n\fR
+または
+\fB\-\-bare\fR
+または
+\fB\-\-mirror\fR
+のいずれかが指定されている場合)、このオプションは無視されます。
+.RE
+.PP
+\fB\-\-[no\-]shallow\-submodules\fR
+.RS 4
+クローンされるすべてのサブモジュールは、深さが1の浅さののになります。
+.RE
+.PP
+\fB\-\-[no\-]remote\-submodules\fR
+.RS 4
+クローン化されるすべてのサブモジュールは、スーパープロジェクトの記録されたSHA\-1ではなく、サブモジュールのリモート追跡ブランチのステータスを使用してサブモジュールを更新します。
+\fB\-\-remote\fR
+を
+\fBgit submodule update\fR
+に渡すのと同じです。
+.RE
+.PP
+\fB\-\-separate\-git\-dir=<git\-dir>\fR
+.RS 4
+クローンされたリポジトリを本来あるべき場所に配置する代わりに、クローンされたリポジトリを指定されたディレクトリに配置し、そこへのファイルシステムに依存しないGitシンボリックリンクを作成します。 その結果、Gitリポジトリを作業ツリーから分離できます。
+.RE
+.PP
+\fB\-j <n>\fR, \fB\-\-jobs <n>\fR
+.RS 4
+同時にフェッチするサブモジュールの数。 デフォルトは
+\fBsubmodule\&.fetchJobs\fR
+オプションです。
+.RE
+.PP
+<repository>
+.RS 4
+クローンを作成する(場合によってはリモートの)リポジトリ。 リポジトリの指定の詳細については、下記
+GIT URLS
+セクションを参照してください。
+.RE
+.PP
+<directory>
+.RS 4
+クローンを作成する新しいディレクトリの名前。 ディレクトリが明示的に指定されていない場合は、ソースリポジトリの「人間味のある」(humanish)部分が使用されます(\fB/path/to/repo\&.git\fR
+の場合は
+\fBrepo\fR
+、
+\fBhost\&.xz:foo/\&.git\fR
+の場合は
+\fBfoo\fR
+)。 既存のディレクトリへのクローン作成は、ディレクトリが空の場合にのみ許可されます。
+.RE
+.PP
+\fB\-\-bundle\-uri=<uri>\fR
+.RS 4
+リモートからフェッチする前に、指定された
+\fB<uri>\fR
+からバンドルをフェッチし、データをローカル・リポジトリで非バンドル化(unbundle)します。 バンドル内のrefは、 非表示の
+\fBrefs/bundle/*\fR
+名前空間に保存されます。 このオプションは、
+\fB\-\-depth\fR
+や`\-\-shallow\-since` や
+\fB\-\-shallow\-exclude\fR
+と互換性がありません。
+.RE
+.SH "GIT URLS"
+.sp
+一般に、URLには、トランスポートプロトコル、リモートサーバーのアドレス、およびリポジトリへのパスに関する情報が含まれています。トランスポートプロトコルによっては、一部の情報が欠落している場合があります。
+.sp
+Gitはsshとgitとhttpとhttpsプロトコルをサポートします(さらにftpとftpsをフェッチに使用できますが、これは非効率的で非推奨です。使用しないでください)。
+.sp
+ネイティブトランスポート(つまり、 git:// URL)は認証を行わないため、セキュリティで保護されていないネットワークでは注意して使用する必要があります。
+.sp
+以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ssh://[user@]host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+git://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http[s]://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ftp[s]://host\&.xz[:port]/path/to/repo\&.git/
+.RE
+.sp
+代替のscpのような構文をsshプロトコルで使用することもできます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+[user@]host\&.xz:path/to/repo\&.git/
+.RE
+.sp
+この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカルパスを区別するのに役立ちます。たとえば、ローカルパス \fBfoo:bar\fR を、絶対パスまたは \fB\&./foo:bar\fR として指定して、 ssh url として誤って解釈されないようにすることができます。
+.sp
+sshおよびgitプロトコルは、さらに ~username 拡張をサポートします:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ssh://[user@]host\&.xz[:port]/~[user]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+git://host\&.xz[:port]/~[user]/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+[user@]host\&.xz:/~[user]/path/to/repo\&.git/
+.RE
+.sp
+Gitでもネイティブにサポートされているローカルリポジトリの場合、以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+/path/to/repo\&.git/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file:///path/to/repo\&.git/
+.RE
+.sp
+これらの2つの構文は、前者が \fB\-\-local\fR オプションを含むことを除いて、ほとんど同等です。
+.sp
+「git clone」と「git fetch」と「git pull」は、「git push」と違って適切なバンドルファイルを受け入れます。 \fBgit-bundle\fR(1) を参照してください。
+.sp
+Gitが特定のトランスポートプロトコルを処理する方法を知らない場合、Gitは \fIremote\-<transport>\fR リモートヘルパー(存在する場合)を使用しようとします。リモートヘルパーを明示的に要求するには、以下の構文を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<transport>::<address>
+.RE
+.sp
+ここで、 <address> は、パス、サーバーとパス、または呼び出されている特定のリモートヘルパーによって認識される任意のURLのような文字列です。詳細については、 \fBgitremote-helpers\fR(7) を参照してください。
+.sp
+同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "<actual url base>"]
+                insteadOf = <other url base>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例えば、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "git://git\&.host\&.xz/"]
+                insteadOf = host\&.xz:/path/to/
+                insteadOf = work:
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"work:repo\&.git" や "host\&.xz:/path/to/repo\&.git" のようなURLは、任意のコンテキストで、"git://git\&.host\&.xz/repo\&.git" に書き換えられます。
+.sp
+プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "<actual url base>"]
+                pushInsteadOf = <other url base>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例えば、以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [url "ssh://example\&.org/"]
+                pushInsteadOf = git://example\&.org/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+"git://example\&.org/path/to/repo\&.git" のようなURLは、プッシュの場合は "ssh://example\&.org/path/to/repo\&.git" に書き換えられますが、プルは引き続き元のURLのままです。
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+アップストリームからのクローン:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone git://git\&.kernel\&.org/pub/scm/\&.\&.\&./linux\&.git my\-linux
+$ cd my\-linux
+$ make
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+チェックアウトせずに、現在のディレクトリから借用するローカルクローンを作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone \-l \-s \-n \&. \&.\&./copy
+$ cd \&.\&./copy
+$ git show\-branch
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+既存のローカルディレクトリから借用しつつ、アップストリームからクローンを作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone \-\-reference /git/linux\&.git \e
+        git://git\&.kernel\&.org/pub/scm/\&.\&.\&./linux\&.git \e
+        my\-linux
+$ cd my\-linux
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+変更を公開するためのベア(bare)リポジトリを作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git clone \-\-bare \-l /home/proj/\&.git /pub/scm/proj\&.git
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+init\&.templateDir
+.RS 4
+テンプレートのコピー元のディレクトリを指定します。 (\fBgit-init\fR(1)
+の「TEMPLATE DIRECTORY」セクションを参照してください。)
+.RE
+.PP
+init\&.defaultBranch
+.RS 4
+デフォルトのブランチ名を上書きできます。例えば、新しいリポジトリを初期化するとき。
+.RE
+.PP
+clone\&.defaultRemoteName
+.RS 4
+リポジトリのクローンを作成するときに作成するリモートの名前。 デフォルトは
+\fBorigin\fR
+で、
+\fB\-\-origin\fR
+コマンドラインオプションを
+\fBgit-clone\fR(1)
+に渡すことでオーバーライドできます。
+.RE
+.PP
+clone\&.rejectShallow
+.RS 4
+リポジトリが浅い(shallow)場合は、リポジトリの複製(clone)を拒否します。コマンドラインでオプション
+\fB\-\-reject\-shallow\fR
+を渡すことでオーバーライドできます。
+\fBgit-clone\fR(1)
+を参照してください
+.RE
+.PP
+clone\&.filterSubmodules
+.RS 4
+部分(partial)クローン・フィルタが提供され(\fBgit-rev-list\fR(1)
+の
+\fB\-\-filter\fR
+を参照)、かつ、
+\fB\-\-recurse\-submodules\fR
+が使用されている場合は、フィルタをサブモジュールにも適用します。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

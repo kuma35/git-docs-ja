@@ -1,0 +1,177 @@
+'\" t
+.\"     Title: git-fetch-pack
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-FETCH\-PACK" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-fetch-pack \- 別のリポジトリから不足しているオブジェクトを受け取ります
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit fetch\-pack\fR [\-\-all] [\-\-quiet|\-q] [\-\-keep|\-k] [\-\-thin] [\-\-include\-tag]
+        [\-\-upload\-pack=<git\-upload\-pack>]
+        [\-\-depth=<n>] [\-\-no\-progress]
+        [\-v] <repository> [<refs>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+通常は、代わりにこのコマンドの上位レベルのラッパーである \fBgit fetch\fR を使用することをお勧めします。
+.sp
+おそらくはリモートリポジトリで \fBgit\-upload\-pack\fR を起動し、このリポジトリから不足しているオブジェクトを送信し、名前付きの head を更新するよう問合せます。ローカルで利用可能なコミットの一覧は、ローカルの refs/ 階層をスキャンして見つけ、相手側で実行されている \fBgit\-upload\-pack\fR に送信されます。
+.sp
+このコマンドは、ローカル側に共通の祖先コミットがない場合には、リモート側から要求された参照を完了するためにすべてをダウンロードするよう機能縮退します。
+.SH "OPTIONS"
+.PP
+\fB\-\-all\fR
+.RS 4
+すべてのリモート参照をフェッチします。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+stdinから参照のリストを1行に1つずつ取得します。このオプションに加えてコマンドラインで参照が指定されている場合、stdinからの参照はコマンドラインでの参照の後に処理されます。
+.sp
+このオプションと一緒に
+\fB\-\-stateless\-rpc\fR
+を指定する場合、参照のリストはパケット形式(pkt\-line)である必要があります。各refは個別のパケットに含まれている必要があり、リストはフラッシュパケットで終了している必要があります。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+\fB\-q\fR
+フラグを
+\fBgit unpack\-objects\fR
+に渡します。 これにより、クローン作成プロセスのおしゃべりが減ります。
+.RE
+.PP
+\fB\-k\fR, \fB\-\-keep\fR
+.RS 4
+受信したデータに対して
+\fBgit unpack\-objects\fR
+を呼び出さないでください。代わりに、そのデータから単一のパックファイルを作成し、オブジェクトデータベースに保存してください。このオプションが2回指定された場合、パックは再パックに対してロックされます(the pack is locked against repacking)。
+.RE
+.PP
+\fB\-\-thin\fR
+.RS 4
+ネットワークトラフィックを軽減するために、パックに含まれないオブジェクトを元に、オブジェクトを差分化(デルタ化)して記録する「薄い」パック(thin pack)をフェッチします。
+.RE
+.PP
+\fB\-\-include\-tag\fR
+.RS 4
+リモート側がサポートしている場合、タグが参照するオブジェクトがダウンロードされると、注釈付きタグオブジェクトが他のオブジェクトと同じ接続(same connection)でダウンロードされます。それ以外の場合、呼び出し元は、このオプションで使用できるタグを決定する必要があります。
+.RE
+.PP
+\fB\-\-upload\-pack=<git\-upload\-pack>\fR
+.RS 4
+あなたの $PATHに見つからない場合は、これを使用して、リモート側の
+\fBgit\-upload\-pack\fR
+へのパスを指定します。sshdをインストールすると、ログインシェル用のユーザーの環境設定スクリプト(\fB\&.bash_profile\fR
+など)が無視され、プライベートにインストールされたgitがシステムのデフォルトの$PATHで見つけられない場合があります。推奨される別の回避策は、
+\fB\&.bashrc\fR
+に $PATHを設定することですが、このフラグは、(ほとんどのものを\&.bash_profileに設定して、)中身の無い
+\fB\&.bashrc\fR
+ファイルを使用して非対話型シェルのオーバーヘッドを支払いたくない人向けです。
+.RE
+.PP
+\fB\-\-exec=<git\-upload\-pack>\fR
+.RS 4
+\fB\-\-upload\-pack=<git\-upload\-pack>\fR
+と同じ。
+.RE
+.PP
+\fB\-\-depth=<n>\fR
+.RS 4
+フェッチを n 以下の祖先チェーンに制限します。
+\fBgit\-upload\-pack\fR
+は、特別な深さ2147483647が指定された場合、その深さの祖先チェーンがある場合でも、それを無限として扱います。
+.RE
+.PP
+\fB\-\-shallow\-since=<date>\fR
+.RS 4
+浅いリポジトリ(shallow repository)の履歴を更に深くするか更に浅くするかして、 <date> 以降の到達可能なすべてのコミットを含めます。
+.RE
+.PP
+\fB\-\-shallow\-exclude=<revision>\fR
+.RS 4
+浅いリポジトリ(shallow repository)の履歴を深くするか浅くするかして、指定されたリモートブランチまたはタグから到達可能なコミットを除外します。このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-deepen\-relative\fR
+.RS 4
+引数
+\fB\-\-depth\fR
+は、各リモートブランチ履歴の先端からではなく、現在の浅い境界(shallow boundary)からのコミット数を指定します。
+.RE
+.PP
+\fB\-\-refetch\fR
+.RS 4
+マッチするすべてのオブジェクトをフェッチするために、サーバーとのコミットのネゴシエーションをスキップします。 新しい部分クローン ブロブ/ツリー フィルターを再適用するために使用します。
+.RE
+.PP
+\fB\-\-no\-progress\fR
+.RS 4
+進捗状況を表示しないでください。
+.RE
+.PP
+\fB\-\-check\-self\-contained\-and\-connected\fR
+.RS 4
+受信したパックが自己完結型で接続されている場合は、 "connectivity\-ok" を出力します。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+おしゃべりになります。
+.RE
+.PP
+<repository>
+.RS 4
+リモートリポジトリへのURL。
+.RE
+.PP
+<refs>\&...
+.RS 4
+更新元のリモートヘッド。これは $GIT_DIR に関連しています(例:
+\fBHEAD\fR
+、
+\fBrefs/heads/master\fR
+)。指定しない場合は、リモート側が持つすべてのヘッドから更新します。
+.sp
+リモートがオプション
+\fBuploadpack\&.allowTipSHA1InWant\fR
+または
+\fBuploadpack\&.allowReachableSHA1InWant\fR
+または
+\fBuploadpack\&.allowAnySHA1InWant\fR
+を有効にしている場合、それらはリモートに存在する 16進40桁 sha1 である可能性があります。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-fetch\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

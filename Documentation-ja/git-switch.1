@@ -1,0 +1,477 @@
+'\" t
+.\"     Title: git-switch
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-SWITCH" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-switch \- ブランチを切り替える
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit switch\fR [<options>] [\-\-no\-guess] <branch>
+\fIgit switch\fR [<options>] \-\-detach [<start\-point>]
+\fIgit switch\fR [<options>] (\-c|\-C) <new\-branch> [<start\-point>]
+\fIgit switch\fR [<options>] \-\-orphan <new\-branch>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+指定のブランチに切り替えます。作業ツリーとインデックスは、ブランチに一致するように更新されます。新規コミットは、全てこのブランチの先端に追加されることになります。
+.sp
+オプションで、同じ名前のリモートブランチから自動的に \fB\-c\fR や \fB\-C\fR を使用して新しいブランチを作成するか(\fB\-\-guess\fR 参照)、あるいは切り替え時に \fB\-\-detach\fR を使用して任意のブランチから作業ツリーをデタッチできます。
+.sp
+ブランチを切り替えるには、クリーンなインデックスと作業ツリーは必要ありません(つまり、「HEAD」との違いはありません)。ただし、操作によってローカル変更が失われる場合、 \fB\-\-discard\-changes\fR または \fB\-\-merge\fR で特に指示されない限り、操作は中止されます。
+.sp
+!!このコマンドは実験的なものです。 動作が変わる可能性があります!!
+.SH "OPTIONS"
+.PP
+<branch>
+.RS 4
+切り替え先のブランチ
+.RE
+.PP
+<new\-branch>
+.RS 4
+新ブランチの名前
+.RE
+.PP
+<start\-point>
+.RS 4
+新ブランチの開始点。
+\fB<start\-point>\fR
+を指定すると、HEADが現在指し示している場所以外の履歴内の場所に基づいてブランチを作成できます。(または、
+\fB\-\-detach\fR
+の場合、他の場所から検査してデタッチすることができます。)
+.sp
+\fB@{\-N}\fR
+構文を使用して、「git switch」または「git checkout」操作を使用して切り替えられた最後からN番目のブランチ/コミットを参照できます。
+\fB@{\-1}\fR
+と同義の
+\fB\-\fR
+を指定することもできます。これは、2つのブランチをすばやく切り替えたり、誤って切り替えたブランチを元に戻したりするためによく使用されます。
+.sp
+特別な場合として、マージベースが1つしかない場合は、
+\fBA\fR
+と
+\fBB\fR
+のマージベースのショートカットとして
+\fBA\&.\&.\&.B\fR
+を使用できます。
+\fBA\fR
+と
+\fBB\fR
+のうち片方を省略できます。その場合、省略した方はデフォルトで
+\fBHEAD\fR
+になります。
+.RE
+.PP
+\fB\-c <new\-branch>\fR, \fB\-\-create <new\-branch>\fR
+.RS 4
+ブランチに切り替える前に、
+\fB<start\-point>\fR
+で始まる
+\fB<new\-branch>\fR
+という名前の新しいブランチを作成します。これは以下に代わる便利なショートカットです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch <new\-branch>
+$ git switch <new\-branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fB\-C <new\-branch>\fR, \fB\-\-force\-create <new\-branch>\fR
+.RS 4
+\fB\-\-create`と似ていますが、 `<new\-branch>\fR
+がすでに存在する場合、
+\fB<start\-point>\fR
+にリセットされる点が異なります。これは以下に代わる便利なショートカットです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch \-f <new\-branch>
+$ git switch <new\-branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fB\-d\fR, \fB\-\-detach\fR
+.RS 4
+検査と破棄可能な実験のためのコミットに切り替えます。詳細については、
+\fBgit-checkout\fR(1)
+の「DETACHED HEAD」セクションを参照してください。
+.RE
+.PP
+\fB\-\-guess\fR, \fB\-\-no\-guess\fR
+.RS 4
+\fB<branch>\fR
+が見つからないが、名前が一致するリモートが正確に1つだけあり(\fB<remote>\fR
+と呼びます)、それに追跡ブランチが存在する場合は、以下と同等のものとして扱います。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch \-c <branch> \-\-track <remote>/<branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ブランチが複数のリモートに存在し、そのうちの1つが
+\fBcheckout\&.defaultRemote\fR
+構成変数によって名前が付けられている場合、
+\fB<branch>\fR
+がすべてのリモートで一意でなくても、曖昧さ回避の目的でそのブランチを使用します。例えば、
+\fB<branch>\fR
+があいまいであるが、
+\fBorigin\fR
+リモートに存在する場合、そこからリモートブランチを常にチェックアウトするには、これを
+\fBcheckout\&.defaultRemote=origin\fR
+と設定します。
+\fBgit-config\fR(1)
+の
+\fBcheckout\&.defaultRemote\fR
+も参照してください。
+.sp
+\fB\-\-guess\fR
+がデフォルトの動作です。無効にするには、
+\fB\-\-no\-guess\fR
+を使用します。
+.sp
+デフォルトの動作は、
+\fBcheckout\&.guess\fR
+構成変数で設定できます。
+.RE
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+\fB\-\-discard\-changes\fR
+のエイリアス。
+.RE
+.PP
+\fB\-\-discard\-changes\fR
+.RS 4
+インデックスまたは作業ツリーが
+\fBHEAD\fR
+と異なっていても続行します。インデックスと作業ツリーの両方が、切り替え先(switching target)に一致するように復元されます。
+\fB\-\-recurse\-submodules\fR
+が指定されている場合、サブモジュールの内容も切り替え先に一致するように復元されます。これは、ローカルの変更を破棄するために使用されます。
+.RE
+.PP
+\fB\-m\fR, \fB\-\-merge\fR
+.RS 4
+現在のブランチと切り替え先のブランチの間で異なる1つ以上のファイルにローカルの変更がある場合、コマンドは、変更をコンテキストに保持するためにブランチの切り替えを拒否します。 ただし、このオプションを使用すると、現在のブランチ、作業ツリーの内容、および新しいブランチの間の3方向のマージが実行され、新しいブランチに移動します。
+.sp
+マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになり、競合を解決し、解決されたパスを
+\fBgit add\fR
+(またはマージによってパスが削除される場合は
+\fBgit rm\fR)でマークする必要があります。
+.RE
+.PP
+\fB\-\-conflict=<style>\fR
+.RS 4
+上記の
+\fB\-\-merge\fR
+オプションと同じですが、競合するハンクの表示方法を変更し、
+\fBmerge\&.conflictStyle\fR
+構成変数をオーバーライドします。 可能な値は、\fBmerge\fR(デフォルト)と
+\fBdiff3\fR
+と
+\fBzdiff3\fR
+です。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+静かにします。フィードバックメッセージを抑制します。
+.RE
+.PP
+\fB\-\-progress\fR, \fB\-\-no\-progress\fR
+.RS 4
+\fB\-\-quiet\fR
+が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。このフラグは、
+\fB\-\-quiet\fR
+に関係なく、端末に接続されていない場合でも進行状況のレポートを有効にします。
+.RE
+.PP
+\fB\-t\fR, \fB\-\-track [direct|inherit]\fR
+.RS 4
+新しいブランチを作成するときは、 "upstream" 構成をセットアップします。
+\fB\-c\fR
+が暗黙に指定されたものと見なします。詳細については、
+\fBgit-branch\fR(1)
+の
+\fB\-\-track\fR
+を参照してください。
+.sp
+\fB\-c\fR
+オプションが指定されていない場合、新しいブランチの名前は、対応するリモート用に構成されたrefspecのローカル部分を調べ、次に、最初の部分を「*」まで削除することにより、リモート追跡ブランチから取得されます。これは、
+\fBorigin/hack\fR
+(または
+\fBremotes/origin/hack\fR
+あるいは
+\fBrefs/remotes/origin/hack\fR)から分岐するときに、ローカルブランチとして
+\fBhack\fR
+を使用するように指示します。指定された名前にスラッシュ(/)がない場合、または上記の推測の結果が空の名前になる場合、推測は中止されます。このような場合は、
+\fB\-c\fR
+を使用して明示的に名前を付けることができます。
+.RE
+.PP
+\fB\-\-no\-track\fR
+.RS 4
+\fBbranch\&.autoSetupMerge\fR
+構成変数がtrueであっても、 "upstream" 構成をセットアップしない。
+.RE
+.PP
+\fB\-\-orphan <new\-branch>\fR
+.RS 4
+\fB<new\-branch>\fR
+という名前の新しい 「孤立した」(orphan)ブランチを作成します。追跡中のファイルはすべて削除されます。
+.RE
+.PP
+\fB\-\-ignore\-other\-worktrees\fR
+.RS 4
+\fBgit switch\fR
+は、必要なrefが別のワークツリーによってすでにチェックアウトされている場合に拒否します。このオプションを使用すると、とにかくrefをチェックアウトできます。つまり、refは複数のワークツリーで保持できます。
+.RE
+.PP
+\fB\-\-recurse\-submodules\fR, \fB\-\-no\-recurse\-submodules\fR
+.RS 4
+\fB\-\-recurse\-submodules\fR
+を使用すると、スーパープロジェクト(親プロジェクト)に記録されたコミットに従って、すべてのアクティブなサブモジュールのコンテンツが更新されます。何も使用されていない(または
+\fB\-\-no\-recurse\-submodules\fR)場合、サブモジュールの作業ツリーは更新されません。
+\fBgit-submodule\fR(1)
+と同様に、これはサブモジュールの
+\fBHEAD\fR
+を切り離します(detach)。
+.RE
+.SH "EXAMPLES"
+.sp
+以下のコマンドは "master" ブランチに切り替えます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+間違ったブランチで作業した後、正しいブランチへの切り替えは以下を使用して行われます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch mytopic
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ただし、「間違った」ブランチと正しい「mytopic」ブランチは、ローカルで変更したファイルが異なる場合があります。その場合、上記のswitchは以下のように失敗します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch mytopic
+error: You have local changes to \*(Aqfrotz\*(Aq; not switching branches\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+コマンドに \fB\-m\fR フラグを指定すると、3方向のマージを試行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch \-m mytopic
+Auto\-merging frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この3者間マージの後、ローカルの変更はインデックスファイルに登録されないため、 \fBgit diff\fR は、新しいブランチの先端以降に行った変更を示します。
+.sp
+mytopicに切り替える前に前のブランチ(つまり、 "master" ブランチ)に戻すには:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch \-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+どのコミットからでも新しいブランチを成長させることができます。たとえば、 "HEAD~3" に切り替えて、ブランチ "fixup" を作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch \-c fixup HEAD~3
+Switched to a new branch \*(Aqfixup\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+同じ名前のリモートブランチから新しいブランチを開始する場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch new\-topic
+Branch \*(Aqnew\-topic\*(Aq set up to track remote branch \*(Aqnew\-topic\*(Aq from \*(Aqorigin\*(Aq
+Switched to a new branch \*(Aqnew\-topic\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+新しいブランチを作成せずに、一時的な検査または実験のためにコミット \fBHEAD~3\fR をチェックアウトするには:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch \-\-detach HEAD~3
+HEAD is now at 9fc9555312 Merge branch \*(Aqcc/shared\-index\-permbits\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+一時的な検査または実験のために行ったことに維持する価値があることが判明した場合は、(切り替えることなく)、いつでも新しい名前を作成できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch \-c good\-surprises
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+checkout\&.defaultRemote
+.RS 4
+\fBgit checkout <something>\fR
+または
+\fBgit switch <something>\fR
+を実行し、リモートが1つしかない場合、
+\fBorigin/<something>\fR
+のチェックアウトと追跡に暗黙的にフォールバックする可能性があります。
+\fB<something>\fR
+参照を持つリモートが複数あるとすぐに動作しなくなります。 この設定により、曖昧性解消に関して常に勝利させる優先リモートの名前を設定できます。 典型的なユースケースは、これを
+\fBorigin\fR
+に設定することです。
+.sp
+現在、これは
+\fBgit-switch\fR(1)
+と
+\fBgit-checkout\fR(1)
+によって、\fBgit checkout <something>\fR
+や
+\fBgit switch <something>\fR
+が別のリモート上の
+\fB<something>\fR
+ブランチをチェックアウトするときに使われています。また
+\fBgit-worktree\fR(1)
+は
+\fBgit worktree add\fR
+がリモートブランチを参照しているときに使われています。 この設定は、将来、他のチェックアウトのようなコマンドまたは機能に使用される可能性があります。
+.RE
+.PP
+checkout\&.guess
+.RS 4
+\fBgit checkout\fR
+と
+\fBgit switch\fR
+の、
+\fB\-\-guess\fR
+または
+\fB\-\-no\-guess\fR
+オプションのデフォルト値を提供します。
+\fBgit-switch\fR(1)
+および
+\fBgit-checkout\fR(1)
+を参照してください。
+.RE
+.PP
+checkout\&.workers
+.RS 4
+作業ツリーを更新するときに使用する並列ワーカーの数。デフォルトは1、つまり順次実行です。 1未満の値に設定すると、Gitは使用可能な論理コアの数と同じ数のワーカーを使用します。 この設定と
+\fBcheckout\&.thresholdForParallelism\fR
+は、チェックアウトを実行するすべてのコマンドに影響します。 例えば、 checkout, clone, reset, sparse\-checkout, などです。
+.sp
+注意: 並列チェックアウトは通常、SSDまたはNFS上にあるリポジトリのパフォーマンスを向上させます。 回転するディスクやコアの数が少ないマシン上のリポジトリの場合、デフォルトのシーケンシャルチェックアウトの方がパフォーマンスが向上することがよくあります。 リポジトリのサイズと圧縮レベルも、並列バージョンのパフォーマンスに影響を与える可能性があります。
+.RE
+.PP
+checkout\&.thresholdForParallelism
+.RS 4
+少数のファイルで並列チェックアウトを実行する場合、サブプロセスの生成とプロセス間通信のコストが並列化のメリットを上回る可能性があります。 この設定により、並列チェックアウトを試行する必要のあるファイルの最小数を定義できます。 デフォルトは100です。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-checkout\fR(1), \fBgit-branch\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

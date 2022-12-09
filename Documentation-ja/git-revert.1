@@ -1,0 +1,209 @@
+'\" t
+.\"     Title: git-revert
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-REVERT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-revert \- いくつかの既存のコミットを元に戻します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit revert\fR [\-\-[no\-]edit] [\-n] [\-m parent\-number] [\-s] [\-S[<keyid>]] <commit>\&...
+\fIgit revert\fR (\-\-continue | \-\-skip | \-\-abort | \-\-quit)
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+1つ以上の既存のコミットが与えられた場合、関連するパッチによって導入された変更を元に戻し、それらを記録するいくつかの新しいコミットを記録します。これには、作業ツリーがクリーンである必要があります(HEADコミットからの変更はありません)。
+.sp
+注意: \fBgit revert\fR は、いくつかの新しいコミットを記録して、以前のコミットの効果を元に戻すために使用されます(多くの場合、障害のあるコミットのみ)。あなたが作業ディレクトリ内のコミットされていないすべての変更を破棄したい場合は、 \fBgit-reset\fR(1) 、特に \fB\-\-hard\fR オプションについて参照すべきです。あなたが別のコミットから特定のファイルを抽出したい場合は、 \fBgit-restore\fR(1) 、特に \fB\-\-source\fR オプションについて参照すべきです。これらは作業ディレクトリ内のコミットされていない変更を破棄するため、これらの選択肢には注意してください。
+.sp
+3つのコマンドの違いについては、 \fBgit\fR(1) の「Reset, restore and revert」を参照してください。
+.SH "OPTIONS"
+.PP
+<commit>\&...
+.RS 4
+元に戻すためのコミットを指定。コミット名を綴る方法のより完全なリストについては、
+\fBgitrevisions\fR(7)
+を参照してください。コミットのセットを指定することもできますが、デフォルトではトラバーサルは実行されません。
+\fBgit-rev-list\fR(1)
+と、その
+\fB\-\-no\-walk\fR
+オプションを参照してください。
+.RE
+.PP
+\fB\-e\fR, \fB\-\-edit\fR
+.RS 4
+このオプションを使用すると、
+\fBgit revert\fR
+は「戻し」(the revert)をコミットする前にあなたにコミットメッセージを編集させます。これは、端末からコマンドを実行する場合のデフォルトです。
+.RE
+.PP
+\fB\-m parent\-number\fR, \fB\-\-mainline parent\-number\fR
+.RS 4
+通常、マージのどの筋を本線(mainline)と見なすかわからないため、マージを元に戻すことはできません。 このオプションは、本線とする親番号(1から始まる)を指定し、指定された親を基準にして変更を元に戻すことができます。
+.sp
+マージコミットを戻す(revert)と、そのマージによってもたらされたツリーの変更が不要になることが宣言されます。その結果、その後に行われるマージでは、先に戻されたマージの先祖ではないコミットによってもたらされたツリーの変更のみが適用されます。これはあなたの望むところかもしれませんし、そうでないかもしれません。
+.sp
+詳細については、
+\m[blue]\fBrevert\-a\-faulty\-merge How\-To\fR\m[]\&\s-2\u[1]\d\s+2
+(誤ったマージの取り消し方法)を参照してください。
+.RE
+.PP
+\fB\-\-no\-edit\fR
+.RS 4
+このオプションを使うと、
+\fIgit revert\fR
+はコミットメッセージエディタを起動しません。
+.RE
+.PP
+\fB\-\-cleanup=<mode>\fR
+.RS 4
+このオプションは、コミットメッセージがコミット機構に渡される前にどのようにクリーンアップされるかを決定します。詳細については、\fBgit-commit\fR(1)
+を参照してください。 特に、競合が発生した場合、 <mode> に値
+\fBscissors\fR
+が指定されていると、渡される前に、MERGE_MSG に切り取り線が追加されます。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-no\-commit\fR
+.RS 4
+通常、コマンドは、どのコミットが元に戻されたかを示すコミットログメッセージを含むいくつかのコミットを自動的に作成します。このフラグは、名前付きコミットを作業ツリーとインデックスに戻すために必要な変更を適用(apply)しますが、コミットは行いません。さらに、このオプションを使用する場合、インデックスはHEADコミットと一致する必要はありません。 revertは、あなたのインデックスの開始状態に対して行われます。
+.sp
+これは、複数のコミットの効果を連続してインデックスにrevertする場合に役立ちます。
+.RE
+.PP
+\fB\-S[<keyid>]\fR, \fB\-\-gpg\-sign[=<keyid>]\fR, \fB\-\-no\-gpg\-sign\fR
+.RS 4
+GPG署名コミット。
+\fBkeyid\fR
+引数はオプションであり、デフォルトはコミッターIDになります。指定する場合は、スペースなしでオプションに指定する必要があります。
+\fB\-\-no\-gpg\-sign\fR
+は、
+\fBcommit\&.gpgSign\fR
+構成変数と、 それより前で指定された
+\fB\-\-gpg\-sign\fR
+の両方を打ち消すのに役立ちます。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-signoff\fR
+.RS 4
+コミットメッセージの最後に
+\fBSigned\-off\-by\fR
+トレーラーを追加します。 詳細については、
+\fBgit-commit\fR(1)
+の signoff オプションを参照してください。
+.RE
+.PP
+\fB\-\-strategy=<strategy>\fR
+.RS 4
+指定されたマージ戦略を使用します。指定できるのは一度だけです。詳細については、
+\fBgit-merge\fR(1)
+の「MERGE STRATEGIES」セクションを参照してください。
+.RE
+.PP
+\fB\-X<option>\fR, \fB\-\-strategy\-option=<option>\fR
+.RS 4
+マージ戦略固有のオプションをマージ戦略に渡します。詳細については、
+\fBgit-merge\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-rerere\-autoupdate\fR, \fB\-\-no\-rerere\-autoupdate\fR
+.RS 4
+rerere メカニズムが現在の競合で記録された解決を再利用して作業ツリー内のファイルを更新した後、解決の結果でインデックスも更新できるようにします。
+\fB\-\-no\-rerere\-autoupdate\fR
+は、別の
+\fBgit add\fR
+で結果をインデックスにコミットする前に、「rerere」が行ったことを再確認し、潜在的な間違いマージ(mismerges)を捉える良い方法です。
+.RE
+.PP
+\fB\-\-reference\fR
+.RS 4
+ログ・メッセージの本文を "This reverts <full object name of the commit being reverted>\&." で始める代わりに、
+\fB\-\-pretty=reference\fR
+形式を使用してコミットを参照します(\fBgit-log\fR(1)
+参照)。
+\fBrevert\&.reference\fR
+構成変数を使用して、このオプションをデフォルトで有効にすることができます。
+.RE
+.SH "SEQUENCER SUBCOMMANDS"
+.PP
+\fB\-\-continue\fR
+.RS 4
+\fB\&.git/sequencer\fR
+の情報を使用して、進行中の操作の続行を行います。失敗したcherry\-pickまたはrevertの競合を解決した後、続行するために使用できます。
+.RE
+.PP
+\fB\-\-skip\fR
+.RS 4
+現在のコミットをスキップして、残りのシーケンスを続行します。
+.RE
+.PP
+\fB\-\-quit\fR
+.RS 4
+進行中の今回の操作を忘れてください。チェリーピックまたはrevertに失敗した後、シーケンサーの状態をクリアするために使用できます。
+.RE
+.PP
+\fB\-\-abort\fR
+.RS 4
+操作をキャンセルして、シーケンス操作前の状態に戻ります。
+.RE
+.SH "EXAMPLES"
+.PP
+\fBgit revert HEAD~3\fR
+.RS 4
+HEADの最後から4番目のコミットで指定された変更を元に戻し、元に戻した変更を使用して新しいコミットを作成します。
+.RE
+.PP
+\fBgit revert \-n master~5\&.\&.master~2\fR
+.RS 4
+コミットによって行われた変更を、masterの最後から5番目のコミット(それ自身を含む)から、masterの最後から3番目のコミット(それ自身を含む)に戻しますが、元に戻した変更でコミットを作成しないでください。元に戻すと、作業ツリーとインデックスのみが変更されます。
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+revert\&.reference
+.RS 4
+この変数を true に設定すると、
+\fBgit revert\fR
+は
+\fB\-\-reference\fR
+オプションが指定されているかのように振る舞います。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-cherry-pick\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+revert-a-faulty-merge How-To
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/howto/revert-a-faulty-merge.html
+.RE

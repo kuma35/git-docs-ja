@@ -1,0 +1,94 @@
+'\" t
+.\"     Title: gitnamespaces
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITNAMESPACES" "7" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitnamespaces \- Git名前空間
+.SH "SYNOPSIS"
+.sp
+.nf
+GIT_NAMESPACE=<namespace> \fIgit upload\-pack\fR
+GIT_NAMESPACE=<namespace> \fIgit receive\-pack\fR
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+Gitは、単一のリポジトリのrefを複数の名前空間に分割することをサポートしています。各名前空間には、独自のブランチ、タグ、およびHEADがあります。Gitは、オブジェクトストアを共有し、すべてのrefを \fBgit-gc\fR(1) などの操作に公開しながら、プル元とプッシュ先の独立したリポジトリとして各名前空間を公開できます。
+.sp
+複数のリポジトリを単一のリポジトリの名前空間として保存すると、同じソースの複数のブランチを保存する場合など、同じオブジェクトの重複コピーを保存することを回避できます。代替メカニズムは、重複を回避するための同様のサポートを提供しますが、名前空間が行うのに対し、代替は、継続的なメンテナンスなしでリポジトリに追加された新しいオブジェクト間の重複を防止しません。
+.sp
+名前空間を指定するには、 \fBGIT_NAMESPACE\fR 環境変数に名前空間を設定します。 ref名前空間ごとに、Gitは対応するrefを \fBrefs/namespaces/\fR の下のディレクトリに保存します。 たとえば、 \fBGIT_NAMESPACE=foo\fR はrefを \fBrefs/namespaces/foo/\fR の下に保存します。 \fBgit\fR(1) の \fB\-\-namespace\fR オプションを使用して名前空間を指定することもできます。
+.sp
+注意: \fB/\fR を含む名前空間は、名前空間の階層に拡張されることに注意してください。たとえば、 \fBGIT_NAMESPACE=foo/bar\fR はrefを \fBrefs/namespaces/foo/refs/namespaces/bar/\fR の下に保存します。 これにより、 \fBGIT_NAMESPACE\fR のパスが階層的に動作するため、 \fBGIT_NAMESPACE=foo/bar\fR でクローンを作成すると、 \fBGIT_NAMESPACE=foo\fR でクローンを作成してそのリポジトリから \fBGIT_NAMESPACE=bar\fR でクローンを作成するのと同じ結果が得られます。また、 \fBfoo/refs/heads/\fR などの奇妙な名前空間パスとのあいまいさを回避します。そうしないと、 \fBrefs\fR ディレクトリ内で ディレクトリ/ファイル の競合が発生する可能性があります。
+.sp
+\fBgit-upload-pack\fR(1) と \fBgit-receive-pack\fR(1) は、 \fBGIT_NAMESPACE\fR で指定されているようにrefの名前を書き換えます。 git\-upload\-pack と git\-receive\-pack は、指定された名前空間外のすべてのrefを無視します。
+.sp
+スマートHTTPサーバー \fBgit-http-backend\fR(1) は、 GIT_NAMESPACE をバックエンドプログラムに渡します。リポジトリの名前空間をリポジトリとして公開するための設定例については、 \fBgit-http-backend\fR(1) を参照してください。
+.sp
+簡単なローカルテストには、あなたは \fBgit-remote-ext\fR(1) を使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git clone ext::\*(Aqgit \-\-namespace=foo %s /tmp/prefixed\&.git\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SECURITY"
+.sp
+フェッチおよびプッシュプロトコルは、共有することを意図していない一方の側が他方のリポジトリからデータを盗むのを防ぐようには設計されていません。悪意のある者から保護する必要のあるプライベートデータがある場合、最善のオプションはそれを別のリポジトリに保存することです。これは、クライアントとサーバーの両方に適用されます。特に、サーバー上の名前空間は、読み取りアクセス制御には効果的ではありません。リポジトリ全体への読み取りアクセスで信頼できるクライアントにのみ、名前空間への読み取りアクセスを許可する必要があります。
+.sp
+既知の攻撃ベクトル(attack vectors)は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+被害者は、明示的に共有することを意図していないオブジェクトのIDをアドバタイズする "have" 行を送信しますが、他にもIDを持っている者が居る場合は、転送を最適化するために使用できます。攻撃者はオブジェクトID Xを選択して盗み、refをXに送信しますが、被害者はすでにXのコンテンツを持っているため、Xのコンテンツを送信する必要はありません。 これで、被害者は攻撃者がXを持っていると信じ、Xのコンテンツを後で攻撃者に送り返します。 (この攻撃は、クライアントがアクセスできる名前空間にXへのrefを作成してフェッチすることにより、クライアントがサーバー上で実行するのが最も簡単です。サーバーがクライアント上で実行する最も可能性の高い方法は、Xをパブリックブランチにマージし、ユーザーがこのブランチで追加の作業を行い、マージに気付かずにサーバーにプッシュバックすることを期待します。)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+#1 と同様に、攻撃者は盗むオブジェクトID Xを選択します。被害者は、攻撃者がすでに持っているオブジェクトYを送信し、攻撃者はYではなくXを持っていると誤って主張するため、被害者はYをXに対するデルタとして送信します。デルタは、攻撃者にYに類似したXの領域を明らかにします。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

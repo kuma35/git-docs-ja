@@ -1,0 +1,185 @@
+'\" t
+.\"     Title: git-index-pack
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-INDEX\-PACK" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-index-pack \- 既存のパックされたアーカイブのパックインデックスファイル構築
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit index\-pack\fR [\-v] [\-o <index\-file>] [\-\-[no\-]rev\-index] <pack\-file>
+\fIgit index\-pack\fR \-\-stdin [\-\-fix\-thin] [\-\-keep] [\-v] [\-o <index\-file>]
+                  [\-\-[no\-]rev\-index] [<pack\-file>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+指定されたファイルからパックされたアーカイブ(\&.pack)を読み取り、そのためのパックインデックスファイル(\&.idx)を作成します。オプションで、指定されたパックの逆インデックス(reverse\-index)(\&.rev)を書き込みます。パックされたアーカイブは、パックインデックスとともに、Gitリポジトリの objects/pack/ ディレクトリに配置できます。
+.SH "OPTIONS"
+.PP
+\fB\-v\fR
+.RS 4
+進捗状況など、何が起こっているかについて詳しく説明します。
+.RE
+.PP
+\fB\-o <index\-file>\fR
+.RS 4
+生成されたパックインデックスを指定のファイルに書き込みます。このオプションがない場合、パックインデックスファイルの名前は、 \&.pack を \&.idx に置き換えることにより、パックされたアーカイブファイルの名前から作成されます(パックされたアーカイブの名前が \&.pack で終わらない場合、プログラムは失敗します)。
+.RE
+.PP
+\fB\-\-[no\-]rev\-index\fR
+.RS 4
+このフラグが指定されている場合、指定されたパックに対応する逆インデックス(reverse index)(\fB\&.rev\fR
+ファイル)を生成します。
+\fB\-\-verify\fR
+が指定されている場合は、既存の逆インデックスが正しいことを確認し保証(ensure)します。
+\fBpack\&.writeReverseIndex\fR
+よりも優先されます。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+このフラグが指定されると、コマンドラインの代わりにパックがstdinから読み取られ、コピーが <pack\-file> に書き込まれます。 <pack\-file> が指定されていない場合、パックは現在のGitリポジトリの objects/pack/ ディレクトリに書き込まれ、デフォルト名はパックの内容から決定されます。 <pack\-file> が指定されていない場合は、
+\fB\-\-keep\fR
+を使用して、このプロセスと
+\fBgit repack\fR
+の間の競合状態を防ぐことを検討してください。
+.RE
+.PP
+\fB\-\-fix\-thin\fR
+.RS 4
+デルタ化オブジェクトが基づいている除外されたオブジェクトをパックに追加することにより、
+\fBgit pack\-objects \-\-thin\fR
+によって生成された「薄い」パックを修正します(詳細は
+\fBgit-pack-objects\fR(1)
+を参照)。 このオプションは、\fB\-\-stdin\fR
+と組み合わせた場合にのみ意味があります。
+.RE
+.PP
+\fB\-\-keep\fR
+.RS 4
+インデックスを最終的な宛先に移動する前に、関連するパックファイル用に空の \&.keep ファイルを作成します。このオプションは通常、
+\fB\-\-stdin\fR
+と一緒に指定する必要があります。これは、パックに含まれるオブジェクトを使用するようにrefを更新する前に、
+\fBgit repack\fR
+プロセスが新しく構築されたパックとインデックスを同時に削除しないようにするためです。
+.RE
+.PP
+\fB\-\-keep=<msg>\fR
+.RS 4
+\fB\-\-keep\fR
+のように、インデックスを最終的な宛先に移動する前に \&.keep ファイルを作成しますが、空のファイルを作成するのではなく、 \&.keep ファイル内で <msg> の後にLFを配置します。 後ですべての \&.keep ファイル内で <msg> メッセージを検索して、使い古されたものを見つけることができます。
+.RE
+.PP
+\fB\-\-index\-version=<version>[,<offset>]\fR
+.RS 4
+これは、テストスイートでのみ使用することを目的としています。 生成されたパックインデックスのバージョンを強制し、指定されたオフセットにあるオブジェクトに64ビットインデックスエントリを強制することができます。
+.RE
+.PP
+\fB\-\-strict\fR
+.RS 4
+パックに壊れたオブジェクトやリンクが含まれている場合は、終了します(die)。
+.RE
+.PP
+\fB\-\-progress\-title\fR
+.RS 4
+内部使用のみ。
+.sp
+プログレスバーのタイトルを設定します。 タイトルはデフォルトで「Receiving objects」(オブジェクトの受信)であり、
+\fB\-\-stdin\fR
+が指定されている場合は「Indexing objects」(オブジェクトのインデックス作成)です。
+.RE
+.PP
+\fB\-\-check\-self\-contained\-and\-connected\fR
+.RS 4
+パックに壊れたリンクが含まれている場合は終了(die)します。内部使用のみ。
+.RE
+.PP
+\fB\-\-fsck\-objects\fR
+.RS 4
+内部使用のみ。
+.sp
+パックに壊れたオブジェクトが含まれている場合は終了(die)します。 存在しない \&.gitmodulesblob を指すツリーがパックに含まれている場合、 pack/idx ファイルの名前に含まれるハッシュの後に、(呼び出し元が確認できるように)そのブロブのハッシュを出力します(「Notes」参照)。
+.RE
+.PP
+\fB\-\-threads=<n>\fR
+.RS 4
+デルタを解決するときに生成するスレッドの数を指定します。これには、インデックスパックを pthreads でコンパイルする必要があります。そうでない場合、このオプションは警告とともに無視されます。これは、マルチプロセッサマシンでのパッキング時間を短縮することを目的としています。ただし、デルタ検索ウィンドウに必要なメモリ量は、スレッド数で乗算されます。0を指定すると、GitはCPUの数を自動検出し、最大3つのスレッドを使用します。
+.RE
+.PP
+\fB\-\-max\-input\-size=<size>\fR
+.RS 4
+パックが <size> を超える場合は、終了(die)します。
+.RE
+.PP
+\fB\-\-object\-format=<hash\-algorithm>\fR
+.RS 4
+パックに指定するオブジェクト形式(ハッシュアルゴリズム)を指定します。有効な値は
+\fBsha1\fR
+と
+\fBsha256\fR
+(有効な場合) です。デフォルトは、(\fBextensions\&.objectFormat\fR
+で設定する、)現在のリポジトリのアルゴリズム、または値が設定されていないかリポジトリの外部にある場合は
+\fBsha1\fR
+です。
+.sp
+このオプションは
+\fB\-\-stdin\fR
+オプションと一緒に使用することはできません。
+.sp
+このオプションは実験的なものです！ SHA\-256のサポートは実験的なものであり、まだ初期段階です。 SHA\-256リポジトリは、通常、「通常の」SHA\-1リポジトリと作業を共有できません。 たとえば、SHA\-256リポジトリに関連するGit内部ファイル形式は、下位互換性のない方法で変更される可能性があると想定する必要があります。テスト目的でのみ
+\fB\-\-object\-format=sha256\fR
+を使用してください。
+.RE
+.PP
+\fB\-\-promisor[=<message>]\fR
+.RS 4
+pack\-index をコミットする前に、このパックの
+\fB\&.promisor\fR
+ファイルを作成します。 パックが完全に書き込まれるまでパックの名前は最終的ではないため、
+\fB\-\-fix\-thin\fR
+を使用して プロミサー・パック(promisor pack)を書き込む場合に特に役立ちます。
+\fB<message>\fR
+が指定されている場合、その内容は後で参照できるように
+\fB\&.promisor\fR
+ファイルに書き込まれます。 詳細については、
+\m[blue]\fBpartial clone\fR\m[]\&\s-2\u[1]\d\s+2
+を参照してください。
+.RE
+.SH "NOTES"
+.sp
+一旦インデックスが作成されると、 pack/idx ファイルの名前に含まれるハッシュがstdoutに出力されます。 \fB\-\-stdin\fR も使用された場合、これには \fBpack\et\fR 、または新しい \fB\&.keep\fR ファイルが正常に作成された場合は \fBkeep\et\fR の、どちらかのプレフィックスが付きます。 これは、 上記 \fBgit repack\fR との競合を防ぐためにロックとして使用されている keep ファイルを削除するのに役立ちます。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+partial clone
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/technical/partial-clone.html
+.RE

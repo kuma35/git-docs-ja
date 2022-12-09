@@ -1,0 +1,176 @@
+'\" t
+.\"     Title: git-cvsexportcommit
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CVSEXPORTCOMMIT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-cvsexportcommit \- 単一のコミットをCVSチェックアウトにエクスポートします
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit cvsexportcommit\fR [\-h] [\-u] [\-v] [\-c] [\-P] [\-p] [\-a] [\-d <cvsroot>]
+        [\-w <cvs\-workdir>] [\-W] [\-f] [\-m <msgprefix>] [<parent\-commit>] <commit\-id>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+コミットをGitからCVSチェックアウトにエクスポートし、GitリポジトリからCVSリポジトリへのパッチのマージを容易にします。
+.sp
+\fB\-w\fR スイッチを使用してCVSチェックアウトの名前を指定するか、CVS作業コピーのルートから実行します。後者の場合、GIT_DIRを定義する必要があります。以下の例を参照してください。
+.sp
+安全寄りに最大限振って、CVSチェックアウトでファイルが変更されておらず、最新であることを確認したら、デフォルトでは自動コミットしません。
+.sp
+バイナリファイルに影響するファイルの追加、削除、およびコミットをサポートします。
+.sp
+コミットがマージコミットの場合は、あなたは \fBgit cvsexportcommit\fR にchangesetの対象となる親を指定する必要があります。
+.SH "OPTIONS"
+.PP
+\fB\-c\fR
+.RS 4
+パッチが正常に適用された場合、自動的にコミットします。ハンクが適用されない場合、またはその他の問題が発生した場合、コミットされません。
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+パッチを適用するときは、pedantic(衒学的)(paranoid;病的なほど疑り深い)にする。
+\fB\-\-fuzz=0\fR
+でpatchを呼び出します。
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+著者情報を追加します。作者行と(作成者と異なる場合)コミッターをメッセージに追加します。
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+使用する代替CVSROOTを設定します。これは、
+\fBCVS \-d\fR
+パラメーターに対応します。 非対称的な方法でCVSを使用する場合を除いて、通常、ユーザーはこれを設定することは無いと思います。
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+ファイルが最新でない場合でも、強制的にマージします。
+.RE
+.PP
+\fB\-P\fR
+.RS 4
+直接の親でなくても、親を強制的にコミットします。
+.RE
+.PP
+\fB\-m\fR
+.RS 4
+コミットメッセージの前に、指定のプレフィックスを付けます。パッチシリーズなどに便利です。
+.RE
+.PP
+\fB\-u\fR
+.RS 4
+エクスポートを試みる前に、影響を受けるファイルをCVSリポジトリから更新してください。
+.RE
+.PP
+\fB\-k\fR
+.RS 4
+パッチを適用する前に、CVSチェックアウトの動作でCVSキーワード拡張を逆にします。 (例: $Revision: 1\&.2\&.3\&.4$ は $Revision$ になります)
+.RE
+.PP
+\fB\-w\fR
+.RS 4
+エクスポートに使用するCVSチェックアウトの場所を指定します。現在のディレクトリがGitリポジトリ内にある場合、このオプションでは、実行前にGIT_DIRを設定する必要はありません。 デフォルトは
+\fBcvsexportcommit\&.cvsdir\fR
+の値です。
+.RE
+.PP
+\fB\-W\fR
+.RS 4
+現在の作業ディレクトリがGitチェックアウトであるだけでなく、CVSチェックアウトでもあることをcvsexportcommitに伝えます。したがって、Gitは続行する前に作業ディレクトリを親コミットにリセットします。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+おしゃべりにします。
+.RE
+.SH "CONFIGURATION"
+.PP
+cvsexportcommit\&.cvsdir
+.RS 4
+エクスポートに使用するCVSチェックアウトのデフォルトの場所。
+.RE
+.SH "EXAMPLES"
+.PP
+1つのパッチをCVSにマージします
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ export GIT_DIR=~/project/\&.git
+$ cd ~/project_cvs_checkout
+$ git cvsexportcommit \-v <commit\-sha1>
+$ cvs commit \-F \&.msg <files>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+1つのパッチをCVSにマージします( \fB\-c\fR および \fB\-w\fR オプション)。作業ディレクトリはGitリポジトリ内にあります
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        $ git cvsexportcommit \-v \-c \-w ~/project_cvs_checkout <commit\-sha1>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+保留中のパッチをCVSに自動的にマージします \(em 自分が何をしているかを本当に知っている場合だけにしましょう。
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ export GIT_DIR=~/project/\&.git
+$ cd ~/project_cvs_checkout
+$ git cherry cvshead myhead | sed \-n \*(Aqs/^+ //p\*(Aq | xargs \-l1 git cvsexportcommit \-c \-p \-v
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

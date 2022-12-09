@@ -1,0 +1,353 @@
+'\" t
+.\"     Title: git-gc
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-GC" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-gc \- 不要なファイルをクリーンアップし、ローカルリポジトリを最適化する
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit gc\fR [\-\-aggressive] [\-\-auto] [\-\-quiet] [\-\-prune=<date> | \-\-no\-prune] [\-\-force] [\-\-keep\-largest\-pack]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+ファイルリビジョンの圧縮(ディスクスペースの削減とパフォーマンスの向上)または、「git add」の以前の呼び出しから作成された可能性のある到達不能オブジェクトの削除または、refのパッキングまたは、reflogの剪定(prune)または、メタデータまたは古い作業ツリーのrerere、など、現在のリポジトリ内で多数のハウスキーピングタスクを実行します。 commit\-graphなどの補助インデックスも更新される場合があります。
+.sp
+オブジェクトを作成する一般的な磁器コマンド操作を実行すると、最後のメンテナンス以降にリポジトリが大幅に拡張されているかどうかが確認され、拡張されている場合は、 \fBgit gc\fR が自動的に実行されます。この動作を無効にする方法については、以下の \fBgc\&.auto\fR を参照してください。
+.sp
+\fBgit gc\fR を手動で実行する必要があるのは、そのような磁器コマンドを定期的に実行せずにオブジェクトをリポジトリに追加する場合、1回限りのリポジトリ最適化を行う場合などです。最適ではない大量インポートをクリーンアップします。インポートの場合の詳細については、 \fBgit-fast-import\fR(1)の「PACKFILE OPTIMIZATION」セクションを参照してください。
+.SH "OPTIONS"
+.PP
+\fB\-\-aggressive\fR
+.RS 4
+通常、「git gc」は非常に高速に実行され、ディスクスペースの使用率とパフォーマンスは良好です。このオプションを使用すると、「git gc」はリポジトリをより積極的に最適化できますが、時間がかかります。この最適化の効果は割と持続性があります。詳細については、以下の「AGGRESSIVE」セクションを参照してください。
+.RE
+.PP
+\fB\-\-auto\fR
+.RS 4
+このオプションを使用すると、「git gc」はハウスキーピングが必要かどうかを確認します。 そうでない場合は、作業を実行せずに終了します。
+.sp
+このヒューリスティックな作業がどのように機能するかについては、以下の「CONFIGURATION」セクションの「gc\&.auto」オプションを参照してください。
+.sp
+\fBgc\&.auto\fR
+や
+\fBgc\&.autoPackLimit\fR
+などの構成オプションの制限を超えてハウスキーピングがトリガーされると、他のすべてのハウスキーピングタスク（rerere、working tree、reflogなど）も実行されます。
+.RE
+.PP
+\fB\-\-cruft\fR
+.RS 4
+到達不能なオブジェクトを期限切れにするときは、緩いオブジェクトとして保管するのではなく、クラフト・パック(cruft pack)に個別にパックします。
+.RE
+.PP
+\fB\-\-prune=<date>\fR
+.RS 4
+指定の日付より古いルーズオブジェクトを削除します(デフォルトは2週間前で、構成変数
+\fBgc\&.pruneExpire\fR
+で上書きできます)。
+\fB\-\-prune=now\fR
+は、日付に関係なく緩いオブジェクトを削除し、別のプロセスが同時にリポジトリに書き込んでいる場合に破損のリスクが高まります。以下の「NOTES」を参照してください。
+\fB\-\-prune\fR
+はデフォルトでオンになっています。
+.RE
+.PP
+\fB\-\-no\-prune\fR
+.RS 4
+任意のルーズオブジェクトを剪定しません。
+.RE
+.PP
+\fB\-\-quiet\fR
+.RS 4
+すべての進捗レポートを抑制します。
+.RE
+.PP
+\fB\-\-force\fR
+.RS 4
+このリポジトリで別の
+\fBgit gc\fR
+インスタンスが実行されている場合でも、
+\fBgit gc\fR
+を強制的に実行します。
+.RE
+.PP
+\fB\-\-keep\-largest\-pack\fR
+.RS 4
+最大のパックと
+\fB\&.keep\fR
+ファイルでマークされたパックを除くすべてのパックが1つのパックに統合されます。このオプションを使用すると、
+\fBgc\&.bigPackThreshold\fR
+は無視されます。
+.RE
+.SH "AGGRESSIVE"
+.sp
+\fB\-\-aggressive\fR オプションが指定されている場合、 \fBgit-repack\fR(1) は \fB\-f\fR フラグを指定して呼び出され、次に \fB\-\-no\-reuse\-delta\fR が \fBgit-pack-objects\fR(1) に渡されます。これにより、既存のデルタが破棄されて再計算され、再パッキングに多くの時間を費します。
+.sp
+この効果は割と長続きします。例えばパックとルーズオブジェクトが互いに合体すると、そのパック内の既存のデルタが再利用される可能性がありますが、代わりに新しいパックから次善のデルタを選択する場合もあります。
+.sp
+さらに、 \fB\-\-aggressive\fR を指定すると、 \fBgit-repack\fR(1) に渡される \fB\-\-depth\fR と \fB\-\-window\fR オプションが微調整されます。以下の \fBgc\&.aggressiveDepth\fR と \fBgc\&.aggressiveWindow\fR 設定を参照してください。より大きなウィンドウサイズを使用することで、より最適なデルタを見つける可能性が高くなります。
+.sp
+カスタマイズされたパフォーマンスベンチマークを実行せずに、特定のリポジトリでこのオプションを使用することはおそらく価値がありません。それにはもっと時間がかかり、結果として生じるスペース/デルタの最適化はそれだけの価値があるかもしれませんし、そうでないかもしれません。これをまったく使用しないことは、ほとんどのユーザーとそのリポジトリにとって正しいトレードオフです。
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+gc\&.aggressiveDepth
+.RS 4
+\fBgit gc \-\-aggressive\fR
+で使用されるデルタ圧縮アルゴリズムで使用される深さパラメーター。これはデフォルトで50に設定されています。これは
+\fB\-\-aggressive\fR
+が使用されていない場合の
+\fB\-\-depth\fR
+オプションのデフォルトです。
+.sp
+詳細については
+\fBgit-repack\fR(1)
+の
+\fB\-\-depth\fR
+オプションの文書を参照してください。
+.RE
+.PP
+gc\&.aggressiveWindow
+.RS 4
+\fBgit gc \-\-aggressive\fR
+で使用されるデルタ圧縮アルゴリズムで使用されるウィンドウサイズパラメータ。これはデフォルトで250に設定されています。これは、
+\fB\-\-window\fR
+のデフォルト値の10よりもはるかに積極的なウィンドウサイズです。
+.sp
+詳細については、
+\fBgit-repack\fR(1)
+の
+\fB\-\-window\fR
+オプションの文書を参照してください。
+.RE
+.PP
+gc\&.auto
+.RS 4
+リポジトリにおおよそ指定の値より多くのルーズオブジェクトがある場合、
+\fBgit gc \-\-auto\fR
+はそれらをパックします。一部の磁器コマンドは、このコマンドを使用して、軽量のガベージコレクションを時々実行します。デフォルト値は6700です。
+.sp
+これを0に設定すると、ルーズオブジェクトの数に基づく自動パッキングが無効にななります。また、他のヒューリスティックな
+\fBgit gc \-\-auto\fR
+が、
+\fBgc\&.autoPackLimit\fR
+などの作業があるかどうかを判断するためにこの値を使用します。
+.RE
+.PP
+gc\&.autoPackLimit
+.RS 4
+リポジトリに
+\fB* \&.keep\fR
+ファイルでマークされていないパックがこの設定値より多くある場合、
+\fBgit gc \-\-auto\fR
+はそれらを1つの大きなパックに統合します。デフォルト値は50です。これを0に設定すると、無効になります。
+\fBgc\&.auto\fR
+を0に設定すると、この設定も無効になります。
+.sp
+以下の
+\fBgc\&.bigPackThreshold\fR
+構成変数を参照してください。この設定を使用中は、自動パックの制限がどのように機能するかに影響します。
+.RE
+.PP
+gc\&.autoDetach
+.RS 4
+システムがサポートしている場合は
+\fBgit gc \-\-auto\fR
+は即座戻り、実行はバックグラウンドで行われます。デフォルトはtrueです。
+.RE
+.PP
+gc\&.bigPackThreshold
+.RS 4
+ゼロ以外の場合、
+\fBgit gc\fR
+の実行時に、この設定値より大きいすべてのパックが保持されます。これは
+\fB\-\-keep\-largest\-pack\fR
+と非常に似ていますが、最大のパックだけでなく、しきい値を満たす全てのパックが保持される点が異なります。デフォルトはゼロです。
+\fBk\fR
+、
+\fBm\fR
+、
+\fBg\fR
+の一般的な単位接尾辞がサポートされています。
+.sp
+注意: 保持されるパックの数が gc\&.autoPackLimit を超える場合、この構成変数は無視され、基本パックを除くすべてのパックが再パックされることに注意してください。再パック後、パックの数は gc\&.autoPackLimit を下回り、再び gc\&.bigPackThreshold が尊重されるでしょう。
+.sp
+\fBgit repack\fR
+がスムーズに実行されると推定されるメモリ量が利用できず、かつ、
+\fBgc\&.bigPackThreshold\fR
+が設定されていない場合、最大のパックも除外されます(これは、
+\fB\-\-keep\-largest\-pack\fR
+を指定して
+\fBgit gc\fR
+を実行するのと同じです)。
+.RE
+.PP
+gc\&.writeCommitGraph
+.RS 4
+trueの場合、
+\fBgit-gc\fR(1)
+が実行されると、 gcはcommit\-graphファイルを書き換えます。
+\fBgit gc \-\-auto\fR
+を使用する場合、ハウスキーピングが必要な場合はコミットグラフが更新されます。デフォルトはtrueです。詳細については
+\fBgit-commit-graph\fR(1)
+を参照してください。
+.RE
+.PP
+gc\&.logExpiry
+.RS 4
+ファイルgc\&.logが存在する場合、
+\fBgit gc \-\-auto\fR
+はそのコンテンツを出力し、そのファイルが「gc\&.logExpiry」より古い場合を除いて、実行する代わりにステータス0で終了します。デフォルトは「1\&.day」です。その他の値の指定方法については
+\fBgc\&.pruneExpire\fR
+を参照してください。
+.RE
+.PP
+gc\&.packRefs
+.RS 4
+リポジトリで
+\fBgit pack\-refs\fR
+を実行すると、HTTPなどの馬鹿プロトコル(dumb transport) を介して 1\&.5\&.1\&.2 より前のGitバージョンではクローンが作成できなくなります。この変数は、「git gc」が「git pack\-refs」を実行するかどうかを決定します。これを
+\fBnotbare\fR
+に設定して、すべての非ベアリポジトリ内で有効にするか、ブール値に設定することができます。 デフォルトは
+\fBtrue\fR
+です。
+.RE
+.PP
+gc\&.cruftPacks
+.RS 4
+到達不能なオブジェクトを緩いオブジェクトとしてではなく、クラフト・パック(cruft pack)(\fBgit-repack\fR(1)
+参照)に格納します。 デフォルトは
+\fBfalse\fR
+です。
+.RE
+.PP
+gc\&.pruneExpire
+.RS 4
+\fBgit gc\fR
+を実行すると、
+\fBprune \-\-expire 2\&.weeks\&.ago\fR
+が呼び出されます(そして
+\fBgc\&.cruftPacks\fR
+または
+\fB\-\-cruft\fR
+を介してクラフトパック(cruft packs)を使用している場合は、
+\fBrepack \-\-cruft \-\-cruft\-expiration 2\&.weeks\&.ago\fR
+が呼び出されます)。 この構成変数で猶予期間をオーバーライドします。 値
+\fBnow\fR
+を使用してこの猶予期間を無効にし、到達不能なオブジェクトを常にすぐに刈り込み(prune)するか、
+\fBnever\fR
+を使用して刈り込みを抑制することができます。この機能は
+\fBgit gc\fR
+が、リポジトリに書き込む別のプロセスと並列実行される場合の破損を防ぐのに役立ちます。
+\fBgit-gc\fR(1)
+の「NOTES」セクションを参照してください。
+.RE
+.PP
+gc\&.worktreePruneExpire
+.RS 4
+\fBgit gc\fR
+が実行されると、
+\fBgit worktree prune \-\-expire3\&.months\&.ago\fR
+が呼び出されます。この構成変数を使用して、別の猶予期間を設定できます。値「now」を使用して猶予期間を無効にし、
+\fB$GIT_DIR/worktrees\fR
+をすぐに剪定(prune)するか、「never」を使用して剪定を抑制することができます。
+.RE
+.PP
+gc\&.reflogExpire, gc\&.<pattern>\&.reflogExpire
+.RS 4
+「git reflog expire」は、この時間より古いreflogエントリを削除します。デフォルトは90日です。値「now」はすべてのエントリをすぐに期限切れにし、「never」は期限切れを完全に抑制します。中央に「<pattern>」(例:「refs/stash」)がある場合、設定は <pattern> に一致するrefにのみ適用されます。
+.RE
+.PP
+gc\&.reflogExpireUnreachable, gc\&.<pattern>\&.reflogExpireUnreachable
+.RS 4
+\fBgit reflog expire\fR
+は、この時間より古いreflogエントリを削除し、現在の先端(the current tip)から到達不能にします。デフォルトは30日です。値「now」はすべてのエントリをすぐに期限切れにし、「never」は期限切れを完全に抑制します。中央に「<pattern>」(例:「refs/stash」)がある場合、設定は <pattern> に一致するrefにのみ適用されます。
+.sp
+これらのタイプのエントリは通常、
+\fBgit commit\-\-amend\fR
+または
+\fBgit rebase\fR
+を使用した結果として作成され、修正またはリベースが発生する前のコミットです。これらの変更は現在のプロジェクトの一部ではないため、ほとんどのユーザーはそれらをより早く期限切れにしたいと思うでしょう。そのため、デフォルトは
+\fBgc\&.reflogExpire\fR
+よりも積極的です。
+.RE
+.PP
+gc\&.rerereResolved
+.RS 4
+以前に解決した競合するマージの記録は、「git rerere gc」が実行されるときに、この設定値で指定の日数保持されます。より人間が読める「1\&.month\&.ago」などを使用することもできます。デフォルトは60日です。
+\fBgit-rerere\fR(1)
+を参照してください。
+.RE
+.PP
+gc\&.rerereUnresolved
+.RS 4
+\fBgit rerere gc\fR
+が実行されると、解決していない競合するマージの記録がこの設定値の日数保持されます。より人間が読める `1\&.month\&.ago`などを使用することもできます。デフォルトは15日です。
+\fBgit-rerere\fR(1)
+を参照してください。
+.RE
+.SH "NOTES"
+.sp
+\fBgit gc\fR は、リポジトリ内のどこかで参照されているオブジェクトを削除しないように非常に努力しています。特に、現在のブランチとタグのセットによって参照されるオブジェクトだけでなく、インデックス、リモートトラッキングブランチ、reflog（後で修正または巻き戻されたブランチのコミットを参照する可能性がある）などによって参照されるオブジェクトも保持されます。それ以外の場合は、 refs/* 名前空間にあります。オブジェクトに添付された(「git notes」によって作成された種類の) noteは、オブジェクトの存続に寄与しないことに注意してください。一部のオブジェクトが削除されることを期待していて、削除されない場合は、それらの場所をすべて確認し、それらの参照を削除することが理にかなっているかどうかを判断してください。
+.sp
+一方、「git gc」が別のプロセスと同時に実行されると、他のプロセスが使用しているが参照を作成していないオブジェクトが削除されるリスクがあります。これにより、他のプロセスが失敗したり、他のプロセスが後で削除されたオブジェクトへの参照を追加した場合にリポジトリが破損したりする可能性があります。 Gitには、この問題を大幅に軽減する2つの機能があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fB\-\-prune\fR
+の日付よりも新しい変更時刻を持つオブジェクトは、そこから到達可能なすべてのモノと共にに保持されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+データベースにオブジェクトを追加するほとんどの操作は、オブジェクトがすでに存在する場合はその変更時刻を更新して、 #1 が適用されるようにします。
+.RE
+.sp
+ただし、これらの機能は完全なソリューションには及ばないため、コマンドを同時に実行するユーザーは、破損のリスクを抱えて生活する必要があります(実際にはリスクは低いようです)。
+.SH "HOOKS"
+.sp
+\fBgit gc \-\-auto\fR コマンドは、 \fBpre\-auto\-gc\fR フックを実行します。 詳細については、 \fBgithooks\fR(5) を参照してください。
+.SH "SEE ALSO"
+.sp
+\fBgit-prune\fR(1) \fBgit-reflog\fR(1) \fBgit-repack\fR(1) \fBgit-rerere\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

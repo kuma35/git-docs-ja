@@ -1,0 +1,250 @@
+'\" t
+.\"     Title: gitprotocol-common
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITPROTOCOL\-COMMON" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitprotocol-common \- 各種プロトコルの共通事項
+.SH "SYNOPSIS"
+.sp
+.nf
+<over\-the\-wire\-protocol>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このドキュメント・セットは、 Git で使用されるさまざまな通信プロトコルとファイル形式に共通の事柄を定義します。
+.SH "ABNF NOTATION"
+.sp
+以下の置換コア・ルールが使用されていることを除き、RFC 5234で説明されているABNF記法がプロトコルドキュメント内で使用されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  HEXDIG    =  DIGIT / "a" / "b" / "c" / "d" / "e" / "f"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+また、以下の共通ルールを定義します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  NUL       =  %x00
+  zero\-id   =  40*"0"
+  obj\-id    =  40*(HEXDIGIT)
+
+  refname  =  "HEAD"
+  refname /=  "refs/" <see discussion below>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+refnameは、 "refs/" で始まり、 \fBgit\-check\-ref\-format\fR コマンドの検証ルールに違反していない階層的な8ビット文字列(octet string)です。より具体的には、それらは:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+階層(ディレクトリ)グループ化のためにスラッシュ
+\fB/\fR
+を含めることができますが、スラッシュで区切られたコンポーネントをドット
+\fB\&.\fR
+で始めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+少なくとも1つの
+\fB/\fR
+が含まれている必要があります。 これにより、
+\fBheads/\fR
+、
+\fBtags/\fR
+などのカテゴリの存在が強制されますが、実際の名前は制限されません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+どこにも2つの連続したドット
+\fB\&.\&.\fR
+を含めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+どこにも ASCII制御文字(つまり、値が \e040 未満、または \e177
+\fBDEL\fR
+)、空白、チルダ
+\fB~\fR
+、キャレット
+\fB^\fR
+、コロン
+\fB:\fR
+、 疑問符
+\fB?\fR
+、アスタリスク
+\fB*\fR
+、 開き角かっこ
+\fB[\fR
+は使用できません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+スラッシュ
+\fB/\fR
+またはドット
+\fB\&.\fR
+で終了することはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+シーケンス
+\fB\&.lock\fR
+で終了することはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+シーケンス
+\fB@{\fR
+を含めることはできません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  8." 4.2
+.\}
+\fB\e\fR
+を含めることはできません。
+.RE
+.SH "PKT\-LINE FORMAT"
+.sp
+(すべてではありませんが)ペイロードの多くがpkt\-lines周りで説明されています。
+.sp
+pkt\-lineは、可変長のバイナリ文字列です。行の最初の4バイトであるpkt\-lenは、行の全長を16進数で示します。pkt\-lenには、長さの16進表現を含めるために使用される4バイトが含まれます。
+.sp
+pkt\-lineにはバイナリデータが含まれる場合があるため、実装者はpkt\-lineの パース/フォーマット ルーチンが8ビットクリーンであることを確認する必要があります。
+.sp
+非バイナリ行はLFで終了する必要があります。LFが存在する場合は、全長に含める必要があります。受信者は、非バイナリデータを含むpkt\-lineを、末尾のLFが含まれているかどうかに関係なく同じように処理する必要があります(LFが存在する場合はそれを取り除き、欠落している場合は文句を言いません)。
+.sp
+pkt\-lineのデータコンポーネントの最大長は65516バイトです。実装は、長さが65520(65516バイトのペイロード+4バイトの長さデータ)を超えるpkt\-lineの送信は禁止でです。
+.sp
+実装は空のpkt\-line("0004")を送信すべきではありません。
+.sp
+flash\-pktと呼ばれる長さフィールドが0("0000")のpkt\-lineは特殊なケースであり、空のpkt\-line("0004")とは異なる方法で処理しなければいけません。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  pkt\-line     =  data\-pkt / flush\-pkt
+
+  data\-pkt     =  pkt\-len pkt\-payload
+  pkt\-len      =  4*(HEXDIG)
+  pkt\-payload  =  (pkt\-len \- 4)*(OCTET)
+
+  flush\-pkt    = "0000"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例(C言語の文字列形式):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  pkt\-line          actual value
+  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+  "0006a\en"         "a\en"
+  "0005a"           "a"
+  "000bfoobar\en"    "foobar\en"
+  "0004"            ""
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

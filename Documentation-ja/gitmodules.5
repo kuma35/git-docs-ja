@@ -1,0 +1,170 @@
+'\" t
+.\"     Title: gitmodules
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITMODULES" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitmodules \- サブモジュールプロパティの定義
+.SH "SYNOPSIS"
+.sp
+$GIT_WORK_TREE/\&.gitmodules
+.SH "DESCRIPTION"
+.sp
+Git作業ツリーの最上位ディレクトリにある \fB\&.gitmodules\fR ファイルは、 \fBgit-config\fR(1) の構文を持つテキストファイルです。
+.sp
+このファイルには、サブモジュールごとに1つのサブセクションが含まれており、サブセクションの値はサブモジュールの名前です。名前は、 \fBgit submodule add\fR の \fB\-\-name\fR プションでカスタマイズされていない限り、サブモジュールが追加されたパス名として使用されます。各サブモジュールセクションには、以下の必須キーも含まれています:
+.PP
+submodule\&.<name>\&.path
+.RS 4
+サブモジュールがチェックアウトされると予想される、Git作業ツリーの最上位ディレクトリを基準にしたパスを定義します。 パス名は`/` で終わらせてはいけません。 すべてのサブモジュールパスは、
+\fB\&.gitmodules\fR
+ファイル内で一意である必要があります。
+.RE
+.PP
+submodule\&.<name>\&.url
+.RS 4
+サブモジュールリポジトリのクローンを作成できるURLを定義します。 これは、
+\fBgit-clone\fR(1)
+に渡す準備ができている絶対URLか、 (
+\fB\&./\fR
+または
+\fB\&.\&./\fR
+で始まる場合)スーパープロジェクトの、元のリポジトリ(superproject\(cqs origin repository)から相対的な場所のいずれかです。
+.RE
+.sp
+さらに、いくつかのオプションのキーがあります:
+.PP
+submodule\&.<name>\&.update
+.RS 4
+名前付きサブモジュールのデフォルトの更新手順を定義します。つまり、スーパープロジェクトの
+\fBgit submodul eupdate\fR
+コマンドによってサブモジュールが更新される方法を定義します。これは、同一名称の構成変数を初期化するために
+\fBgit submodule init\fR
+によってのみ使用されます。 ここで許可される値は、「checkout」、「rebase」、「merge」、「none」です。 それらの意味については、
+\fBgit-submodule\fR(1)
+の「update」コマンドの説明を参照してください。セキュリティ上の理由から、「!command」形式は受け入れられません。
+.RE
+.PP
+submodule\&.<name>\&.branch
+.RS 4
+アップストリームサブモジュールの更新を追跡するためのリモートブランチ名。このオプションが指定されていない場合のデフォルトは、リモートのHEADになります。 別な値
+\fB\&.\fR
+は、サブモジュール内のブランチ名が現在のリポジトリ内の現在のブランチ名と同一でなければならないことを示すために使用されます。詳細については、
+\fBgit-submodule\fR(1)
+の
+\fB\-\-remote\fR
+ドキュメントを参照してください。
+.RE
+.PP
+submodule\&.<name>\&.fetchRecurseSubmodules
+.RS 4
+このオプションは、このサブモジュールの再帰的フェッチを制御するために使用できます。このオプションがスーパープロジェクトの
+\fB\&.git/config\fR
+のサブモジュールのエントリにも存在する場合、そこでの設定は
+\fB\&.gitmodules\fR
+にある設定を上書きします。コマンドラインで両方の設定を上書きするには、
+\fB\-\-[no\-]recurse\-submodules\fR
+オプションを
+\fBgit fetch\fR
+と
+\fBgit pull\fR
+で使用します。
+.RE
+.PP
+submodule\&.<name>\&.ignore
+.RS 4
+どのような状況で
+\fBgit status\fR
+とdiffファミリーがサブモジュールを変更済みとして表示するかを定義します。指定できるのは以下の値です:
+.PP
+all
+.RS 4
+サブモジュールが変更されたと見なされる事は決してありません( ただし、ステータスの出力には表示され、ステージングされるとコミット されます)。
+.RE
+.PP
+dirty
+.RS 4
+サブモジュールの作業ツリーへのすべての変更は無視され、 サブモジュールの「HEAD」とスーパープロジェクトで記録された状態との間の コミットされた違いのみが考慮されます。
+.RE
+.PP
+untracked
+.RS 4
+サブモジュール内の追跡されていないファイル(untracked files)のみが無視されます。 追跡中のファイルへのコミットされた違いと変更が 表示されます。
+.RE
+.PP
+none
+.RS 4
+サブモジュールへの変更は無視されず、コミットされたすべての違い、 および追跡されたファイルと追跡されていないファイルへの変更が表示されます。 これはデフォルトのオプションです。
+.RE
+.sp
+このオプションがスーパープロジェクトの
+\fB\&.git/config\fR
+のサブモジュールのエントリにも存在する場合、そこでの設定は
+\fB\&.gitmodules\fR
+にある設定を上書きします。
+.sp
+\fB\-\-ignore\-submodules\fR
+オプションを使用すると、コマンドラインで両方の設定を上書きできます。
+\fBgit submodule\fR
+コマンドは、この設定の影響を受けません。
+.RE
+.PP
+submodule\&.<name>\&.shallow
+.RS 4
+trueに設定すると、ユーザーが明示的に非浅いクローン(non\-shallow clone)を要求しない限り、このサブモジュールのクローンは浅いクローン(shallow clone)(履歴の深さ1)として実行されます。
+.RE
+.SH "NOTES"
+.sp
+Gitは、作業ツリー内の \fB\&.gitmodules\fR ファイルをシンボリックリンクにすることを許可せず、そのようなツリーエントリのチェックアウトを拒否します。これにより、ファイルがインデックスまたはツリーからアクセスされたときとファイルシステムからアクセスされたときの動作の一貫性が保たれ、Gitがファイルの内容のセキュリティチェックを確実に実施できるようになります。
+.SH "EXAMPLES"
+.sp
+以下の \fB\&.gitmodules\fR ファイルについて考えてみます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[submodule "libfoo"]
+        path = include/foo
+        url = git://foo\&.com/git/lib\&.git
+
+[submodule "libbar"]
+        path = include/bar
+        url = git://bar\&.com/git/lib\&.git
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、\fBlibfoo\fR と \fBlibbar\fR の2つのサブモジュールを定義します。 これらはパス \fBinclude/foo\fR と \fBinclude/bar\fR でチェックアウトされることが期待されており、両方のサブモジュールに対して、サブモジュールのクローン作成に使用できるURLが指定されています。
+.SH "SEE ALSO"
+.sp
+\fBgit-submodule\fR(1), \fBgitsubmodules\fR(7), \fBgit-config\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,720 @@
+'\" t
+.\"     Title: git-reset
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-RESET" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-reset \- 現在のHEADを指定の状態にリセットします
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit reset\fR [\-q] [<tree\-ish>] [\-\-] <pathspec>\&...
+\fIgit reset\fR [\-q] [\-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]] [<tree\-ish>]
+\fIgit reset\fR (\-\-patch | \-p) [<tree\-ish>] [\-\-] [<pathspec>\&...]
+\fIgit reset\fR [\-\-soft | \-\-mixed [\-N] | \-\-hard | \-\-merge | \-\-keep] [\-q] [<commit>]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+最初の3つの形式は、エントリを`<tree\-ish>` からインデックスにコピーします。 最後の形式では、現在のブランチヘッド(\fBHEAD\fR) を \fB<commit>\fR に設定し、オプションでインデックスと作業ツリーを一致するように変更します。 \fB<tree\-ish>\fR/\fB<commit>\fR は、すべての形式でデフォルトで \fBHEAD\fR になります。
+.PP
+\fBgit reset\*(Aq [\-q] [<tree\-ish>] [\-\-] <pathspec>\&.\&.\&.\fR, \fBgit reset [\-q] [\-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]] [<tree\-ish>]\fR
+.RS 4
+これらの形式は、
+\fB<pathspec>\fR
+を
+\fB<tree\-ish>\fR
+の状態に一致させるすべてのパスのインデックスエントリをリセットします。 (作業ツリーや現在のブランチには影響しません。)
+.sp
+これは、
+\fBgit reset <pathspec>\fR
+が
+\fBgit add <pathspec>\fR
+の反対であることを意味します。 このコマンドは、
+\fBgit restore [\-\-source=<tree\-ish>] \-\-staged <pathspec>\&.\&.\&.\fR
+と同等です。
+.sp
+\fBgit reset <pathspec>\fR
+を実行してインデックスエントリを更新した後、
+\fBgit-restore\fR(1)
+を使用して、インデックスの内容を作業ツリーにチェックアウトできます。 または、
+\fBgit-restore\fR(1)
+を使用し、
+\fB\-\-source\fR
+でコミットを指定すると、コミットからインデックスと作業ツリーへのパスの内容を一度にコピーできます。
+.RE
+.PP
+\fBgit reset (\-\-patch | \-p) [<tree\-ish>] [\-\-] [<pathspec>\&.\&.\&.]\fR
+.RS 4
+インデックスと
+\fB<tree\-ish>\fR
+(デフォルトは
+\fBHEAD\fR)の違いでハンクを対話的に選択します。 選択したハンクは、インデックスから適用を外します(apply in reverse)。
+.sp
+これは、
+\fBgit reset \-p\fR
+が
+\fBgit add \-p\fR
+の反対であることを意味します。つまり、これを使用してハンクを選択的にリセットできます。
+\fB\-\-patch\fR
+モードの操作方法については、
+\fBgit-add\fR(1)
+の「Interactive Mode」セクションを参照してください。
+.RE
+.PP
+\fBgit reset [<mode>] [<commit>]\fR
+.RS 4
+この形式は、現在のブランチヘッドを
+\fB<commit>\fR
+にリセットし、場合によっては、
+\fB<mode>\fR
+に応じて、インデックス(\fB<commit>\fR
+のツリーにリセット)と作業ツリーを更新します。
+\fB<mode>\fR
+を省略すると、デフォルトで
+\fB\-\-mixed\fR
+になります。
+\fB<mode>\fR
+は以下のいずれかである必要があります:
+.PP
+\fB\-\-soft\fR
+.RS 4
+インデックスファイルまたは作業ツリーにはまったく触りません(しかし、すべてのモードと同様に、ヘッドを
+\fB<commit>\fR
+にリセットします)。 これにより、
+\fBgit status\fR
+が示すように、変更されたすべてのファイルが「コミットされる変更」(Changes to be committed)のままになります。
+.RE
+.PP
+\fB\-\-mixed\fR
+.RS 4
+インデックスをリセットしますが、作業ツリーはリセットしません(つまり、変更されたファイルは保持されますが、コミットのマークは付けられません)。更新されていないものを報告します。 これがデフォルトのアクションです。
+.sp
+\fB\-N\fR
+が指定されている場合、削除されたパスはadd対象(intent\-to\-add)としてマークされます(\fBgit-add\fR(1)
+参照)。
+.RE
+.PP
+\fB\-\-hard\fR
+.RS 4
+インデックスと作業ツリーをリセットします。
+\fB<commit>\fR
+以降の作業ツリー内の追跡中のファイルへの変更はすべて破棄されます。追跡中のファイルの書き込み時に邪魔になる、追跡されていないファイルまたはディレクトリは、単に削除されます。
+.RE
+.PP
+\fB\-\-merge\fR
+.RS 4
+インデックスをリセットし、作業ツリー内の
+\fB<commit>\fR
+と
+\fBHEAD\fR
+の間で異なるファイルを更新しますが、インデックスと作業ツリーの間で異なるファイル（つまり、まだ追加されていない変更があるもの）は保持します。 もし
+\fB<commit>\fR
+とインデックスの間で異なるファイルに、ステージされていない変更がある場合、リセットは中断(abort)されます。
+.sp
+つまり、
+\fB\-\-merge\fR
+は
+\fBgit read\-tree \-u \-m <commit>\fR
+のようなことをしますが、アンマージインデックスエントリは引き継ぎます。
+.RE
+.PP
+\fB\-\-keep\fR
+.RS 4
+インデックスエントリをリセットし、
+\fB<commit>\fR
+と
+\fBHEAD\fR
+で異なる作業ツリー内のファイルを更新します。
+\fB<commit>\fR
+と
+\fBHEAD\fR
+で異なるファイルにローカル変更がある場合、リセットは中止(abort)されます。
+.RE
+.PP
+\fB\-\-[no\-]recurse\-submodules\fR
+.RS 4
+作業ツリーが更新される時、
+\fB\-\-recurse\-submodules\fR
+を使用すると、スーパープロジェクトに記録されたコミットに従ってすべてのアクティブなサブモジュールの作業ツリーが再帰的にリセットされ、そのコミット時にサブモジュールのHEADが切り離されるよう(detach)に設定されます。
+.RE
+.RE
+.sp
+3つのコマンドの違いについては、 \fBgit\fR(1) の「Reset, restore and revert」を参照してください。
+.SH "OPTIONS"
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+静かにして、エラーのみを報告してください。
+.RE
+.PP
+\fB\-\-refresh\fR, \fB\-\-no\-refresh\fR
+.RS 4
+混合リセット(mixed reset)後にインデックスを更新します。 デフォルトで有効になっています。
+.RE
+.PP
+\fB\-\-pathspec\-from\-file=<file>\fR
+.RS 4
+パススペックは、コマンドライン引数の代わりに
+\fB<file>\fR
+で渡されます。
+\fB<file>\fR
+が正確に
+\fB\-\fR
+の場合、標準入力が使用されます。 Pathspec要素は、LFまたはCR/LFで区切られます。 パススペック要素は、構成変数
+\fBcore\&.quotePath\fR
+で説明されているようにクォートできます(\fBgit-config\fR(1)
+参照)。
+\fB\-\-pathspec\-file\-nul\fR
+および グローバルの
+\fB\-\-literal\-pathspecs\fR
+も参照してください。
+.RE
+.PP
+\fB\-\-pathspec\-file\-nul\fR
+.RS 4
+\fB\-\-pathspec\-from\-file\fR
+指定時のみ意味があります。 パススペック要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+これ以降の引数をオプションとして解釈しないでください。
+.RE
+.PP
+<pathspec>\&...
+.RS 4
+操作の影響を受けるパスを制限します。
+.sp
+詳細については、
+\fBgitglossary\fR(7)
+の「pathspec」エントリを参照してください。
+.RE
+.SH "EXAMPLES"
+.PP
+addを取り消し(undo add)
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit                                     \fB(1)\fR
+$ git add frotz\&.c filfre\&.c
+$ mailx                                    \fB(2)\fR
+$ git reset                                \fB(3)\fR
+$ git pull git://info\&.example\&.com/ nitfol  \fB(4)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRあなたは喜んで何かに取り組んでおり、これらのファイルの変更が適切に行われていることがわかります。 あなたが
+\fBgit diff\fR
+を実行するときにそれらを表示したくないのは、他のファイルで作業することを計画していて、これらのファイルでの変更が気を散らすためです。
+.br
+\fB2. \fR誰かがあなたにプルを要求し、その変更がマージに値すると思われる場合。
+.br
+\fB3. \fRしかしながら、あなたはすでにインデックスをダーティにしています(つまり、インデックスが
+\fBHEAD\fR
+コミットと一致していません)。 ただし、これから行うプルは
+\fBfrotz\&.c\fR
+または
+\fBfilfre\&.c\fR
+には影響しないため、これら2つのファイルのインデックスの変更を元に戻します。 作業ツリーのあなたの変更はそのまま残ります。
+.br
+\fB4. \fRそれから、あなたは
+\fBfrotz\&.c\fR
+と
+\fBfilfre\&.c\fR
+の変更を作業ツリーに残したまま、プルしてマージできます。
+.br
+.RE
+.PP
+コミットを取り消し、再度行う(undo a commit and redo)
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit \&.\&.\&.
+$ git reset \-\-soft HEAD^      \fB(1)\fR
+$ edit                        \fB(2)\fR
+$ git commit \-a \-c ORIG_HEAD  \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRこれは、コミットした内容が不完全であることを思い出した場合、コミットメッセージのスペルを間違えた場合、またはその両方の場合に最もよく行われます。 「リセット」前の状態で作業ツリーを残します。
+.br
+\fB2. \fR作業ツリーファイルを修正します。
+.br
+\fB3. \fR「リセット」は古いヘッドを
+\fB\&.git/ORIG_HEAD\fR
+にコピーします。 ログメッセージから始めて、コミットをやり直します。 メッセージをさらに編集する必要がない場合は、代わりに
+\fB\-C\fR
+オプションを指定できます。
+.sp
+\fBgit-commit\fR(1)
+の
+\fB\-\-amend\fR
+オプションも参照してください。
+.br
+.RE
+.PP
+コミットを取り消し(undo)、トピックブランチにします
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch topic/wip          \fB(1)\fR
+$ git reset \-\-hard HEAD~3       \fB(2)\fR
+$ git switch topic/wip          \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRあなたはいくつかのコミットをしましたが、それらが
+\fBmaster\fR
+ブランチに入るのは時期尚早であることに気づきました。 あなたはトピックブランチでそれらを磨き続けたいので、現在の
+\fBHEAD\fR
+から
+\fBtopic/wip\fR
+ブランチを作成します。
+.br
+\fB2. \fRmasterブランチを巻き戻して、これら3つのコミットを取り除きます。
+.br
+\fB3. \fR\fBtopic/wip\fR
+ブランチに切り替えて、作業を続けます。
+.br
+.RE
+.PP
+コミットを永久に取り消す(undo commits permanently)
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit \&.\&.\&.
+$ git reset \-\-hard HEAD~3   \fB(1)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fR最後の3コミット(\fBHEAD\fR
+と
+\fBHEAD^\fR
+と
+\fBHEAD~2\fR)は悪かったので、二度と見たくありません。 あなたがこれらのコミットを他の誰かにすでに与えている場合は、これを行ってはいけません。 (そうすることの意味については、
+\fBgit-rebase\fR(1)
+の「RECOVERING FROM UPSTREAM REBASE」セクションを参照してください。)
+.br
+.RE
+.PP
+マージまたはプルを取り消す(undo a merge or pull)
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git pull                         \fB(1)\fR
+Auto\-merging nitfol
+CONFLICT (content): Merge conflict in nitfol
+Automatic merge failed; fix conflicts and then commit the result\&.
+$ git reset \-\-hard                 \fB(2)\fR
+$ git pull \&. topic/branch          \fB(3)\fR
+Updating from 41223\&.\&.\&. to 13134\&.\&.\&.
+Fast\-forward
+$ git reset \-\-hard ORIG_HEAD       \fB(4)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRアップストリームから更新しようとすると、多くの競合が発生しました。 あなたは現在、マージに多くの時間を費やす準備ができていなかったため、後でマージすることにしました。
+.br
+\fB2. \fR「プル」はマージコミットを行っていないため、
+\fBgit reset\-\-hard HEAD\fR
+の同義語である
+\fBgit reset \-\-hard\fR
+は、インデックスファイルと作業ツリーから混乱を取り除きます。
+.br
+\fB3. \fRトピックブランチを現在のブランチにマージします。これにより、早送り(fast\-forward)が行われました。
+.br
+\fB4. \fRしかし、あなたはそのトピックブランチがまだ一般公開の準備ができていないと判断しました。 「pull」または「merge」は常に現在のブランチの元の先端を
+\fBORIG_HEAD\fR
+に残すため、ハードにリセットするとインデックスファイルと作業ツリーがその状態に戻り、ブランチの先端がそのコミットにリセットされます。
+.br
+.RE
+.PP
+ダーティな作業ツリー内でマージまたはプルを取り消し(undo)
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git pull                         \fB(1)\fR
+Auto\-merging nitfol
+Merge made by recursive\&.
+ nitfol                |   20 +++++\-\-\-\-
+ \&.\&.\&.
+$ git reset \-\-merge ORIG_HEAD      \fB(2)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fR作業ツリーにローカルの変更がある場合でも、他のブランチの変更がそれらと重複していないことがわかっている場合は、「git pull」と安全に言うことができます。
+.br
+\fB2. \fRマージの結果を調べた後、他のブランチでの変更が不十分であることがわかる場合があります。
+\fBgit reset \-\-hard ORIG_HEAD\fR
+を実行すると、元の場所に戻ることができますが、不要なローカルの変更は破棄されます。
+\fBgit reset \-\-merge\fR
+は、ローカルの変更を保持します。
+.br
+.RE
+.PP
+Interrupted workflow
+.RS 4
+あなたが大規模な変更をしている最中に、緊急の修正リクエストによって中断されたとします。 作業ツリー内のファイルはまだコミットできる形ではありませんが、バグをすばやく修正するには、他のブランチにアクセスする必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch feature  ;# you were working in "feature" branch and
+$ work work work      ;# got interrupted
+$ git commit \-a \-m "snapshot WIP"                 \fB(1)\fR
+$ git switch master
+$ fix fix fix
+$ git commit ;# commit with real log
+$ git switch feature
+$ git reset \-\-soft HEAD^ ;# go back to WIP state  \fB(2)\fR
+$ git reset                                       \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRこのコミットは吹き飛ばされちゃうので、投げやりなログメッセージでOKです。
+.br
+\fB2. \fRこれにより、コミット履歴から「WIP」コミットが削除され、作業ツリーがスナップショットを作成する直前の状態に設定されます。
+.br
+\fB3. \fRこの時点で、インデックスファイルには「スナップショットWIP」としてコミットしたすべてのWIP変更がまだ含まれています。 これにより、インデックスが更新され、WIPファイルがコミットされていないものとして表示されます。
+.sp
+\fBgit-stash\fR(1)
+も参照して下さい。
+.br
+.RE
+.PP
+Reset a single file in the index
+.RS 4
+インデックスにファイルを追加したが、後でそれをコミットに追加したくないと判断したとします。 git resetを使用して変更を保持しながら、ファイルをインデックスから削除できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git reset \-\- frotz\&.c                      \fB(1)\fR
+$ git commit \-m "Commit files in index"     \fB(2)\fR
+$ git add frotz\&.c                           \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRこれにより、ファイルは作業ディレクトリに保持されたまま、インデックスから削除されます。
+.br
+\fB2. \fRこれにより、インデックス内の他のすべての変更がコミットされます。
+.br
+\fB3. \fRそのファイルをインデックスに再度追加します。
+.br
+.RE
+.PP
+以前のコミットを破棄しつつ作業ツリーの変更を保持する
+.RS 4
+何かに取り組んでいて、それをコミットしてから、もう少し作業を続けたとして、作業ツリーにあるものは、以前にコミットしたものとは関係のない別のブランチにあるはずだと思います。 作業ツリーに変更を加えたまま、新しいブランチを開始してリセットできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git tag start
+$ git switch \-c branch1
+$ edit
+$ git commit \&.\&.\&.                            \fB(1)\fR
+$ edit
+$ git switch \-c branch2                     \fB(2)\fR
+$ git reset \-\-keep start                    \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRこれにより、\fBbranch1\fR
+にあなたの最初の編集がコミットされます。
+.br
+\fB2. \fR理想的な世界では、 あなたが
+\fBbranch2\fR
+(つまり、
+\fBgit switch \-c branch2 start\fR)を作成して切り替えたときに、以前のコミットが新しいトピックに属していないことに気付くかもしれませんが、完璧な人は誰もいません。
+.br
+\fB3. \fRしかし、 あなたが
+\fBbranch2\fR
+に切り替えた後は、
+\fBreset \-\-keep\fR
+を使用して不要なコミットを削除できます。
+.br
+.RE
+.PP
+コミット(a commit)を一連のコミット(a sequence of commits)に分割
+.RS 4
+論理的に別々の変更をたくさん作成し、それらを一緒にコミットしたとします。 次に、後で、各論理チャンクを独自のコミットに関連付ける方がよい場合があると判断したとします。 あなたが git reset を使用すると、ローカルファイルの内容を変更せずに履歴を巻き戻すことができます。その後、\fBgit add \-p\fR
+を使用して各コミットに含めるハンクを対話的に選択し、
+\fBgit commit \-c\fR
+でコミットメッセージをあらかじめ入力しておくことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git reset \-N HEAD^                        \fB(1)\fR
+$ git add \-p                                \fB(2)\fR
+$ git diff \-\-cached                         \fB(3)\fR
+$ git commit \-c HEAD@{1}                    \fB(4)\fR
+\&.\&.\&.                                         \fB(5)\fR
+$ git add \&.\&.\&.                               \fB(6)\fR
+$ git diff \-\-cached                         \fB(7)\fR
+$ git commit \&.\&.\&.                            \fB(8)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRまず、履歴をあるコミットにリセットして、元のコミットを削除しますが、すべての変更を作業ツリーに残します。
+\fB\-N\fR
+を使用すると、
+\fBHEAD\fR
+で追加された新しいファイルにマークが付けられ、
+\fBgit add \-p\fR
+がそれらを検出できるようになります。
+.br
+\fB2. \fR次に、 私達は
+\fBgit add \-p\fR
+機能を使用して、追加するdiffハンクを対話的に選択します。 これにより、各diffハンクについて順番に尋ねられ、「はい、これを含める」、「いいえ、これを含めない」、または非常に強力な「編集」機能などの簡単なコマンドを使用できます。
+.br
+\fB3. \fRあなたが含めたいハンクに満足したら、
+\fBgit diff \-\-cached\fR
+を使用して、最初のコミットのために何が準備されているかを確認する必要があります。 これは、インデックスに移動され、コミットされようとしているすべての変更を示しています。
+.br
+\fB4. \fR次に、インデックスに保存されている変更をコミットします。
+\fB\-c\fR
+オプションは、最初のコミットで開始した元のメッセージからコミットメッセージを事前入力することを指定します。 これは、再入力を避けるのに役立ちます。
+\fBHEAD@{1}\fR
+は、元のリセットコミット(1変更前)の前に
+\fBHEAD\fR
+が使用されていたコミットの特別な表記です。 詳細については、
+\fBgit-reflog\fR(1)
+を参照してください。 他の有効なコミット参照を使用することもできます。
+.br
+\fB5. \fRあなたは手順2〜4を複数回繰り返して、元のコードを任意の数のコミットに分割できます。
+.br
+\fB6. \fRさて、あなたは多くの変更をそれぞれのコミットに分割したので、残りの未コミットの変更をすべて選択するために、もはや
+\fBgit add\fR
+のパッチモードは使用しないかもしれません。
+.br
+\fB7. \fRもう一度、必要なものが含まれていることを確認してください。 また、git diffにて後でコミットする残りの変更が表示されないことを確認することもできます。
+.br
+\fB8. \fRそして最後に最終コミットを作成します。
+.br
+.RE
+.SH "DISCUSSION"
+.sp
+以下の表は、実行時に何が起こるかを示しています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git reset \-\-option target
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ファイルの状態に応じて異なるリセットオプションを使用して、 \fBHEAD\fR を別のコミット(\fBtarget\fR)にリセットします。
+.sp
+これらの表で、 \fBA\fR 、\fBB\fR 、\fBC\fR 、\fBD\fR はファイルのいくつかの異なる状態を表しています。例えば、最初のテーブルの1行目は、あるファイルが作業ツリーの状態 \fBA\fR 、インデックスの状態 \fBB\fR 、HEADの状態 \fBC\fR、ターゲットの状態 \fBD\fR にある場合、 \fBgit reset \-\-soft target\fR は作業ツリーの状態 \fBA\fR とインデックスの状態 \fBB\fR を残したままにすることを意味しています。 これは、\fBHEAD\fR (つまり、現在のブランチの先端)を \fBtarget\fR (状態 \fBD\fR のファイルがある)にリセット(つまり移動)するものです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ A       B     C    D     \-\-soft   A       B     D
+                          \-\-mixed  A       D     D
+                          \-\-hard   D       D     D
+                          \-\-merge (disallowed)
+                          \-\-keep  (disallowed)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ A       B     C    C     \-\-soft   A       B     C
+                          \-\-mixed  A       C     C
+                          \-\-hard   C       C     C
+                          \-\-merge (disallowed)
+                          \-\-keep   A       C     C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ B       B     C    D     \-\-soft   B       B     D
+                          \-\-mixed  B       D     D
+                          \-\-hard   D       D     D
+                          \-\-merge  D       D     D
+                          \-\-keep  (disallowed)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ B       B     C    C     \-\-soft   B       B     C
+                          \-\-mixed  B       C     C
+                          \-\-hard   C       C     C
+                          \-\-merge  C       C     C
+                          \-\-keep   B       C     C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ B       C     C    D     \-\-soft   B       C     D
+                          \-\-mixed  B       D     D
+                          \-\-hard   D       D     D
+                          \-\-merge (disallowed)
+                          \-\-keep  (disallowed)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ B       C     C    C     \-\-soft   B       C     C
+                          \-\-mixed  B       C     C
+                          \-\-hard   C       C     C
+                          \-\-merge  B       C     C
+                          \-\-keep   B       C     C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBreset \-\-merge\fR は、競合するマージからリセットするときに使用することを目的としています。 マージ操作は、マージに関係する作業ツリーファイルが、開始前にインデックスに対してローカルな変更がないこと、そしてその結果を作業ツリーに書き出すことを保証しています。 したがって、インデックスとターゲットの間、およびインデックスと作業ツリーの間に何らかの違いが見られる場合、それは、マージ中の操作が競合で失敗した後に残した状態からリセットされていないことを意味します。 そのため、この場合は \fB\-\-merge\fR オプションを使用を許可しません。
+.sp
+\fBreset \-\-keep\fR は、作業ツリーの変更を維持しながら、現在のブランチの最後のコミットの一部を削除するときに使用することを目的としています。 削除するコミットの変更と保持する作業ツリーの変更の間に競合が発生する可能性がある場合、リセットは許可されません。 そのため、作業ツリーと \fBHEAD\fR の間、および \fBHEAD\fR とターゲットの間の両方に変更がある場合、リセットは許可されません。 安全のため、アンマージエントリがある場合もリセットは許可されません。
+.sp
+以下の表は、アンマージエントリがある場合に何が起こるかを示しています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ X       U     A    B     \-\-soft  (disallowed)
+                          \-\-mixed  X       B     B
+                          \-\-hard   B       B     B
+                          \-\-merge  B       B     B
+                          \-\-keep  (disallowed)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+working index HEAD target         working index HEAD
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+ X       U     A    A     \-\-soft  (disallowed)
+                          \-\-mixed  X       A     A
+                          \-\-hard   A       A     A
+                          \-\-merge  A       A     A
+                          \-\-keep  (disallowed)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBX\fR は任意の状態を意味し、 \fBU\fR はアンマージインデックスを意味します。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

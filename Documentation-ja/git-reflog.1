@@ -1,0 +1,149 @@
+'\" t
+.\"     Title: git-reflog
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-REFLOG" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-reflog \- reflog情報を管理します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit reflog\fR <subcommand> <options>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このコマンドは、さまざまなサブコマンドと、サブコマンドに応じて異なるオプションを取ります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIgit reflog\fR [\fIshow\fR] [<log\-options>] [<ref>]
+\fIgit reflog expire\fR [\-\-expire=<time>] [\-\-expire\-unreachable=<time>]
+        [\-\-rewrite] [\-\-updateref] [\-\-stale\-fix]
+        [\-\-dry\-run | \-n] [\-\-verbose] [\-\-all [\-\-single\-worktree] | <refs>\&...]
+\fIgit reflog delete\fR [\-\-rewrite] [\-\-updateref]
+        [\-\-dry\-run | \-n] [\-\-verbose] <ref>@{<specifier>}\&...
+\fIgit reflog exists\fR <ref>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+参照ログ(reference logs)、または "reflogs" は、ブランチのヒントやその他の参照がローカルリポジトリで更新された時期を記録します。reflogは、参照の古い値を指定するために、さまざまなGitコマンドで役立ちます。 たとえば、 \fBHEAD@{2}\fR は「HEADが2移動前にあった位置」を意味し、 \fBmaster@{one\&.week\&.ago}\fR は「masterがこのローカルリポジトリで1週間前を指していた位置」を意味する等々。詳細については \fBgitrevisions\fR(7) を参照してください。
+.sp
+このコマンドは、reflogに記録された情報を管理します。
+.sp
+「show」サブコマンド(サブコマンドの指定がない場合のデフォルトでもあります)は、コマンドライン(またはデフォルトでは「HEAD」)で指定される参照のログを表示します。 reflogは最近のすべてのアクションをカバーし、さらに \fBHEAD\fR reflogはブランチの切り替えを記録します。 \fBgit reflog show\fR は \fBgit log \-g \-\-abbrev\-commit \-\-pretty=oneline\fR のエイリアスです。詳細については \fBgit-log\fR(1) を参照してください。
+.sp
+「expire」サブコマンドは、古いreflogエントリを刈り取ります。「expire」時間より古いエントリ、または「expire\-unreachable」時間より古く、現在の先端から到達できないエントリがreflogから削除されます。これは通常、エンドユーザーが直接使用することはありません。代わりに、 \fBgit-gc\fR(1) を参照してください。
+.sp
+「delete」サブコマンドは、reflogから単一のエントリを削除します。 その引数は「正確な」エントリである必要があります(例: \fBgit reflog delete master@{2}\fR )。 このサブコマンドは、通常、エンドユーザーが直接使用することもありません。
+.sp
+「exists」サブコマンドは、refにreflogがあるかどうかをチェックします。reflogが存在する場合はゼロのステータスで終了し、存在しない場合はゼロ以外のステータスで終了します。
+.SH "OPTIONS"
+.SS "showサブコマンド用オプション"
+.sp
+\fBgit reflog show\fR は、 \fBgit log\fR で受け入れられるすべてのオプションを受け入れます。
+.SS "expireサブコマンド用オプション"
+.PP
+\fB\-\-all\fR
+.RS 4
+すべての参照のreflogを処理します。
+.RE
+.PP
+\fB\-\-single\-worktree\fR
+.RS 4
+デフォルトでは、
+\fB\-\-all\fR
+が指定されている場合、すべての作業ツリーからのreflogが処理されます。 このオプションは、処理を現在の作業ツリーからのreflogのみに制限します。
+.RE
+.PP
+\fB\-\-expire=<time>\fR
+.RS 4
+指定された時間より古いエントリを刈り取ります。このオプションが指定されていない場合、有効期限は構成設定
+\fBgc\&.reflogExpire\fR
+から取得され、デフォルトで90日になります。
+\fB\-\-expire=all\fR
+は、年齢に関係なくエントリを削除します。
+\fB\-\-expire=never\fR
+は、到達可能なエントリの刈り取りをオフにします(しかし、
+\fB\-\-expire\-unreachable\fR
+を参照してください)。
+.RE
+.PP
+\fB\-\-expire\-unreachable=<time>\fR
+.RS 4
+ブランチの現在の先端から到達できない
+\fB<time>\fR
+より古いエントリを刈り取ります。このオプションが指定されていない場合、有効期限は構成設定
+\fBgc\&.reflogExpireUnreachable\fR
+から取得され、デフォルトで30日になります。
+\fB\-\-expire\-unreachable=all\fR
+は、年齢に関係なく、到達不能なエントリを刈り取ります。
+\fB\-\-expire\-unreachable=never\fR
+は、到達不能なエントリの早期刈り取りをオフにします(しかし、
+\fB\-\-expire\fR
+を参照してください)。
+.RE
+.PP
+\fB\-\-updateref\fR
+.RS 4
+以前の最上位エントリが刈り取りされた場合は、最上位のreflogエントリの値(つまり、 <ref>@{0} )への参照を更新します。(このオプションは、シンボリック参照では無視されます。)
+.RE
+.PP
+\fB\-\-rewrite\fR
+.RS 4
+reflogエントリーの前任者が刈り込まれてしまった場合、その「古い」SHA\-1を、現在の前任者にあるエントリーの「新しい」SHA\-1フィールドと等しくなるように調整します。
+.RE
+.PP
+\fB\-\-stale\-fix\fR
+.RS 4
+「壊れたコミット」(broken commits)を指すreflogエントリを削除します。壊れたコミットとは、どのリファレンスヒントからも到達できず、直接または間接的に、欠落しているコミットまたはツリーまたはブロブオブジェクトを参照するコミットです。
+.sp
+これの計算では、到達可能なすべてのオブジェクトのトラバースが含まれます。つまり、
+\fBgit prune\fR
+と同じコストがかかります。これは主に、reflogによって参照されるオブジェクトを保護しなかった古いバージョンのGitを使用したガベージコレクションによって引き起こされた破損を修正することを目的としています。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+実際にエントリの刈り取りは行いません。何が刈り取られるかを表示するだけです。
+.RE
+.PP
+\fB\-\-verbose\fR
+.RS 4
+画面に追加情報を出力します。
+.RE
+.SS "deleteサブコマンド用オプション"
+.sp
+\fBgit reflog delete\fR は、オプション \fB\-\-updateref\fR と \fB\-rewrite\fR と \fB\-n\fR と \fB\-\-dry\-run\fR と` \-\-verbose` を受け入れます。これらは、 \fBexpire\fR で使用される場合と同じ意味です。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

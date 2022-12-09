@@ -1,0 +1,556 @@
+'\" t
+.\"     Title: git-stash
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-STASH" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-stash \- 汚い作業ディレクトリの変更を隠します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit stash\fR list [<log\-options>]
+\fIgit stash\fR show [\-u|\-\-include\-untracked|\-\-only\-untracked] [<diff\-options>] [<stash>]
+\fIgit stash\fR drop [\-q|\-\-quiet] [<stash>]
+\fIgit stash\fR ( pop | apply ) [\-\-index] [\-q|\-\-quiet] [<stash>]
+\fIgit stash\fR branch <branchname> [<stash>]
+\fIgit stash\fR [push [\-p|\-\-patch] [\-S|\-\-staged] [\-k|\-\-[no\-]keep\-index] [\-q|\-\-quiet]
+             [\-u|\-\-include\-untracked] [\-a|\-\-all] [\-m|\-\-message <message>]
+             [\-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]]
+             [\-\-] [<pathspec>\&...]]
+\fIgit stash\fR clear
+\fIgit stash\fR create [<message>]
+\fIgit stash\fR store [\-m|\-\-message <message>] [\-q|\-\-quiet] <commit>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+作業ディレクトリとインデックスの現在の状態を記録したいが、クリーンな作業ディレクトリに戻りたい場合は、\fBgit stash\fR を使用します。 このコマンドは、ローカルの変更を保存し、作業ディレクトリを元に戻して(revert)、\fBHEAD\fR コミットに一致させます。
+.sp
+このコマンドによってスタッシュされた変更は、 \fBgit stash list\fR で一覧表示され、 \fBgit stash show\fR で調査され、 \fBgit stash apply\fR で復元されます(それは別のコミットの上にある可能性があります)。 引数なしで \fBgit stash\fR を呼び出すことは、 \fBgit stash push\fR と同等です。 スタッシュはデフォルトで \fBWIP on \*(Aqbranchname\*(Aq \&.\&.\&.\fR としてリストされますが、作成するときにコマンドラインでより説明的なメッセージを与える事ができます。
+.sp
+作成した 最新のスタッシュ は \fBrefs/stash\fR に保存されます。 古いスタッシュはこのリファレンスのreflogにあり、通常のreflog構文を使用して名前を付けることができます(たとえば、 \fBstash@{0}\fR は最後に作成されたスタッシュで、 \fBstash@{1}\fR はその前のスタッシュです。 \fBstash@{2\&.hours\&.ago}\fR も可能です)。 スタッシュは、スタッシュインデックスのみを指定することによって参照することもできます(たとえば、整数 \fBn\fR は \fBstash@{n}\fR と同等です)。
+.SH "COMMANDS"
+.PP
+push [\-p|\-\-patch] [\-S|\-\-staged] [\-k|\-\-[no\-]keep\-index] [\-u|\-\-include\-untracked] [\-a|\-\-all] [\-q|\-\-quiet] [\-m|\-\-message <message>] [\-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]] [\-\-] [<pathspec>\&...]
+.RS 4
+あなたのローカルの変更を新しい「スタッシュエントリ」に保存し、それらをHEADに巻き戻します(作業ツリー内とインデックス内で)。 <message> の部分はオプションであり、スタッシュ状態と共に説明を提供します。
+.sp
+スナップショットをすばやく作成するために、「push」を省略できます。 このモードでは、サブコマンドのスペルミスで不要なスタッシュエントリを作成するのを防ぐための非オプション引数は許可されていません。 これに対する2つの例外は、
+\fBstash push \-p\fR
+のエイリアスとして機能する
+\fBstash \-p\fR
+と、曖昧さ解消のために二重ハイフン
+\fB\-\-\fR
+の後ろで許可されるpathspec要素です。
+.RE
+.PP
+save [\-p|\-\-patch] [\-S|\-\-staged] [\-k|\-\-[no\-]keep\-index] [\-u|\-\-include\-untracked] [\-a|\-\-all] [\-q|\-\-quiet] [<message>]
+.RS 4
+このオプションは廃止され、
+\fBgit stash push\fR
+が採用されました。 pathspecをとることができないという点で「stash push」とは異なります。 代わりに、オプション以外のすべての引数が連結されて、スタッシュメッセージが形成されます。
+.RE
+.PP
+list [<log\-options>]
+.RS 4
+現在持っているスタッシュエントリを一覧表示します。 各「スタッシュエントリ」は、その名前(たとえば、
+\fBstash@{0}\fR
+は最新のエントリ、
+\fBstash@{1}\fR
+はその前のエントリ、など)と、 エントリが作成されたときの現在のブランチの名前と、エントリが基づいていたコミットの簡単な説明と、ともに一覧表示されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+stash@{0}: WIP on submit: 6ebd0e2\&.\&.\&. Update git\-stash documentation
+stash@{1}: On master: 9cc0589\&.\&.\&. Add git\-stash
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+このコマンドは、
+\fBgit log\fR
+コマンドに適用可能なオプションを使用して、表示内容と方法を制御します。
+\fBgit-log\fR(1)
+を参照してください。
+.RE
+.PP
+\fBshow [\-u|\-\-include\-untracked|\-\-only\-untracked] [<diff\-options>] [<stash>]\fR
+.RS 4
+スタッシュエントリに記録された変更を、スタッシュされたコンテンツとスタッシュエントリが最初に作成されたときのコミットとの差分として表示します。 デフォルトでは、コマンドはdiffstatを表示しますが、
+\fBgit diff\fR
+として認識される任意の形式を受け入れます(たとえば、パッチ形式で2番目に新しいエントリを表示するには
+\fBgit stash show \-p stash@{1}\fR)。
+\fB<diff\-option>\fR
+が指定されていない場合、デフォルトの動作は
+\fBstash\&.showStat\fR
+および
+\fBstash\&.showPatch\fR
+構成変数によって与えられます。
+\fBstash\&.showIncludeUntracked\fR
+を使用して、
+\fB\-\-include\-untracked\fR
+がデフォルトで有効になっているかどうかを設定することもできます。
+.RE
+.PP
+\fBpop [\-\-index] [\-q|\-\-quiet] [<stash>]\fR
+.RS 4
+スタッシュリストから単一のスタッシュ状態を削除し、現在の作業ツリー状態の上に適用します。つまり、
+\fBgit stash push\fR
+の逆の操作を実行します。 作業ディレクトリはインデックスと一致している必要があります。
+.sp
+状態の適用は、競合で失敗する可能性があります。 この場合、スタッシュリストからは削除されません。 競合を手動で解決し、後で手動で
+\fBgit stash drop\fR
+を呼び出す必要があります。
+.RE
+.PP
+\fBapply [\-\-index] [\-q|\-\-quiet] [<stash>]\fR
+.RS 4
+\fBpop\fR
+と同様ですが、スタッシュリストから状態を削除しないでください。
+\fBpop\fR
+とは異なり 、\fB<stash>\fR
+は、\fBstash push\fR
+または
+\fBstash create\fR
+によって作成されたコミットのように見える任意のコミットです。
+.RE
+.PP
+branch <branchname> [<stash>]
+.RS 4
+\fB<stash>\fR
+が元々作成された時のコミットから
+\fB<branchname>\fR
+という名前の新しいブランチを作成してチェックアウトし、
+\fB<stash>\fR
+に記録された変更を新しい作業ツリーとインデックスに適用します。 それが成功し、
+\fB<stash>\fR
+が
+\fBstash@{<revision>}\fR
+形式の参照である場合、
+\fB<stash>\fR
+を削除します。
+.sp
+これは、あなたが
+\fBgit stash push\fR
+を実行したブランチがとても変更されていて、\fBgit stash apply\fR
+が競合のために失敗した場合に便利です。 スタッシュエントリは、
+\fBgit stash\fR
+が実行されたときにHEADであったコミットの上に適用(apply)されるため、競合することなく元のスタッシュされた状態を復元します。
+.RE
+.PP
+clear
+.RS 4
+すべてのスタッシュエントリを削除します。 これらのエントリは刈り込みの対象となり、回復できない可能性があることに注意してください(可能な戦略については、下記「Examples」を参照してください)。
+.RE
+.PP
+\fBdrop [\-q|\-\-quiet] [<stash>]\fR
+.RS 4
+スタッシュエントリリストからスタッシュエントリを1つ削除します。
+.RE
+.PP
+create
+.RS 4
+ref名前空間のどこにも保存せずに、スタッシュエントリ(通常のコミットオブジェクト)を作成し、そのオブジェクト名を返します。 これは、スクリプトで役立つことを目的としています。 おそらくあなたがこのコマンドを使用することはありません。 上記「push」を参照してください。
+.RE
+.PP
+store
+.RS 4
+\fBgit stash create\fR
+を介して作成された特定のスタッシュ(これは宙ぶらりんマージコミット(dangling merge commit)です)をスタッシュrefに格納し、スタッシュreflogを更新します。 これは、スクリプトで役立つことを目的としています。 おそらく、あなたはこのコマンドを使用することはありません。 上記「push」を参照してください。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+および
+\fBsave\fR
+コマンドでのみ有効です。
+.sp
+無視され追跡されていないすべてのファイルもスタッシュしてから、
+\fBgit clean\fR
+でクリーンアップします。
+.RE
+.PP
+\fB\-u\fR, \fB\-\-include\-untracked\fR, \fB\-\-no\-include\-untracked\fR
+.RS 4
+\fBpush\fR
+および
+\fBsave\fR
+コマンドと一緒に使用すると、追跡されていないすべてのファイルもスタッシュし、
+\fBgit clean\fR
+でクリーンアップします。
+.sp
+\fBshow\fR
+コマンドと一緒に使用すると、diffの一部としてスタッシュエントリの追跡されていないファイルを表示します。
+.RE
+.PP
+\fB\-\-only\-untracked\fR
+.RS 4
+このオプションは、
+\fBshow\fR
+コマンドでのみ有効です。
+.sp
+diffの一部として、スタッシュエントリ内の、追跡されていないファイル(untracked files)のみを表示します。
+.RE
+.PP
+\fB\-\-index\fR
+.RS 4
+このオプションは、
+\fBpop\fR
+および
+\fBapply\fR
+コマンドにのみ有効です。
+.sp
+作業ツリーの変更だけでなく、インデックスの変更も復元しようと試みます。 ただし、競合がある場合(競合がインデックスに保存されているため、元の変更を適用できなくなる)、これは失敗する可能性があります。
+.RE
+.PP
+\fB\-k\fR, \fB\-\-keep\-index\fR, \fB\-\-no\-keep\-index\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+および
+\fBsave\fR
+コマンドでのみ有効です。
+.sp
+インデックスにすでに追加されているすべての変更はそのまま残ります。
+.RE
+.PP
+\fB\-p\fR, \fB\-\-patch\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+および
+\fBsave\fR
+コマンドでのみ有効です。
+.sp
+HEADと作業ツリー間のdiffから、スタッシュするハンクを対話的に選択します。 スタッシュエントリは、リポジトリのインデックス状態と同じになるように構築され、そのワークツリーには、対話的に選択した変更点のみが含まれます。 そして、選択した変更はワークツリーから巻き戻されます。
+\fB\-\-patch\fR
+モードの操作方法については、
+\fBgit-add\fR(1)
+の「Interactive Mode」セクションを参照してください。
+.sp
+\fB\-\-patch\fR
+オプションは
+\fB\-\-keep\-index\fR
+の指定を含んでいます。あなたは
+\fB\-\-no\-keep\-index\fR
+を使用してこれを上書きできます。
+.RE
+.PP
+\fB\-S\fR, \fB\-\-staged\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+および
+\fBsave\fR
+コマンドでのみ有効です。
+.sp
+現在ステージングされている変更のみをスタッシュします。 これは、状態が現在のブランチではなくスタッシュにコミットされることを除いて、基本的な
+\fBgit commit\fR
+に似ています。
+.sp
+\fB\-\-patch\fR
+オプションはこれよりも優先されます。
+.RE
+.PP
+\fB\-\-pathspec\-from\-file=<file>\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+コマンドにのみ有効です。
+.sp
+pathspecは、コマンドライン引数の代わりに
+\fB<file>\fR
+で渡されます。
+\fB<file>\fR
+が正確に
+\fB\-\fR
+の場合、標準入力が使用されます。 pathspec要素はLFまたはCR/LFで区切られます。 pathspec要素は、構成変数
+\fBcore\&.quotePath\fR
+にて説明されているようにクォートできます(\fBgit-config\fR(1)
+参照)。
+\fB\-\-pathspec\-file\-nul\fR
+および グローバルの
+\fB\-\-literal\-pathspecs\fR
+も参照してください。
+.RE
+.PP
+\fB\-\-pathspec\-file\-nul\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+コマンドにのみ有効です。
+.sp
+このオプションは
+\fB\-\-pathspec\-from\-file\fR
+でのみ意味があります。 pathspec要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+このオプションは、
+\fBapply\fR,
+\fBdrop\fR,
+\fBpop\fR,
+\fBpush\fR,
+\fBsave\fR,
+\fBstore\fR
+コマンドにのみ有効です。
+.sp
+静かにして、フィードバックメッセージを抑制します。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+このオプションは、
+\fBpush\fR
+コマンドにのみ有効です。
+.sp
+曖昧さ解消の目的のために pathspec をオプションから分離します。
+.RE
+.PP
+<pathspec>\&...
+.RS 4
+このオプションは、
+\fBpush\fR
+コマンドにのみ有効です。
+.sp
+新しいスタッシュエントリは、pathspecに一致するファイルについてのみ変更された状態を記録します。 次に、インデックスエントリと作業ツリーファイルは、これらのファイルについてのみHEADの状態に巻き戻されされ、pathspecに一致しないファイルはそのまま残ります。
+.sp
+詳細については、
+\fBgitglossary\fR(7)
+の「pathspec」エントリを参照してください。
+.RE
+.PP
+<stash>
+.RS 4
+このオプションは、
+\fBapply\fR,
+\fBbranch\fR,
+\fBdrop\fR,
+\fBpop\fR,
+\fBshow\fR
+コマンドにのみ有効です。
+.sp
+\fBstash@{<revision>}\fR
+形式の参照。
+\fB<stash>\fR
+が指定されていない場合、最新のスタッシュ(\fBstash@{0}\fR)を想定します。
+.RE
+.SH "DISCUSSION"
+.sp
+スタッシュエントリーは、作業ディレクトリの状態を記録するツリーを持つコミットとして表現され、その最初の親はエントリーが作成された \fBHEAD\fR でのコミットとなります。 2番目の親のツリーは、エントリーが作成されたときのインデックスの状態を記録しており、\fBHEAD\fR コミットの子として作られます。 祖先のグラフは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+       \&.\-\-\-\-W
+      /    /
+\-\-\-\-\-H\-\-\-\-I
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ここで、 \fBH\fR は \fBHEAD\fR コミット、 \fBI\fR はインデックスの状態を記録するコミット、 \fBW\fR は作業ツリーの状態を記録するコミットです。
+.SH "EXAMPLES"
+.PP
+Pulling into a dirty tree
+.RS 4
+あなたが何かしている最中、あなたがしていることにおそらく関連しているかもしれないアップストリームの変更があったことを知りました。 あなたのローカルの変更がアップストリームの変更と競合しない場合は、単純に `git pull `で先に進むことができます。
+.sp
+しかしながら、あなたのローカルの変更がアップストリームの変更と競合し、
+\fBgit pull\fR
+が変更の上書きを拒否する場合があります。 このような場合、以下のように、変更をスタッシュし、プルしてから、スタッシュ解除できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git pull
+ \&.\&.\&.
+file foobar not up to date, cannot merge\&.
+$ git stash
+$ git pull
+$ git stash pop
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+Interrupted workflow
+.RS 4
+あなたが何かやってる真っ最中に、上司がやって来て、あなたにすぐに何かを直すように要求します。 従来は、一時的なブランチにコミットして変更を保存し、元のブランチに戻って以下のように緊急修正を行っていました:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# \&.\&.\&. hack hack hack \&.\&.\&.
+$ git switch \-c my_wip
+$ git commit \-a \-m "WIP"
+$ git switch master
+$ edit emergency fix
+$ git commit \-a \-m "Fix in a hurry"
+$ git switch my_wip
+$ git reset \-\-soft HEAD^
+# \&.\&.\&. continue hacking \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit stash\fR
+を使用することで上記を以下のように簡略化できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# \&.\&.\&. hack hack hack \&.\&.\&.
+$ git stash
+$ edit emergency fix
+$ git commit \-a \-m "Fix in a hurry"
+$ git stash pop
+# \&.\&.\&. continue hacking \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+Testing partial commits
+.RS 4
+ワークツリーの変更から2つ以上のコミットを行い、コミットする前に各変更をテストする場合は、
+\fBgit stash push \-\-keep\-index\fR
+を使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# \&.\&.\&. hack hack hack \&.\&.\&.
+$ git add \-\-patch foo            # add just first part to the index
+$ git stash push \-\-keep\-index    # save all other changes to the stash
+$ edit/build/test first part
+$ git commit \-m \*(AqFirst part\*(Aq     # commit fully tested change
+$ git stash pop                  # prepare to work on all other changes
+# \&.\&.\&. repeat above five steps until one commit remains \&.\&.\&.
+$ edit/build/test remaining parts
+$ git commit foo \-m \*(AqRemaining parts\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+将来の使用のために無関係な変更を保存
+.RS 4
+大規模な変更の最中に、 修正を忘れたくない無関係な問題を見つけた場合、 変更を行い、それらをステージングし、
+\fBgit stash push \-\-staged\fR
+を使用して将来の使用のためにスタッシュしておくことができます。 これは、ステージングされた変更をコミットするのと似ていますが、コミットのみが現在のブランチではなくスタッシュに配置されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# \&.\&.\&. hack hack hack \&.\&.\&.
+$ git add \-\-patch foo           # add unrelated changes to the index
+$ git stash push \-\-staged       # save these changes to the stash
+# \&.\&.\&. hack hack hack, finish curent changes \&.\&.\&.
+$ git commit \-m \*(AqMassive\*(Aq       # commit fully tested changes
+$ git switch fixup\-branch       # switch to another branch
+$ git stash pop                 # to finish work on the saved changes
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+誤ってクリアまたはドロップされたスタッシュエントリの回復
+.RS 4
+誤ってスタッシュエントリをドロップまたはクリアした場合、通常の安全メカニズムでは回復できません。 ただし、以下の呪文を試して、リポジトリに残っているが到達できなくなったスタッシュエントリのリストを取得できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git fsck \-\-unreachable |
+grep commit | cut \-d\e  \-f3 |
+xargs git log \-\-merges \-\-no\-walk \-\-grep=WIP
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+stash\&.showIncludeUntracked
+.RS 4
+これがtrueに設定されている場合、
+\fBgit stash show\fR
+コマンドはstashエントリの追跡されていないファイルを表示します。 デフォルトはfalseです。
+\fBgit-stash\fR(1)
+の showコマンドの説明を参照してください。
+.RE
+.PP
+stash\&.showPatch
+.RS 4
+これがtrueに設定されている場合、オプションのない
+\fBgit stash show\fR
+コマンドは、パッチ形式でstashエントリを表示します。 デフォルトはfalseです。
+\fBgit-stash\fR(1)の showコマンドの説明を参照してください。
+.RE
+.PP
+stash\&.showStat
+.RS 4
+これがtrueに設定されている場合、オプションのない
+\fBgit stash show\fR
+コマンドは、stashエントリのdiffstatを表示します。 デフォルトはtrueです。
+\fBgit-stash\fR(1)
+の showコマンドの説明を参照してください。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-checkout\fR(1), \fBgit-commit\fR(1), \fBgit-reflog\fR(1), \fBgit-reset\fR(1), \fBgit-switch\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

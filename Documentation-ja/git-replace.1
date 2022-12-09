@@ -1,0 +1,193 @@
+'\" t
+.\"     Title: git-replace
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-REPLACE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-replace \- オブジェクトを置き換えるためのrefsの作成、一覧表示、削除
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit replace\fR [\-f] <object> <replacement>
+\fIgit replace\fR [\-f] \-\-edit <object>
+\fIgit replace\fR [\-f] \-\-graft <commit> [<parent>\&...]
+\fIgit replace\fR [\-f] \-\-convert\-graft\-file
+\fIgit replace\fR \-d <object>\&...
+\fIgit replace\fR [\-\-format=<format>] [\-l [<pattern>]]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fBrefs/replace/\fR 名前空間に \fBreplace\fR 参照を追加します。
+.sp
+\fBreplace\fR 参照の名前は、置き換えられるオブジェクトのSHA\-1です。 \fBreplace\fR 参照の内容は、置き換えるオブジェクトのSHA\-1です。
+.sp
+置き換えられるオブジェクトと置き換えるオブジェクトは同じタイプである必要があります。 この制限は、 \fB\-f\fR を使用して迂回(bypass)できます。
+.sp
+\fB\-f\fR が指定されていない限り、 \fBreplace\fR 参照はまだ存在していてはなりません。
+.sp
+置換されるオブジェクトと置換するオブジェクトに他の制限はありません。マージコミットは非マージコミットに置き換えることができ、その逆も可能です。
+.sp
+置換する参照は、デフォルトでは、到達可能性トラバーサル(剪定(prune)とパックと転送とfsck)実行するコマンドを除くすべてのGitコマンドで使用されます。
+.sp
+\fBgit\fR の直後に \fB\-\-no\-replace\-objects\fR オプションを使用すると、任意のコマンドでの置換参照の使用を無効にすることができます。
+.sp
+たとえば、 コミット \fBfoo\fR がコミット \fBbar\fR に置き換えられた場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git \-\-no\-replace\-objects cat\-file commit foo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+上記は、コミット \fBfoo\fR に関する情報を表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git cat\-file commit foo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これはコミット \fBbar\fR に関する情報を表示します。
+.sp
+\fBGIT_NO_REPLACE_OBJECTS\fR 環境変数は、 \fB\-\-no\-replace\-objects\fR オプションと同じ効果を達成するように設定できます。
+.SH "OPTIONS"
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+同じオブジェクトの既存の置換refが存在する場合、(失敗するのではなく)上書きされます。
+.RE
+.PP
+\fB\-d\fR, \fB\-\-delete\fR
+.RS 4
+指定されたオブジェクトの既存の置換refsを削除します。
+.RE
+.PP
+\fB\-\-edit <object>\fR
+.RS 4
+オブジェクトのコンテンツを対話的に編集します。 <object> の既存のコンテンツは一時ファイルにきれいに表示(pretty\-printed)され、そのファイルでエディタが起動され、エディタの編集結果がパースされて <object> と同じタイプの新しいオブジェクトが作成されます。続いて、置換refが作成され、 <object> が新しく作成されたオブジェクトに置き換えられます。エディタの選択方法の詳細については
+\fBgit-var\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-\-raw\fR
+.RS 4
+編集するときにきれいに出力されたものではなく、生のオブジェクトの内容を提供します。現在、これはツリーにのみ影響し、バイナリ形式で表示されます。これは扱いが難しいですが、きれいに出力できないほど破損しているツリーを修復するときに役立ちます。バイナリデータをきれいに読み書きできるようにエディタを設定する必要がある場合があることに注意してください。
+.RE
+.PP
+\fB\-\-graft <commit> [<parent>\&.\&.\&.]\fR
+.RS 4
+graftコミットを作成します。 <commit> と同じ内容で新しいコミットが作成されますが、その親は <commit> の親ではなく [<parent>\&...] になります。続けて、置換refが作成され、 <commit> が新しく作成されたコミットに置き換えられます。
+\fB\-\-convert\-graft\-file\fR
+を使用して
+\fB$GIT_DIR/info/grafts\fR
+ファイルを変換し、代わりに置換refsを使用します。
+.RE
+.PP
+\fB\-\-convert\-graft\-file\fR
+.RS 4
+\fB$GIT_DIR/info/grafts\fR
+のすべてのエントリに対してgraftコミットを作成し、成功するとそのファイルを削除します。目的は、現在非推奨のgraftファイルからの移行の為にユーザーを支援することです。
+.RE
+.PP
+\fB\-l <pattern>\fR, \fB\-\-list <pattern>\fR
+.RS 4
+指定されたパターンに一致する(またはパターンが指定されていない場合はすべての)オブジェクトの置換refをリストします。引数なしで「git replace」と入力すると、すべての置換refが一覧表示されます。
+.RE
+.PP
+\fB\-\-format=<format>\fR
+.RS 4
+リストするときに、指定の <format> を使用します。これには、「short」および「medium」および「long」のいずれかになります。 省略した場合、フォーマットはデフォルトで「short」になります。
+.RE
+.SH "FORMATS"
+.sp
+以下の形式を使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBshort\fR: <置換された sha1>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmedium\fR: <置換された sha1> \(-> <置換する sha1>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlong\fR: <置換された sha1> (<置換された sha1 のタイプ>) \(-> <置換する sha1> (<置換する sha1 のタイプ>)
+.RE
+.SH "CREATING REPLACEMENT OBJECTS"
+.sp
+\fBgit-hash-object\fR(1) と \fBgit-rebase\fR(1) と \m[blue]\fBgit\-filter\-repo\fR\m[]\&\s-2\u[1]\d\s+2 は、他のgitコマンドの中でも特に 既存のオブジェクトから置換オブジェクトを作成するために使用されます。 \fB\-\-edit\fR オプションを \fIgit replace\fR と一緒に使用して、既存のオブジェクトを編集することで置換オブジェクトを作成することもできます。
+.sp
+コミットの文字列の一部である多くの、ブロブまたはツリーまたはコミットを置き換える場合は、コミットの置換文字列を作成してから、コミットのターゲット文字列の先端にあるコミットのみを、コミットの置換文字列の先端にあるコミットに置き換えることができます。
+.SH "BUGS"
+.sp
+置き換えられたブロブまたはツリーをそれらを置き換えるものと比較すると、正しく機能しません。 また、 \fBgit reset \-\-hard\fR を使用して置換されたコミットに戻ると、ブランチは置換されたコミットではなく置換されたコミットに移動します。
+.sp
+保留中のオブジェクトに関連する「git rev\-list」を使用すると、他の問題が発生する可能性があります。
+.SH "SEE ALSO"
+.sp
+\fBgit-hash-object\fR(1) \fBgit-rebase\fR(1) \fBgit-tag\fR(1) \fBgit-branch\fR(1) \fBgit-commit\fR(1) \fBgit-var\fR(1) \fBgit\fR(1) \m[blue]\fBgit\-filter\-repo\fR\m[]\&\s-2\u[1]\d\s+2
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+git-filter-repo
+.RS 4
+\%https://github.com/newren/git-filter-repo
+.RE

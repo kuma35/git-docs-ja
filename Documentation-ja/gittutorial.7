@@ -1,0 +1,993 @@
+'\" t
+.\"     Title: gittutorial
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITTUTORIAL" "7" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gittutorial \- Git入門
+.SH "SYNOPSIS"
+.sp
+.nf
+git *
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+このチュートリアルでは、新しいプロジェクトをGitにインポートし、変更を加え、他の開発者と変更を共有する方法について説明します。
+.sp
+Gitを使用してプロジェクトをフェッチする方に主な関心がある場合、たとえば、最新バージョンをテストする場合は、 \m[blue]\fBThe Git User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2 の最初の2つの章から始めることをお勧めします。
+.sp
+注意: まず最初に、 あなたは \fBgit log \-\-graph\fR などのコマンドの文書を以下のようにして入手する事ができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ man git\-log
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+または:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git help log
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+後者では。あなたが選択したマニュアルビューアを使用できます。詳細については \fBgit-help\fR(1) を参照してください。
+.sp
+操作を行う前に、名前と公開メールアドレスを使用してあなた自身をGitに紹介する(introduce yourself)ことをお勧めします。これを行う最も簡単な方法は以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config \-\-global user\&.name "Your Name Comes Here"
+$ git config \-\-global user\&.email you@yourdomain\&.example\&.com
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "IMPORTING A NEW PROJECT"
+.sp
+既にtarball project\&.tar\&.gz があると仮定します。あなたは以下にしてそれをGitリビジョン管理下に置くことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ tar xzf project\&.tar\&.gz
+$ cd project
+$ git init
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+Gitは以下のメッセージを返すでしょう
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Initialized empty Git repository in \&.git/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これで作業ディレクトリが初期化されました。あなたは "\&.git" という名前の新しいディレクトリが作成されていることに気付くかもしれません。
+.sp
+次に、Gitに、現在のディレクトリ(\fI\&.\fR に注意)の下にあるすべてのファイルの内容のスナップショットを「git add」で取得するように指示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git add \&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このスナップショットは、Gitが「インデックス」と呼ぶ一時的な足場領域(temporary staging area)に保存されました。 \fIgit commit\fR を使用して、インデックスの内容をリポジトリに永続的に保存できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、コミットメッセージの入力を求められます。 これで、プロジェクトの最初のバージョンがGitに保存されました。
+.SH "MAKING CHANGES"
+.sp
+いくつかのファイルを変更してから、更新された内容をインデックスに追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git add file1 file2 file3
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これで、コミットする準備ができました。 \fB\-\-cached\fR オプションを指定した「git diff」を使用して、何がコミットされようとしているのかを確認できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff \-\-cached
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+(\fB\-\-cached\fR を指定しない場合、「git diff」は、編集を行ったがまだインデックスに追加されていない変更を表示します。）あなたは「git status」を使用して状況の簡単な要約を取得することもできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git status
+On branch master
+Changes to be committed:
+Your branch is up to date with \*(Aqorigin/master\*(Aq\&.
+  (use "git restore \-\-staged <file>\&.\&.\&." to unstage)
+
+        modified:   file1
+        modified:   file2
+        modified:   file3
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+さらに調整が必要な場合は、ここで調整してから、新しく変更したコンテンツをインデックスに追加します。 最後に、以下のコマンドであなたの変更をコミットします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、変更を説明するメッセージの入力を再度求められ、プロジェクトの新しいバージョンが記録されます。
+.sp
+または、事前に「git add」を実行する代わりに、あなたは以下を使用できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit \-a
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、変更された(ただし新規ではない)ファイルが自動的に認識され、それらがインデックスに追加され、コミットされます。それらがすべて1つのステップで実行されます。
+.sp
+コミットメッセージに関する注意: 必須ではありませんが、コミットメッセージは、変更を要約した1行の短い(50文字未満)行で始まり、空行が1行あり、その後にさらに詳細な説明が続くようにすることをお勧めします。コミットメッセージの最初の空白行までのテキストはコミットタイトルとして扱われ、そのタイトルはGit全体で使用されます。たとえば、 \fBgit-format-patch\fR(1) はコミットを電子メールに変換し、件名としてコミットタイトル、本文として残りのコミットメッセージを使用します。
+.SH "GIT TRACKS CONTENT NOT FILES"
+.sp
+【Gitはファイルではなくコンテンツを追跡する】多くのリビジョン管理システムは、新しいファイルへの変更の追跡を開始するようにシステムに指示する \fBadd\fR コマンドを提供します。 Gitの \fBadd\fR コマンドは、よりシンプルで強力な機能を実行します。 \fBgit add\fR \*(Aqは、新しいファイルと新しく変更されたファイルの両方に使用されます。どちらの場合も、指定されたファイルのスナップショットを取得し、そのコンテンツをインデックスにステージングして、次のコミットにすぐに含めることができます。
+.SH "VIEWING PROJECT HISTORY"
+.sp
+あなたはいつでも、以下を使用して変更の履歴を表示できます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたが各ステップで完全な差分も表示したい場合は、以下を使用してください
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log \-p
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+多くの場合、以下のような変更の概要は、各ステップの感触をつかむのに役立ちます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log \-\-stat \-\-summary
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "MANAGING BRANCHES"
+.sp
+単一のGitリポジトリで、開発の複数のブランチを維持できます。「experimental」という名前の新しいブランチを作成するには、以下のようにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch experimental
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そして、以下のようにすることができます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そうすると、既存のすべてのブランチのリストが表示されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  experimental
+* master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+「experimental」ブランチは作成したばかりのブランチであり、「master」ブランチは自動的に作成されたデフォルトのブランチです。アスタリスク(\fB*\fR)は、現在使用しているブランチを示します。そして以下のようにタイプします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git switch experimental
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+するとexperimentalブランチに切り替えます。次に、ファイルを編集し、変更をコミットして、masterブランチに戻ります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+(edit file)
+$ git commit \-a
+$ git switch master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+その変更はexperimentalブランチで行われ、masterブランチに戻ったため、その変更が表示されなくなったことを確認します。
+.sp
+masterブランチで別の変更を加えることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+(edit file)
+$ git commit \-a
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この時点で、2つのブランチは分岐しており、それぞれに異なる変更が加えられています。experimentalで行った変更をmasterにマージするには、以下を実行します
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git merge experimental
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+変更が競合しない場合は、これで完了です。 競合がある場合、競合を示すマーカーが問題のあるファイルに残されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+とすると、これを表示します。あなたが競合を解決するためにファイルを編集したら
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git commit \-a
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+とすると、マージの結果をコミットします。そして最後に、
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gitk
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+とすると、結果の履歴の優れたグラフィック表現が表示されます。
+.sp
+この時点で、以下のコマンドでexperimentalブランチを削除できます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch \-d experimental
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このコマンドは、experimentalブランチでの変更がすでに現在のブランチにあることを確認します。
+.sp
+あなたがブランチクレイジーアイデアで開発し、それを後悔しているなら、あなたはいつでもブランチを(マージせずに)削除することができます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch \-D crazy\-idea
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ブランチのコストは安くて、かつ操作は簡単なので、これは何かを一時的に試す良い方法です。
+.SH "USING GIT FOR COLLABORATION"
+.sp
+アリス(Alice)が /home/alice/project にGitリポジトリを使用して新しいプロジェクトを開始し、同じマシンにホームディレクトリを持っているボブ(Bob)が貢献したいとします。
+.sp
+ボブは以下のように始めます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bob$ git clone /home/alice/project myrepo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、アリスのリポジトリのクローンを含む新しいディレクトリ「myrepo」が作成されます。クローンは元のプロジェクトと同等の立場にあり、元のプロジェクトの履歴の独自のコピーを所有しています。
+.sp
+次に、ボブはいくつかの変更を加えてコミットします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+(edit files)
+bob$ git commit \-a
+(repeat as necessary)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+準備ができたら、ボブはアリスに /home/bob/myrepo のリポジトリから変更をプルするように指示します。アリスはこれを以下のように行います:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ cd /home/alice/project
+alice$ git pull /home/bob/myrepo master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、ボブの「master」ブランチからの変更がアリスの現在のブランチにマージされます。その間にアリスが自分で変更を加えた場合は、競合を手動で修正する必要があります。
+.sp
+つまり「pull」コマンドは2つの操作を実行します。リモートブランチから変更をフェッチしてから、それらを現在のブランチにマージします。
+.sp
+一般に、アリスが「プル」を開始する前に、アリス自身のローカルの変更をコミットすることを望んでいることに注意してください。ボブの作業が、履歴が分岐してからアリスが行ったことと競合する場合、アリスは作業ツリーとインデックスを使用して競合を解決し、既存のアリス自身のローカル変更は競合解決プロセスの障害となります(Gitは引き続きフェッチを実行しますが、マージを拒否します。アリスは、何らかの方法でアリス自身のローカルの変更を取り除き、再度プルする必要があります)。
+.sp
+アリスは、「fetch」コマンドを使用して、マージせずにボブが行ったことを確認できます。 これにより、アリスはボブが何をしたかを特別な記号「FETCH_HEAD」を使用して検査し、プルする価値があるかどうかを判断できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ git fetch /home/bob/myrepo master
+alice$ git log \-p HEAD\&.\&.FETCH_HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この操作は、アリスがアリス自身のローカルの変更をコミットしていない場合でも安全です。 範囲表記 \fBHEAD\&.\&.FETCH_HEAD\fR は、「FETCH_HEADから到達可能なすべてのものを表示し、HEADから到達可能なものはすべて除外する」ことを意味します。 このコマンドで、アリスは、現在の状態（HEAD）につながるすべてのことをすでに知っているとして、ボブが持っている状態（FETCH_HEAD）で、かつ、アリスが持っていないモノを確認します。
+.sp
+アリスが、ボブとの履歴が分岐してから何をしたかを視覚化したい場合は、以下のコマンドを実行できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gitk HEAD\&.\&.FETCH_HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、前に「git log」で見たのと同じ2ドットの範囲表記を使用します。
+.sp
+アリスは、フォークして以来、アリスとボブの両方が何をしたかを見たいと思うかもしれません。その場合、アリスはは2ドット形式の代わりに3ドット形式を使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gitk HEAD\&.\&.\&.FETCH_HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、「どちらか一方から到達可能なものはすべて表示し、両方から到達可能なものはすべて除外する」ことを意味します。
+.sp
+これらの範囲表記は、gitkと「git log」の両方で使用できることに注意してください。
+.sp
+ボブが何をしたかを調べた後、緊急のことがなければ、アリスはボブからプルせずに作業を続けることを決定するかもしれません。ボブの履歴にアリスがすぐに必要とするものがある場合、アリスは最初に進行中の作業をstashし、「プル」を実行し、最後に結果の履歴に加えて進行中の作業をunstashすることを選択できます。
+.sp
+小さな緊密なグループで作業している場合、同じリポジトリを何度も操作することは珍しくありません。リモートリポジトリの省略形を定義すると、作業は以下のように簡単になります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ git remote add bob /home/bob/myrepo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、アリスは「git fetch」コマンドを使用して、「pull」操作の最初の部分を自分のブランチとマージせずに、以下のコマンドを使用して単独で実行できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ git fetch bob
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+直接書いた形式とは異なり、アリスが「git remote」で設定したリモートリポジト省略形を使用してボブからフェッチする場合、フェッチされたものはリモート追跡ブランチ(この場合は「bob/master」）に保存されます。 したがって、以下のようにすると:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ git log \-p master\&.\&.bob/master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ボブがアリスのmasterブランチから分岐してから行ったすべての変更のリストを示します。
+.sp
+これらの変更を調べた後、アリスは変更をアリス自身のmasterブランチにマージできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ git merge bob/master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この「マージ」は、以下のように「アリス自身のリモート追跡ブランチからプルする」ことによっても実行できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alice$ git pull \&. remotes/bob/master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: コマンドラインで他に何が指定されているかに関係なく、 \fBgit pull\fR は常に現在のブランチにマージされることに注意してください。
+.sp
+その後、ボブは以下を使用してアリスの最新の変更でボブのリポジトリを更新できます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bob$ git pull
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: ボブはアリスのリポジトリへのパスを指定する必要がないことに注意してください。ボブがアリスのリポジトリのクローンを作成したとき、Gitはアリスのリポジトリの場所をリポジトリ構成に保存し、その場所がプルに使用されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bob$ git config \-\-get remote\&.origin\&.url
+/home/alice/project
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+( \fIgit clone\fR によって作成される完全な構成は、 \fBgit config \-l\fR を使用して表示でき、 \fBgit-config\fR(1) のマニュアルページで各オプションの意味を説明しています。)
+.sp
+Gitは、「origin/master」という名前でアリスのmasterブランチの当初の綺麗なコピー(pristine copy)も保持しています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bob$ git branch \-r
+  origin/master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ボブが後で別のホストから作業することを決定した場合でも、sshプロトコルを使用してクローンとプルを実行できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bob$ git clone alice\&.org:/home/alice/project myrepo
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+代わりに、Gitのネイティブプロトコルや、httpを使用できます。詳細については、 \fBgit-pull\fR(1) を参照してください。
+.sp
+Gitは、さまざまなユーザーが変更をプッシュする中央リポジトリを使用して、CVSのようなモードで使用することもできます。 \fBgit-push\fR(1) と \fBgitcvs-migration\fR(7) を参照してください。
+.SH "EXPLORING HISTORY"
+.sp
+Gitの履歴は、相互に関連する一連のコミットとして表されます。 \fIgit log\fR コマンドでこれらのコミットを一覧表示できることはすでに見てきました。注意: 各gitログエントリの最初の行には、コミットの名前も示されていることに注意してください:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log
+commit c82a22c39cbc32576f64f5c6b3f24b99ea8149c7
+Author: Junio C Hamano <junkio@cox\&.net>
+Date:   Tue May 16 17:18:22 2006 \-0700
+
+    merge\-base: Clarify the comments on post processing\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このコミットの詳細を確認するには、この名前を「git show」に与えます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show c82a22c39cbc32576f64f5c6b3f24b99ea8149c7
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ただし、コミットを参照する方法は他にもあります。あなたはコミットを一意に識別するのに十分な長さであれば名前の最初の部分だけを指定できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show c82a22c39c   # the first few characters of the name are
+                        # usually enough
+$ git show HEAD         # the tip of the current branch
+$ git show experimental # the tip of the "experimental" branch
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+通常、あらゆるコミットには、プロジェクトの以前の状態を指す1つの「親」コミットがあります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show HEAD^  # to see the parent of HEAD
+$ git show HEAD^^ # to see the grandparent of HEAD
+$ git show HEAD~4 # to see the great\-great grandparent of HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: マージコミットには複数の親が含まれる場合があることに注意してください:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show HEAD^1 # show the first parent of HEAD (same as HEAD^)
+$ git show HEAD^2 # show the second parent of HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+コミットに独自の名前を付けることもできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git tag v2\&.5 1b2e1d63ff
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+と実行すると、1b2e1d63ff は「v2\&.5」という名前で参照できます。この名前を他の人と共有する場合(たとえば、リリースバージョンを識別するため)、「タグ」オブジェクトを作成し、おそらくそれに署名する必要があります。 詳細については \fBgit-tag\fR(1) を参照してください。
+.sp
+コミットを知る必要のあるGitコマンドは、これらの名前のいずれかを指定することができます。 例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff v2\&.5 HEAD     # compare the current HEAD to v2\&.5
+$ git branch stable v2\&.5 # start a new branch named "stable" based
+                         # at v2\&.5
+$ git reset \-\-hard HEAD^ # reset your current branch and working
+                         # directory to its state at HEAD^
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+最後のコマンドには注意してください。作業ディレクトリの変更が失われるだけでなく、このブランチからそれ以降のすべてのコミットも削除されます。このブランチがそれらのコミットを含む唯一のブランチである場合、それらは失われます。また、他の開発者がプルする公開ブランチで「git reset」を使用しないでください。他の開発者に不必要なマージを強制して、履歴をクリーンアップしてしまうためです。プッシュした変更を元に戻す必要がある場合は、代わりに「git revert」を使用してください。
+.sp
+\fIgit grep\fR コマンドは、プロジェクトの任意のバージョンで文字列を検索できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git grep "hello" v2\&.5
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、v2\&.5で出現するすべての「hello」を検索します。
+.sp
+以下のようにコミット名を省略すると、「git grep」は現在のディレクトリで管理しているファイルを検索します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git grep "hello"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、Gitによって追跡されているファイルだけですばやく検索する方法です。
+.sp
+多くのGitコマンドは、さまざまな方法で指定できる一連のコミットも指定できます。 \fIgit log\fR の例を以下に示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log v2\&.5\&.\&.v2\&.6            # commits between v2\&.5 and v2\&.6
+$ git log v2\&.5\&.\&.                # commits since v2\&.5
+$ git log \-\-since="2 weeks ago" # commits from the last 2 weeks
+$ git log v2\&.5\&.\&. Makefile       # commits since v2\&.5 which modify
+                                # Makefile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\*(Aqgit log\(cqにコミットの「範囲」を与えることもできます。ここで、最初のコミットは必ずしも2番目の祖先とは限りません。 たとえば、ブランチの「stable」と「master」の先端が、しばらく前に共通のコミットから分岐した場合、
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log stable\&.\&.master
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+とすると、masterブランチで行われたコミットはリストされますが、stableブランチに対しては行われません。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git log master\&.\&.stable
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+とすると、stableブランチで行われたコミットのリストが表示されますが、masterブランチに対しては表示されません。
+.sp
+「git log」コマンドには弱点があります。コミットを一覧として表示する必要があることです。履歴に分岐してからマージされた開発ラインがある場合、「git log」がそれらのコミットを提示する順序は無意味な順序になります。
+.sp
+複数のコントリビューター（LinuxカーネルやGit自体など）を持つほとんどのプロジェクトでは、頻繁にマージが行われ、「gitk」はそれらの履歴をより適切に視覚化できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gitk \-\-since="2 weeks ago" drivers/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、「drivers」ディレクトリの下のファイルを変更した過去2週間のコミットからのコミットを参照できます。 (注: Ctrlキーを押しながら「\-」または「+」を押すと、gitkのフォントサイズを調整できます。）
+.sp
+最後に、ファイル名を取得するほとんどのコマンドでは、オプションで、ファイルの特定のバージョンを指定するために、任意のファイル名の前にコミットを付けることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git diff v2\&.5:Makefile HEAD:Makefile\&.in
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fIgit show\fR を使用して、任意のファイルを表示することもできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git show v2\&.5:Makefile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "NEXT STEPS"
+.sp
+このチュートリアルは、プロジェクトの基本的な分散リビジョン管理を実行するのに十分なはずです。ただし、Gitの奥深さとパワーを完全に理解するには、Gitの基礎となる2つの簡単なアイデアを理解する必要があります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+オブジェクトデータベースは、あなたのプロジェクトの履歴（ファイル、ディレクトリ、コミット）を格納するために使用されるかなり洗練されたシステムです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+インデックスファイルは、ディレクトリツリーの状態のキャッシュであり、コミットの作成、作業ディレクトリのチェックアウト、およびマージに関係するさまざまなツリーの保持に使用されます。
+.RE
+.sp
+このチュートリアルのパート2では、オブジェクトデータベース、インデックスファイル、およびGitを最大限に活用するために必要なその他のいくつかのガラクタについて説明します。 linkgit: gittutorial\-2[7] をご覧下さい。
+.sp
+すぐにそれを続けたくない場合は、この時点で興味深いかもしれない他のいくつかのより道は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit-format-patch\fR(1)
+、\fBgit-am\fR(1): これらは一連のgitコミットを電子メールで送信されたパッチに変換します。その逆も同様です。電子メールで送信されたパッチに大きく依存するLinuxカーネルなどのプロジェクトで役立ちます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit-bisect\fR(1): プロジェクトにデグレがある場合、バグを追跡する1つの方法は、履歴を検索して、原因となる正確なコミットを見つけることです。 Git bisectは、そのコミットの二分木検索を実行するのに役立ちます。マージされたブランチが多数ある複雑な非線形履歴の場合でも、最適に近い検索を実行するのに十分賢いです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgitworkflows\fR(7): 推奨される作業の流れの概要を示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgiteveryday\fR(7): 20コマンド程度で綴る日々のGit。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgitcvs-migration\fR(7): CVSユーザー向けのGit。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgittutorial-2\fR(7), \fBgitcvs-migration\fR(7), \fBgitcore-tutorial\fR(7), \fBgitglossary\fR(7), \fBgit-help\fR(1), \fBgitworkflows\fR(7), \fBgiteveryday\fR(7), \m[blue]\fBThe Git User\(cqs Manual\fR\m[]\&\s-2\u[1]\d\s+2
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+The Git User\(cqs Manual
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/user-manual.html
+.RE

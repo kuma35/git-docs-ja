@@ -1,0 +1,1920 @@
+'\" t
+.\"     Title: git-diff-files
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-DIFF\-FILES" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-diff-files \- 作業ツリーとインデックス内のファイルを比較します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit diff\-files\fR [\-q] [\-0|\-1|\-2|\-3|\-c|\-\-cc] [<common\-diff\-options>] [<path>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+作業ツリーとインデックス内のファイルを比較します。パスが指定されている場合、それらの名前付きパスのみを比較します。それ以外の場合は、インデックス内のすべてのエントリが比較されます。出力形式は、 \fIgit diff\-index\fR や \fIgit diff\-tree\fR の場合と同じです。
+.SH "OPTIONS"
+.PP
+\fB\-p\fR, \fB\-u\fR, \fB\-\-patch\fR
+.RS 4
+パッチを生成します(generating patches に関するセクションを参照)。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-no\-patch\fR
+.RS 4
+diff出力を抑制します。デフォルトでパッチを表示する
+\fBgit show\fR
+のようなコマンド、または
+\fB\-\-patch\fR
+の効果をキャンセルする場合に便利です。
+.RE
+.PP
+\fB\-U<n>\fR, \fB\-\-unified=<n>\fR
+.RS 4
+通常の3行ではなく、<n> 行の内容でdiffを生成します。
+\fB\-\-patch\fR
+の機能を含んでいます。
+.RE
+.PP
+\fB\-\-output=<file>\fR
+.RS 4
+stdout ではなく指定のファイルに出力します。
+.RE
+.PP
+\fB\-\-output\-indicator\-new=<char>\fR, \fB\-\-output\-indicator\-old=<char>\fR, \fB\-\-output\-indicator\-context=<char>\fR
+.RS 4
+生成されたパッチの新しい行、古い行、またはコンテキスト行を示すために使用される文字を指定します。 通常、それらはそれぞれ "+"、 "\-"、 " " です。
+.RE
+.PP
+\fB\-\-raw\fR
+.RS 4
+生形式(raw format)でdiffを生成します。 これがデフォルトです。
+.RE
+.PP
+\fB\-\-patch\-with\-raw\fR
+.RS 4
+\fB\-p \-\-raw\fR
+の同義語。
+.RE
+.PP
+\fB\-\-indent\-heuristic\fR
+.RS 4
+diffハンクの境界をずらす(shift)ヒューリスティックを有効にして、パッチを読みやすくします。 これがデフォルトです。
+.RE
+.PP
+\fB\-\-no\-indent\-heuristic\fR
+.RS 4
+インデントヒューリスティック(indent heuristic)を無効にします。
+.RE
+.PP
+\fB\-\-minimal\fR
+.RS 4
+より多くの時間を費やして、可能な限り最小のdiffが生成されるようにします。
+.RE
+.PP
+\fB\-\-patience\fR
+.RS 4
+"patience diff" アルゴリズムを使用してdiffを生成します。
+.RE
+.PP
+\fB\-\-histogram\fR
+.RS 4
+"histogram diff" アルゴリズムを使用してdiffを生成します。
+.RE
+.PP
+\fB\-\-anchored=<text>\fR
+.RS 4
+"anchored diff" アルゴリズムを使用してdiffを生成します。
+.sp
+このオプションは複数回指定できます。
+.sp
+行がソースと宛先の両方に存在し、1回だけ存在し、このテキストで始まる場合、このアルゴリズムは、その行が出力に削除または追加として表示されないようにします。内部で "patience diff" アルゴリズムを使用します。
+.RE
+.PP
+\fB\-\-diff\-algorithm={patience|minimal|histogram|myers}\fR
+.RS 4
+diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+.PP
+\fBdefault\fR, \fBmyers\fR
+.RS 4
+基本的な貪欲な差分アルゴリズム(greedy diff algorithm)。現在、これがデフォルトです。
+.RE
+.PP
+\fBminimal\fR
+.RS 4
+より多くの時間を費やして、可能な限り最小のdiffが生成されるようにします。
+.RE
+.PP
+\fBpatience\fR
+.RS 4
+パッチを生成する時に "patience diff" アルゴリズムを使います。
+.RE
+.PP
+\fBhistogram\fR
+.RS 4
+このアルゴリズムは、忍耐アルゴリズム(patience algorithm)を拡張して、「発生率の低い共通要素をサポート」(support low\-occurrence common elements)します。
+.RE
+.sp
+たとえば、 あなたが
+\fBdiff\&.algorithm\fR
+変数をデフォルト以外の値に設定した上で、それでもデフォルト値を使用する場合は、\fB\-\-diff\-algorithm=default\fR
+オプションを使用する必要があります。
+.RE
+.PP
+\fB\-\-stat[=<width>[,<name\-width>[,<count>]]]\fR
+.RS 4
+diffstatを生成します。 デフォルトでは、必要なだけのスペースがファイル名部分に使用され、残りはグラフ部分に使用されます。最大幅はデフォルトで端末幅、または端末に接続されていない場合は80桁であり、
+\fB<width>\fR
+で上書きできます。ファイル名部分の幅は、コンマの後に別の幅
+\fB<name\-width>\fR
+を指定することで制限できます。グラフ部分の幅は、
+\fB\-\-stat\-graph\-width=<width>\fR
+(統計グラフを生成するすべてのコマンドに影響します)を使用するか、
+\fBdiff\&.statGraphWidth=<width>\fR
+(
+\fBgit format\-patch\fR
+に影響しません)を設定することによって制限できます。3番目のパラメータ
+\fB<count>\fR
+を指定することにより、出力を最初の
+\fB<count>\fR
+行に制限し、それに
+\fB\&.\&.\&.\fR
+が続く形にできます。
+.sp
+これらのパラメータは、
+\fB\-\-stat\-width=<width>\fR
+と
+\fB\-\-stat\-name\-width=<name\-width>\fR
+と
+\fB\-\-stat\-count=<count>\fR
+を使用して個別に設定することもできます。
+.RE
+.PP
+\fB\-\-compact\-summary\fR
+.RS 4
+ファイルの作成や削除( "new" または "gone" 。オプションでシンボリックリンクの場合は "+l" )、diffstatのモード変更(実行可能ビットを追加または削除する場合は、それぞれ "+x" または "\-x" )など、拡張ヘッダー情報の要約を出力します。情報はファイル名部分とグラフ部分の間に置かれます。本機能は
+\fB\-\-stat\fR
+の機能を含んでいます。
+.RE
+.PP
+\fB\-\-numstat\fR
+.RS 4
+\fB\-\-stat\fR
+に似ていますが、プログラムで処理しやすい(machine friendly)ように、追加および削除された行数を10進表記とパス名で省略形なしで表示します。バイナリファイルの場合、
+\fB0 0\fR
+の代わりに2つの
+\fB\-\fR
+を出力します。
+.RE
+.PP
+\fB\-\-shortstat\fR
+.RS 4
+変更されたファイルの総数と、追加および削除された行の数を含む
+\fB\-\-stat\fR
+形式の最後の行のみを出力します。
+.RE
+.PP
+\fB\-X[<param1,param2,\&.\&.\&.>]\fR, \fB\-\-dirstat[=<param1,param2,\&.\&.\&.>]\fR
+.RS 4
+各サブディレクトリの相対的な変更量の分布を出力します。
+\fB\-\-dirstat\fR
+の動作は、パラメータのコンマ区切りリストを渡すことでカスタマイズできます。デフォルトは、
+\fBdiff\&.dirstat\fR
+構成変数によって制御されます(\fBgit-config\fR(1)
+参照)。以下のパラメータを使用できます:
+.PP
+\fBchanges\fR
+.RS 4
+ソースから削除された、または宛先に追加された行をカウントして、dirstat数を計算します。これは、ファイル内の純粋なコード移動の量を無視します。つまり、ファイル内の行の再配置は、他の変更ほどカウントされません。これは、パラメーターが指定されていない場合のデフォルトの動作です。
+.RE
+.PP
+\fBlines\fR
+.RS 4
+通常の行ベースのdiff分析を実行し、削除/追加された行数を合計して、dirstat数を計算します。 (バイナリファイルの場合、バイナリファイルには行の概念がないため、代わりに64バイトのチャンクをカウントします)。 これは
+\fBchanges\fR
+動作よりも高価な
+\fB\-\-dirstat\fR
+動作ですが、他の変更と同じようにファイル内の再配置された行をカウントします。結果の出力は、他の
+\fB\-\-*stat\fR
+オプションから得られるものと一致しています。
+.RE
+.PP
+\fBfiles\fR
+.RS 4
+変更されたファイルの数を数えて、dirstat数を計算します。変更された各ファイルは、dirstat分析で等しくカウントされます。これは、ファイルの内容をまったく調べる必要がないため、計算コストが最もかからない
+\fB\-\-dirstat\fR
+の動作です。
+.RE
+.PP
+\fBcumulative\fR
+.RS 4
+親ディレクトリの子ディレクトリの変更も同様にカウントします。
+\fBcumulative\fR(累積的) を使用する場合、報告されるパーセンテージの合計が100%を超える場合があることに注意してください。デフォルトの(非累積的な)動作は、\fBnoncumulative\fR
+パラメーターで指定できます。
+.RE
+.PP
+<limit>
+.RS 4
+整数パラメーターは、カットオフパーセント(デフォルトでは3%)を指定します。指定の割合より少ないディレクトリは、出力に表示されません。
+.RE
+.sp
+例: 変更されたファイルの総数の10%未満のディレクトリを無視し、親ディレクトリに子ディレクトリの数を累積しながら、変更されたファイルをカウント:
+\fB\-\-dirstat=files,10,cumulative\fR
+.RE
+.PP
+\fB\-\-cumulative\fR
+.RS 4
+\fB\-\-dirstat=cumulative\fR
+と同義語
+.RE
+.PP
+\fB\-\-dirstat\-by\-file[=<param1,param2>\&.\&.\&.]\fR
+.RS 4
+\fB\-\-dirstat=files,param1,param2\&.\&.\&.\fR
+と同義語
+.RE
+.PP
+\fB\-\-summary\fR
+.RS 4
+作成、名前変更、モード変更などの拡張ヘッダー情報の短い要約(condensed summary)を出力します。
+.RE
+.PP
+\fB\-\-patch\-with\-stat\fR
+.RS 4
+\fB\-p \-\-stat\fR
+と同義語。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+\fB\-\-raw\fR
+または
+\fB\-\-numstat\fR
+または
+\fB\-\-name\-only\fR
+または
+\fB\-\-name\-status\fR
+が指定されている場合は パス名を変更せず、出力フィールドターミネータとしてNULLを使用してください。
+.sp
+このオプションがないと、構成変数
+\fBcore\&.quotePath\fR
+で説明されているように、 通常の文字以外(unusual characters)を含むパス名が引用符で囲まれます(\fBgit-config\fR(1)
+参照)。
+.RE
+.PP
+\fB\-\-name\-only\fR
+.RS 4
+変更されたファイルの名前のみを表示します。 多くの場合、ファイル名はUTF\-8でエンコードされます。 詳細については、
+\fBgit-log\fR(1)
+のマニュアルページにあるエンコーディングに関する議論(the discussion about encoding)を参照してください。
+.RE
+.PP
+\fB\-\-name\-status\fR
+.RS 4
+変更されたファイルの名前とステータスのみを表示します。ステータス文字の意味については、
+\fB\-\-diff\-filter\fR
+オプションの説明を参照してください。
+\fB\-\-name\-only\fR
+と同じように、ファイル名はしばしばUTF\-8でエンコードされます。
+.RE
+.PP
+\fB\-\-submodule[=<format>]\fR
+.RS 4
+サブモジュールの違いをどのように表示するかを指定します。
+\fB\-\-submodule=short\fR
+を指定する場合、 short形式が使用されます。この形式は、範囲の最初と最後にコミットの名前を表示するだけです。
+\fB\-\-submodule\fR
+または
+\fB\-\-submodule=log\fR
+が指定されている場合、 log形式が使用されます。この形式では、
+\fBgit-submodule\fR(1)
+\fBsummary\fR
+のように範囲内のコミットが一覧表示されます。
+\fB\-\-submodule=diff\fR
+が指定されている場合、 diff形式が使用されます。この形式は、コミット範囲間のサブモジュールの内容の変更のインラインdiffを示します。configオプションが設定されていない場合、デフォルトは
+\fBdiff\&.submodule\fR
+または
+\fBshort\fR
+形式です。
+.RE
+.PP
+\fB\-\-color[=<when>]\fR
+.RS 4
+色付きのdiffを表示します。
+\fB\-\-color\fR
+(つまり、
+\fB=<when>\fR
+無し) は
+\fB\-\-color=always\fR
+と同じです。 <when> は、 always または never または auto のいずれかになります。
+.RE
+.PP
+\fB\-\-no\-color\fR
+.RS 4
+カラーdiffをオフにします。
+\fB\-\-color=never\fR
+と同じです。
+.RE
+.PP
+\fB\-\-color\-moved[=<mode>]\fR
+.RS 4
+ソースコードの移動した行を別の色にします。 <mode>は、オプションが指定されていない場合はデフォルトで no になり、 モードが指定されていないオプションが指定されている場合は zebra になります。 モードは以下のいずれかでなければなりません:
+.PP
+no
+.RS 4
+移動行をハイライトしません。
+.RE
+.PP
+default
+.RS 4
+zebra の同義語です。これは、将来、より賢明なモードに変更される可能性があります。
+.RE
+.PP
+plain
+.RS 4
+ある場所で追加され、別の場所で削除された行は、
+\fBcolor\&.diff\&.newMoved\fR
+で色付けされます。 同様に、
+\fBcolor\&.diff\&.oldMoved\fR
+は、差分の別の場所に追加された削除された行に使用されます。このモードは移動された行をピックアップしますが、コードのブロックが順列なしで移動されたかどうかを判断することはレビューではあまり役に立ちません。
+.RE
+.PP
+blocks
+.RS 4
+少なくとも20文字の英数字の移動テキストのブロックが貪欲に検出されます。検出されたブロックは、
+\fBcolor\&.diff\&.{old,new}Moved\fR
+色のいずれかを使用して色付けされます。隣接するブロックを区別することはできません。
+.RE
+.PP
+zebra
+.RS 4
+移動されたテキストのブロックは、
+\fBblocks\fR
+モードの場合と同様に検出されます。 ブロックは、
+\fBcolor\&.diff\&.{old,new}Moved\fR
+色または
+\fBcolor\&.diff\&.{old,new}MovedAlternative\fR
+色のいずれかを使用して色付けされます。2つの色の間の変化は、新しいブロックが検出されたことを示します。
+.RE
+.PP
+dimmed\-zebra
+.RS 4
+\fBzebra\fR
+に似ていますが、移動されたコードの重要でない部分の追加の調光(dimmed)が実行されます。隣接する2つのブロックの境界線は興味深いと見なされ、残りは興味深いものではありません。
+\fBdimmed_zebra\fR
+は非推奨の同義語です。
+.RE
+.RE
+.PP
+\fB\-\-no\-color\-moved\fR
+.RS 4
+移動検出をオフにします。 これは、構成設定を上書きするために使用できます。
+\fB\-\-color\-moved=no\fR
+と同じです。
+.RE
+.PP
+\fB\-\-color\-moved\-ws=<modes>\fR
+.RS 4
+これは、
+\fB\-\-color\-moved\fR
+の移動検出を実行するときに空白を無視する方法を設定します。 これらのモードは、コンマ区切りのリストとして指定できます:
+.PP
+no
+.RS 4
+移動行検出を実行するときに、空白(whitespace)を無視しない。
+.RE
+.PP
+ignore\-space\-at\-eol
+.RS 4
+行末(EOL)での空白(whitespace)の変更を無視します。
+.RE
+.PP
+ignore\-space\-change
+.RS 4
+空白(whitespace)の数の変更は無視してください。これは、行末の空白(whitespace)を無視し、1つ以上の空白文字(whitespace characters)の他のすべてのシーケンスを同等と見なします。
+.RE
+.PP
+ignore\-all\-space
+.RS 4
+行を比較するときは空白(whitespace)を無視します。これにより、一方の行に空白があり、もう一方の行に空白がない場合でも、違いは無視されます。
+.RE
+.PP
+allow\-indentation\-change
+.RS 4
+最初に移動検出で空白(whitespace)を無視し、空白(whitespace)の変更が行ごとに同じである場合にのみ、移動されたコードブロックをブロックにグループ化します。 これは他のモードと互換性がありません。
+.RE
+.RE
+.PP
+\fB\-\-no\-color\-moved\-ws\fR
+.RS 4
+移動検出を実行するときは、空白(whitespace)を無視しないでください。これは、構成設定を上書きするために使用できます。
+\fB\-\-color\-moved\-ws=no\fR
+と同じです。
+.RE
+.PP
+\fB\-\-word\-diff[=<mode>]\fR
+.RS 4
+<mode> を使用して変更された単語を区切ることにより、単語のdiffを表示します。デフォルトでは、単語は空白で区切られます。 以下の
+\fB\-\-word\-diff\-regex\fR
+を参照してください。 <mode> のデフォルトは
+\fBplain\fR
+です。 <mode> は以下のいずれかである必要があります:
+.PP
+color
+.RS 4
+変更された単語(word)を色のみを使用して強調表示します。
+\fB\-\-color\fR
+を意味します。
+.RE
+.PP
+plain
+.RS 4
+単語を
+\fB[\-removed\-]\fR
+および
+\fB{+added+}\fR
+として表示します。 区切り文字が入力に表示されている場合、区切り文字をエスケープしようとしないため、出力があいまいになる可能性があります。
+.RE
+.PP
+porcelain
+.RS 4
+スクリプトの使用を目的とした特別な行ベースの形式を使用します。追加/削除/無変更については、通常の統一されたdiff形式で印刷され、行の先頭の
+\fB+\fR/\fB\-\fR/` ` 文字で始まり、行の終わりまで続きます。入力の改行は、それ自体の行のチルダ
+\fB~\fR
+で表されます。
+.RE
+.PP
+none
+.RS 4
+単語(word)のdiffを再度無効にします。
+.RE
+.sp
+注意: 最初のモードの名前にもかかわらず、有効になっている場合、すべてのモードで変更された部分を強調するために色が使用されることに注意してください。
+.RE
+.PP
+\fB\-\-word\-diff\-regex=<regex>\fR
+.RS 4
+空白以外を単語と見なす代わりに、 <regex> を使用して単語が何であるかを決定します。また、すでに有効になっていない限り、この機能は
+\fB\-\-word\-diff\fR
+の機能を含んでいます。
+.sp
+<regex> の重複しないマッチはすべて、単語と見なされます。これらのマッチの間のすべては空白と見なされ、違いを見つけるためとしては無視されます！ 正規表現に
+\fB|[^[:space:]]\fR
+を追加して、空白以外のすべての文字とマッチすることを確認することをお勧めします。改行を含むマッチは、改行で黙って切り捨てられます！
+.sp
+たとえば、
+\fB\-\-word\-diff\-regex=\&.\fR
+は各文字を単語として扱い、それに応じて文字ごとの違いを表示します。
+.sp
+正規表現は、diffドライバーまたは構成オプション(configuration option)を介して設定することもできます。
+\fBgitattributes\fR(5)
+または
+\fBgit-config\fR(1)
+を参照してください。これを指定すると、diffドライバーまたは構成設定(configuration settings)が明示的にオーバーライドされます。diffドライバーは構成設定を上書きします。
+.RE
+.PP
+\fB\-\-color\-words[=<regex>]\fR
+.RS 4
+\fB\-\-word\-diff=color\fR
+に
+\fB\-\-word\-diff\-regex=<regex>\fR
+を加えたものに相当します(正規表現が指定されている場合)。
+.RE
+.PP
+\fB\-\-no\-renames\fR
+.RS 4
+構成ファイルにデフォルトで指定されている場合でも、名前変更の検出をオフにします。
+.RE
+.PP
+\fB\-\-[no\-]rename\-empty\fR
+.RS 4
+名前変更ソースとして空のブロブを使用するかどうか。
+.RE
+.PP
+\fB\-\-check\fR
+.RS 4
+変更によって競合マーカーまたは空白エラーが発生した場合に警告します。空白エラーと見なされるものは、
+\fBcore\&.whitespace\fR
+構成によって制御されます。 デフォルトでは、末尾の空白(空白のみで構成される行を含む)と、行の最初のインデント内で直後にタブ文字が続くスペース文字は、空白エラーと見なされます。問題が見つかった場合は、ゼロ以外のステータスで終了します。なお、 \-\-exit\-code とは互換性がありません。
+.RE
+.PP
+\fB\-\-ws\-error\-highlight=<kind>\fR
+.RS 4
+diffの
+\fBcontext\fR
+または
+\fBold\fR
+または
+\fBnew\fR
+行の空白エラーを強調表示します。複数の値はコンマで区切られ、
+\fBnone\fR
+は前の値をリセットし、
+\fBdefault\fR
+はリストを
+\fBnew\fR
+にリセットし、
+\fBall\fR
+は old、new、context の省略形です。このオプションが指定されておらず、構成変数
+\fBdiff\&.wsErrorHighlight\fR
+が設定されていない場合、
+\fBnew\fR
+行の空白エラーのみが強調表示されます。空白エラーは
+\fBcolor\&.diff\&.whitespace\fR
+で色分けされています。
+.RE
+.PP
+\fB\-\-full\-index\fR
+.RS 4
+パッチ形式の出力を生成するときは、最初の一握りの文字(first handful of characters)の代わりに、「インデックス」行にイメージ前およびイメージ後の完全ブロブオブジェクト名を表示します。
+.RE
+.PP
+\fB\-\-binary\fR
+.RS 4
+\fB\-\-full\-index\fR
+に加えて、
+\fBgit\-apply\fR
+で適用できるバイナリ差分を出力します。
+\fB\-\-patch\fR
+の機能を含んでいます。
+.RE
+.PP
+\fB\-\-abbrev[=<n>]\fR
+.RS 4
+完全な40バイトの16進オブジェクト名をdiff\-raw形式の出力とdiff\-treeヘッダー行に表示する代わりに、オブジェクトを一意に参照する、少なくとも <n> 桁の16進数の長さの最短のプレフィックスを表示します。diffパッチ出力形式では、
+\fB\-\-full\-index\fR
+が優先されます。つまり、
+\fB\-\-full\-index\fR
+が指定されている場合、
+\fB\-\-abbrev\fR
+に関係なく、完全なブロブ名が表示されます。デフォルト以外の桁数は、
+\fB\-\-abbrev=<n>\fR
+で指定できます。
+.RE
+.PP
+\fB\-B[<n>][/<m>]\fR, \fB\-\-break\-rewrites[=[<n>][/<m>]]\fR
+.RS 4
+完全な書き換えの変更を削除と作成のペアに分割します。これには以下の2つの目的があります:
+.sp
+これは、ファイルの完全な書き換えに相当する変更が、コンテキストとしてテキストで一致する非常に少数の行と混合された一連の削除と挿入としてではなく、古いものすべての単一の削除とそれに続く すべての新しいものを1回挿入し、数値
+\fBm\fR
+が \-B オプションのこの側面を制御します(デフォルトは60%)。
+\fB\-B/70%\fR
+は、Gitがそれを完全な書き換えと見なすために、元の30%未満が結果に残る必要があることを指定します(つまり、結果のパッチは、コンテキスト行と混合された一連の削除と挿入になります)。
+.sp
+\-M と一緒に使用すると、完全に書き換えられたファイルも名前変更のソースと見なされ(通常、 \-M は、消えたファイルのみを名前変更のソースと見なします)、数
+\fBn\fR
+が \-Bオプションのこの側面を制御します(デフォルトは50%)。
+\fB\-B20%\fR
+は、ファイルのサイズの20%以上と比較して、追加および削除を伴う変更が、別のファイルへの名前変更の可能なソースとして取得される資格があることを指定します。
+.RE
+.PP
+\fB\-M[<n>]\fR, \fB\-\-find\-renames[=<n>]\fR
+.RS 4
+名前の変更(renames)を検知する。
+\fBn\fR
+が指定されている場合、それは類似性インデックスのしきい値です (つまり、ファイルのサイズと比較した追加/削除の量)。 たとえば、
+\fB\-M90%\fR
+は、ファイルの90%以上が変更されていない場合、 Gitが削除/追加のペアを名前変更と見なす必要があることを意味します。
+\fB%\fR
+記号がない場合、数値は小数として読み取られ、その前に小数点が付きます。 つまり、
+\fB\-M5\fR
+は0\&.5になるため、\fB\-M50%\fR
+と同じになります。 同様に、
+\fB\-M05\fR
+は
+\fB\-M5%\fR
+と同じです。 検出を正確な名前変更に制限するには、
+\fB\-M100%\fR
+を使用します。 デフォルトの類似性インデックスは50%です。
+.RE
+.PP
+\fB\-C[<n>]\fR, \fB\-\-find\-copies[=<n>]\fR
+.RS 4
+名前と同様コピーを検出します。
+\fB\-\-find\-copies\-harder\fR
+\fBも参照してください。 `n\fR
+を指定すると、
+\fB\-M<n>\fR
+と同じ意味になります。
+.RE
+.PP
+\fB\-\-find\-copies\-harder\fR
+.RS 4
+パフォーマンス上の理由から、デフォルトでは、
+\fB\-C\fR
+オプションは、コピーの元のファイルが同じ変更組(changeset)で変更された場合にのみコピーを検索します。このフラグにより、コマンドは変更されていないファイルをコピー元の候補として検査します。これは大規模なプロジェクトでは非常にコストのかかる操作であるため、注意して使用してください。 複数の
+\fB\-C\fR
+オプションを指定しても同じ効果があります。
+.RE
+.PP
+\fB\-D\fR, \fB\-\-irreversible\-delete\fR
+.RS 4
+削除するプレイメージ(preimage)を省略します。つまり、ヘッダーのみを出力し、プレイメージと
+\fB/dev/null\fR
+の差分は出力しません。結果のパッチは、
+\fBpatch\fR
+または
+\fBgit apply\fR
+で適用されることを意図していません。これは、変更後にテキストを確認することに集中したい人のためだけのものです。さらに、出力には明らかに、そのようなパッチを手動でも逆に適用するのに十分な情報が不足しているため、オプションの名前が付けられています。
+.sp
+\fB\-B\fR
+と併用する場合は、削除/作成ペアの削除部分のプリイメージ(preimage)も省略してください。
+.RE
+.PP
+\fB\-l<num>\fR
+.RS 4
+\fB\-M\fR
+および
+\fB\-C\fR
+オプションには、名前変更/コピーのサブセットを安価に検出できるいくつかの準備手順が含まれ、その後に、残りのすべてのペアになっていない宛先をすべての関連ソースと比較する徹底的なフォールバック部分が続きます。(名前の変更の場合、残りのペアになっていないソースのみが関係します。コピーの場合、すべての元のソースが関係します)。Nのソースと宛先の場合、この徹底的なチェックのコストは O(N^2) です。このオプションは、関係するソース/宛先ファイルの数が指定された数を超えた場合に、名前変更/コピー検出の完全な部分が実行されないようにします。デフォルトは diff\&.renameLimit です。 値0は無制限として扱われることに注意してください。
+.RE
+.PP
+\fB\-\-diff\-filter=[(A|C|D|M|R|T|U|X|B)\&.\&.\&.[*]]\fR
+.RS 4
+追加(Add)・コピー(Copy)・削除(Delete)・変更(Modify)・名前変更(Rename)されたファイル、タイプが変更されたファイル(T)、マージされていないファイル(U)、不明なファイル(X)、またはペアリングが壊れているファイル(B)のみを選択します。フィルタ文字(無しも含む)の任意の組み合わせを使用できます。 組み合わせに
+\fB*\fR
+(全てまたは無し)が追加されると、比較で他の基準に一致するファイルがある場合、すべてのパスが選択されます。 他の基準に一致するファイルがない場合、何も選択されません。
+.sp
+また、逆に、除外したい時はこれらの各大文字指定を小文字にして指定します。例えば
+\fB\-\-diff\-filter=ad\fR
+は、追加および削除されたパスを除外します。
+.sp
+注意:すべてのdiffがすべてのタイプを特徴とするわけではないことに注意してください。 たとえば、これらのタイプの検出(detection)が無効になっている場合、コピーされたエントリと名前変更されたエントリは表示されません。
+.RE
+.PP
+\fB\-S<string>\fR
+.RS 4
+ファイル内の指定の文字列(つまり、 addition 、deletion)の出現回数の差分を調べます。スクリプターが使用することを目的としています。
+.sp
+(構造体など)コードの正確なブロックを探していて、そのブロックが最初に作成されてからの履歴を知りたい場合に便利です。この機能を繰り返し使用して、プリイメージ(preimage)内の興味深いブロックを
+\fB\-S\fR
+にフィードバックし、そしてあなたはそれをブロックの最初のバージョンを取得するまで続けます。
+.sp
+バイナリファイルも検索されます。
+.RE
+.PP
+\fB\-G<regex>\fR
+.RS 4
+パッチテキストに <regex> にマッチする 追加/削除 された行が含まれている差分を探します。
+.sp
+\fB\-S<regex> \-\-pickaxe\-regex\fR
+と
+\fB\-G<regex>\fR
+の違いを説明するために、同じファイル内で以下のdiffを使用してコミットすることを検討してください:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
++    return frotz(nitfol, two\->ptr, 1, 0);
+\&.\&.\&.
+\-    hit = frotz(nitfol, mf2\&.ptr, 1, 0);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit log \-G"frotz\e(nitfol"\fR
+はこのコミットを表示しますが、
+\fBgit log \-S"frotz\e(nitfol" \-\-pickaxe\-regex\fR
+は表示しません(その文字列の出現回数が変更されなかったため)。
+.sp
+\fB\-\-text\fR
+が提供されていない限り、 textconv フィルターのないバイナリファイルのパッチは無視されます。
+.sp
+詳細については
+\fBgitdiffcore\fR(7)
+の「pickaxe」エントリを参照してください。
+.RE
+.PP
+\fB\-\-find\-object=<object\-id>\fR
+.RS 4
+指定されたオブジェクトの出現回数を変更する違いを探します。
+\fB\-S\fR
+と同様に、引数だけが異なり、特定の文字列ではなく特定のオブジェクトIDを検索します。
+.sp
+オブジェクトは、ブロブまたはサブモジュールのコミットにすることができます。 これは、
+\fBgit\-log\fR
+の
+\fB\-t\fR
+オプションがツリーも探すことを意味します。
+.RE
+.PP
+\fB\-\-pickaxe\-all\fR
+.RS 4
+\fB\-S\fR
+または
+\fB\-G\fR
+が変更を見つけたら、 <string> の変更を含むファイルだけでなく、その変更セット(changeset)のすべての変更を表示します。
+.RE
+.PP
+\fB\-\-pickaxe\-regex\fR
+.RS 4
+\fB\-S\fR
+に指定した <string> を拡張POSIX正規表現として扱います。
+.RE
+.PP
+\fB\-O<orderfile>\fR
+.RS 4
+ファイルが出力に表示される順序を制御します。これは
+\fBdiff\&.orderFile\fR
+構成変数をオーバーライドします(\fBgit-config\fR(1)
+参照)。
+\fBdiff\&.orderFile\fR
+をキャンセルするには、
+\fB\-O/dev/null\fR
+を使用します。
+.sp
+出力順序は、 <orderfile> 内のglobパターンの順序によって決定されます。最初のパターンに一致するパス名を持つすべてのファイルが最初に出力され、2番目のパターンに一致する(ただし最初のパターンには一致しない)パス名を持つすべてのファイルが次に出力されます。パス名がどのパターンとも一致しないすべてのファイルは、ファイルの最後に暗黙のすべて一致パターンがあるかのように、最後に出力されます。複数のパス名のランクが同じである場合(同じパターンに一致するが、以前のパターンには一致しない)、相互の出力順序は通常の順序です。
+.sp
+<orderfile> は以下のとおりパースされます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+空白行は無視されるため、読みやすくするための区切りとして使用できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ハッシュ ("\fB#\fR") で始まる行は無視されるため、コメントに使用できます。 パターンがハッシュで始まる場合は、パターンの先頭にバックスラッシュ(訳注:日本では環境により円記号)("\fB\e\fR") を追加します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+他の各行には、単一のパターンが含まれています。
+.RE
+.sp
+パターンは、 FNM_PATHNAME フラグなしで fnmatch(3) に使用されるパターンと同じ構文とセマンティクスを持ちますが、最終的なパス名コンポーネントをいくつも削除するとパターンと一致する場合、パス名もパターンと一致する点が異なります。 たとえば、パターン "\fBfoo*bar\fR" は、 "\fBfooasdfbar\fR" および "\fBfoo/bar/baz/asdf\fR" と一致しますが、 "\fBfoobarx\fR" とは一致しません。
+.RE
+.PP
+\fB\-\-skip\-to=<file>\fR, \fB\-\-rotate\-to=<file>\fR
+.RS 4
+名前付き <file> の前のファイルを出力から破棄するか(スキップして)、出力の最後に移動させます(ローテーションさせます)。 これらは主に
+\fBgit difftool\fR
+コマンドを使用するために考案されたものであり、それ以外の場合はあまり役に立たない可能性があります。
+.RE
+.PP
+\fB\-R\fR
+.RS 4
+2つの入力を交換します。 つまり、インデックスまたはディスク上のファイルとツリーの内容の違いを表示します。
+.RE
+.PP
+\fB\-\-relative[=<path>]\fR, \fB\-\-no\-relative\fR
+.RS 4
+プロジェクトのサブディレクトリから実行する場合、このオプションを使用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示するように指示できます。サブディレクトリ(ベアリポジトリなど)にいない場合は、引数として <path> を指定することで、出力を作成するサブディレクトリに名前を付けることができます。
+\fB\-\-no\-relative`は、 `diff\&.relative\fR
+設定オプションと以前の
+\fB\-\-relative\fR
+の両方を打ち消すために使用できます。
+.RE
+.PP
+\fB\-a\fR, \fB\-\-text\fR
+.RS 4
+すべてのファイルをテキストとして扱います。
+.RE
+.PP
+\fB\-\-ignore\-cr\-at\-eol\fR
+.RS 4
+比較を行うときは、行末のキャリッジリターン(carriage\-return)を無視します。
+.RE
+.PP
+\fB\-\-ignore\-space\-at\-eol\fR
+.RS 4
+行末(EOL)での空白(whitespace)の変更を無視します。
+.RE
+.PP
+\fB\-b\fR, \fB\-\-ignore\-space\-change\fR
+.RS 4
+空白(whitespace)の数の変更は無視してください。これは、行末の空白(whitespace)を無視し、1つ以上の空白文字(whitespace characters)の他のすべてのシーケンスを同等と見なします。
+.RE
+.PP
+\fB\-w\fR, \fB\-\-ignore\-all\-space\fR
+.RS 4
+行を比較するときは空白を無視します。 これにより、一方の行に空白があり、もう一方の行に空白がない場合でも、違いは無視されます。
+.RE
+.PP
+\fB\-\-ignore\-blank\-lines\fR
+.RS 4
+全て空白の行の変更は無視します。
+.RE
+.PP
+\fB\-I<regex>\fR, \fB\-\-ignore\-matching\-lines=<regex>\fR
+.RS 4
+すべての行が <regex> にマッチする変更を無視します。このオプションは複数回指定できます。
+.RE
+.PP
+\fB\-\-inter\-hunk\-context=<lines>\fR
+.RS 4
+指定された行数までの差分ハンク間のコンテキストを表示し、それによって互いに近いハンクを融合します。デフォルトは
+\fBdiff\&.interHunkContext\fR
+で、設定オプションが設定されていない場合は0です。
+.RE
+.PP
+\fB\-W\fR, \fB\-\-function\-context\fR
+.RS 4
+関数全体を各変更のコンテキスト行として表示します。関数名は、
+\fBgit diff\fR
+がパッチハンクヘッダーを処理するのと同じ方法で決定されます(\fBgitattributes\fR(5)
+の「Defining a custom hunk\-header」参照)。
+.RE
+.PP
+\fB\-\-exit\-code\fR
+.RS 4
+diff(1）と同様のコードでプログラムを終了させます。つまり、違いがあった場合は 1 で終了し、 0 は違いがないことを意味します。
+.RE
+.PP
+\fB\-\-quiet\fR
+.RS 4
+プログラムのすべての出力を無効にします。
+\fB\-\-exit\-code\fR
+を意味します。
+.RE
+.PP
+\fB\-\-ext\-diff\fR
+.RS 4
+外部diffヘルパーの実行を許可します。
+\fBgitattributes\fR(5)
+を使用して外部diffドライバーを設定する場合は、
+\fBgit-log\fR(1)
+およびその仲間と一緒にこのオプションを使用する必要があります。
+.RE
+.PP
+\fB\-\-no\-ext\-diff\fR
+.RS 4
+外部diffドライバーを禁止します。
+.RE
+.PP
+\fB\-\-textconv\fR, \fB\-\-no\-textconv\fR
+.RS 4
+バイナリファイルを比較するときに、外部テキスト変換フィルターの実行を許可(または禁止)します。 詳細については、
+\fBgitattributes\fR(5)
+を参照してください。textconvフィルターは通常、一方向の変換であるため、結果のdiffは人間の消費に適していますが、適用(apply)することはできません。このため、textconvフィルターは、
+\fBgit-diff\fR(1)
+および
+\fBgit-log\fR(1)
+に対してのみデフォルトで有効になりますが、
+\fBgit-format-patch\fR(1)
+またはdiff配管コマンドに対しては有効になりません。
+.RE
+.PP
+\fB\-\-ignore\-submodules[=<when>]\fR
+.RS 4
+diff生成のサブモジュールへの変更を無視します。 <when> は、 none・untracked・dirty・allのいずれかになります。これがデフォルトです。noneを使用すると、追跡されていないファイルまたは変更されたファイルが含まれている場合、またはそのHEADがスーパープロジェクトに記録されているコミットと異なる場合にサブモジュールが変更されたと見なされ、
+\fBgit-config\fR(1)
+または
+\fBgitmodules\fR(5)
+の ignoreオプションの設定をオーバーライドするために使用できます。untrackedが使用されている場合、サブモジュールには追跡されていないコンテンツのみが含まれている場合、サブモジュールはダーティとは見なされません(ただし、変更されたコンテンツはスキャンされます)。「dirty」を使用すると、サブモジュールの作業ツリーへのすべての変更が無視され、スーパープロジェクトに格納されているコミットへの変更のみが表示されます(これは1\&.7\&.0までの動作でした)。「all」を使用すると、サブモジュールへのすべての変更が非表示になります。
+.RE
+.PP
+\fB\-\-src\-prefix=<prefix>\fR
+.RS 4
+"a/" の代わりに、与えられたソースプレフィックス(source prefix)を表示します。
+.RE
+.PP
+\fB\-\-dst\-prefix=<prefix>\fR
+.RS 4
+"b/" の代わりに、指定された宛先プレフィックス(destination prefix)を表示します。
+.RE
+.PP
+\fB\-\-no\-prefix\fR
+.RS 4
+送信元(source)または宛先(destination)のプレフィックスを表示しません。
+.RE
+.PP
+\fB\-\-line\-prefix=<prefix>\fR
+.RS 4
+出力のすべての行に追加のプレフィックスを付加します。
+.RE
+.PP
+\fB\-\-ita\-invisible\-in\-index\fR
+.RS 4
+デフォルトでは、 "git add \-N" によって追加されたエントリは、 "git diff" に既存の空のファイルとして表示され、 "git diff \-\-cached" に新しいファイルとして表示されます。このオプションを使用すると、エントリは "git diff" では新しいファイルとして表示され、 "git diff \-\-cached" では存在しません。このオプションは、
+\fB\-\-ita\-visible\-in\-index\fR
+で元に戻すことができます。どちらのオプションも実験的なものであり、将来削除される可能性があります。
+.RE
+.sp
+これらの一般的なオプションの詳細については、 \fBgitdiffcore\fR(7) も参照してください。
+.PP
+\fB\-1 \-\-base\fR, \fB\-2 \-\-ours\fR, \fB\-3 \-\-theirs\fR, \fB\-0\fR
+.RS 4
+"base" バージョン または "our branch" または "their branch" とそれぞれ異なります。これらのオプションを使用すると、マージされたエントリのdiffは表示されません。
+.sp
+デフォルトでは、 our branch (\-2) とクリーンに解決されたパスに対してdiffを取ります。オプション \-0 を指定すると、マージされていないエントリのdiff出力を省略し、 "Unmerged" と表示することができます。
+.RE
+.PP
+\fB\-c\fR, \fB\-\-cc\fR
+.RS 4
+これは、ステージ2（ブランチ）、ステージ3（ブランチ）、および作業ツリーファイルを比較し、
+\fIdiff\-tree\fR
+がこれらのフラグを使用してマージコミットを示すのと同様に、結合された差分を出力します。
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+存在しないファイルでも黙っています
+.RE
+.SH "RAW OUTPUT FORMAT"
+.sp
+\fBgit\-diff\-index\fR と \fBgit\-diff\-tree\fR と \fBgit\-diff\-files\fR と \fBgit diff \-\-raw\fR からの生の出力形式は非常に似ています。
+.sp
+これらのコマンドはすべて、2つのセットを比較します。なお、比較されるものは異なります:
+.PP
+git\-diff\-index <tree\-ish>
+.RS 4
+<tree\-ish> とファイルシステム上のファイルを比較します。
+.RE
+.PP
+git\-diff\-index \-\-cached <tree\-ish>
+.RS 4
+<tree\-ish> とインデックスを比較します。
+.RE
+.PP
+git\-diff\-tree [\-r] <tree\-ish\-1> <tree\-ish\-2> [<pattern>\&...]
+.RS 4
+2つの引数で指定されたツリーを比較します。
+.RE
+.PP
+git\-diff\-files [<pattern>\&...]
+.RS 4
+インデックスとファイルシステム上のファイルを比較します。
+.RE
+.sp
+"git\-diff\-tree" コマンドは、比較対象のハッシュ値を出力することで出力を開始します。その後、すべてのコマンドは、変更されたファイルごとに1つの出力行を出力します。
+.sp
+出力行は以下のようにフォーマットされます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+in\-place edit  :100644 100644 bcd1234 0123456 M file0
+copy\-edit      :100644 100644 abcd123 1234567 C68 file1 file2
+rename\-edit    :100644 100644 abcd123 1234567 R86 file1 file3
+create         :000000 100644 0000000 1234567 A file4
+delete         :100644 000000 1234567 0000000 D file5
+unmerged       :000000 000000 0000000 0000000 U file6
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+つまり、左から右へ:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+コロン(:)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+"src" のモード。作成(creation)またはマージされていない(unmerged)場合は 000000
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+空白
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+"dst" のモード。作成(creation)またはマージされていない(unmerged)場合は 000000
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+空白
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+"src" のsha1。作成(creation)またはマージされていない(unmerged)場合は 0{40}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+空白
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  8." 4.2
+.\}
+"dst" のsha1; 削除、またはマージされていない(unmerged)、または「ワーク・ツリーがインデックスと同期していない」場合は 0{40}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 9.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  9." 4.2
+.\}
+空白
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'10.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "10." 4.2
+.\}
+ステータスの後に、オプションの「スコア数」("score" number)が続きます
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'11.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "11." 4.2
+.\}
+\fB\-z\fR
+オプションが使用されている場合はタブまたはNUL
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'12.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "12." 4.2
+.\}
+"src" のパス
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'13.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "13." 4.2
+.\}
+\fB\-z\fR
+オプションが使用されている場合タブまたはNUL。ステータスCまたはRにのみ存在します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'14.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "14." 4.2
+.\}
+"dst" のパス。ステータスCまたはRにのみ存在します
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'15.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "15." 4.2
+.\}
+LFでレコードを終了します。
+\fB\-z\fR
+オプションが使用されている場合はNULでレコードを終了します。
+.RE
+.sp
+ステータス文字の種類は以下のとおり:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+A: ファイルの追加
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+C: ファイルを新しいファイルにコピー
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+D: ファイルの削除
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+M: ファイルの内容やモードの変更
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+R: ファイル名の名前変更
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+T: ファイルのタイプを変更(通常ファイル または シンボリックリンク または サブモジュール)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+U: ファイルはマージされていません(コミットする前にマージを完了する必要があります)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+X: 「不明な」変更タイプ(おそらくバグです。報告してください)
+.RE
+.sp
+ステータス文字CとRの後には常にスコアが続きます(移動またはコピーのソースとターゲットの間の類似性のパーセンテージを示します)。ステータス文字Mの後には、ファイルの書き換えのスコア(非類似度のパーセンテージを示す)が続く場合があります。
+.sp
+ファイルシステム上のファイルがインデックスと同期していない場合、 \(rqdst\(rq の sha1 はすべて 0 として表示されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:100644 100644 5be4a4a 0000000 M file\&.c
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-z\fR オプションを指定しない場合、構成変数 \fBcore\&.quotePath\fR で説明されているように、通常の文字以外(unusual characters)を含むパス名が引用符で囲まれます(\fBgit-config\fR(1) 参照)。 \fB\-z\fR を使用すると、ファイル名がそのまま出力され、行はNULバイトで終了します。
+.SH "DIFF FORMAT FOR MERGES"
+.sp
+"git\-diff\-tree" と "git\-diff\-files" と "git\-diff \-\-raw" は、 \fB\-c\fR または \fB\-\-cc\fR オプションを使用して、マージコミットに対してもdiff出力を生成できます。出力は、以下の点で上記の形式とは異なります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+親ごとにコロン(:)があります
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+より多くの "src" モードと "src" sha1があります
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+statusは、各親のステータス文字を連結したものです
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+オプションの「スコア数」はありません
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+ファイルのタブ区切りのパス名
+.RE
+.sp
+\fB\-c\fR および ` \-cc` の場合、履歴のいずれかの側でファイルの名前が変更された場合でも、宛先(dst)または最終パスのみが表示されます。 \fB\-\-combined\-all\-paths\fR を使用すると、各親のパスの名前が表示され、それに続いてマージコミットのパスの名前が表示されます。
+.sp
+例: \fB\-\-combined\-all\-paths\fR を使用しない \fB\-c\fR および \fB\-\-cc\fR の場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+::100644 100644 100644 fabadb8 cc95eb0 4866510 MM       desc\&.c
+::100755 100755 100755 52b7a2d 6d1ac04 d2ac7d7 RM       bar\&.sh
+::100644 100644 100644 e07d6c5 9042e82 ee91881 RR       phooey\&.c
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+例: \fB\-c\fR または \fB\-\-cc\fR のいずれかに \fB\-\-combined\-all\-paths\fR が追加された場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+::100644 100644 100644 fabadb8 cc95eb0 4866510 MM       desc\&.c  desc\&.c  desc\&.c
+::100755 100755 100755 52b7a2d 6d1ac04 d2ac7d7 RM       foo\&.sh  bar\&.sh  bar\&.sh
+::100644 100644 100644 e07d6c5 9042e82 ee91881 RR       fooey\&.c fuey\&.c  phooey\&.c
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: \fBcombined diff\fR は、すべての親から変更されたファイルのみをリストすることに注意してください。
+.SH "GENERATING PATCH TEXT WITH \-P"
+.sp
+\fBgit-diff\fR(1) 、 \fBgit-log\fR(1) 、 \fBgit-show\fR(1) 、 \fBgit-diff-index\fR(1) 、 \fBgit-diff-tree\fR(1) 、 \fBgit-diff-files\fR(1) に \fB\-p\fR オプションを付けて実行するとパッチテキストを生成します。パッチテキストの作成は、 \fBGIT_EXTERNAL_DIFF\fR と \fBGIT_DIFF_OPTS\fR 環境変数( \fBgit\fR(1) 参照)、および \fBdiff\fR 属性( \fBgitattributes\fR(5) 参照)を介してカスタマイズできます。
+.sp
+\-pオプションが生成するものは、従来のdiff形式とは少々異なります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+先行して、以下のような "git diff" ヘッダーがあります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+diff \-\-git a/file1 b/file2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+名前の変更/コピーが含まれない限り、
+\fBa/\fR
+と
+\fBb/\fR
+のファイル名は同じです。 特に、作成または削除の場合でも、
+\fBa/\fR
+または
+\fBb/\fR
+ファイル名の代わりに
+\fB/dev/ null\fR
+が使用されることはありません。
+.sp
+名前変更/コピーが含まれる場合、
+\fBfile1\fR
+と`file2` は、それぞれ名前変更/コピーのソースファイルの名前と、名前変更/コピーが生成するファイルの名前を示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+その後に、1つ以上の拡張ヘッダー行達が続きます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+old mode <mode>
+new mode <mode>
+deleted file mode <mode>
+new file mode <mode>
+copy from <path>
+copy to <path>
+rename from <path>
+rename to <path>
+similarity index <number>
+dissimilarity index <number>
+index <hash>\&.\&.<hash> <mode>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ファイルモードは、ファイルタイプとファイル許可ビットを含む6桁の8進数として出力されます。
+.sp
+拡張ヘッダーのパス名には、
+\fBa/\fR
+および
+\fBb/\fR
+プレフィックスは含まれません。
+.sp
+類似インデックス(similarity index)は変更されていない行のパーセンテージであり、非類似インデックス(dissimilarity index)は変更された行のパーセンテージです。これは切り捨てられた整数であり、その後にパーセント記号が続きます。したがって、100％の類似インデックス値は2つの等しいファイルを表し、100％の非類似性は古いファイルから新しいファイルに移行された行がないことを意味します。
+.sp
+インデックス行には、変更前後のブロブオブジェクト名が含まれます。 <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の場合、別々の行は古いモードと新しいモードを示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+通常の文字でないキャラクタ(\e"unusual\e" characters)を含むパス名は、構成変数
+\fBcore\&.quotePath\fR
+で説明されているように引用符で囲まれています(
+\fBgit-config\fR(1)参照)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+出力内のすべての
+\fBfile1\fR
+ファイルはコミット前のファイルを参照し、すべての
+\fBfile2\fR
+ファイルはコミット後のファイルを参照します。各変更を各ファイルに順番に適用するのは誤りです。たとえば、以下のパッチはaとbを交換します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+diff \-\-git a/a b/b
+rename from a
+rename to b
+diff \-\-git a/b b/a
+rename from b
+rename to a
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+ハンクのヘッダーには、ハンクが適用される関数の名前が記載されています。特定の言語に合わせてこれを調整する方法の詳細については、
+\fBgitattributes\fR(5)
+の "Defining a custom hunk\-header" を参照してください。
+.RE
+.SH "COMBINED DIFF FORMAT"
+.sp
+diffを生成するコマンドは、マージを表示するときに \fB\-c\fR または \fB\-\-cc\fR オプションを使用して「合成diff」(combined diff)を生成できます。これは \fBgit-diff\fR(1) または \fBgit-show\fR(1) でのマージを表示するときのデフォルトの形式です。 注意: これらのコマンドのいずれかに適切な \fB\-\-diff\-merges\fR オプションを指定して、特定の形式で差分を強制的に生成できることにも注意してください。
+.sp
+合成diff形式は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+diff \-\-combined describe\&.c
+index fabadb8,cc95eb0\&.\&.4866510
+\-\-\- a/describe\&.c
++++ b/describe\&.c
+@@@ \-98,20 \-98,12 +98,20 @@@
+        return (a_date > b_date) ? \-1 : (a_date == b_date) ? 0 : 1;
+  }
+
+\- static void describe(char *arg)
+ \-static void describe(struct commit *cmit, int last_one)
+++static void describe(char *arg, int last_one)
+  {
+ +      unsigned char sha1[20];
+ +      struct commit *cmit;
+        struct commit_list *list;
+        static int initialized = 0;
+        struct commit_name *n;
+
+ +      if (get_sha1(arg, sha1) < 0)
+ +              usage(describe_usage);
+ +      cmit = lookup_commit_reference(sha1);
+ +      if (!cmit)
+ +              usage(describe_usage);
+ +
+        if (!initialized) {
+                initialized = 1;
+                for_each_ref(get_name);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+まず "git diff" ヘッダーがあり、以下のようになります(
+\fB\-c\fR
+オプションが使用されている場合):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+diff \-\-combined file
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+または、以下のようになります(
+\fB\-\-cc\fR
+オプションが使用されている場合):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+diff \-\-cc file
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+その後に1つ以上の拡張ヘッダー行が続きます(以下の例は、2つの親とのマージを示しています):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+index <hash>,<hash>\&.\&.<hash>
+mode <mode>,<mode>\&.\&.<mode>
+new file mode <mode>
+deleted file mode <mode>,<mode>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBmode <mode>,<mode>\&.\&.<mode>\fR
+行は、<mode> の少なくとも1つが他の <mode> と異なる場合にのみ表示されます。検出されたコンテンツの移動(名前の変更とコピーの検出)に関する情報を含む拡張ヘッダーは、2つの <tree\-ish> のdiffで機能するように設計されており、合成diff形式では使用されません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+その後に2行の from\-file/to\-file ヘッダーが続きます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\- a/file
++++ b/file
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+従来の統一diff形式の2行ヘッダーと同様に、
+\fB/dev/null\fR
+は、作成または削除されたファイルを通知するために使用されます。
+.sp
+ただし、 \-\-combined\-all\-paths オプションが指定されている場合、2行の from\-file/to\-file の代わりに、 N+1 行の from\-file/to\-file ヘッダーが取得されます。ここで、 N はマージコミットの親の数です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\- a/file
+\-\-\- a/file
+\-\-\- a/file
++++ b/file
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この拡張形式は、名前変更またはコピー検出がアクティブな場合に役立ち、別の親のファイルの元の名前を確認できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+チャンクヘッダーの形式が変更され、誤って
+\fBpatch\-p1\fR
+にフィードされるのを防ぎます。合成差分形式は、マージコミットの変更を確認するために作成されたものであり、適用されることを意図したものではありません。この変更は、拡張された「インデックス」ヘッダーの変更に似ています:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+@@@ <from\-file\-range> <from\-file\-range> <to\-file\-range> @@@
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+合成diff形式のチャンクヘッダーには親の数+1の
+\fB@\fR
+文字があります。
+.RE
+.sp
+従来の統一diff形式とは異なり、2つのファイルAとBが、 \fB\-\fR (マイナスはAに表示されますが、Bでは削除されます) または \fB+\fR (プラスはAにはありませんが、Bには追加されます)、または \fB" "\fR（スペースは変更なし) プレフィックスを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,\&... を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異なるかを示します。
+.sp
+列Nの \fB\-\fR 文字は、その行が fileN に表示されているが、結果には表示されていないことを意味します。 列Nの \fB+\fR 文字は、結果に行が表示され、 fileN にその行がないことを意味します(つまり、その親の観点から見て行が追加されたことを示す)。
+.sp
+上記の出力例では、関数のシグネチャが両方のファイルから見て変更されています(したがって、 file1 と file2 の両方から2つの \fB\-\fR が削除され、さらに \fB++\fR が追加されたため、 file1 と file2 のどちらにも表示されません)。また、他の8行は file1 と同じですが、 file2 には表示されません(したがって、接頭辞として \fB+\fR が付けられます)。
+.sp
+\fBgit diff\-tree \-c\fR で表示される場合、マージコミットの親をマージ結果と比較します(つまり、 file1\&.\&.fileN が親です)。 \fBgit diff\-files \-c\fR で表示される場合、2つの未解決のマージ親を作業ツリーファイルと比較します(つまり、 file1 はステージ2、別名「私たちのバージョン」、 file2 はステージ3、別名「彼らのバージョン」です)。
+.SH "OTHER DIFF FORMATS"
+.sp
+\fB\-\-summary\fR オプションは、新しく追加、削除、名前変更、およびコピーされたファイルを説明します。\fB\-\-stat\fR オプションは、 diffstat(1) グラフ を出力に追加します。これらのオプションは、 \fB\-p\fR などの他のオプションと組み合わせることができ、人間が読むことを目的としています。
+.sp
+名前の変更またはコピーを伴う変更を表示する場合、 \fB\-\-stat\fR 出力は、パス名の共通のプレフィックスとサフィックスを組み合わせることにより、パス名をコンパクトにフォーマットします。 たとえば、4行を変更(modify)しながら \fBarch/i386/Makefile\fR を \fBarch/x86/Makefile\fR に移動(move)する変更(change)は、次のように表示されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+arch/{i386 => x86}/Makefile    |   4 +\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-\-numstat\fR オプションは diffstat(1) 情報を提供しますが、人間ではなくソフトウェアで読むのを容易にするように設計されています。 \fB\-\-numstat\fR 出力のエントリは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+1       2       README
+3       1       arch/{i386 => x86}/Makefile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この形式は、左から右へ:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+追加行数
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+タブ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+削除行数
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+タブ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+パス名(おそらく rename/copy 情報を含む)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+改行
+.RE
+.sp
+\fB\-z\fR 出力オプションが有効な場合、出力は以下のようにフォーマットされます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+1       2       README NUL
+3       1       NUL arch/i386/Makefile NUL arch/x86/Makefile NUL
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+追加行数
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+タブ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+削除行数
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+タブ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+NUL(rename/copy された場合のみ存在します)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+プリイメージのパス名
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+NUL(rename/copy された場合のみ存在します)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  8." 4.2
+.\}
+ポストイメージのパス名(rename/copy された場合のみ存在します)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 9.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  9." 4.2
+.\}
+NUL
+.RE
+.sp
+名前が変更された場合のプリイメージパスの前の追加の \fBNUL\fR は、出力を読み取るスクリプトが、先読みせずに、読み取られている現在のレコードがシングルパスレコードであるか、名前変更/コピーレコードであるか、を判断できるようにするためです。追加および削除された行を読み取った後、 \fBNUL\fR まで読み取るとパス名が生成されますが、それが \fBNUL\fR の場合、レコードには2つのパスが表示されます。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

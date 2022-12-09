@@ -1,0 +1,184 @@
+'\" t
+.\"     Title: gitformat-bundle
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITFORMAT\-BUNDLE" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitformat-bundle \- バンドル・ファイル形式
+.SH "SYNOPSIS"
+.sp
+.nf
+*\&.bundle
+*\&.bdl
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+Git バンドル形式は、 ref と Git オブジェクトの両方を表す形式です。 バンドルは、 \fBgit-show-ref\fR(1) のような形式のヘッダーの後に *\&.pack 形式のパックが続きます。
+.sp
+この形式は \fBgit-bundle\fR(1) コマンドで作成・読み込みができ、 \fBgit-fetch\fR(1) や \fBgit-clone\fR(1) などでサポートされています。
+.SH "FORMAT"
+.sp
+ABNF 記法を使用して Git バンドル形式を定義します。 詳細については、\fBgitprotocol-common\fR(5) を参照してください。
+.sp
+v2バンドルは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bundle    = signature *prerequisite *reference LF pack
+signature = "# v2 git bundle" LF
+
+prerequisite = "\-" obj\-id SP comment LF
+comment      = *CHAR
+reference    = obj\-id SP refname LF
+
+pack         = \&.\&.\&. ; packfile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+v3バンドルは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+bundle    = signature *capability *prerequisite *reference LF pack
+signature = "# v3 git bundle" LF
+
+capability   = "@" key ["=" value] LF
+prerequisite = "\-" obj\-id SP comment LF
+comment      = *CHAR
+reference    = obj\-id SP refname LF
+key          = 1*(ALPHA / DIGIT / "\-")
+value        = *(%01\-09 / %0b\-FF)
+
+pack         = \&.\&.\&. ; packfile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEMANTICS"
+.sp
+Gitバンドルはいくつかの部分で構成されています。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcapabilities\fR
+(機能)はv3形式のみであり、バンドルを正しく読み取るために必要な機能を示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBprerequisites\fR
+(前提条件)には、バンドルに含まれていないオブジェクトがリストされており、バンドル内のデータを使用するには、バンドルのリーダーがそれらを既に持っている必要があります。 バンドルに格納されているオブジェクトは、前提条件オブジェクトとそれらから到達可能なもの(たとえば、バンドル内のツリーオブジェクトは、前提条件から到達可能なブロブを参照できます)、および/または 前提条件オブジェクトに対するデルタとして表現されているものを参照する場合があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBreferences\fR
+には、履歴グラフのヒントが記録されています。つまり、バンドルのリーダーがそこから `git fetch ` できるモノです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpack\fR
+は、上記の「references」に記録された参照を持つリポジトリから、上記の「prerequisites」にリストされたオブジェクトを指す参照を持つリポジトリにフェッチする場合に、
+\fBgit fetch\fR
+が送信するパックデータストリームです。
+.RE
+.sp
+バンドル形式では、前提条件(prerequisite)の obj\-id の後にコメントを付けることができます。 これはコメントであり、特別な意味はありません。 バンドルの作成者は、ここに任意の文字列を入れてもいいです。 バンドルのリーダーはコメントを無視しなければなりません。
+.SS "Note on the shallow clone and a Git bundle"
+.sp
+注意: 前提条件は、浅いクローンの境界(shallow\-clone boundary)を表していないことに注意してください。 前提条件と浅いクローンの境界のセマンティクスは異なり、Gitバンドルv2形式は浅いクローンのリポジトリを表すことはできません。
+.SH "CAPABILITIES"
+.sp
+不明な機能は、 交渉(negotiation)の機会がないため、 \fBgit bundle\fR の中止(abort)を引き起こします。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBobject\-format\fR
+には使用中のハッシュ・アルゴリズムを指定し、
+\fBextensions\&.objectFormat\fR
+構成値と同じ値を取ることができます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBfilter\fR
+は、\fBgit-rev-list\fR(1)
+の
+\fB\-\-filter\fR
+オプションのようにオブジェクト・フィルタを指定します。 生成されたパック・ファイルは、バンドル解除(unbundle)後に
+\fB\&.promisor\fR
+パック・ファイルとしてマークする必要があります。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

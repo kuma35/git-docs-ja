@@ -1,0 +1,446 @@
+'\" t
+.\"     Title: git-ls-files
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-LS\-FILES" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-ls-files \- インデックスと作業ツリーのファイルに関する情報を表示する
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit ls\-files\fR [\-z] [\-t] [\-v] [\-f]
+                [\-c|\-\-cached] [\-d|\-\-deleted] [\-o|\-\-others] [\-i|\-\-|ignored]
+                [\-s|\-\-stage] [\-u|\-\-unmerged] [\-k|\-\-|killed] [\-m|\-\-modified]
+                [\-\-directory [\-\-no\-empty\-directory]] [\-\-eol]
+                [\-\-deduplicate]
+                [\-x <pattern>|\-\-exclude=<pattern>]
+                [\-X <file>|\-\-exclude\-from=<file>]
+                [\-\-exclude\-per\-directory=<file>]
+                [\-\-exclude\-standard]
+                [\-\-error\-unmatch] [\-\-with\-tree=<tree\-ish>]
+                [\-\-full\-name] [\-\-recurse\-submodules]
+                [\-\-abbrev[=<n>]] [\-\-format=<format>] [\-\-] [<file>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+これにより、インデックス内のファイルリストが実際の作業ディレクトリリストとマージされ、2つのさまざまな組み合わせが表示されます。
+.sp
+以下の1つ以上のオプションを使用して、表示されるファイルを判別できます:
+.SH "OPTIONS"
+.PP
+\fB\-c\fR, \fB\-\-cached\fR
+.RS 4
+キャッシュされたファイルを出力に表示します(デフォルト)
+.RE
+.PP
+\fB\-d\fR, \fB\-\-deleted\fR
+.RS 4
+削除されたファイルを出力に表示します
+.RE
+.PP
+\fB\-m\fR, \fB\-\-modified\fR
+.RS 4
+変更されたファイルを出力に表示
+.RE
+.PP
+\fB\-o\fR, \fB\-\-others\fR
+.RS 4
+その他(たとえば 追跡されていない)ファイルを出力に表示します
+.RE
+.PP
+\fB\-i\fR, \fB\-\-ignored\fR
+.RS 4
+無視されたファイル(ignored files)のみを出力に表示します。インデックのファイルを表示する場合は、除外パターンに一致するファイルのみを印刷してください。 「その他」のファイルを表示する場合は、除外パターンに一致するファイルのみを表示してください。標準の無視ルールは自動的にアクティブ化されないため、少なくとも1つの
+\fB\-\-exclude*\fR
+オプションが必要です。
+.RE
+.PP
+\fB\-s\fR, \fB\-\-stage\fR
+.RS 4
+ステージングされたコンテンツのモードビット、オブジェクト名、ステージ番号を出力に表示します。
+.RE
+.PP
+\fB\-\-directory\fR
+.RS 4
+ディレクトリ全体が「その他」に分類される場合は、(末尾にスラッシュを付けて)そのディレクトリ名だけを表示し、ディレクトリの内容を表示しないでください。
+.RE
+.PP
+\fB\-\-no\-empty\-directory\fR
+.RS 4
+空のディレクトリをリストしないでください。
+\fB\-\-directory\fR
+を指定していないと効果がありません。
+.RE
+.PP
+\fB\-u\fR, \fB\-\-unmerged\fR
+.RS 4
+マージされていないファイルを出力に表示します(\fB\-\-stage\fR
+の機能を含む)
+.RE
+.PP
+\fB\-k\fR, \fB\-\-killed\fR
+.RS 4
+checkout\-indexを成功させるために、ファイル/ディレクトリの競合のために削除する必要があるファイルシステム上のファイルを表示します。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+\e 0出力での行の終了であり、ファイルをクォートしません。 詳細については、以下の「OUTPUT」を参照してください。
+.RE
+.PP
+\fB\-\-deduplicate\fR
+.RS 4
+ファイル名のみが表示されている場合は、マージ中に複数のステージがあること、または
+\fB\-\-deleted\fR
+と
+\fB\-\-modified\fR
+オプションを同時に指定することで発生する可能性のある重複を抑制します。
+\fB\-t\fR
+または
+\fB\-\-unmerged\fR
+または
+\fB\-\-stage\fR
+オプションのいずれかが使用されている場合、このオプションは効果がありません。
+.RE
+.PP
+\fB\-x <pattern>\fR, \fB\-\-exclude=<pattern>\fR
+.RS 4
+パターンに一致する追跡されていないファイルをスキップします。パターンはシェルワイルドカードパターンであることに注意してください。 詳細については、以下の「EXCLUDE PATTERNS」を参照してください。
+.RE
+.PP
+\fB\-X <file>\fR, \fB\-\-exclude\-from=<file>\fR
+.RS 4
+<file> から除外パターンを読み取ります。1行に1つづつです。
+.RE
+.PP
+\fB\-\-exclude\-per\-directory=<file>\fR
+.RS 4
+各ディレクトリとサブディレクトリにのみ適用される、追加の除外パターンを、そのディレクトリの <file> から読み取ります。(通常は
+\fB\&.gitignore\fR
+)
+.RE
+.PP
+\fB\-\-exclude\-standard\fR
+.RS 4
+標準のGit除外を追加します: \&.git/info/exclude と 各ディレクトリの \&.gitignore と ユーザーのグローバル除外ファイル。
+.RE
+.PP
+\fB\-\-error\-unmatch\fR
+.RS 4
+<file> がインデックスに現れない場合は、これをエラーとして扱います(1を返します)。
+.RE
+.PP
+\fB\-\-with\-tree=<tree\-ish>\fR
+.RS 4
+\fB\-\-error\-unmatch\fR
+を使用して、ユーザーが指定した <file>（つまり、パスパターン）引数をパスに展開する場合、名前付きの <tree\-ish> がまだ存在するためにインデックスから削除されたパスを装います。 このオプションを
+\fB\-s\fR
+または
+\fB\-u\fR
+オプションと一緒に使用しても意味がありません。
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+この機能は準非推奨です。スクリプト化の目的では、
+\fBgit-status\fR(1)
+\fB\-\-porcelain\fR
+と
+\fBgit-diff-files\fR(1)
+\fB\-\-name\-status\fR
+がほとんどの場合優れた代替手段であり、さらにユーザーフレンドリーな代替手段については、
+\fBgit-status\fR(1)
+\fB\-\-short\fR
+または
+\fBgit-diff\fR(1)
+\fB\-\-name\-status\fR
+をご覧下さい。
+.sp
+このオプションは、各行の先頭にある以下のタグ(スペースが続く)でファイルのステータスを識別します:
+.PP
+H
+.RS 4
+cached
+.RE
+.PP
+S
+.RS 4
+skip\-worktree
+.RE
+.PP
+M
+.RS 4
+unmerged
+.RE
+.PP
+R
+.RS 4
+removed/deleted
+.RE
+.PP
+C
+.RS 4
+modified/changed
+.RE
+.PP
+K
+.RS 4
+to be killed
+.RE
+.PP
+?
+.RS 4
+other
+.RE
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+\fB\-t\fR
+に似ていますが、「assume unchanged」(変更されていないと仮定する)とマークされたファイルには小文字を使用します(\fBgit-update-index\fR(1)
+を参照)。
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+\fB\-t\fR
+に似ていますが、「fsmonitor valid」とマークされているファイルには小文字を使用します(\fBgit-update-index\fR(1)
+を参照)。
+.RE
+.PP
+\fB\-\-full\-name\fR
+.RS 4
+サブディレクトリから実行する場合、コマンドは通常、現在のディレクトリからの相対パスを出力します。 このオプションは、プロジェクトの最上位ディレクトリを基準にしたパスを強制的に出力します。
+.RE
+.PP
+\fB\-\-recurse\-submodules\fR
+.RS 4
+リポジトリ内のアクティブなサブモジュールごとに ls\-files を再帰的に呼び出します。 現在、
+\fB\-\-cached\fR
+モードと
+\fB\-\-stage\fR
+モードのみがサポートされています。
+.RE
+.PP
+\fB\-\-abbrev[=<n>]\fR
+.RS 4
+40バイトの16進数のオブジェクト行全体を表示する代わりに、オブジェクトを一意に参照する、少なくとも <n> の長さ16進数の長さの最短のプレフィックスを表示します。デフォルト以外の桁数は、
+\fB\-\-abbrev=<n>\fR
+で指定できます。
+.RE
+.PP
+\fB\-\-debug\fR
+.RS 4
+ファイルを説明する各行の後に、そのキャッシュエントリに関するデータを追加します。これは、手動検査のために可能な限り多くの情報を表示することを目的としています。正確な形式は予告なく変更される可能性があります。
+.RE
+.PP
+\fB\-\-eol\fR
+.RS 4
+ファイルの <eolinfo> と <eolattr> を表示します。 <eolinfo> は、「text」属性が「auto」の場合(または設定されておらず、 core\&.autocrlf が false でない場合)にGitが使用するファイルコンテンツIDです。 <eolinfo> は、「\-text」、「none」、「lf」、「crlf」、「mixed」、「」のいずれかです。
+.sp
+「」は、ファイルが通常のファイルではない、インデックスにない、または作業ツリーでアクセスできないことを意味します。
+.sp
+<eolattr> は、チェックアウトまたはコミット時に使用される属性であり、「」・「\-text」・「text」・「text=auto」・「text eol=lf」・「text eol=crlf」 のいずれかです。 Git 2\&.10以降では「text=auto eol=lf」と「text=auto eol=crlf」がサポートされています。
+.sp
+通常のファイルの場合、インデックス("i/<eolinfo>")と作業ツリー("w/<eolinfo>")の両方の<eolinfo>が表示され、そのうしろに "attr/<eolattr>" が続きます。
+.RE
+.PP
+\fB\-\-sparse\fR
+.RS 4
+インデックスがスパース(sparse)の場合、含まれているファイルに展開せずにスパース・ディレクトリを表示します。 スパース・ディレクトリは、 スパース・ディレクトリ
+\fBx\fR
+の場合は
+\fBx/\fR
+のように、末尾にスラッシュを付けて表示されます。
+.RE
+.PP
+\fB\-\-format=<format>\fR
+.RS 4
+表示される各結果に対して <format> 文字列を適用します。その際 <format> 文字列中の
+\fB%(fieldname)\fR
+は展開(interpolate)されます。 これはまた、
+\fB%%\fR
+を
+\fB%\fR
+に展開し、\fB%xx\fR
+(\fBxx\fR
+は 16 進数字) を 16 進コード
+\fBxx\fR
+のキャラクタに展開します。 たとえば、\fB%00\fR
+は
+\fB\e0\fR
+(NUL) に、\fB%09\fR
+は
+\fB\et\fR
+(TAB) に、%0a は
+\fB\en\fR
+(LF) に展開されます。
+\fB\-\-format\fR
+は、
+\fB\-s\fR,
+\fB\-o\fR,
+\fB\-k\fR,
+\fB\-t\fR,
+\fB\-\-resolve\-undo\fR,
+\fB\-\-eol\fR
+と組み合わせることはできません。 (訳注: sprintf の 書式文字列 みたいに自由な文章書ける。意味は無いけど
+\fBgit ls\-files \-\-format=\*(Aqhogehoge\*(Aq\fR
+とかもOK)
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+これ以降の引数をオプションとして解釈しないでください。
+.RE
+.PP
+<file>
+.RS 4
+表示するファイル。ファイルが指定されていない場合、他の指定された基準に一致するすべてのファイルが表示されます。
+.RE
+.SH "OUTPUT"
+.sp
+\fBgit ls\-files\fR は、 \fB\-\-stage\fR が指定されていない限り、ファイル名を出力するだけです。指定されている場合は、以下のように出力されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[<tag> ]<mode> <object> <stage> <file>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit ls\-files \-\-eol\fR の場合: i/<eolinfo><SPACES>w/<eolinfo><SPACES>attr/<eolattr><SPACE*><TAB><file>
+.sp
+\fBgit ls\-files \-\-unmerged\fR と \fBgit ls\-files \-\-stage\fR を使用して、マージされていないパスの詳細情報を調べることができます。
+.sp
+マージされていないパスの場合、単一の モード/SHA\-1 ペアを記録する代わりに、インデックスは最大3つのそのようなペアを記録します。 ステージ1のツリーOから一つと、ステージ2のAから一つと、ステージ3のBからの一つです。この情報は、ユーザー(または磁器コマンド)がパスに最終的に記録する内容を確認するために使用できます。(状態の詳細については、 \fBgit-read-tree\fR(1) を参照してください)
+.sp
+\fB\-z\fR オプションを指定しない場合、構成変数 \fBcore\&.quotePath\fR で説明されているように、「異常な」文字を含むパス名がクォートされます(\fBgit-config\fR(1) を参照)。 \fB\-z\fR を使用すると、ファイル名がそのまま出力され、行はNULバイトで終了します。
+.sp
+\fB%(fieldname)\fR 表記を使用してさまざまなフィールドを展開可能な \fB\-\-format\fR オプションを使用して、 カスタム形式で表示することができます。 たとえば、 \fBobjectname\fR フィールドと \fBpath\fR フィールドのみを気にする場合は、以下のような特定の \fB\-\-format\fR で実行できます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git ls\-files \-\-format=\*(Aq%(objectname) %(path)\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FIELD NAMES"
+.sp
+各パスの表示方法は、 \fB\-\-format=<format>\fR オプションを使用してカスタマイズできます。このオプションでは、インデックス・エントリのさまざまな側面の <format> 文字列の %(fieldname) が展開されます。以下の「フィールド名」(fieldname)に対応しています:
+.PP
+objectmode
+.RS 4
+インデックスに記録されるファイルのモード。
+.RE
+.PP
+objectname
+.RS 4
+インデックスに記録されるファイルの名前。
+.RE
+.PP
+stage
+.RS 4
+インデックスに記録されるファイルのステージ。
+.RE
+.PP
+eolinfo:index, eolinfo:worktree
+.RS 4
+パスのインデックスまたはワークツリー内のコンテンツの <eolinfo> (\fB\-\-eol\fR
+オプションの説明を参照)。
+.RE
+.PP
+eolattr
+.RS 4
+パスに適用される <eolattr> (\fB\-\-eol\fR
+オプションの説明を参照)。
+.RE
+.PP
+path
+.RS 4
+インデックスに記録されるファイルのパス名。
+.RE
+.SH "EXCLUDE PATTERNS"
+.sp
+\fBgit ls\-files\fR は、ディレクトリツリーをトラバースし、フラグ \fB\-\-others\fR または \fB\-\-ignored\fR が指定されている場合に表示するファイルを検索するときに、「除外パターン」(exclude patterns)のリストを使用できます。 \fBgitignore\fR(5) は、除外パターンの形式を指定します。
+.sp
+これらの除外パターンは、以下の順序で取得されます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+コマンドラインフラグ
+\fB\-\-exclude=<pattern>\fR
+は、単一のパターンを指定します。 パターンは、コマンドラインに現れるのと同じ順序で並べられます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+コマンドラインフラグ
+\fB\-\-exclude\-from=<file>\fR
+は、パターンのリストを含むファイルを指定します。 パターンは、ファイルに現れるのと同じ順序で並べられます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+コマンドラインフラグ
+\fB\-\-exclude\-per\-directory=<name> ` は、 `git ls\-files\fR
+が調べる各ディレクトリ内のファイルの名前(通常は
+\fB\&.gitignore\fR
+)を指定します。 より深いディレクトリ内のファイルが優先されます。パターンは、ファイルに現れるのと同じ順序で並べられます。
+.RE
+.sp
+コマンドラインで \fB\-\-exclude\fR で指定されたパターン、または \fB\-\-exclude\-from\fR で指定されたファイルから読み取られたパターンは、ディレクトリツリーの最上位を基準にしています。 \fB\-\-exclude\-per\-directory\fR で指定されたファイルから読み取られたパターンは、パターンファイルが置かれているディレクトリを基準にしています。
+.SH "SEE ALSO"
+.sp
+\fBgit-read-tree\fR(1), \fBgitignore\fR(5)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

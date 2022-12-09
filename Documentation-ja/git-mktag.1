@@ -1,0 +1,102 @@
+'\" t
+.\"     Title: git-mktag
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MKTAG" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-mktag \- 追加の検証(extra validation)でタグオブジェクトを作成します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit mktag\fR
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+標準入力でタグの内容を読み取り、タグオブジェクトを作成します。 出力は、新しいタグの <object> IDです。
+.sp
+このコマンドは、 \fBgit-hash-object\fR(1) を \fB\-t tag \-w \-\-stdin\fR オプションで呼び出すのとほとんど同じです。例:以下は両方とも、 \fBmy\-tag\fR ファイル中からタグの記述を見つけ、見つけたタグの記述からをタグオブジェクトを作成して書き込みます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git mktag <my\-tag
+git hash\-object \-t tag \-w \-\-stdin <my\-tag
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit-hash-object\fR(1) の違いは、タグが \fBgit-fsck\fR(1) チェックに合格しない場合、タグを書き込む前にmktagが停止することです。
+.sp
+mktagで実行される「fsck」チェックは、すべての \fBfsck\&.<msg\-id>\fR メッセージが警告からエラーに昇格されるという点で \fBgit-fsck\fR(1) がデフォルトで実行するものよりも厳密(strict)です(たとえば、tagger行の欠落はエラーです)。
+.sp
+オブジェクトの余分なヘッダーもmktagではエラーになりますが、 \fBgit-fsck\fR(1) では無視されます。この追加のチェックは、適切な \fBfsck\&.<msg\-id>\fR 変数を設定することでオフにできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git \-c fsck\&.extraHeaderEntry=ignore mktag <my\-tag\-with\-headers
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OPTIONS"
+.PP
+\fB\-\-strict\fR
+.RS 4
+デフォルトでは、mktagは
+\fBgit-fsck\fR(1)
+の
+\fB\-\-strict\fR
+モードに相当するものをオンにします。無効にするには、
+\fB\-\-no\-strict\fR
+を使用します。
+.RE
+.SH "TAG FORMAT"
+.sp
+このコマンドの標準入力に供給されるタグ署名ファイル(tag signature file)は、非常に単純な固定形式です。それは以下の4行からなります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+object <hash>
+type <typename>
+tag <tagname>
+tagger <tagger>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この後ろにいくつかのオプションの自由形式のメッセージが続きます(古いGitによって作成された一部のタグには \fBtagger\fR 行がない場合があります)。メッセージが存在する場合は、ヘッダーとは空白行で区切られます。メッセージ部分には、Git自体は気にしない署名が含まれている場合がありますが、それはgpgで確認できます。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

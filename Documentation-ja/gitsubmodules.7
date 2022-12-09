@@ -1,0 +1,390 @@
+'\" t
+.\"     Title: gitsubmodules
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITSUBMODULES" "7" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitsubmodules \- あるリポジトリを別のリポジトリ内にマウントする
+.SH "SYNOPSIS"
+.sp
+.nf
+\&.gitmodules, $GIT_DIR/config
+.fi
+.sp
+.nf
+git submodule
+git <command> \-\-recurse\-submodules
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+サブモジュール(submodule)は、別のリポジトリ内に埋め込まれたリポジトリです。サブモジュールにはサブモジュール独自の履歴があります。 それが埋め込まれているリポジトリはスーパープロジェクト(superproject)と呼ばれます。
+.sp
+ファイルシステムでは、サブモジュールは通常(常にではありませんが。以下のFORMSを参照)、(i)スーパープロジェクトの \fB$GIT_DIR/modules/\fR ディレクトリの下にあるGitディレクトリや、(ii)スーパープロジェクトの作業ディレクトリ内の作業ディレクトリや、(i)の指すサブモジュールの作業ディレクトリのルートにある \fB\&.git\fR ファイルで構成されます。
+.sp
+サブモジュールのGitディレクトリが \fB$GIT_DIR/modules/foo/\fR にあり、作業ディレクトリが \fBpath/to/bar/\fR にあるとすると、スーパープロジェクトは、ツリーの \fBpath/to/bar\fR にある \fBgitlink\fR エントリと、\fBsubmodule\&.foo\&.path = path/to/bar\fR 形式の \fB\&.gitmodules\fR ファイル(linkgit: gitmodules[5] を参照)のエントリを介してサブモジュールを追跡します。
+.sp
+\fBgitlink\fR エントリには、スーパープロジェクトがサブモジュールの作業ディレクトリにあると予想するコミットのオブジェクト名が含まれています。
+.sp
+\fB\&.gitmodules\fR ファイルのセクション \fBsubmodule\&.foo\&.*\fR は、Gitの磁器レイヤーに追加のヒントを提供します。 たとえば、 \fBsubmodule\&.foo\&.url\fR 設定は、サブモジュールを取得する場所を指定します。
+.sp
+サブモジュールは、少なくとも2つの異なるユースケースに使用できます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+独立した履歴を維持しながら別のプロジェクトを使用。サブモジュールを使用すると、両方のプロジェクトの履歴を分離したまま、あなた独自の作業ツリー内に別のプロジェクトの作業ツリーを含めることができます。また、サブモジュールは任意のバージョンに固定できるため、別のプロジェクトは、スーパープロジェクトに影響を与えることなく独立して開発でき、スーパープロジェクトプロジェクトが必要とした場合にのみ別プロジェクトを新しいバージョンに固定できます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+(論理的に単一の)プロジェクトを複数のリポジトリに分割し、それらを結び付けます。これを使用して、Gitの実装の現在の制限を克服し、よりきめ細かいアクセスを実現できます:
+.PP
+Gitリポジトリのサイズ
+.RS 4
+現在の形式では、 Gitは、ツリー間のデルタ計算によって圧縮されていないコンテンツを含む大規模なリポジトリではスケールアップが十分にできません。 たとえば、あなたはサブモジュールを使用して大きなバイナリアセットを保持し、 これらのリポジトリを浅く複製して、 ローカルに大きな履歴がないようにすることができます。
+.RE
+.PP
+転送サイズ
+.RS 4
+現在の形式では、Gitは作業ツリー全体が存在する必要があります。 部分的なツリーをフェッチまたはクローンで転送することはできません。 あなたが作業しているプロジェクトが、 スーパープロジェクトのサブモジュールとして結合された複数のリポジトリで構成されている場合は、 関心のないリポジトリの作業ツリーをフェッチすることを回避できます。
+.RE
+.PP
+アクセス制御
+.RS 4
+サブモジュールへのユーザーアクセスを制限することにより、 さまざまなユーザーの読み取り/書き込みポリシーを実装できます。
+.RE
+.RE
+.SH "THE CONFIGURATION OF SUBMODULES"
+.sp
+サブモジュール操作は、以下のメカニズムを使用して構成(configure)できます(優先順位の高い順です):
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+パススペックの一部としてサブモジュールを使用することをサポートするコマンドのコマンドライン。 ほとんどのコマンドには、サブモジュールに再帰するかどうかを指定するブールフラグ
+\fB\-\-recurse\-submodules\fR
+があります。 例としては、
+\fBgrep\fR
+や
+\fBcheckout\fR
+があります。
+\fBfetch\fR
+や
+\fBpush\fR
+などの一部のコマンドは、サブモジュールがどのように影響を受けるかを指定できる列挙型を取ります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サブモジュール内の構成。 これには、サブモジュール内の
+\fB$GIT_DIR/config\fR
+だけでなく、サブモジュール内のコマンドの動作を指定する
+\fB\&.gitattributes\fR
+または
+\fB\&.gitignore\fR
+ファイルなどのツリー内の設定も含まれます。
+.sp
+たとえば、スーパープロジェクトで
+\fBgit status \-\-ignore\-submodules=none\fR
+を実行すると、サブモジュールの
+\fB\&.gitignore\fR
+ファイルの効果が確認できます。これは、サブモジュールの
+\fB\&.gitignore\fR
+ファイルに注意を払いながらサブモジュールで
+\fBstatus\fR
+を実行することにより、サブモジュールの作業ディレクトリから情報を収集します。
+.sp
+サブモジュールの
+\fB$GIT_DIR/config\fR
+ファイルは、スーパープロジェクトで
+\fBgit push \-\-recurse\-submodules=check\fR
+を実行すると機能します。これは、サブモジュールにリモートに公開されていない変更があるかどうかをチェックするためです。リモートは、通常どおりサブモジュールの
+\fB$GIT_DIR/config\fR
+ファイルで構成されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+スーパープロジェクトの構成ファイル
+\fB$GIT_DIR/config\fR
+。Gitはアクティブなサブモジュールのみ再帰します(以下の「ACTIVE SUBMODULES」セクションを参照)。
+.sp
+サブモジュールがまだ初期化されていない場合、サブモジュール内の構成(configuration)はまだ存在しないため、たとえば、サブモジュールを取得する場所はここで構成されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+スーパープロジェクト内の
+\fB\&.gitmodules\fR
+ファイル。プロジェクトは通常、このファイルを使用して、サブモジュールの名前とパスの間に必要なマッピングについて、上流のリポジトリコレクションのデフォルトを提案します。
+.sp
+このファイルは主に、スーパープロジェクト内のサブモジュールの名前とパスの間のマッピングとして機能し、サブモジュールのGitディレクトリを見つけることができます。
+.sp
+サブモジュールが初期化されていない場合、これはサブモジュール構成が見つかる唯一の場所です。 これは、サブモジュールを取得する場所を指定するための最後のフォールバックとして機能します。
+.RE
+.SH "FORMS"
+.sp
+サブモジュールは以下の形式をとることができます:
+.sp
+DESCRIPTIONで説明されている、Gitディレクトリと、作業ディレクトリと、 \fBgitlink\fR と、 `\&.gitmodules`エントリ、を含む基本形式。
+.sp
+「古い形式」のサブモジュール: \fB\&.git\fR ディレクトリが埋め込まれた作業ディレクトリと、スーパープロジェクトの \fBgitlink\fR および \fB\&.gitmodules\fR エントリの追跡。 これは通常、古いバージョンのGitを使用して生成されたリポジトリにあります。
+.sp
++ これらの古い形式のリポジトリを手動で構築することは可能です。
+.sp
++ 非初期化(deinitialized)または削除されると(以下を参照)、サブモジュールのGitディレクトリはスーパープロジェクトの \fB$GIT_DIR/modules/<name>/\fR に自動的に移動されます。
+.sp
+非初期化された(deinitialized)サブモジュール: \fBgitlink\fR と \fB\&.gitmodules\fR エントリがありますが、サブモジュールの作業ディレクトリはありません。サブモジュールのGitディレクトリは、Gitディレクトリを初期化解除した後も保持されているため、そこにある可能性があります。 代わりに、作業ディレクトリであるはずのディレクトリが空になります。
+.sp
++ サブモジュールは、 \fBgit submodule deinit\fR を実行することで非初期化(deinitialized)できます。このコマンドは、作業ディレクトリを空にするだけでなく、スーパープロジェクトの \fB$GIT_DIR/config\fR ファイルのみを変更するため、スーパープロジェクトの履歴は影響を受けません。 これは、 \fBgit submodule init\fR を使用して元に戻すことができます。
+.sp
+削除されたサブモジュール: サブモジュールは、 \fBgit rm <submodule path> && git commit\fR を実行することで削除できます。これは、 \fBgit revert\fR を使用して元に戻すことができます。
+.sp
++ 削除すると、スーパープロジェクトの追跡データが削除されます。これは、 \fBgitlink\fR エントリと \fB\&.gitmodules\fR ファイルのセクションの両方です。サブモジュールの作業ディレクトリはファイルシステムから削除されますが、Gitディレクトリは、別のリポジトリからフェッチすることなく過去のコミットをチェックアウトできるようにするために保持されます。
+.sp
++ サブモジュールを完全に削除するには、手動で \fB$GIT_DIR/modules/<name>/\fR を削除します。
+.SH "ACTIVE SUBMODULES"
+.sp
+サブモジュールがアクティブと見なされるには、
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+if
+\fBsubmodule\&.<name>\&.active\fR
+が
+\fBtrue\fR
+に設定されている
+.sp
+or
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+if サブモジュールのパスが
+\fBsubmodule\&.active\fR
+のパススペックと一致する
+.sp
+or
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+if
+\fBsubmodule\&.<name>\&.url\fR
+が設定されている
+.RE
+.sp
+これらは上記の順序で評価されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  [submodule "foo"]
+    active = false
+    url = https://example\&.org/foo
+  [submodule "bar"]
+    active = true
+    url = https://example\&.org/bar
+  [submodule "baz"]
+    url = https://example\&.org/baz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+上記の構成では、サブモジュール \fBbar\fR と \fBbaz\fR のみがアクティブになります。 \fBbar\fR は上記(1)により、 \fBbaz\fR は上記(3)によりアクティブになります。 (1)が(3)よりも優先されるため、 \fBfoo\fR は非アクティブです。
+.sp
+上記(1)と(2)でサブモジュールがアクティブでないことを指定している場合は、(3)は歴史的遺物であり、無視されることに注意してください。 つまり、 \fBsubmodule\&.<name>\&.active\fR が \fBfalse\fR に設定されている場合、またはサブモジュールのパスが \fBsubmodule\&.active\fR のパススペックで除外されている場合、URLは存在するかどうかは関係ありません。これを以下の例に示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  [submodule "foo"]
+    active = true
+    url = https://example\&.org/foo
+  [submodule "bar"]
+    url = https://example\&.org/bar
+  [submodule "baz"]
+    url = https://example\&.org/baz
+  [submodule "bob"]
+    ignore = true
+  [submodule]
+    active = b*
+    active = :(exclude) baz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+ここでは、 baz を除くすべてのサブモジュール(foo、bar、bob)がアクティブになっています。 foo はそれ自体のアクティブフラグによるものであり、他のすべては submodule active パススペック によるものです。これは、 \&.url フィールドの存在に関係なく、baz を除く \fBb\fR で始まるすべてのサブモジュールもアクティブであることを指定します。
+.SH "WORKFLOW FOR A THIRD PARTY LIBRARY"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  # サブモジュールの追加
+  git submodule add <URL> <path>
+
+  # ときどきサブモジュールを新しいバージョンに更新します:
+  git \-C <path> checkout <new version>
+  git add <path>
+  git commit \-m "update submodule to new version"
+
+  # スーパープロジェクト内でサブモジュールのリストを表示します
+  git submodule status
+
+  # サブモジュールの削除については、「FORMS」を参照してください
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "WORKFLOW FOR AN ARTIFICIALLY SPLIT REPO"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  # 関連するコマンドの再帰(recursion)を有効にし、
+  # 対象のコマンドがデフォルトでサブモジュールで再帰処理するようにします
+  git config \-\-global submodule\&.recurse true
+
+  # 他のほとんどのコマンドとは異なり、
+  # cloneには独自の再帰フラグが必要です:
+  git clone \-\-recurse <URL> <directory>
+  cd <directory>
+
+  # (ソース)コードを知る為に取得する
+  git grep foo
+  git ls\-files \-\-recurse\-submodules
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+\fBgit ls\-files\fR もまた、それ独自の \fB\-\-recurse\-submodules\fR フラグが必要です。
+.sp .5v
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  # 新しいコードを得る
+  git fetch
+  git pull \-\-rebase
+
+  # 作業ツリーの変更
+  git checkout
+  git reset
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "IMPLEMENTATION DETAILS"
+.sp
+サブモジュールを含むリポジトリのクローンを作成またはプルする場合、デフォルトではサブモジュールはチェックアウトされません。クローンにサブモジュールに再帰するように指示できます。 \fBgit submodule\fR の \fBinit\fR および \fBupdate\fR サブコマンドは、チェックアウトされたサブモジュールを維持し、作業ツリーの適切なリビジョンに維持します。 または、 \fBsubmodule\&.recurse\fR を設定して \fBcheckout\fR をサブモジュールに再帰させることもできます( \fBsubmodule\&.recurse\fR は他のGitコマンドにも影響することに注意してください。完全なリストについては\fBgit-config\fR(1) を参照してください)。
+.SH "SEE ALSO"
+.sp
+\fBgit-submodule\fR(1), \fBgitmodules\fR(5)\&.
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

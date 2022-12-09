@@ -1,0 +1,636 @@
+'\" t
+.\"     Title: git-worktree
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-WORKTREE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-worktree \- 複数の作業ツリー(working tree)を管理します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit worktree add\fR [\-f] [\-\-detach] [\-\-checkout] [\-\-lock [\-\-reason <string>]] [\-b <new\-branch>] <path> [<commit\-ish>]
+\fIgit worktree list\fR [\-v | \-\-porcelain [\-z]]
+\fIgit worktree lock\fR [\-\-reason <string>] <worktree>
+\fIgit worktree move\fR <worktree> <new\-path>
+\fIgit worktree prune\fR [\-n] [\-v] [\-\-expire <expire>]
+\fIgit worktree remove\fR [\-f] <worktree>
+\fIgit worktree repair\fR [<path>\&...]
+\fIgit worktree unlock\fR <worktree>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+同一のリポジトリに接続されている複数の作業ツリーを管理します。
+.sp
+gitリポジトリは複数の作業ツリー(working tree)をサポートできるため、一度に複数のブランチをチェックアウトできます。 \fBgit worktree add\fR を使用すると、 新しい作業ツリーがリポジトリに関連付けられ、 その作業ツリーを、同一リポジトリの他の作業ツリーと区別する、追加のメタデータを関連付けます。 作業ツリーは、このメタデータとひっくるめて worktree (ワークツリー)と呼ばれます。
+.sp
+この新しい worktree は、 \fBgit-init\fR(1) または \fBgit-clone\fR(1) によって準備された「メイン worktree」とは対照的に、「リンクされた worktree」(linked worktree)と呼ばれます。 リポジトリには、1 つの メイン worktree (ベア・リポジトリでない場合) と、0 個以上のリンクされた worktree があります。 リンクされたworktree を使い終わったら、 \fBgit worktree remove\fR で削除します。
+.sp
+最も単純な形式では、 \fBgit worktree add <path>\fR は、名前が \fB<path>\fR の最後のコンポーネントである新しいブランチを自動的に作成します。これは、あなたが新しいトピックで作業する場合に便利です。たとえば、 \fBgit worktree add \&.\&./hotfix\fR は、新しいブランチ \fBhotfix\fR を作成し、パス \fB\&.\&./hotfix\fR でチェックアウトします。代わりに、既存のブランチの新しい worktree で作業するには、 \fBgit worktree add <path> <branch>\fR を使用します。一方、既存の開発を妨げることなく実験的な変更やテストを行う場合は、ブランチに関連付けられていない「使い捨て」の worktree を作成すると便利なことがよくあります。たとえば、 \fBgit worktree add \-d <path>\fR は、現在のブランチと同じコミットで、切り離された`HEAD`(detached HEAD)を持つ新しい worktree を作成します。
+.sp
+\fBgit worktree remove\fR を使用せずに作業ツリーを削除すると、リポジトリにある関連する管理ファイル(後述の「DETAILS」参照)が最終的には自動的に削除されます(\fBgit-config\fR(1) の \fBgc\&.worktreePruneExpire\fR 参照)。 または、メインまたはリンクされた worktree で、古い管理ファイルをクリーンアップするために \fBgit worktree prune\fR を実行できます。
+.sp
+リンクされた workutree の作業ツリー(working tree)が、常にマウントされている訳ではないポータブル・デバイスまたはネットワーク共有に保存されている場合、 \fBgit worktree lock\fR コマンド(オプションで \fB\-\-reason\fR を指定して worktree がなぜロックされているかを説明)を発行することで、 管理ファイルが刈り込み(prune)されるのを防ぐことができます。
+.SH "COMMANDS"
+.PP
+add <path> [<commit\-ish>]
+.RS 4
+\fB<path>\fR
+に worktree を作成し、 そこに
+\fB<commit\-ish>\fR
+をチェックアウトします。 新しい worktree は現在のリポジトリにリンクされ、
+\fBHEAD\fR
+、
+\fBindex\fR
+などの worktree ごとのファイルを除くすべてを共有します。 便宜上、
+\fB<commit\-ish>\fR
+は、
+\fB@{\-1}\fR
+と同義の
+\fB\-\fR
+だけでもかまいません。
+.sp
+上記
+\fB<commit\-ish>\fR
+がブランチ名(以下
+\fB<branch>\fR
+とします)で見つからず、
+\fB\-b\fR
+や
+\fB\-B\fR
+や
+\fB\-\-detach\fR
+のいずれも使用されていないが、名前が一致する1つのリモート(以下
+\fB<remote>\fR
+とします)には追跡ブランチが存在する場合、上記は以下と同等です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree add \-\-track \-b <branch> <path> <remote>/<branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ブランチが複数のリモートに存在し、そのうちの1つが
+\fBcheckout\&.defaultRemote\fR
+設定変数によって名付けられた場合、
+\fB<branch>\fR
+がすべてのリモートでユニークでなくても、曖昧さをなくすためにその1つを使用します。例えば、
+\fBcheckout\&.defaultRemote=origin\fR
+と設定すると、
+\fB<branch>\fR
+があいまいで、かつ
+\fBorigin\fR
+リモートに存在する場合、常にそこからリモートブランチをチェックアウトすることができます。\fBgit-config\fR(1)
+にある
+\fBcheckout\&.defaultRemote\fR
+も参照してください。
+.sp
+\fB<commit\-ish>\fR
+が省略され、
+\fB\-b\fR
+も
+\fB\-B\fR
+も
+\fB\-\-detach\fR
+も使用されていない場合、便宜上、新しい worktree は
+\fB$(basename <path>)\fR
+にちなんで名付けらたブランチ(\fB<branch>\fR
+とします)に関連付けられます。\fB<branch>\fR
+が存在しない場合、
+\fB\-b <branch>\fR
+が指定されたかのように、
+\fBHEAD\fR
+に基づく新しいブランチが自動的に作成されます。
+\fB<branch>\fR
+が存在する場合で、他の場所でチェックアウトされていない場合は、新しい worktree でチェックアウトされます。 存在しない場合、(\fB\-\-force\fR
+が使用されている場合を除き、)コマンドは worktree の作成を拒否します。
+.RE
+.PP
+list
+.RS 4
+各 worktree の詳細を一覧表示します。 リストの最初はメインの worktree であり、その後にリンクされた各 worktree が続きます。 出力の詳細として、 worktree が裸(bare)かどうかや、 現在チェックアウトされているリビジョン(または、存在しない場合は「切り離された HEAD」detached HEAD)や、 現在チェックアウトされているブランチや、 worktree がロックされているなら
+\fBlocked\fR
+が出力に含まれ、 worktree が
+\fBprune\fR
+コマンドでプルーニングできる場合は
+\fBprunable\fR
+が出力に含まれます。
+.RE
+.PP
+lock
+.RS 4
+worktree が常にマウントされているとは限らないポータブルデバイスまたはネットワーク共有上にある場合は、 管理ファイルが自動的に刈り込み(prune)されないようにツリーをロック(lock)します。 これにより、移動や削除も防止されます。 オプションの`\-\-reason` を使用してロック理由を記述します。
+.RE
+.PP
+move
+.RS 4
+注意: worktree を新しい場所に移動します。このコマンドでは、 メインの worktree または、 サブモジュールを含むリンクされた worktree (linked worktree)は、移動できないことに注意してください。 (ただし、
+\fBgit worktree repair\fR
+コマンドを使用すると、メインの worktree を手動で移動した場合、 リンクされた worktree ごとの接続を再確立できます。)
+.RE
+.PP
+prune
+.RS 4
+\fB$GIT_DIR/worktrees\fR
+の worktree 情報を刈り込みます(prune)。
+.RE
+.PP
+remove
+.RS 4
+worktgree を削除します。削除できるのは、クリーンな worktree (追跡してないファイルが無く、かつ、追跡ファイルの変更が無い場合)のみです。綺麗でない(unclean) worktree または、サブモジュールのある worktree は、
+\fB\-\-force\fR
+を使用して削除できます。メインの worktree は削除できません。
+.RE
+.PP
+repair [<path>\&...]
+.RS 4
+可能であれば、外部要因によって、破損または古くなった worktree 管理ファイルを修復します。
+.sp
+たとえば、メインの worktree (またはベア・リポジトリ)を移動すると、リンクされた worktree (linked worktree)はそれを見つけることができなくなります。 メインの worktree で
+\fBrepair\fR
+を実行すると、リンクされた worktree からメインの worktree への接続が再確立されます。
+.sp
+同様に、リンクされた worktree (linked worktree)が
+\fBgit worktree move\fR
+を使用せずに移動された場合、 メイン worktree (またはベア・リポジトリ)はそれを見つけることができません。 直近に移動した worktree 内で
+\fBrepair\fR
+を実行すると、接続が再確立されます。 リンクされた worktree が複数移動された場合、 各 worktree の新しい
+\fB<path>\fR
+を引数として任意の worktree から
+\fBrepair\fR
+を実行すると、指定されたすべてのパスへの接続が再確立されます。
+.sp
+メイン worktree とリンクされた worktree (linked worktree)の両方が手動で移動された場合、メイン worktree で
+\fBrepair\fR
+を実行し、 各リンクされた worktree の新しい
+\fB<path>\fR
+を指定すると、両方向のすべての接続が再確立されます。
+.RE
+.PP
+unlock
+.RS 4
+worktree のロックを解除(unlock)して、刈り込み(prune)または移動(move)または削除(delete)できるようにします。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+デフォルトでは、\fB<commit\-ish>\fR
+がブランチ名であり、別の worktree によってすでにチェックアウトされている場合、 または
+\fB<path>\fR
+がすでに worktree に割り当てられているが欠落している場合(たとえば、
+\fB<path>`が手動で削除された場合)、 `add\fR
+は新しい worktree の作成を拒否します。 このオプションは、これらの安全装置(safeguards)をオーバーライドします。 欠落しているがロックされている worktree パスを追加するには、
+\fB\-\-force\fR
+を2回指定します。
+.sp
+\fB\-\-force\fR
+が2回指定されていない限り、
+\fBmove\fR
+はロックされた worktree の移動を拒否します。移動先がすでに他の worktree に割り当てられているが欠落している場合(たとえば、
+\fB<new\-path>\fR
+が手動で削除された場合)は、
+\fB\-\-force\fR
+で移動を続行できます。移動先がロックされている場合は、
+\fB\-\-force\fR
+を2回使用します。
+.sp
+\fBremove\fR
+は、
+\fB\-\-force\fR
+が使用されない限り、 クリーンでない(unclean)worktreeの削除を拒否します。 ロックされた(locked)worktreeを削除するには、
+\fB\-\-force\fR
+を 2 回指定します。
+.RE
+.PP
+\fB\-b <new\-branch>\fR, \fB\-B <new\-branch>\fR
+.RS 4
+\fBadd\fR
+を使用して、
+\fB<commit\-ish>\fR
+から開始する
+\fB<new\-branch>\fR
+という名前の新しいブランチを作成し、
+\fB<new\-branch>\fR
+を新しい worktree にチェックアウトします。
+\fB<commit\-ish>\fR
+を省略すると、 デフォルトで
+\fBHEAD\fR
+になります。 デフォルトでは、
+\fB\-b\fR
+は、 新しいブランチがすでに存在する場合、そのブランチを作成することを拒否します。
+\fB\-B\fR
+はこの安全装置をオーバーライドし、
+\fB<new\-branch>\fR
+を
+\fB<commit\-ish>\fR
+にリセットします。
+.RE
+.PP
+\fB\-d\fR, \fB\-\-detach\fR
+.RS 4
+\fBadd\fR
+を使用して、新しい worktree で
+\fBHEAD\fR
+を切り離します(detach)。
+\fBgit-checkout\fR(1)
+の「DETACHED HEAD」を参照してください。
+.RE
+.PP
+\fB\-\-[no\-]checkout\fR
+.RS 4
+デフォルトでは、
+\fBadd\fR
+は
+\fB<commit\-ish>\fR
+をチェックアウトしますが、
+\fB\-\-no\-checkout\fR
+を使用して、スパースチェックアウト(suppress checkout)の構成などのカスタマイズを行うためにチェックアウトを抑制することができます。
+\fBgit-read-tree\fR(1)
+の「Sparse checkout」を参照してください。
+.RE
+.PP
+\fB\-\-[no\-]guess\-remote\fR
+.RS 4
+\fB<commit\-ish>\fR
+を伴わずに
+\fBworktree add <path>\fR
+を使用し、
+\fBHEAD\fR
+から新しいブランチを作成する代わりに、
+\fB<path>\fR
+のベース名に一致する追跡ブランチが１つリモートにだけ存在する場合、新しいブランチをそのリモート追跡ブランチに基づいて作成し、そのリモート追跡ブランチを新しいブランチの「アップストリーム」としてマークします。
+.sp
+これは、
+\fBworktree\&.guessRemote\fR
+構成オプションを使用してデフォルトの動作として設定することもできます。
+.RE
+.PP
+\fB\-\-[no\-]track\fR
+.RS 4
+新しいブランチを作成するときに、
+\fB<commit\-ish>\fR
+がブランチである場合は、新しいブランチの「アップストリーム」としてマークします。
+\fB<commit\-ish>\fR
+がリモート追跡ブランチの場合、これの振る舞いがデフォルトです。詳細については、
+\fBgit-branch\fR(1)の
+\fB\-\-track\fR
+を参照してください。
+.RE
+.PP
+\fB\-\-lock\fR
+.RS 4
+作成後は、 worktree をロックしたままにします。 これは、
+\fBgit worktree add\fR
+の後に
+\fBgit worktree lock\fR
+するのと同等ですが、競合状態(race condition)にはなりません。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+\fBprune\fR
+では、何も削除しないでください。何が削除されるかを報告するだけです。
+.RE
+.PP
+\fB\-\-porcelain\fR
+.RS 4
+\fBlist\fR
+を使用すると、スクリプトの解析が容易な形式で出力されます。この形式は、Gitのバージョン間で、ユーザー構成に関係なく安定しています。 これは
+\fB\-z\fR
+と組み合わせることをお勧めします。 詳細については、後述します。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+\fBlist\fR
+で
+\fB\-\-porcelain\fR
+が指定されている場合、改行(newline)ではなく NUL で各行を終了します。 これにより、 worktree パスに改行文字が含まれている場合、出力をパースできます。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+\fBadd\fR
+を使用して、フィードバックメッセージを抑制します。
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+\fBprune\fR
+を使用して、すべての削除を報告します。
+.sp
+\fBlist\fR
+を使用して、worktreeに関する追加情報を出力します(後述)。
+.RE
+.PP
+\fB\-\-expire <time>\fR
+.RS 4
+\fBprune\fR
+と共に使うと、
+\fB<time>\fR
+より古い未使用の worktree のみを期限切れにします。
+.sp
+\fBlist\fR
+と共に使うと、
+\fB<time>\fR
+より古い場合は、欠落している worktree に刈り込み可能(prunable)という注釈(annotate)を付けます。
+.RE
+.PP
+\fB\-\-reason <string>\fR
+.RS 4
+\fBlock\fR
+または
+\fBadd \-\-lock\fR
+と共に使用して、その worktree がなぜロックされているかを記述します。
+.RE
+.PP
+<worktree>
+.RS 4
+worktree は、相対パスまたは絶対パスのいずれかで識別できます。
+.sp
+worktree のパスの最後のパスコンポーネントが worktree 間で一意である場合、それを使用して worktree を識別できます。 たとえば、
+\fB/abc/def/ghi\fR
+と
+\fB/abc/def/ggg\fR
+の2つの worktree しかない場合、 これらの worktree を指すには、
+\fBghi\fR
+または
+\fBdef/ghi\fR
+で十分です。
+.RE
+.SH "REFS"
+.sp
+複数の worktree を使用する場合、一部のrefはすべての worktree 間で共有されますが、その他は個々の worktree に固有です。 その一例が \fBHEAD\fR で、これは worktree ごとに異なります。 このセクションでは、共有ルールと、ある worktree の ref を別の worktree からアクセスする方法について説明します。
+.sp
+一般に、すべての疑似ref(pseudo refs)は worktree ごとにあり、そして、 \fBrefs/\fR で始まるすべてのrefは共有されます。 疑似refは、 \fB$GIT_DIR/refs\fR 内ではなく、 \fB$GIT_DIR\fR の直下にある \fBHEAD\fR のようなものです。 ただし、例外があります。 \fBrefs/bisect\fR 内のrefと \fBrefs/worktree\fR は共有されません。
+.sp
+worktree ごとのrefには、 別の worktree から、 \fBmain\-worktree\fR と \fBworktrees\fR の2つの特別なパスを介してアクセスできます。 前者はメインの worktree の worktree ごとのrefを提供し、後者はすべてのリンクされた worktree へのアクセスを提供します。
+.sp
+たとえば、 \fBmain\-worktree/HEAD\fR や \fBmain\-worktree/refs/bisect/good\fR は、それぞれメイン worktree の \fBHEAD\fR や \fBrefs/bisect/good ` と同一の値に解決されます。 同様に、 `worktrees/foo/HEAD\fR や \fBworktrees/bar/refs/bisect/bad\fR は、 \fB$GIT_COMMON_DIR/worktrees/foo/HEAD\fR や \fB$GIT_COMMON_DIR/worktrees/bar/refs/bisect/bad\fR と同一です。
+.sp
+refにアクセスするのに \fB$GIT_DIR\fR の内部を直接調べないことをお勧めします。代わりに、refを正しく処理する \fBgit-rev-parse\fR(1) や \fBgit-update-ref\fR(1) などのコマンドを使用してください。
+.SH "CONFIGURATION FILE"
+.sp
+デフォルトでは、リポジトリの \fBconfig\fR ファイルはすべての worktree で共有されます。 構成変数 \fBcore\&.bare\fR または \fBcore\&.worktree\fR が共通の構成ファイルに存在し、 \fBextensions\&.worktreeConfig\fR が無効になっている場合、それらはメイン worktree のみに適用されます。
+.sp
+worktree 固有の構成を作成するには、 \fBworktreeConfig\fR 拡張機能をオンにします。例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config extensions\&.worktreeConfig true
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このモードでは、指定の構成は \fBgit rev\-parse \-\-git\-path config\&.worktree\fR が指すパスに残ります。 \fBgit config \-\-worktree\fR を使用して、このファイルの構成を追加または更新できます。古いバージョンのGitは、この拡張機能を備えたリポジトリへのアクセスを拒否します。
+.sp
+注意: このファイルでは、 \fBcore\&.bare\fR と \fBcore\&.worktree\fR が例外扱いされないことに注意してください。 それらが \fB$GIT_DIR/config\fR に存在する場合は、メイン worktree の \fBconfig\&.worktree\fR に移動する必要があります。 また、この機会に、あなたが共有したくない他の構成を確認して、すべての worktree に移動することもできます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcore\&.worktree\fR
+は決して共有しないでください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcore\&.bare\fR
+は、 値が
+\fBcore\&.bare=true\fR
+である場合には共有されるべきではありません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+すべての worktree に対して常にスパース・チェックアウトを使用することが確実でない限り、
+\fBcore\&.sparseCheckout\fR
+は共有すべきではありません。
+.RE
+.sp
+詳細については、 \fBgit-config\fR(1) の \fBextensions\&.worktreeConfig\fR のドキュメントを参照してください。
+.SH "DETAILS"
+.sp
+各々のリンクされた workutree (linked worktree)には、 リポジトリの \fB$ GIT_DIR/worktrees\fR ディレクトリにプライベート・サブ・ディレクトリがあります。 プライベート・サブ・ディレクトリの名前は通常、リンクされた worktree のパスのベース名であり、 一意にするために番号が追加される場合があります。 たとえば、 \fB$GIT_DIR=/path/main/\&.git\fR の場合、 コマンド \fBgit worktree add /path/other/test\-next next\fR はリンクされた worktree を \fB/path/other/test\-next\fR に作成し、 そしてまた \fB$GIT_DIR/worktrees/test\-next\fR ディレクトリ(または、 \fBtest\-next\fR がすでに存在する場合、 \fB$GIT_DIR/worktrees/test\-next1\fR ディレクトリ)を作成します。
+.sp
+リンクされた worktree (linked worktree)内で、 \fB$GIT_DIR\fR は、このプライベート・ディレクトリを指すように設定され(例では \fB/path/main/\&.git/worktrees/test\-next\fR)、 \fB$GIT_COMMON_DIR\fR はメイン worktree の \fB$GIT_DIR\fR (例では \fB/path/main/\&.git\fR )を指すように設定されます。これらの設定は、リンクされた worktree の最上位ディレクトリにある \fB\&.git\fR ファイルで行われます。
+.sp
+\fBgit rev\-parse \-\-git\-path\fR によるパス解決では、 パスに応じて \fB$GIT_DIR\fR または \fB$GIT_COMMON_DIR\fR のいずれかが使用されます。たとえば、リンクされた worktree (linked worktree)では、 \fBgit rev\-parse \-\-git\-path HEAD\fR は \fB/path/main/\&.git/worktrees/test\-next/HEAD\fR を返します(\fB/path/other/test\-next/\&.git/HEAD\fR や \fB/path/main/\&.git/HEAD\fR ではありません)。 一方、 \fBgit rev\-parse \-\-git\-path refs/heads/master\fR は \fB$GIT_COMMON_DIR\fR を使用し、 \fB/path/main/\&.git/refs/heads/ master\fR を返します。 refは、 \fBrefs/bisect\fR と \fBrefs/worktree\fR を除くすべての worktree で共有されるためです。
+.sp
+詳細については、 \fBgitrepository-layout\fR(5) を参照してください。 経験則では、 \fB$GIT_DIR\fR 内の何かに直接アクセスする必要がある場合、パスが \fB$GIT_DIR\fR または \fB$GIT_COMMON_DIR\fR のどちらに属するかについては何も想定していません。 \fBgit rev\-parse \-\-git\-path\fR を使用して、最終的なパスを取得してください。
+.sp
+リンクされた worktree (linked worktree)を手動で移動する場合は、 エントリのディレクトリにある \fBgitdir\fR ファイルを更新する必要があります。 たとえば、リンクされた作業ツリーが \fB/newpath/test\-next\fR に移動され、 その \fB\&.git\fR ファイルが \fB/path/main/\&.git/worktrees/test\-next\fR を指しているならば、 代わりに \fB/path/main/\&.git/worktrees/test\-next/gitdir\fR を更新し \fB/newpath/test\-next\fR を参照するようにします。 もっといいのは、 \fBgit worktree repair\fR を実行して、接続を自動的に再確立することです。
+.sp
+\fB$GIT_DIR/worktrees\fR エントリが刈り込み(prune)されないようにする(これは、 エントリの worktree がポータブルデバイスに保存されている場合など、 状況によっては便利です)には、 \fBgit worktree lock\fR コマンドを使用します。 このコマンドは \fBlocked\fR という名前のファイルをエントリのディレクトリに追加します。 ファイルには、 理由(reason)がプレーンテキストで含まれています。 たとえば、リンクされた worktree (linked worktree)の \fB\&.git\fR ファイルが \fB/path/main/\&.git/worktrees/test\-next\fR を指しているならば、 \fB/path/main/\&.git/worktrees/test\-next/locked\fR という名前のファイルは \fBtest\-next\fR エントリが刈り込み(pruned)されるのを防ぎます。 詳細については、 \fBgitrepository-layout\fR(5) を参照してください。
+.sp
+\fBextensions\&.worktreeConfig\fR が有効になっている場合、設定ファイル \fB\&.git/worktrees/<id>/config\&.worktree\fR は \fB\&.git/config\fR の後に読み込まれます。
+.SH "LIST OUTPUT FORMAT"
+.sp
+\fBworktreelist\fR コマンドには2つの出力形式があります。デフォルトの形式では、詳細が1行に複数列で表示されます。例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree list
+/path/to/bare\-source            (bare)
+/path/to/linked\-worktree        abcd1234 [master]
+/path/to/other\-linked\-worktree  1234abc  (detached HEAD)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このコマンドは、状態に応じて、各 worktree の注釈(annotations)も表示します。これらの注釈は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlocked\fR
+: worktree がロックされている場合。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBprunable\fR
+: worktree が
+\fBgit worktree prune\fR
+を介して刈り込みできる場合。
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree list
+/path/to/linked\-worktree    abcd1234 [master]
+/path/to/locked\-worktree    acbd5678 (brancha) locked
+/path/to/prunable\-worktree  5678abc  (detached HEAD) prunable
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これらの注釈(annotations)については、理由(reason)も利用できる可能性があり、これは冗長モード(verbose mode)を使用して確認できます。そして、注釈はインデントされた次の行に移動され、その後に追加情報が続きます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree list \-\-verbose
+/path/to/linked\-worktree              abcd1234 [master]
+/path/to/locked\-worktree\-no\-reason    abcd5678 (detached HEAD) locked
+/path/to/locked\-worktree\-with\-reason  1234abcd (brancha)
+        locked: worktree path is mounted on a portable device
+/path/to/prunable\-worktree            5678abc1 (detached HEAD)
+        prunable: gitdir file points to non\-existent location
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+注意: 追加情報が利用可能な場合、注釈は次の行に移動されることに注意してください。そうでない場合、注釈は worktree 自体と同じ行にとどまります。
+.SS "Porcelain Format"
+.sp
+磁器コマンドのフォーマットは、属性ごとに1行あります。 \fB\-z\fR が指定された場合、 行は改行(newline)ではなく NUL で終了します。 属性は、 単一のスペースで区切られたラベルと値でリストされます。 ブール属性(\fBbare\fR や \fBdetached\fR など)はラベルとしてのみリストされ、 値がtrueの場合にのみ存在します。 一部の属性(\fBlocked\fR など)は、 ラベルとしてのみリストすることも、 理由が利用可能かどうかに応じて値とともにリストすることもできます。 worktree の最初の属性は常に \fBworktree\fR であり、空行はレコードの終わりを示します。 例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree list \-\-porcelain
+worktree /path/to/bare\-source
+bare
+
+worktree /path/to/linked\-worktree
+HEAD abcd1234abcd1234abcd1234abcd1234abcd1234
+branch refs/heads/master
+
+worktree /path/to/other\-linked\-worktree
+HEAD 1234abc1234abc1234abc1234abc1234abc1234a
+detached
+
+worktree /path/to/linked\-worktree\-locked\-no\-reason
+HEAD 5678abc5678abc5678abc5678abc5678abc5678c
+branch refs/heads/locked\-no\-reason
+locked
+
+worktree /path/to/linked\-worktree\-locked\-with\-reason
+HEAD 3456def3456def3456def3456def3456def3456b
+branch refs/heads/locked\-with\-reason
+locked reason why is locked
+
+worktree /path/to/linked\-worktree\-prunable
+HEAD 1233def1234def1234def1234def1234def1234b
+detached
+prunable gitdir file points to non\-existent location
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-z\fR が使用されない限り、ロック理由での改行などの「異常な」文字はエスケープされ、 設定変数 \fBcore\&.quotePath\fR で説明されているように理由全体がクォートされます(\fBgit-config\fR(1) 参照)。 例えば:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree list \-\-porcelain
+\&.\&.\&.
+locked "reason\enwhy is locked"
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "EXAMPLES"
+.sp
+リファクタリングセッションの真っ最中に、 上司がやって来て、 あなたに、 すぐに何かを修正するように要求します。 通常、 \fBgit-stash\fR(1) を使用して変更を一時的に保存しますが、 作業ツリー(working tree)は、(新しいファイル、移動されたファイル、削除されたファイル、その他の断片が散らばっていて)混乱状態にあります。 あなたはそれのいずれかを邪魔する危険を冒したくありません。 あなたは代わりに、一時的にリンクされた worktree を作成して緊急修正を行い、 完了したらそれを削除してから、以前のリファクタリングセッションを再開することにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git worktree add \-b emergency\-fix \&.\&./temp master
+$ pushd \&.\&./temp
+# \&.\&.\&. hack hack hack \&.\&.\&.
+$ git commit \-a \-m \*(Aqemergency fix for boss\*(Aq
+$ popd
+$ git worktree remove \&.\&./temp
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "BUGS"
+.sp
+一般的な複数チェックアウト(multiple checkout)はまだ実験段階であり、サブモジュールのサポートは不完全です。スーパープロジェクトを複数チェックアウトすることはお勧めしません。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,301 @@
+'\" t
+.\"     Title: gitk
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITK" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitk \- Gitリポジトリブラウザ
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgitk\fR [<options>] [<revision range>] [\-\-] [<path>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+リポジトリまたは選択したコミットのセットの変更を表示します。 これには、コミットグラフの視覚化、各コミットに関連する情報、および各リビジョンのツリー内のファイルの表示が含まれます。
+.SH "OPTIONS"
+.sp
+表示するリビジョンを制御するために、gitkは \fBgit rev\-list\fR コマンドに適用できるほとんどのオプションをサポートしています。 また、 \fBgit diff\-*\fR コマンド群に適用できるいくつかのオプションをサポートして、各コミットによって導入される変更の表示方法を制御します。最後に、いくつかのgitk固有のオプションをサポートします。
+.sp
+gitkは通常、コマンドラインパーサーの制限により、串刺し形式(sticked form)の引数を持つオプションのみを理解します(linkgit: gitcli[7] を参照)。
+.SS "rev\-list options and arguments"
+.sp
+このマニュアルページでは、最も頻繁に使用されるオプションについてのみ説明しています。 完全なリストについては、 \fBgit-rev-list\fR(1) を参照してください。
+.PP
+\fB\-\-all\fR
+.RS 4
+全ての参照(ブランチ、タグ、等)を表示します。
+.RE
+.PP
+\fB\-\-branches[=<pattern>]\fR, \fB\-\-tags[=<pattern>]\fR, \fB\-\-remotes[=<pattern>]\fR
+.RS 4
+すべてのブランチ(タグ、リモートブランチ、等)がコマンドラインに <commit> としてリストされているかのように見せかけます。 <pattern> が指定されている場合、参照を指定されたシェルグロブに一致するものに制限します。
+.RE
+.PP
+\fB\-\-since=<date>\fR
+.RS 4
+指定の日付よりも新しいコミットを表示します。
+.RE
+.PP
+\fB\-\-until=<date>\fR
+.RS 4
+指定の日付より古いコミットを表示します。
+.RE
+.PP
+\fB\-\-date\-order\fR
+.RS 4
+可能な場合は、コミットを日付順で並べ替えます。
+.RE
+.PP
+\fB\-\-merge\fR
+.RS 4
+マージの試みが競合で停止した後、競合するファイルを変更し、マージされるすべてのヘッドに存在しない2つのブランチ間(つまり、HEADとMERGE_HEAD)の履歴のコミットを表示します。
+.RE
+.PP
+\fB\-\-left\-right\fR
+.RS 4
+対称差のどちら側からコミットに到達できるかをマークします。左側からのコミットには
+\fB<\fR
+記号が接頭辞として付けられ、右側からのコミットには
+\fB>\fR
+記号が付けられます。
+.RE
+.PP
+\fB\-\-full\-history\fR
+.RS 4
+\fB<path>\&.\&.\&.\fR
+で履歴をフィルタリングする場合、一部の履歴は削除されません。(詳細な説明については、
+\fBgit-log\fR(1)
+の「History simplification」を参照してください。)
+.RE
+.PP
+\fB\-\-simplify\-merges\fR
+.RS 4
+\fB\-\-full\-history\fR
+への追加オプションで、このマージに寄与する選択されたコミットがないため、結果の履歴からいくつかの不要なマージを削除します。(詳細な説明については、
+\fBgit-log\fR(1)
+の「History simplification」を参照してください。)
+.RE
+.PP
+\fB\-\-ancestry\-path\fR
+.RS 4
+表示するコミットの範囲が指定されている(例:
+\fBcommit1\&.\&.commit2\fR
+または
+\fBcommit2 {caret}commit1\fR)場合、 commit1とcommit2の間の祖先チェーンに直接存在するコミット、つまりcommit1の子孫であり、commit2の祖先でもあるコミットのみを表示します。(詳細な説明については、 linkgit：git\-log[1] の「History simplification」を参照してください。)
+.RE
+.PP
+\fB\-L<start>,<end>:<file>\fR, \fB\-L:<funcname>:<file>\fR
+.RS 4
+<file> 内で、
+\fB<start>,<end>\fR
+、または正規表現の関数名 <funcname> で指定された行範囲をトレースします。pathspec リミッターを指定することはできません。これは現在、単一のリビジョンから開始するウォークに制限されています。つまり、0個または1個の正のリビジョン引数のみを指定でき、 <start> と <end> (または <funcname>) が開始リビジョンに存在する必要があります。このオプションは複数回指定できます。これは
+\fB\-\-patch\fR
+オプションの機能を含んでいます。パッチ出力は
+\fB\-\-no\-patch\fR
+を使用して抑制できますが、他の差分形式(つまり、
+\fB\-\-raw\fR,
+\fB\-\-numstat\fR,
+\fB\-\-shortstat\fR,
+\fB\-\-dirstat\fR,
+\fB\-\-summary\fR,
+\fB\-\-name\-only\fR,
+\fB\-\-name\-status\fR,
+\fB\-\-check\fR)は現在実装されていません。
+.sp
+<start> と <end> は、以下のいずれかの形式です:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+数値
+.sp
+<start> または <end> が数値の場合、絶対行番号を指定します(行は1から数えます)。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB/regex/\fR
+.sp
+この形式は、指定されたPOSIX正規表現に一致する最初の行を使用します。 <start> が正規表現の場合、前の
+\fB\-L\fR
+範囲の末尾から検索します。それ以外の場合は、ファイルの先頭から検索します。 <start> が
+\fB^/regex/\fR
+の場合、ファイルの先頭から検索します。 <end> が正規表現の場合、 <start> で指定された行から検索開始します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
++offset or \-offset
+.sp
+これは <end> に対してのみ有効であり、 <start> で指定された行の前後の行数を指定します。
+.RE
+.sp
+<start> と <end> の代わりに
+\fB:<funcname>\fR
+が指定されている場合、これは <funcname> に一致する最初の関数名行から次の関数名行までの範囲を示す正規表現です。
+\fB:<funcname>\fR
+は、前の
+\fB\-L\fR
+範囲の末尾から検索します。それ以外の場合は、ファイルの先頭から検索します。
+\fB^:<funcname>\fR
+はファイルの先頭から検索します。関数名は、
+\fBgit diff\fR
+がパッチハンクヘッダーを処理するのと同じ方法で決定されます(\fBgitattributes\fR(5)
+の「Defining a custom hunk\-header」参照)。
+.RE
+.PP
+<revision range>
+.RS 4
+表示するリビジョンを制限します。これは、指定されたリビジョンからの表示を意味する単一のリビジョンのいずれか、または、"\fI<from>\fR\&.\&.\fI<to>\fR" 形式の範囲で、 <from> から <to> までのすべてのリビジョンを表示することもできます。注意:より高度なリビジョン選択を適用できることに注意してください。オブジェクト名のスペルのより完全なリストについては、
+\fBgitrevisions\fR(7)
+を参照してください。
+.RE
+.PP
+<path>\&...
+.RS 4
+指定されたパス内のファイルにアクセスするモノだけにコミットを制限します。注意:リビジョン名に関するあいまいさを避けるために、
+\fB\-\-\fR
+を使用してパスを先行するオプションから分離することに注意してください。
+.RE
+.SS "gitk\-specific options"
+.PP
+\fB\-\-argscmd=<command>\fR
+.RS 4
+gitkが表示するリビジョン範囲を決定する必要があるたびに実行されるコマンド。このコマンドは、標準出力に、表示される追加のリビジョンのリストを1行に1つずつ出力することが期待されています。表示するコミットのセットが更新ごとに異なる可能性がある場合は、<リビジョン範囲> を明示的に指定する代わりにこれを使用してください。
+.RE
+.PP
+\fB\-\-select\-commit=<ref>\fR
+.RS 4
+グラフを読み込んだ後、指定したコミットを選択します。デフォルトの動作は、
+\fB\-select\-commit=HEAD\fR
+を指定するのと同じです。
+.RE
+.SH "EXAMPLES"
+.PP
+gitk v2\&.6\&.12\&.\&. include/scsi drivers/scsi
+.RS 4
+バージョン「v2\&.6\&.12」以降の変更で、include/scsiまたはdrivers/scsiサブディレクトリ内で変更されたファイルを表示する
+.RE
+.PP
+gitk \-\-since="2 weeks ago" \-\- gitk
+.RS 4
+ファイル
+\fBgitk\fR
+について過去2週間の変更を表示します。
+\fB\-\-\fR
+は、ブランチ名
+\fBgitk\fR
+と混同されるのを避けるために必要です。
+.RE
+.PP
+gitk \-\-max\-count=100 \-\-all \-\- Makefile
+.RS 4
+ファイル
+\fBMakefile\fR
+に加えられた最大100個の変更を表示します。現在のブランチの変更だけを探すのではなく、すべてのブランチを調べます。
+.RE
+.SH "FILES"
+.sp
+ユーザー構成と設定は以下の場所に保存されます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+存在すれば
+\fB$XDG_CONFIG_HOME/git/gitk\fR
+です。でなければ、
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+存在すれば
+\fB$HOME/\&.gitk\fR
+です。
+.RE
+.sp
+上記のいずれも存在しない場合は、デフォルトで \fB$XDG_CONFIG_HOME/git/gitk\fR が作成されて使用されます。 \fI$XDG_CONFIG_HOME\fR が設定されていない場合、すべての場合でデフォルトで \fB$HOME/\&.config\fR になります。
+.SH "HISTORY"
+.sp
+Gitkは最初のグラフィカルリポジトリブラウザでした。それはtcl/tkで書かれています。
+.sp
+\fBgitk\fR は実際には独立したプロジェクトとして維持されていますが、エンドユーザーの便宜のために安定したバージョンがGitスイートの一部として配布されています。
+.sp
+gitk\-git/ は、 Paul Mackerras のgitkプロジェクトからのものです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git://ozlabs\&.org/~paulus/gitk
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SEE ALSO"
+.PP
+\fIqgit(1)\fR
+.RS 4
+Qtを使用してC++で記述されたリポジトリブラウザです。
+.RE
+.PP
+\fItig(1)\fR
+.RS 4
+Ncursesを使用してCで記述された最小限のリポジトリブラウザーとGitツールの出力ハイライト。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

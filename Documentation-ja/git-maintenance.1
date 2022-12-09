@@ -1,0 +1,558 @@
+'\" t
+.\"     Title: git-maintenance
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MAINTENANCE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-maintenance \- Gitリポジトリのデータを最適化するためのタスクの実行
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit maintenance\fR run [<options>]
+\fIgit maintenance\fR start [\-\-scheduler=<scheduler>]
+\fIgit maintenance\fR (stop|register|unregister)
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+タスクを実行してGitリポジトリデータを最適化し、他のGitコマンドを高速化し、リポジトリのストレージ使用量を減らします。
+.sp
+リポジトリのデータを追加するGitコマンド、例えば \fBgit add\fR や \fBgit fetch\fR は、応答性の良いユーザー体験(user experience)を実現するために最適化されています。これらのコマンドは、Gitデータを最適化するのに時間がかかりません。なぜなら、これらのユーザーコマンドはそれぞれ比較的小さなアクションを実行するのに対して、その最適化はリポジトリのフルサイズでスケールするからです。
+.sp
+\fBgit maintenance\fR コマンドはGitリポジトリを最適化する方法に柔軟性を提供します。
+.SH "SUBCOMMANDS"
+.PP
+run
+.RS 4
+1つ以上のメンテナンスタスクを実行します。 1つ以上の
+\fB\-\-task\fR
+オプションが指定されている場合、それらのタスクは指定した順序で実行されます。 それ以外の場合、タスクは、どの
+\fBmaintenance\&.<task>\&.enabled\fR
+構成オプションがtrueであるかによって決定されます。 デフォルトでは、
+\fBmaintenance\&.gc\&.enabled\fR
+のみがtrueです。
+.RE
+.PP
+start
+.RS 4
+現在のリポジトリでメンテナンスの実行を開始します。 これにより、
+\fBregister\fR
+サブコマンドと同一構成の更新が実行され、バックグラウンドスケジューラが更新されて、1時間ごとに
+\fBgit maintenance run \-\-scheduled\fR
+が実行されます。
+.RE
+.PP
+stop
+.RS 4
+バックグラウンドメンテナンススケジュールを停止します。 バックグラウンドメンテナンスが後で再開された場合に備えて、現在のリポジトリはメンテナンスされたリポジトリのリストから削除されません。
+.RE
+.PP
+register
+.RS 4
+Git構成値を初期化して、スケジュールされたメンテナンスが、このリポジトリで実行を開始するようにします。 これにより、現在のユーザーのグローバル構成の
+\fBmaintenance\&.repo\fR
+構成変数にリポジトリが追加され、
+\fBmaintenance\&.<task>\&.schedule\fR
+の推奨構成値が有効になります。 有効になっているタスクは、フォアグラウンドプロセスを中断することなく、バックグラウンドで安全に実行できます。
+.sp
+\fBregister\fR
+サブコマンドは、\fBmaintenance\&.strategy\fR
+構成値が以前に設定されていない場合、\fBmaintenance\&.strategy\fR
+を
+\fBincremental\fR
+に設定します。
+\fBincremental\fR
+戦略では、メンテナンスタスクごとに以下のスケジュールを使用します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgc\fR: disabled\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBcommit\-graph\fR: hourly\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBprefetch\fR: hourly\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBloose\-objects\fR: daily\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBincremental\-repack\fR: daily\&.
+.RE
+.sp
+\fBgit maintenance register\fR
+は、現在のリポジトリで
+\fBmaintenance\&.auto = false\fR
+を設定することにより、フォアグラウンドメンテナンスも無効にします。 この設定設定は、
+\fBgit maintenance unregister\fR
+コマンドの後も残ります。
+.RE
+.PP
+unregister
+.RS 4
+現在のリポジトリをバックグラウンドメンテナンスから削除します。 構成済みリストからリポジトリが削除されるだけです。 バックグラウンドメンテナンスプロセスの実行を停止することはありません。
+.RE
+.SH "TASKS"
+.PP
+commit\-graph
+.RS 4
+\fBcommit\-graph\fR
+ジョブは
+\fBcommit\-graph\fR
+ファイルを段階的に更新し、書き込まれたデータが正しいことを確認します。段階的書き込みは、前の
+\fBcommit\-graph\-chain\fR
+ファイルにあった
+\fB\&.graph\fR
+ファイルを期限切れにしないため、並行Gitプロセスと一緒に安全に実行できます。 それらは、有効期限延長に基づいて、のちの実行で削除されます。
+.RE
+.PP
+prefetch
+.RS 4
+\fBprefetch\fR
+タスクは、登録されているすべてのリモートからの最新のオブジェクトでオブジェクトディレクトリを更新します。 リモートごとに、
+\fBgit fetch\fR
+コマンドが実行されます。 構成されたrefspecは、要求されたすべてのrefを
+\fBrefs/prefetch/\fR
+内に配置するように変更されます。 また、タグは更新されません。
+.sp
+これは、リモート追跡ブランチの一時不通(disrupting)を回避するために行われます。 エンドユーザーは、フェッチを開始しない限り、これらのrefが移動されないままになることを期待しています。 ただし、prefetchタスクでは、後で実際のフェッチを完了するために必要なオブジェクトがすでに取得されているため、実際のフェッチはより高速になります。 理想的なケースでは、オブジェクトを転送せずに、一連のリモート追跡ブランチの更新ができます。
+.RE
+.PP
+gc
+.RS 4
+不要なファイルをクリーンアップし、ローカルリポジトリを最適化します。 「GC」は「ガベージコレクション」の略で、このタスクは多くの小さなタスクを実行します。 このタスクは、すべてのGitオブジェクトを単一のパックファイルに再パックするため、大規模なリポジトリではコストがかかる可能性があります。 また、古いデータを削除するため、状況によっては混乱を招く可能性があります。 Gitでのガベージコレクションの詳細については、
+\fBgit-gc\fR(1)
+を参照してください。
+.RE
+.PP
+loose\-objects
+.RS 4
+\fBloose\-objects\fR
+ジョブは、緩いオブジェクト(loose objects)をクリーンアップし、パックファイルに配置します。 並行Gitコマンドによる競合状態を防ぐために、2段階で処理を行います。 まず、パックファイルにすでに存在する緩いオブジェクトを削除します。 並行Gitプロセスは、緩いオブジェクトではなく、オブジェクトデータのパックファイルを調べます。 次に、緩いオブジェクトのバッチを含む新しいパックファイル(\fBloose\-\fR
+で始まる)を作成します。 バッチサイズは5万オブジェクトに制限されており、多量の緩いオブジェクトがあるリポジトリでジョブに時間がかかりすぎるのを防ぎます。
+\fBgc\fR
+タスクは、到達不能なオブジェクトを、パックファイルに再追加されない場合にのみ、後の段階でクリーンアップされる緩いオブジェクトとして書き込みます。 このため、
+\fBloose\-objects\fR
+タスクと
+\fBgc\fR
+タスクの両方を同時に有効にすることはお勧めできません。
+.RE
+.PP
+incremental\-repack
+.RS 4
+\fBincremental\-repack\fR
+ジョブは、
+\fBmulti\-pack\-index\fR
+機能を使用してオブジェクトディレクトリを再パックします。 並行Gitコマンドによる競合状態を防ぐために、2段階の処理を行います。 まず、
+\fBgitmulti\-pack\-indexexpire\fR
+を呼び出して
+\fBmulti\-pack\-index\fR
+ファイルによって参照されていないパックファイルを削除します。 次に、
+\fBgit multi\-pack\-index repack\fR
+を呼び出して、いくつかの小さなパックファイルを選択し、それらをより大きなファイルに再パックし、次に、小さなパックファイルを参照する
+\fBmulti\-pack\-index\fR
+エントリを更新して、新しいパックファイルを参照します。 これにより、これらの小さなパックファイルは、次回の
+\fBgitmulti\-pack\-indexexpire\fR
+の実行時に削除できるようになります。 小さいパックファイルの選択は、大きいパックファイルの予想サイズが少なくともバッチサイズになるように行われます。
+\fBgit-multi-pack-index\fR(1)
+の
+\fBrepack\fR
+サブコマンドの
+\fB\-\-batch\-size\fR
+オプションを参照してください。 デフォルトのバッチサイズはゼロです。これは、すべてのパックファイルを単一のパックファイルに再パックしようとする特殊なケースです。
+.RE
+.PP
+pack\-refs
+.RS 4
+\fBpack\-refs\fR
+タスクは、緩い参照ファイル(loose reference files)を収集し、それらを1つのファイルに纏めます。 これにより、多くの参照間で反復する必要のある操作が高速化されます。 詳細については、
+\fBgit-pack-refs\fR(1)
+を参照してください。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-\-auto\fR
+.RS 4
+\fBrun\fR
+サブコマンドと組み合わせると、特定のしきい値が満たされた場合にのみメンテナンスタスクを実行します。 たとえば、
+\fBgc\fR
+タスクは、緩いオブジェクトの数が
+\fBgc\&.auto\fR
+構成設定に格納されている数を超えた場合、またはパックファイルの数が
+\fBgc\&.autoPackLimit\fR
+構成設定を超えた場合に実行されます。
+\fB\-\-schedule\fR
+オプションとは互換性がありません。
+.RE
+.PP
+\fB\-\-schedule\fR
+.RS 4
+\fBrun\fR
+サブコマンドと組み合わせると、 各
+\fB<task>\fR
+の
+\fBmaintenance\&.<task>\&.schedule\fR
+構成値で指定されているように、特定の時間条件が満たされた場合にのみメンテナンスタスクを実行します。 この構成値は、\fBmaintenance\&.<task>\&.lastRun\fR
+構成値に従って、そのタスクが最後に実行されてからの秒数を指定します。 テストされるタスクは、
+\fB\-\-task=<task>\fR
+オプションによって提供されるタスク、または
+\fBmaintenance\&.<task>\&.enabled\fR
+がtrueに設定されているタスクです。
+.RE
+.PP
+\fB\-\-quiet\fR
+.RS 4
+(stderrを介して)進捗状況やその他の情報を報告しないでください。
+.RE
+.PP
+\fB\-\-task=<task>\fR
+.RS 4
+このオプションを1回以上指定した場合は、指定したタスクを指定した順序でのみ実行してください。
+\fB\-\-task=<task>\fR
+引数が指定されていない場合、
+\fBmaintenance\&.<task>\&.enabled\fR
+が
+\fBtrue\fR
+として構成されているタスクのみが考慮されます。 受け入れられる
+\fB<task>\fR
+値のリストについては、「TASKS」セクションを参照してください。
+.RE
+.PP
+\fB\-\-scheduler=auto|crontab|systemd\-timer|launchctl|schtasks\fR
+.RS 4
+\fBstart\fR
+サブコマンドと組み合わせる場合は、
+\fBgit maintenance run\fR
+を毎時(hourly)、毎日(daily)、毎週(weekly)に実行するスケジューラーを指定します。
+\fB<scheduler>\fR
+に指定できる値は、
+\fBauto\fR
+、
+\fBcrontab\fR(POSIX)、
+\fBsystemd\-timer\fR(Linux)、
+\fBlaunchctl\fR(macOS)、
+\fBschtasks\fR(Windows) です。
+\fBauto\fR
+が指定されている場合、適切なプラットフォーム固有のスケジューラが使用されます。 Linuxでは、使用可能な場合は
+\fBsystemd\-timer\fR
+が使用され、
+\fBsystemd\-timer\fR
+が使用できない場合は
+\fBcrontab\fR
+が使用されます。 デフォルトは`auto`です。
+.RE
+.SH "TROUBLESHOOTING"
+.sp
+\fBgit maintenance\fR コマンドは、Gitコマンド実行中のユーザーの待ち時間を最小限に抑えながら、リポジトリのメンテナンスパターンを簡素化するように設計されています。この処理をカスタマイズできるように、さまざまな構成オプションを利用できます。 デフォルトのメンテナンスオプションは、大規模なリポジトリであっても、迅速に完了する操作に重点を置いています。
+.sp
+スケジュールされたメンテナンスタスクが、ユーザーが意図したほど頻繁に実行されない場合があります。 各 \fBgit maintenance run\fR コマンドは、リポジトリのオブジェクトデータベースをロックします。これにより、他の並列の \fBgit maintenance run\fR コマンドが同じリポジトリで実行されなくなります。この安全柵がないと、競合するプロセスによってリポジトリが予測できない状態になる可能性があります。
+.sp
+バックグラウンドメンテナンススケジュールは、1時間ごとに \fBgit maintenance run\fR プロセスを実行します。 実行するたびに、「毎時」のタスクが実行されます。 深夜に、そのプロセスは「毎日」のタスクも実行します。 週の最初の日の深夜に、そのプロセスは「毎週」のタスクも実行します。 単一のプロセスが登録された各リポジトリを反復処理し、その頻度でスケジュールされたタスクを実行します。 登録されているリポジトリの数とそのサイズによっては、このプロセスに1時間以上かかる場合があります。 この場合、複数の \fBgit maintenance run\fR コマンドが同じリポジトリで同時に実行され、オブジェクトデータベースのロックを引き起こす可能性があります。 これにより、2つのタスクのどちらかが実行されなくなります。
+.sp
+一部のメンテナンスウィンドウの完了に1時間以上かかる場合は、メンテナンスタスクの複雑さを軽減することを検討してください。 たとえば、 \fBincremental\-repack\fR タスクは \fBgc\fR タスクよりもはるかに高速です。しかし、その代償として、オブジェクトデータベースが若干大きくなってしまいます。 より高価なタスクを移動して、実行頻度を減らすことを検討してください。
+.sp
+エキスパートユーザーは、 \fBgit maintenance start\fR およびGit構成オプションで利用できるスケジュールとは異なるスケジュールを使用して独自のメンテナンスタスクをスケジュールすることを検討できます。 これらのユーザーは、オブジェクトデータベースのロックと、並列実行の \fBgit maintenance run\fR コマンドの動作に注意する必要があります。 さらに、\fBgit gc\fR コマンドを \fBgit maintenance run\fR コマンドと組み合わせないでください。 \fBgit gc\fR はオブジェクトデータベースを変更しますが、 \fBgit maintenance run\fR のようにロックを取得しません。 可能であれば、 \fBgit gc\fR の代わりに \fBgit maintenance run \-\-task=gc\fR を使用してください。
+.sp
+次のセクションでは、 \fBgit maintenance start\fR によるバックグラウンドメンテナンスを実行するために導入されたメカニズムとそれらをカスタマイズする方法について説明します。
+.SH "BACKGROUND MAINTENANCE ON POSIX SYSTEMS"
+.sp
+POSIXシステムでバックグラウンドタスクをスケジュールするための標準メカニズムは cron(8) です。 このツールは、指定されたスケジュールに基づいてコマンドを実行します。 ユーザーがスケジュールしたタスクの現在のリストは、\fBcrontab \-l\fR を実行することで見つけることができます。 \fBgit maintenances tart\fR が書いたスケジュールは以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# BEGIN GIT MAINTENANCE SCHEDULE
+# The following schedule was created by Git
+# Any edits made in this region might be
+# replaced in the future by a Git command\&.
+
+0 1\-23 * * * "/<path>/git" \-\-exec\-path="/<path>" for\-each\-repo \-\-config=maintenance\&.repo maintenance run \-\-schedule=hourly
+0 0 * * 1\-6 "/<path>/git" \-\-exec\-path="/<path>" for\-each\-repo \-\-config=maintenance\&.repo maintenance run \-\-schedule=daily
+0 0 * * 0 "/<path>/git" \-\-exec\-path="/<path>" for\-each\-repo \-\-config=maintenance\&.repo maintenance run \-\-schedule=weekly
+
+# END GIT MAINTENANCE SCHEDULE
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+コメントは、Gitによって作成されたスケジュールをマークするための領域として使用されます。 この領域内の変更は、 \fBgit maintenance stop\fR によって完全に削除されるか \fBgit maintenance start\fR によって上書きされます。
+.sp
+\fBcrontab\fR エントリは、実行された \fBgit\fR コマンドが \fBPATH\fR とは無関係に \fBgit maintenance start\fR が発行したものと同じであることを保証するために \fBgit\fR 実行可能ファイルのフルパスを指定します。 同じユーザーが複数のGit実行可能ファイルで \fBgit maintenance start\fR を実行する場合、最新の実行可能ファイルのみが使用されます。
+.sp
+これらのコマンドは、 \fBgit for\-each\-repo \-\-config=maintenance\&.repo\fR を使用して、複数値の \fBmaintenance\&.repo\fR 構成オプションにリストされている各リポジトリで \fBgit maintenance run \-\-schedule=<frequency>\fR を実行します。 これらは通常、ユーザー固有のグローバル構成からロードされます。 次に、 \fBgit maintenance\fR プロセスは \fBmaintenance\&.<task>\&.schedule\fR 設定オプションを使用して、 各 \fB<frequency>\fR で各リポジトリで実行するように設定されているメンテナンスタスクを決定します。 これらの値は、グローバルまたはリポジトリ構成値からロードされます。
+.sp
+構成値が、目的のバックグラウンドメンテナンススケジュールを達成するには不十分な場合は、あなた独自のスケジュールを作成できます。 \fBcrontab \-e\fR を実行すると、エディターはユーザー固有の \fBcron\fR スケジュールをロードします。 そのエディターでは、独自のスケジュール行を追加できます。 あなたは前述のデフォルトのスケジュールを採用することから始めるか、あるいは高度なスケジューリング手法について crontab(5) のドキュメントを読むことができます。 あなたのスケジュールで正しいバイナリを実行していることを確認するために、デフォルトのスケジュールから、フルパスと \fB\-\-exec\-path\fR の手法を流用してください。
+.SH "BACKGROUND MAINTENANCE ON LINUX SYSTEMD SYSTEMS"
+.sp
+Linux は \fBcron\fR をサポートしていますが、ディストリビューションによっては \fBcron\fR はオプションパッケージで、必ずしもインストールされるとは限りません。最近の Linux ディストリビューションでは、systemd タイマー がこれに取って代わっています。
+.sp
+ユーザーsystemdタイマーが使用可能な場合、それらが \fBcron\fR の代わりに使用されます。
+.sp
+この場合、 \fBgit Maintenance start\fR はユーザーsystemdタイマーユニットを作成し、タイマーを開始します。 ユーザーがスケジュールしたタスクの現在のリストは、 \fBsystemctl \-\-user list\-timers\fR を実行することで見つけることができます。 \fBgit maintenance start\fR によって書かれたタイマー以下のような感じになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ systemctl \-\-user list\-timers
+NEXT                         LEFT          LAST                         PASSED     UNIT                         ACTIVATES
+Thu 2021\-04\-29 19:00:00 CEST 42min left    Thu 2021\-04\-29 18:00:11 CEST 17min ago  git\-maintenance@hourly\&.timer git\-maintenance@hourly\&.service
+Fri 2021\-04\-30 00:00:00 CEST 5h 42min left Thu 2021\-04\-29 00:00:11 CEST 18h ago    git\-maintenance@daily\&.timer  git\-maintenance@daily\&.service
+Mon 2021\-05\-03 00:00:00 CEST 3 days left   Mon 2021\-04\-26 00:00:11 CEST 3 days ago git\-maintenance@weekly\&.timer git\-maintenance@weekly\&.service
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-\-schedule=<frequency>\fR オプションごとに1つのタイマーが登録されます。
+.sp
+systemdユニットの定義は、以下のファイルで調べることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+~/\&.config/systemd/user/git\-maintenance@\&.timer
+~/\&.config/systemd/user/git\-maintenance@\&.service
+~/\&.config/systemd/user/timers\&.target\&.wants/git\-maintenance@hourly\&.timer
+~/\&.config/systemd/user/timers\&.target\&.wants/git\-maintenance@daily\&.timer
+~/\&.config/systemd/user/timers\&.target\&.wants/git\-maintenance@weekly\&.timer
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBgit maintenance start\fR はこれらのファイルを上書きし、 \fBsystemctl \-\-user\fR でタイマーを再開するため、カスタマイズは差し込み式ファイル(drop\-in file)ドロップインファイル、つまり \fB~/\&.config/systemd/user/git\-maintenance@\&.service\&.d\fR ディレクトリに \fB\&.conf\fR 拡張子のファイルを作成して行う必要があります。
+.sp
+\fBgit maintenance stop\fR は、ユーザーのsystemdタイマーを停止し、上記のファイルを削除します。
+.sp
+詳細は \fBsystemd\&.timer(5)\fR を参照して下さい。
+.SH "BACKGROUND MAINTENANCE ON MACOS SYSTEMS"
+.sp
+macOSは技術的には \fBcron\fR をサポートしていますが、 \fBcrontab \-e\fR を使用するには昇格された権限が必要であり、実行されるプロセスには完全なユーザーコンテキストがありません。 完全なユーザーコンテキストがないと、Gitとその資格情報ヘルパーは保存されている資格情報にアクセスできないため、一部のメンテナンスタスクは機能しません。
+.sp
+代わりに、 \fBgit maintenance start\fR は \fBlaunchctl\fR ツールと相呼応します。これはmacOSで時限ジョブをスケジュールするための推奨される方法です。 \fBgit maintenance (start|stop)\fR によるメンテナンスのスケジュールには、macOS10\&.11以降でのみ利用可能ないくつかの \fBlaunchctl\fR 機能が必要です。
+.sp
+ユーザー固有のスケジュールされたタスクは、XML形式の \fB\&.plist\fR ファイルとして \fB~/Library/LaunchAgents/\fR に保存されます。 あなたは以下のコマンドを使用して、現在登録されているタスクを確認できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ls ~/Library/LaunchAgents/org\&.git\-scm\&.git*
+org\&.git\-scm\&.git\&.daily\&.plist
+org\&.git\-scm\&.git\&.hourly\&.plist
+org\&.git\-scm\&.git\&.weekly\&.plist
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-\-schedule=<frequency>\fR オプションごとに1つのタスクが登録されます。 XML形式で各スケジュールがどのように記述されているかを調べるには、これらの \fB\&.plist\fR ファイルの1つをエディターで開き、 \fB<key>StartCalendarInterval</key>\fR 要素に続く`<array>` 要素を調べます。
+.sp
+\fBgit maintenance start\fR はこれらのファイルを上書きし、タスクを \fBlaunchctl\fR に再度登録するため、カスタマイズは、個別の名前で独自の \fB\&.plist\fR ファイルを作成して行う必要があります。 同様に、 \fBgit maintenance stop\fR コマンドは \fBlaunchctl\fR でタスクの登録を解除し、 \fB\&.plist\fR ファイルを削除します。
+.sp
+バックグラウンドタスクのより高度なカスタマイズの作成の詳細については launchctl\&.plist(5) を参照してください。
+.SH "BACKGROUND MAINTENANCE ON WINDOWS SYSTEMS"
+.sp
+Windowsは \fBcron\fR をサポートしておらず、代わりにバックグラウンドタスクをスケジュールするための独自のシステムを備えています。 \fBgit maintenance start\fR コマンドは、 \fBschtasks\fR コマンドを使用してこのシステムにタスクを送信します。 タスクスケジューラアプリケーションを使用して、すべてのバックグラウンドタスクを検査できます。 Gitによって追加されたタスクには、 \fBGit Maintenance (<frequency>)\fR という形式の名前が付いています。 タスクスケジューラGUIには、これらのタスクを検査する方法がありますが、タスクをXMLファイルにエクスポートして、そこで詳細を表示することもできます。
+.sp
+注意: Gitはコンソールアプリケーションであるため、これらのバックグラウンドタスクにより、現在のユーザーに表示されるコンソールウィンドウが作成されることに注意してください。 これは、タスクスケジューラの「Run whether user is logged in or not」(ユーザーがログインしているかどうかに関係なく実行する)オプションを選択することで手動で変更できます。 この変更にはパスワードの入力が必要で、そのため \fBgit maintenance start\fR はデフォルトではこのオプションを選択しません。
+.sp
+バックグラウンドタスクをカスタマイズする場合は、タスクの名前を変更して、その後に \fBgit maintenance (start|stop)\fR を呼び出してもカスタムタスクが上書きされないようにしてください。
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+maintenance\&.auto
+.RS 4
+このブール構成オプションは、一部のコマンドが通常の作業を行った後に
+\fBgit maintenance run \-\-auto\fR
+を実行するかどうかを制御します。 デフォルトはtrueです。
+.RE
+.PP
+maintenance\&.strategy
+.RS 4
+この文字列設定オプションは、バックグラウンドメンテナンスのいくつかの推奨スケジュールの1つを指定する方法を提供します。 これは、
+\fB\-\-task=<task>\fR
+引数が指定されていない場合、
+\fBgit maintenance run \-\-schedule=X\fR
+コマンド中に実行されるタスクにのみ影響します。 さらに、
+\fBmaintenance\&.<task>\&.schedule\fR
+構成値が設定されている場合、
+\fBmaintenance\&.strategy\fR
+によって提供される値の代わりにその値が使用されます。 戦略として指定可能な文字列は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnone\fR: このデフォルト設定は、どのスケジュールでもタスクが実行されないことを意味します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBincremental\fR: この設定は、データを削除しない小さなメンテナンスアクティビティの実行に最適化されています。 これは
+\fBgc\fR
+タスクをスケジュールしませんが、
+\fBprefetch\fR
+および
+\fBcommit\-graph\fR
+タスクを1時間ごとに実行し、
+\fBloose\-objects\fR
+および
+\fBincremental\-repack\fR
+タスクを毎日実行し、
+\fBpack\-refs\fR
+タスクを毎週実行します。
+.RE
+.RE
+.PP
+maintenance\&.<task>\&.enabled
+.RS 4
+このブール構成オプションは、
+\fBgit maintenance run\fR
+に
+\fB\-\-task\fR
+オプションが指定されていない場合に、
+\fB<task>\fR
+という名前のメンテナンスタスクを実行するかどうかを制御します。
+\fB\-\-task\fR
+オプションが存在する場合、これらの構成値は無視されます。 デフォルトでは、
+\fBmaintenance\&.gc\&.enabled\fR
+のみがtrueです。
+.RE
+.PP
+maintenance\&.<task>\&.schedule
+.RS 4
+この設定オプションは、指定された
+\fB<task>\fR
+が
+\fBgit maintenance run \-\-schedule=<frequency>\fR
+コマンド中に実行されるかどうかを制御します。 値は、 "hourly", "daily", "weekly" のいずれかである必要があります。
+.RE
+.PP
+maintenance\&.commit\-graph\&.auto
+.RS 4
+この整数値構成オプションは、
+\fBgit maintenance run \-\-auto\fR
+の一部として
+\fBcommit\-graph\fR
+タスクを実行する頻度を制御します。 ゼロの場合、
+\fBcommit\-graph\fR
+タスクは`\-\-auto` オプションで実行されません。負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、commit\-graphファイルにない到達可能なコミットの数が
+\fBmaintenance\&.commit\-graph\&.auto\fR
+の値以上であるときにコマンドを実行する必要があることを意味します。デフォルト値は100です。
+.RE
+.PP
+maintenance\&.loose\-objects\&.auto
+.RS 4
+この整数値構成オプションは、
+\fBgit maintenance run \-\-auto\fR
+の一部として
+\fBloose\-objects\fR
+タスクを実行する頻度を制御します。 ゼロの場合、
+\fBloose\-objects\fR
+タスクは
+\fB\-\-auto\fR
+オプションでは実行されません。 負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、緩いオブジェクト(loose objects)の数が
+\fBmaintenance\&.loose\-objects\&.auto\fR
+の値以上であるときにコマンドを実行する必要があることを意味します。 デフォルト値は100です。
+.RE
+.PP
+maintenance\&.incremental\-repack\&.auto
+.RS 4
+この整数値構成オプションは、
+\fBgit maintenance run \-\-auto\fR
+の一部として
+\fBincremental\-repack\fR
+タスクを実行する頻度を制御します。 ゼロの場合、
+\fBincremental\-repack\fR
+タスクは
+\fB\-\-auto\fR
+オプションでは実行されません。 負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、multi\-pack\-indexにないpack\-fileの数が
+\fBmaintenance\&.incremental\-repack\&.auto\fR
+の値以上であるときにコマンドを実行する必要があることを意味します。 デフォルト値は10です。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

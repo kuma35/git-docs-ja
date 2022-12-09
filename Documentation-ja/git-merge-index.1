@@ -1,0 +1,109 @@
+'\" t
+.\"     Title: git-merge-index
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MERGE\-INDEX" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-merge-index \- マージが必要なファイルのマージを実行します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit merge\-index\fR [\-o] [\-q] <merge\-program> (\-a | ( [\-\-] <file>\&...) )
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+これにより、インデックス内の <file> が検索され、マージエントリがある場合は、それらのファイルのSHA\-1ハッシュが引数1、2、3（ファイルがない場合は空の引数）として、および、引数4として <file> が渡されます。引数1、2、3の3つのファイルのファイルモードは、引数5、6、7として渡されます。
+.SH "OPTIONS"
+.PP
+\fB\-\-\fR
+.RS 4
+これ以後の引数をオプションとして解釈しないでください。
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+インデックス内のマージが必要なすべてのファイルに対してマージを実行します。
+.RE
+.PP
+\fB\-o\fR
+.RS 4
+最初に失敗したマージで停止するのではなく、すべてを一度に実行します。前のマージでエラーが返された場合でもマージを続行し、すべてのマージ後にエラーコードを返します。
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+マージプログラムの失敗について文句を言わないでください(マージプログラムの失敗は通常、マージ中の競合を示します)。 これは、カスタムメッセージを送信する可能性のある磁器コマンド用です。
+.RE
+.sp
+\fBgit merge\-index\fR が複数の <file> (または \fB\-a\fR )で呼び出された場合、それらを順番に処理し、マージがゼロ以外の終了コードを返した場合にのみ停止します。
+.sp
+通常、これは、RCSパッケージの「マージ」コマンドのGitの模倣を呼び出すスクリプトで実行されます。
+.sp
+\fBgit merge\-one\-file\fR というサンプルスクリプトがディストリビューションに含まれています。
+.sp
+警告！警告！警告！ Gitの「オブジェクトのマージ順序」は、RCSの「マージ」プログラムのオブジェクトのマージ順序とは異なります。上記の順番では、オリジナルが最初です。しかし、3方向マージプログラム「マージ」の引数の順序は、オリジナルを中央に置きます。理由は聞かないで\&...
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+torvalds@ppc970:~/merge\-test> git merge\-index cat MM
+This is MM from the original tree\&.              # original
+This is modified MM in the branch A\&.            # merge1
+This is modified MM in the branch B\&.            # merge2
+This is modified MM in the branch B\&.            # current contents
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+または
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+torvalds@ppc970:~/merge\-test> git merge\-index cat AA MM
+cat: : No such file or directory
+This is added AA in the branch A\&.
+This is added AA in the branch B\&.
+This is added AA in the branch B\&.
+fatal: merge program failed
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+後者の例は、何かがエラーを返した後、 \fBgit merge\-index\fR がマージの試行を停止する方法を示しています(つまり、「cat」は元のファイルに存在しなかったため、AAファイルのエラーを返しました。 \fBgit merge\-index\fR はMMをマージしようとさえしませんでした)。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

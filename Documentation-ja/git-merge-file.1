@@ -1,0 +1,122 @@
+'\" t
+.\"     Title: git-merge-file
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-MERGE\-FILE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-merge-file \- 3方向ファイルマージを実行する
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit merge\-file\fR [\-L <current\-name> [\-L <base\-name> [\-L <other\-name>]]]
+        [\-\-ours|\-\-theirs|\-\-union] [\-p|\-\-stdout] [\-q|\-\-quiet] [\-\-marker\-size=<n>]
+        [\-\-[no\-]diff3] <current\-file> <base\-file> <other\-file>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fBgit merge\-file\fR は、 \fB<base\-file>\fR から \fB<other\-file>\fR へのすべての変更を \fB<current\-file>\fR に組み込みます。結果は通常 \fB<current\-file>\fR に入ります。 \fBgit merge\-file\fR は、元のファイルへの個別の変更を組み合わせるのに役立ちます。 \fB<base\-file>\fR がオリジナルであり、 \fB<current\-file>\fR と \fB<other\-file>\fR の両方が \fB<base\-file>\fR の変更であるとすると、 \fBgit merge\-file\fR は両方の変更を結合します。
+.sp
+\fB<current\-file>\fR と \fB<other\-file>\fR の両方の行の共通セグメントに変更がある場合、競合が発生します。競合が見つかった場合、「git merge\-file」は通常、警告を出力し、 \fB<<<<<<<\fR および \fB>>>>>>>\fR マーカーを含む行で競合を囲みます。典型的な競合は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<<<<<<< A
+lines in file A
+=======
+lines in file B
+>>>>>>> B
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+競合がある場合、ユーザーは結果を編集して、選択肢の1つを削除する必要があります。 ただし \fB\-\-ours\fR または \fB\-\-theirs\fR または \fB\-\-union\fR オプションが有効な場合、これらの競合は、 \fB<current\-file>\fR の行または \fB<other\-file>\fR の行または両方からの行を優先して解決します。競合マーカーの長さは \fB\-\-marker\-size\fR オプションで指定できます。
+.sp
+このプログラムの終了値は、エラーの場合は負数であり、それ以外の場合は競合した数です(競合たくさんの場合は127に切り捨てられます)。マージがクリーンだった場合、終了値は0です。
+.sp
+\fBgit merge\-file\fR は、RCS用マージの最小限のクローンになるように設計されています。つまり \fBgit\fR(1) に必要なRCSのマージ機能をすべて実装します。
+.SH "OPTIONS"
+.PP
+\fB\-L <label>\fR
+.RS 4
+このオプションは最大3回指定でき、競合レポートで対応するファイル名の代わりに使用するラベルを指定します。 つまり
+\fBgit merge\-file \-L x \-L y \-L z a b c\fR
+は、ファイルa、b、cからではなく、ファイルx、y、zから来たように見える出力を生成します。
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+\fB<current\-file>\fR
+を上書きする代わりに、結果を標準出力に送信します。
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+静かにします(quiet)。競合について警告しないでください。
+.RE
+.PP
+\fB\-\-diff3\fR
+.RS 4
+\fBdiff3\fR
+スタイルで競合を表示します。
+.RE
+.PP
+\fB\-\-zdiff3\fR
+.RS 4
+\fBzdiff3\fR
+スタイルで競合を表示します。
+.RE
+.PP
+\fB\-\-ours\fR, \fB\-\-theirs\fR, \fB\-\-union\fR
+.RS 4
+ファイルに競合を残す代わりに、競合部分の、our (または their または 両方)側に有利な競合解決します。
+.RE
+.SH "EXAMPLES"
+.PP
+\fBgit merge\-file README\&.my README README\&.upstream\fR
+.RS 4
+README以降のREADME\&.myとREADME\&.upstreamの変更を組み合わせて、それらをマージしようとし、結果をREADME\&.myに書き込みます。
+.RE
+.PP
+\fBgit merge\-file \-L a \-L b \-L c tmp/a123 tmp/b234 tmp/c345\fR
+.RS 4
+tmp/a123 と tmp/c345 をベースの tmp/b234 とマージしますが、
+\fBtmp/a123\fR
+と
+\fBtmp/c345\fR
+の代わりにラベル
+\fBa\fR
+と
+\fBc\fR
+を使用します。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

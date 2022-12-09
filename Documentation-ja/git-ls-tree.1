@@ -1,0 +1,283 @@
+'\" t
+.\"     Title: git-ls-tree
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-LS\-TREE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-ls-tree \- ツリーオブジェクトの内容を一覧表示します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit ls\-tree\fR [\-d] [\-r] [\-t] [\-l] [\-z]
+            [\-\-name\-only] [\-\-name\-status] [\-\-object\-only] [\-\-full\-name] [\-\-full\-tree] [\-\-abbrev[=<n>]] [\-\-format=<format>]
+            <tree\-ish> [<path>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+「/bin/ls \-a」が現在の作業ディレクトリで行うことのように、特定のツリーオブジェクトの内容を一覧表示します。 ただし以下の点に注意してください:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+動作は「/bin/ls」の動作とは少し異なり、「<path>」は一致するパターンのリストのみを示します。 したがって、(
+\fB\-r\fR
+なしで)ディレクトリ名を指定すると動作が異なり、引数の順序は重要ではありません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB<path>\fR
+が現在の作業ディレクトリを基準にして取得されるという点で、動作は「/bin/ls」の動作と似ています。例えば、あなたの現在の作業ディレクトリが「sub」で、その下にサブディレクトリ「dir」がある場合は、「git ls\-tree \-r HEAD dir」を実行すると、「dir」ツリーの内容を一覧表示できます(つまり、「HEAD」の「sub/dir」) 。あなたが、ルートレベル以外のツリーを直接指定したいとします(たとえば
+\fBgit ls\-tree \-r HEAD:sub dir\fR
+と指定します)。しかし、この場合は結果として
+\fBHEAD\fR
+コミットで
+\fBsub/sub/dir\fR
+を要求したことになります(そしてそんなディレクトリはないので何も表示されない)。ただし、
+\fB\-\-full\-tree\fR
+プションを渡すと、現在の作業ディレクトリを無視できます(つまり、
+\fBgit ls\-tree \-\-fulltree \-r HEAD:sub dir\fR
+とすれば意図したとおりに動く)
+.RE
+.SH "OPTIONS"
+.PP
+<tree\-ish>
+.RS 4
+ツリーっぽい何か(tree\-ish)のID
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+名前付きツリーエントリ自体のみを表示し、その子供たちは表示しません。
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+サブツリーに再帰的に入っていきます
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+サブツリーに再帰的入っていく場合でも、ツリーエントリを表示します。
+\fB\-r\fR
+が渡されなかった場合は効果がありません。
+\fB\-d\fR
+は
+\fB\-t\fR
+の意味を含んでいます。
+.RE
+.PP
+\fB\-l\fR, \fB\-\-long\fR
+.RS 4
+ブロブ(ファイル)エントリのオブジェクトサイズを表示します。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+\fB\e0\fR
+(NULバイト)出力での行終了であり、ファイル名をクォートしません。 詳細については、以下の OUTPUT FORMAT を参照してください。
+.RE
+.PP
+\fB\-\-name\-only\fR, \fB\-\-name\-status\fR
+.RS 4
+(「long」出力ではなく)ファイル名のみを1行に1つずつリストします。
+\fB\-\-object\-only\fR
+と組み合わせることはできません。
+.RE
+.PP
+\fB\-\-object\-only\fR
+.RS 4
+オブジェクトの名前のみを 1 行に 1 つずつリストします。
+\fB\-\-name\-only\fR
+または
+\fB\-\-name\-status\fR
+と組み合わせることはできません。 これは、
+\fB\-\-format=\*(Aq%(objectname)\*(Aq\fR
+を指定するのと同じですが、このオプションとその正確な形式の両方で、コマンドは一般的なフォーマット・メカニズムを経由する代わりに、手動で最適化されたコードパス(hand\-optimized codepath)を使用します。
+.RE
+.PP
+\fB\-\-abbrev[=<n>]\fR
+.RS 4
+40バイトの16進オブジェクト行全体を表示する代わりに、オブジェクトを一意に参照できる、少なくとも
+\fB<n>\fR
+以上の長さの最短のプレフィックスを表示します。デフォルト以外の桁数は
+\fB\-\-abbrev=<n>\fR
+で指定できます。(訳注:手元ではデフォルトは10桁で表示された。
+\fB\-\-abbrev=1\fR
+とすると5桁(一部6桁)表示となった)
+.RE
+.PP
+\fB\-\-full\-name\fR
+.RS 4
+現在の作業ディレクトリに関連するパス名を表示する代わりに、フルパス名を表示します。
+.RE
+.PP
+\fB\-\-full\-tree\fR
+.RS 4
+現在の作業ディレクトリを無視して、ルートレベルを起点として一覧表示します。
+\fB\-\-full\-name\fR
+の意味を含んでいます。
+.RE
+.PP
+\fB\-\-format=<format>\fR
+.RS 4
+表示される各結果に対して <format> 文字列を適用します。その際 <format> 文字列中の
+\fB%(fieldname)\fR
+は展開(interpolate)されます。 これはまた、
+\fB%%\fR
+を
+\fB%\fR
+に展開し、\fB%xx\fR
+(\fBxx\fR
+は 16 進数字) を 16 進コード
+\fBxx\fR
+のキャラクタに展開します。 たとえば、\fB%00\fR
+は
+\fB\e0\fR
+(NUL) に、\fB%09\fR
+は
+\fB\et\fR
+(TAB) に、%0a は
+\fB\en\fR
+(LF) に展開されます。 指定した場合、
+\fB\-\-format\fR
+は、
+\fB\-\-long\fR
+や`\-\-name\-only` や
+\fB\-\-object\-only\fR
+などの他の書式変更(format\-altering)オプションと組み合わせることはできません。 (訳注: sprintf の 書式文字列 みたいに自由な文章書ける。意味は無いけど
+\fBgit ls\-tree \-\-format=\*(Aqhogehoge\*(Aq HEAD\fR
+とかもOK)
+.RE
+.PP
+[<path>\&...]
+.RS 4
+パスが指定されたら、それらを表示します(これは実際には生のパス名ではなく、一致するパターンのリストであることに注意してください)。 それ以外の場合は、ツリーのルートレベルを唯一のパス引数として暗黙的に使用します。
+.RE
+.SH "OUTPUT FORMAT"
+.sp
+\fBls\-tree\fR の出力形式は、\fB\-\-format\fR オプションまたは \fB\-\-name\-only\fR などの他の書式変更(format\-altering)オプションのいずれかによって決定されます(上記 \fB\-\-format\fR 参照)。
+.sp
+特定の \fB\-\-format\fR ディレクティブを使用することは、これらのオプションを使用することと同等ですが、フルフルのフォーマット機構を呼び出すと、適切なフォーマット・オプションを使用するよりも遅くなる可能性があります。
+.sp
+\fB\-\-format\fR が既存のオプション \fBls\-tree\fR に正確にマッピングされる場合、適切な高速パス(appropriate faster path)が使用されます。 したがって、デフォルトの形式は以下と同等です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+%(objectmode) %(objecttype) %(objectname)%x09%(path)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この出力形式は、 \fBgit update\-index\fR の \fB\-\-index\-info\-\-stdin\fR が期待するものと互換性があります。
+.sp
+\fB\-l\fR オプションを使用すると、形式が以下のように変わります
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+%(objectmode) %(objecttype) %(objectname) %(objectsize:padded)%x09%(path)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+<objectname> のオブジェクトのサイズ(\fB%(objectsize:padded)\fR)はバイト単位で表され、そのフィールドは最小幅 7 文字で右寄せされます。オブジェクト サイズは、 ブロブ (ファイル) エントリに対してのみ指定されます。 他のエントリでは、サイズの代わりに \fB\-\fR 文字が使用されます。
+.sp
+\fB\-z\fR オプションを指定しない場合、構成変数 \fBcore\&.quotePath\fR で説明されているように、「異常な」文字を含むパス名が引用符で囲まれます(\fBgit-config\fR(1) を参照)。 \fB\-z\fR を使用すると、ファイル名がそのまま出力され、行はNULバイトで終了します。
+.sp
+Customized format:
+.sp
+\fB%(fieldname)\fR 表記を使用してさまざまなフィールドを展開できる \fB\-\-format\fR オプションを使用して、カスタム形式で表示することができます。 たとえば、 \fBobjectname\fR フィールドと \fBpath\fR フィールドのみを気にする場合は、以下のような特定の \fB\-\-format\fR で実行できます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git ls\-tree \-\-format=\*(Aq%(objectname) %(path)\*(Aq <tree\-ish>
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FIELD NAMES"
+.sp
+構造化フィールドのさまざまな値を使用して、結果の出力を展開できます。 出力行ごとに、以下の名前を使用できます:
+.PP
+objectmode
+.RS 4
+オブジェクトのモード。
+.RE
+.PP
+objecttype
+.RS 4
+オブジェクトのタイプ(\fBcommit\fR
+または
+\fBblob\fR
+または
+\fBtree\fR)。
+.RE
+.PP
+objectname
+.RS 4
+オブジェクトの名前。
+.RE
+.PP
+objectsize[:padded]
+.RS 4
+\fBblob\fR
+オブジェクトのサイズ (\fBcommit\fR
+または
+\fBtree\fR
+の場合は
+\fB\-\fR)。また、
+\fB%(objectsize:padded)\fR
+を使用したサイズのパディング形式もサポートしています。
+.RE
+.PP
+path
+.RS 4
+オブジェクトのパス名。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

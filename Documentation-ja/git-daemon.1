@@ -1,0 +1,461 @@
+'\" t
+.\"     Title: git-daemon
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-DAEMON" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-daemon \- Gitリポジトリ用のほんまにシンプルなサーバー
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit daemon\fR [\-\-verbose] [\-\-syslog] [\-\-export\-all]
+             [\-\-timeout=<n>] [\-\-init\-timeout=<n>] [\-\-max\-connections=<n>]
+             [\-\-strict\-paths] [\-\-base\-path=<path>] [\-\-base\-path\-relaxed]
+             [\-\-user\-path | \-\-user\-path=<path>]
+             [\-\-interpolated\-path=<pathtemplate>]
+             [\-\-reuseaddr] [\-\-detach] [\-\-pid\-file=<file>]
+             [\-\-enable=<service>] [\-\-disable=<service>]
+             [\-\-allow\-override=<service>] [\-\-forbid\-override=<service>]
+             [\-\-access\-hook=<path>] [\-\-[no\-]informative\-errors]
+             [\-\-inetd |
+              [\-\-listen=<host_or_ipaddr>] [\-\-port=<n>]
+              [\-\-user=<user> [\-\-group=<group>]]]
+             [\-\-log\-destination=(stderr|syslog|none)]
+             [<directory>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+通常はポート「DEFAULT_GIT_PORT」(9418)でリッスンする非常に単純なTCP Gitデーモン。サービスを要求する接続を待機し、有効になっている場合はそのサービスを提供します。
+.sp
+ディレクトリにマジックファイル \fBgit\-daemon\-export\-ok\fR があることを確認し、この方法でエクスポートのマークが明示されていないGitディレクトリのエクスポートを拒否します(\fB\-\-export\-all\fR パラメーターが指定されていない場合)。 いくつかのディレクトリ・パスを「git daemon」の引数として渡すと、提供するのはそれらのディレクトリ内のリポジトリに限定されます。
+.sp
+デフォルトでは、 \fBupload\-pack\fR サービスのみが有効になっており、 \fBgit fetch\fR や \fBgit pull\fR や \fBgit clone\fR から呼び出される \fBgit fetch\-pack\fR と \fBgit ls\-remote\fR クライアントにサービスを提供します。
+.sp
+これは、読み取り専用の更新、つまりGitリポジトリからのプルに最適です。
+.sp
+\fBgit archive\fR を提供するための \fBupload\-archive\fR もあります。
+.SH "OPTIONS"
+.PP
+\fB\-\-strict\-paths\fR
+.RS 4
+パスを正確に一致させ(つまり、 実際のパスが "/foo/repo\&.git" または "/foo/repo/\&.git" の場合は "/foo/repo" を許可しないでください)、 そしてユーザー相対パスを許可しないでください。 このオプションが有効で、かつ、ディレクトリ引数が指定されていない場合、「git daemon」は起動を拒否します。
+.RE
+.PP
+\fB\-\-base\-path=<path>\fR
+.RS 4
+指定されたパスを基準にして、すべてのパス要求を再マップします。これは一種の "Git root" です。example\&.comで
+\fB\-\-base\-path=/srv/git\fR
+を伴って
+\fBgit daemon\fR
+を実行し、後で
+\fBgit://example\&.com/hello\&.git\fR
+をプルしようと試みると、
+\fBgit daemon\fR
+はパスを
+\fB/srv/git/hello\&.git\fR
+として解釈します。
+.RE
+.PP
+\fB\-\-base\-path\-relaxed\fR
+.RS 4
+\fB\-\-base\-path\fR
+が有効になっていて、リポジトリを探すのに失敗した場合、このオプションを使用すると、
+\fBgit daemon\fR
+はベースパスを前に付けずに探索を試みます。 これは、古いパスを許可したまま、
+\fB\-\-base\-path\fR
+使用に切り替える場合に便利です。
+.RE
+.PP
+\fB\-\-interpolated\-path=<pathtemplate>\fR
+.RS 4
+仮想ホスティングをサポートするために、補完されたパステンプレートを使用して、代替パスを動的に構築できます。テンプレートは、クライアントから提供されたターゲットホスト名の %H をサポートしますが、すべて小文字に変換されます。正規ホスト名の場合は %CH、サーバーのIPアドレスの場合は %IP、ポート番号の場合は %P、名前付きリポジトリの絶対パスの場合は %D です。補完後、パスはディレクトリのリストに対して検証されます。
+.RE
+.PP
+\fB\-\-export\-all\fR
+.RS 4
+\fBgit\-daemon\-export\-ok\fR
+ファイルがない場合でも、 (\fBobjects\fR
+と
+\fBrefs\fR
+サブディレクトリがある、)Gitリポジトリのように見えるすべてのディレクトリからのプルを許可します。
+.RE
+.PP
+\fB\-\-inetd\fR
+.RS 4
+サーバーをinetdサービスとして実行します。\fB\-\-syslog\fR
+の指定を含んでいます(\fB\-\-log\-destination=\fR
+でオーバーライドされる場合があります)。
+\fB\-\-detach\fR
+、
+\fB\-\-port\fR
+、
+\fB\-\-listen\fR
+、
+\fB\-\-user\fR
+、
+\fB\-\-group\fR
+オプションとは互換性がありません。
+.RE
+.PP
+\fB\-\-listen=<host_or_ipaddr>\fR
+.RS 4
+特定のIPアドレスまたはホスト名でリッスンします。IPアドレスは、IPv4アドレス、またはサポートされている場合はIPv6アドレスのいずれかになります。IPv6がサポートされていない場合、
+\fB\-\-listen=hostname\fR
+もサポートされていないため、
+\fB\-\-listen\fR
+にはIPv4アドレスを指定する必要があります。このオプションは複数回与えることができます。
+\fB\-\-inetd\fR
+オプションと互換性がありません。
+.RE
+.PP
+\fB\-\-port=<n>\fR
+.RS 4
+代わりのポートでリッスンします。
+\fB\-\-inetd\fR
+オプションと互換性がありません。
+.RE
+.PP
+\fB\-\-init\-timeout=<n>\fR
+.RS 4
+接続が確立されてからクライアント要求が受信されるまでのタイムアウト(秒単位)(基本的には即時である必要があるため、通常はかなり低い値)。
+.RE
+.PP
+\fB\-\-timeout=<n>\fR
+.RS 4
+特定のクライアントサブリクエスト(client sub\-requests)のタイムアウト(秒単位)。これには、サーバーがサブリクエストを処理するのにかかる時間と、次のクライアントのリクエストを待つために費やされる時間が含まれます。
+.RE
+.PP
+\fB\-\-max\-connections=<n>\fR
+.RS 4
+同時クライアントの最大数。デフォルトは32です。制限しない場合はゼロに設定します。
+.RE
+.PP
+\fB\-\-syslog\fR
+.RS 4
+\fB\-\-log\-destination=syslog\fR
+の短縮形。
+.RE
+.PP
+\fB\-\-log\-destination=<destination>\fR
+.RS 4
+指定した宛先にログメッセージを送信します。 このオプションは
+\fB\-\-verbose\fR
+を意味しないため、デフォルトではエラー状態のみがログに記録されることに注意してください。 <destination> は以下のいずれかである必要があります:
+.PP
+stderr
+.RS 4
+標準エラーに書き込みます。
+\fB\-\-detach\fR
+が指定されている場合、プロセスは実際の標準エラーから切断され、この宛先は実質的に
+\fBnone\fR
+と同等になることに注意してください。
+.RE
+.PP
+syslog
+.RS 4
+\fBgit\-daemon\fR
+識別子を使用してsyslogに書き込みます。
+.RE
+.PP
+none
+.RS 4
+すべてのログを無効にします。
+.RE
+.sp
+デフォルトの宛先は、
+\fB\-\-inetd\fR
+または
+\fB\-\-detach\fR
+が指定されている場合、は
+\fBsyslog\fR
+であり、それ以外の場合は
+\fBstderr\fR
+です。
+.RE
+.PP
+\fB\-\-user\-path\fR, \fB\-\-user\-path=<path>\fR
+.RS 4
+~user 表記をリクエストで使用できるようにします。パラメータなしで指定した場合、 git://host/~alice/foo git：// host / ~ alice / fooへのリクエストは、ユーザー
+\fBalice\fR
+のホームディレクトリにある
+\fBfoo\fR
+リポジトリへのアクセスリクエストと見なされます。
+\fB\-\-user\-path=path\fR
+が指定されている場合、同じリクエストが、ユーザー
+\fBalice\fR
+のホームディレクトリにある
+\fBpath/foo\fR
+リポジトリにアクセスするリクエストと見なされます。
+.RE
+.PP
+\fB\-\-verbose\fR
+.RS 4
+着信接続と要求されたファイルに関する詳細をログに記録します。
+.RE
+.PP
+\fB\-\-reuseaddr\fR
+.RS 4
+リスニングソケットをバインドするときは SO_REUSEADDR を使用します。 これにより、古い接続がタイムアウトするのを待たずにサーバーを再起動できます。
+.RE
+.PP
+\fB\-\-detach\fR
+.RS 4
+シェルからデタッチします。
+\fB\-\-syslog\fR
+オプションの指定を含んでいます。
+.RE
+.PP
+\fB\-\-pid\-file=<file>\fR
+.RS 4
+プロセスIDを <file> に保存します。デーモンが
+\fB\-\-inetd\fR
+で実行されている場合は無視されます。
+.RE
+.PP
+\fB\-\-user=<user>\fR, \fB\-\-group=<group>\fR
+.RS 4
+サービスループに入る前に、デーモンのuidとgidを変更します。
+\fB\-\-group\fR
+なしで
+\fB\-\-user\fR
+のみが指定された場合、ユーザーのプライマリグループIDが使用されます。オプションの値は
+\fBgetpwnam(3)\fR
+と
+\fBgetgrnam(3)\fR
+に与えられ、数値IDはサポートされていません。
+.sp
+これらのオプションを指定すると、
+\fB\-\-inetd\fR
+と一緒に使用するとエラーになります。 同じことを実現するには、必要に応じて、
+\fBgit daemon\fR
+を生成する前に、inetデーモンの機能を使用します。
+.sp
+ユーザーIDを切り替える多くのプログラムと同様に、デーモンは、(例えば、\fBupload\-pack\fR
+や`receive\-pack` の) gitプログラムを実行するときに
+\fB$HOME\fR
+などの環境変数をリセットしません。このオプションを使用する場合は、デーモンを起動する前に、
+\fBHOME\fR
+を
+\fB<user>\fR
+のホームディレクトリを指すように設定、およびエクスポートし、そのディレクトリ内のGit構成ファイルが
+\fB<user>\fR
+によって読み取り可能であることを確認してください。
+.RE
+.PP
+\fB\-\-enable=<service>\fR, \fB\-\-disable=<service>\fR
+.RS 4
+デフォルトでサイト全体のサービスを 有効/無効 にします。サイト全体で無効にされたサービスは、オーバーライド可能とマークされていて、リポジトリが構成アイテムでサービスを有効にしている場合でも、リポジトリごとに有効にできることに注意してください。
+.RE
+.PP
+\fB\-\-allow\-override=<service>\fR, \fB\-\-forbid\-override=<service>\fR
+.RS 4
+リポジトリごとの構成でサイト全体のデフォルトをオーバーライドすることを 許可/禁止 します。デフォルトでは、すべてのサービスがオーバーライドされる場合があります。
+.RE
+.PP
+\fB\-\-[no\-]informative\-errors\fR
+.RS 4
+informative\-errorsがオンになっている場合、git\-daemonはより詳細なエラーをクライアントに報告し、「no such repository」(そのようなリポジトリがない)と「repository not exported」(リポジトリがエクスポートされていない)などの条件を区別します。これはクライアントにとってより便利ですが、エクスポートされていないリポジトリの存在に関する情報が漏洩する可能性があります。informative\-errorsが有効になっていない場合、すべてのエラーは「access denied」とクライアントに報告します。 デフォルトは
+\fB\-\-no\-informative\-errors\fR
+です。
+.RE
+.PP
+\fB\-\-access\-hook=<path>\fR
+.RS 4
+クライアントが接続するたびに、最初に、<path> で指定された外部コマンドを実行します。コマンドライン引数として、サービス名("upload\-pack"など)や、リポジトリへのパスや、ホスト名(%H)や、正規のホスト名(%CH)や、IPアドレス(%IP)や、TCPポート(%P)を、指定します。外部コマンドは、ゼロ以外のステータスで終了することによってサービスを拒否する(またはゼロ・ステータスで終了することによってサービスを許可する)ことを決定できます。また $REMOTE_ADDR や
+\fB$REMOTE_PORT\fR
+環境変数を調べて、この決定を行うときにリクエスト側(requestor)ついて調べることもできます。
+.sp
+外部コマンドはオプションで、サービスを拒否したときにエラーメッセージとしてリクエスト側(requestor)に送信される1行を標準出力に書き込むことができます。
+.RE
+.PP
+<directory>
+.RS 4
+残りの引数は、ディレクトリのリストを提供します。 ディレクトリが指定されている場合、
+\fBgit\-daemon\fR
+プロセスは、 要求されたディレクトリがこれらのディレクトリのいずれかに含まれている場合にのみ、 リクエストされたディレクトリをサーブします。
+\fB\-\-strict\-paths\fR
+が指定されている場合、リクエストされたディレクトリはこれらのディレクトリのいずれかと正確に一致する必要があります。
+.RE
+.SH "SERVICES"
+.sp
+これらのサービスは、このコマンドのコマンドラインオプションを使用してグローバルに 有効/無効 にできます。よりきめ細かい制御が必要な場合(たとえば、デーモンがサービスを提供するいくつかの選択されたリポジトリでのみ \fBgit archive\fR を実行できるようしたい時)、リポジトリごとの構成ファイルを使用して、それらを有効または無効にできます。
+.PP
+upload\-pack
+.RS 4
+これは、
+\fBgit fetch\-pack\fR
+と
+\fBgit ls\-remote\fR
+クライアントにサービスを提供します。デフォルトで有効になっていますが、リポジトリでは
+\fBdaemon\&.uploadpack `構成アイテムを `false\fR
+に設定することで無効にできます。
+.RE
+.PP
+upload\-archive
+.RS 4
+これは
+\fBgit archive \-\-remote\fR
+を提供します。 デフォルトでは無効になっていますが、リポジトリでは、
+\fBdaemon\&.uploadarch\fR
+構成アイテムを
+\fBtrue\fR
+に設定することで有効にできます。
+.RE
+.PP
+receive\-pack
+.RS 4
+これは
+\fBgit send\-pack\fR
+クライアントにサービスを提供し、匿名プッシュを可能にします。プロトコルに認証が「ない」ため、デフォルトでは無効になっています(つまり、参照の削除を含め、誰でもリポジトリに何でもプッシュできます)。これは、誰もが友好的であるクローズドLAN設定のみを対象としています。このサービスは、
+\fBdaemon\&.receivepack\fR
+構成アイテムを
+\fBtrue\fR
+に設定することで有効にできます。
+.RE
+.SH "EXAMPLES"
+.PP
+ここでは /etc/services の下に構築するものと仮定します
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ grep 9418 /etc/services
+git             9418/tcp                # Git Version Control System
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fBgit daemon\fR as inetd server
+.RS 4
+\fB/pub/foo\fR
+または
+\fB/pub/bar\fR
+内の任意のリポジトリを処理する inetd サービスとして「git daemon」を設定するには、 以下のようなエントリを
+\fB/etc/inetd\fR
+に、すべて 1 行で配置します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git stream tcp nowait nobody  /usr/bin/git
+                git daemon \-\-inetd \-\-verbose \-\-export\-all
+                /pub/foo /pub/bar
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fBgit daemon\fR as inetd server for virtual hosts
+.RS 4
+異なる仮想ホスト
+\fBwww\&.example\&.com\fR
+と
+\fBwww\&.example\&.org\fR
+のリポジトリを処理するinetdサービスとして「git daemon」を設定するには、以下のようなエントリをすべて１行で
+\fB/etc/inetd\fR
+に配置します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git stream tcp nowait nobody /usr/bin/git
+                git daemon \-\-inetd \-\-verbose \-\-export\-all
+                \-\-interpolated\-path=/pub/%H%D
+                /pub/www\&.example\&.org/software
+                /pub/www\&.example\&.com/software
+                /software
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この例では、ルートレベルのディレクトリ
+\fB/pub\fR
+には、サポートされている各仮想ホスト名のサブディレクトリが含まれています。さらに、両方のホストは、リポジトリを単に
+\fBgit://www\&.example\&.com/software/repo\&.git\fR
+として公開します。 1\&.4\&.0より前のクライアントの場合、
+\fB/software\fR
+から適切なデフォルトリポジトリへのシンボリックリンクも作成できます。
+.RE
+.PP
+\fBgit daemon\fR as regular daemon for virtual hosts
+.RS 4
+IPアドレスに基づいて複数の仮想ホストのリポジトリを処理する通常の非inetdサービスとして「git daemon」を設定するには、以下のようにデーモンを起動します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        git daemon \-\-verbose \-\-export\-all
+                \-\-interpolated\-path=/pub/%IP/%D
+                /pub/192\&.168\&.1\&.200/software
+                /pub/10\&.10\&.220\&.23/software
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+IPアドレスに基づいて複数の仮想ホストのリポジトリを処理する通常の非inetdサービスとして「git daemon」を設定するには、以下のようにデーモンを起動します。
+.RE
+.PP
+selectively enable/disable services per repository
+.RS 4
+リポジトリに対して
+\fBgit archive \-\-remote\fR
+を有効にし、
+\fBgit fetch\fR
+を無効にするには、リポジトリの構成ファイルに以下のものを含めます（つまり、「HEAD」、「refs」、および「objects」の横にあるファイル「config」)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [daemon]
+                uploadpack = false
+                uploadarch = true
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "ENVIRONMENT"
+.sp
+「git daemon」は、IPアドレスが使用可能な場合、REMOTE_ADDRをそれに接続したクライアントのIPアドレスに設定します。 REMOTE_ADDRは、サービスの実行時に呼び出されるフックの環境で使用できます。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

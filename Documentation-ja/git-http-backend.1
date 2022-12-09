@@ -1,0 +1,425 @@
+'\" t
+.\"     Title: git-http-backend
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-HTTP\-BACKEND" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-http-backend \- Git over HTTP のサーバー側実装
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit http\-backend\fR
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+\fBhttp://\fR と \fBhttps://\fR プロトコルを介してリポジトリにアクセスするGitクライアントにGitリポジトリのコンテンツを提供するための単純なCGIプログラム。 このプログラムは、スマートHTTPプロトコルと下位互換性のあるダムHTTPプロトコルの両方を使用してフェッチするクライアント、およびスマートHTTPプロトコルを使用してプッシュするクライアントをサポートします。 適切に構成されていれば、Gitのより効率的な「v2」プロトコルもサポートします。 以下の「ENVIRONMENT」セクションの「GIT_PROTOCOL」の説明を参照してください。
+.sp
+ディレクトリにマジックファイル \fBgit\-daemon\-export\-ok\fR があることを確認し、この方法でエクスポートのマークが明示されていないGitディレクトリのエクスポートを拒否します(\fBGIT_HTTP_EXPORT_ALL\fR 環境変数が設定されている場合を除く)。
+.sp
+デフォルトでは、 \fBupload\-pack\fR サービスのみが有効になっており、 \fBgit fetch\fR や \fBgit pull\fR や \fBgit clone\fR から呼び出される \fBgit fetch\-pack\fR クライアントと \fBgit ls\-remote\fR クライアントにサービスを提供します。クライアントが認証されると、 \fBreceive\-pack\fR サービスが有効になります。このサービスは \fBgit push\fR から呼び出される \fBgit send\-pack\fR クライアントにサービスを提供します。
+.SH "SERVICES"
+.sp
+これらのサービスは、リポジトリごとの構成ファイルを使用して有効/無効にできます。
+.PP
+http\&.getanyfile
+.RS 4
+これは、アップロードパックサービスを使用できないバージョン1\&.6\&.6より古いGitクライアントにサービスを提供します。 有効にすると、クライアントは、ブランチから到達できなくなったがまだ存在しているオブジェクトを含む、リポジトリ内の任意のファイルを読み取ることができます。 デフォルトで有効になっていますが、リポジトリはこの構成アイテムを「false」に設定することで無効にできます。
+.RE
+.PP
+http\&.uploadpack
+.RS 4
+これは、
+\fBgit fetch\-pack\fR
+および
+\fBgit ls\-remote\fR
+クライアントにサービスを提供します。 デフォルトで有効になっていますが、リポジトリはこの構成アイテムを「false」に設定することで無効にできます。
+.RE
+.PP
+http\&.receivepack
+.RS 4
+これは
+\fBgit send\-pack\fR
+クライアントにサービスを提供し、プッシュを可能にします。 匿名ユーザーの場合はデフォルトで無効になっており、Webサーバーによって認証されたユーザーの場合はデフォルトで有効になっています。 この項目を
+\fBfalse\fR
+に設定することで無効にするか、
+\fBtrue\fR
+に設定することで匿名ユーザーを含むすべてのユーザーに対して有効にすることができます。
+.RE
+.SH "URL TRANSLATION"
+.sp
+ディスク上のリポジトリの場所を特定するために、 \fBgit http\-backend\fR は、Webサーバーによって自動的に設定される環境変数PATH_INFOと、Webサーバー構成で手動で設定する必要があるGIT_PROJECT_ROOTを連結します。 GIT_PROJECT_ROOTが設定されていない場合、 \fBgit http\-backend\fR はPATH_TRANSLATEDを読み取ります。これも、Webサーバーによって自動的に設定されます。
+.SH "EXAMPLES"
+.sp
+以下の例はすべて、 \fBhttp://$hostname/git/foo/bar\&.git\fR を \fB/var/www/git/foo/bar\&.git\fR にマップします。
+.PP
+Apache 2\&.x
+.RS 4
+mod_cgiとmod_aliasとmod_envが有効になっていることを確認し、 GIT_PROJECT_ROOT (またはDocumentRoot)を適切に設定して、CGIにScriptAliasを作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SetEnv GIT_PROJECT_ROOT /var/www/git
+SetEnv GIT_HTTP_EXPORT_ALL
+ScriptAlias /git/ /usr/libexec/git\-core/git\-http\-backend/
+
+# This is not strictly necessary using Apache and a modern version of
+# git\-http\-backend, as the webserver will pass along the header in the
+# environment as HTTP_GIT_PROTOCOL, and http\-backend will copy that into
+# GIT_PROTOCOL\&. But you may need this line (or something similar if you
+# are using a different webserver), or if you want to support older Git
+# versions that did not do that copying\&.
+#
+# Having the webserver set up GIT_PROTOCOL is perfectly fine even with
+# modern versions (and will take precedence over HTTP_GIT_PROTOCOL,
+# which means it can be used to override the client\*(Aqs request)\&.
+SetEnvIf Git\-Protocol "\&.*" GIT_PROTOCOL=$0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+匿名の読み取りアクセスを有効にし、認証された書き込みアクセスを有効にするには、最初のref広告(クエリ文字列のサービスパラメーターを介したプッシュとして検出)とreceive\-pack呼び出し自体の両方の承認(authorization)が必要です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+RewriteCond %{QUERY_STRING} service=git\-receive\-pack [OR]
+RewriteCond %{REQUEST_URI} /git\-receive\-pack$
+RewriteRule ^/git/ \- [E=AUTHREQUIRED:yes]
+
+<LocationMatch "^/git/">
+        Order Deny,Allow
+        Deny from env=AUTHREQUIRED
+
+        AuthType Basic
+        AuthName "Git Access"
+        Require group committers
+        Satisfy Any
+        \&.\&.\&.
+</LocationMatch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+クエリ文字列と照合するために使用できる
+\fBmod_rewrite\fR
+がない場合は、以下のように
+\fBgit\-receive\-pack\fR
+自体を保護するだけで十分です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<LocationMatch "^/git/\&.*/git\-receive\-pack$">
+        AuthType Basic
+        AuthName "Git Access"
+        Require group committers
+        \&.\&.\&.
+</LocationMatch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+このモードでは、サーバーは、クライアントが最初の接続中ではなく、プッシュのオブジェクトネゴシエーションフェーズを実際に開始するまで、認証(authentication)を要求しません。 このため、プッシュを受け入れる必要のあるリポジトリでは、
+\fBhttp\&.receivepack\fR
+設定オプションも有効にする必要があります。
+\fBhttp\&.receivepack\fR
+が設定されていない場合のデフォルトの動作は、認証されていないユーザーによるプッシュを拒否することです。 したがって、最初のリクエストは、認証の機会さえ与えずに、クライアントに
+\fB403 Forbidden\fR
+を報告します。
+.sp
+読み取りと書き込みの両方に認証を要求するには、リポジトリまたはその親ディレクトリの1つでLocationディレクティブを使用します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<Location /git/private>
+        AuthType Basic
+        AuthName "Private Git Access"
+        Require group committers
+        \&.\&.\&.
+</Location>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+同一URLでgitwebを提供するには、ScriptAliasMatchを使用して
+\fBgit http\-backend\fR
+が処理できるURLのみを取得し、残りをgitwebに転送します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ScriptAliasMatch \e
+        "(?x)^/git/(\&.*/(HEAD | \e
+                        info/refs | \e
+                        objects/(info/[^/]+ | \e
+                                 [0\-9a\-f]{2}/[0\-9a\-f]{38} | \e
+                                 pack/pack\-[0\-9a\-f]{40}\e\&.(pack|idx)) | \e
+                        git\-(upload|receive)\-pack))$" \e
+        /usr/libexec/git\-core/git\-http\-backend/$1
+
+ScriptAlias /git/ /var/www/cgi\-bin/gitweb\&.cgi/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+単一のリポジトリで異なる
+\fBgitnamespaces\fR(7)
+から複数のリポジトリを提供するには:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SetEnvIf Request_URI "^/git/([^/]*)" GIT_NAMESPACE=$1
+ScriptAliasMatch ^/git/[^/]*(\&.*) /usr/libexec/git\-core/git\-http\-backend/storage\&.git$1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+Accelerated static Apache 2\&.x
+.RS 4
+上記と同様ですが、Apacheを使用して、ディスクに保存されている静的ファイルを返すことができます。 多くのシステムでは、Apacheがカーネルにファイルの内容をファイルシステムからネットワークに直接コピーするように要求できるため、これはより効率的です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SetEnv GIT_PROJECT_ROOT /var/www/git
+
+AliasMatch ^/git/(\&.*/objects/[0\-9a\-f]{2}/[0\-9a\-f]{38})$          /var/www/git/$1
+AliasMatch ^/git/(\&.*/objects/pack/pack\-[0\-9a\-f]{40}\&.(pack|idx))$ /var/www/git/$1
+ScriptAlias /git/ /usr/libexec/git\-core/git\-http\-backend/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これは、gitweb構成と組み合わせることができます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SetEnv GIT_PROJECT_ROOT /var/www/git
+
+AliasMatch ^/git/(\&.*/objects/[0\-9a\-f]{2}/[0\-9a\-f]{38})$          /var/www/git/$1
+AliasMatch ^/git/(\&.*/objects/pack/pack\-[0\-9a\-f]{40}\&.(pack|idx))$ /var/www/git/$1
+ScriptAliasMatch \e
+        "(?x)^/git/(\&.*/(HEAD | \e
+                        info/refs | \e
+                        objects/info/[^/]+ | \e
+                        git\-(upload|receive)\-pack))$" \e
+        /usr/libexec/git\-core/git\-http\-backend/$1
+ScriptAlias /git/ /var/www/cgi\-bin/gitweb\&.cgi/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+Lighttpd
+.RS 4
+\fBmod_cgi\fR
+、
+\fBmod_alias\fR
+、
+\fBmod_auth\fR
+、
+\fBmod_setenv\fR
+がロードされていることを確認してから、
+\fBGIT_PROJECT_ROOT\fR
+を適切に設定し、すべてのリクエストをCGIにリダイレクトします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+alias\&.url += ( "/git" => "/usr/lib/git\-core/git\-http\-backend" )
+$HTTP["url"] =~ "^/git" {
+        cgi\&.assign = ("" => "")
+        setenv\&.add\-environment = (
+                "GIT_PROJECT_ROOT" => "/var/www/git",
+                "GIT_HTTP_EXPORT_ALL" => ""
+        )
+}
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+匿名での読み取りアクセスを有効にする一方、認証された書き込みアクセスを有効にするには:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$HTTP["querystring"] =~ "service=git\-receive\-pack" {
+        include "git\-auth\&.conf"
+}
+$HTTP["url"] =~ "^/git/\&.*/git\-receive\-pack$" {
+        include "git\-auth\&.conf"
+}
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ここで、
+\fBgit\-auth\&.conf\fR
+は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+auth\&.require = (
+        "/" => (
+                "method" => "basic",
+                "realm" => "Git Access",
+                "require" => "valid\-user"
+               )
+)
+# \&.\&.\&.and set up auth\&.backend here
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+読み取りと書き込みの両方に認証を要求するには:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$HTTP["url"] =~ "^/git/private" {
+        include "git\-auth\&.conf"
+}
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "ENVIRONMENT"
+.sp
+\fBgit http\-backend\fR は、呼び出し元のWebサーバーによって設定された \fBCGI\fR 環境変数に依存します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+PATH_INFO (GIT_PROJECT_ROOTが設定されている場合。それ以外の場合はPATH_TRANSLATED)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+REMOTE_USER
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+REMOTE_ADDR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+CONTENT_TYPE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+QUERY_STRING
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+REQUEST_METHOD
+.RE
+.sp
+\fBGIT_HTTP_EXPORT_ALL\fR 環境変数を \fBgit\-http\-backend\fR に渡して、各リポジトリの \fBgit\-daemon\-export\-ok\fR ファイルのチェックをバイパスしてから、そのリポジトリのエクスポートを許可することができます。
+.sp
+\fBGIT_HTTP_MAX_REQUEST_BUFFER\fR 環境変数(または \fBhttp\&.maxRequestBuffer\fR 構成変数)は、gitがフェッチ中に処理する最大のrefネゴシエーション要求を変更するように設定できます。これより大きなバッファを必要とするフェッチは成功しません。 通常、この値を変更する必要はありませんが、ref数が非常に多いリポジトリからフェッチする場合に役立つことがあります。 値は単位毎に指定できます(たとえば、100メガバイトの場合は「100M」)。 デフォルトは10メガバイトです。
+.sp
+クライアントは、 \fBGit\-Protocol\fR HTTPヘッダーを使用して、オプションのプロトコル機能（v2プロトコルなど）を探査(probe)できます。 これらをサポートするには、そのヘッダーの内容が \fBGIT_PROTOCOL\fR 環境変数に含まれている必要があります。 ほとんどのウェブサーバーはこのヘッダーを \fBHTTP_GIT_PROTOCOL\fR 変数を介してCGIに渡し、\fBgit\-http\-backend\fR はそれを \fBGIT_PROTOCOL\fR に自動的にコピーします。 ただし、一部のWebサーバーは、渡すヘッダーをより選択的にする場合があります。その場合には明示的に構成する必要があります(上記EXAMPLESセクションのApache構成の「Git\-Protocol」の説明を参照してください)。
+.sp
+バックエンドプロセスは、GIT_COMMITTER_NAMEを \fB$REMOTE_USER\fR に設定し、 GIT_COMMITTER_EMAILを \fB$\e{REMOTE_USER}@http\&.$\e{REMOTE_ADDR\e}\fR に設定して、 \fBgit\-receive\-pack\fR によって作成されたreflogにプッシュを実行したリモートユーザの識別情報が含まれるようにします。
+.sp
+すべての \fBCGI\fR 環境変数は、 \fBgit\-receive\-pack\fR によって呼び出される各フックで使用できます。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

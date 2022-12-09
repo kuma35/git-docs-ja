@@ -1,0 +1,577 @@
+'\" t
+.\"     Title: git-update-index
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-UPDATE\-INDEX" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-update-index \- 作業ツリーのファイルの内容をインデックスに登録します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit update\-index\fR
+             [\-\-add] [\-\-remove | \-\-force\-remove] [\-\-replace]
+             [\-\-refresh] [\-q] [\-\-unmerged] [\-\-ignore\-missing]
+             [(\-\-cacheinfo <mode>,<object>,<file>)\&...]
+             [\-\-chmod=(+|\-)x]
+             [\-\-[no\-]assume\-unchanged]
+             [\-\-[no\-]skip\-worktree]
+             [\-\-[no\-]ignore\-skip\-worktree\-entries]
+             [\-\-[no\-]fsmonitor\-valid]
+             [\-\-ignore\-submodules]
+             [\-\-[no\-]split\-index]
+             [\-\-[no\-|test\-|force\-]untracked\-cache]
+             [\-\-[no\-]fsmonitor]
+             [\-\-really\-refresh] [\-\-unresolve] [\-\-again | \-g]
+             [\-\-info\-only] [\-\-index\-info]
+             [\-z] [\-\-stdin] [\-\-index\-version <n>]
+             [\-\-verbose]
+             [\-\-] [<file>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+インデックスを変更します。 言及された各ファイルはインデックスに更新され、「unmerged」(マージされていない)または「needs updating」(更新が必要)状態がクリアされます。
+.sp
+インデックスで最も一般的な操作のいくつかを実行するためのよりユーザーフレンドリーな方法については、 \fBgit-add\fR(1) も参照してください。
+.sp
+\fBgit update\-index\fR が通知されたファイルを処理する方法は、さまざまなオプションを使用して変更できます:
+.SH "OPTIONS"
+.PP
+\fB\-\-add\fR
+.RS 4
+指定のファイルがまだインデックスにない場合は、追加されます。 デフォルトの動作では、新規ファイルは無視されます。
+.RE
+.PP
+\fB\-\-remove\fR
+.RS 4
+指定のファイルがインデックスに含まれているが欠落している場合、そのファイルは削除されます。 デフォルトの動作では、削除済のファイルは無視されます。
+.RE
+.PP
+\fB\-\-refresh\fR
+.RS 4
+現在のインデックスを調べ、 stat() 情報をチェックして、マージまたは更新が必要かどうかを確認します。
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+静かにします。 もし
+\fB\-\-refresh\fR
+がインデックスの更新を必要としていると判断した場合、デフォルトの動作はエラーになります。 このオプションは、
+\fBgit update\-index\fR
+をとにかく継続させます。
+.RE
+.PP
+\fB\-\-ignore\-submodules\fR
+.RS 4
+サブモジュールを更新しようと試みない。このオプションは、\fB\-\-refresh\fR
+より前に渡された場合にのみ尊重されます。
+.RE
+.PP
+\fB\-\-unmerged\fR
+.RS 4
+\fB\-\-refresh\fR
+がインデックス内のマージされていない変更を検出した場合、デフォルトの動作はエラー終了です。 このオプションにより、「git update\-index」はとにかく続行されます。
+.RE
+.PP
+\fB\-\-ignore\-missing\fR
+.RS 4
+\fB\-\-refresh\fR
+の処理中に欠落しているファイルを無視します
+.RE
+.PP
+\fB\-\-cacheinfo <mode>,<object>,<path>\fR, \fB\-\-cacheinfo <mode> <object> <path>\fR
+.RS 4
+指定の情報を直接インデックスに挿入します。 下位互換性のために、これらの3つの引数を3つの別個のパラメーターとして指定することもできますが、新しいユーザーは単一パラメーター形式を使用することをお勧めします。
+.RE
+.PP
+\fB\-\-index\-info\fR
+.RS 4
+stdinからインデックス情報を読み取ります。
+.RE
+.PP
+\fB\-\-chmod=(+|\-)x\fR
+.RS 4
+更新されたファイルに実行権限を設定します。
+.RE
+.PP
+\fB\-\-[no\-]assume\-unchanged\fR
+.RS 4
+このフラグを指定すると、パスに記録されているオブジェクト名は更新されません。 代わりに、このオプションは、パスの「assume unchanged」(無変更仮定)ビットを 設定(1)/設定解除(0) します。 「assume unchanged」ビットがオンの場合、ユーザーはファイルを変更しないことを約束し、作業ツリーファイルがインデックスに記録されているものと一致するとGitに想定させます。 作業ツリーファイルを変更する場合は、Gitに通知するビットを設定解除する必要があります。 これは、 lstat(2) システムコールが非常に遅いファイルシステム(cifsなど)で大きなプロジェクトを操作する場合に役立つことがあります。
+.sp
+インデックス内のこのファイルを変更する必要がある場合、例えばコミットにマージするとき、Gitは(正常に)失敗します。 したがって、追跡されていないと仮定されるファイルがアップストリームで変更された場合、あなたは状況を手動で処理する必要があります。
+.RE
+.PP
+\fB\-\-really\-refresh\fR
+.RS 4
+\fB\-\-refresh\fR
+と同様ですが、「assume unchanged」設定に関係なく、統計情報を無条件にチェックします。
+.RE
+.PP
+\fB\-\-[no\-]skip\-worktree\fR
+.RS 4
+これらのフラグのいずれかが指定されている場合、パスに記録されているオブジェクト名は更新されません。 代わりに、これらのオプションは、パスの「skip\-worktree」ビットを設定および設定解除します。 詳細については、下記「Skip\-worktree bit」のセクションを参照してください。
+.RE
+.PP
+\fB\-\-[no\-]ignore\-skip\-worktree\-entries\fR
+.RS 4
+\fB\-\-remove\fR
+オプションが指定されている場合でも、 skip\-worktree (別名「インデックスのみ」) エントリを削除しないでください。
+.RE
+.PP
+\fB\-\-[no\-]fsmonitor\-valid\fR
+.RS 4
+これらのフラグのいずれかが指定されている場合、パスに記録されているオブジェクト名は更新されません。 代わりに、これらのオプションは、パスの「fsmonitor valid」ビットを設定および設定解除します。 詳細については、下記「File System Monitor」のセクションを参照してください。
+.RE
+.PP
+\fB\-g\fR, \fB\-\-again\fR
+.RS 4
+インデックスエントリが
+\fBHEAD\fR
+コミットとは異なるパスで
+\fBgit update\-index\fR
+自体を実行します。
+.RE
+.PP
+\fB\-\-unresolve\fR
+.RS 4
+誤ってクリアされた場合、マージ処理中のファイルの「unmerged」(マージされていない)または「needs updating」(更新が必要)状態を復元します。
+.RE
+.PP
+\fB\-\-info\-only\fR
+.RS 4
+このフラグに続くすべての <file> 引数に対して、オブジェクトデータベースにオブジェクトを作成しません。 オブジェクトIDをインデックスに挿入するだけです。
+.RE
+.PP
+\fB\-\-force\-remove\fR
+.RS 4
+作業ディレクトリにそのようなファイルがまだある場合でも、インデックスからファイルを削除します。 (\fB\-\-remove\fR
+の指定を含んでいます。)
+.RE
+.PP
+\fB\-\-replace\fR
+.RS 4
+デフォルトでは、ファイル
+\fBpath\fR
+がインデックスに存在する場合、
+\fBgit update\-index\fR
+は
+\fBpath/file\fR
+を追加する試みを拒否します。 同様に、ファイル
+\fBpath/file\fR
+が存在する場合、ファイル
+\fBpath\fR
+を追加することはできません。
+\fB\-\-replace\fR
+フラグを使用すると、競合する既存のエントリが警告メッセージとともに自動的に削除されて、エントリが追加されます。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+コマンドラインからパスのリストを取得する代わりに、標準入力からパスのリストを読み取ります。 デフォルトでは、パスはLFで区切られます(つまり、1行に1つのパス)。
+.RE
+.PP
+\fB\-\-verbose\fR
+.RS 4
+インデックスに 追加・削除 されているものを報告します。
+.RE
+.PP
+\fB\-\-index\-version <n>\fR
+.RS 4
+結果のインデックスを、指定のディスク上のフォーマットバージョン(on\-disk format version)で書き出します。 サポートされているバージョンは 2 と 3 と 4 です。現在のデフォルトバージョンは、
+\fBgit add \-N\fR
+などの追加機能が使用されているかどうかに応じて、 2 または 3 です。
+.sp
+バージョン4は、単純なパス名圧縮を実行し、大規模なリポジトリでインデックスサイズを30%〜50%削減します。これにより、読み込み時間が短縮されます。 バージョン4は比較的若いです(2012年10月の1\&.8\&.0で最初にリリースされました)。 JGitやlibgit2などの他のGit実装は、まだサポートしていない可能性があります。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+これは
+\fB\-\-stdin\fR
+または
+\fB\-\-index\-info\fR
+でのみ意味があります。 パスは、LFではなくNUL文字で区切られます。
+.RE
+.PP
+\fB\-\-split\-index\fR, \fB\-\-no\-split\-index\fR
+.RS 4
+分割インデックスモードを有効または無効にします。 分割インデックスモードがすでに有効になっていて、
+\fB\-\-split\-index\fR
+が再度指定された場合、 $GIT_DIR/index のすべての変更が共有インデックスファイルに押し返されます。
+.sp
+これらのオプションは、構成変数
+\fBcore\&.splitIndex\fR
+の値が何であれ有効になります(\fBgit-config\fR(1)
+参照)。 しかし、構成変数
+\fBcore\&.splitIndex\fR
+の設定値に反する変更を行うと警告が表示されます。なぜなら、次回インデックスを読み込むときには構成変数
+\fBcore\&.splitIndex\fR
+の設定値が有効になり、オプションの意図した効果がなくなってしまうからです。
+.RE
+.PP
+\fB\-\-untracked\-cache\fR, \fB\-\-no\-untracked\-cache\fR
+.RS 4
+追跡されていないモノのキャッシュ機能を有効または無効にします。 有効にする前には
+\fB\-\-test\-untracked\-cache\fR
+の使用をお願いします。
+.sp
+これらのオプションは、
+\fBcore\&.untrackedCache\fR
+構成変数の値に関係なく有効になります(\fBgit-config\fR(1)
+参照)。 ただし、
+\fBcore\&.untrackedCache\fR
+構成変数設定値に反する変更を行うと警告が表示されます。これは、インデックスを次に読み込むときには
+\fBcore\&.untrackedCache\fR
+構成変数設定値が有効になり、このオプションが意図したとおりの効果を得られなくなってしまうからです。
+.RE
+.PP
+\fB\-\-test\-untracked\-cache\fR
+.RS 4
+追跡されていないモノのキャッシュ(untracked cache)を使用できることを確認するために、作業ディレクトリでのみテストを実行します。 本当に使用したい場合は、後で
+\fB\-\-untracked\-cache\fR
+または
+\fB\-\-force\-untracked\-cache\fR
+または
+\fBcore\&.untrackedCache\fR
+構成変数を使用して、追跡されていないモノのキャッシュ(untracked cache)を手動で有効にする必要があります。 テストが失敗した場合、exitコードは1であり、必要に応じて機能しないことを説明するメッセージが表示されます。それ以外の場合、exitコードは0であり、OKと出力されます。
+.RE
+.PP
+\fB\-\-force\-untracked\-cache\fR
+.RS 4
+\fB\-\-untracked\-cache\fR
+と同一です。
+\fB\-\-untracked\-cache\fR
+が
+\fB\-\-test\-untracked\-cache\fR
+を意味するために使用されていた古いバージョンのGitとの下位互換性のために提供されていますが、このオプションは無条件に拡張を有効にします。
+.RE
+.PP
+\fB\-\-fsmonitor\fR, \fB\-\-no\-fsmonitor\fR
+.RS 4
+ファイルシステムモニター機能を有効または無効にします。 これらのオプションは、設定変数
+\fBcore\&.fsmonitor\fR
+の値が何であっても有効になります((\fBgit-config\fR(1)
+参照)。 しかし、設定変数
+\fBcore\&.fsmonitor\fR
+の設定値と異なる変更を行うと警告が表示されます。インデックスを次に読み込む際には設定変数
+\fBcore\&.fsmonitor\fR
+の設定値が有効となり、オプションの意図した効果がなくなってしまうからです。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+これ以降の引数をオプションとして解釈しないでください。
+.RE
+.PP
+<file>
+.RS 4
+作用するファイル。 注意:
+\fB\&.\fR
+で始まるファイルは破棄されます。 これには、
+\fB\&./file\fR
+と
+\fBdir/\&./file\fR
+が含まれます。 これがあなたの求めるものでない場合は、よりクリーンな名前を使用してください。
+\fB/\fR
+で終わるディレクトリと
+\fB//\fR
+で終わるパスにも同じことが当てはまります。
+.RE
+.SH "USING \FB\-\-REFRESH\FR"
+.sp
+\fB\-\-refresh\fR は、新しいsha1ファイルを計算したり、また、モード/コンテンツ の変更についてインデックスを最新の状態にしたりしません。 ただし、ファイルの統計情報をインデックスと「再照合」(re\-match)することで、変更されていないが統計エントリが古くなっているファイルのインデックスを更新できます。
+.sp
+たとえば、あなたが「git read\-tree」を実行した後にこれを実行して、統計インデックスの詳細を適切なファイルにリンクすることができます。
+.SH "USING \FB\-\-CACHEINFO\FR OR \FB\-\-INFO\-ONLY\FR"
+.sp
+\fB\-\-cacheinfo\fR は、現在の作業ディレクトリにないファイルを登録するために使用されます。 これは、最小チェックアウト(minimum\-checkout)のマージに役立ちます。
+.sp
+path に mode と sha1 を持つファイルがあるように見せかけるには、以下のようにします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git update\-index \-\-add \-\-cacheinfo <mode>,<sha1>,<path>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB\-\-info\-only\fR は、ファイルをオブジェクトデータベースに配置せずに登録するために使用されます。 これは、ステータスのみ(status\-only)のリポジトリに役立ちます。
+.sp
+\fB\-\-cacheinfo\fR と \fB\-\-info\-only\fR はどちらも同じように振る舞います。インデックスは更新されますが、オブジェクトデータベースは更新されません。 \fB\-\-cacheinfo\fR は、オブジェクトがデータベースにあるが、ファイルがローカルで利用できない場合に役立ちます。 \fB\-\-info\-only\fR は、ファイルが利用可能であるが、オブジェクトデータベースを更新したくない場合に役立ちます。
+.SH "USING \FB\-\-INDEX\-INFO\FR"
+.sp
+\fB\-\-index\-info\fR は、標準入力から複数のエントリ定義を供給できるより強力なメカニズムであり、スクリプト用に特別に設計されています。 以下の3つの形式の入力を受け取ることができます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+mode SP type SP sha1 TAB path
+.sp
+この形式は、
+\fBgit ls\-tree\fR
+出力をインデックスに詰め込むためのものです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+mode SP sha1 SP stage TAB path
+.sp
+この形式は、より高次のステージをインデックスファイルに配置するためのものであり、
+\fBgit ls\-files \-\-stage\fR
+の出力と一致します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+mode SP sha1 TAB path
+.sp
+この形式はGitコマンドでは生成されなくなりましたが、
+\fBupdate\-index \-\-index\-info\fR
+では引き続きサポートされます。
+.RE
+.sp
+インデックスに上位ステージのエントリを配置するには、最初にパスに mode=0 エントリを入力してパスを削除し、次に必要な入力行を3番目の形式で入力する必要があります。
+.sp
+たとえば、以下のインデックスから始めます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-files \-s
+100644 8a1218a1024a212bb3db30becd860315f9f3ac52 0       frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたは以下の入力を \fB\-\-index\-info\fR にフィードできます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git update\-index \-\-index\-info
+0 0000000000000000000000000000000000000000      frotz
+100644 8a1218a1024a212bb3db30becd860315f9f3ac52 1       frotz
+100755 8a1218a1024a212bb3db30becd860315f9f3ac52 2       frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+入力の最初の行は、パスを削除するモードとして0を供給します。 SHA\-1は、適切にフォーマットされている限り問題ありません。 次に、2行目と3行目は、そのパスのステージ1とステージ2のエントリに供給します。 上記の後は、以下のようになるでしょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git ls\-files \-s
+100644 8a1218a1024a212bb3db30becd860315f9f3ac52 1       frotz
+100755 8a1218a1024a212bb3db30becd860315f9f3ac52 2       frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "「ASSUME UNCHANGED」(無変更と仮定する)ビットの使用"
+.sp
+Gitの多くの操作は、効率的な \fBlstat(2)\fR 実装をファイルシステムに依存しているため、作業ツリーファイルの \fBst_mtime\fR 情報を低コストでチェックして、ファイルの内容がインデックスファイルに記録されているバージョンから変更されているかどうかを確認できます。 残念ながら、一部のファイルシステムには非効率的な \fBlstat(2)\fR があります。 ファイルシステムがそれらの1つである場合は、変更していないパスに「assume unchanged」(不変更仮定)ビットを設定して、Gitがこのチェックを行わないようにすることができます。 パスにこのビットを設定しても、Gitがファイルの内容をチェックしてファイルが変更されているかどうかを確認するわけではありません。Gitはチェックを省略し、変更されていないと見なします。 作業ツリーファイルに変更を加えるときは、変更する前または後に、「assume unchanged」ビットを削除して、Gitに明示的に通知する必要があります。
+.sp
+「assume unchanged」(不変更仮定)ビットを設定するには、 \fB\-\-assume\-unchanged\fR オプションを使用します。 設定を解除するには、 \fB\-\-no\-assume\-unchanged\fR を使用します。 「assume unchanged」ビットが設定されているファイルを確認するには、 \fBgit ls\-files \-v\fR を使用します(\fBgit-ls-files\fR(1) 参照)。
+.sp
+このコマンドは \fBcore\&.ignorestat\fR 構成変数を調べます。 core\&.ignorestat` 構成変数が true の場合、 \fBgit update\-index paths\&.\&.\&.\fR で更新されたパスと、インデックスと作業ツリーの両方を更新する他のGitコマンド(例: \fBgit apply \-\-index\fR や \fBgit checkout\-index \-u\fR や \fBgit read\-tree \-u\fR)で更新されたパスは、自動的に「変更されていないと見なす」とマークされます。 注意: \fBgit update\-index \-\-refresh\fR が、作業ツリーファイルとインデックスが一致することを検出した場合、「assume unchanged」ビットは設定されないことに注意してください(あなたがそれらに「assume unchanged」マークを付けたい場合は、 \fBgit update\-index \-\-really\-refresh\fR を使用してください)。
+.sp
+時々ユーザーは assume\-unchanged ビットと skip\-worktree ビットを混同することがあります。 これらの違いの説明については、 下記「Skip\-worktree bit」セクションの最後の段落を参照してください。
+.SH "EXAMPLES"
+.sp
+すでにチェックアウトされているファイルのみをupdateおよびrefreshするには:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout\-index \-n \-f \-a && git update\-index \-\-ignore\-missing \-\-refresh
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBcore\&.ignorestat\fR が設定された非効率的なファイルシステム上で\&...
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git update\-index \-\-really\-refresh              \fB(1)\fR
+$ git update\-index \-\-no\-assume\-unchanged foo\&.c   \fB(2)\fR
+$ git diff \-\-name\-only                           \fB(3)\fR
+$ edit foo\&.c
+$ git diff \-\-name\-only                           \fB(4)\fR
+M foo\&.c
+$ git update\-index foo\&.c                         \fB(5)\fR
+$ git diff \-\-name\-only                           \fB(6)\fR
+$ edit foo\&.c
+$ git diff \-\-name\-only                           \fB(7)\fR
+$ git update\-index \-\-no\-assume\-unchanged foo\&.c   \fB(8)\fR
+$ git diff \-\-name\-only                           \fB(9)\fR
+M foo\&.c
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRlstat(2) に、インデックスに一致するパスに「assume unchanged」(無変更仮定)ビットをセットするように強制します。
+.br
+\fB2. \fR編集するパスをマークします。
+.br
+\fB3. \fRこれは lstat(2) を実行し、インデックスがパスに一致することを検出します。
+.br
+\fB4. \fRこれは lstat(2) を実行し、インデックスがパスと「一致しない」ことを検出します。
+.br
+\fB5. \fR新しいバージョンをインデックスに登録すると、「assume unchanged」(無変更仮定)ビットがセットされます。
+.br
+\fB6. \fRそしてそれは無変更と仮定されています(assumed unchanged)。
+.br
+\fB7. \fRそれを編集した後でもです。
+.br
+\fB8. \fRあなたは事後に、変更について伝える事ができます。
+.br
+\fB9. \fRいまや、 lstat(2) をチェックして、変更されていることがわかります。
+.br
+.RE
+.SH "SKIP\-WORKTREE BIT"
+.sp
+skip\-worktreeビットは1つの(長い)文で定義できます。 合理的に可能な限り作業ディレクトリへのファイルの書き込みを避け、 作業ディレクトリにファイルが存在しない場合は未変更として扱うようにgitに指示します。
+.sp
+注意: すべての git コマンドがこのビットに注意を払うわけではなく、部分的にしかサポートしていないものもあります。
+.sp
+update\-index フラグと skip\-worktree ビットに関連する read\-tree 機能は、 \fBgit-sparse-checkout\fR(1) コマンド導入以前のものです。 \fBgit-sparse-checkout\fR(1) コマンド導入により、skip\-worktree ビットを構成および処理するはるかに簡単な方法が提供されます。 リポジトリ内のファイルのサブセットのみを処理するように作業ツリーを縮小したい場合は、 低レベルの update\-index や read\-tree プリミティブに優先して、 \fBgit-sparse-checkout\fR(1) の使用を強くお勧めします。
+.sp
+skip\-worktree ビットの主な目的は、スパース・チェックアウトを有効にすることです。つまり、パスのサブセットのみが存在する作業ディレクトリを作成します。 skip\-worktree ビットが設定されている場合、 (\fBswitch\fR や \fBpull\fR や \fBmerge\fR のような) Git コマンドはこれらのファイルへの書き込みを回避します。 ただし、これらのコマンドは、マージ中またはリベース中の競合などの重要な場合に、 とにかくこれらのファイルを書き込むことがあります。 Git コマンドでは、そのようなファイルの欠如を意図的な削除として扱うことも回避します。 たとえば、 \fBgit add \-u\fR はこれらのファイルの削除をステージングせず、 \fBgit commit \-a\fR はそれらを削除するコミットも行いません。
+.sp
+このビットは、assume\-unchange ビットに似ていますが、その目的は異なります。 変更されていないと仮定するビットは、 ファイルを作業ツリーに残しますが、 Git に変更のチェックを省略させ、 ファイルが変更されていないと推定するためのものです(ただし、 ファイルが変更されたと明記せずに判断できる場合は、 その変更を記録するのは自由にできます)。 skip\-worktree は Git にファイルの不在を無視するように指示し、 通常は作業ディレクトリの大部分を更新するコマンド(例: \fBcheckout\fR や`switch` や \fBpull\fR など)で可能な場合はファイルを更新しないようにし、その不在がコミットに記録されないようにします。 注意: (\fBgit sparse\-checkout\fR または core\&.sparseCheckout を true に設定してセットアップする)スパース・チェックアウトでは、 ファイルがインデックスで skip\-worktree としてマークされているが、作業ツリー内で見つかった場合、 Git はそのファイルの skip\-worktree ビットをクリアすることに注意してください。
+.SH "SPLIT INDEX"
+.sp
+このモードは、非常に大きなインデックスを持つリポジトリ用に設計されており、これらのインデックスを繰り返し書き込むのにかかる時間を短縮することを目的としています。
+.sp
+このモードでは、インデックスは $GIT_DIR/index と $GIT_DIR/sharedindex\&.<SHA\-1> の2つのファイルに分割されます。 変更は分割インデックスである $GIT_DIR/index に蓄積されますが、共有インデックス(shared index)ファイルにはすべてのインデックスエントリが含まれ、変更されません。
+.sp
+分割インデックスのエントリ数が splitIndex\&.maxPercentChange 構成変数で指定されたレベルに達すると、分割インデックスのすべての変更が共有インデックスファイルに押し戻されます(\fBgit-config\fR(1) 参照)。
+.sp
+新しい共有インデックスファイルが作成されるたびに、古い共有インデックスファイルは、変更時間が splitIndex\&.sharedIndexExpire 構成変数で指定された時間よりも古い場合に削除されます(\fBgit-config\fR(1) 参照)。
+.sp
+まだ使用されている共有インデックスファイルの削除を回避するために、共有インデックスファイルに基づく新しい分割インデックスが、作成または読み取られるたびに、その変更時刻が現在の時刻に更新されます。
+.SH "UNTRACKED CACHE"
+.sp
+このキャッシュは、 \fBgit status\fR などの追跡されていないファイルの判別を伴うコマンドを高速化することを目的としています。
+.sp
+この機能は、作業ツリーディレクトリのmtimeを記録し、mtimeが変更されていないディレクトリ内のファイルに対するディレクトリの読み取りとstat呼び出しを省略することで機能します。 これを機能させるには、ディレクトリ内のファイルが追加、変更、または削除された場合に、基盤となるオペレーティングシステムとファイルシステムがディレクトリの \fBst_mtime\fR フィールドを変更する必要があります。
+.sp
+\fB\-\-test\-untracked\-cache\fR オプションを使用して、ファイルシステムがそれをサポートしているかどうかをテストできます。 \fB\-\-untracked\-cache\fR オプションは、古いバージョンのGitでこのテストを暗黙的に実行するために使用されていましたが、現在はそうではありません。
+.sp
+この機能を有効(または無効)にする場合は、 各リポジトリで \fB\-\-untracked\-cache\fR オプションを \fBgit update\-index\fR に使用するよりも、 \fBcore\&.untrackedCache\fR 構成変数(\fBgit-config\fR(1) 参照)を使用する方が簡単です。 特に、使用しているすべてのリポジトリに対してそうしたい場合は、あなたの \fB$HOME/\&.gitconfig\fR で \fBcore\&.untrackedCache\fR 構成変数を \fBtrue\fR(または \fBfalse\fR)と一度セットするだけですべてのリポジトリでその機能を使えるため、簡単です。
+.sp
+\fBcore\&.untrackedCache\fR 構成変数が変更されると、次にコマンドがインデックスを読み取るときに、追跡されていないキャッシュがインデックスに追加されるか、インデックスから削除されます。 一方、 \fB\-\-[no\-|force\-]untracked\-cache\fR が使用されている場合、追跡されていないキャッシュはすぐにインデックスに追加されるか、インデックスから削除されます。
+.sp
+2\&.17より前は、追跡されていないモノのキャッシュ(untracked cache)にバグがあり、ディレクトリを別のディレクトリへのシンボリックリンクに置き換えると、gitによって追跡されたファイルが追跡されていないものとして誤って表示される可能性がありました。 git\&.git の「status: add a failing test showing a core\&.untrackedCache bug」コミットを参照してください。 その回避策は以下のとおりです(これは将来、他の未発見のバグでも機能する可能性があります):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git \-c core\&.untrackedCache=false status
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+このバグは、追跡されていないモノのキャッシュ(untracked cache)の内部構造に関して、ディレクトリをファイルに置き換えるシンボリックリンク以外のケースにも影響を与えることが示されていますが、これにより誤った「git status」出力が発生したケースは報告されていません。
+.sp
+2\&.17より前のバージョンのgitによって書き込まれた既存のインデックスが、もう存在しないディレクトリを参照し、「could not open directory」(ディレクトリを開けませんでした)という警告が「git status」に出力される可能性があります。 これらは、以前は黙って破棄されていた既存の問題に対する新しい警告です。
+.sp
+上記のバグと同様に、解決策は、 \fBcore\&.untrackedCache=false\fR で「git status」を1回実行して、残っている不良データをフラッシュすることです。
+.SH "FILE SYSTEM MONITOR"
+.sp
+この機能は、巨大な作業ディレクトリを持つリポジトリのgit操作を高速化することを目的としています。
+.sp
+これにより、gitはファイルシステムモニター(\fBgit-fsmonitor--daemon\fR(1) と、 \fBgithooks\fR(5) の「fsmonitor\-watchman」セクションを参照)と連携して、どのファイルが変更されたかを通知できます。 これにより、gitは、変更されたファイルを見つけるためにすべてのファイルを lstat() する必要がなくなります。
+.sp
+追跡されていないモノのキャッシュ(untracked cache)と組み合わせて使用すると、作業ディレクトリ全体をスキャンして新しいファイルを探すコストを回避できるため、パフォーマンスをさらに向上させることができます。
+.sp
+この機能を有効(または無効)にする場合は、 各リポジトリの \fBgit update\-index\fR に \fB\-\-fsmonitor\fR オプションを付けるよりも、 \fBcore\&.fsmonitor\fR 構成変数(\fBgit-config\fR(1) 参照)を使用する方が簡単です。 特に、すべてのリポジトリで同じことをしたい場合は、あなたの \fB$HOME/\&.gitconfig\fR で \fBcore\&.fsmonitor\fR 構成変数を一度設定するだけですべてのリポジトリでそれが適用されるので、使い勝手はよいでしょう。
+.sp
+\fBcore\&.fsmonitor\fR 構成変数が変更されると、次にコマンドがインデックスを読み取るときに、ファイルシステムモニターがインデックスに追加またはインデックスから削除されます。 \fB\-\-[no\-]fsmonitor\fR を使用すると、ファイルシステムモニターはすぐにインデックスに追加またはインデックスから削除されます。
+.SH "CONFIGURATION"
+.sp
+このコマンドは、\fBcore\&.filemode\fR 構成変数を尊重します。 リポジトリが実行可能ビットの信頼性が低いファイルシステム上にある場合は、 これを「false」に設定する必要があります(\fBgit-config\fR(1) 参照)。 これにより、コマンドは、インデックスに記録されたファイルモードと、 実行可能ビットのみが異なる場合はファイルシステムのファイルモードの違いを無視します。 このような不幸なファイルシステムでは、 「git update\-index \-\-chmod=」を使用する必要があるかもしれません。
+.sp
+まったく同様に、 \fBcore\&.symlinks\fR 構成変数が \fBfalse\fR に設定されている場合(\fBgit-config\fR(1) 参照)、シンボリックリンクはプレーンファイルとしてチェックアウトされ、そしてこのコマンドは記録されたファイルモードをシンボリックから通常のファイルへのリンクへ変更しません。
+.sp
+このコマンドは、 \fBcore\&.ignorestat\fR 構成変数を調べます。 上記「Using "assume unchanged" bit」セクションを参照してください。
+.sp
+このコマンドは、 \fBcore\&.trustctime\fR 構成変数も調べます。 iノードの変更時刻がGitの外部で定期的に変更される場合に便利です(ファイルシステムクローラーとバックアップシステムは、処理されたファイルのマーキングにctimeを使用します)(\fBgit-config\fR(1) 参照)。
+.sp
+追跡されていないモノのキャッシュ(untracked cache)拡張は、 \fBcore\&.untrackedCache\fR 構成変数によって有効にできます(\fBgit-config\fR(1) 参照)。
+.SH "NOTES"
+.sp
+ユーザーは、追跡されるファイルへの変更を無視するようにGitに指示するために、assume\-unchangedビット と skip\-worktreeビット を使用しようと試みることがよくありますが、 Gitは特定の操作を実行するときに、インデックスに対して作業ツリーファイルをチェックする可能性があるため、これは期待どおりに機能しません。 一般に、Gitは追跡されたファイルへの変更を無視する方法を提供しないため、別の解決策をお勧めします。
+.sp
+たとえば、変更するファイルがある種の構成ファイルである場合、リポジトリにサンプルの構成ファイルを含めることができます。このファイルは、無視された名前にコピーして変更できます。 リポジトリには、サンプルファイルをテンプレートとして扱い、自動的に変更およびコピーするスクリプトを含めることもできます。
+.SH "SEE ALSO"
+.sp
+\fBgit-config\fR(1), \fBgit-add\fR(1), \fBgit-ls-files\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

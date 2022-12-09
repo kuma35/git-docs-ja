@@ -1,0 +1,65 @@
+'\" t
+.\"     Title: git-pack-refs
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-PACK\-REFS" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-pack-refs \- 効率的なリポジトリアクセスのためにヘッド(heads)とタグ(tags)をパックします
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit pack\-refs\fR [\-\-all] [\-\-no\-prune]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+旧来、ブランチとタグのヒント(まとめて「refs」と呼ばれます)は、refごとに1つのファイルを \fB$GIT_DIR/refs\fR ディレクトリの下のディレクトリ(サブディレクトリ)に保存していました。多くのブランチヒントは頻繁に更新される傾向がありますが、ほとんどのタグと一部のブランチヒントは更新されません。リポジトリに数百または数千のタグがある場合、この 1ファイル毎に1ref形式 はストレージを浪費し、パフォーマンスを低下させます。
+.sp
+このコマンドは、refを単一のファイル \fB$GIT_DIR/packed\-refs\fR に保存することにより、ストレージとパフォーマンスの問題を解決するために使用されます。旧来の \fB$GIT_DIR/refs\fR ディレクトリ階層にrefがない場合、このファイルの中から探し、見つかればそれが使用されます。
+.sp
+その後のブランチの更新では、常に \fB$GIT_DIR/refs\fR ディレクトリ階層の下に新しいファイルが作成されます。
+.sp
+refが多すぎるリポジトリを処理するための推奨される方法は、refを \fB\-\-all\fR で一度パックし、ときどき \fBgit pack\-refs\fR を実行することです。タグは定義上静止しており、変更されることは期待されていません。ブランチヘッドは最初の \fBpack\-refs \-\-all\fR でパックされますが、現在アクティブなブランチヘッドのみはアンパックされ、その後 \fBpack\-refs\fR ( \fB\-\-all\fR なし)ではアンパックされたままになります。
+.SH "OPTIONS"
+.PP
+\fB\-\-all\fR
+.RS 4
+このコマンドはデフォルトでは、すでにパックされているすべてのタグとrefをパックし、他のrefはそのままにします。これは、ブランチが積極的に開発されることが期待されており、そのヒントをパックしてもパフォーマンスが向上しないためです。このオプションを使用すると、ブランチのヒントもパックされます。 歴史的な関心のある多くのブランチがあるリポジトリに役立ちます。
+.RE
+.PP
+\fB\-\-no\-prune\fR
+.RS 4
+コマンドは通常、それらをパックした後、
+\fB$GIT_DIR/refs\fR
+階層の下の緩いrefを削除します。このオプションは、そうしないように指示します。
+.RE
+.SH "BUGS"
+.sp
+pack\-refs メカニズムが導入される前に作成された古い文書では、 "branch <branch> exists" という意味の場合でも "\&.git/refs/heads/<branch> file exists" などと紹介される場合があります。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

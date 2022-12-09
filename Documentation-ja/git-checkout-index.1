@@ -1,0 +1,242 @@
+'\" t
+.\"     Title: git-checkout-index
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CHECKOUT\-INDEX" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-checkout-index \- インデックスから作業ツリーにファイルをコピー
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit checkout\-index\fR [\-u] [\-q] [\-a] [\-f] [\-n] [\-\-prefix=<string>]
+                   [\-\-stage=<number>|all]
+                   [\-\-temp]
+                   [\-\-ignore\-skip\-worktree\-bits]
+                   [\-z] [\-\-stdin]
+                   [\-\-] [<file>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+リストされているすべてのファイルをインデックスから作業ディレクトリにコピーします(既存ファイルは上書きしません)。
+.SH "OPTIONS"
+.PP
+\fB\-u\fR, \fB\-\-index\fR
+.RS 4
+インデックスファイルのチェックアウトされたエントリの統計情報を更新します。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+ファイルが存在する場合、またはインデックスにない場合は、静かにする
+.RE
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+既存ファイルを強制的に上書きします
+.RE
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+skip\-worktree ビットが設定されているファイルを除いて、インデックス内のすべてのファイルをチェックアウトします(\fB\-\-ignore\-skip\-worktree\-bits\fR
+参照)。 明示的なファイル名(explicit filenames)と一緒に使用することはできません。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-no\-create\fR
+.RS 4
+新しいファイルをチェックアウトせず、すでにチェックアウトされているファイルのみを更新します。
+.RE
+.PP
+\fB\-\-prefix=<string>\fR
+.RS 4
+ファイルを作成するときは、<string> (通常は末尾に/を含むディレクトリ名) をファイル名の先頭に追加します
+.RE
+.PP
+\fB\-\-stage=<number>|all\fR
+.RS 4
+マージされていないエントリをチェックアウトする代わりに、名前付きステージからファイルをコピーします。 <number>は1〜3の間でなければなりません。 注:
+\fB\-\-stage=all\fR
+は自動的に
+\fB\-\-temp\fR
+の指定を含みます。
+.RE
+.PP
+\fB\-\-temp\fR
+.RS 4
+ファイルを作業ディレクトリにコピーする代わりに、コンテンツを一時ファイルに書き込みます。一時的な名前の関連付けはstdoutに書き込まれます。
+.RE
+.PP
+\fB\-\-ignore\-skip\-worktree\-bits\fR
+.RS 4
+skip\-worktree ビットが設定されたファイルを含め、すべてのファイルをチェックアウトします。
+.RE
+.PP
+\fB\-\-stdin\fR
+.RS 4
+コマンドラインからパスのリストを取得する代わりに、標準入力からパスのリストを読み取ります。デフォルトでは、パスはLFで区切られます(つまり、1行に1つのパス)。
+.RE
+.PP
+\fB\-z\fR
+.RS 4
+\fB\-\-stdin\fR
+でのみ意味があります。 パスは、LFではなくNUL文字で区切られます。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+これ以降の引数をオプションとして解釈しないでください。
+.RE
+.sp
+フラグの順序は以前は重要でしたが、現在は重要ではありません。
+.sp
+\fBgit checkout\-index\fR を実行するだけでは何も起こりません。 あなたはおそらく \fBgit checkout\-index \-a\fR を意図しました。 そして、それを強制したい場合は、 \fBgit checkout\-index \-f \-a\fR が必要です。
+.sp
+ここでは直感性は目標ではありません。再現性が目標です。 「引数がないということは作業がないことを意味する」という振る舞いの理由は、スクリプトから以下のことができるはずだからです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ find \&. \-name \*(Aq*\&.h\*(Aq \-print0 | xargs \-0 git checkout\-index \-f \-\-
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これにより、既存のすべての \fB*\&.h\fR ファイルがキャッシュされたコピーに置き換えられます。 空のコマンドラインが「すべて」を意味するならば、これはインデックス内のすべてを強制的に更新してしまいますが、そうではありません。 ただし、 \fBgit checkout\-index\fR は \fB\-\-stdin\fR を受け入れるため、以下のようにする方が高速です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ find \&. \-name \*(Aq*\&.h\*(Aq \-print0 | git checkout\-index \-f \-z \-\-stdin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+残りがファイル名になることがわかっている場合は、 \fB\-\-\fR を使用することをお勧めします。 たとえば、\fB\-a\fR のファイル名での問題を防ぎます。 スクリプトでは \fB\-\-\fR を使用することをお勧めします。
+.SH "USING \-\-TEMP OR \-\-STAGE=ALL"
+.sp
+\fB\-\-temp\fR が使用されている場合(または \fB\-\-stage=all\fR によって暗黙に指定されている場合)、 \fBgit checkout\-index\fR は、チェックアウトされているインデックスエントリごとに一時ファイルを作成します。 インデックスの統計情報は更新されません。 これらのオプションは、マージされていないファイルを外部のマージツールで処理できるように、呼び出し元がマージされていないすべてのエントリのすべてのステージを必要とする場合に役立ちます。
+.sp
+一時ファイル名と追跡されたパス名の関連付けを提供するリストがstdoutに書き込まれます。リスト形式には2つのバリエーションがあります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\&. tempname TAB path RS
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+最初の形式は、 \fB\-\-stage\fR が省略されているか、 \fB\-\-stage=all\fR でない場合に使用される形式です。 フィールドtempnameはファイルの内容を保持する一時ファイル名であり、pathはインデックスで追跡されるパス名です。 要求されたエントリのみが出力されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\&. stage1temp SP stage2temp SP stage3tmp TAB path RS
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+2番目の形式は、 \fB\-\-stage=all\fR の場合に使用される形式です。 3つのステージ一時フィールド(stage1temp、stage2temp、stage3temp)は、インデックスにステージエントリがある場合は一時ファイルの名前をリストし、ステージエントリがない場合は \fB\&.\fR をリストします。ステージ0のエントリしかないpathは、常に出力から省略されます。
+.sp
+どちらの形式でも、RS(レコード区切り文字)はデフォルトでは改行ですが、コマンドラインで \fB\-z\fR が渡された場合はヌルバイトになります。一時ファイル名は常に安全な文字列(safe strings)で、ディレクトリ区切り文字や空白文字が含まれることはありません。pathフィールドは常に現在のディレクトリを基準にしており、一時ファイル名は常に最上位ディレクトリを基準にしています。
+.sp
+一時ファイルにコピーされるオブジェクトがシンボリックリンクである場合、リンクの内容は通常のファイルに書き込まれます。 この情報を利用するのはエンドユーザーまたは磁器コマンドの責任です。
+.SH "EXAMPLES"
+.PP
+すでにチェックアウトされているファイルのみをupdateおよびrefreshするには
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout\-index \-n \-f \-a && git update\-index \-\-ignore\-missing \-\-refresh
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\fBgit checkout\-index\fR を使用して「ツリー全体をエクスポート」
+.RS 4
+プレフィックス機能により、基本的に
+\fBgit checkout\-index\fR
+を「ツリーとしてエクスポートする」機能として使用するのは簡単になります。目的のツリーをインデックスに読み込んで、以下の手順を実行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout\-index \-\-prefix=git\-export\-dir/ \-a
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBgit checkout\-index\fR
+は、指定されたディレクトリにインデックスを「エクスポート」します。
+.sp
+最後の
+\fB/\fR
+は重要です。 エクスポートされた名前には、文字通り、指定された文字列が接頭辞として付けられます。 これを以下の例と比較してください。
+.RE
+.PP
+プレフィックス付きのファイルをエクスポート
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout\-index \-\-prefix=\&.merged\- Makefile
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+これにより、現在キャッシュされている
+\fBMakefile\fR
+のコピーが、ファイル
+\fB\&.merged\-Makefile\fR
+にチェックアウトされます。
+.RE
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

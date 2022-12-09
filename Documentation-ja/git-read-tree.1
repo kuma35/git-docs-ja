@@ -1,0 +1,486 @@
+'\" t
+.\"     Title: git-read-tree
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-READ\-TREE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-read-tree \- ツリー情報をインデックスに読み込みます
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit read\-tree\fR [[\-m [\-\-trivial] [\-\-aggressive] | \-\-reset | \-\-prefix=<prefix>]
+                [\-u | \-i]] [\-\-index\-output=<file>] [\-\-no\-sparse\-checkout]
+                (\-\-empty | <tree\-ish1> [<tree\-ish2> [<tree\-ish3>]])
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+<tree\-ish> によって指定されたツリー情報をインデックスに読み込みますが、「キャッシュする」ファイルは実際には「更新」されません。 (\fBgit-checkout-index\fR(1) 参照)
+.sp
+オプションで、ツリーをインデックスにマージしたり、早送り(fast\-forward)(つまり、2方向)マージを実行したり、 \fB\-m\fR フラグを使用して3方向マージを実行したりできます。 \fB\-u\fR フラグを \fB\-m\fR と一緒に使用すると、マージの結果で作業ツリー内のファイルも更新されます。
+.sp
+trivial(些細な)マージは、 \fBgit read\-tree\fR 自体によって行われます。 \fBgit read\-tree\fR から戻ると、競合するパスのみがマージされていない状態になります。
+.SH "OPTIONS"
+.PP
+\fB\-m\fR
+.RS 4
+読み取りだけでなく、マージを実行します。インデックスファイルにマージされていないエントリがある場合、コマンドは実行を拒否します。これは、以前に開始したマージが完了していないことを示します。
+.RE
+.PP
+\fB\-\-reset\fR
+.RS 4
+\fB\-m\fR
+と同じですが、マージされていないエントリが失敗する代わりに破棄される点が異なります。
+\fB\-u\fR
+と一緒に使うと、作業ツリーの変更が失われる原因になる更新によって、または、追跡されていないファイルやディレクトリが失われる原因になる更新によって、操作を中止(abort)されることはありません。
+.RE
+.PP
+\fB\-u\fR
+.RS 4
+マージが成功したら、マージの結果で作業ツリーのファイルを更新します。
+.RE
+.PP
+\fB\-i\fR
+.RS 4
+通常、マージでは、ローカルの変更が失われないように、インデックスファイルと作業ツリー内のファイルが現在のヘッドコミットで最新である必要があります。 このフラグは、作業ツリーでのチェックを無効にし、現在の作業ツリーのステータスに直接関係しないツリーを一時的なインデックスファイルにマージするときに使用することを目的としています。
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+作業ツリー内のインデックスまたはファイルを実際に更新せずに、コマンドがエラーになるかどうかを確認します。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+ファイルのチェックアウトの進行状況を表示します。
+.RE
+.PP
+\fB\-\-trivial\fR
+.RS 4
+trivial(些細な)ケースでマージ解決作業し、競合するファイルをインデックスに未解決のままにする代わりに、
+\fBgit read\-tree\fR
+による3方向マージを、ファイルレベルのマージが必要ない場合にのみ発生するように制限します。
+.RE
+.PP
+\fB\-\-aggressive\fR
+.RS 4
+通常、
+\fBgit read\-tree\fR
+による3方向のマージは、本当にtrivial(些細な)ケースのマージを解決し、他のケースはインデックスに未解決のままにして、磁器コマンドがさまざまなマージポリシーを実装できるようにします。このフラグにより、コマンドはさらにいくつかのケースを内部的に解決します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+一方の側がパスを削除し、もう一方の側がパスを変更しないままにする場合。 解決策は、そのパスを削除することです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+両側でパスを削除したとき。 解決策は、そのパスを削除することです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+両側で同じようにパスを追加する場合。 解決策は、そのパスを追加することです。
+.RE
+.RE
+.PP
+\fB\-\-prefix=<prefix>\fR
+.RS 4
+現在のインデックスの内容を保持し、
+\fB<prefix>\fR
+のディレクトリの下にある名前付きtree\-ishの内容を読み取ります。このコマンドは、元のインデックスファイルにすでに存在しているエントリの上書きを拒否します。
+.RE
+.PP
+\fB\-\-index\-output=<file>\fR
+.RS 4
+結果を
+\fB$GIT_INDEX_FILE\fR
+に書き出す代わりに、結果のインデックスを名前付きファイルに書き込みます。コマンドの動作中は、元のインデックスファイルが通常と同じメカニズムでロックされます。ファイルは、通常のインデックスファイルの隣に作成される一時ファイルから名前を変更できるようにする必要があります(rename(2))。通常、これは、インデックスファイル自体と同じファイルシステム上にある必要があり、インデックスファイルとインデックス出力ファイルが配置されているディレクトリへの書き込み権限が必要であることを意味します。
+.RE
+.PP
+\fB\-\-[no\-]recurse\-submodules\fR
+.RS 4
+\fB\-\-recurse\-submodules\fR
+を使用すると、スーパープロジェクトに記録されたコミットに従ってすべてのアクティブなサブモジュールのコンテンツが更新され、read\-treeが再帰的に呼び出され、そのコミット時にサブモジュールのHEADが切り離される(detach)ように設定されます。
+.RE
+.PP
+\fB\-\-no\-sparse\-checkout\fR
+.RS 4
+`core\&.sparseCheckout`がtrueの場合でも、スパースチェックアウト(sparse checkout)のサポートを無効にします。
+.RE
+.PP
+\fB\-\-empty\fR
+.RS 4
+ツリーオブジェクトをインデックスに読み込む代わりに、空にします。
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+静かにし、フィードバックメッセージを抑制します。
+.RE
+.PP
+<tree\-ish#>
+.RS 4
+読み取られる/マージされる ツリーオブジェクトのID。
+.RE
+.SH "MERGING"
+.sp
+\fB\-m\fR が指定されている場合、 \fBgit read\-tree\fR は3種類のマージを提供します。1つのツリーのみが指定されている場合は単一のツリーマージ(single tree merge)、2つのツリーとの早送り(fast\-forward)マージ(two tree merge)、3つ以上のツリーが指定されている3方向マージです(3\-way merge)。
+.SS "Single Tree Merge"
+.sp
+ツリーが 1 つだけ指定されている場合、 \fBgit read\-tree\fR はユーザーが \fB\-m\fR を指定しなかったかのように動作しますが、 元のインデックスに特定のパス名のエントリがあり、パスの内容が読み取られるツリーと一致する場合、インデックスの統計情報が使用されます。(言い換えれば、インデックスの stat() はマージされたツリーのものよりも優先されます)。
+.sp
+つまり、 \fBgit read\-tree \-m <newtree>\fR の後に \fBgit checkout\-index \-f \-u \-a\fR を実行すると、 \fBgit checkout\-index\fR は本当に変更されたものだけをチェックアウトします。
+.sp
+これは、 \fBgit read\-tree\fR の後に \fBgit diff\-files\fR を実行したときに不要な誤検出を避けるために使用します。
+.SS "Two Tree Merge"
+.sp
+通常、これは \fBgit read\-tree \-m $H $M\fR として呼び出されます。ここで、$H は現在のリポジトリのヘッドコミットであり、$M は $H の前にある外部ツリーのヘッドです(つまり、早送り(fast\-forward)の状況にあります)。
+.sp
+2つのツリーが指定されている場合、ユーザーは \fBgit read\-tree\fR に以下のように指示している事になります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+現在のインデックスと作業ツリーは$Hから派生していますが、 ユーザーは$H以降にローカルで変更を加えている可能性があります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+ユーザーは$Mに早送り(fast\-forward)したいと考えています。
+.RE
+.sp
+この場合、 \fBgit read\-tree \-m $H $M\fR コマンドは、この「マージ」の結果としてローカルの変更が失われないことを確認します。 「繰越」(carry forward)ルールは次のとおりです。「I」はインデックスを示し、「clean」はインデックスと作業ツリーが一致することを意味し、「exists」/「nothing」 は指定されたコミットにパスが存在することを示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        I                   H        M        Result
+       \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+     0  nothing             nothing  nothing  (does not happen)
+     1  nothing             nothing  exists   use M
+     2  nothing             exists   nothing  remove path from index
+     3  nothing             exists   exists,  use M if "initial checkout",
+                                     H == M   keep index otherwise
+                                     exists,  fail
+                                     H != M
+
+        clean I==H  I==M
+       \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+     4  yes   N/A   N/A     nothing  nothing  keep index
+     5  no    N/A   N/A     nothing  nothing  keep index
+
+     6  yes   N/A   yes     nothing  exists   keep index
+     7  no    N/A   yes     nothing  exists   keep index
+     8  yes   N/A   no      nothing  exists   fail
+     9  no    N/A   no      nothing  exists   fail
+
+     10 yes   yes   N/A     exists   nothing  remove path from index
+     11 no    yes   N/A     exists   nothing  fail
+     12 yes   no    N/A     exists   nothing  fail
+     13 no    no    N/A     exists   nothing  fail
+
+        clean (H==M)
+       \-\-\-\-\-\-
+     14 yes                 exists   exists   keep index
+     15 no                  exists   exists   keep index
+
+        clean I==H  I==M (H!=M)
+       \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+     16 yes   no    no      exists   exists   fail
+     17 no    no    no      exists   exists   fail
+     18 yes   no    yes     exists   exists   keep index
+     19 no    no    yes     exists   exists   keep index
+     20 yes   yes   no      exists   exists   use M
+     21 no    yes   no      exists   exists   fail
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+すべての「インデックスを保持する」場合、インデックスエントリは元のインデックスファイルと同じままです。 エントリが最新でない場合、 \fBgit read\-tree\fR は \fB\-u\fR フラグの下で動作しているときに作業ツリー内のコピーをそのまま保持します。
+.sp
+この形式の \fBgit read\-tree\fR から正常に返ると、 \fBgit diff\-index \-\-cached $M\fR を実行することで、行った「ローカル変更」のどれが繰り越されたかを確認できます。 これは、このような2つのツリーがマージされる前に \fBgit diff\-index \-\-cached $H\fR が生成したものと必ずしも一致しないことに注意してください。 これは、上記ケース18と19が原因です \(em すでに$Mに変更があった場合(たとえば、パッチ形式で電子メールで取得した場合)、 \fBgit diff\-index \-\-cached $H\fR は、このマージの前に変更について通知しますが、 2ツリーのマージ後の \fBgit diff\-index \-\-cached $M\fR 出力には表示されません。
+.sp
+上記ケース3は少しトリッキーで、説明が必要です。 このルールの結果は、論理的には、ユーザーがパスの削除をステージングしてから新しいブランチに切り替えた場合に、パスを削除することです。 ただし、これにより最初のチェックアウトが行われないため、インデックスの内容が空の場合にのみM(新しいツリー)を使用するようにルールが変更されます。 それ以外の場合、パスの削除は、$Hと$Mが同じである限り保持されます。
+.SS "3\-Way Merge"
+.sp
+各「インデックス」エントリには、2ビット相当の「ステージ」状態があります。ステージ0は通常のステージであり、通常の使用で見られる唯一のステージです。
+.sp
+しかしながら、あなたが3つのツリーで \fBgit read\-tree\fR を実行すると、「ステージ」は1から始まります。
+.sp
+これはあなたが以下のようにできることを意味します
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git read\-tree \-m <tree1> <tree2> <tree3>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+そうすると、「stage1」にすべての<tree1>エントリ、「stage2」にすべての<tree2>エントリ、「stage3」にすべての<tree3>エントリを持つインデックスが作成されます。 別のブランチを現在のブランチにマージする場合、共通の祖先ツリーを<tree1>として、現在のブランチヘッドを<tree2>として、他のブランチヘッドを<tree3>として使用します。
+.sp
+さらに、 \fBgit read\-tree\fR には、以下のような特殊なケースのロジックがあります。以下の状態ですべての点で一致するファイルを見つけると、「折りたたみ」(collapse)して \fBstage0\fR に戻します:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ステージ2と3は同一です。 どちらか一方を取ります(違いはありません。ステージ2のブランチとステージ3のブランチで同じ作業が行われました)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ステージ1とステージ2は同じで、ステージ3は異なります。ステージ3を取得します（ステージ2のブランチは、ステージ3のブランチが作業している間、ステージ1の祖先以降何もしませんでした）
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ステージ1とステージ3は同じで、ステージ2は異なります。ステージ2を使用します(私達は何もしなかったのに何かをしました)
+.RE
+.sp
+\fBgit write\-tree\fR コマンドは、無意味なツリーの書き込みを拒否し、ステージ0ではない単一のエントリを検出すると、マージされていないエントリについて文句を言います。
+.sp
+ええ、これはすべてまったく無意味なルールのコレクションのように聞こえますが、実際には、高速マージを実行するために必要なものです。 異なるステージは、「結果ツリー」(result tree)(ステージ0、別名「merged」)、元のツリー(original tree)(ステージ1、別名「orig」）、およびマージしようとしている2つのツリー（それぞれステージ2と3）を表します。
+.sp
+すでに入力されているインデックスファイルを使用して3方向マージを開始する場合、ステージ1、2、および3の順序(つまり、3つの<tree\-ish>コマンドライン引数の順序)は重要です。アルゴリズムの仕組みの概要は以下のとおりです:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ファイルが3つのツリーすべてに同じ形式で存在する場合、ファイルは
+\fBgit read\-tree\fR
+によって自動的に「マージされた」状態(merged state)に折りたたまれ(collapse)ます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+3つのツリーに違いがあるファイルは、インデックス内の別々のエントリとして残ります。0以外のステージを削除し、マージされたバージョンを挿入する方法を決定するのは、「磁器ポリシー」(porcelain policy)次第です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+インデックスファイルはこれらすべての情報を保存および復元するため、段階的にマージできますが、ステージ 1/2/3 のエントリ(つまり、「マージされていないエントリ」)がある限り、結果を書き込むことはできません。したがって、マージアルゴリズムは非常に単純になります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+あなたはインデックスを順番に歩きます。ステージ0のすべてのエントリはすでに完了しているため、無視します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「stage1」が見つかったが、一致する「stage2」または「stage3」がない場合は、両方のツリーから削除されたことがわかり(元のツリーにのみ存在した)、そのエントリを削除します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+一致する「stage2」および「stage3」ツリーが見つかった場合は、それらの1つを削除し、もう1つを「stage0」エントリに変換します。 一致する「stage1」エントリも存在する場合は削除します。 \&.\&. すべての通常のtrivial(些細な)ルール \&.\&.
+.RE
+.RE
+.sp
+この最後のステップを実行するには、通常、提供された \fBgit merge\-one\-file\fR とともに \fBgit merge\-index\fR を使用します。 スクリプトは、各パスをマージし、マージが正常に終了すると、作業ツリー内のファイルを更新します。
+.sp
+すでに入力されているインデックスファイルを使用して3方向マージを開始すると、それが作業ツリー内のファイルの状態を表していると見なされ、変更がインデックスファイルに記録されていないファイルを作成することもできます。 さらに、この状態はステージ2ツリーから「派生」していると想定されます。 元のインデックスファイルでステージ2と一致しないエントリが見つかった場合、3方向マージは実行を拒否します。
+.sp
+これは、進行中の変更が失われたり、無関係なマージコミットでランダムな変更が混在したりするのを防ぐために行われます。ここでは説明のために、あなたのリポジトリに最後にコミットされたものから開始するとします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ JC=`git rev\-parse \-\-verify "HEAD^0"`
+$ git checkout\-index \-f \-u \-a $JC
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+あなたは \fBgit update\-index\fR を実行せずに、ランダムに編集します。 そして、あなたは彼(him)からpullしてからあなたの「上流」のツリーの先端が進んだことに気づきます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git fetch git://\&.\&.\&.\&. linus
+$ LT=`git rev\-parse FETCH_HEAD`
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+作業ツリーはまだHEAD($JC)に基づいていますが、あなたはそれ以降、いくつか編集しています。3方向マージは、 $JC 以降にインデックスエントリを追加または変更していないことを確認し、追加していない場合は、正しいことを行います。 したがって、以下のシーケンス:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git read\-tree \-m \-u `git merge\-base $JC $LT` $JC $LT
+$ git merge\-index git\-merge\-one\-file \-a
+$ echo "Merge with Linus" | \e
+  git commit\-tree `git write\-tree` \-p $JC \-p $LT
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、コミットするのは、進行中の作業を変更せずに$JCと$LTを純粋にマージすることであり、作業ツリーはマージの結果に更新されます。
+.sp
+ただし、このマージによって上書きされる作業ツリーにローカルの変更がある場合、変更が失われるのを防ぐために、 \fBgit read\-tree\fR は実行を拒否します。
+.sp
+つまり、作業ツリーにのみ存在するものについて心配する必要はありません。 マージに関係しないプロジェクトの一部にローカルの変更がある場合、変更はマージに干渉せず、そのまま保持されます。 それらが干渉する場合、マージは開始されません(\fBgit read\-tree\fR は大声で文句を言い、何も変更せずに失敗します)。 このような場合は、実行中の作業を続行し、作業ツリーの準備ができたら(つまり、進行中の作業が終了したら)、マージを再試行します。
+.SH "SPARSE CHECKOUT"
+.sp
+注意: \fBgit-update-index\fR(1) と \fBread\-tree\fR の skip\-worktree 機能は、\fBgit-sparse-checkout\fR(1) の導入以前の機能です。 ユーザーは、 sparse\-checkout/skip\-worktree 関連の需要に対して、 これらの配管コマンドよりも優先して \fBsparse\-checkout\fR コマンドを使用することをお勧めします。 ただし、以下の情報は、\fBsparse\-checkout\fR コマンドの非円錐(non\-cone)モードで使用されるパターン・スタイルを理解しようとしているユーザーにとって役立つ場合があります。
+.sp
+「スパースチェックアウト」(Sparse checkout)を使用すると、作業ディレクトリにまばらに(sparsely)データを入力できます。 skip\-worktreeビット(\fBgit-update-index\fR(1) 参照)を使用して、作業ディレクトリ内のファイルを確認する価値があるかどうかをGitに通知します。
+.sp
+\fBgit read\-tree\fR およびその他のマージベースコマンド(\fBgit merge\fR 、 \fBgit checkout\fR \&...)は、skip\-worktreeビットマップと作業ディレクトリの更新を維持するのに役立ちます。\fB$GIT_DIR/info/sparse\-checkout\fR は、skip\-worktree参照ビットマップを定義するために使用されます。 \fBgit read\-tree\fR が作業ディレクトリを更新する必要がある場合、このファイルに基づいてインデックスのskip\-worktreeビットをリセットします。これは、 \fB\&.gitignore\fR ファイルと同じ構文を使用します。 エントリがこのファイルのパターンとマッチする場合、または、エントリが作業ツリーに存在するファイルに対応する場合、 skip\-worktree はそのエントリに設定されません。 それ以外の場合は、skip\-worktree が設定されます。
+.sp
+次に、新しいskip\-worktree値を前の値と比較します。 skip\-worktreeがsetからunsetに変わると、対応するファイルが追加されます。 unsetからsetに変わると、そのファイルは削除されます。
+.sp
+通常、 \fB$GIT_DIR/info/sparse\-checkout\fR はどのファイルが含まれているかを指定するために使用されますが、否定パターンを使用して、どのファイルが含まれていないかを指定することもできます。 たとえば、ファイル \fBunwanted\fR を削除するには以下のようにします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/*
+!unwanted
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+もう1つの注意が必要なのは、スパースチェックアウトが不要になったときに作業ディレクトリを完全に再設定することです。 skip\-worktreeビットはまだインデックスにあり、作業ディレクトリはまだまばらに(sparsely)配置されているため、「スパースチェックアウト」を無効にすることはできません。 以下のように、作業ディレクトリに \fB$GIT_DIR/info/sparse\-checkout\fR ファイルの内容を再入力する必要があります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/*
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+その後、スパースチェックアウトを無効にできます。 \fBgit read\-tree\fR および同様のコマンドでのスパースチェックアウトのサポートはデフォルトで無効になっています。 スパースチェックアウトをサポートするには、 \fBcore\&.sparseCheckout\fR をオンにする必要があります。
+.SH "SEE ALSO"
+.sp
+\fBgit-write-tree\fR(1), \fBgit-ls-files\fR(1), \fBgitignore\fR(5), \fBgit-sparse-checkout\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

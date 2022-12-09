@@ -1,0 +1,87 @@
+'\" t
+.\"     Title: git-fsmonitor--daemon
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-FSMONITOR\-\-DA" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-fsmonitor--daemon \- ビルトイン・ファイル・システム・モニター
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit fsmonitor\-\-daemon\fR start
+\fIgit fsmonitor\-\-daemon\fR run
+\fIgit fsmonitor\-\-daemon\fR stop
+\fIgit fsmonitor\-\-daemon\fR status
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+プラットフォーム固有のファイル・システム通知機能を使用して、 作業ディレクトリのファイルとディレクトリの変更を監視するデーモン。
+.sp
+このデーモンは、 低速の \fBgithooks\fR(5) インターフェイスではなく、 \m[blue]\fBsimple IPC\fR\m[]\&\s-2\u[1]\d\s+2 インターフェイスを使用して、 \fBgit status\fR などのコマンドと直接通信(communicate)します。
+.sp
+このデーモンは Git に組み込まれているため、 サードパーティのツールは必要ありません。
+.SH "OPTIONS"
+.PP
+start
+.RS 4
+バックグラウンドでデーモンを開始(start)します。
+.RE
+.PP
+run
+.RS 4
+フォアグラウンドでデーモンを実行します。
+.RE
+.PP
+stop
+.RS 4
+存在する場合、 現在の作業ディレクトリで実行されているデーモンを停止(stop)します。
+.RE
+.PP
+status
+.RS 4
+デーモンが現在の作業ディレクトリを監視している場合、 ゼロ・ステータスで終了(exit)します。
+.RE
+.SH "REMARKS"
+.sp
+このデーモンは、 単一の作業ディレクトリを監視し、 最近変更されたファイルとディレクトリのリストを維持するために使用される長時間実行プロセスです。 作業ディレクトリへの変更の概要を要求するだけで、 ディスクのスキャンを回避できる場合、 \fBgit status\fR などのコマンドのパフォーマンスを向上させることができます。
+.sp
+\fBcore\&.fsmonitor\fR が \fBtrue\fR に設定されている場合 (\fBgit-config\fR(1) 参照)、 \fBgit status\fR などのコマンドはデーモンに変更を要求し、 必要に応じてデーモンを自動的に起動します。
+.sp
+詳細については、 \fBgit-update-index\fR(1) の「File System Monitor」セクションを参照してください。
+.SH "CAVEATS"
+.sp
+fsmonitor デーモンは現在、 サブモジュールについて認識しておらず、 サブモジュール内で発生するファイル・システム・イベントを除外する方法も認識していません。 fsmonitor デーモンがスーパー・リポジトリを監視していて、 サブモジュールの作業ディレクトリ内でファイルが変更された場合、 (スーパー・ リポジトリに対して発生したものとして)変更が報告されます。 ただし、 クライアントはこれらの余分なイベントを適切に無視するため、 パフォーマンスが影響を受ける可能性がありますが、 誤った結果が生じることはありません。
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
+.SH "NOTES"
+.IP " 1." 4
+simple IPC
+.RS 4
+\%file:///home/hideo/share/doc/git-doc/technical/api-simple-ipc.html
+.RE

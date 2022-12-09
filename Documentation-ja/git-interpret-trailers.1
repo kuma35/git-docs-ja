@@ -1,0 +1,662 @@
+'\" t
+.\"     Title: git-interpret-trailers
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-INTERPRET\-TRAI" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-interpret-trailers \- コミットメッセージの構造化情報を追加またはパースします
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit interpret\-trailers\fR [<options>] [(\-\-trailer <token>[(=|:)<value>])\&...] [<file>\&...]
+\fIgit interpret\-trailers\fR [<options>] [\-\-parse] [<file>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+コミットメッセージの自由形式の部分の最後に、RFC 822 電子メールヘッダーに似たトレーラー(trailer)行の、追加またはパースを支援します。
+.sp
+このコマンドは、<file> 引数または、 <file>が指定されていない場合は標準入力のいずれかから、いくつかのパッチまたはコミットメッセージを読み取ります。 \fB\-\-parse\fR が指定されている場合、出力はパースされたトレーラーで構成されます。
+.sp
+それ以外の場合、このコマンドは、 \fB\-\-trailer\fR オプション(存在する場合)を使用して渡された引数を、各入力ファイルのコミットメッセージ部分に適用します。結果は標準出力に出力されます。
+.sp
+一部の構成変数は、 \fB\-\-trailer\fR 引数が各コミットメッセージに適用される方法と、コミットメッセージ内の既存のトレーラーが変更される方法を制御します。また、トレーラーを自動的に追加することもできます。
+.sp
+デフォルトでは、 \fB\-\-trailer\fR で指定された \fB<token>=<value>\fR または \fB<token>:<value>\fR 引数は、既存の最後のトレーラーのペア(<token>, <value>)が指定のペア異なる場合(または、既存のに無い場合)にのみ、指定したモノが既存のトレーラーの後に追加されます。 <token>と<value>の部分は、先頭と末尾の空白がトリミングされ、以下のようなメッセージとして出力されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+token: value
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+これは、トリミングされた<token>と<value>が `: ` (1つのコロンとそれに続く1つのスペース)で区切られることを意味します。
+.sp
+デフォルトでは、新しいトレーラーは既存のすべてのトレーラーの後に出力されます。既存のトレーラーがない場合は、出力のコミットメッセージ部分の後に新しいトレーラーが出力されます。コミットメッセージ部分の最後に空白しかない行が存在しない場合は、新しいトレーラーの前に空行を1行追加します。
+.sp
+既存のトレーラーは、(i)すべてのトレーラーであるか、または、(ii)少なくとも1つのGit生成またはユーザー構成のトレーラーを含む少なくとも25％のトレーラーで構成される、1行以上のグループが入力メッセージから抽出されます。グループの前には、1行以上の空行(または空白のみの行)が必要です。グループは、メッセージの最後にあるか、 \fB\-\-\-\fR で始まる行の前の最後の非空白行である必要があります(その後にスペースまたは行の終わりが続きます)。このような3つのマイナス記号(\fB\-\-\-\fR)は、メッセージのパッチ部分を開始します。 以下の \fB\-\-no\-divider\fR も参照してください。
+.sp
+トレーラーを読み取る場合、トークンの前または内部に空白(whitespace)を含めることはできませんが、トークンとセパレーターの間には、任意の数の通常の空白(space)文字とタブ文字を使用できます。 値の前または内部または後ろに空白(達)(whitespaces)を入れることができます。 RFC 822 の「folding」(折り畳み)のように、値は複数の行に分割され、後続の各行は少なくとも 1 つの空白(whitespace)で始まります。
+.sp
+注意: トレーラーはRFC822ヘッダー規則の多くに従うことを意図してませんし、従わないことに注意してください。たとえば、それらはエンコーディング規則や、おそらく他の多くの規則に従いません。
+.SH "OPTIONS"
+.PP
+\fB\-\-in\-place\fR
+.RS 4
+その場でファイルを編集します。
+.RE
+.PP
+\fB\-\-trim\-empty\fR
+.RS 4
+トレーラーの <value> 部分に空白(whitespace)のみが含まれている場合、結果のメッセージからトレーラー全体が削除されます。これは、新しいトレーラーだけでなく、既存のトレーラーにも適用されます。
+.RE
+.PP
+\fB\-\-trailer <token>[(=|:)<value>]\fR
+.RS 4
+入力メッセージのトレーラーとして適用する必要があるペア（<token>、<value>）を指定します。詳しくはこのコマンドの説明を参照してください。
+.RE
+.PP
+\fB\-\-where <placement>\fR, \fB\-\-no\-where\fR
+.RS 4
+すべての新しいトレーラーが追加される場所を指定します。
+\fB\-\-where\fR
+で指定する設定は、すべての構成変数をオーバーライドし、
+\fB\-\-where\fR
+または
+\fB\-\-no\-where\fR
+が次に出現するまですべての
+\fB\-\-trailer\fR
+オプションに適用されます。 <placement> として可能な値は、
+\fBafter\fR
+または
+\fBbefore\fR
+または
+\fBend\fR
+または
+\fBstart\fR
+です。
+.RE
+.PP
+\fB\-\-if\-exists <action>\fR, \fB\-\-no\-if\-exists\fR
+.RS 4
+メッセージに同じ <token> を持つトレーラーがすでに少なくとも1つある場合に、実行される操作を指定します。
+\fB\-\-if\-exists\fR
+で指定する設定は、すべての構成変数をオーバーライドし、
+\fB\-\-if\-exists\fR
+または
+\fB\-\-no\-if\-exists\fR
+が次に出現するまですべての
+\fB\-\-trailer\fR
+オプションに適用されます。可能な操作は、
+\fBaddIfDifferent\fR
+または
+\fBaddIfDifferentNeighbor\fR
+または
+\fBadd\fR
+または
+\fBreplace\fR
+または
+\fBdoNothing\fR
+です。
+.RE
+.PP
+\fB\-\-if\-missing <action>\fR, \fB\-\-no\-if\-missing\fR
+.RS 4
+メッセージに同じ <token> を持つ他のトレーラーがない場合に実行される操作を指定します。
+\fB\-\-if\-missing\fR
+で指定する設定は、すべての構成変数をオーバーライドし、
+\fB\-\-if\-missing\fR
+または
+\fB\-\-no\-if\-missing\fR
+が次に出現するまですべての
+\fB\-\-trailer\fR
+オプションに適用されます。可能な操作は
+\fBdoNothing\fR
+または
+\fBadd\fR
+です。
+.RE
+.PP
+\fB\-\-only\-trailers\fR
+.RS 4
+トレーラーのみを出力し、入力の他の部分は出力しません。
+.RE
+.PP
+\fB\-\-only\-input\fR
+.RS 4
+入力に存在するトレーラーのみを出力します。コマンドラインや、構成された
+\fBtrailer\&.*\fR
+ルールに従って追加することはありません。
+.RE
+.PP
+\fB\-\-unfold\fR
+.RS 4
+トレーラーの複数行に渡る先頭空白による継続を解除して、各トレーラーが1行で完結するよう出力します。
+.RE
+.PP
+\fB\-\-parse\fR
+.RS 4
+\fB\-\-only\-trailers \-\-only\-input \-\-unfold\fR
+の便利なエイリアス。
+.RE
+.PP
+\fB\-\-no\-divider\fR
+.RS 4
+\fB\-\-\-\fR
+をコミットメッセージの終わりとして扱わないでください。(電子メールや `git format\-patch`の出力が含まれておらず、)入力にコミットメッセージ自体だけが含まれていることがわかっている場合にこれを使用します。
+.RE
+.SH "CONFIGURATION VARIABLES"
+.PP
+trailer\&.separators
+.RS 4
+このオプションは、どの文字がトレーラー区切り文字として認識されるかを示します。 デフォルトでは、
+\fB:\fR
+のみがトレーラー区切り文字として認識されます。ただし、他のgitコマンドとの互換性のために、コマンドラインでは
+\fB=\fR
+が常に受け入れられます。
+.sp
+このオプションで指定された最初の1文字は、このトレーラーの構成で別の区切り文字が指定されていない場合に使用されるデフォルトの文字になります。
+.sp
+たとえば、このオプションの値が "%=$" の場合、
+\fB<token><sep><value>\fR
+の形式を使用し、<sep> に
+\fB%\fR
+または
+\fB=\fR
+または
+\fB$\fR
+と、空白達を含む行のみトレーラーと見なされます。 また、
+\fB%\fR
+がデフォルトの区切り文字として使用されるため、デフォルトでは、トレーラーは
+\fB<token>% <value>\fR
+と出力されます(デフォルトの場合はこのようにトークンと値の間に1つの区切り文字列の最初の文字(パーセント記号)と「1つのスペース」が出力されます)。
+.RE
+.PP
+trailer\&.where
+.RS 4
+このオプションは、新しいトレーラーが追加される場所を示します。
+.sp
+これは、デフォルトの
+\fBend\fR
+の他に
+\fBstart\fR
+または
+\fBafter\fR
+または
+\fBbefore\fR
+にすることができます。
+.sp
+\fBend\fR
+の場合、新しいトレーラーはそれぞれ、既存のトレーラーの最後に出力されます。
+.sp
+\fBstart\fR
+の場合、新しい各トレーラーは、既存のトレーラーの最後ではなく、最初に出力されます。
+.sp
+\fBafter\fR
+の場合、新しいトレーラーはそれぞれ、同じ <token> を持つ最後のトレーラーの直後に出力されます。
+.sp
+\fBbefore\fR
+の場合、新しい各トレーラーは、同じ <token> を持つ最初のトレーラーの直前に出力されます。
+.RE
+.PP
+trailer\&.ifexists
+.RS 4
+このオプションを使用すると、メッセージに同じ <token> を持つトレーラーがすでに少なくとも1つある場合に、実行する操作を選択できます。
+.sp
+このオプションの有効な値は、
+\fBaddIfDifferentNeighbor\fR
+(デフォルト)、 または
+\fBaddIfDifferent\fR
+または
+\fBadd\fR
+または
+\fBreplace\fR
+または
+\fBdoNothing\fR
+です。
+.sp
+\fBaddIfDifferentNeighbor\fR
+を使用すると、同一のペア(<token>、<value>)のトレーラーが、新しいトレーラーが追加される行の上または下にない場合にのみ、新しいトレーラーが追加されます。
+.sp
+\fBaddIfDifferent\fR
+を使用すると、同じペア(<token>、<value>)のトレーラーがメッセージに含まれていない場合にのみ、新しいトレーラーが追加されます。
+.sp
+\fBadd\fR
+を使用すると、同じペア（<token>、<value>）のトレーラーがすでにメッセージに含まれている場合でも、新しいトレーラーが追加されます。
+.sp
+\fBreplace\fR
+を使用すると、同じ <token> を持つ既存のトレーラーが削除され、新しいトレーラーが追加されます。削除されるトレーラーは、新しいトレーラーが追加される場所に最も近い(同じ <token> を持つ)トレーラーになります。
+.sp
+\fBdoNothing\fR
+を使用すると、何も実行されません。 つまり、メッセージに同じ <token> を持つトレーラーがすでに存在する場合、新しいトレーラーは追加されません。
+.RE
+.PP
+trailer\&.ifmissing
+.RS 4
+このオプションを使用すると、メッセージに同じ <token> を持つトレーラーがまだない場合に実行する操作を選択できます。
+.sp
+このオプションの有効な値は、
+\fBadd\fR
+(デフォルト)と
+\fBdoNothing\fR
+です。
+.sp
+`add`を使用すると、新しいトレーラーが追加されます。
+.sp
+\fBdoNothing\fR
+を使用すると、何も実行されません。
+.RE
+.PP
+trailer\&.<token>\&.key
+.RS 4
+この キー(key) は、トレーラーで <token> の代わりに使用されます。このキーの後ろに、区切り文字を出力してから、いくつかのスペース文字を出力できます。デフォルトでは、有効な区切り文字は
+\fB:\fR
+のみですが、これは
+\fBtrailer\&.separators\fR
+構成変数を使用して変更できます。
+.sp
+トレーラーを追加するときに、この構成値内に区切り文字がある場合、 <token> とデフォルトの区切り文字の両方(つまり、<token><区切り文字><空白1つ>)がキーで置き換えられます。
+.RE
+.PP
+trailer\&.<token>\&.where
+.RS 4
+このオプションは、「trailer\&.where」構成変数と同じ値を取り、指定された <token> を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+.RE
+.PP
+trailer\&.<token>\&.ifexists
+.RS 4
+このオプションは、「trailer\&.ifexists」構成変数と同じ値を取り、指定された <token> を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+.RE
+.PP
+trailer\&.<token>\&.ifmissing
+.RS 4
+このオプションは、「trailer\&.ifmissing」構成変数と同じ値を取り、指定された <token> を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+.RE
+.PP
+trailer\&.<token>\&.command
+.RS 4
+このオプションは、指定のコマンドに引数として何も渡さないことを除いて、
+\fBtrailer\&.<token>\&.cmd\fR
+と同じように動作します。代わりに、文字列に最初に現れる置換文字列 $ARG のみ、引数として渡される値に置き換えられます。
+.sp
+\fBtrailer\&.<token>\&.command\fR
+オプションは非推奨になり
+\fBtrailer\&.<token>\&.cmd\fR
+が採用されました。これは、ユーザーのコマンドの $ARG が一度だけ置き換えられることと、 $ARG を置き換える独創的な方法が安全でないためです。
+.sp
+\fBtrailer\&.<token>\&.cmd\fR
+と
+\fBtrailer\&.<token>\&.command\fR
+の両方が同じ<token>で指定されている場合、
+\fBtrailer\&.<token>\&.cmd\fR
+が使用され、
+\fBtrailer\&.<token>\&.command\fR
+は無視されます。
+.RE
+.PP
+trailer\&.<token>\&.cmd
+.RS 4
+このオプションを使用して、呼び出されるシェルコマンドを指定できます。最初の1回は、指定の <token> を持つトレーラーを自動的に追加し、その後、毎回
+\fB\-\-trailer <token>=<value>\fR
+引数を使用して、このオプションが生成するトレーラーの <value> を変更します。
+.sp
+指定のコマンドを最初に呼び出して、指定の <token> のトレーラーを追加すると、動作は、「git interpret\-trailers」コマンドの先頭に特別な
+\fB\-\-trailer <token>=<value>\fR
+引数が追加されたかのように振る舞います。ここで、 <value> は、先頭と末尾の空白が削除された、コマンドからの標準出力と見なされます。
+.sp
+いくつかの
+\fB\-\-trailer <token>=<value>\fR
+引数がコマンドラインで渡された場合、同じ <token> を持つこれらの引数ごとにコマンドが1回呼び出されます。そして、これらの引数の <value> 部分は、もしあれば、最初の引数としてコマンドに渡されます。このようにして、コマンドは
+\fB\-\-trailer <token>=<value>\fR
+引数で渡された <value> から計算された <value> を生成できます。
+.RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Signed\-off\-by」キーを使用して「sign」トレーラーを構成してから、これらのトレーラーのうち2つをメッセージに追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config trailer\&.sign\&.key "Signed\-off\-by"
+$ cat msg\&.txt
+subject
+
+message
+$ cat msg\&.txt | git interpret\-trailers \-\-trailer \*(Aqsign: Alice <alice@example\&.com>\*(Aq \-\-trailer \*(Aqsign: Bob <bob@example\&.com>\*(Aq
+subject
+
+message
+
+Signed\-off\-by: Alice <alice@example\&.com>
+Signed\-off\-by: Bob <bob@example\&.com>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-\-in\-place\fR
+オプションを使用して、メッセージファイルをその場で編集します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat msg\&.txt
+subject
+
+message
+
+Signed\-off\-by: Bob <bob@example\&.com>
+$ git interpret\-trailers \-\-trailer \*(AqAcked\-by: Alice <alice@example\&.com>\*(Aq \-\-in\-place msg\&.txt
+$ cat msg\&.txt
+subject
+
+message
+
+Signed\-off\-by: Bob <bob@example\&.com>
+Acked\-by: Alice <alice@example\&.com>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+最後のコミットをパッチとして抽出し、それに「Cc」トレーラーと「Reviewed\-by」トレーラーを追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git format\-patch \-1
+0001\-foo\&.patch
+$ git interpret\-trailers \-\-trailer \*(AqCc: Alice <alice@example\&.com>\*(Aq \-\-trailer \*(AqReviewed\-by: Bob <bob@example\&.com>\*(Aq 0001\-foo\&.patch >0001\-bar\&.patch
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Signed\-off\-by: 」がまだない場合にのみ、作者情報を含む「Signed\-off\-by: 」を自動的に追加するコマンドを伴って「sign」トレーラーを構成し、それがどのように機能するかを示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config trailer\&.sign\&.key "Signed\-off\-by: "
+$ git config trailer\&.sign\&.ifmissing add
+$ git config trailer\&.sign\&.ifexists doNothing
+$ git config trailer\&.sign\&.command \*(Aqecho "$(git config user\&.name) <$(git config user\&.email)>"\*(Aq
+$ git interpret\-trailers <<EOF
+> EOF
+
+Signed\-off\-by: Bob <bob@example\&.com>
+$ git interpret\-trailers <<EOF
+> Signed\-off\-by: Alice <alice@example\&.com>
+> EOF
+
+Signed\-off\-by: Alice <alice@example\&.com>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+trailer\&.fix\&.key に 区切り文字
+\fB#\fR
+を含み、その後ろにスペースを含まないキーを使用して「fix」トレーラーを構成し、それがどのように機能するかを示します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config trailer\&.separators ":#"
+$ git config trailer\&.fix\&.key "Fix #"
+$ echo "subject" | git interpret\-trailers \-\-trailer fix=42
+subject
+
+Fix #42
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+cmdを使用して「ヘルプ」トレーラーを構成します。スクリプト
+\fBglog\-find\-author\fR
+を使用して、gitリポジトリのgitログから指定された作成者IDを検索し、その動作を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat ~/bin/glog\-find\-author
+#!/bin/sh
+test \-n "$1" && git log \-\-author="$1" \-\-pretty="%an <%ae>" \-1 || true
+$ git config trailer\&.help\&.key "Helped\-by: "
+$ git config trailer\&.help\&.ifExists "addIfDifferentNeighbor"
+$ git config trailer\&.help\&.cmd "~/bin/glog\-find\-author"
+$ git interpret\-trailers \-\-trailer="help:Junio" \-\-trailer="help:Couder" <<EOF
+> subject
+>
+> message
+>
+> EOF
+subject
+
+message
+
+Helped\-by: Junio C Hamano <gitster@pobox\&.com>
+Helped\-by: Christian Couder <christian\&.couder@gmail\&.com>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+cmdを使用して
+\fBref\fR
+トレーラーを構成し、スクリプト
+\fBglog\-grep\fR
+を使用して、gitリポジトリのgitログから最後の関連するコミットをgrepし、それがどのように機能するかを示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat ~/bin/glog\-grep
+#!/bin/sh
+test \-n "$1" && git log \-\-grep "$1" \-\-pretty=reference \-1 || true
+$ git config trailer\&.ref\&.key "Reference\-to: "
+$ git config trailer\&.ref\&.ifExists "replace"
+$ git config trailer\&.ref\&.cmd "~/bin/glog\-grep"
+$ git interpret\-trailers \-\-trailer="ref:Add copyright notices\&." <<EOF
+> subject
+>
+> message
+>
+> EOF
+subject
+
+message
+
+Reference\-to: 8bc9a0c769 (Add copyright notices\&., 2005\-04\-07)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+関連するコミットの件名を出力し、それがどのように機能するかを示すコマンドを使用して、「see」トレーラーを構成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git config trailer\&.see\&.key "See\-also: "
+$ git config trailer\&.see\&.ifExists "replace"
+$ git config trailer\&.see\&.ifMissing "doNothing"
+$ git config trailer\&.see\&.command "git log \-1 \-\-oneline \-\-format=\e"%h (%s)\e" \-\-abbrev\-commit \-\-abbrev=14 \e$ARG"
+$ git interpret\-trailers <<EOF
+> subject
+>
+> message
+>
+> see: HEAD~2
+> EOF
+subject
+
+message
+
+See\-also: fe3187489d69c4 (subject of related commit)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+空の値を持ついくつかのトレーラーを使用してコミットテンプレートを構成し(sedを使用してトレーラーの後に末尾のスペースを出力および保持します)、次に、「git interpret\-trailers」を使用するcommit\-msgフックを構成して、値が空のトレーラーを削除し、「git\-version」トレーラーを追加します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ sed \-e \*(Aqs/ Z$/ /\*(Aq >commit_template\&.txt <<EOF
+> ***subject***
+>
+> ***message***
+>
+> Fixes: Z
+> Cc: Z
+> Reviewed\-by: Z
+> Signed\-off\-by: Z
+> EOF
+$ git config commit\&.template commit_template\&.txt
+$ cat >\&.git/hooks/commit\-msg <<EOF
+> #!/bin/sh
+> git interpret\-trailers \-\-trim\-empty \-\-trailer "git\-version: \e$(git describe)" "\e$1" > "\e$1\&.new"
+> mv "\e$1\&.new" "\e$1"
+> EOF
+$ chmod +x \&.git/hooks/commit\-msg
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-commit\fR(1), \fBgit-format-patch\fR(1), \fBgit-config\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

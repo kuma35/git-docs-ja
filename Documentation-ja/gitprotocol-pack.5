@@ -1,0 +1,766 @@
+'\" t
+.\"     Title: gitprotocol-pack
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GITPROTOCOL\-PACK" "5" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gitprotocol-pack \- パックが通信(over\-the\-wire)で転送される方法
+.SH "SYNOPSIS"
+.sp
+.nf
+<over\-the\-wire\-protocol>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+Git は、 \fBssh://\fR や \fBgit://\fR や \fBhttp://\fR や \fBfile://\fR 転送を介したパック・ファイルでのデータ転送をサポートしています。 クライアントからサーバーにデータをプッシュするためのプロトコルと、 サーバーからクライアントにデータをフェッチするためのプロトコルの、 2 つのセットがあります。 3 つの転送 (ssh, git, file) は、同じプロトコルを使用してデータを転送します。 http 転送については \fBgitprotocol-http\fR(5) に記載されています。
+.sp
+正規の Git 実装で呼び出されるプロセスは、サーバー側では \fBupload\-pack\fR 、クライアント側ではデータを取得(fetch)するための \fBfetch\-pack\fR です。 それから、データをプッシュするためには、サーバー側では \fBreceive\-pack\fR 、クライアント側では \fBsend\-pack\fR です。 プロトコルは、サーバーが現在サーバー上にあるものをクライアントに通知し、それから双方で送信する最小量のデータをネゴシエートして、一方または他方を完全に更新するよう機能します。
+.SH "PKT\-LINE FORMAT"
+.sp
+以下の説明は、 \fBgitprotocol-common\fR(5) で説明されている pkt\-line 形式に基づいています。 文法が \fBPKT\-LINE(\&.\&.\&.)\fR を示す場合、 特に明記しない限り、 通常の pkt\-line LF ルールが適用されます。
+.sp
+エラーパケットは、エラー文字列を含む特別な pkt\-line です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  error\-line     =  PKT\-LINE("ERR" SP explanation\-text)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBPKT\-LINE(\&.\&.\&.)\fR が期待されるそのプロトコル中の何処であっても、エラーパケットが送信される場合があります。 このパケットがクライアントまたはサーバーによって送信されると、そのプロトコルで定義されたデータ転送プロセスは終了します。
+.SH "TRANSPORTS"
+.sp
+パックファイルプロトコルが開始される転送(transport)は 3 つあります。 Git 転送は、クライアントが希望するコマンド (ほとんどの場合 \fBupload\-pack\fR ですが、Git サーバーはグローバルに書き込み可能に構成でき、 \fBreceive\-pack\fR 開始も許可されます) を受け取る単純な非認証サーバーです。 通信して実行し、リクエスト元のプロセスに接続します。
+.sp
+SSH 転送では、クライアントは SSH プロトコルを介してサーバー上で \fBupload\-pack\fR または \fBreceive\-pack\fR プロセスを実行し、SSH 接続を介して、その呼び出されたプロセスと通信します。
+.sp
+\fBfile://\fR 転送は、 \fBupload\-pack\fR または \fBreceive\-pack\fR プロセスをローカルで実行し、パイプを介して通信します。
+.SH "EXTRA PARAMETERS"
+.sp
+このプロトコルは、クライアントが最初のメッセージで追加情報をサーバーに送信できるメカニズムを提供します。 これらは「追加パラメーター」(Extra Parameters)と呼ばれ、Git と SSH と HTTP プロトコルでサポートされています。
+.sp
+各追加パラメーター(Extra Parameter)は、 \fB<key>=<value>\fR 形式または \fB<key>\fR 形式を取ります。
+.sp
+そのような追加パラメータ(Extra Parameters)を受信するサーバーは、 認識されていないすべてのキーを無視する必要があります。 現在認識されている追加パラメータは、値が \fB1\fR または \fB2\fR である \fBversion\fR のみです。 プロトコル・バージョン 2 の詳細については、 \fBgitprotocol-v2\fR(5) を参照してください。
+.SH "GIT TRANSPORT"
+.sp
+Git 転送(transport)は、 pkt\-line 形式を使用してネットワーク上でコマンドとリポジトリを送信することから始まり、その後に NUL バイトとホスト名パラメーターが続き、NUL バイトで終了します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+0033git\-upload\-pack /project\&.git\e0host=myserver\&.com\e0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+その転送は、NUL バイトを追加し、そして更に 1 つ以上の、 NUL で終了する文字列を追加することによって、追加のパラメーター(Extra Parameters)を送信できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+003egit\-upload\-pack /project\&.git\e0host=myserver\&.com\e0\e0version=1\e0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+git\-proto\-request = request\-command SP pathname NUL
+                    [ host\-parameter NUL ] [ NUL extra\-parameters ]
+request\-command   = "git\-upload\-pack" / "git\-receive\-pack" /
+                    "git\-upload\-archive"   ; case sensitive
+pathname          = *( %x01\-ff ) ; exclude NUL
+host\-parameter    = "host=" hostname [ ":" port ]
+extra\-parameters  = 1*extra\-parameter
+extra\-parameter   = 1*( %x01\-ff ) NUL
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+host\-parameter は、 git\-daemon の 名前ベースの仮想ホスティング(name based virtual hosting)に使用されます。 \fB%H/%CH\fR 形式の文字を使用した git デーモンの \fB\-\-interpolated\-path\fR オプションを参照してください。
+.sp
+基本的に、GitクライアントがGitプロトコルを介してサーバー側の \fBupload\-pack\fR プロセスに接続するために行っていることは以下のとおりです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo \-e \-n \e
+  "003agit\-upload\-pack /schacon/gitbook\&.git\e0host=example\&.com\e0" |
+  nc \-v example\&.com 9418
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SSH TRANSPORT"
+.sp
+SSH 経由で upload\-pack または receive\-pack プロセスを開始することは、SSH リモート実行を介してサーバー上でバイナリを実行することです。 これは基本的に以下を実行するのと同じです:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ssh git\&.example\&.com "git\-upload\-pack \*(Aq/project\&.git\*(Aq"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+サーバーが SSH を介して特定のユーザーの Git プッシュおよびプルをサポートするには、そのユーザーが、ログイン時に提供される SSH シェルを介して、これらのコマンドのいずれかまたは両方を実行できる必要があります。 一部のシステムでは、そのシェル アクセスは、これら 2 つのコマンドの実行のみ、またはそれらの 1 つだけに制限されています。
+.sp
+\fBssh://\fR 形式の URI では、これは URI 内で絶対的であるため、ホスト名 (またはポート番号) の後の \fB/\fR が引数として送信され、リモートの git\-upload\-pack によってそのまま読み取られます。 そのため、実質的にはリモートファイルシステムの絶対パスです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   git clone ssh://user@example\&.com/project\&.git
+                |
+                v
+ssh user@example\&.com "git\-upload\-pack \*(Aq/project\&.git\*(Aq"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBuser@host:path\fR 形式の URI では、Git クライアントが実行されるため、ユーザーのホーム ディレクトリに相対的です:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   git clone user@example\&.com:project\&.git
+                  |
+                  v
+ssh user@example\&.com "git\-upload\-pack \*(Aqproject\&.git\*(Aq"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+例外は、 \fB~\fR が使用されている場合です。この場合、先頭の \fB/\fR なしで実行されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   ssh://user@example\&.com/~alice/project\&.git,
+                  |
+                  v
+ssh user@example\&.com "git\-upload\-pack \*(Aq~alice/project\&.git\*(Aq"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBprotocol\&.version\fR 構成変数の値に応じて、Git は GIT_PROTOCOL 環境変数のコロン(\fB:\fR)で区切られた文字列を追加パラメーター(Extra Parameters)として送信しようとする場合があります。 これは、 \fBssh\&.variant\fR 構成変数で、ssh コマンドが環境変数を引数として渡すことをサポートすることを示している場合にのみ行われます。
+.sp
+ここでいくつか覚えておいて欲しいことがあります:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「コマンド名」はダッシュ(\fB\-\fR)で続けて綴られます (例: git\-upload\-pack) が、これはクライアントによってオーバーライドできます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+リポジトリパスは常に一重引用符(single quotes)で囲みます。
+.RE
+.SH "FETCHING DATA FROM A SERVER"
+.sp
+ある Git リポジトリが 2 つ目のリポジトリにあるデータを取得したい場合、最初の Git リポジトリは 2つめ目のリポジトリから「fetch」(取得)できます。 この操作は、サーバーが持っていてクライアントが持っていないデータを判別し、そのデータを packfile 形式でクライアントにストリーミングします。
+.SH "REFERENCE DISCOVERY"
+.sp
+クライアントが最初に接続すると、サーバーはすぐに、バージョン番号 ("version=1" が追加パラメーター(Extra Parameter)として送信された場合) と、それが持つ各参照 (すべてのブランチとタグ) のリストと、各参照が現在指しているオブジェクト名で、応答します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo \-e \-n "0045git\-upload\-pack /schacon/gitbook\&.git\e0host=example\&.com\e0\e0version=1\e0" |
+   nc \-v example\&.com 9418
+000eversion 1
+00887217a7c7e582c46cec22a130adf4b9d7d950fba0 HEAD\e0multi_ack thin\-pack
+             side\-band side\-band\-64k ofs\-delta shallow no\-progress include\-tag
+00441d3fcd5ced445d1abc402225c0b8a1299641f497 refs/heads/integration
+003f7217a7c7e582c46cec22a130adf4b9d7d950fba0 refs/heads/master
+003cb88d2441cac0977faf98efc80305012112238d9d refs/tags/v0\&.9
+003c525128480b96c89e6418b1e40909bf6c5b2d580f refs/tags/v1\&.0
+003fe92df48743b7bc7d26bcaabfddde0a1e20cae47c refs/tags/v1\&.0^{}
+0000
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+返される応答は、各refとその現在の値を説明する pkt\-line ストリームです。 そのストリームは、C ロケールの順序に従って名前でソートする必要があります。
+.sp
+HEAD が有効な ref である場合、HEAD は最初に広告(advertise)された ref として表示されなければなりません。 HEAD が有効な ref でない場合、HEAD は広告(advertise)リストにまったく表示されてはなりませんが、他の ref は表示される可能性があります。
+.sp
+ストリームは、最初のrefの NUL の後ろに機能宣言を含める必要があります。 ref の皮をむいた値(the (peeled value) (つまり、\fBref^{}\fR) は、提示される場合、ref 自体の直後になければなりません。 準拠するサーバーは、注釈付きタグの場合、ref を皮むき(peel)しなければなりません。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  advertised\-refs  =  *1("version 1")
+                      (no\-refs / list\-of\-refs)
+                      *shallow
+                      flush\-pkt
+
+  no\-refs          =  PKT\-LINE(zero\-id SP "capabilities^{}"
+                      NUL capability\-list)
+
+  list\-of\-refs     =  first\-ref *other\-ref
+  first\-ref        =  PKT\-LINE(obj\-id SP refname
+                      NUL capability\-list)
+
+  other\-ref        =  PKT\-LINE(other\-tip / other\-peeled)
+  other\-tip        =  obj\-id SP refname
+  other\-peeled     =  obj\-id SP refname "^{}"
+
+  shallow          =  PKT\-LINE("shallow" SP obj\-id)
+
+  capability\-list  =  capability *(SP capability)
+  capability       =  1*(LC_ALPHA / DIGIT / "\-" / "_")
+  LC_ALPHA         =  %x61\-7A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+サーバーとクライアントは obj\-id に英小文字を使用する必要があり、サーバーとクライアントどちらも obj\-id を英大文字と英小文字を区別しないものとして扱わなければなりません。
+.sp
+許可されているサーバー機能と説明のリストについては、 protocol\-capabilities\&.txt を参照してください。
+.SH "PACKFILE NEGOTIATION"
+.sp
+参照と機能の検出後、クライアントは、 パックデータが不要になった時、 flush\-pkt を送信して接続を終了することを決定し、サーバーに正常に終了できるようになったことを伝え、切断できます。 これは ls\-remote コマンドで発生する可能性があり、そしてまた、クライアントが既に最新の状態である場合にも発生する可能性があります。
+.sp
+それ以外の場合は、ネゴシエーション フェーズに入り、クライアントとサーバーは、必要なオブジェクトや、浅い(shallow)オブジェクト (存在する場合)や、必要なコミットの最大深度 (対応する場合) をサーバーに伝えることによって、転送に必要な最小限のパックファイルを決定します。 クライアントは、サーバーが最初の \fBwant\fR 行に対して、実行できると言った機能の中から、有効にしたい機能のリストも送信します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  upload\-request    =  want\-list
+                       *shallow\-line
+                       *1depth\-request
+                       [filter\-request]
+                       flush\-pkt
+
+  want\-list         =  first\-want
+                       *additional\-want
+
+  shallow\-line      =  PKT\-LINE("shallow" SP obj\-id)
+
+  depth\-request     =  PKT\-LINE("deepen" SP depth) /
+                       PKT\-LINE("deepen\-since" SP timestamp) /
+                       PKT\-LINE("deepen\-not" SP ref)
+
+  first\-want        =  PKT\-LINE("want" SP obj\-id SP capability\-list)
+  additional\-want   =  PKT\-LINE("want" SP obj\-id)
+
+  depth             =  1*DIGIT
+
+  filter\-request    =  PKT\-LINE("filter" SP filter\-spec)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+クライアントは、参照検出フェーズから必要なすべての obj\-id を \fBwant\fR 行として送信する必要があります。 クライアントは、リクエスト本文で少なくとも 1 つの \fBwant\fR コマンドを送信する必要があります。 クライアントは、ref 検出によって取得された応答に表示されなかった obj\-id について \fBwant\fR コマンドで言及してはなりません。
+.sp
+クライアントは、サーバーがクライアントの履歴の制限を認識できるように、浅い(shallow)コピーしか持たない (つまり、コミットの親を持たない) すべての obj\-id を \fBshallow\fR 行として書き込まなければなりません。
+.sp
+クライアントは、この取引(transaction)に必要な最大のコミット履歴の深さを送信します。 これは、履歴の先端から必要なコミットの数であり、存在する場合は \fBdeepen\fR 行として送信します。 深度 0 は、深度(depth)リクエストを行わないことと同じです。 クライアントは、この深さを超えるコミットを受け取りたくないし、それらのコミットを完了するためだけに必要なオブジェクトも欲していません。 結果として親が受信されないコミットは、浅い(shallow)ものとして定義され、サーバーでそのようにマークされます。 この情報は、次のステップでクライアントに送り返されます。
+.sp
+クライアントはオプションで、いくつかのフィルタリング手法の 1 つを使用して、 pack\-objects が パックファイルからさまざまなオブジェクトを省略するように要求できます。 これらは、部分(partial)クローンおよび部分(partial)フェッチ操作で使用するためのものです。 \fBwant\fR 行で明示的に要求されない限り、 filter\-spec 値を満たさないオブジェクトは省略されます。 可能な filter\-spec 値については、 \fBrev\-list\fR を参照してください。
+.sp
+すべての \fBwant\fR と \fBshallow\fR (およびオプションの \fBdeepen\fR ) が転送されると、クライアントは、リストの送信が完了したことをサーバー側に通知するために、 flush\-pkt を送信する必要があります。
+.sp
+それ以外の場合、クライアントが正の深さ(depth)のリクエストを送信した場合、サーバーはどのコミットが浅い(shallow)かどうかを判断し、その情報をクライアントに送信します。 クライアントが正の深さをリクエストしなかった場合、この手順はスキップされます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  shallow\-update   =  *shallow\-line
+                      *unshallow\-line
+                      flush\-pkt
+
+  shallow\-line     =  PKT\-LINE("shallow" SP obj\-id)
+
+  unshallow\-line   =  PKT\-LINE("unshallow" SP obj\-id)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+クライアントが正の深さをリクエストした場合、サーバーは目的の深さまでの一連のコミットを計算します。 一連のコミットは、クライアントの要求(wants)から始まります。
+.sp
+サーバーは、結果として親が送信されないコミットごとに \fBshallow\fR 行を書き込みます。 サーバーは、クライアントが浅いと示したコミットごとに、現在要求されている深さ(depth)ではもはや浅く(shallow)は無いため、 \fBunshallow\fR 行を書き込みます(つまり、その親が送信されます)。 サーバーは、クライアントが浅い(shallow)と示していないものを非浅い(unshallow)としてマークしてはなりません。
+.sp
+これで、クライアントは \fBhave\fR 行を使用して、所有している obj\-id のリストを送信するため、サーバーはクライアントが必要とするオブジェクトのみを含むパックファイルを作成できます。 multi_ack モードでは、正規の実装はこれらを一度に最大 32 個送信して、それから flush\-pkt を送信します。 正規の実装では、先にスキップして次の 32 をすぐに送信し、一度に 32 の 「送信中」(in\-flight on the wire)のブロックが常に存在するようにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  upload\-haves      =  have\-list
+                       compute\-end
+
+  have\-list         =  *have\-line
+  have\-line         =  PKT\-LINE("have" SP obj\-id)
+  compute\-end       =  flush\-pkt / PKT\-LINE("done")
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+サーバーが \fBhave\fR 行を読み取ると、サーバーも持っているとクライアントが言った obj\-id のいずれかに ACK を返すことで応答します。 サーバーは、クライアントが選択した ack モードに応じて、異なる方法で obj\-id を ACK します。
+.sp
+multi_ack モードでは:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、一般的なコミットに対して
+\fBACK obj\-id continue\fR
+で応答します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーが受け入れ可能な共通ベースのコミットを見つけ、パックファイルを作成する準備が整うと、サーバーはすべての
+\fBhave\fR
+obj\-id を盲目的にクライアントに返します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは
+\fBNAK\fR
+を送信し、クライアントからの別の応答を待ちます。それは
+\fBdone\fR
+または
+\fBhave\fR
+行の別のリストのいずれかです。
+.RE
+.sp
+multi_ack_detailed モードでは:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サーバーは、
+\fBACK obj\-id ready\fR
+行でデータを送信する準備ができていることを通知する ACK を識別し、そして、
+\fBACK obj\-id common\fR
+行で識別された共通コミットを通知します。
+.RE
+.sp
+multi_ack または multi_ack_detailed を使用しない場合:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+upload\-pack は、最初に見つけた共通オブジェクトに対して
+\fBACK obj\-id\fR
+を送信します。 その後、クライアントが
+\fBdone\fR
+するまで何も言いません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+共通オブジェクトがまだ見つからない場合、 upload\-pack は flush\-pkt で
+\fBNAK\fR
+を送信します。 1 つ見つかった場合、ACK が既に送信されている場合は、 flush\-pkt では何も言いません。
+.RE
+.sp
+クライアントが十分な ACK 応答を取得して、サーバーが効率的なパックファイルを送信するのに十分な情報を持っていると判断した場合(正規の実装では、 これは \fB\-\-date\-order\fR キューに残っているすべてをサーバーと共通のものとして色付けできるほど十分な ACK を受信した場合、 または \fB\-\-date\-order\fR キューが空である場合、に決定されます)、またはクライアントがあきらめたい(wants to give up)と判断した場合(正規の実装では、これは、クライアントが 256 の \fBhave｀行をサーバーからの ACK を取得せずに送信したとき \-\- これはサーバーとの共通点がなく、サーバーはすべてのオブジェクトを送信する必要があることを意味します\-\- に決定されます)、クライアントは `done\fR コマンドを送信します。 \fBdone\fR コマンドは、クライアントがパックファイルデータを受信する準備ができていることをサーバーに通知します。
+.sp
+ただし、256 の制限は、前のラウンド中に少なくとも 1 つの \fBACK %s continue\fR を受信した場合にのみ、正規のクライアント実装で有効になります。 これにより、完全にあきらめる(give up)前に、共通の祖先を少なくとも 1 つ見つけることができます。
+.sp
+\fBdone\fR 行がクライアントから読み取られると、サーバーは最後の \fBACK obj\-id\fR を送信するか、あるいは \fBNAK`を送信する場合があります。 `obj\-id\fR は、一般的であると判断された最後のコミットのオブジェクト名です。 サーバーは、少なくとも 1 つの共通ベースがあり、 multi_ack または multi_ack_detailed が有効になっている場合にのみ、 \fBdone\fR 後に ACK を送信します。 共通のベースが見つからない場合、サーバーは \fBdone\fR 後に常に NAK を送信します。
+.sp
+\fBACK\fR または \fBNAK\fR の代わりに、サーバーはエラーメッセージを送信する場合があります(たとえば、クライアントから受信した \fBwant\fR 行のオブジェクトを認識できない場合)。
+.sp
+その後、サーバーはパックファイルデータの送信を開始します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  server\-response = *ack_multi ack / nak
+  ack_multi       = PKT\-LINE("ACK" SP obj\-id ack_status)
+  ack_status      = "continue" / "common" / "ready"
+  ack             = PKT\-LINE("ACK" SP obj\-id)
+  nak             = PKT\-LINE("NAK")
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+単純なクローンは以下のようになります(\fBhave\fR 行はありません):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   C: 0054want 74730d410fcb6603ace96f1dc55ea6196122532d multi_ack \e
+     side\-band\-64k ofs\-delta\en
+   C: 0032want 7d1665144a3a975c05f1f43902ddaf084e784dbe\en
+   C: 0032want 5a3f6be755bbb7deae50065988cbfa1ffa9ab68a\en
+   C: 0032want 7e47fe2bd8d01d481f44d7af0531bd93d3b21c01\en
+   C: 0032want 74730d410fcb6603ace96f1dc55ea6196122532d\en
+   C: 0000
+   C: 0009done\en
+
+   S: 0008NAK\en
+   S: [PACKFILE]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+増分更新(fetch)応答は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   C: 0054want 74730d410fcb6603ace96f1dc55ea6196122532d multi_ack \e
+     side\-band\-64k ofs\-delta\en
+   C: 0032want 7d1665144a3a975c05f1f43902ddaf084e784dbe\en
+   C: 0032want 5a3f6be755bbb7deae50065988cbfa1ffa9ab68a\en
+   C: 0000
+   C: 0032have 7e47fe2bd8d01d481f44d7af0531bd93d3b21c01\en
+   C: [30 more have lines]
+   C: 0032have 74730d410fcb6603ace96f1dc55ea6196122532d\en
+   C: 0000
+
+   S: 003aACK 7e47fe2bd8d01d481f44d7af0531bd93d3b21c01 continue\en
+   S: 003aACK 74730d410fcb6603ace96f1dc55ea6196122532d continue\en
+   S: 0008NAK\en
+
+   C: 0009done\en
+
+   S: 0031ACK 74730d410fcb6603ace96f1dc55ea6196122532d\en
+   S: [PACKFILE]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "PACKFILE DATA"
+.sp
+クライアントとサーバーは、クライアントに送信する必要があるデータの最小量についてのネゴシエーションを終了したので、サーバーは必要なデータを作成してパックファイル形式で送信します。
+.sp
+パック・ファイル自体が実際にどのように見えるかについては、 \fBgitformat-pack\fR(5) を参照してください。
+.sp
+\fBside\-band\fR または \fBside\-band\-64k\fR 機能がクライアントによって指定されている場合、サーバーはパックファイルデータを多重化して送信します。
+.sp
+各パケットは、後続のデータ量のパケット行長さで始まり、後続のデータが入ってくるサイドバンドを指定する 1 バイトが続きます。
+.sp
+\fBside\-band\fR モードでは、最大 999 データ バイトと 1 つの制御コード、つまり合計で最大 1000 バイトを pkt\-line で送信します。 \fBside\-band\-64k\fR モードでは、最大 65519 データ バイトと 1 つの制御コード、つまり合計で最大 65520 バイトを pkt\-line で送信します。
+.sp
+サイドバンドバイトは「1」または「2」または「3」になります。 サイドバンド \fB1\fR には packfile データが含まれ、サイドバンド \fB2\fR はクライアントが通常 stderr に出力する進捗情報に使用され、サイドバンド \fB3\fR はエラー情報に使用されます。
+.sp
+\fBside\-band\fR 機能が指定されていない場合、サーバーは多重化せずにパックファイル全体をストリーミングします。
+.SH "PUSHING DATA TO A SERVER"
+.sp
+データをサーバーにプッシュすると、サーバー上で \fBreceive\-pack\fR プロセスが呼び出されます。これにより、クライアントは更新する必要がある参照をクライアントに通知し、それらの新しい参照を完結させるためにサーバーが必要とするすべてのデータを送信できます。 すべてのデータが受信されて検証(validate)されると、サーバーはその参照をクライアントが指定したものに更新します。
+.SH "AUTHENTICATION"
+.sp
+プロトコル自体には、認証メカニズムは含まれていません。 これは、 \fBreceive\-pack\fR プロセスが呼び出される前に、SSH などの転送(transport)によって処理されます。 \fBreceive\-pack\fR がGit転送(transport)上で構成されている場合、その転送(transport)は認証されていないため、そのポート(9418)にアクセスできる人なら誰でもこれらのリポジトリに書き込みできます。
+.SH "REFERENCE DISCOVERY"
+.sp
+参照検出フェーズは、フェッチプロトコル(the fetching protocol)とほぼ同じ方法で行われます。 サーバー上の各参照 obj\-id と名前は、 packet\-line 形式でクライアントに送信され、その後に flush\-pkt が続きます。 唯一の違いは、機能リストが異なることです。可能な値は、 \fBreport\-status\fR, \fBreport\-status\-v2\fR, \fBdelete\-refs\fR, \fBofs\-delta\fR, \fBatomic\fR, \fBpush\-options\fR のみです。
+.SH "REFERENCE UPDATE REQUEST AND PACKFILE TRANSFER"
+.sp
+クライアントがサーバー上にある参照を知ったら、参照更新リクエストのリストを送信できます。 更新するサーバー上の参照ごとに、現在サーバー上にある obj\-id と、クライアントが更新したい obj\-id と、参照の名前を、リストした行を送信します。
+.sp
+このリストの後には、flush\-pkt が続きます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  update\-requests   =  *shallow ( command\-list | push\-cert )
+
+  shallow           =  PKT\-LINE("shallow" SP obj\-id)
+
+  command\-list      =  PKT\-LINE(command NUL capability\-list)
+                       *PKT\-LINE(command)
+                       flush\-pkt
+
+  command           =  create / delete / update
+  create            =  zero\-id SP new\-id  SP name
+  delete            =  old\-id  SP zero\-id SP name
+  update            =  old\-id  SP new\-id  SP name
+
+  old\-id            =  obj\-id
+  new\-id            =  obj\-id
+
+  push\-cert         = PKT\-LINE("push\-cert" NUL capability\-list LF)
+                      PKT\-LINE("certificate version 0\&.1" LF)
+                      PKT\-LINE("pusher" SP ident LF)
+                      PKT\-LINE("pushee" SP url LF)
+                      PKT\-LINE("nonce" SP nonce LF)
+                      *PKT\-LINE("push\-option" SP push\-option LF)
+                      PKT\-LINE(LF)
+                      *PKT\-LINE(command LF)
+                      *PKT\-LINE(gpg\-signature\-lines LF)
+                      PKT\-LINE("push\-cert\-end" LF)
+
+  push\-option       =  1*( VCHAR | SP )
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+サーバーが \fBpush\-options\fR 機能を広告し、クライアントが上記の機能リストの一部として \fBpush\-options\fR を指定した場合、クライアントはプッシュオプションに続いて flush\-pkt を送信します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  push\-options      =  *PKT\-LINE(push\-option) flush\-pkt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+古い Git サーバーとの下位互換性のために、クライアントがプッシュ証明書とプッシュオプションを送信する場合、プッシュ証明書内に埋め込まれたプッシュオプションと、プッシュ証明書の後のプッシュオプションの両方を送信する必要があります。 (注意: 証明書内のプッシュオプションにはプレフィックスが付いていますが、証明書の後のプッシュオプションには付いていないことに注意してください。) これらのリストは、プレフィックスを除けば、両方とも同一でなければなりません。
+.sp
+その後、サーバーが新しい参照を完結させるために必要なすべてのオブジェクトを含むパックファイルが送信されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  packfile          =  "PACK" 28*(OCTET)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+受信側が delete\-refs をサポートしていない場合、送信側は delete コマンドを要求してはなりません。
+.sp
+受信側がプッシュ証明書をサポートしていない場合、送信側はプッシュ証明書コマンドを送信してはいけません。 push\-cert コマンドが送信される場合、command\-list は送信してはいけません。 代わりに、プッシュ証明書に記録されているコマンド(commands)が使用されます。
+.sp
+使用されるコマンドが \fBdelete\fR のみの場合、パックファイルを送信してはなりません。
+.sp
+create または update コマンドを使用する場合は、サーバーに必要なすべての オブジェクトが既にある場合でも、パックファイルを送信する必要があります。 の場合、クライアントは空のパックファイルを送信する必要があります。 クライアントが既存の obj\-id を指す新しいブランチまたはタグを 作成している場合に、これが発生する可能性が高いです。
+.sp
+サーバーはパックファイルを受け取り、アンパックし、更新中の各参照がリクエストの処理中に変更されていないこと(obj\-id は古い old\-id と同一のままでである)を検証(validate)し、更新フックを実行して、更新が受け入れられることを確かめます。 すべて問題なければ、サーバーは参照を更新します。
+.SH "PUSH CERTIFICATE"
+.sp
+プッシュ証明書は一連のヘッダー行で始まります。 ヘッダーと1行の空行の後に、プロトコル コマンドが 1 行に 1 つずつ続きます。 push\-cert PKT\-LINE の末尾の LF は「オプションでは無い」ことに注意してください。 しかし push\-cert PKT\-LINE の末尾の LF は存在していなければなりません。
+.sp
+現在、以下のヘッダーフィールドが定義されています:
+.PP
+\fBpusher\fR ID
+.RS 4
+\fBHuman Readable Name <email@address>\fR
+形式で GPG キーを識別します。
+.RE
+.PP
+\fBpushee\fR URL
+.RS 4
+\fBgit push\fR
+を実行したユーザーがプッシュしようとしていたリポジトリ URL (URL に認証情報が含まれている場合は匿名化)。
+.RE
+.PP
+\fBnonce\fR ノンス
+.RS 4
+リプレイ攻撃(replay attacks)を防ぐために、受信リポジトリ側がプッシュするユーザーに証明書に含めるように要求した「ノンス」(nonce)文字列。
+.RE
+.sp
+GPG 署名行は、署名ブロックが開始される前にプッシュ証明書に記録された、コンテンツから切り離された署名(detached signature)です。 切り離された署名(detached signature)は、署名者(signer)でなければならないプッシャー(pusher)によってコマンドが与えられたことを証明するために使用されます。
+.SH "REPORT STATUS"
+.sp
+送信側からパックデータを受信した後、 \fBreport\-status\fR または \fBreport\-status\fR 機能が有効な場合、受信側はレポートを送信します。 これは、その更新で何が起こったかの短いリストです。 最初に、パックファイルのアンパックのステータスが \fBunpack ok\fR または \fBunpack [error]\fR としてリストされます。 次に、更新しようとした各参照のステータスを一覧表示します。 各行は、更新が成功した場合は \fBok [refname]\fR 、更新が失敗した場合は \fBng [refname] [error]\fR の、いずれかです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  report\-status     = unpack\-status
+                      1*(command\-status)
+                      flush\-pkt
+
+  unpack\-status     = PKT\-LINE("unpack" SP unpack\-result)
+  unpack\-result     = "ok" / error\-msg
+
+  command\-status    = command\-ok / command\-fail
+  command\-ok        = PKT\-LINE("ok" SP refname)
+  command\-fail      = PKT\-LINE("ng" SP refname SP error\-msg)
+
+  error\-msg         = 1*(OCTET) ; where not "ok"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fBreport\-status\-v2\fR 機能は、 \fBproc\-receive\fR フックによって書き換え(rewritten)られた参照のレポートをサポートするために、新しいオプション行を追加してプロトコルを拡張(extend)します。 \fBproc\-receive\fR フックは、1 つまたは複数の参照を作成または更新する疑似参照(pseudo\-reference)のコマンドを処理できます。各参照は、異なる名前と、異なる new\-oidと、異なる old\-oid を、持つことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  report\-status\-v2  = unpack\-status
+                      1*(command\-status\-v2)
+                      flush\-pkt
+
+  unpack\-status     = PKT\-LINE("unpack" SP unpack\-result)
+  unpack\-result     = "ok" / error\-msg
+
+  command\-status\-v2 = command\-ok\-v2 / command\-fail
+  command\-ok\-v2     = command\-ok
+                      *option\-line
+
+  command\-ok        = PKT\-LINE("ok" SP refname)
+  command\-fail      = PKT\-LINE("ng" SP refname SP error\-msg)
+
+  error\-msg         = 1*(OCTET) ; where not "ok"
+
+  option\-line       = *1(option\-refname)
+                      *1(option\-old\-oid)
+                      *1(option\-new\-oid)
+                      *1(option\-forced\-update)
+
+  option\-refname    = PKT\-LINE("option" SP "refname" SP refname)
+  option\-old\-oid    = PKT\-LINE("option" SP "old\-oid" SP obj\-id)
+  option\-new\-oid    = PKT\-LINE("option" SP "new\-oid" SP obj\-id)
+  option\-force      = PKT\-LINE("option" SP "forced\-update")
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+更新は、さまざまな理由で失敗する可能性があります。 参照検出フェーズが最初に送信されてから参照が変更された可能性があります。つまり、その間に誰かがプッシュしたことを意味します。 プッシュされる参照は非早送り(non\-fast\-forward)参照である可能性があり、更新フックまたは構成がそれを許可しないように設定されている可能性があります。 また、一部の参照は更新できまるけど、他の参照は拒否とかできます。
+.sp
+クライアント/サーバー 通信の例は以下のようになります:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   S: 006274730d410fcb6603ace96f1dc55ea6196122532d refs/heads/local\e0report\-status delete\-refs ofs\-delta\en
+   S: 003e7d1665144a3a975c05f1f43902ddaf084e784dbe refs/heads/debug\en
+   S: 003f74730d410fcb6603ace96f1dc55ea6196122532d refs/heads/master\en
+   S: 003d74730d410fcb6603ace96f1dc55ea6196122532d refs/heads/team\en
+   S: 0000
+
+   C: 00677d1665144a3a975c05f1f43902ddaf084e784dbe 74730d410fcb6603ace96f1dc55ea6196122532d refs/heads/debug\en
+   C: 006874730d410fcb6603ace96f1dc55ea6196122532d 5a3f6be755bbb7deae50065988cbfa1ffa9ab68a refs/heads/master\en
+   C: 0000
+   C: [PACKDATA]
+
+   S: 000eunpack ok\en
+   S: 0018ok refs/heads/debug\en
+   S: 002ang refs/heads/master non\-fast\-forward\en
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

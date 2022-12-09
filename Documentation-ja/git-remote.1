@@ -1,0 +1,360 @@
+'\" t
+.\"     Title: git-remote
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-REMOTE" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-remote \- 追跡中のリポジトリの組を管理します
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit remote\fR [\-v | \-\-verbose]
+\fIgit remote add\fR [\-t <branch>] [\-m <master>] [\-f] [\-\-[no\-]tags] [\-\-mirror=(fetch|push)] <name> <URL>
+\fIgit remote rename\fR [\-\-[no\-]progress] <old> <new>
+\fIgit remote remove\fR <name>
+\fIgit remote set\-head\fR <name> (\-a | \-\-auto | \-d | \-\-delete | <branch>)
+\fIgit remote set\-branches\fR [\-\-add] <name> <branch>\&...
+\fIgit remote get\-url\fR [\-\-push] [\-\-all] <name>
+\fIgit remote set\-url\fR [\-\-push] <name> <newurl> [<oldurl>]
+\fIgit remote set\-url \-\-add\fR [\-\-push] <name> <newurl>
+\fIgit remote set\-url \-\-delete\fR [\-\-push] <name> <URL>
+\fIgit remote\fR [\-v | \-\-verbose] \fIshow\fR [\-n] <name>\&...
+\fIgit remote prune\fR [\-n | \-\-dry\-run] <name>\&...
+\fIgit remote\fR [\-v | \-\-verbose] \fIupdate\fR [\-p | \-\-prune] [(<group> | <remote>)\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+ブランチを追跡するリポジトリの組(「remotes」)を管理します。
+.SH "OPTIONS"
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+もう少しおしゃべりにして、名前の後にリモートURLを表示します。 プロミサー・リモートの場合は、構成されているフィルター(\fBblob:none\fR
+など)も表示します。 注意: これは、\fBremote\fR
+とサブコマンドの間に配置する必要があります。
+.RE
+.SH "COMMANDS"
+.sp
+引数なしだと、既存のリモートのリストを表示します。 「リモート」に操作を実行するために、いくつかのサブコマンドを使用できます。
+.PP
+\fBadd\fR
+.RS 4
+<URL>のリポジトリに<name>という名前の「リモート」を追加します。 次に、コマンド
+\fBgit fetch <name>\fR
+を使用して、リモート追跡ブランチ <name>/<branch> を作成および更新できます。
+.sp
+\fB\-f\fR
+オプションと使用すると、「リモート」情報が設定された直後に
+\fBgit fetch <name>\fR
+が実行されます。
+.sp
+\fB\-\-tags\fR
+オプションと使用すると、
+\fBgit fetch <name>\fR
+はリモートリポジトリからすべてのタグをインポートします。
+.sp
+\fB\-\-no\-tags\fR
+オプションと使用すると、 `git fetch <name> ` はリモートリポジトリからタグをインポートしません。
+.sp
+デフォルトでは、フェッチされたブランチのタグのみがインポートされます(\fBgit-fetch\fR(1)
+参照)。
+.sp
+\fB\-t <branch>\fR
+オプションと使用すると、「リモート」のデフォルトのグロブrefspecが
+\fBrefs/remotes/<name>/\fR
+名前空間の下のすべてのブランチを追跡する代わりに、
+\fB<branch>\fR
+のみを追跡するrefspecが作成されます。 複数の
+\fB\-t <branch>\fR
+を指定して、すべてのブランチを取得せずに複数のブランチを追跡できます。
+.sp
+\fB\-m <master>\fR
+オプションと使用すると、シンボリックref
+\fBrefs/remotes/<name>/HEAD\fR
+がリモートの
+\fB<master>\fR
+ブランチを指すように設定されます。 set\-head コマンドも参照してください。
+.sp
+フェッチミラーが
+\fB\-\-mirror=fetch\fR
+で作成される場合、refは
+\fBrefs/remotes/\fR
+名前空間に保存されませんが、リモートの
+\fBrefs/\fR
+内のすべてがローカルリポジトリ内の
+\fBrefs/\fR
+に直接ミラーリングされます。フェッチはローカルコミットを上書きするため、このオプションはベアリポジトリでのみ意味があります。
+.sp
+プッシュミラーが
+\fB\-\-mirror=push\fR
+で作成されると、
+\fBgit push\fR
+は常に
+\fB\-\-mirror\fR
+が渡されたかのように動作します。
+.RE
+.PP
+\fBrename\fR
+.RS 4
+<old>という名前の「リモート」の名前を<new>に変更します。 「リモート」のすべてのリモート追跡ブランチと構成設定が更新されます。
+.sp
+<old>と<new>が同一で、<old>が
+\fB$GIT_DIR/remotes\fR
+または
+\fB$GIT_DIR/branchs\fR
+の下のファイルである場合、「リモート」は構成ファイル形式に変換されます。
+.RE
+.PP
+\fBremove\fR, \fBrm\fR
+.RS 4
+<name>という名前の「リモート」を削除します。 「リモート」のすべてのリモート追跡ブランチと構成設定が削除されます。
+.RE
+.PP
+\fBset\-head\fR
+.RS 4
+名前付き「リモート」のデフォルトブランチ(つまり、シンボリックref
+\fBrefs/remotes/<name>/HEAD\fR
+のターゲット)を設定または削除します。 リモートのデフォルトブランチを持つ必要はありませんが、特定のブランチの代わりにリモートの名前を指定できます。 たとえば、\fBorigin\fR
+のデフォルトブランチが
+\fBmaster\fR
+に設定されている場合、通常は
+\fBorigin/master\fR
+を指定する場所であればどこでも
+\fBorigin\fR
+を指定できます。
+.sp
+\fB\-d\fR
+または
+\fB\-\-delete\fR
+と使用すると、シンボリックref
+\fBrefs/remotes/<name>/HEAD\fR
+が削除されます。
+.sp
+\fB\-a\fR
+または
+\fB\-\-auto\fR
+と使用すると、リモートはその
+\fBHEAD\fR
+を決定するために照会され、シンボリックref
+\fBrefs/remotes/<name>/HEAD\fR
+が同じブランチに設定されます。 たとえば、リモートの
+\fBHEAD\fR
+が
+\fBnext\fR
+を指している場合、
+\fBgit remote set\-head origin \-a\fR
+はシンボリックref
+\fBrefs/remotes/origin/HEAD\fR
+を
+\fBrefs/remotes/origin/next\fR
+に設定します。 これは、
+\fBrefs/remotes/origin/next\fR
+がすでに存在する場合にのみ機能します。 そうでない場合は、最初にフェッチする必要があります。
+.sp
+\fB<branch>\fR
+を使用して、シンボリックref
+\fBrefs/remotes/<name>/HEAD\fR
+を明示的に設定します。 たとえば、
+\fBgit remote set\-head origin master\fR
+はシンボリックref
+\fBrefs/remotes/origin/HEAD\fR
+を
+\fBrefs/remotes/origin/master\fR
+に設定します。 これは、
+\fBrefs/remotes/origin/master\fR
+がすでに存在する場合にのみ機能します。 そうでない場合は、最初にフェッチする必要があります。
+.RE
+.PP
+\fBset\-branches\fR
+.RS 4
+指定された「リモート」によって追跡されるブランチのリストを変更します。 これは、「リモート」の初期セットアップ後に、使用可能なリモートブランチのサブセットを追跡するために使用できます。
+.sp
+名前付きブランチは、
+\fBgit remote add\fR
+コマンドラインで
+\fB\-t\fR
+オプションを指定した場合と同じように解釈されます。
+.sp
+\fB\-\-add\fR
+と使用すると、現在追跡されているブランチのリストを置き換える代わりに、そのリストに追加します。
+.RE
+.PP
+\fBget\-url\fR
+.RS 4
+「リモート」のURLを取得します。
+\fBinsteadOf\fR
+と
+\fBpushInsteadOf\fR
+の設定はここで展開されます。デフォルトでは、最初のURLのみがリストされます。
+.sp
+\fB\-\-push\fR
+と使用すると、URLをフェッチするのではなく、プッシュURLが照会されます。
+.sp
+\fB\-\-all\fR
+と使用すると、リモート(remote)のすべてのURLが一覧表示されます。
+.RE
+.PP
+\fBset\-url\fR
+.RS 4
+「リモート」のURLを変更します。 正規表現 <oldurl> (<oldurl> が指定されていない場合は最初のURL)に一致するリモート<name>の最初のURLを<newurl>に設定します。 <oldurl>がどのURLとも一致しない場合、エラーが発生し、何も変更されません。
+.sp
+\fB\-\-push\fR
+と使用すると、フェッチURLの代わりにプッシュURLが操作されます。
+.sp
+\fB\-\-add\fR
+と使用すると、既存のURLを変更する代わりに、新しいURLが追加されます。
+.sp
+\fB\-\-delete\fR
+と使用すると、既存のURLを変更する代わりに、リモート<name>の 正規表現<URL> に一致するすべてのURLが削除されます。プッシュされていないURLをすべて削除しようとするとエラーになります。
+.sp
+注意: プッシュURLとフェッチURLは、設定を変えても、同じ場所を参照する必要があることに注意してください。 プッシュURLにプッシュしたものは、フェッチURLからすぐにフェッチした場合に表示されるものになります。 ある場所(アップストリームなど)からフェッチして別の場所(パブリッシングリポジトリなど)にプッシュしようとしている場合は、2つの別々の「リモート」を使用します。
+.RE
+.PP
+\fBshow\fR
+.RS 4
+リモートの<name>に関する情報を提供します。
+.sp
+\fB\-n\fR
+オプションと使用すると、リモートヘッドは最初に
+\fBgit ls\-remote <name>\fR
+でクエリされません。 代わりに、キャッシュされた情報が使用されます。
+.RE
+.PP
+\fBprune\fR
+.RS 4
+<name>に関連付けられている古い参照を削除します。 デフォルトでは、<name>の下の古いリモート追跡ブランチは削除されますが、グローバル構成とリモートの構成によっては、そこにプッシュされていないローカルタグを削除することもあります。 新しい参照がフェッチされないことを除いて、
+\fBgit fetch \-\-prune <name>\fR
+と同等です。
+.sp
+さまざまな構成に応じて刈り込みする内容については、
+\fBgit-fetch\fR(1)
+の「PRUNING」セクションを参照してください。
+.sp
+\fB\-\-dry\-run\fR
+オプションと使用して、どのブランチが刈り込まれるかを報告しますが、実際にはそれらを刈り込みしません。
+.RE
+.PP
+\fBupdate\fR
+.RS 4
+\fBremotes\&.<group>\fR
+で定義されているように、リポジトリ内のリモートまたはリモートグループの更新を取得します。 コマンドラインでgroupもremoteも指定されていない場合は、構成パラメーター remotes\&.default が使用されます。 remotes\&.defaultが定義されていない場合、構成パラメーター
+\fBremote\&.<name>\&.skipDefaultUpdate\fR
+がtrueに設定されていないすべてのリモートが更新されます。 (\fBgit-config\fR(1)
+参照)。
+.sp
+\fB\-\-prune\fR
+オプションと使用して、更新されたすべてのリモートに対して刈り込みを実行します。
+.RE
+.SH "DISCUSSION"
+.sp
+「リモート」構成は、 \fBremote\&.origin\&.url\fR および \fBremote\&.origin\&.fetch\fR 構成変数を使用して実現されます。 (\fBgit-config\fR(1) 参照)。
+.SH "EXIT STATUS"
+.sp
+成功ならば、終了ステータスは \fB0\fR です。
+.sp
+add や rename や remove などのサブコマンドが問題のリモートを見つけることができない場合、終了ステータスは \fB2\fR です。 リモートがすでに存在する場合、終了ステータスは \fB3\fR です。
+.sp
+その他のエラーの場合、終了ステータスはその他ゼロ以外の値になるでしょう。
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+新しいリモートを追加し、フェッチして、そこからブランチをチェックアウトします
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git remote
+origin
+$ git branch \-r
+  origin/HEAD \-> origin/master
+  origin/master
+$ git remote add staging git://git\&.kernel\&.org/\&.\&.\&./gregkh/staging\&.git
+$ git remote
+origin
+staging
+$ git fetch staging
+\&.\&.\&.
+From git://git\&.kernel\&.org/pub/scm/linux/kernel/git/gregkh/staging
+ * [new branch]      master     \-> staging/master
+ * [new branch]      staging\-linus \-> staging/staging\-linus
+ * [new branch]      staging\-next \-> staging/staging\-next
+$ git branch \-r
+  origin/HEAD \-> origin/master
+  origin/master
+  staging/master
+  staging/staging\-linus
+  staging/staging\-next
+$ git switch \-c staging staging/master
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgit clone\fR
+を模倣しますが、選択したブランチのみを追跡します
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ mkdir project\&.git
+$ cd project\&.git
+$ git init
+$ git remote add \-f \-t master \-m master origin git://example\&.com/git\&.git/
+$ git merge origin
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-fetch\fR(1) \fBgit-branch\fR(1) \fBgit-config\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite

@@ -1,0 +1,974 @@
+'\" t
+.\"     Title: git-checkout
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 12/10/2022
+.\"    Manual: Git Manual
+.\"    Source: Git 2.38.0.rc1.238.g4f4d434dc6.dirty
+.\"  Language: English
+.\"
+.TH "GIT\-CHECKOUT" "1" "12/10/2022" "Git 2\&.38\&.0\&.rc1\&.238\&.g" "Git Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-checkout \- ブランチの切り替え、または作業ツリーファイルの復元を行います。
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit checkout\fR [\-q] [\-f] [\-m] [<branch>]
+\fIgit checkout\fR [\-q] [\-f] [\-m] \-\-detach [<branch>]
+\fIgit checkout\fR [\-q] [\-f] [\-m] [\-\-detach] <commit>
+\fIgit checkout\fR [\-q] [\-f] [\-m] [[\-b|\-B|\-\-orphan] <new\-branch>] [<start\-point>]
+\fIgit checkout\fR [\-f|\-\-ours|\-\-theirs|\-m|\-\-conflict=<style>] [<tree\-ish>] [\-\-] <pathspec>\&...
+\fIgit checkout\fR [\-f|\-\-ours|\-\-theirs|\-m|\-\-conflict=<style>] [<tree\-ish>] \-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]
+\fIgit checkout\fR (\-p|\-\-patch) [<tree\-ish>] [\-\-] [<pathspec>\&...]
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+作業ツリー内のファイルを、インデックスまたは指定されたツリー内のバージョンと一致するように更新します。 pathspecが指定されていない場合、 \fBgit checkout\fR は \fBHEAD\fR も更新して、指定されたブランチを現在のブランチとして設定します。
+.PP
+\fBgit checkout [<branch>]\fR
+.RS 4
+\fB<branch>\fR
+での作業の準備をするために、インデックスと作業ツリーのファイルを更新し、
+\fBHEAD\fR
+をブランチに向けることで、\fB<branch>\fR
+に切り替わります。作業ツリーのファイルに対するローカルな変更は保持され、
+\fB<branch>\fR
+にコミットできるようになります。
+.sp
+\fB<branch>\fR
+が見つからないが、一致する名前を持つ1つのリモート(\fB<remote>\fR
+と呼びます)に追跡ブランチが存在し、` \-\-no\-guess` が指定されていない場合は、以下と同等として扱います
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-b <branch> \-\-track <remote>/<branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+あなたは
+\fB<branch>\fR
+を省略できます。この場合、コマンドは「現在のブランチをチェックアウトする」ことになり、(もし存在すれば)現在のブランチの追跡情報だけを表示するという、かなり高価な副作用のある、見栄えの良いノー・オペレーション(no\-op)となります。
+.RE
+.PP
+\fIgit checkout\fR \-b|\-B <new\-branch> [<start\-point>]
+.RS 4
+\fB\-b\fR
+を指定すると、\fBgit-branch\fR(1)
+が呼び出されてチェックアウトされたかのように新しいブランチが作成されます。 この場合、
+\fBgit branch\fR
+に渡される
+\fB\-\-track\fR
+または
+\fB\-\-no\-track\fR
+オプションを使用できます。便利にするために
+\fB\-b\fR
+のない
+\fB\-\-track\fR
+はブランチの作成を意味します。後述の
+\fB\-\-track\fR
+の説明を参照してください。
+.sp
+\fB\-B\fR
+を指定すると、存在しない場合は
+\fB<new\-branch>\fR
+が作成されます。 それ以外の場合はリセットされます。これは、以下の取引(transaction)と同等です
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git branch \-f <branch> [<start\-point>]
+$ git checkout <branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+つまり、
+\fBgit checkout\fR
+が成功しない限り、ブランチは リセット/作成 されません。
+.RE
+.PP
+\fBgit checkout \-\-detach [<branch>]\fR, \fBgit checkout [\-\-detach] <commit>\fR
+.RS 4
+\fB<commit>\fR
+の上で作業する準備をします。その上で、
+\fBHEAD\fR
+を切り離し(「DETACHED HEAD」セクションを参照)、作業ツリーのインデックスとファイルを更新します。 作業ツリー内のファイルへのローカルの変更は保持されるため、結果の作業ツリーは、コミットに記録された状態と、ローカルの変更になります。
+.sp
+\fB<commit>\fR
+引数がブランチ名の場合、
+\fB\-\-detach\fR
+オプションを使用して、ブランチの先端にある
+\fBHEAD\fR
+をデタッチできます(\fBgit checkout <branch>\fR
+は、
+\fBHEAD\fR
+をデタッチせずにそのブランチをチェックアウトします)。
+.sp
+\fB<branch>\fR
+を省略すると、現在のブランチの先端にある
+\fBHEAD\fR
+が切り離されます。
+.RE
+.PP
+\fBgit checkout [\-f|\-\-ours|\-\-theirs|\-m|\-\-conflict=<style>] [<tree\-ish>] [\-\-] <pathspec>\&.\&.\&.\fR, \fBgit checkout [\-f|\-\-ours|\-\-theirs|\-m|\-\-conflict=<style>] [<tree\-ish>] \-\-pathspec\-from\-file=<file> [\-\-pathspec\-file\-nul]\fR
+.RS 4
+pathspecにマッチするファイルの内容を上書きします。
+\fB<tree\-ish>\fR
+(ほとんどの場合コミット)が指定されていない場合は、作業ツリーをインデックスの内容で上書きします。
+\fB<tree\-ish>\fR
+が指定された場合、インデックスと作業ツリーの両方を
+\fB<tree\-ish>\fR
+の内容で上書きします。
+.sp
+以前にマージに失敗したため、インデックスがマージされていないエントリを含んでいる可能性があります。デフォルトでは、インデックスからそのようなエントリをチェックアウトしようとすると、チェックアウト操作は失敗し、何もチェックアウトされません。
+\fB\-f\fR
+を使用すると、これらのマージされていないエントリは無視されます。マージの特定の側からのコンテンツは、
+\fB\-\-ours\fR
+または
+\fB\-\-theirs\fR
+を使用してインデックスからチェックアウトできます。
+\fB\-m\fR
+を使用すると、作業ツリーファイルに加えられた変更を破棄して、元の競合するマージ結果を再作成できます。
+.RE
+.PP
+\fBgit checkout (\-p|\-\-patch) [<tree\-ish>] [\-\-] [<pathspec>\&.\&.\&.]\fR
+.RS 4
+これは以前のモードと似ていますが、対話的インターフェイスを使用して「diff」出力を表示し、その結果において使用するハンクを選択できます。
+\fB\-\-patch\fR
+オプションの説明については、以下を参照してください。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+静かにします。フィードバックメッセージを抑制します。
+.RE
+.PP
+\fB\-\-progress\fR, \fB\-\-no\-progress\fR
+.RS 4
+\fB\-\-quiet\fR
+が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、
+\fB\-\-quiet\fR
+に関係なく、端末に接続されていない場合でも進行状況のレポートを有効にします。
+.RE
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+ブランチを切り替えるとき、インデックスや作業ツリーが
+\fBHEAD\fR
+と異なっていても、また、邪魔な未追跡のファイルがあっても進行します。 これは、ローカルの変更や、邪魔な未追跡のファイルやディレクトリを捨てるために使用します。
+.sp
+インデックスからパスをチェックアウトするときは、マージされていないエントリでエラーにしないでください。代わりに、マージされていないエントリは無視されます。
+.RE
+.PP
+\fB\-\-ours\fR, \fB\-\-theirs\fR
+.RS 4
+インデックスからパスをチェックアウトするときは、ステージ#2(\fBours\fR)または#3(\fBtheirs\fR)でマージされていないパスをチェックアウトしてください。
+.sp
+注意:
+\fBgit rebase\fR
+と
+\fBgit pull \-\-rebase\fR
+での作業中、「ours」と「theirs」が入れ替わっているように見える場合があることに注意してください。
+\fB\-\-ours\fR
+は、変更がリベースされるブランチからのバージョンを提供し、
+\fB\-\-theirs\fR
+は、リベースされる作業を保持するブランチからのバージョンを提供します。
+.sp
+これは、リモートでの履歴を共有の正規の履歴として扱うワークフローで
+\fBrebase\fR
+が使用されているためです。リベースするブランチで行われた作業を、統合されるサードパーティの作業として扱います。そして、あなたは一時的にリベース中に正規の歴史の管理者の役割を引き受けています。正規の履歴の管理者として、リモートからの履歴を「私たち」(ours; つまり、「私達の共有された正規の履歴」)として表示する必要があり、サイドブランチで行ったことは「彼ら」(theirs;つまり「その上での貢献者の作品」)として表示する必要があります。
+.RE
+.PP
+\fB\-b <new\-branch>\fR
+.RS 4
+\fB<new\-branch>\fR
+という名前の新しいブランチを作成し、
+\fB<start\-point>\fR
+から開始します。詳細については、
+\fBgit-branch\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-B <new\-branch>\fR
+.RS 4
+ブランチ
+\fB<new\-branch>\fR
+を作成し、
+\fB<start\-point>\fR
+から開始します。すでに存在する場合は、
+\fB<start\-point>\fR
+にリセットします。 これは、
+\fB\-f\fR
+を伴って
+\fBgit branch\fR
+を実行するのと同じです。 詳細については、
+\fBgit-branch\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-t\fR, \fB\-\-track[=(direct|inherit)]\fR
+.RS 4
+新しいブランチを作成するときは、「アップストリーム構成」(upstream configuration)をセットアップします。 詳細については、
+\fBgit-branch\fR(1)の
+\fB\-\-track\fR
+を参照してください。
+.sp
+\fB\-b`オプションが指定されていない場合、新しいブランチの名前は、対応するリモート用に構成されたrefspecのローカル部分を調べ、最初の部分を `*\fR
+まで削除することにより、リモート追跡ブランチから派生させます。これにより、
+\fBorigin/hack\fR
+(または
+\fBremotes/origin/hack\fR、 あるいは
+\fBrefs/remotes/origin/hack\fR) から分岐するときに、ローカルブランチとして
+\fBhack\fR
+を使用するように指示されます。指定された名前にスラッシュ(\fB/\fR)がない場合、または上記の推測の結果が空の名前になる場合、推測は中止されます。このような場合は、
+\fB\-b\fR
+を使用して明示的に名前を付けることができます。
+.RE
+.PP
+\fB\-\-no\-track\fR
+.RS 4
+\fBbranch\&.autoSetupMerge\fR
+構成変数がtrueであっても、「アップストリーム構成」を設定しないでください。
+.RE
+.PP
+\fB\-\-guess\fR, \fB\-\-no\-guess\fR
+.RS 4
+`<branch>`が見つからないが、名前が一致する1つのリモート( `<remote>`と呼びます)に追跡ブランチが存在する場合は、以下と同等としてあつかいます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-b <branch> \-\-track <remote>/<branch>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ブランチが複数のリモートに存在し、そのうちの1つが
+\fBcheckout\&.defaultRemote\fR
+構成変数で名付けられている場合、
+\fB<branch>\fR
+がすべてのリモートで一意でなくても、曖昧さ回避の目的でそのブランチを使用します。例えば
+\fBcheckout\&.defaultRemote=origin\fR
+と設定すると、
+\fB<branch>\fR
+があいまいだが
+\fBorigin\fR
+リモート上に存在する場合、常にそこからリモートブランチをチェックアウトします。
+\fBgit-config\fR(1)
+の
+\fBcheckout\&.defaultRemote\fR
+も参照してください。
+.sp
+\fB\-\-guess\fR
+がデフォルトの振る舞いです。無効にするには、
+\fB\-\-no\-guess\fR
+を使用します。
+.sp
+デフォルトの振る舞いは、\fBcheckout\&.guess\fR
+構成変数を介して設定できます。
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+新しいブランチのreflogを作成します。詳細については、
+\fBgit-branch\fR(1)
+を参照してください。
+.RE
+.PP
+\fB\-d\fR, \fB\-\-detach\fR
+.RS 4
+ブランチをチェックアウトして作業するのではなく、検査と破棄可能な実験のためのコミットをチェックアウトします。 これは、
+\fB<commit>\fR
+がブランチ名でない場合の、
+\fBgit checkout <commit>\fR
+のデフォルトの動作です。 詳細については、以下の「DETACHED HEAD」セクションを参照してください。
+.RE
+.PP
+\fB\-\-orphan <new\-branch>\fR
+.RS 4
+\fB<start\-point>\fR
+から開始された
+\fB<new\-branch>\fR
+という名前の新しい「孤立した」(orphan) ブランチを作成し、それに切り替えます。 この新しいブランチで行われた最初のコミットには親がなく、他のすべてのブランチとコミットから完全に切断された新しい履歴のルートになります。
+.sp
+インデックスと作業ツリーは、以前に
+\fBgit checkout <start\-point>\fR
+を実行した場合と同じように調整されます。これにより、 ルート(root)をコミットするために容易に
+\fBgit commit \-a\fR
+実行をでき、
+\fB<start\-point>\fR
+と同様のパスのセットを記録する新しい履歴を開始できます。
+.sp
+これは、ツリーの完全な履歴を公開せずにコミットからツリーを公開する場合に便利です。これは、現在のツリーが「クリーン」であるが、完全な履歴にはプロプライエタリなコードやその他の邪魔なコードが含まれているプロジェクトの、オープンソースブランチを公開するためにこれを行うことができます。
+.sp
+\fB<start\-point>\fR
+のパスとはまったく異なるパスのセットを記録する切断された履歴を開始する場合は、 作業ツリーの最上位から
+\fBgit rm \-rf \&.\fR
+を実行して、 孤立したブランチ(orphan branch)を作成した直後にインデックスと作業ツリーをクリアする必要があります。 その後に、 新しいファイルを準備したり、 作業ツリーを再作成したり、 他の場所からファイルをコピーしたり、 tarballを抽出したりする準備が整います。
+.RE
+.PP
+\fB\-\-ignore\-skip\-worktree\-bits\fR
+.RS 4
+スパースチェックアウトモード(sparse checkout mode)では、
+\fBgit checkout \-\- <paths>\fR
+は、
+\fB<paths>\fR
+と一致するエントリと、
+\fB$GIT_DIR/info/sparse\-checkout\fR
+のスパースパターン(sparse patterns)のみを更新します。このオプションは、スパースパターンを無視し、
+\fB<paths>\fR
+内のファイルを追加し直します。
+.RE
+.PP
+\fB\-m\fR, \fB\-\-merge\fR
+.RS 4
+ブランチを切り替えるときに、現在のブランチと切り替え先のブランチの間で異なる1つ以上のファイルにローカルの変更がある場合、コマンドは、コンテキストでの変更を保持するためにブランチの切り替えを拒否します。ただし、このオプションを使用すると、現在のブランチ、作業ツリーの内容、および新しいブランチの間の3方向のマージを実行してから新しいブランチに移動します。
+.sp
+マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになります。競合を解決し、解決されたパスを
+\fBgit add\fR（またはマージによってパスが削除される場合は
+\fBgit rm\fR)でマークする必要があります。
+.sp
+インデックスからパスをチェックアウトする場合、このオプションを使用すると、指定したパスで競合するマージを再作成できます。
+.sp
+\fB\-\-merge\fR
+でブランチを切り替えると、ステージされた変更が失われる可能性があります。
+.RE
+.PP
+\fB\-\-conflict=<style>\fR
+.RS 4
+上記の
+\fB\-\-merge\fR
+オプションと同一ですが、競合するハンクの表示方法を変更し、
+\fBmerge\&.conflictStyle\fR
+構成変数をオーバーライドします。 可能な値は
+\fBmerge\fR(デフォルト)と
+\fBdiff3\fR
+と
+\fBzdiff3\fR
+です。
+.RE
+.PP
+\fB\-p\fR, \fB\-\-patch\fR
+.RS 4
+\fB<tree\-ish>\fR
+(または指定されていない場合はインデックス)と作業ツリーの間の差分でハンクを対話的に選択します。選択されたハンクは、作業ツリー(\fB<tree\-ish>\fR
+が指定されている場合はインデックス)に逆に適用されます。
+.sp
+これは、
+\fBgit checkout \-p\fR
+を使用して、現在の作業ツリーから編集を選択的に破棄できることを意味します。
+\fB\-\-patch\fR
+モードの操作方法については、
+\fBgit-add\fR(1)
+の「Interactive Mode」セクションを参照してください。
+.sp
+注意: このオプションはデフォルトでオーバーレイなしモードを使用します(\fB\-\-overlay\fR
+も参照)。現在はオーバーレイモードをサポートしていないことに注意してください。
+.RE
+.PP
+\fB\-\-ignore\-other\-worktrees\fR
+.RS 4
+\fBgit checkout\fR
+は、必要なrefが別のワークツリーによってすでにチェックアウトされている場合に拒否します。このオプションを使用すると、とにかくrefをチェックアウトできます。つまり、refを複数のワークツリーで保持できます。
+.RE
+.PP
+\fB\-\-overwrite\-ignore\fR, \fB\-\-no\-overwrite\-ignore\fR
+.RS 4
+ブランチを切り替えるときに、無視したファイルを黙って上書きします。これがデフォルトの動作です。新しいブランチに無視したファイルが含まれている場合に操作を中止するには、
+\fB\-\-no\-overwrite\-ignore\fR
+を使用します。
+.RE
+.PP
+\fB\-\-recurse\-submodules\fR, \fB\-\-no\-recurse\-submodules\fR
+.RS 4
+\fB\-\-recurse\-submodules\fR
+を使用すると、スーパープロジェクトに記録されたコミットに従って、すべてのアクティブなサブモジュールのコンテンツが更新されます。サブモジュールのローカル変更が上書きされる場合、
+\fB\-f\fR
+が使用されない限り、チェックアウトは失敗します。何も使用されていない場合(または
+\fB\-\-no\-recurse\-submodules\fR)、サブモジュールの作業ツリーは更新されません。
+\fBgit-submodule\fR(1)
+と同様に、これはサブモジュールの
+\fBHEAD\fR
+を切り離します(detach)。
+.RE
+.PP
+\fB\-\-overlay\fR, \fB\-\-no\-overlay\fR
+.RS 4
+デフォルトのオーバーレイモードでは、
+\fBgit checkout\fR
+がインデックスまたは作業ツリーからファイルを削除することはありません。
+\fB\-\-no\-overlay\fR
+を指定すると、インデックスと作業ツリーには表示されるが、
+\fB<tree\-ish>\fR
+には表示されないファイルが削除され、
+\fB<tree\-ish>\fR
+と完全に一致するようになります。
+.RE
+.PP
+\fB\-\-pathspec\-from\-file=<file>\fR
+.RS 4
+pathspecは、コマンドライン引数の代わりに
+\fB<file>\fR
+で渡されます。
+\fB<file>\fR
+が正確に
+\fB\-\fR
+の場合、標準入力が使用されます。pathspec要素は、LFまたはCR/LFで区切られます。pathspec要素は、構成変数
+\fBcore\&.quotePath\fR
+で説明されているように、クォートできます(\fBgit-config\fR(1)
+参照)。
+\fB\-\-pathspec\-file\-nul\fR
+および グローバル
+\fB\-\-literal\-pathspecs\fR
+も参照してください。
+.RE
+.PP
+\fB\-\-pathspec\-file\-nul\fR
+.RS 4
+`\-\-pathspec\-from\-file`でのみ意味があります。Pathspec要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
+.RE
+.PP
+<branch>
+.RS 4
+チェックアウトするブランチ。もしそれがブランチ(つまり、
+\fBrefs/heads/\fR
+を前につけたとき、有効なrefである名前)を参照しているなら、そのブランチはチェックアウトされます。そうでない場合、もしそれが有効なコミットを参照していれば、あなたの
+\fBHEAD\fR
+は "detached" となり、あなたはもはやどのブランチにもいません(詳しくは以下を参照してください)。
+.sp
+\fB@{\-N}\fR
+構文を使用して、
+\fBgit checkout `操作を使用してチェックアウトされた最後からN番目ブランチ/コミットを参照できます。 `@{\-1}\fR
+と同義の
+\fB\-\fR
+を指定することもできます。
+.sp
+特殊なケースとして、マージベースが1つしかない場合は、
+\fBA\fR
+と
+\fBB\fR
+のマージベースのショートカットとして
+\fBA\&.\&.\&.B\fR
+を使用できます。 最大で
+\fBA\fR
+と
+\fBB\fR
+のどちらかを省略できます。その場合、デフォルトで
+\fBHEAD\fR
+になります。
+.RE
+.PP
+<new\-branch>
+.RS 4
+新しいブランチの名前。
+.RE
+.PP
+<start\-point>
+.RS 4
+新しいブランチを開始するコミットの名前。詳細については、
+\fBgit-branch\fR(1)
+を参照してください。デフォルトは
+\fBHEAD\fR
+です。
+.sp
+特殊なケースとして、マージベースが1つしかない場合は、
+\fBA\fR
+と
+\fBB\fR
+のマージベースのショートカットとして
+\fBA\&.\&.\&.B\fR
+を使用できます。 最大で
+\fBA\fR
+と
+\fBB\fR
+のどちらかを省略できます。その場合、デフォルトで
+\fBHEAD\fR
+になります。
+.RE
+.PP
+<tree\-ish>
+.RS 4
+チェックアウト元のツリー(パスが指定されている場合)。指定しない場合はインデックスが使用されます。
+.sp
+特殊なケースとして、マージベースが1つしかない場合は、
+\fBA\fR
+と
+\fBB\fR
+のマージベースのショートカットとして
+\fBA\&.\&.\&.B\fR
+を使用できます。 最大で
+\fBA\fR
+と
+\fBB\fR
+のどちらかを省略できます。その場合、デフォルトで
+\fBHEAD\fR
+になります。
+.RE
+.PP
+\fB\-\-\fR
+.RS 4
+これ以降の引数をオプションとして解釈しないでください。
+.RE
+.PP
+<pathspec>\&...
+.RS 4
+操作の影響を受けるパスを制限します。
+.sp
+詳細については、
+\fBgitglossary\fR(7)
+の「pathspec」エントリを参照してください。
+.RE
+.SH "DETACHED HEAD"
+.sp
+\fBHEAD\fR は通常、名前付きブランチ(\fBmaster\fR など)を指します。一方、各ブランチは特定のコミットを参照します。3つのコミットがあり、そのうちの1つがタグ付けされており、ブランチ`master` がチェックアウトされているリポジトリを見てみましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+           HEAD (refers to branch \*(Aqmaster\*(Aq)
+            |
+            v
+a\-\-\-b\-\-\-c  branch \*(Aqmaster\*(Aq (refers to commit \*(Aqc\*(Aq)
+    ^
+    |
+  tag \*(Aqv2\&.0\*(Aq (refers to commit \*(Aqb\*(Aq)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この状態でコミットが作成されると、新しいコミットを参照するようにブランチが更新されます。 具体的には、 \fBgit commit\fR は、親がコミット \fBc\fR である新しいコミット \fBd\fR を作成し、ブランチ \fBmaster\fR を更新して新しい コミット \fBd\fR を参照します。 \fBHEAD\fR はまだブランチ \fBmaster\fR を参照しているので、間接的に コミット \fBd\fR を参照するようになりました:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit; git add; git commit
+
+               HEAD (refers to branch \*(Aqmaster\*(Aq)
+                |
+                v
+a\-\-\-b\-\-\-c\-\-\-d  branch \*(Aqmaster\*(Aq (refers to commit \*(Aqd\*(Aq)
+    ^
+    |
+  tag \*(Aqv2\&.0\*(Aq (refers to commit \*(Aqb\*(Aq)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+名前付きブランチの先端にないコミットをチェックアウトしたり、名前付きブランチによって参照されていない新しいコミットを作成したりできると便利な場合があります。 コミット \fBb\fR をチェックアウトするとどうなるか見てみましょう(ここでは、これを行う2つの方法を示します):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout v2\&.0  # or
+$ git checkout master^^
+
+   HEAD (refers to commit \*(Aqb\*(Aq)
+    |
+    v
+a\-\-\-b\-\-\-c\-\-\-d  branch \*(Aqmaster\*(Aq (refers to commit \*(Aqd\*(Aq)
+    ^
+    |
+  tag \*(Aqv2\&.0\*(Aq (refers to commit \*(Aqb\*(Aq)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+使用するcheckoutコマンドに関係なく、 \fBHEAD\fR はコミット \fBb\fR を直接参照するようになりました。 これは、切り離された \fBHEAD\fR (detached HEAD)状態にあることとして知られています。これは、名前付きブランチを参照するのではなく、単に \fBHEAD\fR が特定のコミットを参照することを意味します。この状態でコミットを作成するとどうなるか見てみましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit; git add; git commit
+
+     HEAD (refers to commit \*(Aqe\*(Aq)
+      |
+      v
+      e
+     /
+a\-\-\-b\-\-\-c\-\-\-d  branch \*(Aqmaster\*(Aq (refers to commit \*(Aqd\*(Aq)
+    ^
+    |
+  tag \*(Aqv2\&.0\*(Aq (refers to commit \*(Aqb\*(Aq)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+新しいコミット \fBe\fR がありますが、これは \fBHEAD\fR によってのみ参照されます。 もちろん、この状態でさらに別のコミットを追加できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit; git add; git commit
+
+         HEAD (refers to commit \*(Aqf\*(Aq)
+          |
+          v
+      e\-\-\-f
+     /
+a\-\-\-b\-\-\-c\-\-\-d  branch \*(Aqmaster\*(Aq (refers to commit \*(Aqd\*(Aq)
+    ^
+    |
+  tag \*(Aqv2\&.0\*(Aq (refers to commit \*(Aqb\*(Aq)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+実際、私達は通常のGit操作はすべて実行できます。 しかし、ここで私達が \fBmaster\fR をチェックアウトするとどうなるか見てみましょう:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout master
+
+               HEAD (refers to branch \*(Aqmaster\*(Aq)
+      e\-\-\-f     |
+     /          v
+a\-\-\-b\-\-\-c\-\-\-d  branch \*(Aqmaster\*(Aq (refers to commit \*(Aqd\*(Aq)
+    ^
+    |
+  tag \*(Aqv2\&.0\*(Aq (refers to commit \*(Aqb\*(Aq)
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+この時点で、コミット \fBf\fR を指しているものは何もないことを理解することが重要です。最終的に、コミット \fBf\fR (および拡張によりコミット \fBe\fR )は、あなたがルーチンのGitガベージコレクションプロセス前に参照を作成しない限り、ルーチンのGitガベージコレクションプロセスによって削除されます。あなたが、まだコミット`f`から離れていない場合、以下のいずれかがそれへの参照を作成します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-b foo   \fB(1)\fR
+$ git branch foo        \fB(2)\fR
+$ git tag foo           \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.sp
+\fB1. \fRコミット
+\fBf\fR
+を参照する新しいブランチ
+\fBfoo\fR
+を作成し、次にブランチ
+\fBfoo\fR
+を参照するように`HEAD`を更新します。つまり、このコマンドを実行すると、もはや切り離された`HEAD` (detached HEAD)状態では無くなります。
+.br
+\fB2. \fR同様に、コミット
+\fBf\fR
+を参照する新しいブランチ
+\fBfoo\fR
+を作成しますが、
+\fBHEAD\fR
+は切り離されたままにします。
+.br
+\fB3. \fR新しいタグ
+\fBfoo\fR
+を作成します。これは、\fBHEAD\fR
+を切り離したままコミット
+\fBf\fR
+を参照します。
+.br
+.sp
+私達がうっかり \fBf\fR から離れてしまった場合は、最初にそのオブジェクト名を回復する必要があり(通常は \fBgit reflog\fR を使用)、次にそれへの参照を作成できます。 たとえば、 \fBHEAD\fR が参照した最後の2つのコミットを確認するには、以下のいずれかのコマンドを使用できます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git reflog \-2 HEAD # or
+$ git log \-g \-2 HEAD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "ARGUMENT DISAMBIGUATION(引数の曖昧性解消)"
+.sp
+与えられた引数が1つだけで、それが \fB\-\-\fR ではない場合(例: \fBgit checkout abc\fR)や、引数が有効な \fB<tree\-ish>\fR (例:ブランチ \fBabc\fR が存在する)や、有効な \fB<pathspec>\fR (たとえば、 "abc" という名前のファイルまたはディレクトリが存在する)な場合、Gitは通常、明確にするように求めます。ただし、ブランチのチェックアウトは非常に一般的な操作であるため、このような状況では、 \fBgit checkout abc\fR は "abc" を \fB<tree\-ish>\fR と見なします。これらのパスをインデックスからチェックアウトする場合は、 \fBgit checkout \-\- <pathspec>\fR を使用します。
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+以下のシーケンスは、
+\fBmaster\fR
+ブランチをチェックアウトし、
+\fBMakefile\fR
+のリビジョンを2つ戻し、誤って
+\fBhello\&.c\fR
+を削除したので、
+\fBhello\&.c\fR
+をインデックスから取得します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout master             \fB(1)\fR
+$ git checkout master~2 Makefile  \fB(2)\fR
+$ rm \-f hello\&.c
+$ git checkout hello\&.c            \fB(3)\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB1. \fRブランチを切り替えます
+.br
+\fB2. \fR別のコミットからファイルを取り出します
+.br
+\fB3. \fRインデックスから
+\fBhello\&.c\fR
+を復元します
+.sp
+あなたがインデックスから「すべての」Cソースファイルをチェックアウトしたい場合は、以下のように言うことができます
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-\- \*(Aq*\&.c\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fB*\&.c\fR
+を囲む引用符に注意してください。 ファイル
+\fBhello\&.c\fR
+も、作業ツリーに存在していなくてもチェックアウトされます。これは、(引用符で囲む事で作業ツリーに対してシェル展開するのではなくて)ファイルグロブがインデックスのエントリを照合するために使用されるためです。
+.sp
+\fBhello\&.c\fR
+という名前の不幸なブランチがある場合、このステップはそのブランチに切り替えるための指示として混乱を産みます。あなたは代わりに以下のように書く必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-\- hello\&.c
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.br
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+間違ったブランチで作業した後、正しいブランチへの切り替えは以下を使用して行います:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout mytopic
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+ただし、あなたの「間違った」ブランチと正しい
+\fBmytopic\fR
+ブランチは、ローカルで変更したファイルで異なる場合があります。その場合、上記のチェックアウトは以下のように失敗します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout mytopic
+error: You have local changes to \*(Aqfrotz\*(Aq; not switching branches\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+コマンドに
+\fB\-m\fR
+フラグを指定すると、3方向のマージを試みます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-m mytopic
+Auto\-merging frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この3方向マージの後、ローカルの変更はインデックスファイルに登録されないため、
+\fBgit diff\fR
+は、新しいブランチの先端以降に行った変更を表示します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+\fB\-m\fR
+オプションを使用してブランチを切り替えるときにマージの競合が発生すると、以下のように表示されます:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ git checkout \-m mytopic
+Auto\-merging frotz
+ERROR: Merge conflict in frotz
+fatal: merge program failed
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+この時点で、
+\fBgit diff\fR
+は、前の例のようにきれいにマージされた変更と、競合するファイルの変更を示しています。 競合を編集して解決し、通常どおり
+\fBgit add\fR
+で解決済みのマークを付けます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ edit frotz
+$ git add frotz
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "CONFIGURATION"
+.sp
+このセクションの以下のすべては、 \fBgit-config\fR(1) ドキュメントの抜粋です。 内容は \fBgit-config\fR(1) ドキュメント にあるものと同一です:
+.PP
+checkout\&.defaultRemote
+.RS 4
+\fBgit checkout <something>\fR
+または
+\fBgit switch <something>\fR
+を実行し、リモートが1つしかない場合、
+\fBorigin/<something>\fR
+のチェックアウトと追跡に暗黙的にフォールバックする可能性があります。
+\fB<something>\fR
+参照を持つリモートが複数あるとすぐに動作しなくなります。 この設定により、曖昧性解消に関して常に勝利させる優先リモートの名前を設定できます。 典型的なユースケースは、これを
+\fBorigin\fR
+に設定することです。
+.sp
+現在、これは
+\fBgit-switch\fR(1)
+と
+\fBgit-checkout\fR(1)
+によって、\fBgit checkout <something>\fR
+や
+\fBgit switch <something>\fR
+が別のリモート上の
+\fB<something>\fR
+ブランチをチェックアウトするときに使われています。また
+\fBgit-worktree\fR(1)
+は
+\fBgit worktree add\fR
+がリモートブランチを参照しているときに使われています。 この設定は、将来、他のチェックアウトのようなコマンドまたは機能に使用される可能性があります。
+.RE
+.PP
+checkout\&.guess
+.RS 4
+\fBgit checkout\fR
+と
+\fBgit switch\fR
+の、
+\fB\-\-guess\fR
+または
+\fB\-\-no\-guess\fR
+オプションのデフォルト値を提供します。
+\fBgit-switch\fR(1)
+および
+\fBgit-checkout\fR(1)
+を参照してください。
+.RE
+.PP
+checkout\&.workers
+.RS 4
+作業ツリーを更新するときに使用する並列ワーカーの数。デフォルトは1、つまり順次実行です。 1未満の値に設定すると、Gitは使用可能な論理コアの数と同じ数のワーカーを使用します。 この設定と
+\fBcheckout\&.thresholdForParallelism\fR
+は、チェックアウトを実行するすべてのコマンドに影響します。 例えば、 checkout, clone, reset, sparse\-checkout, などです。
+.sp
+注意: 並列チェックアウトは通常、SSDまたはNFS上にあるリポジトリのパフォーマンスを向上させます。 回転するディスクやコアの数が少ないマシン上のリポジトリの場合、デフォルトのシーケンシャルチェックアウトの方がパフォーマンスが向上することがよくあります。 リポジトリのサイズと圧縮レベルも、並列バージョンのパフォーマンスに影響を与える可能性があります。
+.RE
+.PP
+checkout\&.thresholdForParallelism
+.RS 4
+少数のファイルで並列チェックアウトを実行する場合、サブプロセスの生成とプロセス間通信のコストが並列化のメリットを上回る可能性があります。 この設定により、並列チェックアウトを試行する必要のあるファイルの最小数を定義できます。 デフォルトは100です。
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-switch\fR(1), \fBgit-restore\fR(1)
+.SH "GIT"
+.sp
+Part of the \fBgit\fR(1) suite
