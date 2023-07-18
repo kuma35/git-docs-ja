@@ -1,9 +1,13 @@
 #include "builtin.h"
 #include "config.h"
+#include "gettext.h"
+#include "repository.h"
 #include "revision.h"
 #include "reachable.h"
+#include "wildmatch.h"
 #include "worktree.h"
 #include "reflog.h"
+#include "parse-options.h"
 
 #define BUILTIN_REFLOG_SHOW_USAGE \
 	N_("git reflog [show] [<log-options>] [<ref>]")
@@ -67,7 +71,8 @@ static int collect_reflog(const char *ref, const struct object_id *oid UNUSED,
 	 * Avoid collecting the same shared ref multiple times because
 	 * they are available via all worktrees.
 	 */
-	if (!worktree->is_current && ref_type(ref) == REF_TYPE_NORMAL)
+	if (!worktree->is_current &&
+	    parse_worktree_ref(ref, NULL, NULL, NULL) == REF_WORKTREE_SHARED)
 		return 0;
 
 	strbuf_worktree_ref(worktree, &newref, ref);
@@ -105,7 +110,8 @@ static struct reflog_expire_cfg *find_cfg_ent(const char *pattern, size_t len)
 #define EXPIRE_TOTAL   01
 #define EXPIRE_UNREACH 02
 
-static int reflog_expire_config(const char *var, const char *value, void *cb)
+static int reflog_expire_config(const char *var, const char *value,
+				const struct config_context *ctx, void *cb)
 {
 	const char *pattern, *key;
 	size_t pattern_len;
@@ -114,7 +120,7 @@ static int reflog_expire_config(const char *var, const char *value, void *cb)
 	struct reflog_expire_cfg *ent;
 
 	if (parse_config_key(var, "gc", &pattern, &pattern_len, &key) < 0)
-		return git_default_config(var, value, cb);
+		return git_default_config(var, value, ctx, cb);
 
 	if (!strcmp(key, "reflogexpire")) {
 		slot = EXPIRE_TOTAL;
@@ -125,7 +131,7 @@ static int reflog_expire_config(const char *var, const char *value, void *cb)
 		if (git_config_expiry_date(&expire, var, value))
 			return -1;
 	} else
-		return git_default_config(var, value, cb);
+		return git_default_config(var, value, ctx, cb);
 
 	if (!pattern) {
 		switch (slot) {

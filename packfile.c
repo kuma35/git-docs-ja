@@ -1,4 +1,8 @@
-#include "cache.h"
+#include "git-compat-util.h"
+#include "alloc.h"
+#include "environment.h"
+#include "gettext.h"
+#include "hex.h"
 #include "list.h"
 #include "pack.h"
 #include "repository.h"
@@ -11,12 +15,16 @@
 #include "commit.h"
 #include "object.h"
 #include "tag.h"
+#include "trace.h"
 #include "tree-walk.h"
 #include "tree.h"
-#include "object-store.h"
+#include "object-file.h"
+#include "object-store-ll.h"
 #include "midx.h"
 #include "commit-graph.h"
+#include "pack-revindex.h"
 #include "promisor-remote.h"
+#include "wrapper.h"
 
 char *odb_pack_name(struct strbuf *buf,
 		    const unsigned char *hash,
@@ -373,7 +381,7 @@ void close_object_store(struct raw_object_store *o)
 
 void unlink_pack_path(const char *pack_name, int force_delete)
 {
-	static const char *exts[] = {".pack", ".idx", ".rev", ".keep", ".bitmap", ".promisor", ".mtimes"};
+	static const char *exts[] = {".idx", ".pack", ".rev", ".keep", ".bitmap", ".promisor", ".mtimes"};
 	int i;
 	struct strbuf buf = STRBUF_INIT;
 	size_t plen;
@@ -1008,6 +1016,16 @@ void reprepare_packed_git(struct repository *r)
 	struct object_directory *odb;
 
 	obj_read_lock();
+
+	/*
+	 * Reprepare alt odbs, in case the alternates file was modified
+	 * during the course of this process. This only _adds_ odbs to
+	 * the linked list, so existing odbs will continue to exist for
+	 * the lifetime of the process.
+	 */
+	r->objects->loaded_alternates = 0;
+	prepare_alt_odb(r);
+
 	for (odb = r->objects->odb; odb; odb = odb->next)
 		odb_clear_loose_cache(odb);
 
@@ -1650,22 +1668,6 @@ struct unpack_entry_stack_ent {
 	unsigned long size;
 };
 
-static void *read_object(struct repository *r,
-			 const struct object_id *oid,
-			 enum object_type *type,
-			 unsigned long *size)
-{
-	struct object_info oi = OBJECT_INFO_INIT;
-	void *content;
-	oi.typep = type;
-	oi.sizep = size;
-	oi.contentp = &content;
-
-	if (oid_object_info_extended(r, oid, &oi, 0) < 0)
-		return NULL;
-	return content;
-}
-
 void *unpack_entry(struct repository *r, struct packed_git *p, off_t obj_offset,
 		   enum object_type *final_type, unsigned long *final_size)
 {
@@ -1798,6 +1800,8 @@ void *unpack_entry(struct repository *r, struct packed_git *p, off_t obj_offset,
 			uint32_t pos;
 			struct object_id base_oid;
 			if (!(offset_to_pack_pos(p, obj_offset, &pos))) {
+				struct object_info oi = OBJECT_INFO_INIT;
+
 				nth_packed_object_id(&base_oid, p,
 						     pack_pos_to_index(p, pos));
 				error("failed to read delta base object %s"
@@ -1805,7 +1809,13 @@ void *unpack_entry(struct repository *r, struct packed_git *p, off_t obj_offset,
 				      oid_to_hex(&base_oid), (uintmax_t)obj_offset,
 				      p->pack_name);
 				mark_bad_packed_object(p, &base_oid);
-				base = read_object(r, &base_oid, &type, &base_size);
+
+				oi.typep = &type;
+				oi.sizep = &base_size;
+				oi.contentp = &base;
+				if (oid_object_info_extended(r, &base_oid, &oi, 0) < 0)
+					base = NULL;
+
 				external_base = base;
 			}
 		}
@@ -2144,7 +2154,7 @@ int for_each_object_in_pack(struct packed_git *p,
 	int r = 0;
 
 	if (flags & FOR_EACH_OBJECT_PACK_ORDER) {
-		if (load_pack_revindex(p))
+		if (load_pack_revindex(the_repository, p))
 			return -1;
 	}
 
@@ -2212,8 +2222,8 @@ int for_each_packed_object(each_packed_object_fn cb, void *data,
 }
 
 static int add_promisor_object(const struct object_id *oid,
-			       struct packed_git *pack,
-			       uint32_t pos,
+			       struct packed_git *pack UNUSED,
+			       uint32_t pos UNUSED,
 			       void *set_)
 {
 	struct oidset *set = set_;
@@ -2271,7 +2281,7 @@ int is_promisor_object(const struct object_id *oid)
 	static int promisor_objects_prepared;
 
 	if (!promisor_objects_prepared) {
-		if (has_promisor_remote()) {
+		if (repo_has_promisor_remote(the_repository)) {
 			for_each_packed_object(add_promisor_object,
 					       &promisor_objects,
 					       FOR_EACH_OBJECT_PROMISOR_ONLY |

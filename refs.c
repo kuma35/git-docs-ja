@@ -2,25 +2,35 @@
  * The backend-independent part of the reference module.
  */
 
-#include "cache.h"
+#include "git-compat-util.h"
+#include "advice.h"
+#include "alloc.h"
 #include "config.h"
+#include "environment.h"
 #include "hashmap.h"
+#include "gettext.h"
+#include "hex.h"
 #include "lockfile.h"
 #include "iterator.h"
 #include "refs.h"
 #include "refs/refs-internal.h"
 #include "run-command.h"
 #include "hook.h"
-#include "object-store.h"
+#include "object-name.h"
+#include "object-store-ll.h"
 #include "object.h"
+#include "path.h"
 #include "tag.h"
 #include "submodule.h"
 #include "worktree.h"
 #include "strvec.h"
 #include "repository.h"
+#include "setup.h"
 #include "sigchain.h"
 #include "date.h"
 #include "commit.h"
+#include "wildmatch.h"
+#include "wrapper.h"
 
 /*
  * List of all available backends
@@ -811,7 +821,7 @@ int dwim_log(const char *str, int len, struct object_id *oid, char **log)
 	return repo_dwim_log(the_repository, str, len, oid, log);
 }
 
-static int is_per_worktree_ref(const char *refname)
+int is_per_worktree_ref(const char *refname)
 {
 	return starts_with(refname, "refs/worktree/") ||
 	       starts_with(refname, "refs/bisect/") ||
@@ -827,37 +837,63 @@ static int is_pseudoref_syntax(const char *refname)
 			return 0;
 	}
 
+	/*
+	 * HEAD is not a pseudoref, but it certainly uses the
+	 * pseudoref syntax.
+	 */
 	return 1;
 }
 
-static int is_main_pseudoref_syntax(const char *refname)
-{
-	return skip_prefix(refname, "main-worktree/", &refname) &&
-		*refname &&
-		is_pseudoref_syntax(refname);
+static int is_current_worktree_ref(const char *ref) {
+	return is_pseudoref_syntax(ref) || is_per_worktree_ref(ref);
 }
 
-static int is_other_pseudoref_syntax(const char *refname)
+enum ref_worktree_type parse_worktree_ref(const char *maybe_worktree_ref,
+					  const char **worktree_name, int *worktree_name_length,
+					  const char **bare_refname)
 {
-	if (!skip_prefix(refname, "worktrees/", &refname))
-		return 0;
-	refname = strchr(refname, '/');
-	if (!refname || !refname[1])
-		return 0;
-	return is_pseudoref_syntax(refname + 1);
-}
+	const char *name_dummy;
+	int name_length_dummy;
+	const char *ref_dummy;
 
-enum ref_type ref_type(const char *refname)
-{
-	if (is_per_worktree_ref(refname))
-		return REF_TYPE_PER_WORKTREE;
-	if (is_pseudoref_syntax(refname))
-		return REF_TYPE_PSEUDOREF;
-	if (is_main_pseudoref_syntax(refname))
-		return REF_TYPE_MAIN_PSEUDOREF;
-	if (is_other_pseudoref_syntax(refname))
-		return REF_TYPE_OTHER_PSEUDOREF;
-	return REF_TYPE_NORMAL;
+	if (!worktree_name)
+		worktree_name = &name_dummy;
+	if (!worktree_name_length)
+		worktree_name_length = &name_length_dummy;
+	if (!bare_refname)
+		bare_refname = &ref_dummy;
+
+	if (skip_prefix(maybe_worktree_ref, "worktrees/", bare_refname)) {
+		const char *slash = strchr(*bare_refname, '/');
+
+		*worktree_name = *bare_refname;
+		if (!slash) {
+			*worktree_name_length = strlen(*worktree_name);
+
+			/* This is an error condition, and the caller tell because the bare_refname is "" */
+			*bare_refname = *worktree_name + *worktree_name_length;
+			return REF_WORKTREE_OTHER;
+		}
+
+		*worktree_name_length = slash - *bare_refname;
+		*bare_refname = slash + 1;
+
+		if (is_current_worktree_ref(*bare_refname))
+			return REF_WORKTREE_OTHER;
+	}
+
+	*worktree_name = NULL;
+	*worktree_name_length = 0;
+
+	if (skip_prefix(maybe_worktree_ref, "main-worktree/", bare_refname)
+	    && is_current_worktree_ref(*bare_refname))
+		return REF_WORKTREE_MAIN;
+
+	*bare_refname = maybe_worktree_ref;
+	if (is_current_worktree_ref(maybe_worktree_ref))
+		return REF_WORKTREE_CURRENT;
+
+	return REF_WORKTREE_SHARED;
 }
 
 long get_files_ref_lock_timeout_ms(void)
@@ -1284,65 +1320,68 @@ int update_ref(const char *msg, const char *refname,
 			       old_oid, flags, onerr);
 }
 
+/*
+ * Check that the string refname matches a rule of the form
+ * "{prefix}%.*s{suffix}". So "foo/bar/baz" would match the rule
+ * "foo/%.*s/baz", and return the string "bar".
+ */
+static const char *match_parse_rule(const char *refname, const char *rule,
+				    size_t *len)
+{
+	/*
+	 * Check that rule matches refname up to the first percent in the rule.
+	 * We can bail immediately if not, but otherwise we leave "rule" at the
+	 * %-placeholder, and "refname" at the start of the potential matched
+	 * name.
+	 */
+	while (*rule != '%') {
+		if (!*rule)
+			BUG("rev-parse rule did not have percent");
+		if (*refname++ != *rule++)
+			return NULL;
+	}
+
+	/*
+	 * Check that our "%" is the expected placeholder. This assumes there
+	 * are no other percents (placeholder or quoted) in the string, but
+	 * that is sufficient for our rev-parse rules.
+	 */
+	if (!skip_prefix(rule, "%.*s", &rule))
+		return NULL;
+
+	/*
+	 * And now check that our suffix (if any) matches.
+	 */
+	if (!strip_suffix(refname, rule, len))
+		return NULL;
+
+	return refname; /* len set by strip_suffix() */
+}
+
 char *refs_shorten_unambiguous_ref(struct ref_store *refs,
 				   const char *refname, int strict)
 {
 	int i;
-	static char **scanf_fmts;
-	static int nr_rules;
-	char *short_name;
 	struct strbuf resolved_buf = STRBUF_INIT;
 
-	if (!nr_rules) {
-		/*
-		 * Pre-generate scanf formats from ref_rev_parse_rules[].
-		 * Generate a format suitable for scanf from a
-		 * ref_rev_parse_rules rule by interpolating "%s" at the
-		 * location of the "%.*s".
-		 */
-		size_t total_len = 0;
-		size_t offset = 0;
-
-		/* the rule list is NULL terminated, count them first */
-		for (nr_rules = 0; ref_rev_parse_rules[nr_rules]; nr_rules++)
-			/* -2 for strlen("%.*s") - strlen("%s"); +1 for NUL */
-			total_len += strlen(ref_rev_parse_rules[nr_rules]) - 2 + 1;
-
-		scanf_fmts = xmalloc(st_add(st_mult(sizeof(char *), nr_rules), total_len));
-
-		offset = 0;
-		for (i = 0; i < nr_rules; i++) {
-			assert(offset < total_len);
-			scanf_fmts[i] = (char *)&scanf_fmts[nr_rules] + offset;
-			offset += xsnprintf(scanf_fmts[i], total_len - offset,
-					    ref_rev_parse_rules[i], 2, "%s") + 1;
-		}
-	}
-
-	/* bail out if there are no rules */
-	if (!nr_rules)
-		return xstrdup(refname);
-
-	/* buffer for scanf result, at most refname must fit */
-	short_name = xstrdup(refname);
-
 	/* skip first rule, it will always match */
-	for (i = nr_rules - 1; i > 0 ; --i) {
+	for (i = NUM_REV_PARSE_RULES - 1; i > 0 ; --i) {
 		int j;
 		int rules_to_fail = i;
-		int short_name_len;
+		const char *short_name;
+		size_t short_name_len;
 
-		if (1 != sscanf(refname, scanf_fmts[i], short_name))
+		short_name = match_parse_rule(refname, ref_rev_parse_rules[i],
+					      &short_name_len);
+		if (!short_name)
 			continue;
-
-		short_name_len = strlen(short_name);
 
 		/*
 		 * in strict mode, all (except the matched one) rules
 		 * must fail to resolve to a valid non-ambiguous ref
 		 */
 		if (strict)
-			rules_to_fail = nr_rules;
+			rules_to_fail = NUM_REV_PARSE_RULES;
 
 		/*
 		 * check if the short name resolves to a valid ref,
@@ -1362,7 +1401,8 @@ char *refs_shorten_unambiguous_ref(struct ref_store *refs,
 			 */
 			strbuf_reset(&resolved_buf);
 			strbuf_addf(&resolved_buf, rule,
-				    short_name_len, short_name);
+				    cast_size_t_to_int(short_name_len),
+				    short_name);
 			if (refs_ref_exists(refs, resolved_buf.buf))
 				break;
 		}
@@ -1373,12 +1413,11 @@ char *refs_shorten_unambiguous_ref(struct ref_store *refs,
 		 */
 		if (j == rules_to_fail) {
 			strbuf_release(&resolved_buf);
-			return short_name;
+			return xmemdupz(short_name, short_name_len);
 		}
 	}
 
 	strbuf_release(&resolved_buf);
-	free(short_name);
 	return xstrdup(refname);
 }
 
@@ -1388,9 +1427,8 @@ char *shorten_unambiguous_ref(const char *refname, int strict)
 					    refname, strict);
 }
 
-static struct string_list *hide_refs;
-
-int parse_hide_refs_config(const char *var, const char *value, const char *section)
+int parse_hide_refs_config(const char *var, const char *value, const char *section,
+			   struct string_list *hide_refs)
 {
 	const char *key;
 	if (!strcmp("transfer.hiderefs", var) ||
@@ -1405,21 +1443,16 @@ int parse_hide_refs_config(const char *var, const char *value, const char *secti
 		len = strlen(ref);
 		while (len && ref[len - 1] == '/')
 			ref[--len] = '\0';
-		if (!hide_refs) {
-			CALLOC_ARRAY(hide_refs, 1);
-			hide_refs->strdup_strings = 1;
-		}
-		string_list_append(hide_refs, ref);
+		string_list_append_nodup(hide_refs, ref);
 	}
 	return 0;
 }
 
-int ref_is_hidden(const char *refname, const char *refname_full)
+int ref_is_hidden(const char *refname, const char *refname_full,
+		  const struct string_list *hide_refs)
 {
 	int i;
 
-	if (!hide_refs)
-		return 0;
 	for (i = hide_refs->nr - 1; i >= 0; i--) {
 		const char *match = hide_refs->items[i].string;
 		const char *subject;
@@ -1703,9 +1736,10 @@ static void find_longest_prefixes(struct string_list *out,
 	strbuf_release(&prefix);
 }
 
-int for_each_fullref_in_prefixes(const char *namespace,
-				 const char **patterns,
-				 each_ref_fn fn, void *cb_data)
+int refs_for_each_fullref_in_prefixes(struct ref_store *ref_store,
+				      const char *namespace,
+				      const char **patterns,
+				      each_ref_fn fn, void *cb_data)
 {
 	struct string_list prefixes = STRING_LIST_INIT_DUP;
 	struct string_list_item *prefix;
@@ -1720,7 +1754,7 @@ int for_each_fullref_in_prefixes(const char *namespace,
 
 	for_each_string_list_item(prefix, &prefixes) {
 		strbuf_addstr(&buf, prefix->string);
-		ret = for_each_fullref_in(buf.buf, fn, cb_data);
+		ret = refs_for_each_fullref_in(ref_store, buf.buf, fn, cb_data);
 		if (ret)
 			break;
 		strbuf_setlen(&buf, namespace_len);
@@ -1797,7 +1831,7 @@ const char *refs_resolve_ref_unsafe(struct ref_store *refs,
 			return NULL;
 
 		/*
-		 * dwim_ref() uses REF_ISBROKEN to distinguish between
+		 * repo_dwim_ref() uses REF_ISBROKEN to distinguish between
 		 * missing refs and refs that were present but invalid,
 		 * to complain about the latter to stderr.
 		 *
@@ -2100,9 +2134,9 @@ void base_ref_store_init(struct ref_store *refs, struct repository *repo,
 }
 
 /* backend functions */
-int refs_pack_refs(struct ref_store *refs, unsigned int flags)
+int refs_pack_refs(struct ref_store *refs, struct pack_refs_opts *opts)
 {
-	return refs->be->pack_refs(refs, flags);
+	return refs->be->pack_refs(refs, opts);
 }
 
 int peel_iterated_oid(const struct object_id *base, struct object_id *peeled)

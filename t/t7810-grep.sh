@@ -18,6 +18,9 @@ test_invalid_grep_expression() {
 	'
 }
 
+LC_ALL=en_US.UTF-8 test-tool regex '^.$' '¿' &&
+  test_set_prereq MB_REGEX
+
 cat >hello.c <<EOF
 #include <assert.h>
 #include <stdio.h>
@@ -87,6 +90,10 @@ test_expect_success setup '
 	then
 		echo unusual >"\"unusual\" pathname" &&
 		echo unusual >"t/nested \"unusual\" pathname"
+	fi &&
+	if test_have_prereq MB_REGEX
+	then
+		echo "¿" >reverse-question-mark
 	fi &&
 	git add . &&
 	test_tick &&
@@ -569,6 +576,14 @@ do
 	'
 done
 
+test_expect_success MB_REGEX 'grep exactly one char in single-char multibyte file' '
+	LC_ALL=en_US.UTF-8 git grep "^.$" reverse-question-mark
+'
+
+test_expect_success MB_REGEX 'grep two chars in single-char multibyte file' '
+	LC_ALL=en_US.UTF-8 test_expect_code 1 git grep ".." reverse-question-mark
+'
+
 cat >expected <<EOF
 file
 EOF
@@ -986,7 +1001,9 @@ test_expect_success 'log --committer does not search in timestamp' '
 test_expect_success 'grep with CE_VALID file' '
 	git update-index --assume-unchanged t/t &&
 	rm t/t &&
-	test "$(git grep test)" = "t/t:test" &&
+	echo "t/t:test" >expect &&
+	git grep test >actual &&
+	test_cmp expect actual &&
 	git update-index --no-assume-unchanged t/t &&
 	git checkout t/t
 '

@@ -202,6 +202,107 @@ test_expect_success 'one of gc.reflogExpire{Unreachable,}=never does not skip "e
 	grep -E "^trace: (built-in|exec|run_command): git reflog expire --" trace.out
 '
 
+prepare_cruft_history () {
+	test_commit base &&
+
+	test_commit --no-tag foo &&
+	test_commit --no-tag bar &&
+	git reset HEAD^^
+}
+
+assert_no_cruft_packs () {
+	find .git/objects/pack -name "*.mtimes" >mtimes &&
+	test_must_be_empty mtimes
+}
+
+for argv in \
+	"gc" \
+	"-c gc.cruftPacks=true gc" \
+	"-c gc.cruftPacks=false gc --cruft"
+do
+	test_expect_success "git $argv generates a cruft pack" '
+		test_when_finished "rm -fr repo" &&
+		git init repo &&
+		(
+			cd repo &&
+
+			prepare_cruft_history &&
+			git $argv &&
+
+			find .git/objects/pack -name "*.mtimes" >mtimes &&
+			sed -e 's/\.mtimes$/\.pack/g' mtimes >packs &&
+
+			test_file_not_empty packs &&
+			while read pack
+			do
+				test_path_is_file "$pack" || return 1
+			done <packs
+		)
+	'
+done
+
+for argv in \
+	"gc --no-cruft" \
+	"-c gc.cruftPacks=false gc" \
+	"-c gc.cruftPacks=true gc --no-cruft"
+do
+	test_expect_success "git $argv does not generate a cruft pack" '
+		test_when_finished "rm -fr repo" &&
+		git init repo &&
+		(
+			cd repo &&
+
+			prepare_cruft_history &&
+			git $argv &&
+
+			assert_no_cruft_packs
+		)
+	'
+done
+
+test_expect_success '--keep-largest-pack ignores cruft packs' '
+	test_when_finished "rm -fr repo" &&
+	git init repo &&
+	(
+		cd repo &&
+
+		# Generate a pack for reachable objects (of which there
+		# are 3), and one for unreachable objects (of which
+		# there are 6).
+		prepare_cruft_history &&
+		git gc --cruft &&
+
+		mtimes="$(find .git/objects/pack -type f -name "pack-*.mtimes")" &&
+		sz="$(test_file_size "${mtimes%.mtimes}.pack")" &&
+
+		# Ensure that the cruft pack gets removed (due to
+		# `--prune=now`) despite it being the largest pack.
+		git -c gc.bigPackThreshold=$sz gc --cruft --prune=now &&
+
+		assert_no_cruft_packs
+	)
+'
+
+test_expect_success 'gc.bigPackThreshold ignores cruft packs' '
+	test_when_finished "rm -fr repo" &&
+	git init repo &&
+	(
+		cd repo &&
+
+		# Generate a pack for reachable objects (of which there
+		# are 3), and one for unreachable objects (of which
+		# there are 6).
+		prepare_cruft_history &&
+		git gc --cruft &&
+
+		# Ensure that the cruft pack gets removed (due to
+		# `--prune=now`) despite it being the largest pack.
+		git gc --cruft --prune=now --keep-largest-pack &&
+
+		assert_no_cruft_packs
+	)
+'
+
 run_and_wait_for_auto_gc () {
 	# We read stdout from gc for the side effect of waiting until the
 	# background gc process exits, closing its fd 9.  Furthermore, the

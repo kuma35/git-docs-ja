@@ -4,6 +4,7 @@ test_description='basic clone options'
 GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME=main
 export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
 
+TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 
 test_expect_success 'setup' '
@@ -42,11 +43,12 @@ test_expect_success 'rejects invalid -o/--origin' '
 
 '
 
-test_expect_success 'disallows --bare with --origin' '
+test_expect_success 'clone --bare -o' '
 
-	test_must_fail git clone -o foo --bare parent clone-bare-o 2>err &&
-	test_debug "cat err" &&
-	test_i18ngrep -e "options .--bare. and .--origin foo. cannot be used together" err
+	git clone -o foo --bare parent clone-bare-o &&
+	(cd parent && pwd) >expect &&
+	git -C clone-bare-o config remote.foo.url >actual &&
+	test_cmp expect actual
 
 '
 
@@ -116,6 +118,16 @@ test_expect_success 'prefers -c config over --template config' '
 	git clone "--template=$template" -c foo.bar=inline parent clone-template-inline-config &&
 	test "$(git -C clone-template-inline-config config --local foo.bar)" = "inline"
 
+'
+
+test_expect_failure 'prefers --template config even for core.bare' '
+
+	template="$TRASH_DIRECTORY/template-with-bare-config" &&
+	mkdir "$template" &&
+	git config --file "$template/config" core.bare true &&
+	git clone "--template=$template" parent clone-bare-config &&
+	test "$(git -C clone-bare-config config --local core.bare)" = "true" &&
+	test_path_is_file clone-bare-config/HEAD
 '
 
 test_expect_success 'prefers config "clone.defaultRemoteName" over default' '

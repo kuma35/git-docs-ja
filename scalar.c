@@ -2,7 +2,8 @@
  * The Scalar command-line interface.
  */
 
-#include "cache.h"
+#include "git-compat-util.h"
+#include "abspath.h"
 #include "gettext.h"
 #include "parse-options.h"
 #include "config.h"
@@ -14,6 +15,8 @@
 #include "dir.h"
 #include "packfile.h"
 #include "help.h"
+#include "setup.h"
+#include "trace2.h"
 
 static void setup_enlistment_directory(int argc, const char **argv,
 				       const char * const *usagestr,
@@ -69,21 +72,18 @@ static void setup_enlistment_directory(int argc, const char **argv,
 
 static int run_git(const char *arg, ...)
 {
-	struct strvec argv = STRVEC_INIT;
+	struct child_process cmd = CHILD_PROCESS_INIT;
 	va_list args;
 	const char *p;
-	int res;
 
 	va_start(args, arg);
-	strvec_push(&argv, arg);
+	strvec_push(&cmd.args, arg);
 	while ((p = va_arg(args, const char *)))
-		strvec_push(&argv, p);
+		strvec_push(&cmd.args, p);
 	va_end(args);
 
-	res = run_command_v_opt(argv.v, RUN_GIT_CMD);
-
-	strvec_clear(&argv);
-	return res;
+	cmd.git_cmd = 1;
+	return run_command(&cmd);
 }
 
 struct scalar_config {
@@ -146,6 +146,7 @@ static int set_recommended_config(int reconfigure)
 		{ "credential.validate", "false", 1 }, /* GCM4W-only */
 		{ "gc.auto", "0", 1 },
 		{ "gui.GCWarning", "false", 1 },
+		{ "index.skipHash", "false", 1 },
 		{ "index.threads", "true", 1 },
 		{ "index.version", "4", 1 },
 		{ "merge.stat", "false", 1 },
@@ -207,7 +208,10 @@ static int set_recommended_config(int reconfigure)
 
 static int toggle_maintenance(int enable)
 {
-	return run_git("maintenance", enable ? "start" : "unregister", NULL);
+	return run_git("maintenance",
+		       enable ? "start" : "unregister",
+		       enable ? NULL : "--force",
+		       NULL);
 }
 
 static int add_or_remove_enlistment(int add)
@@ -261,7 +265,7 @@ static int register_dir(void)
 		return error(_("could not set recommended config"));
 
 	if (toggle_maintenance(1))
-		return error(_("could not turn on maintenance"));
+		warning(_("could not turn on maintenance"));
 
 	if (have_fsmonitor_support() && start_fsmonitor_daemon()) {
 		return error(_("could not start the FSMonitor daemon"));
@@ -404,7 +408,7 @@ void load_builtin_commands(const char *prefix, struct cmdnames *cmds)
 static int cmd_clone(int argc, const char **argv)
 {
 	const char *branch = NULL;
-	int full_clone = 0, single_branch = 0;
+	int full_clone = 0, single_branch = 0, show_progress = isatty(2);
 	struct option clone_options[] = {
 		OPT_STRING('b', "branch", &branch, N_("<branch>"),
 			   N_("branch to checkout after clone")),
@@ -499,7 +503,9 @@ static int cmd_clone(int argc, const char **argv)
 	if (set_recommended_config(0))
 		return error(_("could not configure '%s'"), dir);
 
-	if ((res = run_git("fetch", "--quiet", "origin", NULL))) {
+	if ((res = run_git("fetch", "--quiet",
+				show_progress ? "--progress" : "--no-progress",
+				"origin", NULL))) {
 		warning(_("partial clone failed; attempting full clone"));
 
 		if (set_config("remote.origin.promisor") ||
@@ -508,7 +514,9 @@ static int cmd_clone(int argc, const char **argv)
 			goto cleanup;
 		}
 
-		if ((res = run_git("fetch", "--quiet", "origin", NULL)))
+		if ((res = run_git("fetch", "--quiet",
+					show_progress ? "--progress" : "--no-progress",
+					"origin", NULL)))
 			goto cleanup;
 	}
 
@@ -558,7 +566,7 @@ static int cmd_diagnose(int argc, const char **argv)
 	return res;
 }
 
-static int cmd_list(int argc, const char **argv)
+static int cmd_list(int argc, const char **argv UNUSED)
 {
 	if (argc != 1)
 		die(_("`scalar list` does not take arguments"));
@@ -586,7 +594,9 @@ static int cmd_register(int argc, const char **argv)
 	return register_dir();
 }
 
-static int get_scalar_repos(const char *key, const char *value, void *data)
+static int get_scalar_repos(const char *key, const char *value,
+			    const struct config_context *ctx UNUSED,
+			    void *data)
 {
 	struct string_list *list = data;
 
@@ -594,6 +604,24 @@ static int get_scalar_repos(const char *key, const char *value, void *data)
 		string_list_append(list, value);
 
 	return 0;
+}
+
+static int remove_deleted_enlistment(struct strbuf *path)
+{
+	int res = 0;
+	strbuf_realpath_forgiving(path, path->buf, 1);
+
+	if (run_git("config", "--global",
+		    "--unset", "--fixed-value",
+		    "scalar.repo", path->buf, NULL) < 0)
+		res = -1;
+
+	if (run_git("config", "--global",
+		    "--unset", "--fixed-value",
+		    "maintenance.repo", path->buf, NULL) < 0)
+		res = -1;
+
+	return res;
 }
 
 static int cmd_reconfigure(int argc, const char **argv)
@@ -635,8 +663,22 @@ static int cmd_reconfigure(int argc, const char **argv)
 		strbuf_reset(&gitdir);
 
 		if (chdir(dir) < 0) {
-			warning_errno(_("could not switch to '%s'"), dir);
-			res = -1;
+			struct strbuf buf = STRBUF_INIT;
+
+			if (errno != ENOENT) {
+				warning_errno(_("could not switch to '%s'"), dir);
+				res = -1;
+				continue;
+			}
+
+			strbuf_addstr(&buf, dir);
+			if (remove_deleted_enlistment(&buf))
+				res = error(_("could not remove stale "
+					      "scalar.repo '%s'"), dir);
+			else
+				warning(_("removing stale scalar.repo '%s'"),
+					dir);
+			strbuf_release(&buf);
 		} else if (discover_git_directory(&commondir, &gitdir) < 0) {
 			warning_errno(_("git repository gone in '%s'"), dir);
 			res = -1;
@@ -720,24 +762,6 @@ static int cmd_run(int argc, const char **argv)
 			    "--task", tasks[i].task, NULL))
 			return -1;
 	return 0;
-}
-
-static int remove_deleted_enlistment(struct strbuf *path)
-{
-	int res = 0;
-	strbuf_realpath_forgiving(path, path->buf, 1);
-
-	if (run_git("config", "--global",
-		    "--unset", "--fixed-value",
-		    "scalar.repo", path->buf, NULL) < 0)
-		res = -1;
-
-	if (run_git("config", "--global",
-		    "--unset", "--fixed-value",
-		    "maintenance.repo", path->buf, NULL) < 0)
-		res = -1;
-
-	return res;
 }
 
 static int cmd_unregister(int argc, const char **argv)

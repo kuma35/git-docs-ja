@@ -1,16 +1,29 @@
-#include "../cache.h"
+#include "../git-compat-util.h"
 #include "../config.h"
+#include "../copy.h"
+#include "../environment.h"
+#include "../gettext.h"
+#include "../hash.h"
+#include "../hex.h"
 #include "../refs.h"
 #include "refs-internal.h"
 #include "ref-cache.h"
 #include "packed-backend.h"
+#include "../ident.h"
 #include "../iterator.h"
 #include "../dir-iterator.h"
 #include "../lockfile.h"
 #include "../object.h"
+#include "../object-file.h"
+#include "../path.h"
 #include "../dir.h"
 #include "../chdir-notify.h"
-#include "worktree.h"
+#include "../setup.h"
+#include "../worktree.h"
+#include "../wrapper.h"
+#include "../write-or-die.h"
+#include "../revision.h"
+#include <wildmatch.h>
 
 /*
  * This backend uses the following flags in `ref_update::flags` for
@@ -138,44 +151,30 @@ static struct files_ref_store *files_downcast(struct ref_store *ref_store,
 	return refs;
 }
 
-static void files_reflog_path_other_worktrees(struct files_ref_store *refs,
-					      struct strbuf *sb,
-					      const char *refname)
-{
-	const char *real_ref;
-	const char *worktree_name;
-	int length;
-
-	if (parse_worktree_ref(refname, &worktree_name, &length, &real_ref))
-		BUG("refname %s is not a other-worktree ref", refname);
-
-	if (worktree_name)
-		strbuf_addf(sb, "%s/worktrees/%.*s/logs/%s", refs->gitcommondir,
-			    length, worktree_name, real_ref);
-	else
-		strbuf_addf(sb, "%s/logs/%s", refs->gitcommondir,
-			    real_ref);
-}
-
 static void files_reflog_path(struct files_ref_store *refs,
 			      struct strbuf *sb,
 			      const char *refname)
 {
-	switch (ref_type(refname)) {
-	case REF_TYPE_PER_WORKTREE:
-	case REF_TYPE_PSEUDOREF:
+	const char *bare_refname;
+	const char *wtname;
+	int wtname_len;
+	enum ref_worktree_type wt_type = parse_worktree_ref(
+		refname, &wtname, &wtname_len, &bare_refname);
+
+	switch (wt_type) {
+	case REF_WORKTREE_CURRENT:
 		strbuf_addf(sb, "%s/logs/%s", refs->base.gitdir, refname);
 		break;
-	case REF_TYPE_OTHER_PSEUDOREF:
-	case REF_TYPE_MAIN_PSEUDOREF:
-		files_reflog_path_other_worktrees(refs, sb, refname);
+	case REF_WORKTREE_SHARED:
+	case REF_WORKTREE_MAIN:
+		strbuf_addf(sb, "%s/logs/%s", refs->gitcommondir, bare_refname);
 		break;
-	case REF_TYPE_NORMAL:
-		strbuf_addf(sb, "%s/logs/%s", refs->gitcommondir, refname);
+	case REF_WORKTREE_OTHER:
+		strbuf_addf(sb, "%s/worktrees/%.*s/logs/%s", refs->gitcommondir,
+			    wtname_len, wtname, bare_refname);
 		break;
 	default:
-		BUG("unknown ref type %d of ref %s",
-		    ref_type(refname), refname);
+		BUG("unknown ref type %d of ref %s", wt_type, refname);
 	}
 }
 
@@ -183,22 +182,25 @@ static void files_ref_path(struct files_ref_store *refs,
 			   struct strbuf *sb,
 			   const char *refname)
 {
-	switch (ref_type(refname)) {
-	case REF_TYPE_PER_WORKTREE:
-	case REF_TYPE_PSEUDOREF:
+	const char *bare_refname;
+	const char *wtname;
+	int wtname_len;
+	enum ref_worktree_type wt_type = parse_worktree_ref(
+		refname, &wtname, &wtname_len, &bare_refname);
+	switch (wt_type) {
+	case REF_WORKTREE_CURRENT:
 		strbuf_addf(sb, "%s/%s", refs->base.gitdir, refname);
 		break;
-	case REF_TYPE_MAIN_PSEUDOREF:
-		if (!skip_prefix(refname, "main-worktree/", &refname))
-			BUG("ref %s is not a main pseudoref", refname);
-		/* fallthrough */
-	case REF_TYPE_OTHER_PSEUDOREF:
-	case REF_TYPE_NORMAL:
-		strbuf_addf(sb, "%s/%s", refs->gitcommondir, refname);
+	case REF_WORKTREE_OTHER:
+		strbuf_addf(sb, "%s/worktrees/%.*s/%s", refs->gitcommondir,
+			    wtname_len, wtname, bare_refname);
+		break;
+	case REF_WORKTREE_SHARED:
+	case REF_WORKTREE_MAIN:
+		strbuf_addf(sb, "%s/%s", refs->gitcommondir, bare_refname);
 		break;
 	default:
-		BUG("unknown ref type %d of ref %s",
-		    ref_type(refname), refname);
+		BUG("unknown ref type %d of ref %s", wt_type, refname);
 	}
 }
 
@@ -771,7 +773,8 @@ static int files_ref_iterator_advance(struct ref_iterator *ref_iterator)
 
 	while ((ok = ref_iterator_advance(iter->iter0)) == ITER_OK) {
 		if (iter->flags & DO_FOR_EACH_PER_WORKTREE_ONLY &&
-		    ref_type(iter->iter0->refname) != REF_TYPE_PER_WORKTREE)
+		    parse_worktree_ref(iter->iter0->refname, NULL, NULL,
+				       NULL) != REF_WORKTREE_CURRENT)
 			continue;
 
 		if ((iter->flags & DO_FOR_EACH_OMIT_DANGLING_SYMREFS) &&
@@ -1175,14 +1178,13 @@ static void prune_refs(struct files_ref_store *refs, struct ref_to_prune **refs_
  */
 static int should_pack_ref(const char *refname,
 			   const struct object_id *oid, unsigned int ref_flags,
-			   unsigned int pack_flags)
+			   struct pack_refs_opts *opts)
 {
-	/* Do not pack per-worktree refs: */
-	if (ref_type(refname) != REF_TYPE_NORMAL)
-		return 0;
+	struct string_list_item *item;
 
-	/* Do not pack non-tags unless PACK_REFS_ALL is set: */
-	if (!(pack_flags & PACK_REFS_ALL) && !starts_with(refname, "refs/tags/"))
+	/* Do not pack per-worktree refs: */
+	if (parse_worktree_ref(refname, NULL, NULL, NULL) !=
+	    REF_WORKTREE_SHARED)
 		return 0;
 
 	/* Do not pack symbolic refs: */
@@ -1193,10 +1195,18 @@ static int should_pack_ref(const char *refname,
 	if (!ref_resolves_to_object(refname, the_repository, oid, ref_flags))
 		return 0;
 
-	return 1;
+	if (ref_excluded(opts->exclusions, refname))
+		return 0;
+
+	for_each_string_list_item(item, opts->includes)
+		if (!wildmatch(item->string, refname, 0))
+			return 1;
+
+	return 0;
 }
 
-static int files_pack_refs(struct ref_store *ref_store, unsigned int flags)
+static int files_pack_refs(struct ref_store *ref_store,
+			   struct pack_refs_opts *opts)
 {
 	struct files_ref_store *refs =
 		files_downcast(ref_store, REF_STORE_WRITE | REF_STORE_ODB,
@@ -1221,8 +1231,7 @@ static int files_pack_refs(struct ref_store *ref_store, unsigned int flags)
 		 * in the packed ref cache. If the reference should be
 		 * pruned, also add it to refs_to_prune.
 		 */
-		if (!should_pack_ref(iter->refname, iter->oid, iter->flags,
-				     flags))
+		if (!should_pack_ref(iter->refname, iter->oid, iter->flags, opts))
 			continue;
 
 		/*
@@ -1236,7 +1245,7 @@ static int files_pack_refs(struct ref_store *ref_store, unsigned int flags)
 			    iter->refname, err.buf);
 
 		/* Schedule the loose reference for pruning if requested. */
-		if ((flags & PACK_REFS_PRUNE)) {
+		if ((opts->flags & PACK_REFS_PRUNE)) {
 			struct ref_to_prune *n;
 			FLEX_ALLOC_STR(n, name, iter->refname);
 			oidcpy(&n->oid, iter->oid);
@@ -2267,7 +2276,8 @@ static enum iterator_selection reflog_iterator_select(
 		 */
 		return ITER_SELECT_0;
 	} else if (iter_common) {
-		if (ref_type(iter_common->refname) == REF_TYPE_NORMAL)
+		if (parse_worktree_ref(iter_common->refname, NULL, NULL,
+				       NULL) == REF_WORKTREE_SHARED)
 			return ITER_SELECT_1;
 
 		/*

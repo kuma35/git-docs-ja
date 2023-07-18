@@ -1,7 +1,6 @@
 #ifndef REFS_H
 #define REFS_H
 
-#include "cache.h"
 #include "commit.h"
 
 struct object_id;
@@ -63,6 +62,12 @@ struct worktree;
 #define RESOLVE_REF_READING 0x01
 #define RESOLVE_REF_NO_RECURSE 0x02
 #define RESOLVE_REF_ALLOW_BAD_NAME 0x04
+
+struct pack_refs_opts {
+	unsigned int flags;
+	struct ref_exclusions *exclusions;
+	struct string_list *includes;
+};
 
 const char *refs_resolve_ref_unsafe(struct ref_store *refs,
 				    const char *refname,
@@ -159,12 +164,6 @@ int expand_ref(struct repository *r, const char *str, int len, struct object_id 
 int repo_dwim_ref(struct repository *r, const char *str, int len,
 		  struct object_id *oid, char **ref, int nonfatal_dangling_mark);
 int repo_dwim_log(struct repository *r, const char *str, int len, struct object_id *oid, char **ref);
-static inline int dwim_ref(const char *str, int len, struct object_id *oid,
-			   char **ref, int nonfatal_dangling_mark)
-{
-	return repo_dwim_ref(the_repository, str, len, oid, ref,
-			     nonfatal_dangling_mark);
-}
 int dwim_log(const char *str, int len, struct object_id *oid, char **ref);
 
 /*
@@ -354,8 +353,10 @@ int for_each_fullref_in(const char *prefix, each_ref_fn fn, void *cb_data);
  *
  * callers should be prepared to ignore references that they did not ask for.
  */
-int for_each_fullref_in_prefixes(const char *namespace, const char **patterns,
-				 each_ref_fn fn, void *cb_data);
+int refs_for_each_fullref_in_prefixes(struct ref_store *refs,
+				      const char *namespace, const char **patterns,
+				      each_ref_fn fn, void *cb_data);
+
 /**
  * iterate refs from the respective area.
  */
@@ -410,7 +411,7 @@ void warn_dangling_symrefs(FILE *fp, const char *msg_fmt,
  * Write a packed-refs file for the current repository.
  * flags: Combination of the above PACK_REFS_* flags.
  */
-int refs_pack_refs(struct ref_store *refs, unsigned int flags);
+int refs_pack_refs(struct ref_store *refs, struct pack_refs_opts *opts);
 
 /*
  * Setup reflog before using. Fill in err and return -1 on failure.
@@ -808,7 +809,8 @@ int update_ref(const char *msg, const char *refname,
 	       const struct object_id *new_oid, const struct object_id *old_oid,
 	       unsigned int flags, enum action_on_err onerr);
 
-int parse_hide_refs_config(const char *var, const char *value, const char *);
+int parse_hide_refs_config(const char *var, const char *value, const char *,
+			   struct string_list *);
 
 /*
  * Check whether a ref is hidden. If no namespace is set, both the first and
@@ -818,17 +820,36 @@ int parse_hide_refs_config(const char *var, const char *value, const char *);
  * the ref is outside that namespace, the first parameter is NULL. The second
  * parameter always points to the full ref name.
  */
-int ref_is_hidden(const char *, const char *);
+int ref_is_hidden(const char *, const char *, const struct string_list *);
 
-enum ref_type {
-	REF_TYPE_PER_WORKTREE,	  /* refs inside refs/ but not shared       */
-	REF_TYPE_PSEUDOREF,	  /* refs outside refs/ in current worktree */
-	REF_TYPE_MAIN_PSEUDOREF,  /* pseudo refs from the main worktree     */
-	REF_TYPE_OTHER_PSEUDOREF, /* pseudo refs from other worktrees       */
-	REF_TYPE_NORMAL,	  /* normal/shared refs inside refs/        */
+/* Is this a per-worktree ref living in the refs/ namespace? */
+int is_per_worktree_ref(const char *refname);
+
+/* Describes how a refname relates to worktrees */
+enum ref_worktree_type {
+	REF_WORKTREE_CURRENT, /* implicitly per worktree, eg. HEAD or
+				 refs/bisect/SOMETHING */
+	REF_WORKTREE_MAIN, /* explicitly in main worktree, eg.
+			      main-worktree/HEAD */
+	REF_WORKTREE_OTHER, /* explicitly in named worktree, eg.
+			       worktrees/bla/HEAD */
+	REF_WORKTREE_SHARED, /* the default, eg. refs/heads/main */
 };
 
-enum ref_type ref_type(const char *refname);
+/*
+ * Parse a `maybe_worktree_ref` as a ref that possibly refers to a worktree ref
+ * (ie. either REFNAME, main-worktree/REFNAME or worktree/WORKTREE/REFNAME). It
+ * returns what kind of ref was found, and in case of REF_WORKTREE_OTHER, the
+ * worktree name is returned in `worktree_name` (pointing into
+ * `maybe_worktree_ref`) and `worktree_name_length`. The bare refname (the
+ * refname stripped of prefixes) is returned in `bare_refname`. The
+ * `worktree_name`, `worktree_name_length` and `bare_refname` arguments may be
+ * NULL.
+ */
+enum ref_worktree_type parse_worktree_ref(const char *maybe_worktree_ref,
+					  const char **worktree_name,
+					  int *worktree_name_length,
+					  const char **bare_refname);
 
 enum expire_reflog_flags {
 	EXPIRE_REFLOGS_DRY_RUN = 1 << 0,

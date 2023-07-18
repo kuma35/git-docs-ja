@@ -25,6 +25,7 @@ compare_head()
 
 
 test_expect_success 'setup a submodule tree' '
+	git config --global protocol.file.allow always &&
 	echo file > file &&
 	git add file &&
 	test_tick &&
@@ -1176,6 +1177,29 @@ test_expect_success 'submodule update --recursive skip submodules with strategy=
 	Skipping submodule '\''middle/bottom'\''
 	EOF
 	test_cmp expect.err actual.err
+'
+
+add_submodule_commit_and_validate () {
+	HASH=$(git rev-parse HEAD) &&
+	git update-index --add --cacheinfo 160000,$HASH,sub &&
+	git commit -m "create submodule" &&
+	echo "160000 commit $HASH	sub" >expect &&
+	git ls-tree HEAD -- sub >actual &&
+	test_cmp expect actual
+}
+
+test_expect_success 'commit with staged submodule change' '
+	add_submodule_commit_and_validate
+'
+
+test_expect_success 'commit with staged submodule change with ignoreSubmodules dirty' '
+	test_config diff.ignoreSubmodules dirty &&
+	add_submodule_commit_and_validate
+'
+
+test_expect_success 'commit with staged submodule change with ignoreSubmodules all' '
+	test_config diff.ignoreSubmodules all &&
+	add_submodule_commit_and_validate
 '
 
 test_done

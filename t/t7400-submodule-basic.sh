@@ -14,6 +14,10 @@ export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
 
 . ./test-lib.sh
 
+test_expect_success 'setup - enable local submodules' '
+	git config --global protocol.file.allow always
+'
+
 test_expect_success 'submodule usage: -h' '
 	git submodule -h >out 2>err &&
 	grep "^usage: git submodule" out &&
@@ -573,6 +577,16 @@ test_expect_success 'status should be "modified" after submodule commit' '
 	git submodule status >list &&
 
 	grep "^+$rev2" list
+'
+
+test_expect_success '"submodule --cached" command forms should be identical' '
+	git submodule status --cached >expect &&
+
+	git submodule --cached >actual &&
+	test_cmp expect actual &&
+
+	git submodule --cached status >actual &&
+	test_cmp expect actual
 '
 
 test_expect_success 'the --cached sha1 should be rev1' '
@@ -1335,6 +1349,22 @@ test_expect_success 'clone active submodule without submodule url set' '
 		EOF
 		test_cmp expect actual
 	)
+'
+
+test_expect_success 'update submodules without url set in .gitconfig' '
+	test_when_finished "rm -rf multisuper_clone" &&
+	git clone file://"$pwd"/multisuper multisuper_clone &&
+
+	git -C multisuper_clone submodule init &&
+	for s in sub0 sub1 sub2 sub3
+	do
+		key=submodule.$s.url &&
+		git -C multisuper_clone config --local --unset $key &&
+		git -C multisuper_clone config --file .gitmodules --unset $key || return 1
+	done &&
+
+	test_must_fail git -C multisuper_clone submodule update 2>err &&
+	grep "cannot clone submodule .sub[0-3]. without a URL" err
 '
 
 test_expect_success 'clone --recurse-submodules with a pathspec works' '

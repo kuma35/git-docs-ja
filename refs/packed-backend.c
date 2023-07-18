@@ -1,11 +1,18 @@
-#include "../cache.h"
+#include "../git-compat-util.h"
+#include "../alloc.h"
 #include "../config.h"
+#include "../gettext.h"
+#include "../hash.h"
+#include "../hex.h"
 #include "../refs.h"
 #include "refs-internal.h"
 #include "packed-backend.h"
 #include "../iterator.h"
 #include "../lockfile.h"
 #include "../chdir-notify.h"
+#include "../statinfo.h"
+#include "../wrapper.h"
+#include "../write-or-die.h"
 
 enum mmap_strategy {
 	/*
@@ -646,7 +653,7 @@ static struct snapshot *create_snapshot(struct packed_ref_store *refs)
 					 snapshot->buf,
 					 snapshot->eof - snapshot->buf);
 
-		string_list_split_in_place(&traits, p, ' ', -1);
+		string_list_split_in_place(&traits, p, " ", -1);
 
 		if (unsorted_string_list_has_string(&traits, "fully-peeled"))
 			snapshot->peeled = PEELED_FULLY;
@@ -862,7 +869,7 @@ static int packed_ref_iterator_advance(struct ref_iterator *ref_iterator)
 
 	while ((ok = next_record(iter)) == ITER_OK) {
 		if (iter->flags & DO_FOR_EACH_PER_WORKTREE_ONLY &&
-		    ref_type(iter->base.refname) != REF_TYPE_PER_WORKTREE)
+		    !is_per_worktree_ref(iter->base.refname))
 			continue;
 
 		if (!(iter->flags & DO_FOR_EACH_INCLUDE_BROKEN) &&
@@ -1263,7 +1270,8 @@ static int write_with_updates(struct packed_ref_store *refs,
 		goto error;
 	}
 
-	if (fsync_component(FSYNC_COMPONENT_REFERENCE, get_tempfile_fd(refs->tempfile)) ||
+	if (fflush(out) ||
+	    fsync_component(FSYNC_COMPONENT_REFERENCE, get_tempfile_fd(refs->tempfile)) ||
 	    close_tempfile_gently(refs->tempfile)) {
 		strbuf_addf(err, "error closing file %s: %s",
 			    get_tempfile_path(refs->tempfile),
@@ -1570,7 +1578,7 @@ static int packed_delete_refs(struct ref_store *ref_store, const char *msg,
 }
 
 static int packed_pack_refs(struct ref_store *ref_store UNUSED,
-			    unsigned int flags UNUSED)
+			    struct pack_refs_opts *pack_opts UNUSED)
 {
 	/*
 	 * Packed refs are already packed. It might be that loose refs

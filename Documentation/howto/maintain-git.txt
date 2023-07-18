@@ -230,7 +230,15 @@ later topics that should not be in 'jch' yet.  Add a line that
 consists of '### match next' before the name of the first topic
 in the output that should be in 'jch' but not in 'next' yet.
 
- * Now we are ready to start merging topics to 'next'.  For each
+     $ Meta/Reintegrate master..jch >Meta/redo-jch.sh
+
+   The result is a script that lists topics to be merged in order to
+   rebuild 'seen' as the input to Meta/Reintegrate script.  Remove
+   later topics that should not be in 'jch' yet.  Add a line that
+   consists of '### match next' before the name of the first topic
+   in the output that should be in 'jch' but not in 'next' yet.
+
+ - Now we are ready to start merging topics to 'next'.  For each
    branch whose tip is not merged to 'next', one of three things can
    happen:
    ** The commits are all next-worthy; merge the topic to next;
@@ -281,13 +289,66 @@ This removes topics listed in the script that have already been
 merged to 'master'.  This may lose '### match next' marker;
 add it again to the appropriate place when it happens.
 
- * Rebuild 'seen'.
-+
-     $ Meta/Reintegrate master..seen >Meta/redo-seen.sh
-+
-Edit the result by adding new topics that are not still in 'seen'
-in the script.  Then
-+
+   - The commits are all next-worthy; merge the topic to next;
+   - The new parts are of mixed quality, but earlier ones are
+     next-worthy; merge the early parts to next;
+   - Nothing is next-worthy; do not do anything.
+
+   This step is aided with Meta/redo-jch.sh script created earlier.
+   If a topic that was already in 'next' gained a patch, the script
+   would list it as "ai/topic~1".  To include the new patch to the
+   updated 'next', drop the "~1" part; to keep it excluded, do not
+   touch the line.  If a topic that was not in 'next' should be
+   merged to 'next', add it at the end of the list.  Then:
+
+     $ git checkout -B jch master
+     $ sh Meta/redo-jch.sh -c1
+
+   to rebuild the 'jch' branch from scratch.  "-c1" tells the script
+   to stop merging at the first line that begins with '###'
+   (i.e. the "### match next" line you added earlier).
+
+   At this point, build-test the result.  It may reveal semantic
+   conflicts (e.g. a topic renamed a variable, another added a new
+   reference to the variable under its old name), in which case
+   prepare an appropriate merge-fix first (see appendix), and
+   rebuild the 'jch' branch from scratch, starting at the tip of
+   'master'.
+
+   Then do the same to 'next'
+
+     $ git checkout next
+     $ sh Meta/redo-jch.sh -c1 -e
+
+   The "-e" option allows the merge message that comes from the
+   history of the topic and the comments in the "What's cooking" to
+   be edited.  The resulting tree should match 'jch' as the same set
+   of topics are merged on 'master'; otherwise there is a mismerge.
+   Investigate why and do not proceed until the mismerge is found
+   and rectified.
+
+     $ git diff jch next
+
+   Then build the rest of 'jch':
+
+     $ git checkout jch
+     $ sh Meta/redo-jch.sh
+
+   When all is well, clean up the redo-jch.sh script with
+
+     $ sh Meta/redo-jch.sh -u
+
+   This removes topics listed in the script that have already been
+   merged to 'master'.  This may lose '### match next' marker;
+   add it again to the appropriate place when it happens.
+
+ - Rebuild 'seen'.
+
+     $ Meta/Reintegrate jch..seen >Meta/redo-seen.sh
+
+   Edit the result by adding new topics that are not still in 'seen'
+   in the script.  Then
+
      $ git checkout -B seen jch
      $ sh Meta/redo-seen.sh
 +
