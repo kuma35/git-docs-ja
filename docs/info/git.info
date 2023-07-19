@@ -1501,6 +1501,32 @@ world」を追加したことを示しています。
      $ git diff -3 file.txt          # diff against stage 3
      $ git diff --theirs file.txt    # same as the above.
 
+   When using the _ort_ merge strategy (the default), before updating
+the working tree with the result of the merge, Git writes a special ref
+named AUTO_MERGE reflecting the state of the tree it is about to write.
+Conflicted paths with textual conflicts that could not be automatically
+merged are written to this tree with conflict markers, just as in the
+working tree.  AUTO_MERGE can thus be used with git-diff(1)
+(git-diff.html) to show the changes you’ve made so far to resolve
+conflicts.  Using the same example as above, after resolving the
+conflict we get:
+
+     $ git diff AUTO_MERGE
+     diff --git a/file.txt b/file.txt
+     index cd10406..8bf5ae7 100644
+     --- a/file.txt
+     +++ b/file.txt
+     @@ -1,5 +1 @@
+     -<<<<<<< HEAD:file.txt
+     -Hello world
+     -=======
+     -Goodbye
+     ->>>>>>> 77976da35a11db4580b80ae27e8d65caf5208086:file.txt
+     +Goodbye world
+
+   Notice that the diff shows we deleted the conflict markers and both
+versions of the content line, and wrote "Goodbye world" instead.
+
    git-log(1) (git-log.html) や gitk(1) (gitk.html) コマンドも、マージの
 ためにに特別な援助を提供します:
 
@@ -2456,9 +2482,7 @@ pull」リクエストメッセージを準備できます:
    これをさらに単純化するスクリプトのいくつかを以下に示します。
 
      ==== update script ====
-     #
-     Gitツリーのブランチを更新します。更新するブランチがoriginの場合は、kernel.orgからプルします。それ以外の場合は、origin/masterブランチを
-     test ブランチ または releaseブランチにマージします
+     # Gitツリーのブランチを更新します。更新するブランチがoriginの場合は、kernel.orgからプルします。それ以外の場合は、origin/masterブランチを test ブランチ または releaseブランチにマージします
 
      case "$1" in
      test|release)
@@ -2512,7 +2536,7 @@ pull」リクエストメッセージを準備できます:
      ==== status script ====
      # report on status of my ia64 Git tree
 
-     gb=$(tput setab 2)  rb=$(tput setab 1)  restore=$(tput setab 9)
+     gb=$(tput setab 2) rb=$(tput setab 1) restore=$(tput setab 9)
 
      if [ `git rev-list test..release | wc -c` -gt 0 ]
      then
@@ -4299,15 +4323,12 @@ File: git.info,  Node: Gitのソースコードを俯瞰する,  Prev: Object st
 えば、そのリビジョンのREADMEは、 "changeset" という単語を使用して、今、
 commit (*note [def_commit_object]::) と呼んでいるものを説明しています。
 
-   また、それを「キャッシュ」と呼ぶのではなく、「インデックス」と呼びま
-す。 ただし、このファイルは引き続き ‘cache.h’ と呼ばれます。備考: これを
-変更する理由はたいしたものではありません。GitのすべてのCソースで
-includeされている基本的なヘッダーファイルであるため、他に適切な単一の名
-前がないためです。
+   Also, we do not call it "cache" any more, but rather "index";
+however, the file is still called ‘read-cache.h’.
 
-   あなたが最初のコミットでGitの考え方を把握したなら、あなたはより新しい
-バージョンをチェックして、 ‘cache.h’ と‘ object.h‘ と ‘commit.h’ を読み
-下すべきです。
+   If you grasp the ideas in that initial commit, you should check out a
+more recent version and skim ‘read-cache-ll.h’, ‘object.h’ and
+‘commit.h’.
 
    初期のGitは、(UNIXの伝統でである)非常に単純なプログラムの集まりであり
 、スクリプトで使用して、出力を別のプログラムにパイプしていました。 新し
@@ -4316,12 +4337,12 @@ includeされている基本的なヘッダーファイルであるため、他�
 "libified" )されました。つまり、パフォーマンス、移植性、およびコードの重
 複を避けるために libgit.a に配置されました。
 
-   今や、あなたはインデックスが何であるか(および、対応するデータ構造を
-‘cache.h’ で探す)、そして最初のメンバーである ‘struct object’ から共通の
-構造を継承するオブジェクトタイプ(blobs と trees と commits と tags)がい
-くつかあることがわかりました(したがって、たとえば ‘(struct object
-*)commit’ をキャストして 、 ‘&commit->object’ と同じようにすることができ
-ます。つまり、オブジェクト名とフラグを取得します)。
+   By now, you know what the index is (and find the corresponding data
+structures in ‘read-cache-ll.h’), and that there are just a couple of
+object types (blobs, trees, commits and tags) which inherit their common
+structure from ‘struct object’, which is their first member (and thus,
+you can cast e.g.  ‘(struct object *)commit’ to achieve the _same_ as
+‘&commit->object’, i.e.  get at the object name and flags).
 
    ここで、この情報を吸収するために一服するとしましょう。
 
@@ -4513,15 +4534,15 @@ blob object(ブロブオブジェクト)
      型の無いオブジェクト (*note [def_object]::)。例:ファイルの中身。
 
 branch
-     「ブランチ」は開発ラインです。ブランチの最新のコミット (*note
-     [def_commit]::)は、そのブランチの先端(the tip of that branch)と呼ば
-     れます。ブランチの先端はブランチhead (*note [def_head]::)によって参
-     照され、ブランチで追加の開発が行われると前進します。単一のGit リポ
-     ジトリ (*note [def_repository]::)は任意の数のブランチを追跡できます
-     が、あなたの作業ツリー (*note [def_working_tree]::)はそのうちの1つ
-     (「current branch」(現在のブランチ)または「checked out branch」(チ
-     ェックアウトされたブランチ))に関連付けられ、 HEAD (*note
-     [def_HEAD]::) はそのブランチを指します。
+     A "branch" is a line of development.  The most recent commit (*note
+     [def_commit]::) on a branch is referred to as the tip of that
+     branch.  The tip of the branch is referenced (*note [def_ref]::) by
+     a branch head (*note [def_head]::), which moves forward as
+     additional development is done on the branch.  A single Git
+     repository (*note [def_repository]::) can track an arbitrary number
+     of branches, but your working tree (*note [def_working_tree]::) is
+     associated with just one of them (the "current" or "checked out"
+     branch), and HEAD (*note [def_HEAD]::) points to that branch.
 
 cache
      廃止。 index (*note [def_index]::) を使ってください。
@@ -4573,6 +4594,21 @@ commit
      の状態を表す新しいコミットを作成し、その新しいコミットをポイントす
      るようにHEAD (*note [def_HEAD]::)を進めることにより、プロジェクトの
      状態の新しいスナップショットをGit履歴に保存する操作。
+
+commit graph concept, representations and usage
+     A synonym for the DAG (*note [def_DAG]::) structure formed by the
+     commits in the object database, referenced (*note [def_ref]::) by
+     branch tips, using their chain (*note [def_chain]::) of linked
+     commits.  This structure is the definitive commit graph.  The graph
+     can be represented in other ways, e.g.  the "commit-graph" file
+     (*note [def_commit_graph_file]::).
+
+commit-graph file
+     The "commit-graph" (normally hyphenated) file is a supplemental
+     representation of the commit graph (*note
+     [def_commit_graph_general]::) which accelerates commit graph walks.
+     The "commit-graph" file is stored either in the .git/objects/info
+     directory or in the info directory of an alternate object database.
 
 commit object
      親 (*note [def_parent]::)、コミッター、作者、日付、保存されたリビジ
@@ -4763,7 +4799,7 @@ object database
      って識別されます。オブジェクトは通常、 ‘$GIT_DIR/objects/’ にありま
      す。
 
-object identifier(オブジェクトID)
+object identifier (oid)
      object name (*note [def_object_name]::) (オブジェクト名)の同義語
 
 object name(オブジェクト名)
@@ -4991,6 +5027,15 @@ reachable(到達可能)
      るチェーン (*note [def_chain]::)によって、あるオブジェクト (*note
      [def_object]::)から別のオブジェクト (*note [def_object]::)に到達で
      きる場合に到達が可能です。
+
+reachability bitmaps
+     Reachability bitmaps store information about the reachability
+     (*note [def_reachable]::) of a selected set of commits in a
+     packfile, or a multi-pack index (MIDX), to speed up object search.
+     The bitmaps are stored in a ".bitmap" file.  A repository may have
+     at most one bitmap file in use.  The bitmap file may belong to
+     either one pack, or the repository’s multi-pack index (if it
+     exists).
 
 rebase
      一連の変更をブランチ (*note [def_branch]::)から別のベースに再適用し
@@ -5512,171 +5557,174 @@ Node: Ignoring files60015
 Node: How to merge62918
 Node: Resolving a merge65609
 Node: マージ作業中に競合解決の助けを得る67492
-Node: マージを元に戻す72445
-Node: Fast-forward merges73292
-Node: 作業ミスを修正する74233
-Node: 新しいコミットによって作業ミスを修正する75714
-Node: 履歴を巻き戻す事によって作業ミスを修正する77027
-Node: Checking out an old version of a file78557
-Node: 作業中の作業を一時的に保存しておく79638
-Node: 良好なパフォーマンスの確保80921
-Node: 信頼性の確保81742
-Node: リポジトリの破損をチェックする81998
-Node: 失われた変更の回復83471
-Node: Reflogs83840
-Node: Examining dangling objects[宙ぶらりんオブジェクトを調べる]86317
-Node: Sharing development with others88771
-Node: Getting updates with git pull89227
-Node: Submitting patches to a project92140
-Node: Importing patches to a project93798
-Node: Public Git repositories95424
-Node: Setting up a public repository98513
-Node: Gitプロトコルを介したGitリポジトリのエクスポート99594
-Node: Exporting a git repository via HTTP101130
-Node: Pushing changes to a public repository102769
-Node: プッシュが失敗した場合の対処方法105626
-Node: Setting up a shared repository108817
-Node: Allowing web browsing of a repository111027
-Node: 最小限の履歴でGitリポジトリを取得する方法112057
-Node: Examples <1>113417
-Node: Maintaining topic branches for a Linux subsystem maintainer113664
-Node: Rewriting history and maintaining patch series124639
-Node: Creating the perfect patch series125694
-Node: Keeping a patch series up to date using git rebase127695
-Node: Rewriting a single commit130963
-Node: Reordering or selecting from a patch series132037
-Node: Using interactive rebases132863
-Node: Other tools135703
-Node: 履歴の書き換えに関する問題136079
-Node: なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか138381
-Node: Advanced branch management142201
-Node: Fetching individual branches142568
-Node: git fetch and fast-forwards144075
-Node: Forcing git fetch to do non-fast-forward updates145852
-Node: Configuring remote-tracking branches146867
-Node: Gitの概念148798
-Node: The Object Database149453
-Node: Commit Object153071
-Node: Tree Object156382
-Node: Blob Object158848
-Node: Trust[信頼性]160570
-Node: Tag Object162497
-Node: Gitがオブジェクトを効率的に保存する方法; pack files163804
-Node: Dangling objects[宙ぶらりんオブジェクト]166839
-Node: 破損したリポジトリの回復172261
-Node: The index177928
-Node: Submodules181662
-Node: サブモジュールの落とし穴190005
-Node: Low-level Git operations193273
-Node: Object access and manipulation193941
-Node: The Workflow194955
-Node: working directory → index196116
-Node: index → object database198398
-Node: object database → index199127
-Node: index → working directory199990
-Node: 全てを結び付ける201539
-Node: Examining the data204864
-Node: Merging multiple trees206409
-Node: Merging multiple trees; continued208918
-Node: Hacking Git212881
-Node: Object storage format213232
-Node: Gitのソースコードを俯瞰する215208
-Node: Git用語集227004
-Node: Git解説227155
-Ref: [def_alternate_object_database]227239
-Ref: [def_bare_repository]227567
-Ref: [def_blob_object]228270
-Ref: [def_branch]228402
-Ref: [def_cache]229200
-Ref: [def_chain]229278
-Ref: [def_changeset]229622
-Ref: [def_checkout]229879
-Ref: [def_cherry-picking]230369
-Ref: [def_clean]231063
-Ref: [def_commit]231427
-Ref: [def_commit_object]232355
-Ref: [def_commit-ish]232748
-Ref: [def_core_git]233495
-Ref: [def_DAG]233649
-Ref: [def_dangling_object]234071
-Ref: [def_detached_HEAD]234507
-Ref: [def_directory]235885
-Ref: [def_dirty]235951
-Ref: [def_evil_merge]236271
-Ref: [def_fast_forward]236443
-Ref: [def_fetch]237142
-Ref: [def_file_system]237664
-Ref: [def_git_archive]237971
-Ref: [def_gitfile]238068
-Ref: [def_grafts]238223
-Ref: [def_hash]239085
-Ref: [def_head]239181
-Ref: [def_HEAD]239580
-Ref: [def_head_ref]240061
-Ref: [def_hook]240118
-Ref: [def_index]240830
-Ref: [def_index_entry]241294
-Ref: [def_master]241713
-Ref: [def_merge]242142
-Ref: [def_object]243536
-Ref: [def_object_database]243794
-Ref: [def_object_identifier]244093
-Ref: [def_object_name]244215
-Ref: [def_object_type]244460
-Ref: [def_octopus]244862
-Ref: [def_origin]244938
-Ref: [def_overlay]245499
-Ref: [def_pack]246158
-Ref: [def_pack_index]246329
-Ref: [def_pathspec]246523
-Ref: [def_parent]253450
-Ref: [def_pickaxe]253708
-Ref: [def_plumbing]254278
-Ref: [def_porcelain]254366
-Ref: [def_per_worktree_ref]254742
-Ref: [def_pseudoref]255049
-Ref: [def_pull]256334
-Ref: [def_push]256585
-Ref: [def_reachable]257406
-Ref: [def_rebase]258119
-Ref: [def_ref]258339
-Ref: [def_reflog]259226
-Ref: [def_refspec]259650
-Ref: [def_remote]259890
-Ref: [def_remote_tracking_branch]260209
-Ref: [def_repository]260832
-Ref: [def_resolve]261405
-Ref: [def_revision]261528
-Ref: [def_rewind]261601
-Ref: [def_SCM]261782
-Ref: [def_SHA1]261823
-Ref: [def_shallow_clone]262054
-Ref: [def_shallow_repository]262315
-Ref: [def_stash]263149
-Ref: [def_submodule]263399
-Ref: [def_superproject]263709
-Ref: [def_symref]264132
-Ref: [def_tag]264531
-Ref: [def_tag_object]265284
-Ref: [def_topic_branch]265713
-Ref: [def_tree]266198
-Ref: [def_tree_object]266505
-Ref: [def_tree-ish]266794
-Ref: [def_unmerged_index]267591
-Ref: [def_unreachable_object]267756
-Ref: [def_upstream_branch]268042
-Ref: [def_working_tree]268501
-Ref: [def_worktree]268803
-Node: Git Quick Reference269410
-Node: Creating a new repository <1>269971
-Node: Managing branches270445
-Node: Exploring history272569
-Node: Making changes274216
-Node: Merging275005
-Node: Sharing your changes275380
-Node: Repository maintenance276729
-Node: Notes and todo list for this manual277019
-Node: Todo list277238
+Node: マージを元に戻す73467
+Node: Fast-forward merges74314
+Node: 作業ミスを修正する75255
+Node: 新しいコミットによって作業ミスを修正する76736
+Node: 履歴を巻き戻す事によって作業ミスを修正する78049
+Node: Checking out an old version of a file79579
+Node: 作業中の作業を一時的に保存しておく80660
+Node: 良好なパフォーマンスの確保81943
+Node: 信頼性の確保82764
+Node: リポジトリの破損をチェックする83020
+Node: 失われた変更の回復84493
+Node: Reflogs84862
+Node: Examining dangling objects[宙ぶらりんオブジェクトを調べる]87339
+Node: Sharing development with others89793
+Node: Getting updates with git pull90249
+Node: Submitting patches to a project93162
+Node: Importing patches to a project94820
+Node: Public Git repositories96446
+Node: Setting up a public repository99535
+Node: Gitプロトコルを介したGitリポジトリのエクスポート100616
+Node: Exporting a git repository via HTTP102152
+Node: Pushing changes to a public repository103791
+Node: プッシュが失敗した場合の対処方法106648
+Node: Setting up a shared repository109839
+Node: Allowing web browsing of a repository112049
+Node: 最小限の履歴でGitリポジトリを取得する方法113079
+Node: Examples <1>114439
+Node: Maintaining topic branches for a Linux subsystem maintainer114686
+Node: Rewriting history and maintaining patch series125649
+Node: Creating the perfect patch series126704
+Node: Keeping a patch series up to date using git rebase128705
+Node: Rewriting a single commit131973
+Node: Reordering or selecting from a patch series133047
+Node: Using interactive rebases133873
+Node: Other tools136713
+Node: 履歴の書き換えに関する問題137089
+Node: なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか139391
+Node: Advanced branch management143211
+Node: Fetching individual branches143578
+Node: git fetch and fast-forwards145085
+Node: Forcing git fetch to do non-fast-forward updates146862
+Node: Configuring remote-tracking branches147877
+Node: Gitの概念149808
+Node: The Object Database150463
+Node: Commit Object154081
+Node: Tree Object157392
+Node: Blob Object159858
+Node: Trust[信頼性]161580
+Node: Tag Object163507
+Node: Gitがオブジェクトを効率的に保存する方法; pack files164814
+Node: Dangling objects[宙ぶらりんオブジェクト]167849
+Node: 破損したリポジトリの回復173271
+Node: The index178938
+Node: Submodules182672
+Node: サブモジュールの落とし穴191015
+Node: Low-level Git operations194283
+Node: Object access and manipulation194951
+Node: The Workflow195965
+Node: working directory → index197126
+Node: index → object database199408
+Node: object database → index200137
+Node: index → working directory201000
+Node: 全てを結び付ける202549
+Node: Examining the data205874
+Node: Merging multiple trees207419
+Node: Merging multiple trees; continued209928
+Node: Hacking Git213891
+Node: Object storage format214242
+Node: Gitのソースコードを俯瞰する216218
+Node: Git用語集227486
+Node: Git解説227637
+Ref: [def_alternate_object_database]227721
+Ref: [def_bare_repository]228049
+Ref: [def_blob_object]228752
+Ref: [def_branch]228884
+Ref: [def_cache]229516
+Ref: [def_chain]229594
+Ref: [def_changeset]229938
+Ref: [def_checkout]230195
+Ref: [def_cherry-picking]230685
+Ref: [def_clean]231379
+Ref: [def_commit]231743
+Ref: [def_commit_graph_general]232671
+Ref: [def_commit_graph_file]233112
+Ref: [def_commit_object]233464
+Ref: [def_commit-ish]233857
+Ref: [def_core_git]234604
+Ref: [def_DAG]234758
+Ref: [def_dangling_object]235180
+Ref: [def_detached_HEAD]235616
+Ref: [def_directory]236994
+Ref: [def_dirty]237060
+Ref: [def_evil_merge]237380
+Ref: [def_fast_forward]237552
+Ref: [def_fetch]238251
+Ref: [def_file_system]238773
+Ref: [def_git_archive]239080
+Ref: [def_gitfile]239177
+Ref: [def_grafts]239332
+Ref: [def_hash]240194
+Ref: [def_head]240290
+Ref: [def_HEAD]240689
+Ref: [def_head_ref]241170
+Ref: [def_hook]241227
+Ref: [def_index]241939
+Ref: [def_index_entry]242403
+Ref: [def_master]242822
+Ref: [def_merge]243251
+Ref: [def_object]244645
+Ref: [def_object_database]244903
+Ref: [def_object_identifier]245202
+Ref: [def_object_name]245308
+Ref: [def_object_type]245553
+Ref: [def_octopus]245955
+Ref: [def_origin]246031
+Ref: [def_overlay]246592
+Ref: [def_pack]247251
+Ref: [def_pack_index]247422
+Ref: [def_pathspec]247616
+Ref: [def_parent]254543
+Ref: [def_pickaxe]254801
+Ref: [def_plumbing]255371
+Ref: [def_porcelain]255459
+Ref: [def_per_worktree_ref]255835
+Ref: [def_pseudoref]256142
+Ref: [def_pull]257427
+Ref: [def_push]257678
+Ref: [def_reachable]258499
+Ref: [def_reachability_bitmap]259212
+Ref: [def_rebase]259660
+Ref: [def_ref]259880
+Ref: [def_reflog]260767
+Ref: [def_refspec]261191
+Ref: [def_remote]261431
+Ref: [def_remote_tracking_branch]261750
+Ref: [def_repository]262373
+Ref: [def_resolve]262946
+Ref: [def_revision]263069
+Ref: [def_rewind]263142
+Ref: [def_SCM]263323
+Ref: [def_SHA1]263364
+Ref: [def_shallow_clone]263595
+Ref: [def_shallow_repository]263856
+Ref: [def_stash]264690
+Ref: [def_submodule]264940
+Ref: [def_superproject]265250
+Ref: [def_symref]265673
+Ref: [def_tag]266072
+Ref: [def_tag_object]266825
+Ref: [def_topic_branch]267254
+Ref: [def_tree]267739
+Ref: [def_tree_object]268046
+Ref: [def_tree-ish]268335
+Ref: [def_unmerged_index]269132
+Ref: [def_unreachable_object]269297
+Ref: [def_upstream_branch]269583
+Ref: [def_working_tree]270042
+Ref: [def_worktree]270344
+Node: Git Quick Reference270951
+Node: Creating a new repository <1>271512
+Node: Managing branches271986
+Node: Exploring history274110
+Node: Making changes275757
+Node: Merging276546
+Node: Sharing your changes276921
+Node: Repository maintenance278270
+Node: Notes and todo list for this manual278560
+Node: Todo list278779
 
 End Tag Table
 

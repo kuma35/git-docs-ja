@@ -743,15 +743,9 @@ asciidoc.install();
 <h3 id="_overview">Overview</h3>
 <div class="sect3">
 <h4 id="_problem_statement">Problem statement</h4>
-<div class="paragraph"><p>一部のリポジトリにはたくさんの参照が含まれています(例: android の 866k、rails の 31k)。 既存の pack-refs
-形式は多くのスペース(たとえば 62M とか)を占有し、追加の参照では拡張できません。
-単一の参照を検索するには、ファイルを線形にスキャンする必要があります。</p></div>
-<div class="paragraph"><p>複数の参照を変更するアトミック・プッシュでは、パックされた参照ファイル全体をコピーする必要があります。これは、(2つの参照が変更されただけの、)小さな取引
-(transactions)でも、かなりの量のデータが移動される可能性があります(たとえば、62M の入出力)。</p></div>
-<div class="paragraph"><p>各参照は 41 バイトを格納する独自のファイル (および対応する reflog 用の別のファイル)
-であるため、多くの緩い(loose)参照を含むリポジトリは、ローカル・ファイルシステム上で多数のディスク・ブロックを占有します。
-これは、多数のリポジトリが同じファイルシステムに保存されている場合に、利用可能な inode の数に悪影響を及ぼします。 <code>$GIT_DIR/refs</code>
-ディレクトリをトラバースして読み取るために必要なシステムコールの数がすごくたくさんになるため、読み取り側は不利(penalize)になる可能性があります。</p></div>
+<div class="paragraph"><p>一部のリポジトリにはたくさんの参照が含まれています(例: android の 866k、rails の 31k)。 既存の pack-refs 形式は多くのスペース(たとえば 62M とか)を占有し、追加の参照では拡張できません。 単一の参照を検索するには、ファイルを線形にスキャンする必要があります。</p></div>
+<div class="paragraph"><p>複数の参照を変更するアトミック・プッシュでは、パックされた参照ファイル全体をコピーする必要があります。これは、(2つの参照が変更されただけの、)小さな取引 (transactions)でも、かなりの量のデータが移動される可能性があります(たとえば、62M の入出力)。</p></div>
+<div class="paragraph"><p>各参照は 41 バイトを格納する独自のファイル (および対応する reflog 用の別のファイル) であるため、多くの緩い(loose)参照を含むリポジトリは、ローカル・ファイルシステム上で多数のディスク・ブロックを占有します。 これは、多数のリポジトリが同じファイルシステムに保存されている場合に、利用可能な inode の数に悪影響を及ぼします。 <code>$GIT_DIR/refs</code> ディレクトリをトラバースして読み取るために必要なシステムコールの数がすごくたくさんになるため、読み取り側は不利(penalize)になる可能性があります。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_objectives">Objectives</h4>
@@ -763,8 +757,7 @@ asciidoc.install();
 </li>
 <li>
 <p>
-オブジェクト名が少なくとも1つの参照によって参照される場合、ほぼ一定時間で検証(verification)を行う(allow-tip-sha1-in-want
-  用)。
+オブジェクト名が少なくとも1つの参照によって参照される場合、ほぼ一定時間で検証(verification)を行う(allow-tip-sha1-in-want 用)。
 </p>
 </li>
 <li>
@@ -791,10 +784,8 @@ asciidoc.install();
 </div>
 <div class="sect3">
 <h4 id="_description">Description</h4>
-<div class="paragraph"><p>reftable ファイルは、参照ストレージ用にカスタマイズされた可搬性(portable)のあるバイナリ・ファイル形式です。
-参照は並べ替えられ、線形スキャン、二分木検索検索(binary search lookup)、範囲スキャンが可能になります。</p></div>
-<div class="paragraph"><p>ファイル内のストレージは、可変サイズのブロックに編成されます。 ディスク領域を削減するために、1 つのブロック内でプレフィックス圧縮が使用されます。
-ブロックサイズと揃え幅(alignment)は、ライターによって調整可能です。</p></div>
+<div class="paragraph"><p>reftable ファイルは、参照ストレージ用にカスタマイズされた可搬性(portable)のあるバイナリ・ファイル形式です。 参照は並べ替えられ、線形スキャン、二分木検索検索(binary search lookup)、範囲スキャンが可能になります。</p></div>
+<div class="paragraph"><p>ファイル内のストレージは、可変サイズのブロックに編成されます。 ディスク領域を削減するために、1 つのブロック内でプレフィックス圧縮が使用されます。 ブロックサイズと揃え幅(alignment)は、ライターによって調整可能です。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_performance">Performance</h4>
@@ -856,8 +847,7 @@ cellspacing="0" cellpadding="4">
 </tbody>
 </table>
 </div>
-<div class="paragraph"><p>スキャン (866k ref の読み取り)と、参照名検索(lookup) (866k refs から 単一 ref を)と、SHA-1
-検索(lookup) (866k refs からのその SHA-1 を含む refs):</p></div>
+<div class="paragraph"><p>スキャン (866k ref の読み取り)と、参照名検索(lookup) (866k refs から 単一 ref を)と、SHA-1 検索(lookup) (866k refs からのその SHA-1 を含む refs):</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
@@ -909,7 +899,7 @@ cellspacing="0" cellpadding="4">
 </tbody>
 </table>
 </div>
-<div class="paragraph"><p>43,061 refs の 149,932 ログ エントリに使用されるスペース  reflog V.S. reftable:</p></div>
+<div class="paragraph"><p>43,061 refs の 149,932 ログ エントリに使用されるスペース reflog V.S. reftable:</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
@@ -945,13 +935,11 @@ cellspacing="0" cellpadding="4">
 <h3 id="_details">Details</h3>
 <div class="sect3">
 <h4 id="_peeling">Peeling</h4>
-<div class="paragraph"><p>reftable に格納された参照は皮むき(peel)され、注釈付き (または署名付き) タグのレコードは、タグ
-オブジェクトとそれが参照するオブジェクトの両方を記録します。 これは、packed-refs 形式のストレージに似ています。</p></div>
+<div class="paragraph"><p>reftable に格納された参照は皮むき(peel)され、注釈付き (または署名付き) タグのレコードは、タグ オブジェクトとそれが参照するオブジェクトの両方を記録します。 これは、packed-refs 形式のストレージに似ています。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_reference_name_encoding">Reference name encoding</h4>
-<div class="paragraph"><p>参照名は解釈されないバイト列で、有効な参照名としては <a href="../git-check-ref-format.html">git-check-ref-format(1)</a>
-をパス(pass)しなければなりません。</p></div>
+<div class="paragraph"><p>参照名は解釈されないバイト列で、有効な参照名としては <a href="../git-check-ref-format.html">git-check-ref-format(1)</a> をパス(pass)しなければなりません。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_key_unicity">Key unicity</h4>
@@ -981,9 +969,7 @@ while (buf[ptr] &amp; 0x80) {
 <div class="sect3">
 <h4 id="_directory_file_conflicts">Directory/file conflicts</h4>
 <div class="paragraph"><p>reftable 形式は、<code>refs/heads/foo</code> と <code>refs/heads/foo/bar</code> の両方を別個の参照として受け入れます。</p></div>
-<div class="paragraph"><p>この特性は、reftable にログ レコードを保持するのに役立ちますが、<code>$GIT_DIR/refs</code> ディレクトリ ツリーを使用して参照を維持する
-Git のバージョンを混乱させる可能性があります。 reftable のユーザーは、ピアの問題を防ぐために、<code>foo</code> および <code>foo/bar</code>
-タイプの競合を引き続き拒否することを選択できます。</p></div>
+<div class="paragraph"><p>この特性は、reftable にログ レコードを保持するのに役立ちますが、<code>$GIT_DIR/refs</code> ディレクトリ ツリーを使用して参照を維持する Git のバージョンを混乱させる可能性があります。 reftable のユーザーは、ピアの問題を防ぐために、<code>foo</code> および <code>foo/bar</code> タイプの競合を引き続き拒否することを選択できます。</p></div>
 </div>
 </div>
 <div class="sect2">
@@ -1005,8 +991,7 @@ log_block*
 log_index*
 footer</code></pre>
 </div></div>
-<div class="paragraph"><p>ログのみのファイルでは、<code>ref_block</code> と <code>ref_index</code> と`obj_block` と`obj_index`
-セクションが省略され、ファイルヘッダーとログブロックのみが含まれます:</p></div>
+<div class="paragraph"><p>ログのみのファイルでは、<code>ref_block</code> と <code>ref_index</code> と`obj_block` と`obj_index` セクションが省略され、ファイルヘッダーとログブロックのみが含まれます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>first_block {
@@ -1020,24 +1005,15 @@ footer</code></pre>
 </div>
 <div class="sect3">
 <h4 id="_block_size">Block size</h4>
-<div class="paragraph"><p>ファイルのブロック・サイズはライター(writer)によって任意に決定され、2
-のべき乗である必要はありません。参照は複数のブロックにまたがることができないため、ブロック
-サイズは、リポジトリで使用される最長の参照名またはログ・エントリよりも大きくする必要があります。</p></div>
-<div class="paragraph"><p>仮想メモリ・システムまたはファイル・システム (4k や 8k など) に適した 2 の累乗が推奨されます。 サイズが大きい (64k)
-ほど圧縮率が高くなりますが、アクセス中にリーダー(readers)が負担するコストが増加する可能性があります。</p></div>
+<div class="paragraph"><p>ファイルのブロック・サイズはライター(writer)によって任意に決定され、2 のべき乗である必要はありません。参照は複数のブロックにまたがることができないため、ブロック サイズは、リポジトリで使用される最長の参照名またはログ・エントリよりも大きくする必要があります。</p></div>
+<div class="paragraph"><p>仮想メモリ・システムまたはファイル・システム (4k や 8k など) に適した 2 の累乗が推奨されます。 サイズが大きい (64k) ほど圧縮率が高くなりますが、アクセス中にリーダー(readers)が負担するコストが増加する可能性があります。</p></div>
 <div class="paragraph"><p>最大ブロック サイズは「16777215」バイト (15.99 MiB) です。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_block_alignment">Block alignment</h4>
-<div class="paragraph"><p>ライター(writers)は、ブロックの末尾に NUL
-バイトで満たされた「詰物」(padding)を含めることにより、ブロック・サイズの倍数でブロックを揃えて、選択した揃え幅(alignment)に丸めることができます。
-揃えを使用する場合、ライターはファイル・ヘッダーの「block_size」フィールドで揃え幅(alignment)を指定する必要があります。</p></div>
-<div class="paragraph"><p>このファイル形式では、ブロック揃え幅(alignment)は必須ではありません。 揃えない(unaligned)ファイルは、ファイル・ヘッダーで
-<code>block_size = 0</code> を設定し、「詰物」(padding)を省略しなければなりません。 複数の ref ブロックを含む揃えないファイルには、
-<a href="#Ref-index">ref index</a> を含めて高速検索をサポートする必要があります。
-リーダー(readers)は、揃えるファイルと揃えないファイルの両方を読み取ることができなければなりません。</p></div>
-<div class="paragraph"><p>非常に小さなファイル (単一の ref ブロックなど) では、合計ファイル
-サイズを減らすために「詰物」(padding)とrefインデックスを省略できます。</p></div>
+<div class="paragraph"><p>ライター(writers)は、ブロックの末尾に NUL バイトで満たされた「詰物」(padding)を含めることにより、ブロック・サイズの倍数でブロックを揃えて、選択した揃え幅(alignment)に丸めることができます。 揃えを使用する場合、ライターはファイル・ヘッダーの「block_size」フィールドで揃え幅(alignment)を指定する必要があります。</p></div>
+<div class="paragraph"><p>このファイル形式では、ブロック揃え幅(alignment)は必須ではありません。 揃えない(unaligned)ファイルは、ファイル・ヘッダーで <code>block_size = 0</code> を設定し、「詰物」(padding)を省略しなければなりません。 複数の ref ブロックを含む揃えないファイルには、 <a href="#Ref-index">ref index</a> を含めて高速検索をサポートする必要があります。 リーダー(readers)は、揃えるファイルと揃えないファイルの両方を読み取ることができなければなりません。</p></div>
+<div class="paragraph"><p>非常に小さなファイル (単一の ref ブロックなど) では、合計ファイル サイズを減らすために「詰物」(padding)とrefインデックスを省略できます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_header_version_1">Header (version 1)</h4>
@@ -1050,12 +1026,8 @@ uint24( block_size )
 uint64( min_update_index )
 uint64( max_update_index )</code></pre>
 </div></div>
-<div class="paragraph"><p>揃えるファイルは、予想されるブロック揃え幅(alignment)でリーダーを構成するために、 <code>block_size</code> を指定する必要があります。
-揃えないファイルは、<code>block_size = 0</code> を設定する必要があります。</p></div>
-<div class="paragraph"><p><code>min_update_index</code> と <code>max_update_index</code> は、このファイル内のすべてのログ・レコードの
-<code>update_index</code> フィールドの境界を記述します。 <a href="#Update-transactions">transactions</a>
-のスタックで reftable が使用される場合、これらのフィールドは、前のファイルの <code>max_update_index + 1</code> が次のファイルの
-<code>min_update_index</code> になるようにファイルを並べ替えることができます。</p></div>
+<div class="paragraph"><p>揃えるファイルは、予想されるブロック揃え幅(alignment)でリーダーを構成するために、 <code>block_size</code> を指定する必要があります。 揃えないファイルは、<code>block_size = 0</code> を設定する必要があります。</p></div>
+<div class="paragraph"><p><code>min_update_index</code> と <code>max_update_index</code> は、このファイル内のすべてのログ・レコードの <code>update_index</code> フィールドの境界を記述します。 <a href="#Update-transactions">transactions</a> のスタックで reftable が使用される場合、これらのフィールドは、前のファイルの <code>max_update_index + 1</code> が次のファイルの <code>min_update_index</code> になるようにファイルを並べ替えることができます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_header_version_2">Header (version 2)</h4>
@@ -1069,14 +1041,12 @@ uint64( min_update_index )
 uint64( max_update_index )
 uint32( hash_id )</code></pre>
 </div></div>
-<div class="paragraph"><p>ヘッダーは「version_number=1」と全く同じで、 4バイトのハッシュID (SHA1 の場合は「sha1」、SHA-256
-の場合は「s256」) がヘッダーに追加されます。</p></div>
+<div class="paragraph"><p>ヘッダーは「version_number=1」と全く同じで、 4バイトのハッシュID (SHA1 の場合は「sha1」、SHA-256 の場合は「s256」) がヘッダーに追加されます。</p></div>
 <div class="paragraph"><p>下位互換性を最大限に保つために、SHA1 reftable を作成する場合はバージョン 1 を使用することをお勧めします。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_first_ref_block">First ref block</h4>
-<div class="paragraph"><p>最初の ref ブロックは、ファイルヘッダーと同一のブロックを共有し、ファイル内の他のすべてのブロックよりも 24 バイト小さくなります。
-最初のブロックは、ファイルヘッダーの直後の 24 番目の位置から始まります。</p></div>
+<div class="paragraph"><p>最初の ref ブロックは、ファイルヘッダーと同一のブロックを共有し、ファイル内の他のすべてのブロックよりも 24 バイト小さくなります。 最初のブロックは、ファイルヘッダーの直後の 24 番目の位置から始まります。</p></div>
 <div class="paragraph"><p>最初のブロックがログ・ブロック (ログのみのファイル) の場合、そのブロック・ヘッダーは位置 24 から直ちに始まります。</p></div>
 </div>
 <div class="sect3">
@@ -1092,20 +1062,11 @@ uint16( restart_count )
 
 padding?</code></pre>
 </div></div>
-<div class="paragraph"><p>ブロックは <code>block_type = 'r'</code> で始まり、そして 3 バイトの <code>block_len</code>
-はブロック内のバイト数をエンコードしますが、オプションの「詰物」は含みません。 これは、常にファイルのブロック・イズ以下です。 最初の ref
-ブロックでは、 <code>block_len</code> にファイル・ヘッダー用の 24 バイトが含まれます。</p></div>
-<div class="paragraph"><p>2 バイトの「restart_count」には、「restart_offset」リストのエントリ数が格納されます。このリストは空であってはなりません。
-リーダーは、線形スキャンを開始する前に、「restart_count」を使用して再開区間(between
-restarts)で二分木検索を行うことができます。</p></div>
-<div class="paragraph"><p>正確に <code>restart_count</code> の 3 バイトの <code>restart_offset</code> 値が <code>restart_count</code> に先行します。
-オフセットはブロックの開始からの相対であり、名前がプレフィックス圧縮されていない「ref_record」の最初のバイトを参照します。
-<code>restart_offset</code> リストのエントリは、昇順で並べ替える必要があります。
-リーダーは、これらのレコードのいずれかから線形スキャンを開始できます。</p></div>
+<div class="paragraph"><p>ブロックは <code>block_type = 'r'</code> で始まり、そして 3 バイトの <code>block_len</code> はブロック内のバイト数をエンコードしますが、オプションの「詰物」は含みません。 これは、常にファイルのブロック・イズ以下です。 最初の ref ブロックでは、 <code>block_len</code> にファイル・ヘッダー用の 24 バイトが含まれます。</p></div>
+<div class="paragraph"><p>2 バイトの「restart_count」には、「restart_offset」リストのエントリ数が格納されます。このリストは空であってはなりません。 リーダーは、線形スキャンを開始する前に、「restart_count」を使用して再開区間(between restarts)で二分木検索を行うことができます。</p></div>
+<div class="paragraph"><p>正確に <code>restart_count</code> の 3 バイトの <code>restart_offset</code> 値が <code>restart_count</code> に先行します。 オフセットはブロックの開始からの相対であり、名前がプレフィックス圧縮されていない「ref_record」の最初のバイトを参照します。 <code>restart_offset</code> リストのエントリは、昇順で並べ替える必要があります。 リーダーは、これらのレコードのいずれかから線形スキャンを開始できます。</p></div>
 <div class="paragraph"><p>可変数の「ref_record」がブロックの中央部を埋め、参照名と値を記述します。 形式は下記のとおりです。</p></div>
-<div class="paragraph"><p>最初の ref ブロックは最初のファイル・ブロックをファイル・ヘッダーと共有するため、最初のブロックのすべての <code>restart_offset</code>
-はファイルの先頭 (位置 0) からの相対であり、ファイル・ヘッダーを含みます。
-これにより、最初の「restart_offset」は強制的に「28」になります。</p></div>
+<div class="paragraph"><p>最初の ref ブロックは最初のファイル・ブロックをファイル・ヘッダーと共有するため、最初のブロックのすべての <code>restart_offset</code> はファイルの先頭 (位置 0) からの相対であり、ファイル・ヘッダーを含みます。 これにより、最初の「restart_offset」は強制的に「28」になります。</p></div>
 <div class="sect4">
 <h5 id="_ref_record">ref record</h5>
 <div class="paragraph"><p><code>ref_record</code> は、名前とその値の両方を格納する単一の参照を記述します。各レコードは以下の形式です:</p></div>
@@ -1117,18 +1078,14 @@ suffix
 varint( update_index_delta )
 value?</code></pre>
 </div></div>
-<div class="paragraph"><p>「prefix_length」フィールドは、この参照の名前を取得するために、前の参照レコードの名前の先頭の何バイトをコピーする必要があるかを指定します。
-これは、任意のブロックの最初の参照では 0 でなければならず、ブロックの最後の <code>restart_offset</code>
-テーブルにオフセットがリストされているすべての <code>ref_record</code> についても 0 でなければなりません。</p></div>
+<div class="paragraph"><p>「prefix_length」フィールドは、この参照の名前を取得するために、前の参照レコードの名前の先頭の何バイトをコピーする必要があるかを指定します。 これは、任意のブロックの最初の参照では 0 でなければならず、ブロックの最後の <code>restart_offset</code> テーブルにオフセットがリストされているすべての <code>ref_record</code> についても 0 でなければなりません。</p></div>
 <div class="paragraph"><p>任意の <code>ref_record</code> から参照名を復元するのは単純な連結です:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>this_name = prior_name[0..prefix_length] + suffix</code></pre>
 </div></div>
-<div class="paragraph"><p><code>suffix_length</code> 値は、参照名を完成させるために <code>suffix</code> からコピーするために <code>suffix</code>
-で利用可能なバイト数を提供します。</p></div>
-<div class="paragraph"><p>参照を最後に変更した <code>update_index</code> は、ファイル・ヘッダーの <code>min_update_index</code> に
-<code>update_index_delta</code> を追加することで取得できます: <code>min_update_index + update_index_delta</code></p></div>
+<div class="paragraph"><p><code>suffix_length</code> 値は、参照名を完成させるために <code>suffix</code> からコピーするために <code>suffix</code> で利用可能なバイト数を提供します。</p></div>
+<div class="paragraph"><p>参照を最後に変更した <code>update_index</code> は、ファイル・ヘッダーの <code>min_update_index</code> に <code>update_index_delta</code> を追加することで取得できます: <code>min_update_index + update_index_delta</code></p></div>
 <div class="paragraph"><p>「値」が続きます。 その形式は、以下のいずれかの「value_type」によって決まります:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1158,21 +1115,10 @@ value?</code></pre>
 </div>
 <div class="sect3">
 <h4 id="_ref_index">Ref index</h4>
-<div class="paragraph"><p>ref インデックスは、ファイル内のすべての ref ブロックからの最後の参照の名前を格納し、検索(lookup)のためのディスク・シークを削減します。
-インデックスを検索(search)し、それを含むブロックを特定し、そのブロック内を検索(search)することで、すべての参照を見つける(find)ことができます。</p></div>
-<div class="paragraph"><p>インデックスは、マルチレベル・インデックスに編成することができます。この場合、第 1
-レベルのインデックス・ブロックが追加の参照インデックス・ブロック(第2レベル)を指し、さらに追加のインデックス・ブロック (たとえば 第 3 レベル)
-または参照ブロック (リーフ レベル) を指す場合があります。 ref
-にアクセスするために必要なディスク読み取りの必要性は、インデックス・レベルが高いほど高くなります。
-単一のインデックス・ブロックがファイル形式の最大ブロック サイズ「16777215」バイト (15.99 MiB)
-を超えないようにするために、複数レベルのインデックスが必要になる場合があります。 検索(lookup)のために一定の O(1)
-ディスク・シークを実現するには、インデックスは単一レベルである必要があります。これは、ファイルの構成されたブロック・サイズを超えることは許可されていますが、フォーマットの最大ブロック・サイズである
-15.99 MiB を超えることは許可されていません。</p></div>
+<div class="paragraph"><p>ref インデックスは、ファイル内のすべての ref ブロックからの最後の参照の名前を格納し、検索(lookup)のためのディスク・シークを削減します。 インデックスを検索(search)し、それを含むブロックを特定し、そのブロック内を検索(search)することで、すべての参照を見つける(find)ことができます。</p></div>
+<div class="paragraph"><p>インデックスは、マルチレベル・インデックスに編成することができます。この場合、第 1 レベルのインデックス・ブロックが追加の参照インデックス・ブロック(第2レベル)を指し、さらに追加のインデックス・ブロック (たとえば 第 3 レベル) または参照ブロック (リーフ レベル) を指す場合があります。 ref にアクセスするために必要なディスク読み取りの必要性は、インデックス・レベルが高いほど高くなります。 単一のインデックス・ブロックがファイル形式の最大ブロック サイズ「16777215」バイト (15.99 MiB) を超えないようにするために、複数レベルのインデックスが必要になる場合があります。 検索(lookup)のために一定の O(1) ディスク・シークを実現するには、インデックスは単一レベルである必要があります。これは、ファイルの構成されたブロック・サイズを超えることは許可されていますが、フォーマットの最大ブロック・サイズである 15.99 MiB を超えることは許可されていません。</p></div>
 <div class="paragraph"><p>もしあれば、refインデックス・ブロック(達)は最後のrefブロックの後に表れます。</p></div>
-<div class="paragraph"><p>少なくとも 4 つの ref ブロックがある場合は、検索(lookup)時間を改善するために ref インデックス・ブロックを書き込む必要があります。
-インデックスを使用したコールド読み取りには 2 つのディスク読み取り (インデックス読み取りとブロック読み取り)
-が必要であり、また、4ブロック未満のバイナリ検索でもディスク読み取りが2回以下必要です。
-小さいファイルからインデックス・ブロックを省略すると、スペースが節約されます。</p></div>
+<div class="paragraph"><p>少なくとも 4 つの ref ブロックがある場合は、検索(lookup)時間を改善するために ref インデックス・ブロックを書き込む必要があります。 インデックスを使用したコールド読み取りには 2 つのディスク読み取り (インデックス読み取りとブロック読み取り) が必要であり、また、4ブロック未満のバイナリ検索でもディスク読み取りが2回以下必要です。 小さいファイルからインデックス・ブロックを省略すると、スペースが節約されます。</p></div>
 <div class="paragraph"><p>ファイルが揃えられておらず、複数の ref ブロックが含まれている場合は、ref インデックスを書き込む必要があります。</p></div>
 <div class="paragraph"><p>インデックス・ブロック形式:</p></div>
 <div class="literalblock">
@@ -1185,13 +1131,10 @@ uint16( restart_count )
 
 padding?</code></pre>
 </div></div>
-<div class="paragraph"><p>インデックス・ブロックは、<code>block_type = 'i'</code> で始まり、そして、ブロック内のバイト数をエンコードする 3 バイトの
-<code>block_len</code> は、オプションの「詰物」を含みません。</p></div>
+<div class="paragraph"><p>インデックス・ブロックは、<code>block_type = 'i'</code> で始まり、そして、ブロック内のバイト数をエンコードする 3 バイトの <code>block_len</code> は、オプションの「詰物」を含みません。</p></div>
 <div class="paragraph"><p><code>restart_offset</code> および <code>restart_count</code> フィールドの形式と意味と使用法は、 ref ブロックの場合と全く同じです。</p></div>
-<div class="paragraph"><p>非常に大きなファイルのランダム・アクセスに必要な読み取り回数を減らすために、インデックス・ブロックは他のブロックよりも大きくなる場合があります。
-ただし、これを利用するには、リーダーはインデックス全体をメモリに保持する必要があるため、ファイル・サイズとリーダー・メモリの両方で時間と空間のトレードオフになります。</p></div>
-<div class="paragraph"><p>ファイルのブロック・サイズを大きくすると、インデックス・サイズが小さくなります。
-別の方法として、複数レベルのインデックスを使用して、インデックス・ブロックをファイルのブロック・サイズ内に保ちながら、アクセスする必要があるブロックの数を増やすこともできます。</p></div>
+<div class="paragraph"><p>非常に大きなファイルのランダム・アクセスに必要な読み取り回数を減らすために、インデックス・ブロックは他のブロックよりも大きくなる場合があります。 ただし、これを利用するには、リーダーはインデックス全体をメモリに保持する必要があるため、ファイル・サイズとリーダー・メモリの両方で時間と空間のトレードオフになります。</p></div>
+<div class="paragraph"><p>ファイルのブロック・サイズを大きくすると、インデックス・サイズが小さくなります。 別の方法として、複数レベルのインデックスを使用して、インデックス・ブロックをファイルのブロック・サイズ内に保ちながら、アクセスする必要があるブロックの数を増やすこともできます。</p></div>
 <div class="sect4">
 <h5 id="_index_record">index record</h5>
 <div class="paragraph"><p>インデックス・レコードは、別のブロックの最後のエントリを記述します。 インデックス・レコードは以下のとおり記述されます:</p></div>
@@ -1203,29 +1146,19 @@ suffix
 varint( block_position )</code></pre>
 </div></div>
 <div class="paragraph"><p>インデックス・レコードは、<code>ref_record</code> と正確に同様にプレフィックス圧縮を使用します。</p></div>
-<div class="paragraph"><p>インデックス・レコードは、サフィックスの後に「block_position」を格納し、この参照で終了するブロックの (ファイルの先頭からの)
-絶対位置をバイト単位で指定します。 リーダーは「block_position」へシークして、ブロック・ヘッダーの読み取りを開始できます。</p></div>
-<div class="paragraph"><p>リーダーは、<code>block_position</code>
-のブロック・ヘッダーを調べて、次のブロックが別のレベルのインデックス・ブロックであるか、枝葉レベル(leaf-level)の ref
-ブロックであるかを判断する必要があります。</p></div>
+<div class="paragraph"><p>インデックス・レコードは、サフィックスの後に「block_position」を格納し、この参照で終了するブロックの (ファイルの先頭からの) 絶対位置をバイト単位で指定します。 リーダーは「block_position」へシークして、ブロック・ヘッダーの読み取りを開始できます。</p></div>
+<div class="paragraph"><p>リーダーは、<code>block_position</code> のブロック・ヘッダーを調べて、次のブロックが別のレベルのインデックス・ブロックであるか、枝葉レベル(leaf-level)の ref ブロックであるかを判断する必要があります。</p></div>
 </div>
 <div class="sect4">
 <h5 id="_reading_the_index">Reading the index</h5>
-<div class="paragraph"><p>ref インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>ref_index_position</code> を取得する必要があります。
-存在しない場合、位置は 0 になります。 <code>ref_index_position</code> は、ref インデックスの第 1 レベルのルート(root)用です。</p></div>
+<div class="paragraph"><p>ref インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>ref_index_position</code> を取得する必要があります。 存在しない場合、位置は 0 になります。 <code>ref_index_position</code> は、ref インデックスの第 1 レベルのルート(root)用です。</p></div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_obj_block_format">Obj block format</h4>
-<div class="paragraph"><p>オブジェクト・ブロックはオプションです。
-ライターは、特にリーダーがrefマッピングにオブジェクト名を使用しない場合は、オブジェクト・ブロックを省略することを選択できます。</p></div>
-<div class="paragraph"><p>オブジェクト・ブロックは、 2 ～ 31 個の一意の短縮オブジェクト名キーを使用し、そのオブジェクトを直接指す参照を含む ref
-ブロックにマッピングするか、注釈付きタグの皮むきされた値(peeled value)としてマッピングします。 ref
-ブロックと同様に、オブジェクト・ブロックはファイルの標準ブロック・サイズを使用します。 省略形の長さは、フッターで <code>obj_id_len</code>
-として利用できます。</p></div>
-<div class="paragraph"><p>小さなファイルのスペースを節約するために、ref インデックスが存在しない場合はオブジェクト・ブロックを省略できます。力づくで検索(brute
-force search)を行う場合はいくつかの ref ブロックを読み取るだけでよいためです。
-欠落がある場合、リーダーは、オブジェクト名で検索(lookup)するすべての参照の線形検索を力ずくで実行する必要があります。</p></div>
+<div class="paragraph"><p>オブジェクト・ブロックはオプションです。 ライターは、特にリーダーがrefマッピングにオブジェクト名を使用しない場合は、オブジェクト・ブロックを省略することを選択できます。</p></div>
+<div class="paragraph"><p>オブジェクト・ブロックは、 2 ～ 31 個の一意の短縮オブジェクト名キーを使用し、そのオブジェクトを直接指す参照を含む ref ブロックにマッピングするか、注釈付きタグの皮むきされた値(peeled value)としてマッピングします。 ref ブロックと同様に、オブジェクト・ブロックはファイルの標準ブロック・サイズを使用します。 省略形の長さは、フッターで <code>obj_id_len</code> として利用できます。</p></div>
+<div class="paragraph"><p>小さなファイルのスペースを節約するために、ref インデックスが存在しない場合はオブジェクト・ブロックを省略できます。力づくで検索(brute force search)を行う場合はいくつかの ref ブロックを読み取るだけでよいためです。 欠落がある場合、リーダーは、オブジェクト名で検索(lookup)するすべての参照の線形検索を力ずくで実行する必要があります。</p></div>
 <div class="paragraph"><p>オブジェクト・ブロックは以下のとおり記述されます:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1237,11 +1170,8 @@ uint16( restart_count )
 
 padding?</code></pre>
 </div></div>
-<div class="paragraph"><p>フィールドは ref ブロックの場合と全く同じです。 再開表(restart
-table)を使用した二分木探索は、参照ブロックの場合と全く同一に機能します。</p></div>
-<div class="paragraph"><p>オブジェクト名はライターによって reftable 内の最も短い一意の略語に省略されるため、オブジェクト・キーの長さは可変長になります。
-それらの長さは少なくとも 2 バイトでなければなりません。
-リーダーは、オブジェクト・ブロックまたはオブジェクト・インデックス内の一般的なプレフィックスの一致についてのみ比較する必要があります。</p></div>
+<div class="paragraph"><p>フィールドは ref ブロックの場合と全く同じです。 再開表(restart table)を使用した二分木探索は、参照ブロックの場合と全く同一に機能します。</p></div>
+<div class="paragraph"><p>オブジェクト名はライターによって reftable 内の最も短い一意の略語に省略されるため、オブジェクト・キーの長さは可変長になります。 それらの長さは少なくとも 2 バイトでなければなりません。 リーダーは、オブジェクト・ブロックまたはオブジェクト・インデックス内の一般的なプレフィックスの一致についてのみ比較する必要があります。</p></div>
 <div class="sect4">
 <h5 id="_obj_record">obj record</h5>
 <div class="paragraph"><p><code>obj_record</code> は、単一のオブジェクトの略語と、その一意の略語を使用する参照を含むブロックを記述します:</p></div>
@@ -1253,20 +1183,11 @@ suffix
 varint( cnt_large )?
 varint( position_delta )*</code></pre>
 </div></div>
-<div class="paragraph"><p>参照ブロックと同様に、省略形はオブジェクト・ブロック内でプレフィックス圧縮されます。 多くの一意のオブジェクトや、より大きなブロック・サイズ
-(64k)や、より長い再開間隔 (128) を持つ大きな reftable では、オブジェクト・レコード内では <code>prefix_length</code>
-の値は2または3で <code>suffix_length</code> の値は3が一般的です(5～6バイトである10～12桁の16進数の一意の省略形)。</p></div>
-<div class="paragraph"><p>各レコードには、一致する参照ブロックの位置の「position_count」数が含まれます。 1 ～ 7
-の位置の場合、カウントは「cnt_3」に格納されます。 <code>cnt_3 = 0</code> の場合、実際のカウントは派生(varint) の <code>cnt_large</code>
-に続きます。</p></div>
-<div class="paragraph"><p><code>cnt_3</code> の使用は、ほとんどのオブジェクトが 1 つの参照のみによって指されていること、いくつかのオブジェクトは 2
-つの参照によって指されていること、および 7 つ以上の参照によって指されているオブジェクトは (存在するとしても) 非常に少ないことに賭けます。</p></div>
-<div class="paragraph"><p><code>cnt_3 = 0</code> かつ <code>cnt_large = 0</code> である特殊なケースがあります: 「position_delta」はありませんが、少なくとも
-1 つの参照がこの省略形で始まります。
-正確な参照名が必要なリーダーは、すべての参照をスキャンして、目的のオブジェクトを持つ特定の参照を見つける必要があります。
-ライターは、同じオブジェクトを指している多数の参照が原因で「position_delta」リストがファイルのブロック・サイズをオーバーフローした場合に、この形式を使用する必要があります。</p></div>
-<div class="paragraph"><p>最初の <code>position_delta</code> は、ファイルの先頭からの位置です。
-追加の「position_delta」エントリは昇順で、前のエントリに対して相対的にソートされます。 リーダーは以下のことを実行します:</p></div>
+<div class="paragraph"><p>参照ブロックと同様に、省略形はオブジェクト・ブロック内でプレフィックス圧縮されます。 多くの一意のオブジェクトや、より大きなブロック・サイズ (64k)や、より長い再開間隔 (128) を持つ大きな reftable では、オブジェクト・レコード内では <code>prefix_length</code> の値は2または3で <code>suffix_length</code> の値は3が一般的です(5～6バイトである10～12桁の16進数の一意の省略形)。</p></div>
+<div class="paragraph"><p>各レコードには、一致する参照ブロックの位置の「position_count」数が含まれます。 1 ～ 7 の位置の場合、カウントは「cnt_3」に格納されます。 <code>cnt_3 = 0</code> の場合、実際のカウントは派生(varint) の <code>cnt_large</code> に続きます。</p></div>
+<div class="paragraph"><p><code>cnt_3</code> の使用は、ほとんどのオブジェクトが 1 つの参照のみによって指されていること、いくつかのオブジェクトは 2 つの参照によって指されていること、および 7 つ以上の参照によって指されているオブジェクトは (存在するとしても) 非常に少ないことに賭けます。</p></div>
+<div class="paragraph"><p><code>cnt_3 = 0</code> かつ <code>cnt_large = 0</code> である特殊なケースがあります: 「position_delta」はありませんが、少なくとも 1 つの参照がこの省略形で始まります。 正確な参照名が必要なリーダーは、すべての参照をスキャンして、目的のオブジェクトを持つ特定の参照を見つける必要があります。 ライターは、同じオブジェクトを指している多数の参照が原因で「position_delta」リストがファイルのブロック・サイズをオーバーフローした場合に、この形式を使用する必要があります。</p></div>
+<div class="paragraph"><p>最初の <code>position_delta</code> は、ファイルの先頭からの位置です。 追加の「position_delta」エントリは昇順で、前のエントリに対して相対的にソートされます。 リーダーは以下のことを実行します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>pos = position_delta[0]
@@ -1276,25 +1197,19 @@ for (j = 1; j &lt; position_count; j++) {
   prior = pos
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>位置を取得したら、リーダーは最初の ref_record から開始して ref ブロックを直線的にスキャンし、各参照のオブジェクト名 (
-<code>value_type</code> = <code>0x1</code> または <code>0x2</code> ) が完全に等しいかどうかをテストする必要があります。 単一の ref
-ブロック内のオブジェクト名による高速検索(searching)は、reftable 形式ではサポートされていません。
-ブロック・サイズが小さいほど、このステップで考慮する必要がある候補の数が減ります。</p></div>
+<div class="paragraph"><p>位置を取得したら、リーダーは最初の ref_record から開始して ref ブロックを直線的にスキャンし、各参照のオブジェクト名 ( <code>value_type</code> = <code>0x1</code> または <code>0x2</code> ) が完全に等しいかどうかをテストする必要があります。 単一の ref ブロック内のオブジェクト名による高速検索(searching)は、reftable 形式ではサポートされていません。 ブロック・サイズが小さいほど、このステップで考慮する必要がある候補の数が減ります。</p></div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_obj_index">Obj index</h4>
-<div class="paragraph"><p>オブジェクト・インデックスには、ファイル内のすべてのオブジェクト・ブロックの最後のエントリの省略形が格納され、すべての検索(lookup)でのディスク・シークが削減されます。それは
-ref インデックスと正確に同じフォーマットがなされますが、オブジェクト・ブロックを参照します。</p></div>
+<div class="paragraph"><p>オブジェクト・インデックスには、ファイル内のすべてのオブジェクト・ブロックの最後のエントリの省略形が格納され、すべての検索(lookup)でのディスク・シークが削減されます。それは ref インデックスと正確に同じフォーマットがなされますが、オブジェクト・ブロックを参照します。</p></div>
 <div class="paragraph"><p>オブジェクト・ブロックはより大きなファイルにのみ書き込む必要があるため、オブジェクト・ブロックが存在する場合は、オブジェクト・インデックスが存在する必要があります。</p></div>
-<div class="paragraph"><p>オブジェクト・インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>obj_index_position</code>
-を取得する必要があります。 存在しない場合、位置は 0 になります。</p></div>
+<div class="paragraph"><p>オブジェクト・インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>obj_index_position</code> を取得する必要があります。 存在しない場合、位置は 0 になります。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_log_block_format">Log block format</h4>
 <div class="paragraph"><p>ref ブロックや obj ブロックとは異なり、ログ ブロックは常に揃えられていません。</p></div>
-<div class="paragraph"><p>ログ・ブロックのサイズは可変であり、ファイル・ヘッダーまたはフッターで指定された「block_size」と一致しません。 ライターは、「2 *
-block_size」などの適切なバッファ・サイズを選択して、圧縮用のログ・ブロックを準備する必要があります。</p></div>
+<div class="paragraph"><p>ログ・ブロックのサイズは可変であり、ファイル・ヘッダーまたはフッターで指定された「block_size」と一致しません。 ライターは、「2 * block_size」などの適切なバッファ・サイズを選択して、圧縮用のログ・ブロックを準備する必要があります。</p></div>
 <div class="paragraph"><p>ログ・ブロックは以下のとおり記述されます:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1307,13 +1222,9 @@ zlib_deflate {
 }</code></pre>
 </div></div>
 <div class="paragraph"><p>ログ・ブロックは、<code>block_type = 'g'</code> を除いて、refブロックと似ています。</p></div>
-<div class="paragraph"><p>4バイトのブロック・ヘッダーの後に、zlib圧縮を使用して圧縮されたブロックの内容が続きます。 ヘッダーの「block_len」は膨張したサイズ (4
-バイトのブロック・ヘッダーを含む) であり、解凍出力バッファーを事前に割り当てるためにリーダーで使用する必要があります。
-ログ・ブロックの「block_len」がファイルのブロック・サイズを超える場合があります。</p></div>
-<div class="paragraph"><p>ログ・ブロック内のオフセット (「restart_offset」など) には、4 バイトのヘッダーがまだ含まれています。
-リーダーは、解凍出力バッファーの前に 4 バイトのヘッダーをプレフィックスすることを好むかもしれません。</p></div>
-<div class="paragraph"><p>圧縮コンテナー内では、可変数の「log_record」が参照の変更を記述します。 ログの記録形式は以下のとおりです。 <code>restart_offset</code>
-と <code>restart_count</code> の説明については、「ref block format」(ref ブロック形式)(上述) を参照してください。</p></div>
+<div class="paragraph"><p>4バイトのブロック・ヘッダーの後に、zlib圧縮を使用して圧縮されたブロックの内容が続きます。 ヘッダーの「block_len」は膨張したサイズ (4 バイトのブロック・ヘッダーを含む) であり、解凍出力バッファーを事前に割り当てるためにリーダーで使用する必要があります。 ログ・ブロックの「block_len」がファイルのブロック・サイズを超える場合があります。</p></div>
+<div class="paragraph"><p>ログ・ブロック内のオフセット (「restart_offset」など) には、4 バイトのヘッダーがまだ含まれています。 リーダーは、解凍出力バッファーの前に 4 バイトのヘッダーをプレフィックスすることを好むかもしれません。</p></div>
+<div class="paragraph"><p>圧縮コンテナー内では、可変数の「log_record」が参照の変更を記述します。 ログの記録形式は以下のとおりです。 <code>restart_offset</code> と <code>restart_count</code> の説明については、「ref block format」(ref ブロック形式)(上述) を参照してください。</p></div>
 <div class="paragraph"><p>ログ・ブロックにはブロック間の揃え幅(alignment)や詰物(padding)がないため、リーダーは次のログ・ブロックの開始位置を知るために、インフレータによって消費されるバイトを追跡する必要があります。</p></div>
 <div class="sect4">
 <h5 id="_log_record">log record</h5>
@@ -1322,18 +1233,15 @@ zlib_deflate {
 <div class="content">
 <pre><code>ref_name '\0' reverse_int64( update_index )</code></pre>
 </div></div>
-<div class="paragraph"><p>ここで、「update_index」は一意の取引(transaction)IDです。 <code>update_index</code> フィールドは、 <code>ref_name</code>
-のスコープ内で一意である必要があります。 詳細については、下記「update transactions」(取引更新)セクションを参照してください。</p></div>
-<div class="paragraph"><p><code>reverse_int64</code> 関数は値を反転するので、ネットワーク・バイト・オーダー・エンコーディングの辞書式順序付けは、より高い
-<code>update_index</code> 値を持つ新しいレコードが最初になるように並べ替えます:</p></div>
+<div class="paragraph"><p>ここで、「update_index」は一意の取引(transaction)IDです。 <code>update_index</code> フィールドは、 <code>ref_name</code> のスコープ内で一意である必要があります。 詳細については、下記「update transactions」(取引更新)セクションを参照してください。</p></div>
+<div class="paragraph"><p><code>reverse_int64</code> 関数は値を反転するので、ネットワーク・バイト・オーダー・エンコーディングの辞書式順序付けは、より高い <code>update_index</code> 値を持つ新しいレコードが最初になるように並べ替えます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>reverse_int64(int64 t) {
   return 0xffffffffffffffff - t;
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>ログ・レコードは、上記のログ・レコード・キーに適用されるのと同じプレフィックス圧縮方式を利用して、ref および index
-レコードと同様の開始構造(starting structure)を持っています。</p></div>
+<div class="paragraph"><p>ログ・レコードは、上記のログ・レコード・キーに適用されるのと同じプレフィックス圧縮方式を利用して、ref および index レコードと同様の開始構造(starting structure)を持っています。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>    varint( prefix_length )
@@ -1362,11 +1270,8 @@ zlib_deflate {
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p><code>log_type = 0x0</code> は、より大きなファイルを書き換える必要なく、取引ファイル(transaction file)(下記) の
-<code>refs/stash</code> の reflog からエントリを削除して、 <code>git stash drop</code> に最も役立ちます。 reflog
-のスタックを読み取るリーダーは、これを削除として扱う必要があります。</p></div>
-<div class="paragraph"><p>「log_type = 0x1」の場合、「log_data」セクションは <a href="../git-update-ref.html">git-update-ref(1)</a>
-ロギングに従い、以下が含まれます:</p></div>
+<div class="paragraph"><p><code>log_type = 0x0</code> は、より大きなファイルを書き換える必要なく、取引ファイル(transaction file)(下記) の <code>refs/stash</code> の reflog からエントリを削除して、 <code>git stash drop</code> に最も役立ちます。 reflog のスタックを読み取るリーダーは、これを削除として扱う必要があります。</p></div>
+<div class="paragraph"><p>「log_type = 0x1」の場合、「log_data」セクションは <a href="../git-update-ref.html">git-update-ref(1)</a> ロギングに従い、以下が含まれます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1399,43 +1304,29 @@ zlib_deflate {
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p><code>tz_offset</code> は、更新時にコミッターがいたタイムゾーンです(GMT からのオフセットで表される)。 たとえば、<code>GMT-0800</code> は
-reftable で <code>sint16(-480)</code> としてエンコードされ、<code>GMT+0230</code> は <code>sint16(150)</code>
-としてエンコードされます。</p></div>
-<div class="paragraph"><p>コミッターの電子メールアドレスには <code>&lt;</code> または <code>&gt;</code> は含まれません。これは通常、git commit オブジェクト ヘッダーの <code>&lt;&gt;</code>
-の間にある値です。</p></div>
+<div class="paragraph"><p><code>tz_offset</code> は、更新時にコミッターがいたタイムゾーンです(GMT からのオフセットで表される)。 たとえば、<code>GMT-0800</code> は reftable で <code>sint16(-480)</code> としてエンコードされ、<code>GMT+0230</code> は <code>sint16(150)</code> としてエンコードされます。</p></div>
+<div class="paragraph"><p>コミッターの電子メールアドレスには <code>&lt;</code> または <code>&gt;</code> は含まれません。これは通常、git commit オブジェクト ヘッダーの <code>&lt;&gt;</code> の間にある値です。</p></div>
 <div class="paragraph"><p><code>message_length</code> は 0 の場合があります。この場合、更新用のメッセージは提供されていません。</p></div>
-<div class="paragraph"><p>従来の reflog (ファイル) とは対照的に、名前の変更は ref 削除と ref 作成の組み合わせとしてエンコードされます。 削除は new_id
-がゼロのログ・レコードであり、作成は old_id がゼロのログ・レコードです。</p></div>
+<div class="paragraph"><p>従来の reflog (ファイル) とは対照的に、名前の変更は ref 削除と ref 作成の組み合わせとしてエンコードされます。 削除は new_id がゼロのログ・レコードであり、作成は old_id がゼロのログ・レコードです。</p></div>
 </div>
 <div class="sect4">
 <h5 id="_reading_the_log">Reading the log</h5>
-<div class="paragraph"><p>ログにアクセスするリーダーは、最初にフッター (下記) を読んで <code>log_position</code> を判断する必要があります。
-ログの最初のブロックは、ファイルの先頭から <code>log_position</code> バイトで始まります。 <code>log_position</code>
-はブロック揃えになっていません。</p></div>
+<div class="paragraph"><p>ログにアクセスするリーダーは、最初にフッター (下記) を読んで <code>log_position</code> を判断する必要があります。 ログの最初のブロックは、ファイルの先頭から <code>log_position</code> バイトで始まります。 <code>log_position</code> はブロック揃えになっていません。</p></div>
 </div>
 <div class="sect4">
 <h5 id="_importing_logs">Importing logs</h5>
-<div class="paragraph"><p><code>$GIT_DIR/logs</code>
-からインポートする場合、ライターは、ファイルの順序を維持しながら、すべてのログ・レコードを大まかにタイムスタンプで並べ替え、ログ行ごとに一意の、増加する
-<code>update_index</code> 値を割り当てる必要があります。 新しいログ・レコードほど、「update_index」の値が大きくなります。</p></div>
-<div class="paragraph"><p>インポートは 1 つの reftable ファイルのみを書き込むことができますが、セマンティクスを維持するために各ログ行には独自の
-<code>update_index</code> が必要であるため、 reftable ファイルは多くの一意の <code>update_index</code> にまたがる必要があります。</p></div>
+<div class="paragraph"><p><code>$GIT_DIR/logs</code> からインポートする場合、ライターは、ファイルの順序を維持しながら、すべてのログ・レコードを大まかにタイムスタンプで並べ替え、ログ行ごとに一意の、増加する <code>update_index</code> 値を割り当てる必要があります。 新しいログ・レコードほど、「update_index」の値が大きくなります。</p></div>
+<div class="paragraph"><p>インポートは 1 つの reftable ファイルのみを書き込むことができますが、セマンティクスを維持するために各ログ行には独自の <code>update_index</code> が必要であるため、 reftable ファイルは多くの一意の <code>update_index</code> にまたがる必要があります。</p></div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_log_index">Log index</h4>
-<div class="paragraph"><p>ログ・インデックスは、ファイル内のすべてのログ・ブロックの最後のログ・レコードのログ・キー (<code>refname \0
-reverse_int64(update_index)</code>) を格納し、制限時間検索(bounded-time lookup)をサポートします。</p></div>
-<div class="paragraph"><p>2 つ以上のログ・ブロックがファイルに書き込まれる場合は、ログ・インデックス・ブロックを書き込む必要があります。
-存在する場合、ログ・インデックスは最後のログ・ブロックの後に表れます。
-ログ・インデックスをブロック揃え幅(alignment)に揃える(align)ために使用される詰物(padding)はありません。</p></div>
-<div class="paragraph"><p>ログ・インデックスの形式は ref インデックスと同じですが、<code>'\0'</code> と 8 バイトの <code>reverse_int64(update_index)</code>
-を含めるためにキーが 9 バイト長くなります。 レコードは「block_position」を使用してログ・ブロック開始を参照します。</p></div>
+<div class="paragraph"><p>ログ・インデックスは、ファイル内のすべてのログ・ブロックの最後のログ・レコードのログ・キー (<code>refname \0 reverse_int64(update_index)</code>) を格納し、制限時間検索(bounded-time lookup)をサポートします。</p></div>
+<div class="paragraph"><p>2 つ以上のログ・ブロックがファイルに書き込まれる場合は、ログ・インデックス・ブロックを書き込む必要があります。 存在する場合、ログ・インデックスは最後のログ・ブロックの後に表れます。 ログ・インデックスをブロック揃え幅(alignment)に揃える(align)ために使用される詰物(padding)はありません。</p></div>
+<div class="paragraph"><p>ログ・インデックスの形式は ref インデックスと同じですが、<code>'\0'</code> と 8 バイトの <code>reverse_int64(update_index)</code> を含めるためにキーが 9 バイト長くなります。 レコードは「block_position」を使用してログ・ブロック開始を参照します。</p></div>
 <div class="sect4">
 <h5 id="_reading_the_index_2">Reading the index</h5>
-<div class="paragraph"><p>ログ・インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>log_index_position</code> を取得する必要があります。
-存在しない場合、位置は 0 になります。</p></div>
+<div class="paragraph"><p>ログ・インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>log_index_position</code> を取得する必要があります。 存在しない場合、位置は 0 になります。</p></div>
 </div>
 </div>
 <div class="sect3">
@@ -1454,8 +1345,7 @@ reverse_int64(update_index)</code>) を格納し、制限時間検索(bounded-ti
 
     uint32( CRC-32 of above )</code></pre>
 </div></div>
-<div class="paragraph"><p>セクションが欠落している場合 (たとえば ref インデックス)、対応する位置フィールド (たとえば <code>ref_index_position</code>) は 0
-になります。</p></div>
+<div class="paragraph"><p>セクションが欠落している場合 (たとえば ref インデックス)、対応する位置フィールド (たとえば <code>ref_index_position</code>) は 0 になります。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1491,9 +1381,7 @@ reverse_int64(update_index)</code>) を格納し、制限時間検索(bounded-ti
 <div class="paragraph"><p>フッターのサイズは、バージョン 1 で 68 バイト、バージョン 2 で 72 バイトです。</p></div>
 <div class="sect4">
 <h5 id="_reading_the_footer">Reading the footer</h5>
-<div class="paragraph"><p>リーダーは、最初にファイルの先頭を読んでバージョン番号を確認する必要があります。 次に、フッターにアクセスするために「file_length -
-FOOTER_LENGTH」を探します。 「file_length」を取得するには、信頼できる外部ソース (「stat(2)」など) が必要です。
-フッターを読むとき、リーダー以下のことを確認する必要があります:</p></div>
+<div class="paragraph"><p>リーダーは、最初にファイルの先頭を読んでバージョン番号を確認する必要があります。 次に、フッターにアクセスするために「file_length - FOOTER_LENGTH」を探します。 「file_length」を取得するには、信頼できる外部ソース (「stat(2)」など) が必要です。 フッターを読むとき、リーダー以下のことを確認する必要があります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1520,19 +1408,13 @@ FOOTER_LENGTH」を探します。 「file_length」を取得するには、信�
 </div>
 <div class="sect3">
 <h4 id="_binary_search">Binary search</h4>
-<div class="paragraph"><p>ブロック内の二分木検索は、ブロックの末尾にある「restart_offset」フィールドによってサポートされています。
-リーダーは、再開表(restart table)を二分木検索して、探している参照またはキーがどの 2 つの再開点(restart
-points)の間に現れるかどうかを特定できます。</p></div>
-<div class="paragraph"><p><code>restart_offset</code> によって識別される各レコードは、レコードの <code>suffix</code>
-フィールドに完全なキーを格納し、バイナリ検索中の比較操作を簡単にします。</p></div>
-<div class="paragraph"><p>求められる参照より辞書的に前の再開点(restart
-point)が特定されると、リーダーは求められるレコードを見つけるために次のレコードエントリを線形にスキャンすることができ、現在のレコードがソート後であれば（したがって、求められるキーが存在しなければ）終了する。</p></div>
+<div class="paragraph"><p>ブロック内の二分木検索は、ブロックの末尾にある「restart_offset」フィールドによってサポートされています。 リーダーは、再開表(restart table)を二分木検索して、探している参照またはキーがどの 2 つの再開点(restart points)の間に現れるかどうかを特定できます。</p></div>
+<div class="paragraph"><p><code>restart_offset</code> によって識別される各レコードは、レコードの <code>suffix</code> フィールドに完全なキーを格納し、バイナリ検索中の比較操作を簡単にします。</p></div>
+<div class="paragraph"><p>求められる参照より辞書的に前の再開点(restart point)が特定されると、リーダーは求められるレコードを見つけるために次のレコードエントリを線形にスキャンすることができ、現在のレコードがソート後であれば（したがって、求められるキーが存在しなければ）終了する。</p></div>
 <div class="sect4">
 <h5 id="_restart_point_selection">Restart point selection</h5>
-<div class="paragraph"><p>ライターは、ファイルの作成時に再開ポイントを決定します。 処理方法は任意ですが、16 または 64 レコードごとをお勧めします。 小さいブロック・サイズ
-(4k または 8k) には 16 ごと、大きいブロック・サイズ (64k) には 64 ごとが適している場合があります。</p></div>
-<div class="paragraph"><p>再開点(restart points)の頻度が高くなると、プレフィックス圧縮が減少し、再開表(restart
-table)によって消費される領域が増加します。どちらもファイル・サイズが増加します。</p></div>
+<div class="paragraph"><p>ライターは、ファイルの作成時に再開ポイントを決定します。 処理方法は任意ですが、16 または 64 レコードごとをお勧めします。 小さいブロック・サイズ (4k または 8k) には 16 ごと、大きいブロック・サイズ (64k) には 64 ごとが適している場合があります。</p></div>
+<div class="paragraph"><p>再開点(restart points)の頻度が高くなると、プレフィックス圧縮が減少し、再開表(restart table)によって消費される領域が増加します。どちらもファイル・サイズが増加します。</p></div>
 <div class="paragraph"><p>再スタート・ポイントの頻度が低いと、プレフィックスの圧縮がより効果的になり、全体的なファイル・サイズが小さくなり、二分探索ステップの後でより多くのレコードを参照するリーダーのペナルティが増加します。</p></div>
 <div class="paragraph"><p>ブロックごとに最大「65535」の再スタート点がサポートされています。</p></div>
 </div>
@@ -1542,44 +1424,34 @@ table)によって消費される領域が増加します。どちらもファ�
 <h3 id="_considerations">Considerations</h3>
 <div class="sect3">
 <h4 id="_lightweight_refs_dominate">Lightweight refs dominate</h4>
-<div class="paragraph"><p>reftable 形式は、参照の大部分が、 Gerrit Code Review の <code>refs/changes/</code> 名前空間、または GitHub の
-<code>refs/pulls/</code> 名前空間、または <code>refs/tags/</code> 名前空間です。</p></div>
+<div class="paragraph"><p>reftable 形式は、参照の大部分が、 Gerrit Code Review の <code>refs/changes/</code> 名前空間、または GitHub の <code>refs/pulls/</code> 名前空間、または <code>refs/tags/</code> 名前空間です。</p></div>
 <div class="paragraph"><p>皮剥きされた(peeled)オブジェクトを格納する注釈付きタグには、参照ごとに追加のオブジェクト名が必要です。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_low_overhead">Low overhead</h4>
-<div class="paragraph"><p>参照がほとんどない reftable (例: 5 つのヘッドを持つ git.git) は、reftable で 269 バイト、packed-ref で
-332 バイトです。 これにより、取引ログの参照可能なスケール・ダウンがサポートされます(下記参照)。</p></div>
+<div class="paragraph"><p>参照がほとんどない reftable (例: 5 つのヘッドを持つ git.git) は、reftable で 269 バイト、packed-ref で 332 バイトです。 これにより、取引ログの参照可能なスケール・ダウンがサポートされます(下記参照)。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_block_size_2">Block size</h4>
-<div class="paragraph"><p>多くの変更refがある Gerrit Code Review タイプのリポジトリの場合、ブロック・サイズが大きく (64
-KiB)、再開点(restart points)再起動ポイントの頻度が低い (64 KiB ごと)
-ほどで、ブロック内の参照が前の参照に対して圧縮されるため、圧縮率が向上します。</p></div>
+<div class="paragraph"><p>多くの変更refがある Gerrit Code Review タイプのリポジトリの場合、ブロック・サイズが大きく (64 KiB)、再開点(restart points)再起動ポイントの頻度が低い (64 KiB ごと) ほどで、ブロック内の参照が前の参照に対して圧縮されるため、圧縮率が向上します。</p></div>
 <div class="paragraph"><p>reftable が同じ数の参照を格納するために必要なブロックが少なくなるため、ブロック・サイズが大きくなるとインデックス・サイズが小さくなります。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_minimal_disk_seeks">Minimal disk seeks</h4>
-<div class="paragraph"><p>インデックス・ブロックがメモリに読み込まれていると仮定すると、任意の単一参照のバイナリ検索では、包含ブロックを読み込むためにちょうど 1
-回のディスク・シークが必要です。</p></div>
+<div class="paragraph"><p>インデックス・ブロックがメモリに読み込まれていると仮定すると、任意の単一参照のバイナリ検索では、包含ブロックを読み込むためにちょうど 1 回のディスク・シークが必要です。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_scans_and_lookups_dominate">Scans and lookups dominate</h4>
-<div class="paragraph"><p>すべての参照を走査(scan)し、名前 (または「refs/heads/」などの名前空間)
-で検索(lookup)することは、リポジトリで実行される最も一般的なアクティビティです。
-このユースケースを最適化するために、オブジェクト名は参照とともに直接保存されます。</p></div>
+<div class="paragraph"><p>すべての参照を走査(scan)し、名前 (または「refs/heads/」などの名前空間) で検索(lookup)することは、リポジトリで実行される最も一般的なアクティビティです。 このユースケースを最適化するために、オブジェクト名は参照とともに直接保存されます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_logs_are_infrequently_read">Logs are infrequently read</h4>
-<div class="paragraph"><p>ログはめったにアクセスされませんが、サイズが大きくなる可能性があります。
-ログ・ブロックを圧縮すると、ディスク・スペースが節約されますが、読み取り時のペナルティがいくらか増加します。</p></div>
-<div class="paragraph"><p>ログは ref から分離されたセクションに保存されるため、ログを無視したい参照リーダーの負担が軽減されます。
-さらに、履歴ログをログのみのファイルに分離できます。</p></div>
+<div class="paragraph"><p>ログはめったにアクセスされませんが、サイズが大きくなる可能性があります。 ログ・ブロックを圧縮すると、ディスク・スペースが節約されますが、読み取り時のペナルティがいくらか増加します。</p></div>
+<div class="paragraph"><p>ログは ref から分離されたセクションに保存されるため、ログを無視したい参照リーダーの負担が軽減されます。 さらに、履歴ログをログのみのファイルに分離できます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_logs_are_read_backwards">Logs are read backwards</h4>
-<div class="paragraph"><p>ログは頻繁に逆方向にアクセスされるため (master が <code>master@{4}</code> に応答する最新の N
-レコード)、ログ・レコードは参照によってグループ化され、更新インデックスによって降順に並べ替えられます。</p></div>
+<div class="paragraph"><p>ログは頻繁に逆方向にアクセスされるため (master が <code>master@{4}</code> に応答する最新の N レコード)、ログ・レコードは参照によってグループ化され、更新インデックスによって降順に並べ替えられます。</p></div>
 </div>
 </div>
 <div class="sect2">
@@ -1597,13 +1469,9 @@ KiB)、再開点(restart points)再起動ポイントの頻度が低い (64 KiB 
 </div>
 <div class="sect3">
 <h4 id="_layout">Layout</h4>
-<div class="paragraph"><p>reftable ファイルのコレクションは <code>$GIT_DIR/reftable/</code> ディレクトリに保存されます。
-それらの名前には、各ファイル名がグローバルに一意になるように、ランダムな要素を含める必要があります。
-これにより、開いているファイルを削除または上書きできない Windows での誤ったエラーを回避できます。 その命名規則として
-<code>${min_update_index}-${max_update_index}-${random}.ref</code> を使用することが提案されました。</p></div>
+<div class="paragraph"><p>reftable ファイルのコレクションは <code>$GIT_DIR/reftable/</code> ディレクトリに保存されます。 それらの名前には、各ファイル名がグローバルに一意になるように、ランダムな要素を含める必要があります。 これにより、開いているファイルを削除または上書きできない Windows での誤ったエラーを回避できます。 その命名規則として <code>${min_update_index}-${max_update_index}-${random}.ref</code> を使用することが提案されました。</p></div>
 <div class="paragraph"><p>ログのみのファイルは <code>.log</code> 拡張子を使用しますが、 ref のみのファイルや ref とログの混合ファイルは <code>.ref</code> 拡張子を使用します。</p></div>
-<div class="paragraph"><p>スタック順序付けファイルは <code>$GIT_DIR/reftable/tables.list</code> で、現在のファイルを 1 行に 1 つずつ、もっとも古いの
-(ベース) から最新 (最新) の順にリストします。</p></div>
+<div class="paragraph"><p>スタック順序付けファイルは <code>$GIT_DIR/reftable/tables.list</code> で、現在のファイルを 1 行に 1 つずつ、もっとも古いの (ベース) から最新 (最新) の順にリストします。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ cat .git/reftable/tables.list
@@ -1611,16 +1479,12 @@ KiB)、再開点(restart points)再起動ポイントの頻度が低い (64 KiB 
 00000002-00000002-RANDOM2.ref
 00000003-00000003-RANDOM3.ref</code></pre>
 </div></div>
-<div class="paragraph"><p>リーダーは <code>$GIT_DIR/reftable/tables.list</code>
-を読んで現在どのファイルが関連しているかを判断し、逆の順序でスタックを検索(search)する必要があります (最後の reftable
-が最初に調べられます)。</p></div>
-<div class="paragraph"><p><code>tables.list</code> にリストされていない reftable ファイルは、新しい
-(そして、アクティブなライターによってスタックに追加されようとしている) か、古くて刈り込みされる準備ができている可能性があります。</p></div>
+<div class="paragraph"><p>リーダーは <code>$GIT_DIR/reftable/tables.list</code> を読んで現在どのファイルが関連しているかを判断し、逆の順序でスタックを検索(search)する必要があります (最後の reftable が最初に調べられます)。</p></div>
+<div class="paragraph"><p><code>tables.list</code> にリストされていない reftable ファイルは、新しい (そして、アクティブなライターによってスタックに追加されようとしている) か、古くて刈り込みされる準備ができている可能性があります。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_backward_compatibility">Backward compatibility</h4>
-<div class="paragraph"><p>古いクライアントは、ディレクトリを git リポジトリとして認識し続ける必要があるため、親ディレクトリ内のエンクロージング・リポジトリを検索しません。
-このため、reftable 対応のリポジトリには以下のダミー・ファイルが含まれている必要があります。</p></div>
+<div class="paragraph"><p>古いクライアントは、ディレクトリを git リポジトリとして認識し続ける必要があるため、親ディレクトリ内のエンクロージング・リポジトリを検索しません。 このため、reftable 対応のリポジトリには以下のダミー・ファイルが含まれている必要があります。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1705,28 +1569,18 @@ KiB)、再開点(restart points)再起動ポイントの頻度が低い (64 KiB 
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>ステップ 4 では、新しいファイルの <code>min_update_index</code> と <code>max_update_index</code> は両方とも、ステップ 3
-で選択された <code>update_index</code> に設定されます。取引のすべてのログ・レコードは、それらのキーで同一の <code>update_index</code>
-を使用します。 これにより、同じ取引によってどの参照が更新されたかを後で関連付けることができます。</p></div>
-<div class="paragraph"><p>単一の <code>tables.list.lock</code> ファイルがロックの管理に使用されるため、リポジトリはライター用のシングルスレッドです。
-ライターは、許容可能な待機期間まで、 <code>tables.list.lock</code> の作成中に (バックオフを伴って)
-ビジースピンする必要がある場合があり、リポジトリが忙しすぎて変更できない場合は中止します。 リポジトリにラップされたアプリケーション・サーバー
-(Gerrit Code Review など) は、独自の ロック/待機 キューをレイヤー化して、ライターへの公平性を向上させることができます。</p></div>
+<div class="paragraph"><p>ステップ 4 では、新しいファイルの <code>min_update_index</code> と <code>max_update_index</code> は両方とも、ステップ 3 で選択された <code>update_index</code> に設定されます。取引のすべてのログ・レコードは、それらのキーで同一の <code>update_index</code> を使用します。 これにより、同じ取引によってどの参照が更新されたかを後で関連付けることができます。</p></div>
+<div class="paragraph"><p>単一の <code>tables.list.lock</code> ファイルがロックの管理に使用されるため、リポジトリはライター用のシングルスレッドです。 ライターは、許容可能な待機期間まで、 <code>tables.list.lock</code> の作成中に (バックオフを伴って) ビジースピンする必要がある場合があり、リポジトリが忙しすぎて変更できない場合は中止します。 リポジトリにラップされたアプリケーション・サーバー (Gerrit Code Review など) は、独自の ロック/待機 キューをレイヤー化して、ライターへの公平性を向上させることができます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_reference_deletions">Reference deletions</h4>
-<div class="paragraph"><p><code>type</code> を <code>0x0</code> に設定し、 <code>ref_record</code> の <code>value</code>
-フィールドを省略することにより、任意の参照の削除を明示的に保存できます。
-これは、スタック内の以前のファイルからの参照の存在に関するアサーションをオーバーライドして、墓標(tombstone)として機能します。</p></div>
+<div class="paragraph"><p><code>type</code> を <code>0x0</code> に設定し、 <code>ref_record</code> の <code>value</code> フィールドを省略することにより、任意の参照の削除を明示的に保存できます。 これは、スタック内の以前のファイルからの参照の存在に関するアサーションをオーバーライドして、墓標(tombstone)として機能します。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_compaction">Compaction</h4>
-<div class="paragraph"><p>reftable の部分的なスタックは、reftable 間で単純なマージ結合を使用して参照をマージし、出力用に最新の値を選択し、残りの下位の
-reftable に表示されない削除された参照を省略することで圧縮できます。</p></div>
-<div class="paragraph"><p>圧縮された reftable は、その <code>min_update_index</code> を入力ファイル達の最小の <code>min_update_index</code>
-に設定し、同様にその <code>max_update_index</code> を入力ファイル達の最大の <code>max_update_index</code> に設定する必要があります。</p></div>
-<div class="paragraph"><p>説明のために、スタックが現在 reftable ファイル達 (古いものから新しいものへ) で構成されていると仮定します: A、B、C、および D
-です。圧縮器(compactor)は B と C を圧縮し、A と D だけを残します。</p></div>
+<div class="paragraph"><p>reftable の部分的なスタックは、reftable 間で単純なマージ結合を使用して参照をマージし、出力用に最新の値を選択し、残りの下位の reftable に表示されない削除された参照を省略することで圧縮できます。</p></div>
+<div class="paragraph"><p>圧縮された reftable は、その <code>min_update_index</code> を入力ファイル達の最小の <code>min_update_index</code> に設定し、同様にその <code>max_update_index</code> を入力ファイル達の最大の <code>max_update_index</code> に設定する必要があります。</p></div>
+<div class="paragraph"><p>説明のために、スタックが現在 reftable ファイル達 (古いものから新しいものへ) で構成されていると仮定します: A、B、C、および D です。圧縮器(compactor)は B と C を圧縮し、A と D だけを残します。</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -1755,14 +1609,12 @@ reftable に表示されない削除された参照を省略することで圧�
 </li>
 <li>
 <p>
-<code>B</code> と <code>C</code> がこの順序でまだスタックにあることを確認(verify)します。
-    他のプロセスがロック・プロトコルに従っていると仮定すると、これは常に当てはまるはずです。
+<code>B</code> と <code>C</code> がこの順序でまだスタックにあることを確認(verify)します。 他のプロセスがロック・プロトコルに従っていると仮定すると、これは常に当てはまるはずです。
 </p>
 </li>
 <li>
 <p>
-<code>${min_update_index}-${max_update_index}_XXXXXX</code> を
-    <code>${min_update_index}-${max_update_index}-${random}.ref</code> に名前変更します。
+<code>${min_update_index}-${max_update_index}_XXXXXX</code> を <code>${min_update_index}-${max_update_index}-${random}.ref</code> に名前変更します。
 </p>
 </li>
 <li>
@@ -1782,15 +1634,12 @@ reftable に表示されない削除された参照を省略することで圧�
 </li>
 </ol></div>
 <div class="paragraph"><p>この戦略により、更新とは無関係に圧縮を進めることができます。</p></div>
-<div class="paragraph"><p>各 reftable (圧縮されているかどうかに関係なく) はその名前で一意に識別されるため、開いている reftable
-はその名前でキャッシュできます。</p></div>
+<div class="paragraph"><p>各 reftable (圧縮されているかどうかに関係なく) はその名前で一意に識別されるため、開いている reftable はその名前でキャッシュできます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_windows">Windows</h4>
-<div class="paragraph"><p>Windows
-や、ファイルを開くための削除や名前変更を許可しないその他のシステムでは、圧縮は成功する可能性がありますが、他のリーダーでは古いテーブルの削除が妨げられる場合があります。</p></div>
-<div class="paragraph"><p>これらのプラットフォームでは、次の戦略に従うことができます: reftable スタックを閉じて、 <code>tables.list</code> をリロードし、
-<code>tables.list</code> で言及されなくなったテーブルを削除します。</p></div>
+<div class="paragraph"><p>Windows や、ファイルを開くための削除や名前変更を許可しないその他のシステムでは、圧縮は成功する可能性がありますが、他のリーダーでは古いテーブルの削除が妨げられる場合があります。</p></div>
+<div class="paragraph"><p>これらのプラットフォームでは、次の戦略に従うことができます: reftable スタックを閉じて、 <code>tables.list</code> をリロードし、 <code>tables.list</code> で言及されなくなったテーブルを削除します。</p></div>
 <div class="paragraph"><p>イレギュラーなプログラムの終了により、未使用のファイルが残る場合があります。 この場合、クリーンアップ操作は以下のように進める必要があります:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1827,21 +1676,14 @@ reftable に表示されない削除された参照を省略することで圧�
 <h3 id="_alternatives_considered">Alternatives considered</h3>
 <div class="sect3">
 <h4 id="_bzip_packed_refs">bzip packed-refs</h4>
-<div class="paragraph"><p><code>bzip2</code> は、大きなパックされた参照ファイルを大幅に圧縮できます (たとえば、62 MiB は 23 MiB と、37% に圧縮されます)。
-ただし、bzip 形式は、単一の参照へのランダム・アクセスをサポートしていません。 リーダーは、リニア・スキャン実行中、解凍と破棄を行う必要があります。</p></div>
-<div class="paragraph"><p>パックされた参照をチャンクに分割する (各チャンクを個別に圧縮する)
-と、リーダーが解凍しなければならないデータの量が減りますが、正しいチャンクを効率的に見つけるリーダーをサポートするために、チャンクにインデックスを付けるという問題が残ります。</p></div>
+<div class="paragraph"><p><code>bzip2</code> は、大きなパックされた参照ファイルを大幅に圧縮できます (たとえば、62 MiB は 23 MiB と、37% に圧縮されます)。 ただし、bzip 形式は、単一の参照へのランダム・アクセスをサポートしていません。 リーダーは、リニア・スキャン実行中、解凍と破棄を行う必要があります。</p></div>
+<div class="paragraph"><p>パックされた参照をチャンクに分割する (各チャンクを個別に圧縮する) と、リーダーが解凍しなければならないデータの量が減りますが、正しいチャンクを効率的に見つけるリーダーをサポートするために、チャンクにインデックスを付けるという問題が残ります。</p></div>
 <div class="paragraph"><p>reftable のエンコーディングによって達成される圧縮を考えると、 bzip/gzip/zlib の複雑さを追加する必要はないようです。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_michael_haggerty_8217_s_alternate_format">Michael Haggerty&#8217;s alternate format</h4>
-<div class="paragraph"><p>Michael Haggerty は、Git メーリング リストで
-<a href="https://lore.kernel.org/git/CAMy9T_HCnyc1g8XWOOWhe7nN0aEFyyBskV2aOMb_fe%2BwGvEJ7A%40mail.gmail.com/">an
-alternate</a> 形式を reftable に提案しました。 この形式は、再開表(restart
-table)なしでより小さいチャンクを使用し、詰物によるブロック揃えを回避します。 reflog エントリは各 ref の直後に続くため、ref
-間に差し挟まれます。</p></div>
-<div class="paragraph"><p>性能テストでは、reftable の方が検索(lookup)より高速であることが示されています (51% 高速、11.2 usec 対 5.4
-usec)。ただし、reftable はわずかに大きなファイルを生成します (+ ~3.2%、28.3M 対 29.2M):</p></div>
+<div class="paragraph"><p>Michael Haggerty は、Git メーリング リストで <a href="https://lore.kernel.org/git/CAMy9T_HCnyc1g8XWOOWhe7nN0aEFyyBskV2aOMb_fe%2BwGvEJ7A%40mail.gmail.com/">an alternate</a> 形式を reftable に提案しました。 この形式は、再開表(restart table)なしでより小さいチャンクを使用し、詰物によるブロック揃えを回避します。 reflog エントリは各 ref の直後に続くため、ref 間に差し挟まれます。</p></div>
+<div class="paragraph"><p>性能テストでは、reftable の方が検索(lookup)より高速であることが示されています (51% 高速、11.2 usec 対 5.4 usec)。ただし、reftable はわずかに大きなファイルを生成します (+ ~3.2%、28.3M 対 29.2M):</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
@@ -1878,23 +1720,14 @@ cellspacing="0" cellpadding="4">
 </div>
 <div class="sect3">
 <h4 id="_jgit_ketch_reftree">JGit Ketch RefTree</h4>
-<div class="paragraph"><p><a href="https://dev.eclipse.org/mhonarc/lists/jgit-dev/msg03073.html">JGit Ketch</a> は
-<a href="https://lore.kernel.org/git/CAJo%3DhJvnAPNAdDcAAwAvU9C4RVeQdoS3Ev9WTguHx4fD0V_nOg%40mail.gmail.com/">RefTree</a>
-を提案しました。 これは、リポジトリのオブジェクト・データベースの一部として格納された Git ツリー・オブジェクト内の参照のエンコーディングです。</p></div>
-<div class="paragraph"><p>RefTree 形式は、オブジェクト・データベース・ストレージ層に追加の負荷を加え
-(より多くの緩いオブジェクト、より多くのパック内のオブジェクト)、スペースを節約するためにパッカーのデルタ圧縮に大きく依存しています。
-フラットな名前空間 (例: refs/tags 内の数千のタグ) は、最初は非常に大きな緩いオブジェクトを作成するため、RefTree
-は多くの参照をコピーして一部を変更するという問題に対処しません。</p></div>
-<div class="paragraph"><p>フラットな名前空間は、RefTree では効率的に検索できません。標準的な形式のツリー・オブジェクトは二分木検索できないためです。
-これは、GitHubの <code>refs/pulls</code> のような単一の名前空間で多数の参照を処理する必要性や、多くのタグを持つプロジェクトで失敗します。</p></div>
+<div class="paragraph"><p><a href="https://dev.eclipse.org/mhonarc/lists/jgit-dev/msg03073.html">JGit Ketch</a> は <a href="https://lore.kernel.org/git/CAJo%3DhJvnAPNAdDcAAwAvU9C4RVeQdoS3Ev9WTguHx4fD0V_nOg%40mail.gmail.com/">RefTree</a> を提案しました。 これは、リポジトリのオブジェクト・データベースの一部として格納された Git ツリー・オブジェクト内の参照のエンコーディングです。</p></div>
+<div class="paragraph"><p>RefTree 形式は、オブジェクト・データベース・ストレージ層に追加の負荷を加え (より多くの緩いオブジェクト、より多くのパック内のオブジェクト)、スペースを節約するためにパッカーのデルタ圧縮に大きく依存しています。 フラットな名前空間 (例: refs/tags 内の数千のタグ) は、最初は非常に大きな緩いオブジェクトを作成するため、RefTree は多くの参照をコピーして一部を変更するという問題に対処しません。</p></div>
+<div class="paragraph"><p>フラットな名前空間は、RefTree では効率的に検索できません。標準的な形式のツリー・オブジェクトは二分木検索できないためです。 これは、GitHubの <code>refs/pulls</code> のような単一の名前空間で多数の参照を処理する必要性や、多くのタグを持つプロジェクトで失敗します。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_lmdb">LMDB</h4>
-<div class="paragraph"><p>David Turner は
-<a href="https://lore.kernel.org/git/1455772670-21142-26-git-send-email-dturner@twopensource.com/">using
-LMDB</a> を提案しました。これは、LMDB が軽量 (64k のランタイム コード) で、かつ、 GPL互換ライセンス であるためです。</p></div>
-<div class="paragraph"><p>LMDB の欠点は、単一の C 実装に依存していることです。 これにより、JGit (Git の一般的な再実装)
-内への組み込みが困難になり、仮想ストレージ (JGit DFS 用) へのホスティングが事実上不可能になります。</p></div>
+<div class="paragraph"><p>David Turner は <a href="https://lore.kernel.org/git/1455772670-21142-26-git-send-email-dturner@twopensource.com/">using LMDB</a> を提案しました。これは、LMDB が軽量 (64k のランタイム コード) で、かつ、 GPL互換ライセンス であるためです。</p></div>
+<div class="paragraph"><p>LMDB の欠点は、単一の C 実装に依存していることです。 これにより、JGit (Git の一般的な再実装) 内への組み込みが困難になり、仮想ストレージ (JGit DFS 用) へのホスティングが事実上不可能になります。</p></div>
 <div class="paragraph"><p>すべての主要な Git 実装 (git-core、JGit、libgit2) でサポートできる共通の形式が強く推奨されます。</p></div>
 </div>
 </div>
@@ -1905,7 +1738,7 @@ LMDB</a> を提案しました。これは、LMDB が軽量 (64k のランタイ
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-09-25 22:03:44 JST
+ 2023-07-18 11:06:04 JST
 </div>
 </div>
 </body>

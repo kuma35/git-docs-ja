@@ -761,27 +761,20 @@ git-rebase(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>&lt;branch&gt;</code> が指定されている場合、 「git rebase」は他の処理を行う前に自動で <code>git switch &lt;branch&gt;</code>
-を実行します。それ以外の場合は、引き続き現在のブランチに滞在しています。</p></div>
-<div class="paragraph"><p><code>&lt;upstream&gt;</code> が指定されていない場合、 <code>branch.&lt;name&gt;.remote</code> と
-<code>branch.&lt;name&gt;.mergebranch</code> オプションで構成されたアップストリーム(詳細は<a href="git-config.html">git-config(1)</a> 参照)
-および <code>--fork-point</code>
-オプションが想定されています。あなたが現在ブランチを一切使用していない場合、または、現在のブランチにアップストリームが構成されていない場合、リベースは中止(abort)されます。</p></div>
-<div class="paragraph"><p>現在のブランチでコミットによって行われたが、 <code>&lt;upstream&gt;</code> に無いすべての変更は、一時領域(temporary area)に保存されます。
-これは <code>git log &lt;upstream&gt;..HEAD</code> で表示されるのと同じコミットのセットで、または <code>--fork-point</code>
-がアクティブな場合 <code>git log 'fork_point'..HEAD</code> で表示されるのと同じコミットのセットで、または <code>--root</code>
-オプションが指定されている場合 <code>git log HEAD</code> で表示されるのと同じコミットのセットです。</p></div>
-<div class="paragraph"><p>現在のブランチは <code>&lt;upstream&gt;</code> にリセットされます。 または <code>--onto</code> オプションが指定されている場合は <code>&lt;newbase&gt;</code>
-にリセットされます。 これは、 <code>git reset --hard &lt;upstream&gt;</code> (または <code>&lt;newbase&gt;</code>
-)とまったく同じ効果があります。 <code>ORIG_HEAD</code> は、リセット前にブランチの先端を指すように設定されています。</p></div>
-<div class="paragraph"><p>以前に一時領域に保存されたコミットは、現在のブランチに1つずつ順番に再適用されます。注意: <code>HEAD..&lt;upstream&gt;</code>
-でのコミットと同一のテキスト変更を導入する <code>HEAD</code>
-でのコミットは省略されることに注意してください(つまり、異なるコミットメッセージまたはタイムスタンプで、アップストリームで既に受け入れ済のパッチはスキップされます)。</p></div>
-<div class="paragraph"><p>マージに失敗すると、このプロセスが完全には自動で行われなくなる事があります。あなたは、このようなマージの失敗を解決し、そして <code>git rebase
---continue</code> を実行する必要があります。 別のオプションとしては、 <code>git rebase --skip</code>
-でマージの失敗を引き起こしたコミットをバイパスすることです。そして、元の <code>&lt;branch&gt;</code>
-をチェックアウトし、<code>.git/rebase-apply</code> 作業ファイルを削除するには、代わりにコマンド <code>git rebase --abort</code>
-を使用します。</p></div>
+<div class="paragraph"><p><code>&lt;branch&gt;</code> が指定されている場合、 「git rebase」は他の処理を行う前に自動で <code>git switch &lt;branch&gt;</code> を実行します。それ以外の場合は、引き続き現在のブランチに滞在しています。</p></div>
+<div class="paragraph"><p><code>&lt;upstream&gt;</code> が指定されていない場合、 <code>branch.&lt;name&gt;.remote</code> と <code>branch.&lt;name&gt;.mergebranch</code> オプションで構成されたアップストリーム(詳細は<a href="git-config.html">git-config(1)</a> 参照) および <code>--fork-point</code> オプションが想定されています。あなたが現在ブランチを一切使用していない場合、または、現在のブランチにアップストリームが構成されていない場合、リベースは中止(abort)されます。</p></div>
+<div class="paragraph"><p>現在のブランチでコミットによって行われたが、 <code>&lt;upstream&gt;</code> に無いすべての変更は、一時領域(temporary area)に保存されます。 これは <code>git log &lt;upstream&gt;..HEAD</code> で表示されるのと同じコミットのセットで、または <code>--fork-point</code> がアクティブな場合 <code>git log 'fork_point'..HEAD</code> で表示されるのと同じコミットのセットで、または <code>--root</code> オプションが指定されている場合 <code>git log HEAD</code> で表示されるのと同じコミットのセットです。</p></div>
+<div class="paragraph"><p>現在のブランチは <code>&lt;upstream&gt;</code> にリセットされます。 または <code>--onto</code> オプションが指定されている場合は <code>&lt;newbase&gt;</code> にリセットされます。 これは、 <code>git reset --hard &lt;upstream&gt;</code> (または <code>&lt;newbase&gt;</code> )とまったく同じ効果があります。 <code>ORIG_HEAD</code> は、リセット前にブランチの先端を指すように設定されています。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content"><code>ORIG_HEAD</code> is not guaranteed to still point to the previous branch tip at the end of the rebase if other commands that write that pseudo-ref (e.g. <code>git reset</code>) are used during the rebase. The previous branch tip, however, is accessible using the reflog of the current branch (i.e. <code>@{1}</code>, see <a href="gitrevisions.html">gitrevisions(7)</a>).</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>以前に一時領域に保存されたコミットは、現在のブランチに1つずつ順番に再適用されます。注意: <code>HEAD..&lt;upstream&gt;</code> でのコミットと同一のテキスト変更を導入する <code>HEAD</code> でのコミットは省略されることに注意してください(つまり、異なるコミットメッセージまたはタイムスタンプで、アップストリームで既に受け入れ済のパッチはスキップされます)。</p></div>
+<div class="paragraph"><p>マージに失敗すると、このプロセスが完全には自動で行われなくなる事があります。あなたは、このようなマージの失敗を解決し、そして <code>git rebase --continue</code> を実行する必要があります。 別のオプションとしては、 <code>git rebase --skip</code> でマージの失敗を引き起こしたコミットをバイパスすることです。そして、元の <code>&lt;branch&gt;</code> をチェックアウトし、<code>.git/rebase-apply</code> 作業ファイルを削除するには、代わりにコマンド <code>git rebase --abort</code> を使用します。</p></div>
 <div class="paragraph"><p>以下の履歴が存在し、現在のブランチが <code>topic</code> であるとします:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -805,9 +798,7 @@ git rebase master topic</code></pre>
 <div class="paragraph"><p><strong>注意</strong> : 後者の形式は、
 <code>git checkout topic</code> の後に <code>git rebase master</code> が続く省略形です。
 リベースが終了すると、チェックアウトされたブランチ(<code>topic</code>)のままになります。</p></div>
-<div class="paragraph"><p>(たとえば、アップストリームに適用されたパッチをメールで送信したため)アップストリームブランチにすでに行った変更が含まれている場合、そのコミットはスキップされ、警告が発行されます(<code>merge</code>
-バックエンドが使用されている場合)。たとえば、以下の履歴で <code>git rebase master</code> を実行します(<code>A'</code> と <code>A</code>
-は同じ変更セットを導入しますが、コミッター情報は異なります):</p></div>
+<div class="paragraph"><p>(たとえば、アップストリームに適用されたパッチをメールで送信したため)アップストリームブランチにすでに行った変更が含まれている場合、そのコミットはスキップされ、警告が発行されます(<code>merge</code> バックエンドが使用されている場合)。たとえば、以下の履歴で <code>git rebase master</code> を実行します(<code>A'</code> と <code>A</code> は同じ変更セットを導入しますが、コミッター情報は異なります):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>          A---B---C topic
@@ -821,10 +812,8 @@ git rebase master topic</code></pre>
                   /
     D---E---A'---F master</code></pre>
 </div></div>
-<div class="paragraph"><p>これは、あるブランチに基づいてトピックブランチを別のブランチに移植し、 <code>rebase --onto</code>
-を使用して、トピックブランチを後者のブランチからフォークしたふりをする方法です。</p></div>
-<div class="paragraph"><p>まず、「topic」がブランチ「next」に基づいているとしましょう。
-たとえば「topic」で開発された機能は、「next」にあるいくつかの機能に依存しています。</p></div>
+<div class="paragraph"><p>これは、あるブランチに基づいてトピックブランチを別のブランチに移植し、 <code>rebase --onto</code> を使用して、トピックブランチを後者のブランチからフォークしたふりをする方法です。</p></div>
+<div class="paragraph"><p>まず、「topic」がブランチ「next」に基づいているとしましょう。 たとえば「topic」で開発された機能は、「next」にあるいくつかの機能に依存しています。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o  master
@@ -833,9 +822,7 @@ git rebase master topic</code></pre>
                            \
                             o---o---o  topic</code></pre>
 </div></div>
-<div class="paragraph"><p>我々は <em>topic</em> をブランチ <em>master</em>
-からフォークさせたいのです。たとえば「topic」が依存する機能が、より安定した「master」ブランチにマージされたためです。
-ツリーを以下のようにしたいわけです:</p></div>
+<div class="paragraph"><p>我々は <em>topic</em> をブランチ <em>master</em> からフォークさせたいのです。たとえば「topic」が依存する機能が、より安定した「master」ブランチにマージされたためです。 ツリーを以下のようにしたいわけです:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o  master
@@ -888,10 +875,8 @@ git rebase master topic</code></pre>
 <div class="content">
 <pre><code>    E---H'---I'---J'  topicA</code></pre>
 </div></div>
-<div class="paragraph"><p>これは、 F と G に何らかの欠陥がある場合、または、topicA の一部であってはならない場合に役立ちます。注意: <code>--onto</code> と
-<code>&lt;upstream&gt;</code> パラメーターの引数は、任意の有効なコミットっぽい何か(commit-ish)にすることができることに注意してください。</p></div>
-<div class="paragraph"><p>競合が発生した場合、 <code>git rebase</code> は最初の問題のあるコミットで停止し、ツリーに競合マーカーを残します。 あなたは <code>git diff</code>
-を使用して、マーカー(<code>&lt;&lt;&lt;&lt;&lt;&lt;</code>)を見つけ、編集して競合を解決できます。編集するファイルごとに、競合が解決されたことをGitに通知する必要があります。通常、これは以下の方法で行います</p></div>
+<div class="paragraph"><p>これは、 F と G に何らかの欠陥がある場合、または、topicA の一部であってはならない場合に役立ちます。注意: <code>--onto</code> と <code>&lt;upstream&gt;</code> パラメーターの引数は、任意の有効なコミットっぽい何か(commit-ish)にすることができることに注意してください。</p></div>
+<div class="paragraph"><p>競合が発生した場合、 <code>git rebase</code> は最初の問題のあるコミットで停止し、ツリーに競合マーカーを残します。 あなたは <code>git diff</code> を使用して、マーカー(<code>&lt;&lt;&lt;&lt;&lt;&lt;</code>)を見つけ、編集して競合を解決できます。編集するファイルごとに、競合が解決されたことをGitに通知する必要があります。通常、これは以下の方法で行います</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git add &lt;filename&gt;</code></pre>
@@ -909,6 +894,62 @@ git rebase master topic</code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_mode_options">MODE OPTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The options in this section cannot be used with any other option, including not with each other:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--continue</code>
+</dt>
+<dd>
+<p>
+        マージの競合を解決した後、リベースプロセスを再開します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--skip</code>
+</dt>
+<dd>
+<p>
+        現在のパッチをスキップして、リベースプロセスを再開します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--abort</code>
+</dt>
+<dd>
+<p>
+        リベース操作を中止(abort)し、 <code>HEAD</code> を元のブランチにリセットします。リベース操作の開始時に <code>&lt;branch&gt;</code> が指定された場合、<code>HEAD</code> は <code>&lt;branch&gt;</code> にリセットされます。それ以外の場合、 <code>HEAD</code> はリベース操作が開始されたときの位置にリセットされます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--quit</code>
+</dt>
+<dd>
+<p>
+        リベース操作を中止(abort)しますが、HEADは元のブランチにリセットされません。その結果、インデックスと作業ツリーも変更されません。 <code>--autostash</code> を使用して一時的なstashエントリが作成された場合、それはstashリストに保存されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--edit-todo</code>
+</dt>
+<dd>
+<p>
+        対話リベース中にToDoリストを編集します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--show-current-patch</code>
+</dt>
+<dd>
+<p>
+        対話的なリベース、または、競合のためにリベースが停止されたときに、現在のパッチを表示します。 これは <code>git show REBASE_HEAD</code> と同等です。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
 <div class="dlist"><dl>
@@ -917,25 +958,19 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        新しいコミットを作成する開始点を指定します。 <code>--onto</code> オプションが指定されていない場合、開始点は <code>&lt;upstream&gt;</code>
-        です。これは、既存のブランチ名だけでなく、任意の有効なコミットである可能性があります。
+        新しいコミットを作成する開始点を指定します。 <code>--onto</code> オプションが指定されていない場合、開始点は <code>&lt;upstream&gt;</code> です。これは、既存のブランチ名だけでなく、任意の有効なコミットである可能性があります。
 </p>
-<div class="paragraph"><p>特別な場合として、マージベースが1つしかない場合は、あなたはAとBのマージベースのショートカットとして "A...B"
-を使用できます。最大でAとBのいずれかを省略できます。その場合、デフォルトでHEADになります。</p></div>
+<div class="paragraph"><p>特別な場合として、マージベースが1つしかない場合は、あなたはAとBのマージベースのショートカットとして "A...B" を使用できます。最大でAとBのいずれかを省略できます。その場合、デフォルトでHEADになります。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--keep-base</code>
 </dt>
 <dd>
 <p>
-        <code>&lt;upstream&gt;</code> の <code>&lt;branch&gt;</code> のマージベースへの新しいコミットを作成する開始点を設定します。 <code>git rebase
-        --keep-base &lt;upstream&gt; &lt;branch&gt;</code> を実行することは <code>git rebase --onto
-        &lt;upstream&gt;...&lt;branch&gt; &lt;upstream&gt; &lt;branch&gt;</code> を実行することと同じです。
+        Set the starting point at which to create the new commits to the merge base of <code>&lt;upstream&gt;</code> and <code>&lt;branch&gt;</code>. Running <code>git rebase --keep-base &lt;upstream&gt; &lt;branch&gt;</code> is equivalent to running <code>git rebase --reapply-cherry-picks --no-fork-point --onto &lt;upstream&gt;...&lt;branch&gt; &lt;upstream&gt; &lt;branch&gt;</code>.
 </p>
-<div class="paragraph"><p>このオプションは、アップストリームブランチの先頭で機能を開発している場合に役立ちます。この機能が働いている間に、アップストリームのブランチが進むことがあり、アップストリームの先頭にリベースを続けるのは得策ではなく、ベースのコミットをそのままにしておくことがあります。</p></div>
-<div class="paragraph"><p>このオプションと <code>--fork-point</code> はどちらも <code>&lt;upstream&gt;</code> と <code>&lt;branch&gt;</code>
-の間のマージベースを検索します。しかし、このオプションは新しいコミットが作成される「開始点」としてマージベースを使用します。一方
-<code>--fork-point</code> はマージベースを使用して、リベースされる「コミットのセット」を決定します。</p></div>
+<div class="paragraph"><p>This option is useful in the case where one is developing a feature on top of an upstream branch. While the feature is being worked on, the upstream branch may advance and it may not be the best idea to keep rebasing on top of the upstream but to keep the base commit as-is. As the base commit is unchanged this option implies <code>--reapply-cherry-picks</code> to avoid losing commits.</p></div>
+<div class="paragraph"><p>このオプションと <code>--fork-point</code> はどちらも <code>&lt;upstream&gt;</code> と <code>&lt;branch&gt;</code> の間のマージベースを検索します。しかし、このオプションは新しいコミットが作成される「開始点」としてマージベースを使用します。一方 <code>--fork-point</code> はマージベースを使用して、リベースされる「コミットのセット」を決定します。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -955,39 +990,11 @@ git rebase master topic</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--continue</code>
-</dt>
-<dd>
-<p>
-        マージの競合を解決した後、リベースプロセスを再開します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--abort</code>
-</dt>
-<dd>
-<p>
-        リベース操作を中止(abort)し、 <code>HEAD</code> を元のブランチにリセットします。リベース操作の開始時に <code>&lt;branch&gt;</code>
-        が指定された場合、<code>HEAD</code> は <code>&lt;branch&gt;</code> にリセットされます。それ以外の場合、 <code>HEAD</code>
-        はリベース操作が開始されたときの位置にリセットされます。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--quit</code>
-</dt>
-<dd>
-<p>
-        リベース操作を中止(abort)しますが、HEADは元のブランチにリセットされません。その結果、インデックスと作業ツリーも変更されません。
-        <code>--autostash</code> を使用して一時的なstashエントリが作成された場合、それはstashリストに保存されます。
-</p>
-</dd>
-<dt class="hdlist1">
 <code>--apply</code>
 </dt>
 <dd>
 <p>
-        適用戦略(applying strategies)を使用してリベースします(内部で <code>git-am</code>
-        を呼び出します)。このオプションは、マージバックエンドがapplyのすべてを処理すると、将来的には動作しなくなる可能性があります。
+        適用戦略(applying strategies)を使用してリベースします(内部で <code>git-am</code> を呼び出します)。このオプションは、マージバックエンドがapplyのすべてを処理すると、将来的には動作しなくなる可能性があります。
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -996,15 +1003,9 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        任意のアップストリームコミットの、開始時は空ではなく、かつ、クリーンでは無いチェリーピックであるが、(すでにアップストリームの変更のサブセットが含まれているため、)リベース後に空になるコミットを処理する方法。dropを使用すると、空になるコミットはドロップされます(これがデフォルトです)。keepを使用すると、そのようなコミットは保持されます。
-        ask
-        を使用すると、空のコミットが適用されるとリベースが停止し、ドロップするか、ファイルをさらに編集するか、空の変更をコミットするかを選択できます(<code>--interactive</code>
-        の指定を含んでいます)。<code>--exec</code> などの他のオプションでは、 <code>-i</code>/<code>--interactive</code>
-        が明示的に指定されていない限り、デフォルトのドロップが使用されます。
+        任意のアップストリームコミットの、開始時は空ではなく、かつ、クリーンでは無いチェリーピックであるが、(すでにアップストリームの変更のサブセットが含まれているため、)リベース後に空になるコミットを処理する方法。dropを使用すると、空になるコミットはドロップされます(これがデフォルトです)。keepを使用すると、そのようなコミットは保持されます。 ask を使用すると、空のコミットが適用されるとリベースが停止し、ドロップするか、ファイルをさらに編集するか、空の変更をコミットするかを選択できます(<code>--interactive</code> の指定を含んでいます)。<code>--exec</code> などの他のオプションでは、 <code>-i</code>/<code>--interactive</code> が明示的に指定されていない限り、デフォルトのドロップが使用されます。
 </p>
-<div class="paragraph"><p>注意: (<code>--no-keep-empty</code>
-が指定されていない場合、)空で開始するコミットは保持され、(<code>--reapply-cherry-picks</code> が渡されない限り)準備ステップとして、(
-<code>git log --cherry-mark ...</code> によって決定される)クリーンなチェリーピックであるコミットが検出・ドロップされます。</p></div>
+<div class="paragraph"><p>Note that commits which start empty are kept (unless <code>--no-keep-empty</code> is specified), and commits which are clean cherry-picks (as determined by <code>git log --cherry-mark ...</code>) are detected and dropped as a preliminary step (unless <code>--reapply-cherry-picks</code> or <code>--keep-base</code> is passed).</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1015,12 +1016,9 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        リベースの前に空で始まるコミット(つまり、親から何も変更していないコミット)を結果に残さないようにします。 なぜなら、そのようなコミットを作成するには
-        <code>git commit</code> に <code>--allow-empty</code>
-        というオーバーライドするフラグを渡す必要があり、これはユーザーが意図的にそのようなコミットを作成し、それを保持したいことを意味しているからです。
+        リベースの前に空で始まるコミット(つまり、親から何も変更していないコミット)を結果に残さないようにします。 なぜなら、そのようなコミットを作成するには <code>git commit</code> に <code>--allow-empty</code> というオーバーライドするフラグを渡す必要があり、これはユーザーが意図的にそのようなコミットを作成し、それを保持したいことを意味しているからです。
 </p>
-<div class="paragraph"><p>対話的なリベースを起動し、不要なコミットに対応する行を削除するだけで、空で始まるコミットを取り除くことができるため、このフラグの使用はおそらくまれです。
-このフラグは、外部ツールが多くの空のコミットを生成し、それらをすべて削除したい場合などの為の便利なショートカットとして存在します。</p></div>
+<div class="paragraph"><p>対話的なリベースを起動し、不要なコミットに対応する行を削除するだけで、空で始まるコミットを取り除くことができるため、このフラグの使用はおそらくまれです。 このフラグは、外部ツールが多くの空のコミットを生成し、それらをすべて削除したい場合などの為の便利なショートカットとして存在します。</p></div>
 <div class="paragraph"><p>開始時は空でないが、リベース後に空になるコミットについては、 <code>--empty</code> フラグを参照してください。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1032,17 +1030,10 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        我先にドロップしてしまうのではなく、アップストリームコミットのすべてのクリーンなチェリーピックを再適用します。
-        （これらのコミットがリベース後に空になった場合、それらにはすでにアップストリームの変更のサブセットが含まれているため、それらに対する動作は
-        `--empty`フラグによって制御されます。）
+        我先にドロップしてしまうのではなく、アップストリームコミットのすべてのクリーンなチェリーピックを再適用します。 （これらのコミットがリベース後に空になった場合、それらにはすでにアップストリームの変更のサブセットが含まれているため、それらに対する動作は `--empty`フラグによって制御されます。）
 </p>
-<div class="paragraph"><p>デフォルト(または <code>--no-reapply-cherry-picks</code> が指定されている場合)では、これらのコミットは自動的にドロップされます。
-これにはすべてのアップストリームコミットを読み取る必要があるため、読み取る必要のあるアップストリームコミットが多数あるリポジトリではコストがかかる可能性があります。
-<code>merge</code> バックエンドを使用する場合、（<code>--quiet</code> が指定されていない限り）ドロップされたコミットごとに警告が発行されます。
-<code>advice.skippedCherryPicks</code> がfalseに設定されていない限り、アドバイスも表示されます
-(<a href="git-config.html">git-config(1)</a> を参照)。</p></div>
-<div class="paragraph"><p><code>--reapply-cherry-picks</code>
-を使用すると、リベースはすべてのアップストリームコミットの読み取りを放棄できるため、パフォーマンスが向上する可能性があります。</p></div>
+<div class="paragraph"><p>In the absence of <code>--keep-base</code> (or if <code>--no-reapply-cherry-picks</code> is given), these commits will be automatically dropped. Because this necessitates reading all upstream commits, this can be expensive in repositories with a large number of upstream commits that need to be read. When using the <em>merge</em> backend, warnings will be issued for each dropped commit (unless <code>--quiet</code> is given). Advice will also be issued unless <code>advice.skippedCherryPicks</code> is set to false (see <a href="git-config.html">git-config(1)</a>).</p></div>
+<div class="paragraph"><p><code>--reapply-cherry-picks</code> を使用すると、リベースはすべてのアップストリームコミットの読み取りを放棄できるため、パフォーマンスが向上する可能性があります。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1055,31 +1046,6 @@ git rebase master topic</code></pre>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--skip</code>
-</dt>
-<dd>
-<p>
-        現在のパッチをスキップして、リベースプロセスを再開します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--edit-todo</code>
-</dt>
-<dd>
-<p>
-        対話リベース中にToDoリストを編集します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--show-current-patch</code>
-</dt>
-<dd>
-<p>
-        対話的なリベース、または、競合のためにリベースが停止されたときに、現在のパッチを表示します。 これは <code>git show REBASE_HEAD</code>
-        と同等です。
-</p>
-</dd>
-<dt class="hdlist1">
 <code>-m</code>
 </dt>
 <dt class="hdlist1">
@@ -1089,9 +1055,7 @@ git rebase master topic</code></pre>
 <p>
         マージ戦略(merging strategies)を使用してリベースします(デフォルト)。
 </p>
-<div class="paragraph"><p>リベースマージは、&lt;upstream&gt;ブランチの上にある作業ブランチからの各コミットをリプレイすることによって機能することに注意してください。このため、マージの競合が発生した場合、
-<code>ours</code> として報告される側は、&lt;upstream&gt;で始まるこれまでのリベースされたシリーズであり、 <code>theirs</code> は作業ブランチです。
-つまり、サイドが入れ替わっています。</p></div>
+<div class="paragraph"><p>リベースマージは、&lt;upstream&gt;ブランチの上にある作業ブランチからの各コミットをリプレイすることによって機能することに注意してください。このため、マージの競合が発生した場合、 <code>ours</code> として報告される側は、&lt;upstream&gt;で始まるこれまでのリベースされたシリーズであり、 <code>theirs</code> は作業ブランチです。 つまり、サイドが入れ替わっています。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1104,8 +1068,7 @@ git rebase master topic</code></pre>
 <p>
         デフォルトの <code>ort</code> の代わりに、指定のマージ戦略を使用します。 このオプションは <code>--merge</code> の指定を含んでいます。
 </p>
-<div class="paragraph"><p><code>git rebase</code> は、指定された戦略を使用して&lt;upstream&gt;ブランチの上にある作業ブランチからの各コミットをリプレイするため、
-<code>ours</code>  戦略を使用すると、&lt;branch&gt;からすべてのパッチが空になります。これはほとんど意味がありません。</p></div>
+<div class="paragraph"><p><code>git rebase</code> は、指定された戦略を使用して&lt;upstream&gt;ブランチの上にある作業ブランチからの各コミットをリプレイするため、 <code>ours</code> 戦略を使用すると、&lt;branch&gt;からすべてのパッチが空になります。これはほとんど意味がありません。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1116,8 +1079,7 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        &lt;strategy-option&gt;をマージ戦略に渡します。 これは <code>--merge</code> の指定を含んでいて、戦略が指定されていない場合は <code>-s
-        ort</code> を意味します。 <code>-m</code> オプションにて上記で述べたように、「ours」と「theirs」が逆になっていることに注意してください。
+        &lt;strategy-option&gt;をマージ戦略に渡します。 これは <code>--merge</code> の指定を含んでいて、戦略が指定されていない場合は <code>-s ort</code> を意味します。 <code>-m</code> オプションにて上記で述べたように、「ours」と「theirs」が逆になっていることに注意してください。
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1129,9 +1091,7 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        rerere メカニズムが現在の競合で記録された解決を再利用して作業ツリー内のファイルを更新した後、解決の結果でインデックスも更新できるようにします。
-        <code>--no-rerere-autoupdate</code> は、別の <code>git add</code>
-        で結果をインデックスにコミットする前に、「rerere」が行ったことを再確認し、潜在的な間違いマージ(mismerges)を捉える良い方法です。
+        rerere メカニズムが現在の競合で記録された解決を再利用して作業ツリー内のファイルを更新した後、解決の結果でインデックスも更新できるようにします。 <code>--no-rerere-autoupdate</code> は、別の <code>git add</code> で結果をインデックスにコミットする前に、「rerere」が行ったことを再確認し、潜在的な間違いマージ(mismerges)を捉える良い方法です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1145,9 +1105,7 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        GPG署名コミットです。 <code>keyid</code> 引数はオプションであり、デフォルトでコミッターIDになります。
-        指定する場合は、スペースなしでオプションに串刺しする必要があります。 <code>--no-gpg-sign</code> は、<code>commit.gpgSign</code>
-        構成変数と、それより前で指定した <code>--gpg-sign</code> オプションの、その両方を打ち消すのに役立ちます。
+        GPG署名コミットです。 <code>keyid</code> 引数はオプションであり、デフォルトでコミッターIDになります。 指定する場合は、スペースなしでオプションに串刺しする必要があります。 <code>--no-gpg-sign</code> は、<code>commit.gpgSign</code> 構成変数と、それより前で指定した <code>--gpg-sign</code> オプションの、その両方を打ち消すのに役立ちます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1177,8 +1135,7 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        最後のリベース以降にアップストリームで変更されたもののdiffstatを表示します。 diffstatは、構成オプション rebase.stat
-        によっても制御されます。
+        最後のリベース以降にアップストリームで変更されたもののdiffstatを表示します。 diffstatは、構成オプション rebase.stat によっても制御されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1205,8 +1162,7 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        リベース前フック(pre-rebase hook)の実行を許可します。これがデフォルトです。このオプションは、 <code>--no-verify</code>
-        をオーバーライドするために使用できます。 <a href="githooks.html">githooks(5)</a> も参照してください。
+        リベース前フック(pre-rebase hook)の実行を許可します。これがデフォルトです。このオプションは、 <code>--no-verify</code> をオーバーライドするために使用できます。 <a href="githooks.html">githooks(5)</a> も参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1214,8 +1170,7 @@ git rebase master topic</code></pre>
 </dt>
 <dd>
 <p>
-        各変更の前後で、少なくとも &lt;n&gt; 行の周囲のコンテキストが一致することを確認する。 周囲の文脈の行数が少ない場合は、すべて一致させなければならない。
-        デフォルトでは、コンテキストは無視されます。 <code>--apply</code> の指定を含んでいます。
+        各変更の前後で、少なくとも &lt;n&gt; 行の周囲のコンテキストが一致することを確認する。 周囲の文脈の行数が少ない場合は、すべて一致させなければならない。 デフォルトでは、コンテキストは無視されます。 <code>--apply</code> の指定を含んでいます。
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1232,10 +1187,7 @@ git rebase master topic</code></pre>
 <p>
         変更されていないコミットを早送りす(fast-forward)るのではなく、リベースされたすべてのコミットを個別にリプレイします。これにより、リベースされたブランチの履歴全体が新しいコミットで構成されることが保証されます。
 </p>
-<div class="paragraph"><p>トピックブランチのマージを取り消した後にこのオプションを使うと便利です。このオプションはトピックブランチを新しいコミットで再作成するので、「戻しを戻す」(revert
-the reversion)必要はありません (詳細は
-<a href="howto/revert-a-faulty-merge.html">revert-a-faulty-merge How-To</a>
-をご覧ください)。</p></div>
+<div class="paragraph"><p>トピックブランチのマージを取り消した後にこのオプションを使うと便利です。このオプションはトピックブランチを新しいコミットで再作成するので、「戻しを戻す」(revert the reversion)必要はありません (詳細は <a href="howto/revert-a-faulty-merge.html">revert-a-faulty-merge How-To</a> をご覧ください)。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--fork-point</code>
@@ -1247,14 +1199,9 @@ the reversion)必要はありません (詳細は
 <p>
         &lt;branch&gt;によって導入されたコミットを計算するときに、reflogを使用して、&lt;upstream&gt;と&lt;branch&gt;の間の、より一般的な祖先を見つけます。
 </p>
-<div class="paragraph"><p><code>--fork-point</code> がアクティブな場合、&lt;upstream&gt;の代わりに <code>fork_point</code>
-を使用して、リベースするコミットのセットを計算します。ここで、 <code>fork_point</code> は、 <code>git merge-base --fork-point
-&lt;upstream&gt; &lt;branch&gt;</code> コマンドの結果です（<a href="git-merge-base.html">git-merge-base(1)</a> 参照）。  <code>fork_point</code>
-が空になると、&lt;upstream&gt;がフォールバックとして使用されます。</p></div>
-<div class="paragraph"><p>コマンドラインで&lt;upstream&gt;が指定されている場合、デフォルトは <code>--no-fork-point</code> です。それ以外の場合、デフォルトは
-<code>--fork-point</code> です。 <a href="git-config.html">git-config(1)</a> の <code>rebase.forkpoint</code> も参照してください。</p></div>
-<div class="paragraph"><p>あなたのブランチが&lt;upstream&gt;に基づいていたが、&lt;upstream&gt;が巻き戻され、あなたのブランチにドロップされたコミットが含まれている場合、あなたのブランチからそれらのコミットをドロップするために、このオプションを
-<code>--keep-base</code> とともに使用できます。</p></div>
+<div class="paragraph"><p><code>--fork-point</code> がアクティブな場合、&lt;upstream&gt;の代わりに <code>fork_point</code> を使用して、リベースするコミットのセットを計算します。ここで、 <code>fork_point</code> は、 <code>git merge-base --fork-point &lt;upstream&gt; &lt;branch&gt;</code> コマンドの結果です（<a href="git-merge-base.html">git-merge-base(1)</a> 参照）。 <code>fork_point</code> が空になると、&lt;upstream&gt;がフォールバックとして使用されます。</p></div>
+<div class="paragraph"><p>If <code>&lt;upstream&gt;</code> or <code>--keep-base</code> is given on the command line, then the default is <code>--no-fork-point</code>, otherwise the default is <code>--fork-point</code>. See also <code>rebase.forkpoint</code> in <a href="git-config.html">git-config(1)</a>.</p></div>
+<div class="paragraph"><p>あなたのブランチが&lt;upstream&gt;に基づいていたが、&lt;upstream&gt;が巻き戻され、あなたのブランチにドロップされたコミットが含まれている場合、あなたのブランチからそれらのコミットをドロップするために、このオプションを <code>--keep-base</code> とともに使用できます。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1288,8 +1235,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        このフラグは、パッチを適用する <code>git apply</code> プログラム(<a href="git-apply.html">git-apply(1)</a> 参照)に渡されます。 <code>--apply</code>
-        の指定を含んでいます。
+        このフラグは、パッチを適用する <code>git apply</code> プログラム(<a href="git-apply.html">git-apply(1)</a> 参照)に渡されます。 <code>--apply</code> の指定を含んでいます。
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1298,8 +1244,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        現在の時刻をコミッターの日付として使用する代わりに、リベースされるコミットの作成者の日付をコミッターの日付として使用します。このオプションは、
-        <code>--force-rebase</code> の指定を含んでいます。
+        現在の時刻をコミッターの日付として使用する代わりに、リベースされるコミットの作成者の日付をコミッターの日付として使用します。このオプションは、 <code>--force-rebase</code> の指定を含んでいます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1310,8 +1255,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        元のコミットの作成者の日付を使用する代わりに、現在の時刻をリベースされたコミットの作成者の日付として使用します。 このオプションは、
-        <code>--force-rebase</code> の指定を含んでいます。
+        元のコミットの作成者の日付を使用する代わりに、現在の時刻をリベースされたコミットの作成者の日付として使用します。 このオプションは、 <code>--force-rebase</code> の指定を含んでいます。
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1320,8 +1264,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        すべてのリベースされたコミットに <code>Signed-off-by</code> トレーラーを追加します。注意: <code>--interactive</code>
-        が指定されている場合、pick または edit または reword のマークが付けられたコミットのみにトレーラーが追加されることに注意してください。
+        すべてのリベースされたコミットに <code>Signed-off-by</code> トレーラーを追加します。注意: <code>--interactive</code> が指定されている場合、pick または edit または reword のマークが付けられたコミットのみにトレーラーが追加されることに注意してください。
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1333,11 +1276,9 @@ merge backend
 </dt>
 <dd>
 <p>
-        リベースされようとしているコミットのリストを作成します。リベースする前に、ユーザーにそのリストを編集させます。このモードは、コミットの分割にも使用できます（以下の「SPLITTING
-        COMMITS」を参照）。
+        リベースされようとしているコミットのリストを作成します。リベースする前に、ユーザーにそのリストを編集させます。このモードは、コミットの分割にも使用できます（以下の「SPLITTING COMMITS」を参照）。
 </p>
-<div class="paragraph"><p>コミットリストの書式は、構成オプション rebase.instructionFormat
-を設定することで変更できます。カスタマイズされた命令書式では、書式の前に長いコミットハッシュが自動的に追加されます。</p></div>
+<div class="paragraph"><p>コミットリストの書式は、構成オプション rebase.instructionFormat を設定することで変更できます。カスタマイズされた命令書式では、書式の前に長いコミットハッシュが自動的に追加されます。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1346,20 +1287,15 @@ merge backend
 <dt class="hdlist1">
 <code>--rebase-merges[=(rebase-cousins|no-rebase-cousins)]</code>
 </dt>
+<dt class="hdlist1">
+<code>--no-rebase-merges</code>
+</dt>
 <dd>
 <p>
-        デフォルトでは、リベースはtodoリストからマージコミットを削除し、リベースされたコミットを単一の線形ブランチに配置します。
-        <code>--rebase-merges</code>
-        を使用すると、リベースは代わりに、マージコミットを再作成することにより、リベースされるコミット内の分岐構造を保持しようとします。これらのマージコミットで解決されたマージの競合または手動の修正(amend)は、手動で
-        解決/再適用 する必要があります。
+        By default, a rebase will simply drop merge commits from the todo list, and put the rebased commits into a single, linear branch. With <code>--rebase-merges</code>, the rebase will instead try to preserve the branching structure within the commits that are to be rebased, by recreating the merge commits. Any resolved merge conflicts or manual amendments in these merge commits will have to be resolved/re-applied manually. <code>--no-rebase-merges</code> can be used to countermand both the <code>rebase.rebaseMerges</code> config option and a previous <code>--rebase-merges</code>.
 </p>
-<div class="paragraph"><p>デフォルト、または <code>no-rebase-cousins</code> が指定された場合、直接の祖先として <code>&lt;upstream&gt;</code>
-を持たないコミットは元の分岐点を保持します。つまり、 <a href="git-log.html">git-log(1)</a> の <code>--ancestry-path</code>
-オプションによって除外されるコミットは、デフォルトで元の祖先を保持します。 <code>rebase-cousins</code>
-モードがオンになっている場合、そのようなコミットは代わりに <code>&lt;upstream&gt;</code> （または指定されている場合は <code>&lt;onto&gt;</code>
-）にリベースされます。</p></div>
-<div class="paragraph"><p>現在、 <code>ort</code> マージ戦略を使用してのみマージコミットを再作成することが可能です。異なるマージ戦略は、明示的な <code>exec git merge -s
-&lt;strategy&gt; [...]</code> コマンドを介してのみ使用できます。</p></div>
+<div class="paragraph"><p>When rebasing merges, there are two modes: <code>rebase-cousins</code> and <code>no-rebase-cousins</code>. If the mode is not specified, it defaults to <code>no-rebase-cousins</code>. In <code>no-rebase-cousins</code> mode, commits which do not have <code>&lt;upstream&gt;</code> as direct ancestor will keep their original branch point, i.e. commits that would be excluded by <a href="git-log.html">git-log(1)</a>'s <code>--ancestry-path</code> option will keep their original ancestry by default. In <code>rebase-cousins</code> mode, such commits are instead rebased onto <code>&lt;upstream&gt;</code> (or <code>&lt;onto&gt;</code>, if specified).</p></div>
+<div class="paragraph"><p>現在、 <code>ort</code> マージ戦略を使用してのみマージコミットを再作成することが可能です。異なるマージ戦略は、明示的な <code>exec git merge -s &lt;strategy&gt; [...]</code> コマンドを介してのみ使用できます。</p></div>
 <div class="paragraph"><p>下記の「REBASING MERGES」と「INCOMPATIBLE OPTIONS」も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1370,8 +1306,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        最終履歴にコミットを作成する各行の後に <code>exec &lt;cmd&gt;</code> を追加します。 <code>&lt;cmd&gt;</code> は、1つ以上のシェルコマンドとして解釈されます。
-        失敗したコマンドは、exit code 1でリベースを中断(interrupt)します。
+        最終履歴にコミットを作成する各行の後に <code>exec &lt;cmd&gt;</code> を追加します。 <code>&lt;cmd&gt;</code> は、1つ以上のシェルコマンドとして解釈されます。 失敗したコマンドは、exit code 1でリベースを中断(interrupt)します。
 </p>
 <div class="paragraph"><p><code>--exec</code> の1つのインスタンスを複数のコマンドで使用することにより、複数のコマンドを実行できます:</p></div>
 <div class="literalblock">
@@ -1383,8 +1318,7 @@ merge backend
 <div class="content">
 <pre><code>git rebase -i --exec "cmd1" --exec "cmd2" --exec ...</code></pre>
 </div></div>
-<div class="paragraph"><p><code>--autosquash</code> が使用されている場合、 <code>exec</code> 行は中間コミットに追加されず、各 squash/fixup
-シリーズの最後にのみ現れます。</p></div>
+<div class="paragraph"><p><code>--autosquash</code> が使用されている場合、 <code>exec</code> 行は中間コミットに追加されず、各 squash/fixup シリーズの最後にのみ現れます。</p></div>
 <div class="paragraph"><p>これは内部で <code>--interactive</code> 機構を使用しますが、明示的な <code>--interactive</code> の指定なしで実行できます。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1393,10 +1327,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        &lt;upstream&gt;で制限するのではなく、&lt;branch&gt;から到達可能なすべてのコミットをリベースします。
-        これにより、ブランチのルートコミットをリベースできます。 <code>--onto</code>
-        と一緒に使用すると、（&lt;upstream&gt;ではなく、）&lt;newbase&gt;にすでに含まれている変更をスキップしますが、 <code>--onto</code>
-        を使用しない場合は、すべての変更に対して機能します。
+        Rebase all commits reachable from <code>&lt;branch&gt;</code>, instead of limiting them with an <code>&lt;upstream&gt;</code>. This allows you to rebase the root commit(s) on a branch.
 </p>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1408,17 +1339,9 @@ merge backend
 </dt>
 <dd>
 <p>
-        コミットログメッセージが「squash! &#8230;」または「fixup! &#8230;」または「amend! &#8230;」で始まり、同一の <code>...</code>
-        に一致するコミットがすでにtodoリストにある場合、 <code>rebase -i</code>
-        のtodoリストを自動的に変更して、squashするようにマークされたコミットが、変更するコミットの直後に来るようにし、移動したコミットのアクションをそれぞれ
-        <code>pick</code> から、 <code>squash</code> または <code>fixup</code> または <code>fixup-C</code> に変更します。  コミットの件名が一致する場合、または
-        <code>...</code> がコミットのハッシュを参照する場合、コミットは <code>...</code> と一致します。フォールバックとして、コミットサブジェクトの部分一致も機能します。
-        fixup/amend/squash コミットを作成するための推奨される方法は、 <a href="git-commit.html">git-commit(1)</a> のそれぞれ
-        <code>--fixup</code> または <code>--fixup=amend:</code> または <code>--fixup=reword:</code> と、<code>--squash</code>
-        オプションを使用することです。
+        コミットログメッセージが「squash! &#8230;」または「fixup! &#8230;」または「amend! &#8230;」で始まり、同一の <code>...</code> に一致するコミットがすでにtodoリストにある場合、 <code>rebase -i</code> のtodoリストを自動的に変更して、squashするようにマークされたコミットが、変更するコミットの直後に来るようにし、移動したコミットのアクションをそれぞれ <code>pick</code> から、 <code>squash</code> または <code>fixup</code> または <code>fixup-C</code> に変更します。 コミットの件名が一致する場合、または <code>...</code> がコミットのハッシュを参照する場合、コミットは <code>...</code> と一致します。フォールバックとして、コミットサブジェクトの部分一致も機能します。 fixup/amend/squash コミットを作成するための推奨される方法は、 <a href="git-commit.html">git-commit(1)</a> のそれぞれ <code>--fixup</code> または <code>--fixup=amend:</code> または <code>--fixup=reword:</code> と、<code>--squash</code> オプションを使用することです。
 </p>
-<div class="paragraph"><p>構成変数 <code>rebase.autoSquash</code> を使用して <code>--autosquash</code>
-オプションがデフォルトで有効になっている場合、このオプションを使用して、この設定をオーバーライドおよび無効にすることができます。</p></div>
+<div class="paragraph"><p>構成変数 <code>rebase.autoSquash</code> を使用して <code>--autosquash</code> オプションがデフォルトで有効になっている場合、このオプションを使用して、この設定をオーバーライドおよび無効にすることができます。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1429,8 +1352,7 @@ merge backend
 </dt>
 <dd>
 <p>
-        操作を開始する前に一時的なスタッシュエントリを自動的に作成し、操作の終了後に適用します。これは、汚れたワークツリー(dirty
-        worktree)でリベースを実行できることを意味します。ただし、注意して使用してください。リベース成功後のスタッシュ適用の際、重要な競合を引き起こす可能性があります。
+        操作を開始する前に一時的なスタッシュエントリを自動的に作成し、操作の終了後に適用します。これは、汚れたワークツリー(dirty worktree)でリベースを実行できることを意味します。ただし、注意して使用してください。リベース成功後のスタッシュ適用の際、重要な競合を引き起こす可能性があります。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1441,14 +1363,9 @@ merge backend
 </dt>
 <dd>
 <p>
-        失敗した <code>exec</code> コマンドを自動的に再スケジュールします。 これは、対話モード(または <code>--exec</code>
-        オプションが提供された場合)でのみ意味があります。
+        失敗した <code>exec</code> コマンドを自動的に再スケジュールします。 これは、対話モード(または <code>--exec</code> オプションが提供された場合)でのみ意味があります。
 </p>
-<div class="paragraph"><p>このオプションは、リベースが開始されると適用されますが、これは、 <code>rebase.rescheduleFailedExec</code>
-構成(<a href="git-config.html">git-config(1)</a> または
-下記「CONFIGURATION」参照)、またはこのオプションが提供されているかどうかに基づいて、最初にリベース全体に設定されます。でなければ、開始時の明示的な
-<code>--no-reschedule-failed-exec</code> が、 <code>rebase.rescheduleFailedExec=true</code>
-構成の存在によって上書きされます。</p></div>
+<div class="paragraph"><p>このオプションは、リベースが開始されると適用されますが、これは、 <code>rebase.rescheduleFailedExec</code> 構成(<a href="git-config.html">git-config(1)</a> または 下記「CONFIGURATION」参照)、またはこのオプションが提供されているかどうかに基づいて、最初にリベース全体に設定されます。でなければ、開始時の明示的な <code>--no-reschedule-failed-exec</code> が、 <code>rebase.rescheduleFailedExec=true</code> 構成の存在によって上書きされます。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--update-refs</code>
@@ -1461,6 +1378,7 @@ merge backend
         リベースされているコミットを指すブランチを自動的に強制更新します。 ワークツリーでチェックアウトされたブランチは、この方法では更新されません。
 </p>
 <div class="paragraph"><p>構成変数 <code>rebase.updateRefs</code> が設定されている場合、このオプションを使用して、この設定をオーバーライドして無効にすることができます。</p></div>
+<div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 </dl></div>
 </div>
@@ -1505,12 +1423,7 @@ merge backend
 </li>
 <li>
 <p>
-<code>--allow-empty-message</code>
-</p>
-</li>
-<li>
-<p>
-<code>--[no-]autosquash</code>
+<code>--autosquash</code>
 </p>
 </li>
 <li>
@@ -1540,12 +1453,7 @@ merge backend
 </li>
 <li>
 <p>
-<code>--reapply-cherry-picks</code>
-</p>
-</li>
-<li>
-<p>
-<code>--edit-todo</code>
+<code>--[no-]reapply-cherry-picks</code> when used without <code>--keep-base</code>
 </p>
 </li>
 <li>
@@ -1555,7 +1463,7 @@ merge backend
 </li>
 <li>
 <p>
-<code>--root</code> 。<code>--onto</code> と組み合わせて使用する場合。
+<code>--root</code> when used without <code>--onto</code>
 </p>
 </li>
 </ul></div>
@@ -1582,70 +1490,39 @@ merge backend
 <div class="sect1">
 <h2 id="_behavioral_differences_振る舞いの違い">BEHAVIORAL DIFFERENCES(振る舞いの違い)</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>git rebaseには、 <code>apply</code> と <code>merge</code> の2つの主要バックエンドがあります。 (<code>apply</code> バックエンドは以前は <code>am</code>
-バックエンド と呼ばれていましたが、名詞ではなく動詞のように見えるため混乱を招きました。また、 <code>merge</code> バックエンドは以前は
-<code>interactive</code> バックエンドと呼ばれていましたが、現在は
-非対話型の場合にも使用されます。どちらも、それぞれを支える低レベルの機能に基づいて名前が変更されました。）これら2つのバックエンドの振る舞いには微妙な違いがあります:</p></div>
+<div class="paragraph"><p>git rebaseには、 <code>apply</code> と <code>merge</code> の2つの主要バックエンドがあります。 (<code>apply</code> バックエンドは以前は <code>am</code> バックエンド と呼ばれていましたが、名詞ではなく動詞のように見えるため混乱を招きました。また、 <code>merge</code> バックエンドは以前は <code>interactive</code> バックエンドと呼ばれていましたが、現在は 非対話型の場合にも使用されます。どちらも、それぞれを支える低レベルの機能に基づいて名前が変更されました。）これら2つのバックエンドの振る舞いには微妙な違いがあります:</p></div>
 <div class="sect2">
 <h3 id="_空のコミット">空のコミット</h3>
-<div class="paragraph"><p><code>apply</code>
-バックエンドは、残念ながら意図的に空のコミット、つまり空で開始されたコミットを削除しますが、これらは実際にはまれです。また、空になるコミットを削除したり、その振る舞いを制御するオプションがありません。</p></div>
-<div class="paragraph"><p><code>merge</code> バックエンドは、デフォルトで意図的に空のコミットを保持します(ただし、 <code>-i</code>
-を使用すると、todoリストエディタでemptyとしてマークされます。または、 <code>--no-keep-empty</code> を使用して自動的に削除できます)。</p></div>
-<div class="paragraph"><p>適用バックエンドと同様に、デフォルトでは、mergeバックエンドは、 <code>-i</code>/<code>--interactive</code>
-が指定されていない限り、空になるコミットをドロップします(この場合、mergeバックエンドは停止(stop)し、ユーザーに何をすべきかを尋ねます)。mergeバックエンドには、空になったコミットの処理動作を変更するための
-<code>--empty={drop,keep,ask}</code> オプションもあります。</p></div>
+<div class="paragraph"><p><code>apply</code> バックエンドは、残念ながら意図的に空のコミット、つまり空で開始されたコミットを削除しますが、これらは実際にはまれです。また、空になるコミットを削除したり、その振る舞いを制御するオプションがありません。</p></div>
+<div class="paragraph"><p><code>merge</code> バックエンドは、デフォルトで意図的に空のコミットを保持します(ただし、 <code>-i</code> を使用すると、todoリストエディタでemptyとしてマークされます。または、 <code>--no-keep-empty</code> を使用して自動的に削除できます)。</p></div>
+<div class="paragraph"><p>適用バックエンドと同様に、デフォルトでは、mergeバックエンドは、 <code>-i</code>/<code>--interactive</code> が指定されていない限り、空になるコミットをドロップします(この場合、mergeバックエンドは停止(stop)し、ユーザーに何をすべきかを尋ねます)。mergeバックエンドには、空になったコミットの処理動作を変更するための <code>--empty={drop,keep,ask}</code> オプションもあります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_ディレクトリ名変更の検知">ディレクトリ名変更の検知</h3>
-<div class="paragraph"><p>正確なツリー情報が不足している(パッチで利用可能な限られた情報で偽の祖先を構築するために生じる)ため、 <code>apply</code>
-バックエンドでディレクトリ名変更の検出が無効になっています。 ディレクトリ名前変更の検出が無効になっているということは、
-履歴の一方がディレクトリの名前を変更し、 もう一方が古いディレクトリに新しいファイルを追加した場合に、
-リベース時にこれらのファイルを新しいディレクトリに移動したいという警告なしに、 新しいファイルが古いディレクトリに残されます。</p></div>
+<div class="paragraph"><p>正確なツリー情報が不足している(パッチで利用可能な限られた情報で偽の祖先を構築するために生じる)ため、 <code>apply</code> バックエンドでディレクトリ名変更の検出が無効になっています。 ディレクトリ名前変更の検出が無効になっているということは、 履歴の一方がディレクトリの名前を変更し、 もう一方が古いディレクトリに新しいファイルを追加した場合に、 リベース時にこれらのファイルを新しいディレクトリに移動したいという警告なしに、 新しいファイルが古いディレクトリに残されます。</p></div>
 <div class="paragraph"><p>ディレクトリ名変更の検出は、 <code>merge</code> バックエンドと連携して、このような場合に警告を出します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_context">Context</h3>
-<div class="paragraph"><p>適用バックエンドは、（内部で <code>format-patch</code>
-を呼び出すことにより、）パッチのシーケンスを作成し、次にパッチを順番に適用することにより（内部で <code>am</code>
-を呼び出すことにより）機能します。パッチは複数のハンクで構成されており、それぞれに行番号、コンテキストリージョン、および実際の変更が含まれています。反対側がファイルの前に行を挿入または削除した可能性があるため、行番号はある程度曖昧にする必要があります。コンテキスト領域(context
-region)は、正しい行に変更を適用するために行番号を調整する方法を見つけるのに役立つことを目的としています。ただし、コードの複数の領域に同じ周囲のコンテキスト行がある場合、間違った領域が選択される可能性があります。これにより、競合が報告されずにコミットが誤って再適用される実際のケースがあります。
-<code>diff.context</code>
-をより大きな値に設定すると、このようなタイプの問題を防ぐことができますが、誤った競合の可能性が高くなります（適用するには、一致するコンテキストの行がより多く必要になるため）。</p></div>
+<div class="paragraph"><p>適用バックエンドは、（内部で <code>format-patch</code> を呼び出すことにより、）パッチのシーケンスを作成し、次にパッチを順番に適用することにより（内部で <code>am</code> を呼び出すことにより）機能します。パッチは複数のハンクで構成されており、それぞれに行番号、コンテキストリージョン、および実際の変更が含まれています。反対側がファイルの前に行を挿入または削除した可能性があるため、行番号はある程度曖昧にする必要があります。コンテキスト領域(context region)は、正しい行に変更を適用するために行番号を調整する方法を見つけるのに役立つことを目的としています。ただし、コードの複数の領域に同じ周囲のコンテキスト行がある場合、間違った領域が選択される可能性があります。これにより、競合が報告されずにコミットが誤って再適用される実際のケースがあります。 <code>diff.context</code> をより大きな値に設定すると、このようなタイプの問題を防ぐことができますが、誤った競合の可能性が高くなります（適用するには、一致するコンテキストの行がより多く必要になるため）。</p></div>
 <div class="paragraph"><p><code>merge</code> バックエンドは、関連する各ファイルの完全なコピーを使って動作し、これらの種類の問題からファイルを保護します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_labelling_of_conflicts_markers">Labelling of conflicts markers</h3>
-<div class="paragraph"><p>コンテンツの競合がある場合、マージ機構は、コンテンツが由来するコミットでそれぞれの側の競合マーカーに注釈を付けようとします。 <code>apply</code>
-バックエンドは、リベースされたコミットとその親に関する元の情報を削除するため(代わりに、生成されたパッチの限られた情報に基づいて新しい偽のコミットを生成します)、それらのコミットを識別できません。
-代わりに、コミットの要約にフォールバックする必要があります。また、 merge.conflictStyle が <code>diff3</code> または <code>zdiff3</code>
-に設定されている場合、 <code>apply</code>
-バックエンドは「構築されたマージベース」を使用してマージベースのコンテンツにラベルを付けるため、マージベースのコミットに関する情報は一切提供されません。</p></div>
+<div class="paragraph"><p>コンテンツの競合がある場合、マージ機構は、コンテンツが由来するコミットでそれぞれの側の競合マーカーに注釈を付けようとします。 <code>apply</code> バックエンドは、リベースされたコミットとその親に関する元の情報を削除するため(代わりに、生成されたパッチの限られた情報に基づいて新しい偽のコミットを生成します)、それらのコミットを識別できません。 代わりに、コミットの要約にフォールバックする必要があります。また、 merge.conflictStyle が <code>diff3</code> または <code>zdiff3</code> に設定されている場合、 <code>apply</code> バックエンドは「構築されたマージベース」を使用してマージベースのコンテンツにラベルを付けるため、マージベースのコミットに関する情報は一切提供されません。</p></div>
 <div class="paragraph"><p><code>merge</code> バックエンドは、履歴の両側で完全なコミットで動作するため、そのような制限はありません。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_フック">フック</h3>
-<div class="paragraph"><p><code>apply</code> バックエンドは従来、コミット後フック(post-commit hook)を呼び出していませんでしたが、 <code>merge</code>
-バックエンドは呼び出していました。 <code>merge</code>
-バックエンドはその出力を黙らせましたが、いまだ両方ともチェックアウト後フック(post-checkout
-hook)を呼び出します。さらに、両方のバックエンドは、中間コミットや最終コミットではなく、リベースの開始点コミットでのみチェックアウト後フック(post-checkout
-hook)を呼び出します。いずれの場合も、これらのフックの呼び出しは、そう設計したのではなく、実装の偶然によるものでした(両方のバックエンドは元々シェルスクリプトとして実装されており、フックを呼び出す
-<code>git checkout ` や `git commit</code>
-などの他のコマンドをたまたま呼び出していました)。どちらが正しいかは完全には明らかではありませんが、両方のバックエンドの動作は同じであるべきです。将来的には、リベースがこれらのフックのいずれかを呼び出すのを停止する可能性があります。</p></div>
+<div class="paragraph"><p><code>apply</code> バックエンドは従来、コミット後フック(post-commit hook)を呼び出していませんでしたが、 <code>merge</code> バックエンドは呼び出していました。 <code>merge</code> バックエンドはその出力を黙らせましたが、いまだ両方ともチェックアウト後フック(post-checkout hook)を呼び出します。さらに、両方のバックエンドは、中間コミットや最終コミットではなく、リベースの開始点コミットでのみチェックアウト後フック(post-checkout hook)を呼び出します。いずれの場合も、これらのフックの呼び出しは、そう設計したのではなく、実装の偶然によるものでした(両方のバックエンドは元々シェルスクリプトとして実装されており、フックを呼び出す <code>git checkout ` や `git commit</code> などの他のコマンドをたまたま呼び出していました)。どちらが正しいかは完全には明らかではありませんが、両方のバックエンドの動作は同じであるべきです。将来的には、リベースがこれらのフックのいずれかを呼び出すのを停止する可能性があります。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_interruptability_割り込み可能性">Interruptability(割り込み可能性)</h3>
-<div class="paragraph"><p><code>apply</code> バックエンドには、タイミングの悪い割り込みによる安全上の問題があります。ユーザーが間違ったタイミングで Ctrl-C
-を押してリベースを中止しようとすると、リベースは、後続の <code>git rebase --abort</code> で中止できない状態になる可能性があります。
-<code>merge</code> バックエンドには、同様の欠点は見られません。(詳細については、
-<a href="https://lore.kernel.org/git/20200207132152.GC2868@szeder.dev/">https://lore.kernel.org/git/20200207132152.GC2868@szeder.dev/</a> を参照してください。)</p></div>
+<div class="paragraph"><p><code>apply</code> バックエンドには、タイミングの悪い割り込みによる安全上の問題があります。ユーザーが間違ったタイミングで Ctrl-C を押してリベースを中止しようとすると、リベースは、後続の <code>git rebase --abort</code> で中止できない状態になる可能性があります。 <code>merge</code> バックエンドには、同様の欠点は見られません。(詳細については、 <a href="https://lore.kernel.org/git/20200207132152.GC2868@szeder.dev/">https://lore.kernel.org/git/20200207132152.GC2868@szeder.dev/</a> を参照してください。)</p></div>
 </div>
 <div class="sect2">
 <h3 id="_commit_rewording">Commit Rewording</h3>
-<div class="paragraph"><p>リベース中に競合が発生すると、リベースが停止(stop)し、ユーザーに解決を求めます。
-ユーザーは競合の解決中に注目すべき変更を加える必要がある場合があるため、競合が解決され、ユーザーが <code>git rebase --continue</code>
-を実行した後、リベースはエディターを開き、ユーザーにコミットメッセージを更新するように依頼する必要があります。 <code>merge</code>
-バックエンドはこれを行いますが、 <code>apply</code> バックエンドは元のコミットメッセージを盲目的に適用します。</p></div>
+<div class="paragraph"><p>リベース中に競合が発生すると、リベースが停止(stop)し、ユーザーに解決を求めます。 ユーザーは競合の解決中に注目すべき変更を加える必要がある場合があるため、競合が解決され、ユーザーが <code>git rebase --continue</code> を実行した後、リベースはエディターを開き、ユーザーにコミットメッセージを更新するように依頼する必要があります。 <code>merge</code> バックエンドはこれを行いますが、 <code>apply</code> バックエンドは元のコミットメッセージを盲目的に適用します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_miscellaneous_differences">Miscellaneous differences</h3>
@@ -1658,9 +1535,7 @@ Reflog: 2つのバックエンドは、reflogで行われた変更を説明す�
 </li>
 <li>
 <p>
-進行状況、情報、エラーメッセージ について:
-  2つのバックエンドは、わずかに異なる進行状況と情報メッセージを提供します。また、applyバックエンドはエラーメッセージ（「Your files
-  would be overwritten&#8230;」など）をstdoutに書き込み、mergeバックエンドはそれらをstderrに書き込みます。
+進行状況、情報、エラーメッセージ について: 2つのバックエンドは、わずかに異なる進行状況と情報メッセージを提供します。また、applyバックエンドはエラーメッセージ（「Your files would be overwritten&#8230;」など）をstdoutに書き込み、mergeバックエンドはそれらをstderrに書き込みます。
 </p>
 <div class="ulist"><ul>
 <li>
@@ -1677,19 +1552,14 @@ Reflog: 2つのバックエンドは、reflogで行われた変更を説明す�
 <div class="sect1">
 <h2 id="_merge_strategies">MERGE STRATEGIES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>マージ機構(<code>git merge</code> と <code>git pull</code> コマンド)では、バックエンドの「マージ戦略」を <code>-s</code>
-オプションで選択することができます。 いくつかの戦略では、独自のオプションを指定することができます。これは、 <code>git merge</code> や <code>git
-pull</code> に <code>-X&lt;option&gt;</code> 引数として渡すことができます。</p></div>
+<div class="paragraph"><p>マージ機構(<code>git merge</code> と <code>git pull</code> コマンド)では、バックエンドの「マージ戦略」を <code>-s</code> オプションで選択することができます。 いくつかの戦略では、独自のオプションを指定することができます。これは、 <code>git merge</code> や <code>git pull</code> に <code>-X&lt;option&gt;</code> 引数として渡すことができます。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 ort
 </dt>
 <dd>
 <p>
-        これは、1つのブランチをプルまたはマージするときのデフォルトのマージ戦略です。この戦略では、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。これにより、Linux
-        2.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。さらに、この戦略では、名前の変更を伴うマージを検出して処理できます。検出されたコピーは使用しません。このアルゴリズムの名前は
-        "Ostensibly Recursive&#8217;s Twin"
-        (表面上は再帰の双子)の頭文字を取ったものであり、以前のデフォルトのアルゴリズムである「recursive」の代わりとして作成されたという事実に由来しています。
+        これは、1つのブランチをプルまたはマージするときのデフォルトのマージ戦略です。この戦略では、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。これにより、Linux 2.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。さらに、この戦略では、名前の変更を伴うマージを検出して処理できます。検出されたコピーは使用しません。このアルゴリズムの名前は "Ostensibly Recursive&#8217;s Twin" (表面上は再帰の双子)の頭文字を取ったものであり、以前のデフォルトのアルゴリズムである「recursive」の代わりとして作成されたという事実に由来しています。
 </p>
 <div class="paragraph"><p><code>ort</code> 戦略は、以下のオプションを取ることができます:</p></div>
 <div class="dlist"><dl>
@@ -1698,8 +1568,7 @@ ours
 </dt>
 <dd>
 <p>
-        このオプションは、「our」バージョンを優先することにより、競合するハンクをクリーンに自動解決するように強制します。
-        our側と競合しない他のツリーからの変更は、マージ結果に反映されます。 バイナリファイルの場合、内容全体がour側から取得されます。
+        このオプションは、「our」バージョンを優先することにより、競合するハンクをクリーンに自動解決するように強制します。 our側と競合しない他のツリーからの変更は、マージ結果に反映されます。 バイナリファイルの場合、内容全体がour側から取得されます。
 </p>
 <div class="paragraph"><p>これを「ours」マージ戦略と混同しないでください。この戦略では、他のツリーに何が含まれているのかさえまったく調べません。それは他のツリーが行ったすべてを破棄し、「our」履歴にはその中で起こったすべてが含まれていると宣言します。</p></div>
 </dd>
@@ -1725,9 +1594,7 @@ ignore-cr-at-eol
 </dt>
 <dd>
 <p>
-        指示されたタイプの空白(whitespace)の変更を含む行を、3方向マージのために変更されていないものとして扱います。行に対する、他の変更と空白(whitespace)の変更との混合は、無視されません。
-        <a href="git-diff.html">git-diff(1)</a> の <code>-b</code> と <code>-w</code> と <code>--ignore-space-at-eol</code> と
-        <code>--ignore-cr-at-eol</code> も参照してください。
+        指示されたタイプの空白(whitespace)の変更を含む行を、3方向マージのために変更されていないものとして扱います。行に対する、他の変更と空白(whitespace)の変更との混合は、無視されません。 <a href="git-diff.html">git-diff(1)</a> の <code>-b</code> と <code>-w</code> と <code>--ignore-space-at-eol</code> と <code>--ignore-cr-at-eol</code> も参照してください。
 </p>
 <div class="ulist"><ul>
 <li>
@@ -1752,9 +1619,7 @@ renormalize
 </dt>
 <dd>
 <p>
-        これにより、3方向マージを解決するときに、ファイルの3つのステージすべての仮想チェックアウトとチェックインが実行されます。このオプションは、ブランチをさまざまなクリーンフィルターまたは行末正規化ルールとマージするときに使用することを目的としています。詳細については、
-        <a href="gitattributes.html">gitattributes(5)</a> の「Merging branches with differing checkin/checkout
-        attributes」(チェックイン/チェックアウト属性が異なるブランチのマージ)を参照してください。
+        これにより、3方向マージを解決するときに、ファイルの3つのステージすべての仮想チェックアウトとチェックインが実行されます。このオプションは、ブランチをさまざまなクリーンフィルターまたは行末正規化ルールとマージするときに使用することを目的としています。詳細については、 <a href="gitattributes.html">gitattributes(5)</a> の「Merging branches with differing checkin/checkout attributes」(チェックイン/チェックアウト属性が異なるブランチのマージ)を参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1770,9 +1635,7 @@ find-renames[=&lt;n&gt;]
 </dt>
 <dd>
 <p>
-        名前変更(rename)の検出をオンにし、オプションで類似性のしきい値(similarity threshold)を設定します。これがデフォルトです。
-        これは、 <code>merge.renames</code> 構成変数をオーバーライドします。 <a href="git-diff.html">git-diff(1)</a> の <code>--find-renames</code>
-        も参照してください。
+        名前変更(rename)の検出をオンにし、オプションで類似性のしきい値(similarity threshold)を設定します。これがデフォルトです。 これは、 <code>merge.renames</code> 構成変数をオーバーライドします。 <a href="git-diff.html">git-diff(1)</a> の <code>--find-renames</code> も参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1798,14 +1661,9 @@ recursive
 </dt>
 <dd>
 <p>
-        これは、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。
-        これにより、Linux
-        2.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。
-        さらに、これにより、名前変更を含むマージを検出して処理できます。  検出されたコピーは使用しません。 これは、Git v0.99.9k 〜
-        v2.33.0 まで、2つのヘッドを解決するためのデフォルトの戦略でした。
+        これは、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。 これにより、Linux 2.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。 さらに、これにより、名前変更を含むマージを検出して処理できます。 検出されたコピーは使用しません。 これは、Git v0.99.9k 〜 v2.33.0 まで、2つのヘッドを解決するためのデフォルトの戦略でした。
 </p>
-<div class="paragraph"><p>「recursive」(再帰的)戦略は「ort」と同じオプションを取る。 しかし、「ort」が無視する3つのオプション(上記には書かれていない)があり、
-「recursive」戦略で有用となる可能性がある:</p></div>
+<div class="paragraph"><p>「recursive」(再帰的)戦略は「ort」と同じオプションを取る。 しかし、「ort」が無視する3つのオプション(上記には書かれていない)があり、 「recursive」戦略で有用となる可能性がある:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 patience
@@ -1820,10 +1678,7 @@ diff-algorithm=[patience|minimal|histogram|myers]
 </dt>
 <dd>
 <p>
-        マージ中に別の差分アルゴリズムを使用すると、重要でない一致行(異なる関数の中括弧など)が原因で発生するミスマージを回避できます。
-        <a href="git-diff.html">git-diff(1)</a> <code>--diff-algorithm</code> も参照してください。注意: 特に、「ort」は
-        <code>diff-algorithm=histogram</code> を使用しますが、「recursive」はデフォルトで 「diff.algorithm」
-        設定を使う事に注意して下さい。
+        マージ中に別の差分アルゴリズムを使用すると、重要でない一致行(異なる関数の中括弧など)が原因で発生するミスマージを回避できます。 <a href="git-diff.html">git-diff(1)</a> <code>--diff-algorithm</code> も参照してください。注意: 特に、「ort」は <code>diff-algorithm=histogram</code> を使用しますが、「recursive」はデフォルトで 「diff.algorithm」 設定を使う事に注意して下さい。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1831,8 +1686,7 @@ no-renames
 </dt>
 <dd>
 <p>
-        名前変更(rename)の検出をオフにします。 これは、<code>merge.renames</code> 構成変数をオーバーライドします。
-        <a href="git-diff.html">git-diff(1)</a> の <code>--no-renames</code> も参照してください。
+        名前変更(rename)の検出をオフにします。 これは、<code>merge.renames</code> 構成変数をオーバーライドします。 <a href="git-diff.html">git-diff(1)</a> の <code>--no-renames</code> も参照してください。
 </p>
 </dd>
 </dl></div>
@@ -1842,8 +1696,7 @@ resolve
 </dt>
 <dd>
 <p>
-        これは、3方向マージアルゴリズムを使用して、2つのヘッド（つまり、現在のブランチとプルした別のブランチ）のみを解決できます。
-        交差マージ(criss-cross merge)のあいまいさを注意深く検出しようとします。 名前の変更は処理しません。
+        これは、3方向マージアルゴリズムを使用して、2つのヘッド（つまり、現在のブランチとプルした別のブランチ）のみを解決できます。 交差マージ(criss-cross merge)のあいまいさを注意深く検出しようとします。 名前の変更は処理しません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1859,9 +1712,7 @@ ours
 </dt>
 <dd>
 <p>
-        これにより、任意の数のヘッドが解決されますが、結果として得られるマージのツリーは常に現在のブランチヘッドのツリーであり、他のすべてのブランチからのすべての変更を事実上無視します。
-        これは、サイドブランチの古い開発履歴に取って代わるために使用されることを意図しています。 これは、「recursive」マージ戦略の <code>-Xours</code>
-        オプションとは異なることに注意してください。
+        これにより、任意の数のヘッドが解決されますが、結果として得られるマージのツリーは常に現在のブランチヘッドのツリーであり、他のすべてのブランチからのすべての変更を事実上無視します。 これは、サイドブランチの古い開発履歴に取って代わるために使用されることを意図しています。 これは、「recursive」マージ戦略の <code>-Xours</code> オプションとは異なることに注意してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1869,9 +1720,7 @@ subtree
 </dt>
 <dd>
 <p>
-        これは改造された「ort」戦略です。
-        ツリーAとBをマージするとき、BがAのサブツリーに対応する場合、同じレベルのツリーを読み取るのではなく、Bは最初にAのツリー構造に一致するように調整されます。
-        この調整は、共通の祖先ツリーに対しても行われます。
+        これは改造された「ort」戦略です。 ツリーAとBをマージするとき、BがAのサブツリーに対応する場合、同じレベルのツリーを読み取るのではなく、Bは最初にAのツリー構造に一致するように調整されます。 この調整は、共通の祖先ツリーに対しても行われます。
 </p>
 </dd>
 </dl></div>
@@ -1881,10 +1730,8 @@ subtree
 <div class="sect1">
 <h2 id="_notes">NOTES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>あなたは共有リポジトリで <code>git rebase</code> を使用することの意味を理解する必要があります。下記「RECOVERING FROM UPSTREAM
-REBASE」も参照してください。</p></div>
-<div class="paragraph"><p>リベースを実行すると、最初にpre-rebaseフックが存在する場合はそれが実行されます。このフックを使用して、健全性チェックを実行し、適切でない場合はリベースを拒否できます。例については、テンプレートの
-pre-rebase hook スクリプトを参照してください。</p></div>
+<div class="paragraph"><p>あなたは共有リポジトリで <code>git rebase</code> を使用することの意味を理解する必要があります。下記「RECOVERING FROM UPSTREAM REBASE」も参照してください。</p></div>
+<div class="paragraph"><p>リベースを実行すると、最初にpre-rebaseフックが存在する場合はそれが実行されます。このフックを使用して、健全性チェックを実行し、適切でない場合はリベースを拒否できます。例については、テンプレートの pre-rebase hook スクリプトを参照してください。</p></div>
 <div class="paragraph"><p>完了すると、&lt;branch&gt;が現在のブランチになります。</p></div>
 </div>
 </div>
@@ -1947,9 +1794,7 @@ pre-rebase hook スクリプトを参照してください。</p></div>
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>bの(2)
-で修正したコミットがパッチシリーズの中に深く埋もれているために、完全ではないコミットに戻せない(amend)ことがあります。これこそが対話型リベースの目的です。たくさんの
-"a" と "b" の後に、コミットを並べ替えたり編集したり、複数のコミットをひとつにまとめたりするために使用します。</p></div>
+<div class="paragraph"><p>bの(2) で修正したコミットがパッチシリーズの中に深く埋もれているために、完全ではないコミットに戻せない(amend)ことがあります。これこそが対話型リベースの目的です。たくさんの "a" と "b" の後に、コミットを並べ替えたり編集したり、複数のコミットをひとつにまとめたりするために使用します。</p></div>
 <div class="paragraph"><p>そのまま保持したい最後のコミットから開始します:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1962,25 +1807,14 @@ pre-rebase hook スクリプトを参照してください。</p></div>
 pick fa1afe1 The oneline of the next commit
 ...</code></pre>
 </div></div>
-<div class="paragraph"><p>1行説明は、純粋にあなたの備忘のためです。 <code>git rebase</code> はそれらを参照せず、コミット名（この例では "deadbee" と
-"fa1afe1" ）を参照するため、名前を削除または編集しないでください。</p></div>
-<div class="paragraph"><p>コマンド「pick」をコマンド「edit」に置き換えることで、 <code>git rebase</code>
-にそのコミットを適用した後に停止(stop)するように指示できます。これにより、あなたはファイルやコミットメッセージを編集し、コミットを修正(amend)して、リベースを続行できます。</p></div>
+<div class="paragraph"><p>1行説明は、純粋にあなたの備忘のためです。 <code>git rebase</code> はそれらを参照せず、コミット名（この例では "deadbee" と "fa1afe1" ）を参照するため、名前を削除または編集しないでください。</p></div>
+<div class="paragraph"><p>コマンド「pick」をコマンド「edit」に置き換えることで、 <code>git rebase</code> にそのコミットを適用した後に停止(stop)するように指示できます。これにより、あなたはファイルやコミットメッセージを編集し、コミットを修正(amend)して、リベースを続行できます。</p></div>
 <div class="paragraph"><p>リベースを中断するには(<code>edit</code> コマンドと同様、ただし最初にコミットを選択せずに)、 <code>break</code> コマンドを使用します。</p></div>
 <div class="paragraph"><p>あなたがコミットのコミットメッセージを編集したいだけの場合は、コマンド <code>pick</code> をコマンド <code>reword</code> に置き換えます。</p></div>
 <div class="paragraph"><p>コミットを削除するには、コマンド <code>pick</code> を <code>drop</code> に置き換えるか、あるいはマッチする行を削除します。</p></div>
-<div class="paragraph"><p>2つ以上のコミットを1つにまとめる場合は、2番目以降のコミットのコマンド pick を squash または fixup
-に置き換えます。コミットに異なる作者がいた場合、折りたたまれたコミットは最初のコミットの作者に帰属します。折りたたまれたコミットに対して推奨されるコミットメッセージは、最初のコミットのメッセージと
-squash コマンドで識別されるメッセージを連結したもので、 <code>fixup -c</code>
-が使用されていない限り、fixupコマンドで識別されるコミットのメッセージは省略されます。<code>fixup -c</code>
-が使用された場合、提案されたコミットメッセージは <code>fixup -c</code> コミットのメッセージのみであり、エディタが開いてメッセージを編集できます。
-<code>fixup -c</code> コミットの内容(パッチ)は、折りたたまれたコミットに引き続き組み込まれます。 <code>fixup -c</code>
-コミットが複数ある場合は、最後のコミットからのメッセージが使用されます。あなたは  <code>fixup -C</code> を使用して、エディターを開かないことを除いて
-<code>fixup -c</code> と同じ動作をさせることもできます。</p></div>
-<div class="paragraph"><p>「git rebase」は、 pick が edit に置き換えられたとき、またはマージエラーのためにコマンドが失敗したときに停止(stop)します。
-競合の編集や解決が完了したら、 あなたは <code>git rebase --continue</code> で続行できます。</p></div>
-<div class="paragraph"><p>たとえば、最後の5つのコミットを並べ替えて、 HEAD~4 であったものが新しいHEADになるようにします。これを実現するには、以下のように「git
-rebase」を呼び出します:</p></div>
+<div class="paragraph"><p>2つ以上のコミットを1つにまとめる場合は、2番目以降のコミットのコマンド pick を squash または fixup に置き換えます。コミットに異なる作者がいた場合、折りたたまれたコミットは最初のコミットの作者に帰属します。折りたたまれたコミットに対して推奨されるコミットメッセージは、最初のコミットのメッセージと squash コマンドで識別されるメッセージを連結したもので、 <code>fixup -c</code> が使用されていない限り、fixupコマンドで識別されるコミットのメッセージは省略されます。<code>fixup -c</code> が使用された場合、提案されたコミットメッセージは <code>fixup -c</code> コミットのメッセージのみであり、エディタが開いてメッセージを編集できます。 <code>fixup -c</code> コミットの内容(パッチ)は、折りたたまれたコミットに引き続き組み込まれます。 <code>fixup -c</code> コミットが複数ある場合は、最後のコミットからのメッセージが使用されます。あなたは <code>fixup -C</code> を使用して、エディターを開かないことを除いて <code>fixup -c</code> と同じ動作をさせることもできます。</p></div>
+<div class="paragraph"><p>「git rebase」は、 pick が edit に置き換えられたとき、またはマージエラーのためにコマンドが失敗したときに停止(stop)します。 競合の編集や解決が完了したら、 あなたは <code>git rebase --continue</code> で続行できます。</p></div>
+<div class="paragraph"><p>たとえば、最後の5つのコミットを並べ替えて、 HEAD~4 であったものが新しいHEADになるようにします。これを実現するには、以下のように「git rebase」を呼び出します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git rebase -i HEAD~5</code></pre>
@@ -2011,17 +1845,13 @@ edit deadbab The oneline of the commit after
 exec cd subdir; make test
 ...</code></pre>
 </div></div>
-<div class="paragraph"><p>コマンドが失敗すると（つまり、0以外のステータスで終了すると）、対話的リベースが停止(stop)し、あなたには問題を修正する機会が与えられます。あなたは
-<code>git rebase --continue</code> で続行できます。</p></div>
-<div class="paragraph"><p>「exec」コマンドは、シェル(<code>$SHELL</code> で指定されたもの、または <code>$SHELL</code>
-が設定されていない場合はデフォルトのシェル)でコマンドを起動するため、シェル機能("cd"、"&gt;"、";"
-など)を使用できます。コマンドは、作業ツリーのルートから実行されます。</p></div>
+<div class="paragraph"><p>コマンドが失敗すると（つまり、0以外のステータスで終了すると）、対話的リベースが停止(stop)し、あなたには問題を修正する機会が与えられます。あなたは <code>git rebase --continue</code> で続行できます。</p></div>
+<div class="paragraph"><p>「exec」コマンドは、シェル(<code>$SHELL</code> で指定されたもの、または <code>$SHELL</code> が設定されていない場合はデフォルトのシェル)でコマンドを起動するため、シェル機能("cd"、"&gt;"、";" など)を使用できます。コマンドは、作業ツリーのルートから実行されます。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git rebase -i --exec "make test"</code></pre>
 </div></div>
-<div class="paragraph"><p>このコマンドを使用すると、あなたは中間コミット(intermediate
-commits)がコンパイル可能であることを確認できます。ToDoリストは以下のようになります:</p></div>
+<div class="paragraph"><p>このコマンドを使用すると、あなたは中間コミット(intermediate commits)がコンパイル可能であることを確認できます。ToDoリストは以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>pick 5928aea one
@@ -2038,14 +1868,11 @@ exec make test</code></pre>
 <div class="sect1">
 <h2 id="_splitting_commits">SPLITTING COMMITS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>対話モードでは、アクション「edit」でコミットをマークできます。 ただし、これは必ずしも「git
-rebase」がこの編集の結果が正確に1つのコミットであることを期待していることを意味するわけではありません。
-実際、あなたはコミットを元に戻す(undo)ことも、他のコミットを追加することもできます。そしてこれは、コミットを2つに分割するために使用できます:</p></div>
+<div class="paragraph"><p>対話モードでは、アクション「edit」でコミットをマークできます。 ただし、これは必ずしも「git rebase」がこの編集の結果が正確に1つのコミットであることを期待していることを意味するわけではありません。 実際、あなたはコミットを元に戻す(undo)ことも、他のコミットを追加することもできます。そしてこれは、コミットを2つに分割するために使用できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>git rebase -i &lt;commit&gt; ^</code> を使用して対話的リベースを開始します。ここで、&lt;commit&gt; はあなたが分割したいコミットです。
-  実際、そのコミットが含まれている限り、どんなコミット範囲でもかまいません。
+<code>git rebase -i &lt;commit&gt; ^</code> を使用して対話的リベースを開始します。ここで、&lt;commit&gt; はあなたが分割したいコミットです。 実際、そのコミットが含まれている限り、どんなコミット範囲でもかまいません。
 </p>
 </li>
 <li>
@@ -2055,14 +1882,12 @@ rebase」がこの編集の結果が正確に1つのコミットであること�
 </li>
 <li>
 <p>
-そのコミットを編集する場合は、 <code>git reset HEAD^</code> を実行します。
-  その効果は、HEADが1つ巻き戻され、インデックスがそれに追随することです。 ただし、作業ツリーは同じままです。
+そのコミットを編集する場合は、 <code>git reset HEAD^</code> を実行します。 その効果は、HEADが1つ巻き戻され、インデックスがそれに追随することです。 ただし、作業ツリーは同じままです。
 </p>
 </li>
 <li>
 <p>
-次に、最初のコミットで必要な変更をインデックスに追加します。 これを行うには、 （おそらく対話的に）<code>git add</code> を使うかまたは <em>git
-  gui</em> を使うか（、またはこの両方を使うか)できます。
+次に、最初のコミットで必要な変更をインデックスに追加します。 これを行うには、 （おそらく対話的に）<code>git add</code> を使うかまたは <em>git gui</em> を使うか（、またはこの両方を使うか)できます。
 </p>
 </li>
 <li>
@@ -2081,16 +1906,13 @@ rebase」がこの編集の結果が正確に1つのコミットであること�
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>あなたが中間リビジョンの一貫性(コンパイル、テストスイートの合格など)が完全には分からない場合は、「git
-stash」を使用して、各コミット後にまだコミットされていない変更を隠し、修正が必要な場合はコミットをテストして修正する必要があります。</p></div>
+<div class="paragraph"><p>あなたが中間リビジョンの一貫性(コンパイル、テストスイートの合格など)が完全には分からない場合は、「git stash」を使用して、各コミット後にまだコミットされていない変更を隠し、修正が必要な場合はコミットをテストして修正する必要があります。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_recovering_from_upstream_rebase">RECOVERING FROM UPSTREAM REBASE</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>他の人がベースにしているブランチをリベースする (あるいは他の形で書き換える)
-のは悪い考えです。そのブランチの下流の人は、自分の履歴を手動で修正することを余儀なくされます。
-このセクションでは、下流側の視点から見た修正の方法を説明します。 しかし、本当の意味での修正は、そもそも上流のリベースを行わないことです。</p></div>
+<div class="paragraph"><p>他の人がベースにしているブランチをリベースする (あるいは他の形で書き換える) のは悪い考えです。そのブランチの下流の人は、自分の履歴を手動で修正することを余儀なくされます。 このセクションでは、下流側の視点から見た修正の方法を説明します。 しかし、本当の意味での修正は、そもそも上流のリベースを行わないことです。</p></div>
 <div class="paragraph"><p>説明のために、誰かが「subsystem」ブランチを開発し、この「subsystem」に依存する「topic」に取り組んでいる状況にあると仮定します。たぶん以下のような履歴です:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -2109,8 +1931,7 @@ stash」を使用して、各コミット後にまだコミットされていな
                            \
                             *---*---*  topic</code></pre>
 </div></div>
-<div class="paragraph"><p>これで、あなたは通常どおり開発を続行し、最終的に <code>topic</code> を <code>subsystem</code> にマージすると、 以下のように、 <code>subsystem</code>
-からのコミットは永久に複製されたままになります:</p></div>
+<div class="paragraph"><p>これで、あなたは通常どおり開発を続行し、最終的に <code>topic</code> を <code>subsystem</code> にマージすると、 以下のように、 <code>subsystem</code> からのコミットは永久に複製されたままになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    o---o---o---o---o---o---o---o  master
@@ -2135,21 +1956,14 @@ stash」を使用して、各コミット後にまだコミットされていな
 </dt>
 <dd>
 <p>
-        これは、「subsystem」のリベースで競合が発生した場合、または <code>--interactive</code>
-        を使用してコミットを省略(omit)、edit、squash、fixupした場合に発生します。または、アップストリームで  <code>commit
-        --amend</code> や、 <code>reset</code> や、
-        <a href="https://github.com/newren/git-filter-repo"><code>filter-repo</code></a>
-        のような完全な履歴書き換えコマンドのいずれかを使用した場合に発生します。
+        これは、「subsystem」のリベースで競合が発生した場合、または <code>--interactive</code> を使用してコミットを省略(omit)、edit、squash、fixupした場合に発生します。または、アップストリームで <code>commit --amend</code> や、 <code>reset</code> や、 <a href="https://github.com/newren/git-filter-repo"><code>filter-repo</code></a> のような完全な履歴書き換えコマンドのいずれかを使用した場合に発生します。
 </p>
 </dd>
 </dl></div>
 <div class="sect2">
 <h3 id="_簡単な場合">簡単な場合</h3>
-<div class="paragraph"><p><code>subsystem</code> の変更点(diffの内容に基づくパッチID)がリベース <code>subsystem</code>
-の前と後で文字通り同じである場合にのみ動作します。</p></div>
-<div class="paragraph"><p>その場合、 <code>git rebase</code>
-は新しいアップストリームにすでに存在する変更をスキップすることを知っているため、修正は簡単です(<code>--reapply-cherry-picks</code>
-が指定されていない場合)。 だから(あなたが「topic」にいると仮定して、)あなたが以下のようにすれば、</p></div>
+<div class="paragraph"><p><code>subsystem</code> の変更点(diffの内容に基づくパッチID)がリベース <code>subsystem</code> の前と後で文字通り同じである場合にのみ動作します。</p></div>
+<div class="paragraph"><p>その場合、 <code>git rebase</code> は新しいアップストリームにすでに存在する変更をスキップすることを知っているため、修正は簡単です(<code>--reapply-cherry-picks</code> が指定されていない場合)。 だから(あなたが「topic」にいると仮定して、)あなたが以下のようにすれば、</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git rebase subsystem</code></pre>
@@ -2178,25 +1992,20 @@ stash」を使用して、各コミット後にまだコミットされていな
       を介して削除されたコミットが「復活」します！</td>
 </tr></table>
 </div>
-<div class="paragraph"><p>考え方としては、「git
-rebase」に「古いsubsystemが終了し、あなたのtopicを開始した場所」、つまり、それらの間の古いマージベースが何であったかを手動で伝えることです。
-あなたは古いsubsystemの最後のコミットに名前を付ける方法を見つける必要があります。以下に例を示します:</p></div>
+<div class="paragraph"><p>考え方としては、「git rebase」に「古いsubsystemが終了し、あなたのtopicを開始した場所」、つまり、それらの間の古いマージベースが何であったかを手動で伝えることです。 あなたは古いsubsystemの最後のコミットに名前を付ける方法を見つける必要があります。以下に例を示します:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>subsystem</code> reflogの場合: <code>git fetch</code> 後、<code>subsystem</code> の古い先端は <code>subsystem@{1}</code>
-  にあります。それ以降にフェッチすると、その数は増えます。 (<a href="git-reflog.html">git-reflog(1)</a> を参照してください)。
+<code>subsystem</code> reflogの場合: <code>git fetch</code> 後、<code>subsystem</code> の古い先端は <code>subsystem@{1}</code> にあります。それ以降にフェッチすると、その数は増えます。 (<a href="git-reflog.html">git-reflog(1)</a> を参照してください)。
 </p>
 </li>
 <li>
 <p>
-<code>topic</code> の先端に関連して: <code>topic</code> に3つのコミットがあることを知っているので、 <code>subsystem</code> の古い先端は
-  <code>topic~3</code> でなければなりません。
+<code>topic</code> の先端に関連して: <code>topic</code> に3つのコミットがあることを知っているので、 <code>subsystem</code> の古い先端は <code>topic~3</code> でなければなりません。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>次に、あなたは以下のように言って、古い <code>subsystem..topic</code> を新しい先端に移植できます(reflogの場合、すでに <code>topic</code>
-にいると仮定します):</p></div>
+<div class="paragraph"><p>次に、あなたは以下のように言って、古い <code>subsystem..topic</code> を新しい先端に移植できます(reflogの場合、すでに <code>topic</code> にいると仮定します):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git rebase --onto subsystem subsystem@{1}</code></pre>
@@ -2210,8 +2019,7 @@ rebase」に「古いsubsystemが終了し、あなたのtopicを開始した場
 <div class="sectionbody">
 <div class="paragraph"><p>対話的リベースコマンドは、元々、個々のパッチシリーズを処理するために設計されました。そのため、開発者がブランチの作業中にその時点で最新の「master」をマージした可能性があり、最終的にすべてのコミットを「master」にリベースする(マージコミットをスキップする)ため、マージコミットをtodoリストから除外することは理にかなっています。</p></div>
 <div class="paragraph"><p>ただし、開発者がマージコミットを再作成する正当な理由があります。それは複数の相互に関連するブランチで作業するときに、ブランチ構造(または「コミットトポロジ」）を維持するためです。</p></div>
-<div class="paragraph"><p>次の例では、開発者はボタンの定義方法をリファクタリングするトピックブランチと、そのリファクタリングを使用して[バグの報告]ボタンを実装する別のトピックブランチで作業します。
-<code>git log --graph --format=%s -5</code> の出力は以下のようになります:</p></div>
+<div class="paragraph"><p>次の例では、開発者はボタンの定義方法をリファクタリングするトピックブランチと、そのリファクタリングを使用して[バグの報告]ボタンを実装する別のトピックブランチで作業します。 <code>git log --graph --format=%s -5</code> の出力は以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>*   Merge branch 'report-a-bug'
@@ -2223,9 +2031,7 @@ rebase」に「古いsubsystemが終了し、あなたのtopicを開始した場
 | * Use the Button class for all buttons
 | * Extract a generic Button class from the DownloadButton one</code></pre>
 </div></div>
-<div class="paragraph"><p>開発者は、ブランチトポロジを維持しながら、これらのコミットを新しい <code>master</code>
-にリベースしたい場合があります。たとえば、最初のトピックブランチが2番目のブランチよりもはるかに早く <code>master</code>
-に統合されると予想される場合、たとえば、マージの競合を解決して、 <code>master</code> にしたDownloadButtonクラスへの変更を解決します。</p></div>
+<div class="paragraph"><p>開発者は、ブランチトポロジを維持しながら、これらのコミットを新しい <code>master</code> にリベースしたい場合があります。たとえば、最初のトピックブランチが2番目のブランチよりもはるかに早く <code>master</code> に統合されると予想される場合、たとえば、マージの競合を解決して、 <code>master</code> にしたDownloadButtonクラスへの変更を解決します。</p></div>
 <div class="paragraph"><p>このリベースは、 <code>--rebase-merges</code> オプションを使用して実行できます。 以下のようなToDoリストが生成されます:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -2247,27 +2053,13 @@ merge -C a1b2c3 refactor-button # Merge 'refactor-button'
 merge -C 6f5e4d report-a-bug # Merge 'report-a-bug'</code></pre>
 </div></div>
 <div class="paragraph"><p>通常の対話的リベースとは対照的に、 <code>pick</code> コマンドに加えて <code>label</code> と <code>reset</code> と`merge` コマンドがあります。</p></div>
-<div class="paragraph"><p><code>label</code>
-コマンドは、そのコマンドが実行されるときに、ラベルを現在のHEADに関連付けます。これらのラベルは、ワークツリーローカル参照(<code>refs/rewritten/&lt;label&gt;</code>)として作成され、リベースが終了すると削除されます。こうすれば、同じリポジトリにリンクされている複数のワークツリーでのリベース操作が相互に干渉することはありません。
-<code>label</code> コマンドが失敗した場合、すぐに再スケジュールされ、続行する方法について役立つメッセージが表示されます。</p></div>
-<div class="paragraph"><p><code>reset</code> コマンドは、HEADとインデックスとワークツリーを指定されたリビジョンにリセットします。 これは <code>exec git reset
---hard &lt;label&gt;</code> に似ていますが、追跡していないファイルの上書きを拒否します。 <code>reset</code>
-コマンドが失敗すると、すぐに再スケジュールされ、todoリストを編集する方法がわかりやすく表示されます(これは通常、 <code>reset</code>
-コマンドがtodoリストに手動で挿入され、タイプミスが含まれている場合に発生します)。</p></div>
-<div class="paragraph"><p><code>merge</code> コマンドは、指定されたリビジョンをその時点でHEADであるものにマージします。 <code>-C
-&lt;original-commit&gt;`を使用すると、指定されたマージコミットのコミットメッセージが使用されます。  `-C</code> が小文字の <code>-c</code>
-に変更されると、ユーザーがメッセージを編集できるように、マージが成功した後にメッセージがエディターで開かれます。</p></div>
+<div class="paragraph"><p><code>label</code> コマンドは、そのコマンドが実行されるときに、ラベルを現在のHEADに関連付けます。これらのラベルは、ワークツリーローカル参照(<code>refs/rewritten/&lt;label&gt;</code>)として作成され、リベースが終了すると削除されます。こうすれば、同じリポジトリにリンクされている複数のワークツリーでのリベース操作が相互に干渉することはありません。 <code>label</code> コマンドが失敗した場合、すぐに再スケジュールされ、続行する方法について役立つメッセージが表示されます。</p></div>
+<div class="paragraph"><p><code>reset</code> コマンドは、HEADとインデックスとワークツリーを指定されたリビジョンにリセットします。 これは <code>exec git reset --hard &lt;label&gt;</code> に似ていますが、追跡していないファイルの上書きを拒否します。 <code>reset</code> コマンドが失敗すると、すぐに再スケジュールされ、todoリストを編集する方法がわかりやすく表示されます(これは通常、 <code>reset</code> コマンドがtodoリストに手動で挿入され、タイプミスが含まれている場合に発生します)。</p></div>
+<div class="paragraph"><p><code>merge</code> コマンドは、指定されたリビジョンをその時点でHEADであるものにマージします。 <code>-C &lt;original-commit&gt;`を使用すると、指定されたマージコミットのコミットメッセージが使用されます。 `-C</code> が小文字の <code>-c</code> に変更されると、ユーザーがメッセージを編集できるように、マージが成功した後にメッセージがエディターで開かれます。</p></div>
 <div class="paragraph"><p>マージの競合以外の理由で <code>merge</code> コマンドが失敗した場合(つまり、マージ操作が開始されなかった場合)、コマンドは直ちに再スケジュールされます。</p></div>
-<div class="paragraph"><p>デフォルトでは、「merge」コマンドは通常のマージには「ort」マージ戦略を使用し、タコマージ(octopus
-merges)には「octopus」マージ戦略を使用します。リベースを呼び出すときに <code>--strategy</code>
-引数を使用して、すべてのマージのデフォルト戦略を指定できます。または、 <code>exec</code> コマンドを使用して明示的に <code>--strategy</code> 引数を伴った
-<code>git merge</code> を呼び出すことにより、コマンドの対話リスト内の特定のマージをオーバーライドできます。注意:このように明示的に <code>git
-merge</code> を呼び出す場合、マージするブランチを参照するために、ラベルがワークツリーローカル参照であるという事実(たとえば、 ref
-<code>refs/rewritten/onto</code> はラベル <code>onto</code> に対応します)を利用できることに注意してください。</p></div>
-<div class="paragraph"><p>注意: 最初のコマンド(<code>label onto</code>)は、コミットがリベースされるリビジョンにラベルを付けます。 <code>onto`という名前は単なる慣例で、
-`--onto</code> オプションにちなんでいます。</p></div>
-<div class="paragraph"><p><code>merge &lt;merge-head&gt;</code>
-の形式のコマンドを追加することにより、完全に新しいマージコミットを最初から導入することもできます。この形式は、暫定的なコミットメッセージを生成し、常にエディターを開いてユーザーが編集できるようにします。これは便利です。例えば、トピックブランチが複数の懸念事項に対処していることが判明し、2つ以上のトピックブランチに分割したい場合です。以下のToDoリストを検討してみてください:</p></div>
+<div class="paragraph"><p>デフォルトでは、「merge」コマンドは通常のマージには「ort」マージ戦略を使用し、タコマージ(octopus merges)には「octopus」マージ戦略を使用します。リベースを呼び出すときに <code>--strategy</code> 引数を使用して、すべてのマージのデフォルト戦略を指定できます。または、 <code>exec</code> コマンドを使用して明示的に <code>--strategy</code> 引数を伴った <code>git merge</code> を呼び出すことにより、コマンドの対話リスト内の特定のマージをオーバーライドできます。注意:このように明示的に <code>git merge</code> を呼び出す場合、マージするブランチを参照するために、ラベルがワークツリーローカル参照であるという事実(たとえば、 ref <code>refs/rewritten/onto</code> はラベル <code>onto</code> に対応します)を利用できることに注意してください。</p></div>
+<div class="paragraph"><p>注意: 最初のコマンド(<code>label onto</code>)は、コミットがリベースされるリビジョンにラベルを付けます。 <code>onto`という名前は単なる慣例で、 `--onto</code> オプションにちなんでいます。</p></div>
+<div class="paragraph"><p><code>merge &lt;merge-head&gt;</code> の形式のコマンドを追加することにより、完全に新しいマージコミットを最初から導入することもできます。この形式は、暫定的なコミットメッセージを生成し、常にエディターを開いてユーザーが編集できるようにします。これは便利です。例えば、トピックブランチが複数の懸念事項に対処していることが判明し、2つ以上のトピックブランチに分割したい場合です。以下のToDoリストを検討してみてください:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>pick 192837 Switch from GNU Makefiles to CMake
@@ -2300,16 +2092,14 @@ merge cmake</code></pre>
 <div class="sect1">
 <h2 id="_configuration">CONFIGURATION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
-<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は <a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 rebase.backend
 </dt>
 <dd>
 <p>
-        リベースに使用するデフォルトのバックエンド。 可能な選択肢は、「apply」または「merge」です。
-        将来、mergeバックエンドがapplyバックエンドの残りのすべての機能を取得した場合、この設定は使用されなくなる可能性があります。
+        リベースに使用するデフォルトのバックエンド。 可能な選択肢は、「apply」または「merge」です。 将来、mergeバックエンドがapplyバックエンドの残りのすべての機能を取得した場合、この設定は使用されなくなる可能性があります。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2333,9 +2123,7 @@ rebase.autoStash
 </dt>
 <dd>
 <p>
-        trueに設定すると、操作を開始する前に一時的なstashエントリを自動的に作成し、操作の終了後に適用します。これは、ダーティワークツリーでリベースを実行できることを意味します。ただし、注意して使用してください。リベースが成功した後の最後のstashアプリケーションは、重要な競合を引き起こす可能性があります。このオプションは、
-        <a href="git-rebase.html">git-rebase(1)</a> の <code>--no-autostash</code> および <code>--autostash</code>
-        オプションでオーバーライドできます。 デフォルトはfalseです。
+        trueに設定すると、操作を開始する前に一時的なstashエントリを自動的に作成し、操作の終了後に適用します。これは、ダーティワークツリーでリベースを実行できることを意味します。ただし、注意して使用してください。リベースが成功した後の最後のstashアプリケーションは、重要な競合を引き起こす可能性があります。このオプションは、 <a href="git-rebase.html">git-rebase(1)</a> の <code>--no-autostash</code> および <code>--autostash</code> オプションでオーバーライドできます。 デフォルトはfalseです。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2351,11 +2139,7 @@ rebase.missingCommitsCheck
 </dt>
 <dd>
 <p>
-        「warn」に設定すると、 <code>git rebase -i</code>
-        は、一部のコミットが削除された場合(たとえば、行が削除された場合)に警告を出力しますが、リベースは続行されます。
-        「error」に設定すると、前記の警告が出力され、リベースが停止(stop)します。 <code>git rebase --edit-todo</code>
-        を使用して、エラーを修正できます。 「ignore」に設定すると、チェックは行われません。
-        警告やエラーなしにコミットをドロップするには、todoリストの <code>drop</code> コマンドを使用します。 デフォルトは「ignore」です。
+        「warn」に設定すると、 <code>git rebase -i</code> は、一部のコミットが削除された場合(たとえば、行が削除された場合)に警告を出力しますが、リベースは続行されます。 「error」に設定すると、前記の警告が出力され、リベースが停止(stop)します。 <code>git rebase --edit-todo</code> を使用して、エラーを修正できます。 「ignore」に設定すると、チェックは行われません。 警告やエラーなしにコミットをドロップするには、todoリストの <code>drop</code> コマンドを使用します。 デフォルトは「ignore」です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2363,8 +2147,7 @@ rebase.instructionFormat
 </dt>
 <dd>
 <p>
-        <a href="git-log.html">git-log(1)</a>
-        で指定されている、対話的リベース中にToDoリストに使用される書式文字列。書式では、自動的に長いコミットハッシュが書式の前に付加されます。
+        <a href="git-log.html">git-log(1)</a> で指定されている、対話的リベース中にToDoリストに使用される書式文字列。書式では、自動的に長いコミットハッシュが書式の前に付加されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2372,7 +2155,7 @@ rebase.abbreviateCommands
 </dt>
 <dd>
 <p>
-        trueに設定すると、  <code>git rebase</code> はtodoリストで省略コマンド名を使用し、以下のようになります:
+        trueに設定すると、 <code>git rebase</code> はtodoリストで省略コマンド名を使用し、以下のようになります:
 </p>
 <div class="listingblock">
 <div class="content">
@@ -2394,8 +2177,7 @@ rebase.rescheduleFailedExec
 </dt>
 <dd>
 <p>
-        失敗した <code>exec</code> コマンドを自動的に再スケジュールします。 これは、対話モード (または <code>--exec</code>
-        オプションが指定されている場合)でのみ意味があります。これは  <code>--reschedule-failed-exec</code> オプションを指定するのと同じです。
+        失敗した <code>exec</code> コマンドを自動的に再スケジュールします。 これは、対話モード (または <code>--exec</code> オプションが指定されている場合)でのみ意味があります。これは <code>--reschedule-failed-exec</code> オプションを指定するのと同じです。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2407,14 +2189,19 @@ rebase.forkPoint
 </p>
 </dd>
 <dt class="hdlist1">
+rebase.rebaseMerges
+</dt>
+<dd>
+<p>
+        Whether and how to set the <code>--rebase-merges</code> option by default. Can be <code>rebase-cousins</code>, <code>no-rebase-cousins</code>, or a boolean. Setting to true or to <code>no-rebase-cousins</code> is equivalent to <code>--rebase-merges=no-rebase-cousins</code>, setting to <code>rebase-cousins</code> is equivalent to <code>--rebase-merges=rebase-cousins</code>, and setting to false is equivalent to <code>--no-rebase-merges</code>. Passing <code>--rebase-merges</code> on the command line, with or without an argument, overrides any <code>rebase.rebaseMerges</code> configuration.
+</p>
+</dd>
+<dt class="hdlist1">
 sequence.editor
 </dt>
 <dd>
 <p>
-        リベース命令ファイル(rebase instruction file)を編集するために <code>git rebase -i</code>
-        によって使用されるテキストエディタ。この値は、使用時にシェルによって解釈されることを意図しています。 これは、
-        <code>GIT_SEQUENCE_EDITOR</code>
-        環境変数によってオーバーライドできます。構成されていない場合は、代わりにデフォルトのコミットメッセージエディタが使用されます。
+        リベース命令ファイル(rebase instruction file)を編集するために <code>git rebase -i</code> によって使用されるテキストエディタ。この値は、使用時にシェルによって解釈されることを意図しています。 これは、 <code>GIT_SEQUENCE_EDITOR</code> 環境変数によってオーバーライドできます。構成されていない場合は、代わりにデフォルトのコミットメッセージエディタが使用されます。
 </p>
 </dd>
 </dl></div>
@@ -2431,7 +2218,7 @@ sequence.editor
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-09-29 05:36:39 JST
+ 2023-07-18 11:05:39 JST
 </div>
 </div>
 </body>

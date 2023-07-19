@@ -750,8 +750,9 @@ git-ls-files(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git ls-files</em> [-z] [-t] [-v] [-f]
-                [-c|--cached] [-d|--deleted] [-o|--others] [-i|--|ignored]
-                [-s|--stage] [-u|--unmerged] [-k|--|killed] [-m|--modified]
+                [-c|--cached] [-d|--deleted] [-o|--others] [-i|--ignored]
+                [-s|--stage] [-u|--unmerged] [-k|--killed] [-m|--modified]
+                [--resolve-undo]
                 [--directory [--no-empty-directory]] [--eol]
                 [--deduplicate]
                 [-x &lt;pattern&gt;|--exclude=&lt;pattern&gt;]
@@ -769,7 +770,7 @@ git-ls-files(1) Manual Page
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>これにより、インデックス内のファイルリストが実際の作業ディレクトリリストとマージされ、2つのさまざまな組み合わせが表示されます。</p></div>
-<div class="paragraph"><p>以下の1つ以上のオプションを使用して、表示されるファイルを判別できます:</p></div>
+<div class="paragraph"><p>One or more of the options below may be used to determine the files shown, and each file may be printed multiple times if there are multiple entries in the index or multiple statuses are applicable for the relevant file selection options.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -784,7 +785,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        キャッシュされたファイルを出力に表示します(デフォルト)
+        Show all files cached in Git&#8217;s index, i.e. all tracked files. (This is the default if no -c/-s/-d/-o/-u/-k/-m/--resolve-undo options are specified.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -795,7 +796,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        削除されたファイルを出力に表示します
+        Show files with an unstaged deletion
 </p>
 </dd>
 <dt class="hdlist1">
@@ -806,7 +807,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        変更されたファイルを出力に表示
+        Show files with an unstaged modification (note that an unstaged deletion also counts as an unstaged modification)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -828,10 +829,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        無視されたファイル(ignored
-        files)のみを出力に表示します。インデックのファイルを表示する場合は、除外パターンに一致するファイルのみを印刷してください。
-        「その他」のファイルを表示する場合は、除外パターンに一致するファイルのみを表示してください。標準の無視ルールは自動的にアクティブ化されないため、少なくとも1つの
-        <code>--exclude*</code> オプションが必要です。
+        Show only ignored files in the output. Must be used with either an explicit <em>-c</em> or <em>-o</em>. When showing files in the index (i.e. when used with <em>-c</em>), print only those files matching an exclude pattern. When showing "other" files (i.e. when used with <em>-o</em>), show only those matched by an exclude pattern. Standard ignore rules are not automatically activated, therefore at least one of the <code>--exclude*</code> options is required.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -850,7 +848,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        ディレクトリ全体が「その他」に分類される場合は、(末尾にスラッシュを付けて)そのディレクトリ名だけを表示し、ディレクトリの内容を表示しないでください。
+        If a whole directory is classified as "other", show just its name (with a trailing slash) and not its whole contents. Has no effect without -o/--others.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -869,7 +867,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        マージされていないファイルを出力に表示します(<code>--stage</code> の機能を含む)
+        Show information about unmerged files in the output, but do not show any other tracked files (forces --stage, overrides --cached).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -880,7 +878,15 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        checkout-indexを成功させるために、ファイル/ディレクトリの競合のために削除する必要があるファイルシステム上のファイルを表示します。
+        Show untracked files on the filesystem that need to be removed due to file/directory conflicts for tracked files to be able to be written to the filesystem.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--resolve-undo</code>
+</dt>
+<dd>
+<p>
+        Show files having resolve-undo information in the index together with their resolve-undo information. (resolve-undo information is what is used to implement "git checkout -m $PATH", i.e. to recreate merge conflicts that were accidentally resolved)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -896,9 +902,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        ファイル名のみが表示されている場合は、マージ中に複数のステージがあること、または  <code>--deleted</code> と <code>--modified</code>
-        オプションを同時に指定することで発生する可能性のある重複を抑制します。 <code>-t</code> または <code>--unmerged</code> または <code>--stage</code>
-        オプションのいずれかが使用されている場合、このオプションは効果がありません。
+        ファイル名のみが表示されている場合は、マージ中に複数のステージがあること、または <code>--deleted</code> と <code>--modified</code> オプションを同時に指定することで発生する可能性のある重複を抑制します。 <code>-t</code> または <code>--unmerged</code> または <code>--stage</code> オプションのいずれかが使用されている場合、このオプションは効果がありません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -909,8 +913,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        パターンに一致する追跡されていないファイルをスキップします。パターンはシェルワイルドカードパターンであることに注意してください。
-        詳細については、以下の「EXCLUDE PATTERNS」を参照してください。
+        パターンに一致する追跡されていないファイルをスキップします。パターンはシェルワイルドカードパターンであることに注意してください。 詳細については、以下の「EXCLUDE PATTERNS」を参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -929,8 +932,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        各ディレクトリとサブディレクトリにのみ適用される、追加の除外パターンを、そのディレクトリの &lt;file&gt; から読み取ります。(通常は
-        <code>.gitignore</code> )
+        Read additional exclude patterns that apply only to the directory and its subdirectories in &lt;file&gt;. Deprecated; use --exclude-standard instead.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -938,7 +940,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        標準のGit除外を追加します:  .git/info/exclude と 各ディレクトリの .gitignore と ユーザーのグローバル除外ファイル。
+        標準のGit除外を追加します: .git/info/exclude と 各ディレクトリの .gitignore と ユーザーのグローバル除外ファイル。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -954,9 +956,7 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>--error-unmatch</code> を使用して、ユーザーが指定した &lt;file&gt;（つまり、パスパターン）引数をパスに展開する場合、名前付きの
-        &lt;tree-ish&gt; がまだ存在するためにインデックスから削除されたパスを装います。 このオプションを <code>-s</code> または <code>-u</code>
-        オプションと一緒に使用しても意味がありません。
+        <code>--error-unmatch</code> を使用して、ユーザーが指定した &lt;file&gt;（つまり、パスパターン）引数をパスに展開する場合、名前付きの &lt;tree-ish&gt; がまだ存在するためにインデックスから削除されたパスを装います。 このオプションを <code>-s</code> または <code>-u</code> オプションと一緒に使用しても意味がありません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -964,21 +964,18 @@ git-ls-files(1) Manual Page
 </dt>
 <dd>
 <p>
-        この機能は準非推奨です。スクリプト化の目的では、 <a href="git-status.html">git-status(1)</a> <code>--porcelain</code> と
-        <a href="git-diff-files.html">git-diff-files(1)</a> <code>--name-status</code>
-        がほとんどの場合優れた代替手段であり、さらにユーザーフレンドリーな代替手段については、 <a href="git-status.html">git-status(1)</a> <code>--short</code>
-        または <a href="git-diff.html">git-diff(1)</a> <code>--name-status</code> をご覧下さい。
+        Show status tags together with filenames. Note that for scripting purposes, <a href="git-status.html">git-status(1)</a> <code>--porcelain</code> and <a href="git-diff-files.html">git-diff-files(1)</a> <code>--name-status</code> are almost always superior alternatives, and users should look at <a href="git-status.html">git-status(1)</a> <code>--short</code> or <a href="git-diff.html">git-diff(1)</a> <code>--name-status</code> for more user-friendly alternatives.
 </p>
 <div class="openblock">
 <div class="content">
-<div class="paragraph"><p>このオプションは、各行の先頭にある以下のタグ(スペースが続く)でファイルのステータスを識別します:</p></div>
+<div class="paragraph"><p>This option provides a reason for showing each filename, in the form of a status tag (which is followed by a space and then the filename). The status tags are all single characters from the following list:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 H
 </dt>
 <dd>
 <p>
-cached
+tracked file that is not either unmerged or skip-worktree
 </p>
 </dd>
 <dt class="hdlist1">
@@ -986,7 +983,7 @@ S
 </dt>
 <dd>
 <p>
-skip-worktree
+tracked file that is skip-worktree
 </p>
 </dd>
 <dt class="hdlist1">
@@ -994,7 +991,7 @@ M
 </dt>
 <dd>
 <p>
-unmerged
+tracked file that is unmerged
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1002,7 +999,7 @@ R
 </dt>
 <dd>
 <p>
-removed/deleted
+tracked file with unstaged removal/deletion
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1010,7 +1007,7 @@ C
 </dt>
 <dd>
 <p>
-modified/changed
+tracked file with unstaged modification/change
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1018,7 +1015,7 @@ K
 </dt>
 <dd>
 <p>
-to be killed
+untracked paths which are part of file/directory conflicts which prevent checking out tracked files
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1026,7 +1023,15 @@ to be killed
 </dt>
 <dd>
 <p>
-other
+untracked file
+</p>
+</dd>
+<dt class="hdlist1">
+U
+</dt>
+<dd>
+<p>
+file with resolve-undo information
 </p>
 </dd>
 </dl></div>
@@ -1037,9 +1042,7 @@ other
 </dt>
 <dd>
 <p>
-        <code>-t</code> に似ていますが、「assume
-        unchanged」(変更されていないと仮定する)とマークされたファイルには小文字を使用します(<a href="git-update-index.html">git-update-index(1)</a>
-        を参照)。
+        <code>-t</code> に似ていますが、「assume unchanged」(変更されていないと仮定する)とマークされたファイルには小文字を使用します(<a href="git-update-index.html">git-update-index(1)</a> を参照)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1047,8 +1050,7 @@ other
 </dt>
 <dd>
 <p>
-        <code>-t</code> に似ていますが、「fsmonitor
-        valid」とマークされているファイルには小文字を使用します(<a href="git-update-index.html">git-update-index(1)</a> を参照)。
+        <code>-t</code> に似ていますが、「fsmonitor valid」とマークされているファイルには小文字を使用します(<a href="git-update-index.html">git-update-index(1)</a> を参照)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1056,8 +1058,7 @@ other
 </dt>
 <dd>
 <p>
-        サブディレクトリから実行する場合、コマンドは通常、現在のディレクトリからの相対パスを出力します。
-        このオプションは、プロジェクトの最上位ディレクトリを基準にしたパスを強制的に出力します。
+        サブディレクトリから実行する場合、コマンドは通常、現在のディレクトリからの相対パスを出力します。 このオプションは、プロジェクトの最上位ディレクトリを基準にしたパスを強制的に出力します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1065,8 +1066,7 @@ other
 </dt>
 <dd>
 <p>
-        リポジトリ内のアクティブなサブモジュールごとに ls-files を再帰的に呼び出します。 現在、 <code>--cached</code> モードと <code>--stage</code>
-        モードのみがサポートされています。
+        リポジトリ内のアクティブなサブモジュールごとに ls-files を再帰的に呼び出します。 現在、 <code>--cached</code> モードと <code>--stage</code> モードのみがサポートされています。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1074,8 +1074,7 @@ other
 </dt>
 <dd>
 <p>
-        40バイトの16進数のオブジェクト行全体を表示する代わりに、オブジェクトを一意に参照する、少なくとも &lt;n&gt;
-        の長さ16進数の長さの最短のプレフィックスを表示します。デフォルト以外の桁数は、 <code>--abbrev=&lt;n&gt;</code> で指定できます。
+        40バイトの16進数のオブジェクト行全体を表示する代わりに、オブジェクトを一意に参照する、少なくとも &lt;n&gt; の長さ16進数の長さの最短のプレフィックスを表示します。デフォルト以外の桁数は、 <code>--abbrev=&lt;n&gt;</code> で指定できます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1091,25 +1090,18 @@ other
 </dt>
 <dd>
 <p>
-        ファイルの &lt;eolinfo&gt; と &lt;eolattr&gt; を表示します。 &lt;eolinfo&gt;
-        は、「text」属性が「auto」の場合(または設定されておらず、 core.autocrlf が false
-        でない場合)にGitが使用するファイルコンテンツIDです。 &lt;eolinfo&gt;
-        は、「-text」、「none」、「lf」、「crlf」、「mixed」、「」のいずれかです。
+        ファイルの &lt;eolinfo&gt; と &lt;eolattr&gt; を表示します。 &lt;eolinfo&gt; は、「text」属性が「auto」の場合(または設定されておらず、 core.autocrlf が false でない場合)にGitが使用するファイルコンテンツIDです。 &lt;eolinfo&gt; は、「-text」、「none」、「lf」、「crlf」、「mixed」、「」のいずれかです。
 </p>
 <div class="paragraph"><p>「」は、ファイルが通常のファイルではない、インデックスにない、または作業ツリーでアクセスできないことを意味します。</p></div>
-<div class="paragraph"><p>&lt;eolattr&gt; は、チェックアウトまたはコミット時に使用される属性であり、「」・「-text」・「text」・「text=auto」・「text
-eol=lf」・「text eol=crlf」 のいずれかです。 Git 2.10以降では「text=auto eol=lf」と「text=auto
-eol=crlf」がサポートされています。</p></div>
-<div class="paragraph"><p>通常のファイルの場合、インデックス("i/&lt;eolinfo&gt;")と作業ツリー("w/&lt;eolinfo&gt;")の両方の&lt;eolinfo&gt;が表示され、そのうしろに
-"attr/&lt;eolattr&gt;" が続きます。</p></div>
+<div class="paragraph"><p>&lt;eolattr&gt; は、チェックアウトまたはコミット時に使用される属性であり、「」・「-text」・「text」・「text=auto」・「text eol=lf」・「text eol=crlf」 のいずれかです。 Git 2.10以降では「text=auto eol=lf」と「text=auto eol=crlf」がサポートされています。</p></div>
+<div class="paragraph"><p>通常のファイルの場合、インデックス("i/&lt;eolinfo&gt;")と作業ツリー("w/&lt;eolinfo&gt;")の両方の&lt;eolinfo&gt;が表示され、そのうしろに "attr/&lt;eolattr&gt;" が続きます。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--sparse</code>
 </dt>
 <dd>
 <p>
-        インデックスがスパース(sparse)の場合、含まれているファイルに展開せずにスパース・ディレクトリを表示します。 スパース・ディレクトリは、
-        スパース・ディレクトリ <code>x</code> の場合は <code>x/</code> のように、末尾にスラッシュを付けて表示されます。
+        インデックスがスパース(sparse)の場合、含まれているファイルに展開せずにスパース・ディレクトリを表示します。 スパース・ディレクトリは、 スパース・ディレクトリ <code>x</code> の場合は <code>x/</code> のように、末尾にスラッシュを付けて表示されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1117,12 +1109,7 @@ eol=crlf」がサポートされています。</p></div>
 </dt>
 <dd>
 <p>
-        表示される各結果に対して &lt;format&gt; 文字列を適用します。その際 &lt;format&gt; 文字列中の <code>%(fieldname)</code>
-        は展開(interpolate)されます。 これはまた、 <code>%%</code> を <code>%</code> に展開し、<code>%xx</code> (<code>xx</code> は 16 進数字) を 16 進コード
-        <code>xx</code> のキャラクタに展開します。 たとえば、<code>%00</code> は <code>\0</code> (NUL) に、<code>%09</code> は <code>\t</code> (TAB) に、%0a は <code>\n</code>
-        (LF) に展開されます。 <code>--format</code> は、 <code>-s</code>, <code>-o</code>, <code>-k</code>, <code>-t</code>, <code>--resolve-undo</code>,
-        <code>--eol</code> と組み合わせることはできません。 (訳注: sprintf の 書式文字列 みたいに自由な文章書ける。意味は無いけど <code>git
-        ls-files --format='hogehoge'</code> とかもOK)
+        表示される各結果に対して &lt;format&gt; 文字列を適用します。その際 &lt;format&gt; 文字列中の <code>%(fieldname)</code> は展開(interpolate)されます。 これはまた、 <code>%%</code> を <code>%</code> に展開し、<code>%xx</code> (<code>xx</code> は 16 進数字) を 16 進コード <code>xx</code> のキャラクタに展開します。 たとえば、<code>%00</code> は <code>\0</code> (NUL) に、<code>%09</code> は <code>\t</code> (TAB) に、%0a は <code>\n</code> (LF) に展開されます。 <code>--format</code> は、 <code>-s</code>, <code>-o</code>, <code>-k</code>, <code>-t</code>, <code>--resolve-undo</code>, <code>--eol</code> と組み合わせることはできません。 (訳注: sprintf の 書式文字列 みたいに自由な文章書ける。意味は無いけど <code>git ls-files --format='hogehoge'</code> とかもOK)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1147,25 +1134,17 @@ eol=crlf」がサポートされています。</p></div>
 <div class="sect1">
 <h2 id="_output">OUTPUT</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>git ls-files</code> は、 <code>--stage</code>
-が指定されていない限り、ファイル名を出力するだけです。指定されている場合は、以下のように出力されます:</p></div>
+<div class="paragraph"><p><code>git ls-files</code> は、 <code>--stage</code> が指定されていない限り、ファイル名を出力するだけです。指定されている場合は、以下のように出力されます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>[&lt;tag&gt; ]&lt;mode&gt; &lt;object&gt; &lt;stage&gt; &lt;file&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p><code>git ls-files --eol</code> の場合:
         i/&lt;eolinfo&gt;&lt;SPACES&gt;w/&lt;eolinfo&gt;&lt;SPACES&gt;attr/&lt;eolattr&gt;&lt;SPACE*&gt;&lt;TAB&gt;&lt;file&gt;</p></div>
-<div class="paragraph"><p><code>git ls-files --unmerged</code> と <code>git ls-files --stage</code>
-を使用して、マージされていないパスの詳細情報を調べることができます。</p></div>
-<div class="paragraph"><p>マージされていないパスの場合、単一の モード/SHA-1 ペアを記録する代わりに、インデックスは最大3つのそのようなペアを記録します。
-ステージ1のツリーOから一つと、ステージ2のAから一つと、ステージ3のBからの一つです。この情報は、ユーザー(または磁器コマンド)がパスに最終的に記録する内容を確認するために使用できます。(状態の詳細については、
-<a href="git-read-tree.html">git-read-tree(1)</a> を参照してください)</p></div>
-<div class="paragraph"><p><code>-z</code> オプションを指定しない場合、構成変数 <code>core.quotePath</code>
-で説明されているように、「異常な」文字を含むパス名がクォートされます(<a href="git-config.html">git-config(1)</a> を参照)。 <code>-z</code>
-を使用すると、ファイル名がそのまま出力され、行はNULバイトで終了します。</p></div>
-<div class="paragraph"><p><code>%(fieldname)</code> 表記を使用してさまざまなフィールドを展開可能な <code>--format</code> オプションを使用して、
-カスタム形式で表示することができます。 たとえば、 <code>objectname</code> フィールドと <code>path</code>
-フィールドのみを気にする場合は、以下のような特定の <code>--format</code> で実行できます</p></div>
+<div class="paragraph"><p><code>git ls-files --unmerged</code> と <code>git ls-files --stage</code> を使用して、マージされていないパスの詳細情報を調べることができます。</p></div>
+<div class="paragraph"><p>マージされていないパスの場合、単一の モード/SHA-1 ペアを記録する代わりに、インデックスは最大3つのそのようなペアを記録します。 ステージ1のツリーOから一つと、ステージ2のAから一つと、ステージ3のBからの一つです。この情報は、ユーザー(または磁器コマンド)がパスに最終的に記録する内容を確認するために使用できます。(状態の詳細については、 <a href="git-read-tree.html">git-read-tree(1)</a> を参照してください)</p></div>
+<div class="paragraph"><p><code>-z</code> オプションを指定しない場合、構成変数 <code>core.quotePath</code> で説明されているように、「異常な」文字を含むパス名がクォートされます(<a href="git-config.html">git-config(1)</a> を参照)。 <code>-z</code> を使用すると、ファイル名がそのまま出力され、行はNULバイトで終了します。</p></div>
+<div class="paragraph"><p><code>%(fieldname)</code> 表記を使用してさまざまなフィールドを展開可能な <code>--format</code> オプションを使用して、 カスタム形式で表示することができます。 たとえば、 <code>objectname</code> フィールドと <code>path</code> フィールドのみを気にする場合は、以下のような特定の <code>--format</code> で実行できます</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>git ls-files --format='%(objectname) %(path)'</code></pre>
@@ -1175,9 +1154,7 @@ eol=crlf」がサポートされています。</p></div>
 <div class="sect1">
 <h2 id="_field_names">FIELD NAMES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>各パスの表示方法は、 <code>--format=&lt;format&gt;</code>
-オプションを使用してカスタマイズできます。このオプションでは、インデックス・エントリのさまざまな側面の &lt;format&gt; 文字列の
-%(fieldname) が展開されます。以下の「フィールド名」(fieldname)に対応しています:</p></div>
+<div class="paragraph"><p>各パスの表示方法は、 <code>--format=&lt;format&gt;</code> オプションを使用してカスタマイズできます。このオプションでは、インデックス・エントリのさまざまな側面の &lt;format&gt; 文字列の %(fieldname) が展開されます。以下の「フィールド名」(fieldname)に対応しています:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 objectmode
@@ -1188,11 +1165,27 @@ objectmode
 </p>
 </dd>
 <dt class="hdlist1">
+objecttype
+</dt>
+<dd>
+<p>
+        The object type of the file which is recorded in the index.
+</p>
+</dd>
+<dt class="hdlist1">
 objectname
 </dt>
 <dd>
 <p>
         インデックスに記録されるファイルの名前。
+</p>
+</dd>
+<dt class="hdlist1">
+objectsize[:padded]
+</dt>
+<dd>
+<p>
+        The object size of the file which is recorded in the index ("-" if the object is a <code>commit</code> or <code>tree</code>). It also supports a padded format of size with "%(objectsize:padded)".
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1236,34 +1229,26 @@ path
 <div class="sect1">
 <h2 id="_exclude_patterns">EXCLUDE PATTERNS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>git ls-files</code> は、ディレクトリツリーをトラバースし、フラグ <code>--others</code> または <code>--ignored</code>
-が指定されている場合に表示するファイルを検索するときに、「除外パターン」(exclude patterns)のリストを使用できます。
-<a href="gitignore.html">gitignore(5)</a> は、除外パターンの形式を指定します。</p></div>
-<div class="paragraph"><p>これらの除外パターンは、以下の順序で取得されます:</p></div>
+<div class="paragraph"><p><code>git ls-files</code> は、ディレクトリツリーをトラバースし、フラグ <code>--others</code> または <code>--ignored</code> が指定されている場合に表示するファイルを検索するときに、「除外パターン」(exclude patterns)のリストを使用できます。 <a href="gitignore.html">gitignore(5)</a> は、除外パターンの形式を指定します。</p></div>
+<div class="paragraph"><p>Generally, you should just use --exclude-standard, but for historical reasons the exclude patterns can be specified from the following places, in order:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-コマンドラインフラグ <code>--exclude=&lt;pattern&gt;</code> は、単一のパターンを指定します。
-     パターンは、コマンドラインに現れるのと同じ順序で並べられます。
+コマンドラインフラグ <code>--exclude=&lt;pattern&gt;</code> は、単一のパターンを指定します。 パターンは、コマンドラインに現れるのと同じ順序で並べられます。
 </p>
 </li>
 <li>
 <p>
-コマンドラインフラグ <code>--exclude-from=&lt;file&gt;</code> は、パターンのリストを含むファイルを指定します。
-     パターンは、ファイルに現れるのと同じ順序で並べられます。
+コマンドラインフラグ <code>--exclude-from=&lt;file&gt;</code> は、パターンのリストを含むファイルを指定します。 パターンは、ファイルに現れるのと同じ順序で並べられます。
 </p>
 </li>
 <li>
 <p>
-コマンドラインフラグ <code>--exclude-per-directory=&lt;name&gt; ` は、 `git ls-files</code>
-     が調べる各ディレクトリ内のファイルの名前(通常は <code>.gitignore</code> )を指定します。
-     より深いディレクトリ内のファイルが優先されます。パターンは、ファイルに現れるのと同じ順序で並べられます。
+コマンドラインフラグ <code>--exclude-per-directory=&lt;name&gt; ` は、 `git ls-files</code> が調べる各ディレクトリ内のファイルの名前(通常は <code>.gitignore</code> )を指定します。 より深いディレクトリ内のファイルが優先されます。パターンは、ファイルに現れるのと同じ順序で並べられます。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>コマンドラインで <code>--exclude</code> で指定されたパターン、または <code>--exclude-from</code>
-で指定されたファイルから読み取られたパターンは、ディレクトリツリーの最上位を基準にしています。 <code>--exclude-per-directory</code>
-で指定されたファイルから読み取られたパターンは、パターンファイルが置かれているディレクトリを基準にしています。</p></div>
+<div class="paragraph"><p>コマンドラインで <code>--exclude</code> で指定されたパターン、または <code>--exclude-from</code> で指定されたファイルから読み取られたパターンは、ディレクトリツリーの最上位を基準にしています。 <code>--exclude-per-directory</code> で指定されたファイルから読み取られたパターンは、パターンファイルが置かれているディレクトリを基準にしています。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1283,7 +1268,7 @@ path
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-10-04 04:52:21 JST
+ 2023-07-18 11:05:33 JST
 </div>
 </div>
 </body>

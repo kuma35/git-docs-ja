@@ -749,7 +749,7 @@ git-patch-id(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git patch-id</em> [--stable | --unstable]</pre>
+<pre class="content"><em>git patch-id</em> [--stable | --unstable | --verbatim]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -758,16 +758,27 @@ git-patch-id(1) Manual Page
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>標準入力からパッチを読み取り、そのパッチIDを計算します。</p></div>
-<div class="paragraph"><p>「パッチID」は、パッチに関連付けられたファイル差分のSHA-1の合計に過ぎず、空白と行番号は無視されます。そのため、「適度に安定」していますが、同時に適度に一意です。つまり、同じ「パッチID」を持つ2つのパッチは、ほぼ同じものであることが保証されています。</p></div>
-<div class="paragraph"><p>つまり、これを使用して、重複している可能性のあるコミットを探すことができます。</p></div>
-<div class="paragraph"><p><em>git diff-tree</em>
-出力を処理する場合、パッチの前にコミットのオブジェクト名が付いているという事実を利用して、2つの40バイトの16進文字列を出力します。最初の文字列はパッチIDで、2番目の文字列はコミットIDです。これを使用して、パッチIDからコミットIDへのマッピングを作成できます。</p></div>
+<div class="paragraph"><p>A "patch ID" is nothing but a sum of SHA-1 of the file diffs associated with a patch, with line numbers ignored. As such, it&#8217;s "reasonably stable", but at the same time also reasonably unique, i.e., two patches that have the same "patch ID" are almost guaranteed to be the same thing.</p></div>
+<div class="paragraph"><p>The main usecase for this command is to look for likely duplicate commits.</p></div>
+<div class="paragraph"><p><em>git diff-tree</em> 出力を処理する場合、パッチの前にコミットのオブジェクト名が付いているという事実を利用して、2つの40バイトの16進文字列を出力します。最初の文字列はパッチIDで、2番目の文字列はコミットIDです。これを使用して、パッチIDからコミットIDへのマッピングを作成できます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
 <div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--verbatim</code>
+</dt>
+<dd>
+<p>
+        Calculate the patch-id of the input as it is given, do not strip any whitespace.
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>This is the default if patchid.verbatim is true.</code></pre>
+</div></div>
+</dd>
 <dt class="hdlist1">
 <code>--stable</code>
 </dt>
@@ -778,16 +789,17 @@ git-patch-id(1) Manual Page
 <div class="ulist"><ul>
 <li>
 <p>
-パッチを構成するファイル差分を並べ替えても、IDには影響しません。特に、 "-O&lt;orderfile&gt;"
-           の異なる2つの設定で同じ2つのツリーを比較することによって生成された2つのパッチは、同じパッチIDになります。これにより、計算結果をキーとして使用して、
-           2本のツリー間の変更に関するメタ情報にインデックスを付ける事ができます。
+パッチを構成するファイル差分を並べ替えても、IDには影響しません。特に、 "-O&lt;orderfile&gt;" の異なる2つの設定で同じ2つのツリーを比較することによって生成された2つのパッチは、同じパッチIDになります。これにより、計算結果をキーとして使用して、 2本のツリー間の変更に関するメタ情報にインデックスを付ける事ができます。
 </p>
 </li>
 <li>
 <p>
-結果として、 "-O&lt;orderfile&gt;" を使用せずに取得されたdiff出力で使用された場合でも、 git 1.9
-           以前で生成された値、または「unstable」ハッシュ(以下 <code>--unstable</code>
-           を参照)が構成されたときに生成された値とは異なります。これにより、そのような「不安定な」または過去のパッチIDを格納している既存のデータベースが使用できなくなります。
+結果として、 "-O&lt;orderfile&gt;" を使用せずに取得されたdiff出力で使用された場合でも、 git 1.9 以前で生成された値、または「unstable」ハッシュ(以下 <code>--unstable</code> を参照)が構成されたときに生成された値とは異なります。これにより、そのような「不安定な」または過去のパッチIDを格納している既存のデータベースが使用できなくなります。
+</p>
+</li>
+<li>
+<p>
+All whitespace within the patch is ignored and does not affect the id.
 </p>
 <div class="literalblock">
 <div class="content">
@@ -801,9 +813,7 @@ git-patch-id(1) Manual Page
 </dt>
 <dd>
 <p>
-        パッチIDとして「不安定な」ハッシュを使用します。このオプションを使用すると、生成される結果は git1.9 以前で生成される patch-id
-        値と互換性があります。git 1.9
-        以前で作成されたパッチIDを保存している既存のデータベースを使用しているユーザー(並べ替えられたパッチを処理しないユーザー)は、このオプションを使用することをお勧めします。
+        Use an "unstable" hash as the patch ID. With this option, the result produced is compatible with the patch-id value produced by git 1.9 and older and whitespace is ignored. Users with pre-existing databases storing patch-ids produced by git 1.9 and older (who do not deal with reordered patches) may want to use this option.
 </p>
 <div class="literalblock">
 <div class="content">
@@ -824,7 +834,7 @@ git-patch-id(1) Manual Page
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-09 09:43:55 JST
+ 2023-07-18 11:05:38 JST
 </div>
 </div>
 </body>

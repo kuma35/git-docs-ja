@@ -757,46 +757,28 @@ gitremote-helpers(7) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>リモートヘルパープログラムは通常、エンドユーザーが直接使用することはありませんが、Gitがネイティブでサポートしていないリモートリポジトリと対話する必要がある場合にGitによって呼び出されます。
-特定のヘルパーは、ここに記載されている機能のサブセットを実装します。
-Gitがリモートヘルパーを使用してリポジトリと対話する必要がある場合、Gitは独立したプロセスとしてヘルパーを生成し、ヘルパーの標準入力にコマンドを送信し、ヘルパーの標準出力からの結果を期待します。
-リモートヘルパーはGitから独立したプロセスとして実行されるため、新しいヘルパーを追加するためにGitを再リンクする必要も、ヘルパーをGitの実装にリンクする必要もありません。</p></div>
-<div class="paragraph"><p>すべてのヘルパーは <code>capabilities</code>
-(機能)コマンドをサポートする必要があります。これは、ヘルパーが受け入れる他のコマンドをGitが決定するために使用します。これらの他のコマンドを使用して、リモート参照の検出と更新や、オブジェクトデータベースとリモートリポジトリ間のオブジェクトの転送や、ローカルオブジェクトストアの更新を行うことができます。</p></div>
-<div class="paragraph"><p>Gitには、 <code>git-remote-http</code> や、 <code>git-remote-https</code> や、 <code>git-remote-ftp</code> や、
-<code>git-remote-ftps</code> などのさまざまな転送(transport)プロトコルを処理する "curl"
-ファミリーのリモートヘルパーが付属しています。これらは、機能(capabilities)として、 <code>fetch</code> と <code>option</code> と <code>push</code>
-を実装します。</p></div>
+<div class="paragraph"><p>リモートヘルパープログラムは通常、エンドユーザーが直接使用することはありませんが、Gitがネイティブでサポートしていないリモートリポジトリと対話する必要がある場合にGitによって呼び出されます。 特定のヘルパーは、ここに記載されている機能のサブセットを実装します。 Gitがリモートヘルパーを使用してリポジトリと対話する必要がある場合、Gitは独立したプロセスとしてヘルパーを生成し、ヘルパーの標準入力にコマンドを送信し、ヘルパーの標準出力からの結果を期待します。 リモートヘルパーはGitから独立したプロセスとして実行されるため、新しいヘルパーを追加するためにGitを再リンクする必要も、ヘルパーをGitの実装にリンクする必要もありません。</p></div>
+<div class="paragraph"><p>すべてのヘルパーは <code>capabilities</code> (機能)コマンドをサポートする必要があります。これは、ヘルパーが受け入れる他のコマンドをGitが決定するために使用します。これらの他のコマンドを使用して、リモート参照の検出と更新や、オブジェクトデータベースとリモートリポジトリ間のオブジェクトの転送や、ローカルオブジェクトストアの更新を行うことができます。</p></div>
+<div class="paragraph"><p>Gitには、 <code>git-remote-http</code> や、 <code>git-remote-https</code> や、 <code>git-remote-ftp</code> や、 <code>git-remote-ftps</code> などのさまざまな転送(transport)プロトコルを処理する "curl" ファミリーのリモートヘルパーが付属しています。これらは、機能(capabilities)として、 <code>fetch</code> と <code>option</code> と <code>push</code> を実装します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_invocation">INVOCATION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>リモートヘルパープログラムは、1つまたは(オプションで)2つの引数を使用して呼び出されます。最初の引数は、Gitのようにリモートリポジトリを指定します。それは設定されたリモートの名前またはURLのいずれかです。2番目の引数はURLを指定します。
-通常は <code>&lt;transport&gt;://&lt;address&gt;</code> の形式ですが、任意の文字列を使用できます。 <code>GIT_DIR</code>
-環境変数はリモートヘルパー用に設定されており、追加データを保存する場所や、補助Gitコマンドを呼び出すディレクトリを決定するために使用できます。</p></div>
-<div class="paragraph"><p>Gitが <code>&lt;transport&gt;://&lt;address&gt;</code> の形式のURLを検出すると、ここで、 <code>&lt;transport&gt;</code>
-はネイティブに処理できないプロトコルで、2番目の引数として完全なURLを使用して <code>git remote-&lt;transport&gt;</code>
-を自動的に呼び出します。そのようなURLがコマンドラインで直接検出された場合は最初の引数は2番目の引数と同じであり、構成されたリモートで検出された場合最初の引数はそのリモートの名前です。</p></div>
-<div class="paragraph"><p><code>&lt;transport&gt;::&lt;address&gt;</code> の形式のURLは、2番目の引数として <code>&lt;address&gt;</code> を使用して <code>git
-remote-&lt;transport&gt;</code> を呼び出すようにGitに明示的に指示します。このようなURLがコマンドラインで直接検出された場合最初の引数は
-<code>&lt;address&gt;</code> であり、構成されたリモートで検出された場合最初の引数はそのリモートの名前です。</p></div>
-<div class="paragraph"><p>さらに、構成されたリモートで <code>remote.&lt;name&gt;.vcs</code> が <code>&lt;transport&gt;</code> に設定されている場合、Gitは最初の引数として
-<code>&lt;name&gt;</code> を使用して <code>git remote-&lt;transport&gt;</code> を明示的に呼び出します。  <code>remote.&lt;name&gt;.url</code>
-が設定されている場合は、2番目の引数は <code>remote.&lt;name&gt;.url</code> です。 <code>remote.&lt;name&gt;.url</code>
-が設定されてない場合、2番目の引数は省略されます。</p></div>
+<div class="paragraph"><p>リモートヘルパープログラムは、1つまたは(オプションで)2つの引数を使用して呼び出されます。最初の引数は、Gitのようにリモートリポジトリを指定します。それは設定されたリモートの名前またはURLのいずれかです。2番目の引数はURLを指定します。 通常は <code>&lt;transport&gt;://&lt;address&gt;</code> の形式ですが、任意の文字列を使用できます。 <code>GIT_DIR</code> 環境変数はリモートヘルパー用に設定されており、追加データを保存する場所や、補助Gitコマンドを呼び出すディレクトリを決定するために使用できます。</p></div>
+<div class="paragraph"><p>Gitが <code>&lt;transport&gt;://&lt;address&gt;</code> の形式のURLを検出すると、ここで、 <code>&lt;transport&gt;</code> はネイティブに処理できないプロトコルで、2番目の引数として完全なURLを使用して <code>git remote-&lt;transport&gt;</code> を自動的に呼び出します。そのようなURLがコマンドラインで直接検出された場合は最初の引数は2番目の引数と同じであり、構成されたリモートで検出された場合最初の引数はそのリモートの名前です。</p></div>
+<div class="paragraph"><p><code>&lt;transport&gt;::&lt;address&gt;</code> の形式のURLは、2番目の引数として <code>&lt;address&gt;</code> を使用して <code>git remote-&lt;transport&gt;</code> を呼び出すようにGitに明示的に指示します。このようなURLがコマンドラインで直接検出された場合最初の引数は <code>&lt;address&gt;</code> であり、構成されたリモートで検出された場合最初の引数はそのリモートの名前です。</p></div>
+<div class="paragraph"><p>さらに、構成されたリモートで <code>remote.&lt;name&gt;.vcs</code> が <code>&lt;transport&gt;</code> に設定されている場合、Gitは最初の引数として <code>&lt;name&gt;</code> を使用して <code>git remote-&lt;transport&gt;</code> を明示的に呼び出します。 <code>remote.&lt;name&gt;.url</code> が設定されている場合は、2番目の引数は <code>remote.&lt;name&gt;.url</code> です。 <code>remote.&lt;name&gt;.url</code> が設定されてない場合、2番目の引数は省略されます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_input_format">INPUT FORMAT</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Gitは、リモートヘルパーの標準入力にコマンドのリストを1行に1つずつ送信します。 最初のコマンドは常に <code>capabilities</code>
-(機能)コマンドであり、これに応答して、リモートヘルパーはサポートする機能のリスト(以下を参照)とそれに続く空白行を出力する必要があります。機能コマンドへの応答により、Gitがコマンドストリームの残りの部分で使用するコマンドが決まります。</p></div>
+<div class="paragraph"><p>Gitは、リモートヘルパーの標準入力にコマンドのリストを1行に1つずつ送信します。 最初のコマンドは常に <code>capabilities</code> (機能)コマンドであり、これに応答して、リモートヘルパーはサポートする機能のリスト(以下を参照)とそれに続く空白行を出力する必要があります。機能コマンドへの応答により、Gitがコマンドストリームの残りの部分で使用するコマンドが決まります。</p></div>
 <div class="paragraph"><p>コマンドストリームは空白行で終了します。場合によっては(関連するコマンドのドキュメントに示されています)、この空白行の後に他のプロトコル(packプロトコルなど)のペイロードが続きますが、他の場合は入力の終了を示します。</p></div>
 <div class="sect2">
 <h3 id="_capabilities">Capabilities</h3>
-<div class="paragraph"><p>各リモートヘルパーは、コマンド群のサブセットのみをサポートすることが期待されています。ヘルパーがサポートする操作は、 <code>capabilities</code>
-コマンドへの応答でGitに宣言されます(以下のCOMMANDSを参照)。</p></div>
+<div class="paragraph"><p>各リモートヘルパーは、コマンド群のサブセットのみをサポートすることが期待されています。ヘルパーがサポートする操作は、 <code>capabilities</code> コマンドへの応答でGitに宣言されます(以下のCOMMANDSを参照)。</p></div>
 <div class="paragraph"><p>以下に、定義されているすべての機能をリストし、それぞれについて、その機能を持つヘルパーが提供しなければならないコマンドをリストします。</p></div>
 <div class="sect3">
 <h4 id="_capabilities_for_pushing">Capabilities for Pushing</h4>
@@ -806,8 +788,7 @@ connect
 </dt>
 <dd>
 <p>
-        gitのネイティブpackfileプロトコルを使用した通信のために、 <code>git receive-pack</code>(プッシュ用)、 <code>git
-        upload-pack</code> などへの接続を試みることができます。これには、双方向の全二重接続が必要です。
+        gitのネイティブpackfileプロトコルを使用した通信のために、 <code>git receive-pack</code>(プッシュ用)、 <code>git upload-pack</code> などへの接続を試みることができます。これには、双方向の全二重接続が必要です。
 </p>
 <div class="paragraph"><p>サポートされているコマンド: <code>connect</code></p></div>
 </dd>
@@ -816,8 +797,7 @@ stateless-connect
 </dt>
 <dd>
 <p>
-        実験的:内部使用のみ。 gitのワイヤープロトコル バージョン2を使用して、通信のためにリモートサーバーへの接続を試みることができます。詳細については、
-        stateless-connect コマンドのドキュメントを参照してください。
+        実験的:内部使用のみ。 gitのワイヤープロトコル バージョン2を使用して、通信のためにリモートサーバーへの接続を試みることができます。詳細については、 stateless-connect コマンドのドキュメントを参照してください。
 </p>
 <div class="paragraph"><p>サポートされているコマンド: <code>stateless-connect</code>.</p></div>
 </dd>
@@ -840,18 +820,14 @@ export
 <div class="paragraph"><p>サポートされているコマンド: <code>list for-push</code>, <code>export</code>.</p></div>
 </dd>
 </dl></div>
-<div class="paragraph"><p>ヘルパーが <code>connect</code>
-を広告(advertise)する場合、Gitは可能であればそれを使用し、接続時にヘルパーが要求すると別の機能にフォールバックします(「COMMANDS」セクションの
-<code>connect</code> コマンド参照)。  <code>push</code> と <code>export</code> のどちらかを選択する場合、Gitは <code>push</code>
-を優先します。他のフロントエンドには、他の優先順位がある場合があります。</p></div>
+<div class="paragraph"><p>ヘルパーが <code>connect</code> を広告(advertise)する場合、Gitは可能であればそれを使用し、接続時にヘルパーが要求すると別の機能にフォールバックします(「COMMANDS」セクションの <code>connect</code> コマンド参照)。 <code>push</code> と <code>export</code> のどちらかを選択する場合、Gitは <code>push</code> を優先します。他のフロントエンドには、他の優先順位がある場合があります。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 no-private-update
 </dt>
 <dd>
 <p>
-        <code>refspec</code> 機能を使用する場合、gitは通常、プッシュが成功するとプライベートrefを更新します。リモートヘルパーが機能
-        <code>no-private-update</code> を宣言すると、この更新は無効になります。
+        <code>refspec</code> 機能を使用する場合、gitは通常、プッシュが成功するとプライベートrefを更新します。リモートヘルパーが機能 <code>no-private-update</code> を宣言すると、この更新は無効になります。
 </p>
 </dd>
 </dl></div>
@@ -864,8 +840,7 @@ connect
 </dt>
 <dd>
 <p>
-        Gitのネイティブpackfileプロトコルを使用した通信のために、 <code>git upload-pack</code>(フェッチ用)、 <code>git
-        receive-pack</code> などへの接続を試みることができます。これには、双方向の全二重接続が必要です。
+        Gitのネイティブpackfileプロトコルを使用した通信のために、 <code>git upload-pack</code>(フェッチ用)、 <code>git receive-pack</code> などへの接続を試みることができます。これには、双方向の全二重接続が必要です。
 </p>
 <div class="paragraph"><p>サポートされているコマンド: <code>connect</code></p></div>
 </dd>
@@ -874,8 +849,7 @@ stateless-connect
 </dt>
 <dd>
 <p>
-        実験的:内部使用のみ。 gitのワイヤープロトコル バージョン2を使用して、通信のためにリモートサーバーへの接続を試みることができます。詳細については、
-        stateless-connect コマンドのドキュメントを参照してください。
+        実験的:内部使用のみ。 gitのワイヤープロトコル バージョン2を使用して、通信のためにリモートサーバーへの接続を試みることができます。詳細については、 stateless-connect コマンドのドキュメントを参照してください。
 </p>
 <div class="paragraph"><p>サポートされているコマンド: <code>stateless-connect</code>.</p></div>
 </dd>
@@ -914,10 +888,7 @@ get
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>ヘルパーが <code>connect</code>
-を広告(advertise)する場合、Gitは可能であればそれを使用し、接続時にヘルパーが要求すると別の機能にフォールバックします(「COMMANDS」セクションの
-<code>connect</code> コマンド参照)。  <code>fetch</code> と <code>import</code> のどちらかを選択する場合、Gitは <code>fetch</code>
-を優先します。他のフロントエンドには、他の優先順位がある場合があります。</p></div>
+<div class="paragraph"><p>ヘルパーが <code>connect</code> を広告(advertise)する場合、Gitは可能であればそれを使用し、接続時にヘルパーが要求すると別の機能にフォールバックします(「COMMANDS」セクションの <code>connect</code> コマンド参照)。 <code>fetch</code> と <code>import</code> のどちらかを選択する場合、Gitは <code>fetch</code> を優先します。他のフロントエンドには、他の優先順位がある場合があります。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_miscellaneous_capabilities">Miscellaneous capabilities</h4>
@@ -927,8 +898,7 @@ option
 </dt>
 <dd>
 <p>
-        他のコマンドの実行方法に影響を与える <code>verbosity</code> (stderrに書き込む出力量)や、 <code>depth</code> (浅いクローン(shallow
-        clone)の場合に必要な履歴量)などの設定を指定します。
+        他のコマンドの実行方法に影響を与える <code>verbosity</code> (stderrに書き込む出力量)や、 <code>depth</code> (浅いクローン(shallow clone)の場合に必要な履歴量)などの設定を指定します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -936,30 +906,18 @@ refspec &lt;refspec&gt;
 </dt>
 <dd>
 <p>
-        <code>import</code> または <code>export</code> を実装するリモートヘルパーの場合、この機能により、 <code>refs/heads</code> または
-        <code>refs/remotes</code> に直接書き込む代わりに、refsをプライベート名前空間に制約できます。 <code>import</code>
-        機能を提供するすべてのインポーターがこれを使用することをお勧めします。 <code>export</code> では必須です。
+        <code>import</code> または <code>export</code> を実装するリモートヘルパーの場合、この機能により、 <code>refs/heads</code> または <code>refs/remotes</code> に直接書き込む代わりに、refsをプライベート名前空間に制約できます。 <code>import</code> 機能を提供するすべてのインポーターがこれを使用することをお勧めします。 <code>export</code> では必須です。
 </p>
-<div class="paragraph"><p>機能 <code>refspec refs/heads/*:refs/svn/origin/branches/*</code> を広告(advertise)するヘルパーは、
-<code>import refs/heads/topic</code> と問われた時に出力されるストリームは
-、<code>refs/svn/origin/branches/topic</code> ref を更新します。</p></div>
-<div class="paragraph"><p>この機能は複数回広告できます。最初に適用可能なrefspecが優先されます。この機能でアドバタイズされるrefspecの(<code>:</code>
-の)左側は、listコマンドによって報告されるすべてのrefをカバーする必要があります。 <code>refspec</code> 機能が広告されていない場合は暗黙の
-<code>refspec *:*</code> が設定されています。</p></div>
-<div class="paragraph"><p>分散型バージョン管理システム用のリモートヘルパーを作成する場合は、リポジトリのローカルコピーを保持して対話することをお勧めします。プライベート名前空間refsがこのローカルリポジトリを指すようにし、refs/remotes
-名前空間はリモートリポジトリを追跡するために使用されます。</p></div>
+<div class="paragraph"><p>機能 <code>refspec refs/heads/*:refs/svn/origin/branches/*</code> を広告(advertise)するヘルパーは、 <code>import refs/heads/topic</code> と問われた時に出力されるストリームは 、<code>refs/svn/origin/branches/topic</code> ref を更新します。</p></div>
+<div class="paragraph"><p>この機能は複数回広告できます。最初に適用可能なrefspecが優先されます。この機能でアドバタイズされるrefspecの(<code>:</code> の)左側は、listコマンドによって報告されるすべてのrefをカバーする必要があります。 <code>refspec</code> 機能が広告されていない場合は暗黙の <code>refspec *:*</code> が設定されています。</p></div>
+<div class="paragraph"><p>分散型バージョン管理システム用のリモートヘルパーを作成する場合は、リポジトリのローカルコピーを保持して対話することをお勧めします。プライベート名前空間refsがこのローカルリポジトリを指すようにし、refs/remotes 名前空間はリモートリポジトリを追跡するために使用されます。</p></div>
 </dd>
 <dt class="hdlist1">
 bidi-import
 </dt>
 <dd>
 <p>
-        これにより、 <code>import</code> 機能が変更されます。fast-importコマンドの <code>cat-blob</code> と <code>ls</code>
-        をリモートヘルパーが使用して、fast-importのメモリにすでに存在するブロブとツリーに関する情報を取得できます。これには、fast-importからリモートヘルパーへのチャネルが必要です。
-        <code>import</code> に加えて広告される場合、Gitはfast-importからリモートヘルパーのstdinへのパイプを確立します。
-        したがって、Gitとfast-importは両方ともリモートヘルパーのstdinに接続されています。Gitは複数のコマンドをリモートヘルパーに送信できるため、データをfast-importに送信する前に、
-        <code>bidi-import</code> を使用するヘルパーがバッチのすべての <code>import</code> コマンドをバッファリングする必要があります。
-        これは、ヘルパーのstdinでコマンドと、fast-import高速インポート応答が混在するのを防ぐためです。
+        これにより、 <code>import</code> 機能が変更されます。fast-importコマンドの <code>cat-blob</code> と <code>ls</code> をリモートヘルパーが使用して、fast-importのメモリにすでに存在するブロブとツリーに関する情報を取得できます。これには、fast-importからリモートヘルパーへのチャネルが必要です。 <code>import</code> に加えて広告される場合、Gitはfast-importからリモートヘルパーのstdinへのパイプを確立します。 したがって、Gitとfast-importは両方ともリモートヘルパーのstdinに接続されています。Gitは複数のコマンドをリモートヘルパーに送信できるため、データをfast-importに送信する前に、 <code>bidi-import</code> を使用するヘルパーがバッチのすべての <code>import</code> コマンドをバッファリングする必要があります。 これは、ヘルパーのstdinでコマンドと、fast-import高速インポート応答が混在するのを防ぐためです。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -967,9 +925,7 @@ export-marks &lt;file&gt;
 </dt>
 <dd>
 <p>
-        これにより、 <code>export</code> 機能が変更され、完了時に内部マークテーブル(internal marks
-        table)を&lt;file&gt;にダンプするようにGitに指示します。詳細については <a href="git-fast-export.html">git-fast-export(1)</a> の
-        <code>--export-marks=&lt;file&gt;</code> を参照してください。
+        これにより、 <code>export</code> 機能が変更され、完了時に内部マークテーブル(internal marks table)を&lt;file&gt;にダンプするようにGitに指示します。詳細については <a href="git-fast-export.html">git-fast-export(1)</a> の <code>--export-marks=&lt;file&gt;</code> を参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -977,8 +933,7 @@ import-marks &lt;file&gt;
 </dt>
 <dd>
 <p>
-        これにより、 <code>export</code> 機能が変更され、入力を処理する前に&lt;file&gt;で指定したマークをロードするようにGitに指示します。詳細については
-        <a href="git-fast-export.html">git-fast-export(1)</a> の <code>--import-marks=&lt;file&gt;</code> を参照してください。
+        これにより、 <code>export</code> 機能が変更され、入力を処理する前に&lt;file&gt;で指定したマークをロードするようにGitに指示します。詳細については <a href="git-fast-export.html">git-fast-export(1)</a> の <code>--import-marks=&lt;file&gt;</code> を参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -986,9 +941,7 @@ signed-tags
 </dt>
 <dd>
 <p>
-        これにより、 <code>export</code> 機能が変更され、 <code>--signed-tags=verbatim</code> を
-        linkgit：git-fast-export[1]に渡すようにGitに指示します。この機能がない場合、Gitは
-        <code>--signed-tags=warn-strip</code> を使用します。
+        これにより、 <code>export</code> 機能が変更され、 <code>--signed-tags=verbatim</code> を linkgit：git-fast-export[1]に渡すようにGitに指示します。この機能がない場合、Gitは <code>--signed-tags=warn-strip</code> を使用します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -996,8 +949,7 @@ object-format
 </dt>
 <dd>
 <p>
-        これは、ヘルパーが明示的なハッシュアルゴリズム拡張(explicit hash algorithm
-        extension)を使用してリモート側と対話できることを示しています。
+        これは、ヘルパーが明示的なハッシュアルゴリズム拡張(explicit hash algorithm extension)を使用してリモート側と対話できることを示しています。
 </p>
 </dd>
 </dl></div>
@@ -1015,8 +967,7 @@ capabilities
 </dt>
 <dd>
 <p>
-        ヘルパーの機能を1行に1つずつリスト出力し、空白行で終わります。各機能の前に <code>*</code>
-        を付けることができます。これは、リモートヘルパーを使うGitのバージョンで理解することが必須であることを示します。不明な必須機能は致命的なエラーです。
+        ヘルパーの機能を1行に1つずつリスト出力し、空白行で終わります。各機能の前に <code>*</code> を付けることができます。これは、リモートヘルパーを使うGitのバージョンで理解することが必須であることを示します。不明な必須機能は致命的なエラーです。
 </p>
 <div class="paragraph"><p>このコマンドのサポートは必須です。</p></div>
 </dd>
@@ -1025,13 +976,9 @@ list
 </dt>
 <dd>
 <p>
-        refを1行に1つずつ、 <code>&lt;value&gt; &lt;name&gt; [&lt;attr&gt; ...]</code> の形式で一覧出力します。 値は、16進のsha1ハッシュ
-        または、symrefの場合は <code>@&lt;dest&gt;</code> または、キーと値のペアの場合は <code>:&lt;keyword&gt; &lt;value&gt;</code> または、 `？｀
-        の場合はヘルパーがrefの値を取得できなかったことを示します。
-        nameの後には、スペースで区切られたattributes(属性)のリストが続きます。認識されない属性は無視されます。リストは空白行で終わります。
+        refを1行に1つずつ、 <code>&lt;value&gt; &lt;name&gt; [&lt;attr&gt; ...]</code> の形式で一覧出力します。 値は、16進のsha1ハッシュ または、symrefの場合は <code>@&lt;dest&gt;</code> または、キーと値のペアの場合は <code>:&lt;keyword&gt; &lt;value&gt;</code> または、 `？｀ の場合はヘルパーがrefの値を取得できなかったことを示します。 nameの後には、スペースで区切られたattributes(属性)のリストが続きます。認識されない属性は無視されます。リストは空白行で終わります。
 </p>
-<div class="paragraph"><p>現在定義されている属性のリストについては、「REF LIST
-ATTRIBUTES」を参照してください。現在定義されているキーワードのリストについては、「REF LIST KEYWORDS」を参照してください。</p></div>
+<div class="paragraph"><p>現在定義されている属性のリストについては、「REF LIST ATTRIBUTES」を参照してください。現在定義されているキーワードのリストについては、「REF LIST KEYWORDS」を参照してください。</p></div>
 <div class="paragraph"><p>ヘルパーに「fetch」または「import」機能がある場合にサポートされます。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1039,9 +986,7 @@ list for-push
 </dt>
 <dd>
 <p>
-        <code>list</code>
-        と似ていますが、呼び出し元が結果のrefリストでプッシュコマンドを準備したい場合にのみ使用される点が異なります。プッシュとフェッチの両方をサポートするヘルパーは、これを使用して、
-        <code>list</code> の出力が使用される操作を区別し、実行する必要のある作業の量を減らすことができます。
+        <code>list</code> と似ていますが、呼び出し元が結果のrefリストでプッシュコマンドを準備したい場合にのみ使用される点が異なります。プッシュとフェッチの両方をサポートするヘルパーは、これを使用して、 <code>list</code> の出力が使用される操作を区別し、実行する必要のある作業の量を減らすことができます。
 </p>
 <div class="paragraph"><p>ヘルパーに "push" または "export" 機能がある場合にサポートされます。</p></div>
 </dd>
@@ -1050,9 +995,7 @@ option &lt;name&gt; &lt;value&gt;
 </dt>
 <dd>
 <p>
-        転送(transport)ヘルパーオプション &lt;name&gt; を &lt;value&gt; に設定します。出力は、 <code>ok</code>(オプションが正常に設定された)または、
-        <code>unsupported</code>(オプションが認識されない)または、 <code>error
-        &lt;msg&gt;</code>(オプション&lt;name&gt;はサポートされていますが、&lt;value&gt;は無効です)のいずれかを含む単一行です。オプションは他のコマンドの前に設定する必要があり、それらのコマンドの動作に影響を与える可能性があります。
+        転送(transport)ヘルパーオプション &lt;name&gt; を &lt;value&gt; に設定します。出力は、 <code>ok</code>(オプションが正常に設定された)または、 <code>unsupported</code>(オプションが認識されない)または、 <code>error &lt;msg&gt;</code>(オプション&lt;name&gt;はサポートされていますが、&lt;value&gt;は無効です)のいずれかを含む単一行です。オプションは他のコマンドの前に設定する必要があり、それらのコマンドの動作に影響を与える可能性があります。
 </p>
 <div class="paragraph"><p>現在定義されているオプションのリストについては、OPTIONSを参照してください。</p></div>
 <div class="paragraph"><p>ヘルパーに "option" 機能がある場合にサポートされます。</p></div>
@@ -1062,18 +1005,10 @@ fetch &lt;sha1&gt; &lt;name&gt;
 </dt>
 <dd>
 <p>
-        指定されたオブジェクトをフェッチし、必要なオブジェクトをデータベースに書き込みます。fetchコマンドは、1行に1つずつバッチで送信され、空白行で終了します。
-        同じバッチ内のすべてのfetchコマンドが完了すると、1行の空白行を出力します。この方法でフェッチできるのは、sha1を使用した <code>list</code>
-        の出力で報告されたオブジェクトのみです。
+        指定されたオブジェクトをフェッチし、必要なオブジェクトをデータベースに書き込みます。fetchコマンドは、1行に1つずつバッチで送信され、空白行で終了します。 同じバッチ内のすべてのfetchコマンドが完了すると、1行の空白行を出力します。この方法でフェッチできるのは、sha1を使用した <code>list</code> の出力で報告されたオブジェクトのみです。
 </p>
-<div class="paragraph"><p>オプションで、refが適切に更新されるまでパックを保持している <code>$GIT_DIR/objects/pack</code> の下のファイルのフルパスを示す
-<code>lock&lt;file&gt;</code> 行を出力できます。パスは <code>.keep</code> で終わる必要があります。これは、keepコンポーネントのみを指定して、
-&lt;pack,idx,keep&gt;
-タプルに名前を付けるメカニズムです。保持されたパックは、フェッチが完了するまでそのオブジェクトが参照されない場合でも、並列再パック(concurrent
-repack)によって削除されません。 <code>.keep</code> ファイルはフェッチの終了時に削除されます。</p></div>
-<div class="paragraph"><p>オプション <code>check-connectivity</code>
-が要求された場合、クローンが自己完結型(self-contained)で接続されていれば、ヘルパーは <code>connectivity-ok</code>
-を出力する必要があります。</p></div>
+<div class="paragraph"><p>オプションで、refが適切に更新されるまでパックを保持している <code>$GIT_DIR/objects/pack</code> の下のファイルのフルパスを示す <code>lock&lt;file&gt;</code> 行を出力できます。パスは <code>.keep</code> で終わる必要があります。これは、keepコンポーネントのみを指定して、 &lt;pack,idx,keep&gt; タプルに名前を付けるメカニズムです。保持されたパックは、フェッチが完了するまでそのオブジェクトが参照されない場合でも、並列再パック(concurrent repack)によって削除されません。 <code>.keep</code> ファイルはフェッチの終了時に削除されます。</p></div>
+<div class="paragraph"><p>オプション <code>check-connectivity</code> が要求された場合、クローンが自己完結型(self-contained)で接続されていれば、ヘルパーは <code>connectivity-ok</code> を出力する必要があります。</p></div>
 <div class="paragraph"><p>ヘルパーに "fetch" 機能がある場合にサポートされます。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1081,11 +1016,7 @@ push +&lt;src&gt;:&lt;dst&gt;
 </dt>
 <dd>
 <p>
-        指定された ローカル &lt;src&gt; コミットまたはブランチを、 &lt;dst&gt;で記述されたリモートブランチにプッシュします。 1つ以上の <code>push</code>
-        コマンドのバッチシーケンスは空白行で終了します(pushへの参照が1つしかない場合は、単一の <code>push</code>
-        コマンドの後に空白行が続きます)。たとえば、以下は <code>push</code> の2つのバッチであり、最初のはリモートヘルパーに、ローカル参照 <code>master</code>
-        をリモート参照 <code>master</code> にプッシュし、ローカル <code>HEAD</code> をリモート <code>branch</code> にプッシュするように要求します。2番目のは ref
-        <code>foo</code> を ref <code>bar</code> にプッシュするように要求します(<code>+</code> によって要求された強制更新です)。
+        指定された ローカル &lt;src&gt; コミットまたはブランチを、 &lt;dst&gt;で記述されたリモートブランチにプッシュします。 1つ以上の <code>push</code> コマンドのバッチシーケンスは空白行で終了します(pushへの参照が1つしかない場合は、単一の <code>push</code> コマンドの後に空白行が続きます)。たとえば、以下は <code>push</code> の2つのバッチであり、最初のはリモートヘルパーに、ローカル参照 <code>master</code> をリモート参照 <code>master</code> にプッシュし、ローカル <code>HEAD</code> をリモート <code>branch</code> にプッシュするように要求します。2番目のは ref <code>foo</code> を ref <code>bar</code> にプッシュするように要求します(<code>+</code> によって要求された強制更新です)。
 </p>
 <div class="listingblock">
 <div class="content">
@@ -1096,9 +1027,7 @@ push +refs/heads/foo:refs/heads/bar
 \n</code></pre>
 </div></div>
 <div class="paragraph"><p>最後の <code>push</code> コマンドの後、バッチの終了空白行の前に、0個以上のプロトコルオプションを入力できます。</p></div>
-<div class="paragraph"><p>プッシュが完了すると、1つ以上の <code>ok &lt;dst&gt;</code> または <code>error &lt;dst&gt; &lt;why&gt;?</code>
-行を出力して、プッシュされた各参照の成功または失敗を示します。ステータスレポートの出力は空白行で終了します。オプションフィールド &lt;why&gt;
-は、LFが含まれている場合、Cスタイルの文字列でクォートされる場合があります。</p></div>
+<div class="paragraph"><p>プッシュが完了すると、1つ以上の <code>ok &lt;dst&gt;</code> または <code>error &lt;dst&gt; &lt;why&gt;?</code> 行を出力して、プッシュされた各参照の成功または失敗を示します。ステータスレポートの出力は空白行で終了します。オプションフィールド &lt;why&gt; は、LFが含まれている場合、Cスタイルの文字列でクォートされる場合があります。</p></div>
 <div class="paragraph"><p>ヘルパーに "push" 機能がある場合にサポートされます。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1109,10 +1038,8 @@ import &lt;name&gt;
         名前付きrefの現在の値をインポートするfast-importストリームを生成します。履歴を効率的に構築するために、必要に応じて他の参照を追加でインポートする場合があります。スクリプトは、ヘルパー固有のプライベート名前空間に書き込みます。名前付きrefの値は、「refspec」機能からのrefspecをrefの名前に適用することによって派生した、この名前空間内の場所に書き込む必要があります。
 </p>
 <div class="paragraph"><p>他のバージョン管理システムとの相互運用性に特に役立ちます。</p></div>
-<div class="paragraph"><p><code>push</code> と同様に、1つ以上の <code>import</code> のバッチシーケンスは空白行で終了します。 <code>import</code> の各バッチごとに、リモートヘルパーは
-<code>done</code> コマンドで終了する fast-import ストリームを生成する必要があります。</p></div>
-<div class="paragraph"><p><code>bidi-import</code>
-機能を使用する場合は、ヘルパーのstdinでの、コマンドとfast-import応答の混合を防ぐために、fast-importへのデータの送信を開始する前にバッチシーケンスを完全にバッファリングする必要があることに注意してください。</p></div>
+<div class="paragraph"><p><code>push</code> と同様に、1つ以上の <code>import</code> のバッチシーケンスは空白行で終了します。 <code>import</code> の各バッチごとに、リモートヘルパーは <code>done</code> コマンドで終了する fast-import ストリームを生成する必要があります。</p></div>
+<div class="paragraph"><p><code>bidi-import</code> 機能を使用する場合は、ヘルパーのstdinでの、コマンドとfast-import応答の混合を防ぐために、fast-importへのデータの送信を開始する前にバッチシーケンスを完全にバッファリングする必要があることに注意してください。</p></div>
 <div class="paragraph"><p>ヘルパーに "import" 機能がある場合にサポートされます。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1120,13 +1047,10 @@ export
 </dt>
 <dd>
 <p>
-        後続の入力は、リモートにプッシュする必要のあるオブジェクトを含むfast-importストリーム( <code>git fast-export</code>
-        によって生成される)の一部であることをリモートヘルパーに指示します。
+        後続の入力は、リモートにプッシュする必要のあるオブジェクトを含むfast-importストリーム( <code>git fast-export</code> によって生成される)の一部であることをリモートヘルパーに指示します。
 </p>
 <div class="paragraph"><p>他のバージョン管理システムとの相互運用性に特に役立ちます。</p></div>
-<div class="paragraph"><p><code>export-marks</code> と <code>import-marks</code> 機能は、指定されている場合、 <code>git fast-export｀
-に渡される限り、このコマンドに影響します。 `git fast-export</code> は、ローカルオブジェクトのマークのテーブルを ロード/保存 します。
-これは、増分操作の実装に使用できます。</p></div>
+<div class="paragraph"><p><code>export-marks</code> と <code>import-marks</code> 機能は、指定されている場合、 <code>git fast-export｀ に渡される限り、このコマンドに影響します。 `git fast-export</code> は、ローカルオブジェクトのマークのテーブルを ロード/保存 します。 これは、増分操作の実装に使用できます。</p></div>
 <div class="paragraph"><p>ヘルパーに "export" 機能がある場合にサポートされます。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1134,10 +1058,7 @@ connect &lt;service&gt;
 </dt>
 <dd>
 <p>
-        指定のサービスに接続します。ヘルパーの標準入力と標準出力は、リモート側で指定指定のサービスに接続されます(gitプレフィックスはサービス名に含まれているので、例えばフェッチはサービスとして
-        <code>git-upload-pack</code> を使用します)。このコマンドに対する有効な応答は、空行(接続が確立されました)と、 <code>fallback</code>
-        (スマート転送サポートなし、バカ転送(dumb
-        transports)にフォールバック)と、エラーメッセージが印刷された状態で終了するだけです(接続できません、フォールバックしようと気にしないで)。肯定(空)応答が改行で終了すると、サービスの出力が開始されます。接続が終了すると、リモートヘルパーは終了します。
+        指定のサービスに接続します。ヘルパーの標準入力と標準出力は、リモート側で指定指定のサービスに接続されます(gitプレフィックスはサービス名に含まれているので、例えばフェッチはサービスとして <code>git-upload-pack</code> を使用します)。このコマンドに対する有効な応答は、空行(接続が確立されました)と、 <code>fallback</code> (スマート転送サポートなし、バカ転送(dumb transports)にフォールバック)と、エラーメッセージが印刷された状態で終了するだけです(接続できません、フォールバックしようと気にしないで)。肯定(空)応答が改行で終了すると、サービスの出力が開始されます。接続が終了すると、リモートヘルパーは終了します。
 </p>
 <div class="paragraph"><p>ヘルパーに "connect" 機能がある場合にサポートされます。</p></div>
 </dd>
@@ -1146,14 +1067,7 @@ stateless-connect &lt;service&gt;
 </dt>
 <dd>
 <p>
-        実験的: 内部使用のみ。
-        gitのワイヤープロトコルバージョン2を使用して通信するために、指定のリモートサービスに接続します。このコマンドへの有効な応答は、空行(接続が確立されました)と、
-        <code>fall back</code>
-        (スマート転送サポートなし、バカ転送にフォールバック)と、エラーメッセージ出力するだけです(接続できません。わざわざフォールバックしようとしないでください)。
-        正の(空の)応答を終了する改行の後、サービスの出力が開始されます。
-        メッセージ(要求と応答の両方)は、0個以上のPKT-LINEで構成され、フラッシュパケットで終了する必要があります。
-        応答メッセージには、応答の終了を示すフラッシュパケットの後に応答終了パケットがあります。
-        クライアントは、サーバーが要求と応答のペアの間に状態を保持することを期待してはなりません。接続が終了すると、リモートヘルパーが終了します。
+        実験的: 内部使用のみ。 gitのワイヤープロトコルバージョン2を使用して通信するために、指定のリモートサービスに接続します。このコマンドへの有効な応答は、空行(接続が確立されました)と、 <code>fall back</code> (スマート転送サポートなし、バカ転送にフォールバック)と、エラーメッセージ出力するだけです(接続できません。わざわざフォールバックしようとしないでください)。 正の(空の)応答を終了する改行の後、サービスの出力が開始されます。 メッセージ(要求と応答の両方)は、0個以上のPKT-LINEで構成され、フラッシュパケットで終了する必要があります。 応答メッセージには、応答の終了を示すフラッシュパケットの後に応答終了パケットがあります。 クライアントは、サーバーが要求と応答のペアの間に状態を保持することを期待してはなりません。接続が終了すると、リモートヘルパーが終了します。
 </p>
 <div class="paragraph"><p>ヘルパーに "stateless-connect" 機能がある場合にサポートされます。</p></div>
 </dd>
@@ -1162,8 +1076,7 @@ get &lt;uri&gt; &lt;path&gt;
 </dt>
 <dd>
 <p>
-        指定の <code>&lt;uri&gt;</code> から指定の <code>&lt;path&gt;</code> へファイルをダウンロードします。 <code>&lt;path&gt;.temp</code> が存在する場合、Git は
-        <code>.temp</code> ファイルが以前の試みからの部分的なダウンロードであると想定し、 その位置からダウンロードを再開します。
+        指定の <code>&lt;uri&gt;</code> から指定の <code>&lt;path&gt;</code> へファイルをダウンロードします。 <code>&lt;path&gt;.temp</code> が存在する場合、Git は <code>.temp</code> ファイルが以前の試みからの部分的なダウンロードであると想定し、 その位置からダウンロードを再開します。
 </p>
 </dd>
 </dl></div>
@@ -1174,8 +1087,7 @@ get &lt;uri&gt; &lt;path&gt;
 <div class="sect1">
 <h2 id="_ref_list_attributes">REF LIST ATTRIBUTES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>list</code> コマンドは、各refの後に属性(attribute)のリストが続くことがあるrefのリストを生成します。以下のrefリスト属性(ref
-list attributes)が定義されています。</p></div>
+<div class="paragraph"><p><code>list</code> コマンドは、各refの後に属性(attribute)のリストが続くことがあるrefのリストを生成します。以下のrefリスト属性(ref list attributes)が定義されています。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 unchanged
@@ -1198,8 +1110,7 @@ object-format
 </dt>
 <dd>
 <p>
-        refは指定のハッシュアルゴリズムを使用しています。このキーワードは、サーバーとクライアントの両方がオブジェクト形式の拡張機能(object-format
-        extension)をサポートしている場合にのみ使用されます。
+        refは指定のハッシュアルゴリズムを使用しています。このキーワードは、サーバーとクライアントの両方がオブジェクト形式の拡張機能(object-format extension)をサポートしている場合にのみ使用されます。
 </p>
 </dd>
 </dl></div>
@@ -1215,8 +1126,7 @@ option verbosity &lt;n&gt;
 </dt>
 <dd>
 <p>
-        ヘルパーによって表示されるメッセージの詳細度を変更します。 &lt;n&gt;の値0は、プロセスが静かに動作し、ヘルパーがエラー出力のみを生成することを意味します。
-        1は冗長性のデフォルトレベルであり、&lt;n&gt;の値が大きさは、コマンドラインで渡される <code>-v</code> フラグの数に対応します。
+        ヘルパーによって表示されるメッセージの詳細度を変更します。 &lt;n&gt;の値0は、プロセスが静かに動作し、ヘルパーがエラー出力のみを生成することを意味します。 1は冗長性のデフォルトレベルであり、&lt;n&gt;の値が大きさは、コマンドラインで渡される <code>-v</code> フラグの数に対応します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1264,8 +1174,7 @@ option followtags {<code>true</code>|<code>false</code>}
 </dt>
 <dd>
 <p>
-        有効にすると、フェッチコマンド中にタグが指すオブジェクトが転送された場合、ヘルパーは注釈付きのタグオブジェクトを自動的にフェッチする必要があります。
-        タグがヘルパーによってフェッチされない場合、通常、2番目のフェッチコマンドが送信され、タグを具体的に要求します。一部のヘルパーは、このオプションを使用して2番目のネットワーク接続を回避できる場合があります。
+        有効にすると、フェッチコマンド中にタグが指すオブジェクトが転送された場合、ヘルパーは注釈付きのタグオブジェクトを自動的にフェッチする必要があります。 タグがヘルパーによってフェッチされない場合、通常、2番目のフェッチコマンドが送信され、タグを具体的に要求します。一部のヘルパーは、このオプションを使用して2番目のネットワーク接続を回避できる場合があります。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1273,8 +1182,7 @@ option dry-run {<code>true</code>|<code>false</code>}
 </dt>
 <dd>
 <p>
-        trueの場合、操作が正常に完了したふりをしますが、実際にはリポジトリデータを変更しません。 ほとんどのヘルパーの場合、これはサポートされている場合、
-        <code>push</code> にのみ適用されます。
+        trueの場合、操作が正常に完了したふりをしますが、実際にはリポジトリデータを変更しません。 ほとんどのヘルパーの場合、これはサポートされている場合、 <code>push</code> にのみ適用されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1282,8 +1190,7 @@ option servpath &lt;c-style-quoted-path&gt;
 </dt>
 <dd>
 <p>
-        次の接続のサービスパス(<code>--upload-pack</code> 、<code>--receive-pack</code> など)を設定します。
-        リモートヘルパーはこのオプションをサポートする場合がありますが、接続要求が発生する前に、設定されているこのオプションに依存してはなりません。
+        次の接続のサービスパス(<code>--upload-pack</code> 、<code>--receive-pack</code> など)を設定します。 リモートヘルパーはこのオプションをサポートする場合がありますが、接続要求が発生する前に、設定されているこのオプションに依存してはなりません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1355,8 +1262,7 @@ option atomic {<code>true</code>|<code>false</code>}
 </dt>
 <dd>
 <p>
-        プッシュするときは、リモートサーバーに単一のアトミックトランザクションで参照を更新するように要求します。
-        成功すると、すべての参照が更新されるか、何も更新されません。 リモート側がこの機能をサポートしていない場合、プッシュは失敗します。
+        プッシュするときは、リモートサーバーに単一のアトミックトランザクションで参照を更新するように要求します。 成功すると、すべての参照が更新されるか、何も更新されません。 リモート側がこの機能をサポートしていない場合、プッシュは失敗します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1364,8 +1270,7 @@ option object-format {<code>true</code>|algorithm}
 </dt>
 <dd>
 <p>
-        <code>true</code> の場合、呼び出し元がハッシュアルゴリズム情報をリモートから返されることを望んでいることを示します。
-        このモードは、refをフェッチするときに使用されます。
+        <code>true</code> の場合、呼び出し元がハッシュアルゴリズム情報をリモートから返されることを望んでいることを示します。 このモードは、refをフェッチするときに使用されます。
 </p>
 <div class="paragraph"><p>algorithm に設定されている場合は、発信者がそのアルゴリズムを使用してリモート側と対話することを希望していることを示します。</p></div>
 </dd>
@@ -1392,7 +1297,7 @@ option object-format {<code>true</code>|algorithm}
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-10-13 06:18:24 JST
+ 2023-07-18 11:05:55 JST
 </div>
 </div>
 </body>

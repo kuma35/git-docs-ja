@@ -749,8 +749,9 @@ git-interpret-trailers(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git interpret-trailers</em> [&lt;options&gt;] [(--trailer &lt;token&gt;[(=|:)&lt;value&gt;])&#8230;] [&lt;file&gt;&#8230;]
-<em>git interpret-trailers</em> [&lt;options&gt;] [--parse] [&lt;file&gt;&#8230;]</pre>
+<pre class="content"><em>git interpret-trailers</em> [--in-place] [--trim-empty]
+                        [(--trailer &lt;token&gt;[(=|:)&lt;value&gt;])&#8230;]
+                        [--parse] [&lt;file&gt;&#8230;]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -758,33 +759,35 @@ git-interpret-trailers(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>コミットメッセージの自由形式の部分の最後に、RFC 822 電子メールヘッダーに似たトレーラー(trailer)行の、追加またはパースを支援します。</p></div>
-<div class="paragraph"><p>このコマンドは、&lt;file&gt; 引数または、
-&lt;file&gt;が指定されていない場合は標準入力のいずれかから、いくつかのパッチまたはコミットメッセージを読み取ります。 <code>--parse</code>
-が指定されている場合、出力はパースされたトレーラーで構成されます。</p></div>
-<div class="paragraph"><p>それ以外の場合、このコマンドは、 <code>--trailer</code>
-オプション(存在する場合)を使用して渡された引数を、各入力ファイルのコミットメッセージ部分に適用します。結果は標準出力に出力されます。</p></div>
-<div class="paragraph"><p>一部の構成変数は、 <code>--trailer</code>
-引数が各コミットメッセージに適用される方法と、コミットメッセージ内の既存のトレーラーが変更される方法を制御します。また、トレーラーを自動的に追加することもできます。</p></div>
-<div class="paragraph"><p>デフォルトでは、 <code>--trailer</code> で指定された <code>&lt;token&gt;=&lt;value&gt;</code> または <code>&lt;token&gt;:&lt;value&gt;</code>
-引数は、既存の最後のトレーラーのペア(&lt;token&gt;,
-&lt;value&gt;)が指定のペア異なる場合(または、既存のに無い場合)にのみ、指定したモノが既存のトレーラーの後に追加されます。
-&lt;token&gt;と&lt;value&gt;の部分は、先頭と末尾の空白がトリミングされ、以下のようなメッセージとして出力されます:</p></div>
+<div class="paragraph"><p>Add or parse <em>trailer</em> lines that look similar to RFC 822 e-mail headers, at the end of the otherwise free-form part of a commit message. For example, in the following commit message</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>subject
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+Signed-off-by: Alice &lt;alice@example.com&gt;
+Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>the last two lines starting with "Signed-off-by" are trailers.</p></div>
+<div class="paragraph"><p>This command reads commit messages from either the &lt;file&gt; arguments or the standard input if no &lt;file&gt; is specified. If <code>--parse</code> is specified, the output consists of the parsed trailers. Otherwise, this command applies the arguments passed using the <code>--trailer</code> option, if any, to each input file. The result is emitted on the standard output.</p></div>
+<div class="paragraph"><p>This command can also operate on the output of <a href="git-format-patch.html">git-format-patch(1)</a>, which is more elaborate than a plain commit message. Namely, such output includes a commit message (as above), a "---" divider line, and a patch part. For these inputs, the divider and patch parts are not modified by this command and are emitted as is on the output, unless <code>--no-divider</code> is specified.</p></div>
+<div class="paragraph"><p>Some configuration variables control the way the <code>--trailer</code> arguments are applied to each input and the way any existing trailer in the input is changed. They also make it possible to automatically add some trailers.</p></div>
+<div class="paragraph"><p>By default, a <em>&lt;token&gt;=&lt;value&gt;</em> or <em>&lt;token&gt;:&lt;value&gt;</em> argument given using <code>--trailer</code> will be appended after the existing trailers only if the last trailer has a different (&lt;token&gt;, &lt;value&gt;) pair (or if there is no existing trailer). The &lt;token&gt; and &lt;value&gt; parts will be trimmed to remove starting and trailing whitespace, and the resulting trimmed &lt;token&gt; and &lt;value&gt; will appear in the output like this:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>token: value</code></pre>
 </div></div>
-<div class="paragraph"><p>これは、トリミングされた&lt;token&gt;と&lt;value&gt;が `: ` (1つのコロンとそれに続く1つのスペース)で区切られることを意味します。</p></div>
-<div class="paragraph"><p>デフォルトでは、新しいトレーラーは既存のすべてのトレーラーの後に出力されます。既存のトレーラーがない場合は、出力のコミットメッセージ部分の後に新しいトレーラーが出力されます。コミットメッセージ部分の最後に空白しかない行が存在しない場合は、新しいトレーラーの前に空行を1行追加します。</p></div>
-<div class="paragraph"><p>既存のトレーラーは、(i)すべてのトレーラーであるか、または、(ii)少なくとも1つのGit生成またはユーザー構成のトレーラーを含む少なくとも25％のトレーラーで構成される、1行以上のグループが入力メッセージから抽出されます。グループの前には、1行以上の空行(または空白のみの行)が必要です。グループは、メッセージの最後にあるか、
-<code>---</code>
-で始まる行の前の最後の非空白行である必要があります(その後にスペースまたは行の終わりが続きます)。このような3つのマイナス記号(<code>---</code>)は、メッセージのパッチ部分を開始します。
-以下の <code>--no-divider</code> も参照してください。</p></div>
-<div class="paragraph"><p>トレーラーを読み取る場合、トークンの前または内部に空白(whitespace)を含めることはできませんが、トークンとセパレーターの間には、任意の数の通常の空白(space)文字とタブ文字を使用できます。
-値の前または内部または後ろに空白(達)(whitespaces)を入れることができます。 RFC 822
-の「folding」(折り畳み)のように、値は複数の行に分割され、後続の各行は少なくとも 1 つの空白(whitespace)で始まります。</p></div>
-<div class="paragraph"><p>注意:
-トレーラーはRFC822ヘッダー規則の多くに従うことを意図してませんし、従わないことに注意してください。たとえば、それらはエンコーディング規則や、おそらく他の多くの規則に従いません。</p></div>
+<div class="paragraph"><p>This means that the trimmed &lt;token&gt; and &lt;value&gt; will be separated by <code>': '</code> (one colon followed by one space). For convenience, the &lt;token&gt; can be a shortened string key (e.g., "sign") instead of the full string which should appear before the separator on the output (e.g., "Signed-off-by"). This can be configured using the <em>trailer.&lt;token&gt;.key</em> configuration variable.</p></div>
+<div class="paragraph"><p>By default the new trailer will appear at the end of all the existing trailers. If there is no existing trailer, the new trailer will appear at the end of the input. A blank line will be added before the new trailer if there isn&#8217;t one already.</p></div>
+<div class="paragraph"><p>Existing trailers are extracted from the input by looking for a group of one or more lines that (i) is all trailers, or (ii) contains at least one Git-generated or user-configured trailer and consists of at least 25% trailers. The group must be preceded by one or more empty (or whitespace-only) lines. The group must either be at the end of the input or be the last non-whitespace lines before a line that starts with <em>---</em> (followed by a space or the end of the line).</p></div>
+<div class="paragraph"><p>When reading trailers, there can be no whitespace before or inside the &lt;token&gt;, but any number of regular space and tab characters are allowed between the &lt;token&gt; and the separator. There can be whitespaces before, inside or after the &lt;value&gt;. The &lt;value&gt; may be split over multiple lines with each subsequent line starting with at least one whitespace, like the "folding" in RFC 822. Example:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>token: This is a very long value, with spaces and
+  newlines in it.</code></pre>
+</div></div>
+<div class="paragraph"><p>Note that trailers do not follow (nor are they intended to follow) many of the rules for RFC 822 headers. For example they do not follow the encoding rule.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -804,8 +807,7 @@ git-interpret-trailers(1) Manual Page
 </dt>
 <dd>
 <p>
-        トレーラーの &lt;value&gt;
-        部分に空白(whitespace)のみが含まれている場合、結果のメッセージからトレーラー全体が削除されます。これは、新しいトレーラーだけでなく、既存のトレーラーにも適用されます。
+        If the &lt;value&gt; part of any trailer contains only whitespace, the whole trailer will be removed from the output. This applies to existing trailers as well as new trailers.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -813,7 +815,7 @@ git-interpret-trailers(1) Manual Page
 </dt>
 <dd>
 <p>
-        入力メッセージのトレーラーとして適用する必要があるペア（&lt;token&gt;、&lt;value&gt;）を指定します。詳しくはこのコマンドの説明を参照してください。
+        Specify a (&lt;token&gt;, &lt;value&gt;) pair that should be applied as a trailer to the inputs. See the description of this command.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -824,9 +826,7 @@ git-interpret-trailers(1) Manual Page
 </dt>
 <dd>
 <p>
-        すべての新しいトレーラーが追加される場所を指定します。 <code>--where</code> で指定する設定は、すべての構成変数をオーバーライドし、 <code>--where</code>
-        または <code>--no-where</code> が次に出現するまですべての <code>--trailer</code> オプションに適用されます。 &lt;placement&gt;
-        として可能な値は、 <code>after</code> または <code>before</code> または <code>end</code> または <code>start</code> です。
+        すべての新しいトレーラーが追加される場所を指定します。 <code>--where</code> で指定する設定は、すべての構成変数をオーバーライドし、 <code>--where</code> または <code>--no-where</code> が次に出現するまですべての <code>--trailer</code> オプションに適用されます。 &lt;placement&gt; として可能な値は、 <code>after</code> または <code>before</code> または <code>end</code> または <code>start</code> です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -837,10 +837,7 @@ git-interpret-trailers(1) Manual Page
 </dt>
 <dd>
 <p>
-        メッセージに同じ &lt;token&gt; を持つトレーラーがすでに少なくとも1つある場合に、実行される操作を指定します。 <code>--if-exists</code>
-        で指定する設定は、すべての構成変数をオーバーライドし、 <code>--if-exists</code> または <code>--no-if-exists</code> が次に出現するまですべての
-        <code>--trailer</code> オプションに適用されます。可能な操作は、 <code>addIfDifferent</code> または
-        <code>addIfDifferentNeighbor</code> または <code>add</code> または <code>replace</code> または <code>doNothing</code> です。
+        Specify what action will be performed when there is already at least one trailer with the same &lt;token&gt; in the input. A setting provided with <em>--if-exists</em> overrides all configuration variables and applies to all <em>--trailer</em> options until the next occurrence of <em>--if-exists</em> or <em>--no-if-exists</em>. Possible actions are <code>addIfDifferent</code>, <code>addIfDifferentNeighbor</code>, <code>add</code>, <code>replace</code> and <code>doNothing</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -851,9 +848,7 @@ git-interpret-trailers(1) Manual Page
 </dt>
 <dd>
 <p>
-        メッセージに同じ &lt;token&gt; を持つ他のトレーラーがない場合に実行される操作を指定します。 <code>--if-missing</code>
-        で指定する設定は、すべての構成変数をオーバーライドし、 <code>--if-missing</code> または <code>--no-if-missing</code>
-        が次に出現するまですべての <code>--trailer</code> オプションに適用されます。可能な操作は <code>doNothing</code> または <code>add</code> です。
+        Specify what action will be performed when there is no other trailer with the same &lt;token&gt; in the input. A setting provided with <em>--if-missing</em> overrides all configuration variables and applies to all <em>--trailer</em> options until the next occurrence of <em>--if-missing</em> or <em>--no-if-missing</em>. Possible actions are <code>doNothing</code> or <code>add</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -893,8 +888,7 @@ git-interpret-trailers(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>---</code> をコミットメッセージの終わりとして扱わないでください。(電子メールや `git
-        format-patch`の出力が含まれておらず、)入力にコミットメッセージ自体だけが含まれていることがわかっている場合にこれを使用します。
+        <code>---</code> をコミットメッセージの終わりとして扱わないでください。(電子メールや `git format-patch`の出力が含まれておらず、)入力にコミットメッセージ自体だけが含まれていることがわかっている場合にこれを使用します。
 </p>
 </dd>
 </dl></div>
@@ -909,14 +903,10 @@ trailer.separators
 </dt>
 <dd>
 <p>
-        このオプションは、どの文字がトレーラー区切り文字として認識されるかを示します。 デフォルトでは、 <code>:</code>
-        のみがトレーラー区切り文字として認識されます。ただし、他のgitコマンドとの互換性のために、コマンドラインでは <code>=</code> が常に受け入れられます。
+        このオプションは、どの文字がトレーラー区切り文字として認識されるかを示します。 デフォルトでは、 <code>:</code> のみがトレーラー区切り文字として認識されます。ただし、他のgitコマンドとの互換性のために、コマンドラインでは <code>=</code> が常に受け入れられます。
 </p>
 <div class="paragraph"><p>このオプションで指定された最初の1文字は、このトレーラーの構成で別の区切り文字が指定されていない場合に使用されるデフォルトの文字になります。</p></div>
-<div class="paragraph"><p>たとえば、このオプションの値が "%=$" の場合、 <code>&lt;token&gt;&lt;sep&gt;&lt;value&gt;</code> の形式を使用し、&lt;sep&gt; に <code>%</code> または <code>=</code>
-または <code>$</code> と、空白達を含む行のみトレーラーと見なされます。 また、 <code>%</code>
-がデフォルトの区切り文字として使用されるため、デフォルトでは、トレーラーは <code>&lt;token&gt;% &lt;value&gt;</code>
-と出力されます(デフォルトの場合はこのようにトークンと値の間に1つの区切り文字列の最初の文字(パーセント記号)と「1つのスペース」が出力されます)。</p></div>
+<div class="paragraph"><p>たとえば、このオプションの値が "%=$" の場合、 <code>&lt;token&gt;&lt;sep&gt;&lt;value&gt;</code> の形式を使用し、&lt;sep&gt; に <code>%</code> または <code>=</code> または <code>$</code> と、空白達を含む行のみトレーラーと見なされます。 また、 <code>%</code> がデフォルトの区切り文字として使用されるため、デフォルトでは、トレーラーは <code>&lt;token&gt;% &lt;value&gt;</code> と出力されます(デフォルトの場合はこのようにトークンと値の間に1つの区切り文字列の最初の文字(パーセント記号)と「1つのスペース」が出力されます)。</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.where
@@ -936,28 +926,21 @@ trailer.ifexists
 </dt>
 <dd>
 <p>
-        このオプションを使用すると、メッセージに同じ &lt;token&gt; を持つトレーラーがすでに少なくとも1つある場合に、実行する操作を選択できます。
+        This option makes it possible to choose what action will be performed when there is already at least one trailer with the same &lt;token&gt; in the input.
 </p>
-<div class="paragraph"><p>このオプションの有効な値は、 <code>addIfDifferentNeighbor</code> (デフォルト)、 または <code>addIfDifferent</code> または
-<code>add</code> または <code>replace</code> または <code>doNothing</code> です。</p></div>
-<div class="paragraph"><p><code>addIfDifferentNeighbor</code>
-を使用すると、同一のペア(&lt;token&gt;、&lt;value&gt;)のトレーラーが、新しいトレーラーが追加される行の上または下にない場合にのみ、新しいトレーラーが追加されます。</p></div>
-<div class="paragraph"><p><code>addIfDifferent</code>
-を使用すると、同じペア(&lt;token&gt;、&lt;value&gt;)のトレーラーがメッセージに含まれていない場合にのみ、新しいトレーラーが追加されます。</p></div>
-<div class="paragraph"><p><code>add</code>
-を使用すると、同じペア（&lt;token&gt;、&lt;value&gt;）のトレーラーがすでにメッセージに含まれている場合でも、新しいトレーラーが追加されます。</p></div>
-<div class="paragraph"><p><code>replace</code> を使用すると、同じ &lt;token&gt;
-を持つ既存のトレーラーが削除され、新しいトレーラーが追加されます。削除されるトレーラーは、新しいトレーラーが追加される場所に最も近い(同じ
-&lt;token&gt; を持つ)トレーラーになります。</p></div>
-<div class="paragraph"><p><code>doNothing</code> を使用すると、何も実行されません。 つまり、メッセージに同じ &lt;token&gt;
-を持つトレーラーがすでに存在する場合、新しいトレーラーは追加されません。</p></div>
+<div class="paragraph"><p>このオプションの有効な値は、 <code>addIfDifferentNeighbor</code> (デフォルト)、 または <code>addIfDifferent</code> または <code>add</code> または <code>replace</code> または <code>doNothing</code> です。</p></div>
+<div class="paragraph"><p><code>addIfDifferentNeighbor</code> を使用すると、同一のペア(&lt;token&gt;、&lt;value&gt;)のトレーラーが、新しいトレーラーが追加される行の上または下にない場合にのみ、新しいトレーラーが追加されます。</p></div>
+<div class="paragraph"><p>With <code>addIfDifferent</code>, a new trailer will be added only if no trailer with the same (&lt;token&gt;, &lt;value&gt;) pair is already in the input.</p></div>
+<div class="paragraph"><p>With <code>add</code>, a new trailer will be added, even if some trailers with the same (&lt;token&gt;, &lt;value&gt;) pair are already in the input.</p></div>
+<div class="paragraph"><p><code>replace</code> を使用すると、同じ &lt;token&gt; を持つ既存のトレーラーが削除され、新しいトレーラーが追加されます。削除されるトレーラーは、新しいトレーラーが追加される場所に最も近い(同じ &lt;token&gt; を持つ)トレーラーになります。</p></div>
+<div class="paragraph"><p>With <code>doNothing</code>, nothing will be done; that is no new trailer will be added if there is already one with the same &lt;token&gt; in the input.</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.ifmissing
 </dt>
 <dd>
 <p>
-        このオプションを使用すると、メッセージに同じ &lt;token&gt; を持つトレーラーがまだない場合に実行する操作を選択できます。
+        This option makes it possible to choose what action will be performed when there is not yet any trailer with the same &lt;token&gt; in the input.
 </p>
 <div class="paragraph"><p>このオプションの有効な値は、 <code>add</code> (デフォルト)と <code>doNothing</code> です。</p></div>
 <div class="paragraph"><p>`add`を使用すると、新しいトレーラーが追加されます。</p></div>
@@ -968,20 +951,16 @@ trailer.&lt;token&gt;.key
 </dt>
 <dd>
 <p>
-        この キー(key) は、トレーラーで &lt;token&gt;
-        の代わりに使用されます。このキーの後ろに、区切り文字を出力してから、いくつかのスペース文字を出力できます。デフォルトでは、有効な区切り文字は <code>:</code>
-        のみですが、これは <code>trailer.separators</code> 構成変数を使用して変更できます。
+        この キー(key) は、トレーラーで &lt;token&gt; の代わりに使用されます。このキーの後ろに、区切り文字を出力してから、いくつかのスペース文字を出力できます。デフォルトでは、有効な区切り文字は <code>:</code> のみですが、これは <code>trailer.separators</code> 構成変数を使用して変更できます。
 </p>
-<div class="paragraph"><p>トレーラーを追加するときに、この構成値内に区切り文字がある場合、 &lt;token&gt;
-とデフォルトの区切り文字の両方(つまり、&lt;token&gt;&lt;区切り文字&gt;&lt;空白1つ&gt;)がキーで置き換えられます。</p></div>
+<div class="paragraph"><p>トレーラーを追加するときに、この構成値内に区切り文字がある場合、 &lt;token&gt; とデフォルトの区切り文字の両方(つまり、&lt;token&gt;&lt;区切り文字&gt;&lt;空白1つ&gt;)がキーで置き換えられます。</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.&lt;token&gt;.where
 </dt>
 <dd>
 <p>
-        このオプションは、「trailer.where」構成変数と同じ値を取り、指定された &lt;token&gt;
-        を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+        このオプションは、「trailer.where」構成変数と同じ値を取り、指定された &lt;token&gt; を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -989,8 +968,7 @@ trailer.&lt;token&gt;.ifexists
 </dt>
 <dd>
 <p>
-        このオプションは、「trailer.ifexists」構成変数と同じ値を取り、指定された &lt;token&gt;
-        を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+        このオプションは、「trailer.ifexists」構成変数と同じ値を取り、指定された &lt;token&gt; を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -998,8 +976,7 @@ trailer.&lt;token&gt;.ifmissing
 </dt>
 <dd>
 <p>
-        このオプションは、「trailer.ifmissing」構成変数と同じ値を取り、指定された &lt;token&gt;
-        を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+        このオプションは、「trailer.ifmissing」構成変数と同じ値を取り、指定された &lt;token&gt; を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1007,29 +984,20 @@ trailer.&lt;token&gt;.command
 </dt>
 <dd>
 <p>
-        このオプションは、指定のコマンドに引数として何も渡さないことを除いて、 <code>trailer.&lt;token&gt;.cmd</code>
-        と同じように動作します。代わりに、文字列に最初に現れる置換文字列 $ARG のみ、引数として渡される値に置き換えられます。
+        Deprecated in favor of <em>trailer.&lt;token&gt;.cmd</em>. This option behaves in the same way as <em>trailer.&lt;token&gt;.cmd</em>, except that it doesn&#8217;t pass anything as argument to the specified command. Instead the first occurrence of substring $ARG is replaced by the &lt;value&gt; that would be passed as argument.
 </p>
-<div class="paragraph"><p><code>trailer.&lt;token&gt;.command</code> オプションは非推奨になり <code>trailer.&lt;token&gt;.cmd</code>
-が採用されました。これは、ユーザーのコマンドの $ARG が一度だけ置き換えられることと、 $ARG を置き換える独創的な方法が安全でないためです。</p></div>
-<div class="paragraph"><p><code>trailer.&lt;token&gt;.cmd</code> と <code>trailer.&lt;token&gt;.command</code> の両方が同じ&lt;token&gt;で指定されている場合、
-<code>trailer.&lt;token&gt;.cmd</code> が使用され、 <code>trailer.&lt;token&gt;.command</code> は無視されます。</p></div>
+<div class="paragraph"><p>Note that $ARG in the user&#8217;s command is only replaced once and that the original way of replacing $ARG is not safe.</p></div>
+<div class="paragraph"><p><code>trailer.&lt;token&gt;.cmd</code> と <code>trailer.&lt;token&gt;.command</code> の両方が同じ&lt;token&gt;で指定されている場合、 <code>trailer.&lt;token&gt;.cmd</code> が使用され、 <code>trailer.&lt;token&gt;.command</code> は無視されます。</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.&lt;token&gt;.cmd
 </dt>
 <dd>
 <p>
-        このオプションを使用して、呼び出されるシェルコマンドを指定できます。最初の1回は、指定の &lt;token&gt; を持つトレーラーを自動的に追加し、その後、毎回
-        <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数を使用して、このオプションが生成するトレーラーの &lt;value&gt; を変更します。
+        This option can be used to specify a shell command that will be called once to automatically add a trailer with the specified &lt;token&gt;, and then called each time a <em>--trailer &lt;token&gt;=&lt;value&gt;</em> argument is specified to modify the &lt;value&gt; of the trailer that this option would produce.
 </p>
-<div class="paragraph"><p>指定のコマンドを最初に呼び出して、指定の &lt;token&gt; のトレーラーを追加すると、動作は、「git
-interpret-trailers」コマンドの先頭に特別な <code>--trailer &lt;token&gt;=&lt;value&gt;</code>
-引数が追加されたかのように振る舞います。ここで、 &lt;value&gt; は、先頭と末尾の空白が削除された、コマンドからの標準出力と見なされます。</p></div>
-<div class="paragraph"><p>いくつかの <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数がコマンドラインで渡された場合、同じ &lt;token&gt;
-を持つこれらの引数ごとにコマンドが1回呼び出されます。そして、これらの引数の &lt;value&gt;
-部分は、もしあれば、最初の引数としてコマンドに渡されます。このようにして、コマンドは <code>--trailer &lt;token&gt;=&lt;value&gt;</code>
-引数で渡された &lt;value&gt; から計算された &lt;value&gt; を生成できます。</p></div>
+<div class="paragraph"><p>指定のコマンドを最初に呼び出して、指定の &lt;token&gt; のトレーラーを追加すると、動作は、「git interpret-trailers」コマンドの先頭に特別な <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数が追加されたかのように振る舞います。ここで、 &lt;value&gt; は、先頭と末尾の空白が削除された、コマンドからの標準出力と見なされます。</p></div>
+<div class="paragraph"><p>いくつかの <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数がコマンドラインで渡された場合、同じ &lt;token&gt; を持つこれらの引数ごとにコマンドが1回呼び出されます。そして、これらの引数の &lt;value&gt; 部分は、もしあれば、最初の引数としてコマンドに渡されます。このようにして、コマンドは <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数で渡された &lt;value&gt; から計算された &lt;value&gt; を生成できます。</p></div>
 </dd>
 </dl></div>
 </div>
@@ -1040,7 +1008,7 @@ interpret-trailers」コマンドの先頭に特別な <code>--trailer &lt;token
 <div class="ulist"><ul>
 <li>
 <p>
-「Signed-off-by」キーを使用して「sign」トレーラーを構成してから、これらのトレーラーのうち2つをメッセージに追加します:
+Configure a <em>sign</em> trailer with a <em>Signed-off-by</em> key, and then add two of these trailers to a commit message file:
 </p>
 <div class="listingblock">
 <div class="content">
@@ -1048,11 +1016,11 @@ interpret-trailers」コマンドの先頭に特別な <code>--trailer &lt;token
 $ cat msg.txt
 subject
 
-message
-$ cat msg.txt | git interpret-trailers --trailer 'sign: Alice &lt;alice@example.com&gt;' --trailer 'sign: Bob &lt;bob@example.com&gt;'
+body text
+$ git interpret-trailers --trailer 'sign: Alice &lt;alice@example.com&gt;' --trailer 'sign: Bob &lt;bob@example.com&gt;' &lt;msg.txt
 subject
 
-message
+body text
 
 Signed-off-by: Alice &lt;alice@example.com&gt;
 Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
@@ -1060,21 +1028,21 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </li>
 <li>
 <p>
-<code>--in-place</code> オプションを使用して、メッセージファイルをその場で編集します:
+Use the <code>--in-place</code> option to edit a commit message file in place:
 </p>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ cat msg.txt
 subject
 
-message
+body text
 
 Signed-off-by: Bob &lt;bob@example.com&gt;
 $ git interpret-trailers --trailer 'Acked-by: Alice &lt;alice@example.com&gt;' --in-place msg.txt
 $ cat msg.txt
 subject
 
-message
+body text
 
 Signed-off-by: Bob &lt;bob@example.com&gt;
 Acked-by: Alice &lt;alice@example.com&gt;</code></pre>
@@ -1093,30 +1061,41 @@ $ git interpret-trailers --trailer 'Cc: Alice &lt;alice@example.com&gt;' --trail
 </li>
 <li>
 <p>
-「Signed-off-by: 」がまだない場合にのみ、作者情報を含む「Signed-off-by:
-  」を自動的に追加するコマンドを伴って「sign」トレーラーを構成し、それがどのように機能するかを示します:
+「Signed-off-by: 」がまだない場合にのみ、作者情報を含む「Signed-off-by: 」を自動的に追加するコマンドを伴って「sign」トレーラーを構成し、それがどのように機能するかを示します:
 </p>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ git config trailer.sign.key "Signed-off-by: "
+<pre><code>$ cat msg1.txt
+subject
+
+body text
+$ git config trailer.sign.key "Signed-off-by: "
 $ git config trailer.sign.ifmissing add
 $ git config trailer.sign.ifexists doNothing
-$ git config trailer.sign.command 'echo "$(git config user.name) &lt;$(git config user.email)&gt;"'
-$ git interpret-trailers &lt;&lt;EOF
-&gt; EOF
+$ git config trailer.sign.cmd 'echo "$(git config user.name) &lt;$(git config user.email)&gt;"'
+$ git interpret-trailers --trailer sign &lt;msg1.txt
+subject
+
+body text
 
 Signed-off-by: Bob &lt;bob@example.com&gt;
-$ git interpret-trailers &lt;&lt;EOF
-&gt; Signed-off-by: Alice &lt;alice@example.com&gt;
-&gt; EOF
+$ cat msg2.txt
+subject
+
+body text
+
+Signed-off-by: Alice &lt;alice@example.com&gt;
+$ git interpret-trailers --trailer sign &lt;msg2.txt
+subject
+
+body text
 
 Signed-off-by: Alice &lt;alice@example.com&gt;</code></pre>
 </div></div>
 </li>
 <li>
 <p>
-trailer.fix.key に 区切り文字 <code>#</code>
-  を含み、その後ろにスペースを含まないキーを使用して「fix」トレーラーを構成し、それがどのように機能するかを示します:
+trailer.fix.key に 区切り文字 <code>#</code> を含み、その後ろにスペースを含まないキーを使用して「fix」トレーラーを構成し、それがどのように機能するかを示します:
 </p>
 <div class="listingblock">
 <div class="content">
@@ -1130,26 +1109,24 @@ Fix #42</code></pre>
 </li>
 <li>
 <p>
-cmdを使用して「ヘルプ」トレーラーを構成します。スクリプト <code>glog-find-author</code>
-  を使用して、gitリポジトリのgitログから指定された作成者IDを検索し、その動作を示します。
+cmdを使用して「ヘルプ」トレーラーを構成します。スクリプト <code>glog-find-author</code> を使用して、gitリポジトリのgitログから指定された作成者IDを検索し、その動作を示します。
 </p>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ cat ~/bin/glog-find-author
 #!/bin/sh
 test -n "$1" &amp;&amp; git log --author="$1" --pretty="%an &lt;%ae&gt;" -1 || true
+$ cat msg.txt
+subject
+
+body text
 $ git config trailer.help.key "Helped-by: "
 $ git config trailer.help.ifExists "addIfDifferentNeighbor"
 $ git config trailer.help.cmd "~/bin/glog-find-author"
-$ git interpret-trailers --trailer="help:Junio" --trailer="help:Couder" &lt;&lt;EOF
-&gt; subject
-&gt;
-&gt; message
-&gt;
-&gt; EOF
+$ git interpret-trailers --trailer="help:Junio" --trailer="help:Couder" &lt;msg.txt
 subject
 
-message
+body text
 
 Helped-by: Junio C Hamano &lt;gitster@pobox.com&gt;
 Helped-by: Christian Couder &lt;christian.couder@gmail.com&gt;</code></pre>
@@ -1157,26 +1134,24 @@ Helped-by: Christian Couder &lt;christian.couder@gmail.com&gt;</code></pre>
 </li>
 <li>
 <p>
-cmdを使用して <code>ref</code> トレーラーを構成し、スクリプト <code>glog-grep</code>
-  を使用して、gitリポジトリのgitログから最後の関連するコミットをgrepし、それがどのように機能するかを示します。
+cmdを使用して <code>ref</code> トレーラーを構成し、スクリプト <code>glog-grep</code> を使用して、gitリポジトリのgitログから最後の関連するコミットをgrepし、それがどのように機能するかを示します。
 </p>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ cat ~/bin/glog-grep
 #!/bin/sh
 test -n "$1" &amp;&amp; git log --grep "$1" --pretty=reference -1 || true
+$ cat msg.txt
+subject
+
+body text
 $ git config trailer.ref.key "Reference-to: "
 $ git config trailer.ref.ifExists "replace"
 $ git config trailer.ref.cmd "~/bin/glog-grep"
-$ git interpret-trailers --trailer="ref:Add copyright notices." &lt;&lt;EOF
-&gt; subject
-&gt;
-&gt; message
-&gt;
-&gt; EOF
+$ git interpret-trailers --trailer="ref:Add copyright notices." &lt;msg.txt
 subject
 
-message
+body text
 
 Reference-to: 8bc9a0c769 (Add copyright notices., 2005-04-07)</code></pre>
 </div></div>
@@ -1187,47 +1162,48 @@ Reference-to: 8bc9a0c769 (Add copyright notices., 2005-04-07)</code></pre>
 </p>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ git config trailer.see.key "See-also: "
-$ git config trailer.see.ifExists "replace"
-$ git config trailer.see.ifMissing "doNothing"
-$ git config trailer.see.command "git log -1 --oneline --format=\"%h (%s)\" --abbrev-commit --abbrev=14 \$ARG"
-$ git interpret-trailers &lt;&lt;EOF
-&gt; subject
-&gt;
-&gt; message
-&gt;
-&gt; see: HEAD~2
-&gt; EOF
+<pre><code>$ cat msg.txt
 subject
 
-message
+body text
+
+see: HEAD~2
+$ cat ~/bin/glog-ref
+#!/bin/sh
+git log -1 --oneline --format="%h (%s)" --abbrev-commit --abbrev=14
+$ git config trailer.see.key "See-also: "
+$ git config trailer.see.ifExists "replace"
+$ git config trailer.see.ifMissing "doNothing"
+$ git config trailer.see.cmd "glog-ref"
+$ git interpret-trailers --trailer=see &lt;msg.txt
+subject
+
+body text
 
 See-also: fe3187489d69c4 (subject of related commit)</code></pre>
 </div></div>
 </li>
 <li>
 <p>
-空の値を持ついくつかのトレーラーを使用してコミットテンプレートを構成し(sedを使用してトレーラーの後に末尾のスペースを出力および保持します)、次に、「git
-  interpret-trailers」を使用するcommit-msgフックを構成して、値が空のトレーラーを削除し、「git-version」トレーラーを追加します:
+空の値を持ついくつかのトレーラーを使用してコミットテンプレートを構成し(sedを使用してトレーラーの後に末尾のスペースを出力および保持します)、次に、「git interpret-trailers」を使用するcommit-msgフックを構成して、値が空のトレーラーを削除し、「git-version」トレーラーを追加します:
 </p>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ sed -e 's/ Z$/ /' &gt;commit_template.txt &lt;&lt;EOF
-&gt; ***subject***
-&gt;
-&gt; ***message***
-&gt;
-&gt; Fixes: Z
-&gt; Cc: Z
-&gt; Reviewed-by: Z
-&gt; Signed-off-by: Z
-&gt; EOF
+<pre><code>$ cat temp.txt
+***subject***
+
+***message***
+
+Fixes: Z
+Cc: Z
+Reviewed-by: Z
+Signed-off-by: Z
+$ sed -e 's/ Z$/ /' temp.txt &gt; commit_template.txt
 $ git config commit.template commit_template.txt
-$ cat &gt;.git/hooks/commit-msg &lt;&lt;EOF
-&gt; #!/bin/sh
-&gt; git interpret-trailers --trim-empty --trailer "git-version: \$(git describe)" "\$1" &gt; "\$1.new"
-&gt; mv "\$1.new" "\$1"
-&gt; EOF
+$ cat .git/hooks/commit-msg
+#!/bin/sh
+git interpret-trailers --trim-empty --trailer "git-version: \$(git describe)" "\$1" &gt; "\$1.new"
+mv "\$1.new" "\$1"
 $ chmod +x .git/hooks/commit-msg</code></pre>
 </div></div>
 </li>
@@ -1251,7 +1227,7 @@ $ chmod +x .git/hooks/commit-msg</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-10-03 21:28:20 JST
+ 2023-07-18 11:05:33 JST
 </div>
 </div>
 </body>

@@ -735,6 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>How to rebase from an internal branch</h1>
+<span id="revdate">2023-07-22</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -752,12 +753,9 @@ asciidoc.install();
 &gt;&gt;
 &gt; 実際、これもStGITが意図していることにぴったり当てはまるのではないでしょうか？</code></pre>
 </div></div>
-<div class="paragraph"><p>まさに私の思っている通りの事です。私は Catalin が声を上げるのを(ちょっと)待っていました。 quilt を哲学的な祖先とする StGIT
-は、このような作業を行うために設計されているのです。</p></div>
+<div class="paragraph"><p>まさに私の思っている通りの事です。私は Catalin が声を上げるのを(ちょっと)待っていました。 quilt を哲学的な祖先とする StGIT は、このような作業を行うために設計されているのです。</p></div>
 <div class="paragraph"><p>今回は、Gitのコアツールだけを使った、よりシンプルなものを作ってみました。</p></div>
-<div class="paragraph"><p><code>seen</code> で <code>master</code> よりも進んでいるコミットがひと握りほどあり、 私は <code>seen</code>
-で新しいものを最初に配置するという通常の習慣をバイパスして、いくつかのドキュメントを追加したいと思いました。
-当初、コミットの家系図は以下のようになっていました:</p></div>
+<div class="paragraph"><p><code>seen</code> で <code>master</code> よりも進んでいるコミットがひと握りほどあり、 私は <code>seen</code> で新しいものを最初に配置するという通常の習慣をバイパスして、いくつかのドキュメントを追加したいと思いました。 当初、コミットの家系図は以下のようになっていました:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>                         *"seen" head
@@ -779,16 +777,9 @@ master^ --&gt; #1 --&gt; #2 --&gt; #3
       \
         \---&gt; master</code></pre>
 </div></div>
-<div class="paragraph"><p>古い masterは 現在の <code>master^</code>(masterの最初の親)になりました。 新しい master
-のコミットは、ドキュメントの更新を保持しています。</p></div>
+<div class="paragraph"><p>古い masterは 現在の <code>master^</code>(masterの最初の親)になりました。 新しい master のコミットは、ドキュメントの更新を保持しています。</p></div>
 <div class="paragraph"><p>いまや、私は「seen」ブランチへの対処をしなければなりません。</p></div>
-<div class="paragraph"><p>Linusがメンテナーであり、私がコントリビューターであったとき、「master」ブランチは「maintainer」ブランチであり、「seen」ブランチが「contributor」ブランチであるという状況でした。
-あなた作業の少し前に「maintainer」ブランチの先端で始まり、その後沢山の作業を進めました。そして今、 maintainer
-にはまだあなたが持っていない他のコミットがいくつかあります。 そして、「git
-rebase」は、「seen」のようなブランチの維持を支援するという明確な目的で書かれました。 master
-を「seen」にマージして続行することも可能ですが、最終的に一部の変更を master ブランチにマージして戻す場合は、マージするのではなく
-<code>seen</code> をリベースする(つまり、あなたの変更を繰り越す)と、その後のあなたの操作が簡単になることがよくあります。 だから私は「git
-rebase」を実行しました:</p></div>
+<div class="paragraph"><p>Linusがメンテナーであり、私がコントリビューターであったとき、「master」ブランチは「maintainer」ブランチであり、「seen」ブランチが「contributor」ブランチであるという状況でした。 あなた作業の少し前に「maintainer」ブランチの先端で始まり、その後沢山の作業を進めました。そして今、 maintainer にはまだあなたが持っていない他のコミットがいくつかあります。 そして、「git rebase」は、「seen」のようなブランチの維持を支援するという明確な目的で書かれました。 master を「seen」にマージして続行することも可能ですが、最終的に一部の変更を master ブランチにマージして戻す場合は、マージするのではなく <code>seen</code> をリベースする(つまり、あなたの変更を繰り越す)と、その後のあなたの操作が簡単になることがよくあります。 だから私は「git rebase」を実行しました:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout seen
@@ -801,12 +792,8 @@ $ git rebase master seen</code></pre>
       \                                  *"seen" head
         \---&gt; master --&gt; #1' --&gt; #2' --&gt; #3'</code></pre>
 </div></div>
-<div class="paragraph"><p><code>master^</code> と #1  の diff は master に適用され、コミット #1 から取得したコミット情報(ログ、作成者、日付)を使用して
-<code>#1'</code> コミットを作成するようにコミットされます。 その上で、 <code>#2'</code> と <code>#3'</code> コミットは、 #2 と #3
-のコミットから同様に行われます。</p></div>
-<div class="paragraph"><p>古い #3 は <code>.git/refs/heads/</code> ファイルのいずれにも記録されなくなったため、これを実行した後、fsck-cache
-を実行すると、宙ぶらりんコミット(dangling commit)が発生します。これは正常です。 「seen」をテストした後、「git
-prune」を実行して、元の3つのコミットを取り除くことができます。</p></div>
+<div class="paragraph"><p><code>master^</code> と #1 の diff は master に適用され、コミット #1 から取得したコミット情報(ログ、作成者、日付)を使用して <code>#1'</code> コミットを作成するようにコミットされます。 その上で、 <code>#2'</code> と <code>#3'</code> コミットは、 #2 と #3 のコミットから同様に行われます。</p></div>
+<div class="paragraph"><p>古い #3 は <code>.git/refs/heads/</code> ファイルのいずれにも記録されなくなったため、これを実行した後、fsck-cache を実行すると、宙ぶらりんコミット(dangling commit)が発生します。これは正常です。 「seen」をテストした後、「git prune」を実行して、元の3つのコミットを取り除くことができます。</p></div>
 <div class="paragraph"><p>「git rebase」について話すにあたって、コアGitツールのみを使用してチェリーピッキングを行う方法について話しておきましょう。</p></div>
 <div class="paragraph"><p>以前の図に戻りましょう。でも、ラベルは以前と異なります。</p></div>
 <div class="paragraph"><p>あなたは個人開発者として、上流のリポジトリをクローンし、そのリポジトリでいくつかのコミットを行いました。</p></div>
@@ -815,16 +802,12 @@ prune」を実行して、元の3つのコミットを取り除くことがで�
 <pre><code>                           *your "master" head
 upstream --&gt; #1 --&gt; #2 --&gt; #3</code></pre>
 </div></div>
-<div class="paragraph"><p>あなたは、変更 #2 と #3 をアップストリームに組み込む必要がありますが、 あなたは #1 には更に改善が必要だと思いました。
-したがって、あなたは電子メール送信用に #2 と #3 を準備します。</p></div>
+<div class="paragraph"><p>あなたは、変更 #2 と #3 をアップストリームに組み込む必要がありますが、 あなたは #1 には更に改善が必要だと思いました。 したがって、あなたは電子メール送信用に #2 と #3 を準備します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git format-patch master^^ master</code></pre>
 </div></div>
-<div class="paragraph"><p>これにより、 0001-XXXX.patch と 0002-XXXX.patch の2つのファイルが作成されます。 それらを "To: "
-であなたのプロジェクトメンテナと、"Cc: " であなたのメーリングリストに送信します。
-ホストにこれに必要なperlモジュールがある場合は、提供されたスクリプト git-send-email
-を使用できますが、パッチ内の空白(whitespaces)が破損しない限り、あなたは通常のMUAを使用できます。</p></div>
+<div class="paragraph"><p>これにより、 0001-XXXX.patch と 0002-XXXX.patch の2つのファイルが作成されます。 それらを "To: " であなたのプロジェクトメンテナと、"Cc: " であなたのメーリングリストに送信します。 ホストにこれに必要なperlモジュールがある場合は、提供されたスクリプト git-send-email を使用できますが、パッチ内の空白(whitespaces)が破損しない限り、あなたは通常のMUAを使用できます。</p></div>
 <div class="paragraph"><p>それからしばらく待つと、あなたは、アップストリームが他の変更とともにあなたの変更を取得したことが分かります。</p></div>
 <div class="literalblock">
 <div class="content">
@@ -834,23 +817,18 @@ upstream --&gt; #1 --&gt; #2 --&gt; #3
  to be     \--&gt; #A --&gt; #2' --&gt; #3' --&gt; #B --&gt; #C
                                               *upstream head</code></pre>
 </div></div>
-<div class="paragraph"><p>上の図の2つのコミット <code>#2'</code> と  <code>#3'</code> は、 #2 と #3
-を含む電子メール送信に同一の変更を記録しますが、おそらく上流のメンテナによって追加された新しい sign-off
-行と、間違いなく異なるコミッター名と家系情報(ancestry information)があり、それらは #2 と #3
-のコミットとは異なるオブジェクトです。</p></div>
+<div class="paragraph"><p>上の図の2つのコミット <code>#2'</code> と <code>#3'</code> は、 #2 と #3 を含む電子メール送信に同一の変更を記録しますが、おそらく上流のメンテナによって追加された新しい sign-off 行と、間違いなく異なるコミッター名と家系情報(ancestry information)があり、それらは #2 と #3 のコミットとは異なるオブジェクトです。</p></div>
 <div class="paragraph"><p>あなたはアップストリームからフェッチしますが、マージはしません。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git fetch upstream</code></pre>
 </div></div>
-<div class="paragraph"><p>これにより、更新されたアップストリームヘッドは .git/FETCH_HEAD に残りますが、 .git/HEAD または
-.git/refs/heads/master には影響しません。 ここで「git rebase」を実行します。</p></div>
+<div class="paragraph"><p>これにより、更新されたアップストリームヘッドは .git/FETCH_HEAD に残りますが、 .git/HEAD または .git/refs/heads/master には影響しません。 ここで「git rebase」を実行します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git rebase FETCH_HEAD master</code></pre>
 </div></div>
-<div class="paragraph"><p>以前、私は、リベースはブランチからのすべてのコミットをアップストリームヘッドの上に適用すると言いました。 ええと、それは嘘です。「git
-rebase」はそれよりも少し賢く、 #2 と #3 を適用する必要がないので、 #1 のみを適用します。 コミットの家系図は以下のようになります:</p></div>
+<div class="paragraph"><p>以前、私は、リベースはブランチからのすべてのコミットをアップストリームヘッドの上に適用すると言いました。 ええと、それは嘘です。「git rebase」はそれよりも少し賢く、 #2 と #3 を適用する必要がないので、 #1 のみを適用します。 コミットの家系図は以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code> where                     *your old "master" head
@@ -860,8 +838,7 @@ upstream --&gt; #1 --&gt; #2 --&gt; #3
                                               *upstream
                                               head</code></pre>
 </div></div>
-<div class="paragraph"><p>繰り返しになりますが、「git prune」は、使用されなくなったコミット #1〜#3 を破棄し、新しい「master」ヘッド(<code>#1'</code>
-コミット)から開始し、続けます。</p></div>
+<div class="paragraph"><p>繰り返しになりますが、「git prune」は、使用されなくなったコミット #1〜#3 を破棄し、新しい「master」ヘッド(<code>#1'</code> コミット)から開始し、続けます。</p></div>
 <div class="paragraph"><p>-jc</p></div>
 </div>
 </div>
@@ -870,7 +847,7 @@ upstream --&gt; #1 --&gt; #2 --&gt; #3
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-07-05 19:43:02 JST
+ 2023-07-27 05:08:14 JST
 </div>
 </div>
 </body>

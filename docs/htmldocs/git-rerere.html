@@ -749,7 +749,7 @@ git-rerere(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git rerere</em> [<em>clear</em>|<em>forget</em> &lt;pathspec&gt;|<em>diff</em>|<em>remaining</em>|<em>status</em>|<em>gc</em>]</pre>
+<pre class="content"><em>git rerere</em> [clear | forget &lt;pathspec&gt;&#8230; | diff | status | remaining | gc]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -779,8 +779,7 @@ git-rerere(1) Manual Page
 </dt>
 <dd>
 <p>
-マージ競合解決決定を中止する場合は、rerereが使用するメタデータをリセットします。 <code>git am [--skip|--abort]</code> または
-<code>git rebase [--skip|--abort]</code> を呼び出すと、このコマンドが自動的に呼び出されます。
+マージ競合解決決定を中止する場合は、rerereが使用するメタデータをリセットします。 <code>git am [--skip|--abort]</code> または <code>git rebase [--skip|--abort]</code> を呼び出すと、このコマンドが自動的に呼び出されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -820,8 +819,7 @@ rerereによって自動解決されていない競合のあるパスをプリ�
 </dt>
 <dd>
 <p>
-ずっと前に発生した競合するマージのレコードを剪定(prune)します。デフォルトでは、15日より古い未解決の競合と、60日より古い解決済みの競合は剪定されます。これらのデフォルトは、それぞれ
-<code>gc.rerereUnresolved</code> および <code>gc.rerereResolved</code> 構成変数を介して制御されます。
+ずっと前に発生した競合するマージのレコードを剪定(prune)します。デフォルトでは、15日より古い未解決の競合と、60日より古い解決済みの競合は剪定されます。これらのデフォルトは、それぞれ <code>gc.rerereUnresolved</code> および <code>gc.rerereResolved</code> 構成変数を介して制御されます。
 </p>
 </dd>
 </dl></div>
@@ -847,11 +845,8 @@ rerereによって自動解決されていない競合のあるパスをプリ�
              /           /
     o---o---o---*---o---o master</code></pre>
 </div></div>
-<div class="paragraph"><p><code>*</code> でマークされたコミットは、同じファイルの同じ領域にアクセスします。 <code>+</code>
-でマークされたコミットを作成するときに競合を解決する必要があります。次に、結果をテストして、進行中の作業が最新のマスターにあるもので引き続き機能することを確認できます。</p></div>
-<div class="paragraph"><p>このテストマージの後、トピックの作業を続行するには2つの方法があります。最も簡単なのは、テストマージコミット <code>+</code>
-の上に構築することです。トピックブランチでの作業の準備ができたら、トピックブランチをマスターにプルするか、アップストリームにプルするように依頼します。ただし、その時点で、テストマージ
-<code>+</code> 以降、マスターまたはアップストリームが進んでいる可能性があります。その場合、最終的なコミットグラフは以下のようになります:</p></div>
+<div class="paragraph"><p><code>*</code> でマークされたコミットは、同じファイルの同じ領域にアクセスします。 <code>+</code> でマークされたコミットを作成するときに競合を解決する必要があります。次に、結果をテストして、進行中の作業が最新のマスターにあるもので引き続き機能することを確認できます。</p></div>
+<div class="paragraph"><p>このテストマージの後、トピックの作業を続行するには2つの方法があります。最も簡単なのは、テストマージコミット <code>+</code> の上に構築することです。トピックブランチでの作業の準備ができたら、トピックブランチをマスターにプルするか、アップストリームにプルするように依頼します。ただし、その時点で、テストマージ <code>+</code> 以降、マスターまたはアップストリームが進んでいる可能性があります。その場合、最終的なコミットグラフは以下のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>        $ git switch topic
@@ -879,24 +874,12 @@ rerereによって自動解決されていない競合のあるパスをプリ�
              /                     \
     o---o---o---*---o---o---o---o---+ master</code></pre>
 </div></div>
-<div class="paragraph"><p>これにより、トピックブランチの準備が整い、マスターブランチにマージされたときに、マージコミットが1つだけ残ります。 このマージでは、 <code>*</code>
-でマークされたコミットによって導入された競合を解決する必要があります。ただし、この競合は、多くの場合、吹き飛ばしたテストマージを作成したときに解決した競合と同じです。
-<em>git rerere</em> は、以前の手動解決からの情報を使用して、この最後の競合するマージを解決するのに役立ちます。</p></div>
-<div class="paragraph"><p>競合する自動マージの直後に「git rerere」コマンドを実行すると、それらの中の、通常の競合マーカー <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> と <code>=======</code> と
-<code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> を使用して、競合する作業ツリーファイルが記録されます。後で、競合の解決が完了した後、「git
-rerere」を再度実行すると、これらのファイルの解決された状態が記録されます。
-masterのトピックブランチへのテストマージを作成したときにこれを行ったとします。</p></div>
-<div class="paragraph"><p>次回、同じ競合する自動マージを確認した後、「git
-rerere」を実行すると、以前の競合する自動マージ、以前の手動解決、および現在の競合する自動マージの間で3方向のマージが実行されます。この3方向マージが正常に解決される場合、結果は作業ツリーファイルに書き出されるため、手動で解決する必要はありません。注意:
-<em>git rerere</em> はインデックスファイルをそのままにしておくので、結果に満足のいく場合は、 <code>git diff</code> (または <code>git diff
--c</code>)を使用して最終的な健全性チェックを行い、そして、 <em>git add</em> する必要があることに注意してください。</p></div>
-<div class="paragraph"><p>より便利な方法として、「git merge」は、失敗した自動マージで終了すると自動的に「git rerere」を呼び出し、「git
-rerere」は、新しい競合の場合は手動解決を記録し、そうでない場合は以前の手動解決を再利用します。「git
-commit」は、マージ結果をコミットするときに「git rerere」も呼び出します。
-これが意味することは、（rerere.enabled構成変数を有効にする以外に）自分で特別なことをする必要がないということです。</p></div>
+<div class="paragraph"><p>これにより、トピックブランチの準備が整い、マスターブランチにマージされたときに、マージコミットが1つだけ残ります。 このマージでは、 <code>*</code> でマークされたコミットによって導入された競合を解決する必要があります。ただし、この競合は、多くの場合、吹き飛ばしたテストマージを作成したときに解決した競合と同じです。 <em>git rerere</em> は、以前の手動解決からの情報を使用して、この最後の競合するマージを解決するのに役立ちます。</p></div>
+<div class="paragraph"><p>競合する自動マージの直後に「git rerere」コマンドを実行すると、それらの中の、通常の競合マーカー <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> と <code>=======</code> と <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> を使用して、競合する作業ツリーファイルが記録されます。後で、競合の解決が完了した後、「git rerere」を再度実行すると、これらのファイルの解決された状態が記録されます。 masterのトピックブランチへのテストマージを作成したときにこれを行ったとします。</p></div>
+<div class="paragraph"><p>次回、同じ競合する自動マージを確認した後、「git rerere」を実行すると、以前の競合する自動マージ、以前の手動解決、および現在の競合する自動マージの間で3方向のマージが実行されます。この3方向マージが正常に解決される場合、結果は作業ツリーファイルに書き出されるため、手動で解決する必要はありません。注意: <em>git rerere</em> はインデックスファイルをそのままにしておくので、結果に満足のいく場合は、 <code>git diff</code> (または <code>git diff -c</code>)を使用して最終的な健全性チェックを行い、そして、 <em>git add</em> する必要があることに注意してください。</p></div>
+<div class="paragraph"><p>より便利な方法として、「git merge」は、失敗した自動マージで終了すると自動的に「git rerere」を呼び出し、「git rerere」は、新しい競合の場合は手動解決を記録し、そうでない場合は以前の手動解決を再利用します。「git commit」は、マージ結果をコミットするときに「git rerere」も呼び出します。 これが意味することは、（rerere.enabled構成変数を有効にする以外に）自分で特別なことをする必要がないということです。</p></div>
 <div class="paragraph"><p>この例では、テストマージを実行すると、手動の競合解決決定が記録され、記録された競合解決決定が引き続き適用可能である限り、後で更新されたマスターブランチとトピックブランチを使用して実際のマージを実行するときに再利用されます。</p></div>
-<div class="paragraph"><p>「git rerere」レコードの情報は、「git rebase」を実行するときにも使用されます。
-テストマージを吹き飛ばし、トピックブランチで開発を続けた後:</p></div>
+<div class="paragraph"><p>「git rerere」レコードの情報は、「git rebase」を実行するときにも使用されます。 テストマージを吹き飛ばし、トピックブランチで開発を続けた後:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>              o---*---o-------o---o topic
@@ -909,13 +892,8 @@ commit」は、マージ結果をコミットするときに「git rerere」も�
                                  /
     o---o---o---*---o---o---o---o   master</code></pre>
 </div></div>
-<div class="paragraph"><p><code>git rebase master topic</code>
-を実行して、トピックをアップストリームに送信する準備ができる前に最新の状態にすることができます。これにより、3方向マージにフォールバックし、前に解決したテストマージと同じように競合します。
-「git rerere」は「git rebase」によって実行され、この競合を解決するのに役立ちます。</p></div>
-<div class="paragraph"><p>[注] <em>git rerere</em>
-は、ファイル内の競合マーカーに依存して競合を検出します。ファイルに競合マーカーのある行と同じように見える行がすでに含まれている場合、「git
-rerere」は競合解決の記録に失敗する可能性があります。これを回避するには、 <a href="gitattributes.html">gitattributes(5)</a> の
-<code>conflict-marker-size</code> 設定を使用できます。</p></div>
+<div class="paragraph"><p><code>git rebase master topic</code> を実行して、トピックをアップストリームに送信する準備ができる前に最新の状態にすることができます。これにより、3方向マージにフォールバックし、前に解決したテストマージと同じように競合します。 「git rerere」は「git rebase」によって実行され、この競合を解決するのに役立ちます。</p></div>
+<div class="paragraph"><p>[注] <em>git rerere</em> は、ファイル内の競合マーカーに依存して競合を検出します。ファイルに競合マーカーのある行と同じように見える行がすでに含まれている場合、「git rerere」は競合解決の記録に失敗する可能性があります。これを回避するには、 <a href="gitattributes.html">gitattributes(5)</a> の <code>conflict-marker-size</code> 設定を使用できます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -929,7 +907,7 @@ rerere」は競合解決の記録に失敗する可能性があります。こ�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-27 21:48:26 JST
+ 2023-07-18 11:05:41 JST
 </div>
 </div>
 </body>

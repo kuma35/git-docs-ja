@@ -749,7 +749,7 @@ git-pack-refs(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git pack-refs</em> [--all] [--no-prune]</pre>
+<pre class="content"><em>git pack-refs</em> [--all] [--no-prune] [--include &lt;pattern&gt;] [--exclude &lt;pattern&gt;]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -757,17 +757,10 @@ git-pack-refs(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>旧来、ブランチとタグのヒント(まとめて「refs」と呼ばれます)は、refごとに1つのファイルを <code>$GIT_DIR/refs</code>
-ディレクトリの下のディレクトリ(サブディレクトリ)に保存していました。多くのブランチヒントは頻繁に更新される傾向がありますが、ほとんどのタグと一部のブランチヒントは更新されません。リポジトリに数百または数千のタグがある場合、この
-1ファイル毎に1ref形式 はストレージを浪費し、パフォーマンスを低下させます。</p></div>
-<div class="paragraph"><p>このコマンドは、refを単一のファイル <code>$GIT_DIR/packed-refs</code>
-に保存することにより、ストレージとパフォーマンスの問題を解決するために使用されます。旧来の <code>$GIT_DIR/refs</code>
-ディレクトリ階層にrefがない場合、このファイルの中から探し、見つかればそれが使用されます。</p></div>
+<div class="paragraph"><p>旧来、ブランチとタグのヒント(まとめて「refs」と呼ばれます)は、refごとに1つのファイルを <code>$GIT_DIR/refs</code> ディレクトリの下のディレクトリ(サブディレクトリ)に保存していました。多くのブランチヒントは頻繁に更新される傾向がありますが、ほとんどのタグと一部のブランチヒントは更新されません。リポジトリに数百または数千のタグがある場合、この 1ファイル毎に1ref形式 はストレージを浪費し、パフォーマンスを低下させます。</p></div>
+<div class="paragraph"><p>このコマンドは、refを単一のファイル <code>$GIT_DIR/packed-refs</code> に保存することにより、ストレージとパフォーマンスの問題を解決するために使用されます。旧来の <code>$GIT_DIR/refs</code> ディレクトリ階層にrefがない場合、このファイルの中から探し、見つかればそれが使用されます。</p></div>
 <div class="paragraph"><p>その後のブランチの更新では、常に <code>$GIT_DIR/refs</code> ディレクトリ階層の下に新しいファイルが作成されます。</p></div>
-<div class="paragraph"><p>refが多すぎるリポジトリを処理するための推奨される方法は、refを <code>--all</code> で一度パックし、ときどき <code>git pack-refs</code>
-を実行することです。タグは定義上静止しており、変更されることは期待されていません。ブランチヘッドは最初の <code>pack-refs --all</code>
-でパックされますが、現在アクティブなブランチヘッドのみはアンパックされ、その後 <code>pack-refs</code> ( <code>--all</code>
-なし)ではアンパックされたままになります。</p></div>
+<div class="paragraph"><p>refが多すぎるリポジトリを処理するための推奨される方法は、refを <code>--all</code> で一度パックし、ときどき <code>git pack-refs</code> を実行することです。タグは定義上静止しており、変更されることは期待されていません。ブランチヘッドは最初の <code>pack-refs --all</code> でパックされますが、現在アクティブなブランチヘッドのみはアンパックされ、その後 <code>pack-refs</code> ( <code>--all</code> なし)ではアンパックされたままになります。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -779,8 +772,7 @@ git-pack-refs(1) Manual Page
 </dt>
 <dd>
 <p>
-このコマンドはデフォルトでは、すでにパックされているすべてのタグとrefをパックし、他のrefはそのままにします。これは、ブランチが積極的に開発されることが期待されており、そのヒントをパックしてもパフォーマンスが向上しないためです。このオプションを使用すると、ブランチのヒントもパックされます。
-歴史的な関心のある多くのブランチがあるリポジトリに役立ちます。
+The command by default packs all tags and refs that are already packed, and leaves other refs alone. This is because branches are expected to be actively developed and packing their tips does not help performance. This option causes all refs to be packed as well, with the exception of hidden refs, broken refs, and symbolic refs. Useful for a repository with many branches of historical interests.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -791,14 +783,31 @@ git-pack-refs(1) Manual Page
 コマンドは通常、それらをパックした後、 <code>$GIT_DIR/refs</code> 階層の下の緩いrefを削除します。このオプションは、そうしないように指示します。
 </p>
 </dd>
+<dt class="hdlist1">
+<code>--include &lt;pattern&gt;</code>
+</dt>
+<dd>
+<p>
+Pack refs based on a <code>glob(7)</code> pattern. Repetitions of this option accumulate inclusion patterns. If a ref is both included in <code>--include</code> and <code>--exclude</code>, <code>--exclude</code> takes precedence. Using <code>--include</code> will preclude all tags from being included by default. Symbolic refs and broken refs will never be packed. When used with <code>--all</code>, it will be a noop. Use <code>--no-include</code> to clear and reset the list of patterns.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--exclude &lt;pattern&gt;</code>
+</dt>
+<dd>
+<p>
+Do not pack refs matching the given <code>glob(7)</code> pattern. Repetitions of this option accumulate exclusion patterns. Use <code>--no-exclude</code> to clear and reset the list of patterns. If a ref is already packed, including it with <code>--exclude</code> will not unpack it.
+</p>
+</dd>
 </dl></div>
+<div class="paragraph"><p>When used with <code>--all</code>, pack only loose refs which do not match any of the provided <code>--exclude</code> patterns.</p></div>
+<div class="paragraph"><p>When used with <code>--include</code>, refs provided to <code>--include</code>, minus refs that are provided to <code>--exclude</code> will be packed.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_bugs">BUGS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>pack-refs メカニズムが導入される前に作成された古い文書では、 "branch &lt;branch&gt; exists" という意味の場合でも
-".git/refs/heads/&lt;branch&gt; file exists" などと紹介される場合があります。</p></div>
+<div class="paragraph"><p>pack-refs メカニズムが導入される前に作成された古い文書では、 "branch &lt;branch&gt; exists" という意味の場合でも ".git/refs/heads/&lt;branch&gt; file exists" などと紹介される場合があります。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -812,7 +821,7 @@ git-pack-refs(1) Manual Page
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-11-07 18:36:31 JST
+ 2023-07-18 11:05:37 JST
 </div>
 </div>
 </body>

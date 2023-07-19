@@ -735,116 +735,79 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Bundle URIs</h1>
+<span id="revdate">2023-07-22</span>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>Git バンドルは、 パック・ファイルと追加のメタ・データを格納するファイルです。 これには、 一連の ref と (場合によっては空の)
-必要なコミットのセットが含まれます。  詳細については、 <a href="../git-bundle.html">git-bundle(1)</a> および
-<a href="../gitformat-bundle.html">gitformat-bundle(5)</a> を参照してください。</p></div>
-<div class="paragraph"><p>バンドル URI は、 remote からバンドル以外の残りのオブジェクトをフェッチするのに先立って、
-オブジェクト・データベースをゼロから立ち上げる(bootstrap)ために、 Git が 1 つ以上のバンドルをダウンロードできる場所です。</p></div>
-<div class="paragraph"><p>最大の目標(one goal)として、 orogin
-サーバーへのネットワーク接続が不十分なユーザーのクローンとフェッチを高速化することを目指しています。 別の利点としては、 CI
-ビルド・ファームなどのヘビー・ユーザーが Git データの大部分にローカル・リソースを使用できるようにすることで、 origin
-サーバーの負荷を軽減できることです。</p></div>
-<div class="paragraph"><p>バンドル URI 機能を有効にするには、ユーザーがコマンドライン・オプションを使用してバンドル URI を指定するか、 origin
-サーバーがプロトコル v2 機能を介して 1 つ以上の URI を広告(advertise)します。</p></div>
+<div class="paragraph"><p>Git バンドルは、 パック・ファイルと追加のメタ・データを格納するファイルです。 これには、 一連の ref と (場合によっては空の) 必要なコミットのセットが含まれます。 詳細については、 <a href="../git-bundle.html">git-bundle(1)</a> および <a href="../gitformat-bundle.html">gitformat-bundle(5)</a> を参照してください。</p></div>
+<div class="paragraph"><p>バンドル URI は、 remote からバンドル以外の残りのオブジェクトをフェッチするのに先立って、 オブジェクト・データベースをゼロから立ち上げる(bootstrap)ために、 Git が 1 つ以上のバンドルをダウンロードできる場所です。</p></div>
+<div class="paragraph"><p>最大の目標(one goal)として、 orogin サーバーへのネットワーク接続が不十分なユーザーのクローンとフェッチを高速化することを目指しています。 別の利点としては、 CI ビルド・ファームなどのヘビー・ユーザーが Git データの大部分にローカル・リソースを使用できるようにすることで、 origin サーバーの負荷を軽減できることです。</p></div>
+<div class="paragraph"><p>バンドル URI 機能を有効にするには、ユーザーがコマンドライン・オプションを使用してバンドル URI を指定するか、 origin サーバーがプロトコル v2 機能を介して 1 つ以上の URI を広告(advertise)します。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_design_goals">Design Goals</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>バンドル URI 標準は、 複数の作業(workload)を満たすのに十分な柔軟性を目指しています。 バンドル提供側(bundle provider)と
-Git クライアントには、 バンドル URI を作成および使用する方法についていくつかの選択肢があります。</p></div>
+<div class="paragraph"><p>バンドル URI 標準は、 複数の作業(workload)を満たすのに十分な柔軟性を目指しています。 バンドル提供側(bundle provider)と Git クライアントには、 バンドル URI を作成および使用する方法についていくつかの選択肢があります。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-バンドルには、 サーバーが望む名前を付けることができます。 この名前によって、 バンドル・コンテンツのハッシュを使用して不変データを参照できます。
-  ただし、 これは、 コンテンツが更新されるたびに新しい URI が必要になることを意味します。 これは、 サーバーが URI
-  を広告(advertise)している (そしてサーバーが新しいバンドルが生成されていることを認識している) 場合は許容できますが、
-  コマンド・ライン・オプションを使用するユーザーにとっては使いやすくありません(not ergonomic)。
+バンドルには、 サーバーが望む名前を付けることができます。 この名前によって、 バンドル・コンテンツのハッシュを使用して不変データを参照できます。 ただし、 これは、 コンテンツが更新されるたびに新しい URI が必要になることを意味します。 これは、 サーバーが URI を広告(advertise)している (そしてサーバーが新しいバンドルが生成されていることを認識している) 場合は許容できますが、 コマンド・ライン・オプションを使用するユーザーにとっては使いやすくありません(not ergonomic)。
 </p>
 </li>
 <li>
 <p>
-バンドルは、 完全なクローンをゼロから作成(bootstrap)するために特別に編成できますが、
-  増分フェッチを始める(bootstrap)目的で編成することもできます。 バンドル提供側は、
-  増分フェッチ中のクライアントのダウンロードを最小限に抑えるために、 いくつかの構成スキーム(organization
-  schemes)のいずれを使うかを決定する必要がありますが、 Git
-  クライアントは、これらの操作のいずれかにバンドルを使用するかどうかを選択することもできます。
+バンドルは、 完全なクローンをゼロから作成(bootstrap)するために特別に編成できますが、 増分フェッチを始める(bootstrap)目的で編成することもできます。 バンドル提供側は、 増分フェッチ中のクライアントのダウンロードを最小限に抑えるために、 いくつかの構成スキーム(organization schemes)のいずれを使うかを決定する必要がありますが、 Git クライアントは、これらの操作のいずれかにバンドルを使用するかどうかを選択することもできます。
 </p>
 </li>
 <li>
 <p>
-バンドル提供側は、 完全なクローン(full clones)や部分的なクローン(partial
-  clones)またはその両方をサポートすることを選択できます。 クライアントは、
-  リポジトリの部分クローン・フィルタに適したバンドルがあれば、それを検出できます。
+バンドル提供側は、 完全なクローン(full clones)や部分的なクローン(partial clones)またはその両方をサポートすることを選択できます。 クライアントは、 リポジトリの部分クローン・フィルタに適したバンドルがあれば、それを検出できます。
 </p>
 </li>
 <li>
 <p>
-バンドル提供側は、 単一のバンドル(クローンのみ)またはバンドルのリストを使用できます。 バンドルのリストを使用する場合、 提供側は、
-  クライアントが完全なクローン(full clone)のためにバンドル URI の「全て(all)を必要とするか」、 あるいはバンドル URI
-  の「いずれ(any)かで十分か」どうか、を指定できます。 これにより、 バンドル提供側は異なる地域に対して異なる URI を使用できます。
+バンドル提供側は、 単一のバンドル(クローンのみ)またはバンドルのリストを使用できます。 バンドルのリストを使用する場合、 提供側は、 クライアントが完全なクローン(full clone)のためにバンドル URI の「全て(all)を必要とするか」、 あるいはバンドル URI の「いずれ(any)かで十分か」どうか、を指定できます。 これにより、 バンドル提供側は異なる地域に対して異なる URI を使用できます。
 </p>
 </li>
 <li>
 <p>
-バンドル提供側は、 作成トークン(creation token)などのヒューリスティックを使用してバンドルを整理し、
-  クライアントが不要なバンドルをダウンロードしないようにすることができます。 バンドル提供側がこれらのヒューリスティックを提供しない場合は、
-  クライアントは最適化を使用して、 ダウンロードされるデータの量を最小限に抑えることができます。
+バンドル提供側は、 作成トークン(creation token)などのヒューリスティックを使用してバンドルを整理し、 クライアントが不要なバンドルをダウンロードしないようにすることができます。 バンドル提供側がこれらのヒューリスティックを提供しない場合は、 クライアントは最適化を使用して、 ダウンロードされるデータの量を最小限に抑えることができます。
 </p>
 </li>
 <li>
 <p>
-バンドル提供側を Git サーバーに関連付ける必要はありません。 クライアントは、Git サーバーによって広告(advertise)れることなく、
-  バンドル提供側を使用することを選択できます。
+バンドル提供側を Git サーバーに関連付ける必要はありません。 クライアントは、Git サーバーによって広告(advertise)れることなく、 バンドル提供側を使用することを選択できます。
 </p>
 </li>
 <li>
 <p>
-クライアントは、 Git サーバーによって広告(advertise)されるバンドル提供側を検出することを選択できます。 これは、 <code>git clone</code>
-  中や <code>git fetch</code> 中またはその両方で発生する可能性があり、 どちらでも発生しない可能性があります。 ユーザーは、
-  自分に最適な組み合わせを選択できます。
+クライアントは、 Git サーバーによって広告(advertise)されるバンドル提供側を検出することを選択できます。 これは、 <code>git clone</code> 中や <code>git fetch</code> 中またはその両方で発生する可能性があり、 どちらでも発生しない可能性があります。 ユーザーは、 自分に最適な組み合わせを選択できます。
 </p>
 </li>
 <li>
 <p>
-クライアントは、 いつでもバンドル提供側を手動で構成することを選択できます。 クライアントは <code>git clone</code>
-  のコマンドライン・オプションとして、バンドル提供側を手動で指定することもできます。
+クライアントは、 いつでもバンドル提供側を手動で構成することを選択できます。 クライアントは <code>git clone</code> のコマンドライン・オプションとして、バンドル提供側を手動で指定することもできます。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>各リポジトリは異なり、そして、各Git サーバーごとに異なるニーズがあります。 うまくいけば、 バンドル URI 機能は、
-すべてのニーズを満たすのに十分柔軟です。 そうでない場合は、 バージョン管理メカニズムを通じて機能を拡張できる訳です。</p></div>
+<div class="paragraph"><p>各リポジトリは異なり、そして、各Git サーバーごとに異なるニーズがあります。 うまくいけば、 バンドル URI 機能は、 すべてのニーズを満たすのに十分柔軟です。 そうでない場合は、 バージョン管理メカニズムを通じて機能を拡張できる訳です。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_server_requirements">Server requirements</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>バンドル・サーバーのサーバー側実装を提供するために、 Git プロトコルの他の部分は必要ありません。 これにより、 サーバー管理者は CDN
-などの静的コンテンツ・ソリューションを使用してバンドル・ファイルを提供できます。</p></div>
-<div class="paragraph"><p>バンドル URI 機能の現在のスコープでは、 すべての URI が HTTP(S) URL であると想定され、 その URL への GET
-リクエストを使用してコンテンツがローカル・ファイルにダウンロードされます。 サーバーは、
-安全なアクセスのために構成された資格情報ヘルパー(configured credential helper)をトリガーする目的で、
-これらのリクエストに認証要件(authentication requirement)を含めることができます。 (将来の拡張では、 <code>file://</code>
-URI または SSH URI を使用できるようになる予定です。)</p></div>
-<div class="paragraph"><p>サーバーからの <code>200 OK</code> 応答が得られたとして、 URL の指すコンテンツを調べます。 最初に、 Git はファイルをバージョン 2
-以降のバンドル・ファイルと見なしてパースしようとします。 ファイルがバンドルでない場合、 ファイルは Git の構成パーサー(config
-parser)を使用してプレーン・テキスト・ファイルと見なしてパースし、 その構成ファイルのキーと値のペアは、バンドル URI
-のリストを記述することが期待されます。 これらのパースの試みがいずれも成功しない場合、 Git は、 バンドル URI
-が誤ったデータを提供したというエラーをユーザーに報告します。</p></div>
+<div class="paragraph"><p>バンドル・サーバーのサーバー側実装を提供するために、 Git プロトコルの他の部分は必要ありません。 これにより、 サーバー管理者は CDN などの静的コンテンツ・ソリューションを使用してバンドル・ファイルを提供できます。</p></div>
+<div class="paragraph"><p>バンドル URI 機能の現在のスコープでは、 すべての URI が HTTP(S) URL であると想定され、 その URL への GET リクエストを使用してコンテンツがローカル・ファイルにダウンロードされます。 サーバーは、 安全なアクセスのために構成された資格情報ヘルパー(configured credential helper)をトリガーする目的で、 これらのリクエストに認証要件(authentication requirement)を含めることができます。 (将来の拡張では、 <code>file://</code> URI または SSH URI を使用できるようになる予定です。)</p></div>
+<div class="paragraph"><p>サーバーからの <code>200 OK</code> 応答が得られたとして、 URL の指すコンテンツを調べます。 最初に、 Git はファイルをバージョン 2 以降のバンドル・ファイルと見なしてパースしようとします。 ファイルがバンドルでない場合、 ファイルは Git の構成パーサー(config parser)を使用してプレーン・テキスト・ファイルと見なしてパースし、 その構成ファイルのキーと値のペアは、バンドル URI のリストを記述することが期待されます。 これらのパースの試みがいずれも成功しない場合、 Git は、 バンドル URI が誤ったデータを提供したというエラーをユーザーに報告します。</p></div>
 <div class="paragraph"><p>サーバーによって提供されるその他のデータは、エラーと見なされます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_bundle_lists">Bundle Lists</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Git サーバーは、一連の <code>key=value</code> ペアを使用してバンドル URI を広告(advertise)できます。 バンドル URI は、
-これらの同一の <code>key=value</code> ペアを含む Git 構成形式のプレーン・テキスト・ファイルを提供することもできます。 どちらの場合も、 これを
-バンドル・リスト(bundle list) と見なします。 <code>key=value</code> ペアは、
-クライアントがダウンロードするバンドルと無視するバンドルを決定するために使用できる、 バンドルに関する情報を指定します。</p></div>
+<div class="paragraph"><p>Git サーバーは、一連の <code>key=value</code> ペアを使用してバンドル URI を広告(advertise)できます。 バンドル URI は、 これらの同一の <code>key=value</code> ペアを含む Git 構成形式のプレーン・テキスト・ファイルを提供することもできます。 どちらの場合も、 これを バンドル・リスト(bundle list) と見なします。 <code>key=value</code> ペアは、 クライアントがダウンロードするバンドルと無視するバンドルを決定するために使用できる、 バンドルに関する情報を指定します。</p></div>
 <div class="paragraph"><p>いくつかのキーは、 リスト自体の属性(property)に焦点を当てています。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
@@ -852,9 +815,7 @@ bundle.version
 </dt>
 <dd>
 <p>
-        (必須)この値は、 バンドル・リストのバージョン番号を提供します。 将来の Git の変更により、 Git
-        クライアントがバンドル・リスト・ファイル内の新しいキーに対応する必要がある機能が有効になる場合、 このバージョン番号はインクリメントされます。
-        現在のバージョン番号は 1 だけです。 それ以外の値が指定されている場合、 Git はこのファイルを使用できません。
+        (必須)この値は、 バンドル・リストのバージョン番号を提供します。 将来の Git の変更により、 Git クライアントがバンドル・リスト・ファイル内の新しいキーに対応する必要がある機能が有効になる場合、 このバージョン番号はインクリメントされます。 現在のバージョン番号は 1 だけです。 それ以外の値が指定されている場合、 Git はこのファイルを使用できません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -862,10 +823,7 @@ bundle.mode
 </dt>
 <dd>
 <p>
-        (必須) この値は、 <code>all</code> と <code>any</code> のどちらかです。 <code>all</code> が指定されている場合、 クライアントは、 リポジトリの要件に一致する、
-        リストされているすべてのバンドル URI が必要であると想定する必要があります。 <code>any</code> が指定されている場合、 クライアントは、
-        リポジトリの要件に一致するバンドル URI のいずれかで十分であると想定する必要があります。 通常、 <code>any</code>
-        オプションは、異なる地域にある多数の異なるバンドル・サーバーを一覧表示するために使用されます。
+        (必須) この値は、 <code>all</code> と <code>any</code> のどちらかです。 <code>all</code> が指定されている場合、 クライアントは、 リポジトリの要件に一致する、 リストされているすべてのバンドル URI が必要であると想定する必要があります。 <code>any</code> が指定されている場合、 クライアントは、 リポジトリの要件に一致するバンドル URI のいずれかで十分であると想定する必要があります。 通常、 <code>any</code> オプションは、異なる地域にある多数の異なるバンドル・サーバーを一覧表示するために使用されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -873,25 +831,18 @@ bundle.heuristic
 </dt>
 <dd>
 <p>
-        この文字列値のキーが存在する場合、 バンドル・リストは増分 <code>git fetch</code> コマンドで適切に機能するように設計されています。 heuristic
-        は、 クライアントがダウンロードする必要があるバンドルのサブセットを決定するのに役立つ、 バンドルごとに使用可能な追加のキーがあることを示します。
-        現在策定されている唯一の heuristic は <code>creationToken</code> です。
+        この文字列値のキーが存在する場合、 バンドル・リストは増分 <code>git fetch</code> コマンドで適切に機能するように設計されています。 heuristic は、 クライアントがダウンロードする必要があるバンドルのサブセットを決定するのに役立つ、 バンドルごとに使用可能な追加のキーがあることを示します。 現在策定されている唯一の heuristic は <code>creationToken</code> です。
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>以下のキー達には、 利用可能な各バンドルのサーバー指定名である <code>&lt;id&gt;</code> セグメントが含まれます。 <code>&lt;id&gt;</code>
-には、英数字(alphanumeric)と <code>-</code> 文字のみを含める必要があります。</p></div>
+<div class="paragraph"><p>以下のキー達には、 利用可能な各バンドルのサーバー指定名である <code>&lt;id&gt;</code> セグメントが含まれます。 <code>&lt;id&gt;</code> には、英数字(alphanumeric)と <code>-</code> 文字のみを含める必要があります。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 bundle.&lt;id&gt;.uri
 </dt>
 <dd>
 <p>
-        (必須)この文字列値は、 バンドル <code>&lt;id&gt;</code> をダウンロードするための URI です。  URI がプロトコル(<code>http://</code> または
-        <code>https://</code>)で始まる場合、絶対(absolute)URI です。 それ以外の場合、 URI は、 バンドル・リストに使用される URI
-        への相対(relative)として解釈されます。 URI が <code>/</code> で始まる場合、その相対パスは、
-        バンドル・リストに使用されるドメイン名からの相対パスです。 (この相対パスの使用は、異なるドメイン名を持つ多数のサーバーまたは CDN
-        にバンドルの組を簡単に配布できるようにすることを目的としています。)
+        (必須)この文字列値は、 バンドル <code>&lt;id&gt;</code> をダウンロードするための URI です。 URI がプロトコル(<code>http://</code> または <code>https://</code>)で始まる場合、絶対(absolute)URI です。 それ以外の場合、 URI は、 バンドル・リストに使用される URI への相対(relative)として解釈されます。 URI が <code>/</code> で始まる場合、その相対パスは、 バンドル・リストに使用されるドメイン名からの相対パスです。 (この相対パスの使用は、異なるドメイン名を持つ多数のサーバーまたは CDN にバンドルの組を簡単に配布できるようにすることを目的としています。)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -899,8 +850,7 @@ bundle.&lt;id&gt;.filter
 </dt>
 <dd>
 <p>
-        この文字列値は、 このバンドルのヘッダーにも表示されるオブジェクト・フィルターを表します。 サーバーはこの値を使用して、 異なる種類のバンドルを区別し、
-        そこからクライアントが自分のオブジェクト・フィルタに一致するものを選択できるようにします。
+        この文字列値は、 このバンドルのヘッダーにも表示されるオブジェクト・フィルターを表します。 サーバーはこの値を使用して、 異なる種類のバンドルを区別し、 そこからクライアントが自分のオブジェクト・フィルタに一致するものを選択できるようにします。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -908,8 +858,7 @@ bundle.&lt;id&gt;.creationToken
 </dt>
 <dd>
 <p>
-        この値は、 リストのバンドルをソートするために使用される非負(nonnegative)の 64 ビット整数です。 これは、
-        <code>bundle.heuristic=creationToken</code> の場合において、フェッチ中にバンドルのサブセットをダウンロードするために使用されます。
+        This value is a nonnegative 64-bit integer used for sorting the bundles list. This is used to download a subset of bundles during a fetch when <code>bundle.heuristic=creationToken</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -917,10 +866,7 @@ bundle.&lt;id&gt;.location
 </dt>
 <dd>
 <p>
-        この文字列値は、 バンドル URI が提供される実際の場所(real-world location)を広告(advertise)します。 これは、
-        どのバンドルURIを使うかというオプションをユーザーに提示するため、
-        あるいは、単にGitによってどのバンドルURIが選択されたかという情報インジケーターとして使用することができます。 これは、 bundle.mode
-        の値が <code>any</code> の場合にのみ有効です。
+        この文字列値は、 バンドル URI が提供される実際の場所(real-world location)を広告(advertise)します。 これは、 どのバンドルURIを使うかというオプションをユーザーに提示するため、 あるいは、単にGitによってどのバンドルURIが選択されたかという情報インジケーターとして使用することができます。 これは、 bundle.mode の値が <code>any</code> の場合にのみ有効です。
 </p>
 </dd>
 </dl></div>
@@ -958,12 +904,8 @@ bundle.&lt;id&gt;.location
         creationToken = 1643842568
         filter = blob:none</code></pre>
 </div></div>
-<div class="paragraph"><p>この例では、 <code>bundle.mode=all</code> はもちろん、 <code>bundle.&lt;id&gt;.creationToken</code>
-ヒューリスティックも使用しています。 また、 <code>bundle.&lt;id&gt;.filter</code> オプションを使用して、 バンドルの 2
-つの並列セットを提示します。 1 つは完全なクローン用(full clone)で、 もう 1 つはブロブn無し部分クローン用(blobless
-partial clones)です。</p></div>
-<div class="paragraph"><p>このバンドル・リストは URI <code>https://bundles.example.com/git/git/</code> で見つかったので、2
-つのブロブ無しバンドル(blobless bundles)には以下の完全に展開された URI があると見なします。</p></div>
+<div class="paragraph"><p>この例では、 <code>bundle.mode=all</code> はもちろん、 <code>bundle.&lt;id&gt;.creationToken</code> ヒューリスティックも使用しています。 また、 <code>bundle.&lt;id&gt;.filter</code> オプションを使用して、 バンドルの 2 つの並列セットを提示します。 1 つは完全なクローン用(full clone)で、 もう 1 つはブロブn無し部分クローン用(blobless partial clones)です。</p></div>
+<div class="paragraph"><p>このバンドル・リストは URI <code>https://bundles.example.com/git/git/</code> で見つかったので、2 つのブロブ無しバンドル(blobless bundles)には以下の完全に展開された URI があると見なします。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -981,14 +923,9 @@ partial clones)です。</p></div>
 <div class="sect1">
 <h2 id="_advertising_bundle_uris">Advertising Bundle URIs</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>ユーザーがクローンしているリポジトリのバンドル URI を知っている場合、 コマンドライン・オプションを使用してその URI を手動で指定できます。
-けれども、 Gitホストとしては、 クローン操作中にバンドル URI を広告(advertise)して、
-この機能を知らないユーザーを支援したいと思うかもしれません。</p></div>
-<div class="paragraph"><p>この機能に必要なのは、 サーバーが 1 つ以上のバンドル URI を広告(advertise)可能であることだけです。
-この広告(advertisement)は、 バンドル URI を検出するために、特別に、新しいプロトコル v2 機能の形式を取ります。</p></div>
-<div class="paragraph"><p>クライアントはオプションとして任意(arbitrary)のバンドル URI を選択するか、または、いくつかの探索的チェック(exploratory
-checks)によって最高のパフォーマンスを持つ URI を選択できます。 複数の URI を持つことが、
-サーバー側のインフラストラクチャを通じて地理的に分散された単一の URI よりも望ましいかどうかを判断するのは、バンドル提供側次第です。</p></div>
+<div class="paragraph"><p>ユーザーがクローンしているリポジトリのバンドル URI を知っている場合、 コマンドライン・オプションを使用してその URI を手動で指定できます。 けれども、 Gitホストとしては、 クローン操作中にバンドル URI を広告(advertise)して、 この機能を知らないユーザーを支援したいと思うかもしれません。</p></div>
+<div class="paragraph"><p>この機能に必要なのは、 サーバーが 1 つ以上のバンドル URI を広告(advertise)可能であることだけです。 この広告(advertisement)は、 バンドル URI を検出するために、特別に、新しいプロトコル v2 機能の形式を取ります。</p></div>
+<div class="paragraph"><p>クライアントはオプションとして任意(arbitrary)のバンドル URI を選択するか、または、いくつかの探索的チェック(exploratory checks)によって最高のパフォーマンスを持つ URI を選択できます。 複数の URI を持つことが、 サーバー側のインフラストラクチャを通じて地理的に分散された単一の URI よりも望ましいかどうかを判断するのは、バンドル提供側次第です。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -998,81 +935,50 @@ checks)によって最高のパフォーマンスを持つ URI を選択でき�
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-ユーザーが <code>--bundle-uri</code> コマンドライン・オプションを使用してバンドル URI を指定するか、 クライアントが Git
-   サーバーによって広告(advertise)されたバンドル・リストを検出します。
+ユーザーが <code>--bundle-uri</code> コマンドライン・オプションを使用してバンドル URI を指定するか、 クライアントが Git サーバーによって広告(advertise)されたバンドル・リストを検出します。
 </p>
 </li>
 <li>
 <p>
-バンドル URI からダウンロードされたデータがバンドルの場合、 クライアントはバンドル・ヘッダーを調べて、 前提条件のコミット OID
-   がクライアント・リポジトリに存在することを確認します。 一部が欠落している場合、
-   クライアントは他のバンドルがバンドル解除(unbundle)されるまでそのバンドルのバンドル解除(unbundle)を遅らせ、 それらの OID
-   が存在するようにさせます。 必要な OID がすべて存在する場合、 クライアントは refspec を使用してそのデータをバンドル解除します。
-   デフォルトの refspec は <code>+refs/heads/*:refs/bundles/*</code> ですが、これは構成で変更できます。 これらの ref
-   は保存されるため、 後の <code>git fetch</code> ネゴシエーションではバンドルされた ref を「所持している」ものとして通信でき、 Git
-   プロトコルを介したフェッチのサイズを削減できます。 この ref 名前空間から ref を刈り取る(prune)ために、 Gitは古いバンドル ref
-   を削除できるような番号付きの名前空間(<code>refs/bundles/&lt;i&gt;/*</code> など)を導入することがあります。
+If the downloaded data from a bundle URI is a bundle, then the client inspects the bundle headers to check that the prerequisite commit OIDs are present in the client repository. If some are missing, then the client delays unbundling until other bundles have been unbundled, making those OIDs present. When all required OIDs are present, the client unbundles that data using a refspec. The default refspec is <code>+refs/heads/*:refs/bundles/*</code>, but this can be configured. These refs are stored so that later <code>git fetch</code> negotiations can communicate each bundled ref as a <code>have</code>, reducing the size of the fetch over the Git protocol. To allow pruning refs from this ref namespace, Git may introduce a numbered namespace (such as <code>refs/bundles/&lt;i&gt;/*</code>) such that stale bundle refs can be deleted.
 </p>
 </li>
 <li>
 <p>
-ファイルが代わりにバンドル・リストである場合、 クライアントは <code>bundle.mode</code> を調べて、リストが <code>all</code> と <code>any</code>
-   のどちらの形式であるかを確認します。
+ファイルが代わりにバンドル・リストである場合、 クライアントは <code>bundle.mode</code> を調べて、リストが <code>all</code> と <code>any</code> のどちらの形式であるかを確認します。
 </p>
 <div class="olist loweralpha"><ol class="loweralpha">
 <li>
 <p>
-<code>bundle.mode=all</code> の場合、 クライアントは全バンドル URI を考慮します。
-      クライアント・リポジトリの部分(partial)クローン・フィルターに一致する <code>bundle.&lt;id&gt;.filter</code>
-      オプションに基づいてリストが削られます。 それから、 全バンドル URI を要求します。 <code>bundle.&lt;id&gt;.creationToken</code>
-      ヒューリスティックが提供されている場合、 バンドルは作成トークン(creationToken)の降順でダウンロードされ、 バンドルに必要な OID
-      がすべて揃った時点で停止(stop)します。 その後、 作成トークンの昇順でバンドルをバンドル解除(unbundle)できます。 クライアントは、
-      バンドル・リストがより大きな作成トークンを含むバンドルを広告(advertise)しない場合、
-      将来のダウンロードを回避するためのヒューリスティックとして最新の作成トークンを保存します。
+<code>bundle.mode=all</code> の場合、 クライアントは全バンドル URI を考慮します。 クライアント・リポジトリの部分(partial)クローン・フィルターに一致する <code>bundle.&lt;id&gt;.filter</code> オプションに基づいてリストが削られます。 それから、 全バンドル URI を要求します。 <code>bundle.&lt;id&gt;.creationToken</code> ヒューリスティックが提供されている場合、 バンドルは作成トークン(creationToken)の降順でダウンロードされ、 バンドルに必要な OID がすべて揃った時点で停止(stop)します。 その後、 作成トークンの昇順でバンドルをバンドル解除(unbundle)できます。 クライアントは、 バンドル・リストがより大きな作成トークンを含むバンドルを広告(advertise)しない場合、 将来のダウンロードを回避するためのヒューリスティックとして最新の作成トークンを保存します。
 </p>
 </li>
 <li>
 <p>
-<code>bundle.mode=any</code> の場合、 クライアントは調べたバンドル URI のいずれかを選択できます。 クライアントは、
-      さまざまな方法でこれらの URI を選択できます。 最初の選択で結果が返されなかった場合、 クライアントは別の URI
-      にフォールバックすることもできます。
+<code>bundle.mode=any</code> の場合、 クライアントは調べたバンドル URI のいずれかを選択できます。 クライアントは、 さまざまな方法でこれらの URI を選択できます。 最初の選択で結果が返されなかった場合、 クライアントは別の URI にフォールバックすることもできます。
 </p>
 </li>
 </ol></div>
 </li>
 </ol></div>
-<div class="paragraph"><p>注意: クローン中はすべてのバンドルが必要になることが予想されます。 また、 <code>bundle.&lt;uri&gt;.creationToken</code>
-などのヒューリスティックを使用して、 バンドルを時系列または並列でダウンロードできます。</p></div>
-<div class="paragraph"><p>特定のバンドル URI が <code>bundle.heuristic</code> 値を持つバンドル・リストである場合、 クライアントはその URI を選択したバンドル
-URI として保存することを選択できます。 その後、クライアントは、 後の <code>git fetch</code> 呼び出し中にその URI に直接移動できます。</p></div>
-<div class="paragraph"><p>クライアントは、 バンドル URI をダウンロードするとき、 コンテンツ全体のダウンロードをお願いする前に、
-最初のコンテンツを調査することを選択できます。 これにより、 URI がバンドル・リストかバンドルかを判断するのに十分な情報が得られる場合があります。
-バンドルの場合、 クライアントはバンドル・ヘッダーを調べて、
-広告(advertise)されたすべての先端(tips)がクライアント・リポジトリに既にあることを確認し、
-残りのダウンロードをキャンセルすることができます。</p></div>
+<div class="paragraph"><p>注意: クローン中はすべてのバンドルが必要になることが予想されます。 また、 <code>bundle.&lt;uri&gt;.creationToken</code> などのヒューリスティックを使用して、 バンドルを時系列または並列でダウンロードできます。</p></div>
+<div class="paragraph"><p>特定のバンドル URI が <code>bundle.heuristic</code> 値を持つバンドル・リストである場合、 クライアントはその URI を選択したバンドル URI として保存することを選択できます。 その後、クライアントは、 後の <code>git fetch</code> 呼び出し中にその URI に直接移動できます。</p></div>
+<div class="paragraph"><p>クライアントは、 バンドル URI をダウンロードするとき、 コンテンツ全体のダウンロードをお願いする前に、 最初のコンテンツを調査することを選択できます。 これにより、 URI がバンドル・リストかバンドルかを判断するのに十分な情報が得られる場合があります。 バンドルの場合、 クライアントはバンドル・ヘッダーを調べて、 広告(advertise)されたすべての先端(tips)がクライアント・リポジトリに既にあることを確認し、 残りのダウンロードをキャンセルすることができます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_fetching_with_bundle_uris">Fetching with Bundle URIs</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>クライアントが新しいデータをフェッチするとき、 origin のリモートから取得する前に、バンドル・サーバーから取得するよう決めておく事ができます。
-これはコマンド・ライン・オプションを介して行うこともできますが、 クローン中に指定したような構成値を使用する方が便利な場合があります。</p></div>
-<div class="paragraph"><p>フェッチ操作は、 バンドル・リストからバンドルをダウンロードするのと同じ手順に従います(ただし、
-私達は、ここでは並列ダウンロードを使用することを「望んでいません」)。 薄いバンドル(thin bundle)内のすべての前提条件のコミット OID
-がオブジェクト・データベースに既にある場合、 私達は処理の終了(end)を期待します。</p></div>
-<div class="paragraph"><p><code>creationToken</code> ヒューリスティックを使用する場合、 それらの作成トークン(creation
-tokens)が格納されている作成トークン(creation tokens)以下の数値の場合、 クライアントはバンドルのダウンロードを回避できます。
-新しいバンドルをフェッチした後、 Git はこのローカル作成トークン(creation token)を更新します。</p></div>
-<div class="paragraph"><p>バンドル提供側(bundle provider)がヒューリスティックを提供しない場合、 クライアント・リポジトリにバンドル先端(bundle
-tips)が既に存在する場合に、 クライアントは全バンドル・データをダウンロードする前にバンドル・ヘッダーの調査を試みるべきです。</p></div>
+<div class="paragraph"><p>クライアントが新しいデータをフェッチするとき、 origin のリモートから取得する前に、バンドル・サーバーから取得するよう決めておく事ができます。 これはコマンド・ライン・オプションを介して行うこともできますが、 クローン中に指定したような構成値を使用する方が便利な場合があります。</p></div>
+<div class="paragraph"><p>フェッチ操作は、 バンドル・リストからバンドルをダウンロードするのと同じ手順に従います(ただし、 私達は、ここでは並列ダウンロードを使用することを「望んでいません」)。 薄いバンドル(thin bundle)内のすべての前提条件のコミット OID がオブジェクト・データベースに既にある場合、 私達は処理の終了(end)を期待します。</p></div>
+<div class="paragraph"><p><code>creationToken</code> ヒューリスティックを使用する場合、 それらの作成トークン(creation tokens)が格納されている作成トークン(creation tokens)以下の数値の場合、 クライアントはバンドルのダウンロードを回避できます。 新しいバンドルをフェッチした後、 Git はこのローカル作成トークン(creation token)を更新します。</p></div>
+<div class="paragraph"><p>バンドル提供側(bundle provider)がヒューリスティックを提供しない場合、 クライアント・リポジトリにバンドル先端(bundle tips)が既に存在する場合に、 クライアントは全バンドル・データをダウンロードする前にバンドル・ヘッダーの調査を試みるべきです。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_error_conditions">Error Conditions</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>バンドル URI またはその場所で見つかったバンドル・リストに従って情報をダウンロードしているときに、 Git
-クライアントが予期しないものを発見した場合、 Git はそのデータを無視して、 バンドル URI が指定されていないかのように処理を続行できます。
-バンドル URI ではなく、リモート Git サーバーは、最終的に信頼できる情報源です。</p></div>
+<div class="paragraph"><p>バンドル URI またはその場所で見つかったバンドル・リストに従って情報をダウンロードしているときに、 Git クライアントが予期しないものを発見した場合、 Git はそのデータを無視して、 バンドル URI が指定されていないかのように処理を続行できます。 バンドル URI ではなく、リモート Git サーバーは、最終的に信頼できる情報源です。</p></div>
 <div class="paragraph"><p>以下にエラー状態の例をいくつか示します:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1082,10 +988,7 @@ tips)が既に存在する場合に、 クライアントは全バンドル・�
 </li>
 <li>
 <p>
-クライアントは 400番台のレスポンス (<code>404 Not Found</code> や <code>401 Not Authorized</code> など) を受け取りました。
-  クライアントは、 資格情報ヘルパー(credential helper)を使用して URI
-  の資格情報(credential)を見つけて提供する必要がありますが、 特定の 400番台のエラーの処理に関しては、 Git の他の HTTP
-  プロトコルのセマンティクスと一致させる必要があります。
+クライアントは 400番台のレスポンス (<code>404 Not Found</code> や <code>401 Not Authorized</code> など) を受け取りました。 クライアントは、 資格情報ヘルパー(credential helper)を使用して URI の資格情報(credential)を見つけて提供する必要がありますが、 特定の 400番台のエラーの処理に関しては、 Git の他の HTTP プロトコルのセマンティクスと一致させる必要があります。
 </p>
 </li>
 <li>
@@ -1105,8 +1008,7 @@ tips)が既に存在する場合に、 クライアントは全バンドル・�
 </li>
 <li>
 <p>
-前提条件のコミット OID がオブジェクト・データベースになく、 ダウンロードするバンドルがこれ以上ないため、
-  クライアントはそのバンドルをバンドル解除(unbundle)できません。
+前提条件のコミット OID がオブジェクト・データベースになく、 ダウンロードするバンドルがこれ以上ないため、 クライアントはそのバンドルをバンドル解除(unbundle)できません。
 </p>
 </li>
 </ul></div>
@@ -1114,21 +1016,12 @@ tips)が既に存在する場合に、 クライアントは全バンドル・�
 <div class="ulist"><ul>
 <li>
 <p>
-ダウンロードされたバンドルには、 クローンまたはフェッチ要求によって要求されたよりも多くの情報が含まれています。 あるあるな例として、 ユーザーが
-  <code>--single-branch</code> を使用してクローンを要求するが、 すべての <code>refs/heads/*</code>
-  参照から到達可能なすべてのコミットを格納するバンドルをダウンロードする場合です。 これは最初は無駄かもしれませんが、おそらくこれらのオブジェクトは、
-  クライアントが気にする後々 ref 更新によって到達可能オブジェクトに成る事でしょう。
+ダウンロードされたバンドルには、 クローンまたはフェッチ要求によって要求されたよりも多くの情報が含まれています。 あるあるな例として、 ユーザーが <code>--single-branch</code> を使用してクローンを要求するが、 すべての <code>refs/heads/*</code> 参照から到達可能なすべてのコミットを格納するバンドルをダウンロードする場合です。 これは最初は無駄かもしれませんが、おそらくこれらのオブジェクトは、 クライアントが気にする後々 ref 更新によって到達可能オブジェクトに成る事でしょう。
 </p>
 </li>
 <li>
 <p>
-<code>git fetch</code> 中のバンドルのダウンロードには、 オブジェクト・データベースに既にあるオブジェクトが含まれています。
-  リモート・サーバーへの「追随」(catch-up)フェッチを実行した時は、 ほとんどの場合、
-  クライアントはバンドル・サーバーよりもわずかに先行するため、 フェッチにバンドルを使用している場合、 これはおそらく避けられません。 この余分な作業は、
-  サーバーがバンドルを計算するよりも、クライアントがはるかに頻繁にフェッチしている場合に最も無駄になります。 たとえば、
-  サーバーは週イチでバンドルを計算のに、 クライアントがバックグラウンド・メンテナンスで 1 時間ごとのプリフェッチを行っている場合です。
-  このため、サーバーが <code>bundle.heuristic</code> 値を通じて明示的に推奨しない限り、 クライアントは fetch にバンドル URI
-  を使用しないでください。
+<code>git fetch</code> 中のバンドルのダウンロードには、 オブジェクト・データベースに既にあるオブジェクトが含まれています。 リモート・サーバーへの「追随」(catch-up)フェッチを実行した時は、 ほとんどの場合、 クライアントはバンドル・サーバーよりもわずかに先行するため、 フェッチにバンドルを使用している場合、 これはおそらく避けられません。 この余分な作業は、 サーバーがバンドルを計算するよりも、クライアントがはるかに頻繁にフェッチしている場合に最も無駄になります。 たとえば、 サーバーは週イチでバンドルを計算のに、 クライアントがバックグラウンド・メンテナンスで 1 時間ごとのプリフェッチを行っている場合です。 このため、サーバーが <code>bundle.heuristic</code> 値を通じて明示的に推奨しない限り、 クライアントは fetch にバンドル URI を使用しないでください。
 </p>
 </li>
 </ul></div>
@@ -1137,17 +1030,9 @@ tips)が既に存在する場合に、 クライアントは全バンドル・�
 <div class="sect1">
 <h2 id="_example_bundle_provider_organization">Example Bundle Provider organization</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>バンドル URI 機能は、バンドル提供側(bundle
-provider)がオブジェクト・データを編成するさまざまな方法に柔軟に対応できるように意図的に設計されています。 ただし、
-以下で説明する完全な編成モデルを用意しておけば、 提供側(provider)がそのベースから始める事ができるので、役に立つことがあります。</p></div>
-<div class="paragraph"><p>この編成例は、 GVFS キャッシュ・サーバー (このドキュメントの最後のセクションを参照) で使用されるものの単純化されたモデルであり 、Git
-以外の追加のソフトウェアを使用していますが、 非常に大きなリポジトリ(very large
-repositories)のクローンとフェッチを高速化するのに役立ちました。</p></div>
-<div class="paragraph"><p>バンドル提供側(bundle provider)は、 サーバーを複数の地域に展開します。 各サーバーは独自のバンドル・セットを管理します。
-サーバーは多数の Git リポジトリを追跡できますが、 バンドル・リストの提供は各々のパターンに基づいています。 たとえば、
-<code>https://&lt;domain&gt;/&lt;org&gt;/&lt;repo&gt;</code> でリポジトリをミラーリングする場合、 バンドル・サーバーはそのバンドル・リストを
-<code>https://&lt;server-url&gt;/&lt;domain&gt;/&lt;org&gt;/&lt;repo&gt;</code> で使用できるようにすることができます。 origin の
-Git サーバーは、 これらすべてのサーバーを <code>any</code> モードでリストできます:</p></div>
+<div class="paragraph"><p>バンドル URI 機能は、バンドル提供側(bundle provider)がオブジェクト・データを編成するさまざまな方法に柔軟に対応できるように意図的に設計されています。 ただし、 以下で説明する完全な編成モデルを用意しておけば、 提供側(provider)がそのベースから始める事ができるので、役に立つことがあります。</p></div>
+<div class="paragraph"><p>この編成例は、 GVFS キャッシュ・サーバー (このドキュメントの最後のセクションを参照) で使用されるものの単純化されたモデルであり 、Git 以外の追加のソフトウェアを使用していますが、 非常に大きなリポジトリ(very large repositories)のクローンとフェッチを高速化するのに役立ちました。</p></div>
+<div class="paragraph"><p>バンドル提供側(bundle provider)は、 サーバーを複数の地域に展開します。 各サーバーは独自のバンドル・セットを管理します。 サーバーは多数の Git リポジトリを追跡できますが、 バンドル・リストの提供は各々のパターンに基づいています。 たとえば、 <code>https://&lt;domain&gt;/&lt;org&gt;/&lt;repo&gt;</code> でリポジトリをミラーリングする場合、 バンドル・サーバーはそのバンドル・リストを <code>https://&lt;server-url&gt;/&lt;domain&gt;/&lt;org&gt;/&lt;repo&gt;</code> で使用できるようにすることができます。 origin の Git サーバーは、 これらすべてのサーバーを <code>any</code> モードでリストできます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>[bundle]
@@ -1170,16 +1055,9 @@ Git サーバーは、 これらすべてのサーバーを <code>any</code> モ
         uri = https://apac.example.com/&lt;domain&gt;/&lt;org&gt;/&lt;repo&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>この「リストのリスト」は静的であり、 バンドル・サーバーが追加または削除された場合にのみ変更されます。</p></div>
-<div class="paragraph"><p>各バンドル・サーバーは、 独自のバンドルの組を管理します。 最初のバンドル・リストには、 単一のバンドルのみが含まれており、 origin
-サーバーからリポジトリをクローンして受け取ったすべてのオブジェクトが含まれています。 リストは <code>creationToken</code>
-ヒューリスティックを使用し、 <code>creationToken</code> はサーバーのタイムスタンプに基づいてバンドル用に作成されます。</p></div>
-<div class="paragraph"><p>バンドル・サーバーは、 1 日 1 回など、 定期的にスケジュールされたバンドル・リストの更新を実行します。 このタスクの処理中、 サーバーは
-origin サーバーから最新のコンテンツをフェッチし、 最新の origin  ref から到達可能であるが、
-以前に計算されたバンドルには含まれていないオブジェクトを含むバンドルを生成します。 このバンドルは、 <code>creationToken</code> 値が以前の最大
-<code>creationToken</code> 値より必ず大きくなるように注意してリストに追加されます。</p></div>
-<div class="paragraph"><p>バンドルリストが大きくなりすぎたとき、 つまり、 バンドルの数が30を超えると、 「N - 30」(N minus
-30)より古いバンドル達を1つのバンドルにまとめます。 このバンドルの <code>creationToken</code> は、 まとめられたバンドルの中の最大の
-<code>creationToken</code> と等しくなります。</p></div>
+<div class="paragraph"><p>各バンドル・サーバーは、 独自のバンドルの組を管理します。 最初のバンドル・リストには、 単一のバンドルのみが含まれており、 origin サーバーからリポジトリをクローンして受け取ったすべてのオブジェクトが含まれています。 リストは <code>creationToken</code> ヒューリスティックを使用し、 <code>creationToken</code> はサーバーのタイムスタンプに基づいてバンドル用に作成されます。</p></div>
+<div class="paragraph"><p>バンドル・サーバーは、 1 日 1 回など、 定期的にスケジュールされたバンドル・リストの更新を実行します。 このタスクの処理中、 サーバーは origin サーバーから最新のコンテンツをフェッチし、 最新の origin ref から到達可能であるが、 以前に計算されたバンドルには含まれていないオブジェクトを含むバンドルを生成します。 このバンドルは、 <code>creationToken</code> 値が以前の最大 <code>creationToken</code> 値より必ず大きくなるように注意してリストに追加されます。</p></div>
+<div class="paragraph"><p>バンドルリストが大きくなりすぎたとき、 つまり、 バンドルの数が30を超えると、 「N - 30」(N minus 30)より古いバンドル達を1つのバンドルにまとめます。 このバンドルの <code>creationToken</code> は、 まとめられたバンドルの中の最大の <code>creationToken</code> と等しくなります。</p></div>
 <div class="paragraph"><p>以下にバンドル・リストの例を示しますが、日毎のバンドルは2つしかなく、リストは30個にはとうてい足りていません:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1206,107 +1084,67 @@ origin サーバーから最新のコンテンツをフェッチし、 最新の
         uri = https://eastus.example.com/&lt;domain&gt;/&lt;org&gt;/&lt;repo&gt;/2022-02-02-1643842562.bundle
         creationToken = 1643842562</code></pre>
 </div></div>
-<div class="paragraph"><p>origin サーバーで到達不能になったにもかかわらず、 永続的にオブジェクト・データを保存および提供することを避けるために、
-このバンドルのマージをより慎重に行うことができます。 古いバンドル達の絶対結合(absolute union)を得る代わりに、
-より新しいバンドル達を調べて、 このマージされたバンドルで必要なコミットが全て利用可能であることを確認することでバンドルを作成できます。 これにより、
-この期間内に新しいコミット達で使用されていないオブジェクト・データを「期限切れにする」ことができます。
-そのデータは、その後のプッシュによって再導入される可能性があります。</p></div>
-<div class="paragraph"><p>このデータ編成は主に2つの事を意図しています。 ひとつ目は、 リポジトリの最初のクローンは、
-より近いソースから事前計算(precompute)されたオブジェクト・データをダウンロードすることで高速に行われます。 ふたつ目は、 特に、
-クライアントが数日間フェッチしていない場合は、 <code>git fetch</code> コマンドの方が高速ですが、 クライアントが 30 日間フェッチしないと、
-バンドル・リストの編成により、 大量のオブジェクト・データが再ダウンロードされます。</p></div>
-<div class="paragraph"><p>頻繁にフェッチするユーザーにとってこの編成をより便利にする方法のひとつは、 より頻繁にバンドルを作成することです。 たとえば、 バンドルを 1
-時間ごと(every hour)に作成し、 1 日に 1
-回これらの「毎時」(hourly)バンドルを、「日次」(daily)バンドルにマージすることができます。 日次(daily)バンドルは、 30
-日後に「最古のバンドル」(the oldest bundle)にマージされます。</p></div>
-<div class="paragraph"><p>このリポジトリのクライアントがブロブ無し部分クローン(blobless partial clones)を使用することを期待している場合は、
-このバンドル戦略を <code>blob:none</code> フィルターで繰り返すことをお勧めします。 この ブロブ無しバンドル(blobless
-bundle)のリストは、 完全なバンドル(full bundle)と同一のリストに入りますが、 <code>bundle.&lt;id&gt;.filter</code>
-キーを使用することで 2 つのグループに分離します。 非常に大きなリポジトリの場合、 バンドル提供側(bundle
-provider)はブロブ無しバンドル(blobless bundle)のみを提供したい場合があります。</p></div>
+<div class="paragraph"><p>origin サーバーで到達不能になったにもかかわらず、 永続的にオブジェクト・データを保存および提供することを避けるために、 このバンドルのマージをより慎重に行うことができます。 古いバンドル達の絶対結合(absolute union)を得る代わりに、 より新しいバンドル達を調べて、 このマージされたバンドルで必要なコミットが全て利用可能であることを確認することでバンドルを作成できます。 これにより、 この期間内に新しいコミット達で使用されていないオブジェクト・データを「期限切れにする」ことができます。 そのデータは、その後のプッシュによって再導入される可能性があります。</p></div>
+<div class="paragraph"><p>このデータ編成は主に2つの事を意図しています。 ひとつ目は、 リポジトリの最初のクローンは、 より近いソースから事前計算(precompute)されたオブジェクト・データをダウンロードすることで高速に行われます。 ふたつ目は、 特に、 クライアントが数日間フェッチしていない場合は、 <code>git fetch</code> コマンドの方が高速ですが、 クライアントが 30 日間フェッチしないと、 バンドル・リストの編成により、 大量のオブジェクト・データが再ダウンロードされます。</p></div>
+<div class="paragraph"><p>頻繁にフェッチするユーザーにとってこの編成をより便利にする方法のひとつは、 より頻繁にバンドルを作成することです。 たとえば、 バンドルを 1 時間ごと(every hour)に作成し、 1 日に 1 回これらの「毎時」(hourly)バンドルを、「日次」(daily)バンドルにマージすることができます。 日次(daily)バンドルは、 30 日後に「最古のバンドル」(the oldest bundle)にマージされます。</p></div>
+<div class="paragraph"><p>このリポジトリのクライアントがブロブ無し部分クローン(blobless partial clones)を使用することを期待している場合は、 このバンドル戦略を <code>blob:none</code> フィルターで繰り返すことをお勧めします。 この ブロブ無しバンドル(blobless bundle)のリストは、 完全なバンドル(full bundle)と同一のリストに入りますが、 <code>bundle.&lt;id&gt;.filter</code> キーを使用することで 2 つのグループに分離します。 非常に大きなリポジトリの場合、 バンドル提供側(bundle provider)はブロブ無しバンドル(blobless bundle)のみを提供したい場合があります。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_implementation_plan">Implementation Plan</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>この設計ドキュメントは、 いくつかのパッチ・シリーズの過程で言及されたすべてのクライアント機能を実装することを目標として、
-野心的なドキュメントとして単独で提案されています。 提案に値する見込みのある機能(概要)は以下のとおり:</p></div>
+<div class="paragraph"><p>この設計ドキュメントは、 いくつかのパッチ・シリーズの過程で言及されたすべてのクライアント機能を実装することを目標として、 野心的なドキュメントとして単独で提案されています。 提案に値する見込みのある機能(概要)は以下のとおり:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-<code>--bundle-uri</code> オプションを使用して、バンドル URI を <code>git clone</code> に統合します。 これには、 <code>git clone</code>
-   の下位実装として使用するための新しい <code>git fetch --bundle-uri</code> モードが含まれます。 この初期バージョンは、 与えられた URI
-   で単一のバンドルが指定されること期待しています。
+<code>--bundle-uri</code> オプションを使用して、バンドル URI を <code>git clone</code> に統合します。 これには、 <code>git clone</code> の下位実装として使用するための新しい <code>git fetch --bundle-uri</code> モードが含まれます。 この初期バージョンは、 与えられた URI で単一のバンドルが指定されること期待しています。
 </p>
 </li>
 <li>
 <p>
-バンドル URI からバンドル・リストをパースする機能を実装し、 <code>bundle.mode</code> オプションを適切に区別するために <code>git fetch
-   --bundle-uri</code> ロジックを更新します。 設定形式(config
-   format)のパースでキーと値のペアのリストがバンドル・リスト・ロジックに送られるように、 機能を具体的に設計します。
+バンドル URI からバンドル・リストをパースする機能を実装し、 <code>bundle.mode</code> オプションを適切に区別するために <code>git fetch --bundle-uri</code> ロジックを更新します。 設定形式(config format)のパースでキーと値のペアのリストがバンドル・リスト・ロジックに送られるように、 機能を具体的に設計します。
 </p>
 </li>
 <li>
 <p>
-<code>bundle-uri</code> プロトコル v2 コマンドを作成して、 Git サーバーがキーと値のペアを使用してバンドル URI
-   を広告(advertise)できるようにします。 バンドル・リスト・ロジックへの既存のキー値入力に組み込みます。 <code>git clone</code>
-   がこれらのバンドル URI を検出し、 バンドル・データからクライアント・リポジトリをゼロから作成(bootstrap)できるようにします。
-   (この選択は、 構成オプションとコマンドライン・オプションにより、 ユーザーに許可を求める方式(opt-in) です。)
+<code>bundle-uri</code> プロトコル v2 コマンドを作成して、 Git サーバーがキーと値のペアを使用してバンドル URI を広告(advertise)できるようにします。 バンドル・リスト・ロジックへの既存のキー値入力に組み込みます。 <code>git clone</code> がこれらのバンドル URI を検出し、 バンドル・データからクライアント・リポジトリをゼロから作成(bootstrap)できるようにします。 (この選択は、 構成オプションとコマンドライン・オプションにより、 ユーザーに許可を求める方式(opt-in) です。)
 </p>
 </li>
 <li>
 <p>
-クライアントが <code>bundle.flag=forFetch</code> 構成と <code>bundle.&lt;id&gt;.creationToken</code>
-   ヒューリスティックを理解(understand)できるようにします。 <code>git clone</code> が <code>bundle.flag=forFetch</code>
-   でバンドル URI を検出すると、 その後の <code>git fetch &lt;remote&gt;</code> コマンドでそのバンドル URI
-   をチェックするようにクライアント・リポジトリを設定します。
+Allow the client to understand the <code>bundle.heuristic</code> configuration key and the <code>bundle.&lt;id&gt;.creationToken</code> heuristic. When <code>git clone</code> discovers a bundle URI with <code>bundle.heuristic</code>, it configures the client repository to check that bundle URI during later <code>git fetch &lt;remote&gt;</code> commands.
 </p>
 </li>
 <li>
 <p>
-クライアントが <code>git fetch</code> 中にバンドル URI を検出できるようにし、 <code>bundle.flag=forFetch</code>
-   の場合は後でフェッチするためにバンドル URI を設定できるようにします。
+Allow clients to discover bundle URIs during <code>git fetch</code> and configure a bundle URI for later fetches if <code>bundle.heuristic</code> is set.
 </p>
 </li>
 <li>
 <p>
-<code>bundle.&lt;id&gt;.creationToken</code>
-   ヒューリスティックが利用できない場合にデータのダウンロードを減らすために、「ヘッダー調査」(inspect
-   headers)ヒューリスティックを実装します。
+<code>bundle.&lt;id&gt;.creationToken</code> ヒューリスティックが利用できない場合にデータのダウンロードを減らすために、「ヘッダー調査」(inspect headers)ヒューリスティックを実装します。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>これらの機能が見直されるにつれて、 この計画は更新される可能性があります。 また、 この機能が成熟し、 実際のシナリオで使用されるようになるにつれて、
-新しい設計が発見され、 実装されることも期待しています。</p></div>
+<div class="paragraph"><p>これらの機能が見直されるにつれて、 この計画は更新される可能性があります。 また、 この機能が成熟し、 実際のシナリオで使用されるようになるにつれて、 新しい設計が発見され、 実装されることも期待しています。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_related_work_packfile_uris">Related Work: Packfile URIs</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Git プロトコルには、 Git サーバーがクライアントのリクエストを処理するときに、 パックファイル応答(response)と共に URL
-の組をリストできる機能が既に備わっています。 クライアントは、 レスポンスを受け取った後、 レスポンスを完全に理解するために、 それらの URL
-の場所にあるパックファイルをダウンロードする必要があります。</p></div>
-<div class="paragraph"><p>このメカニズムは(JGit で実装された) Gerrit サーバーによって使用され、 クローン時の、 CPU
-負荷の削減とユーザー・パフォーマンスの向上に効果的です。</p></div>
-<div class="paragraph"><p>このメカニズムの主な欠点は、 origin サーバーがこれらのパックファイルの内容を「正確に」知る必要があり、 サーバーが応答した後しばらくの間、
-ユーザーがパックファイルを利用できる必要があることです。 この、 origin と パックファイル・データの間の結合の管理は困難です。</p></div>
+<div class="paragraph"><p>Git プロトコルには、 Git サーバーがクライアントのリクエストを処理するときに、 パックファイル応答(response)と共に URL の組をリストできる機能が既に備わっています。 クライアントは、 レスポンスを受け取った後、 レスポンスを完全に理解するために、 それらの URL の場所にあるパックファイルをダウンロードする必要があります。</p></div>
+<div class="paragraph"><p>このメカニズムは(JGit で実装された) Gerrit サーバーによって使用され、 クローン時の、 CPU 負荷の削減とユーザー・パフォーマンスの向上に効果的です。</p></div>
+<div class="paragraph"><p>このメカニズムの主な欠点は、 origin サーバーがこれらのパックファイルの内容を「正確に」知る必要があり、 サーバーが応答した後しばらくの間、 ユーザーがパックファイルを利用できる必要があることです。 この、 origin と パックファイル・データの間の結合の管理は困難です。</p></div>
 <div class="paragraph"><p>さらに、 この実装はフェッチで機能させるのが非常に困難です。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_related_work_gvfs_cache_servers">Related Work: GVFS Cache Servers</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>GVFS プロトコル [2] は、Git の部分(partial)クローンが作成される以前に、 Git プロジェクトとは別に設計された一連の HTTP
-通信端点(endponts)です。 このプロトコルの特徴の 1 つは、 中央サーバーに過負荷をかけずに Git データを転送するために、
-ビルド・マシンまたは開発者オフィスと同じ場所に配置できる「キャッシュ・サーバー」のアイデアです。</p></div>
-<div class="paragraph"><p>VFS for Git で有名な通信端点(endpoint)は、 オンデマンドでオブジェクトをダウンロードできる <code>GET
-/gvfs/objects/{oid}</code> 通信端点(endpoint)です。 これは、 当該製品のファイル・システム仮想化の重要な部分です。</p></div>
-<div class="paragraph"><p>けれども、 <code>GET /gvfs/prefetch?lastPackTimestamp=&lt;t&gt;</code> 通信端点(endpoint)は必要性が薄いです。
-オプションのタイムスタンプを指定すると、 キャッシュ・サーバーは、
-それらの時間間隔で導入されたコミットとツリーを含む、事前計算されたパックファイルのリストで応答します。</p></div>
-<div class="paragraph"><p>キャッシュ・サーバーは、 以下の戦略を使用してこれらの「プリフェッチ」パックファイルを計算します:
-The cache server computes these "prefetch" packfiles using the following
-strategy:</p></div>
+<div class="paragraph"><p>GVFS プロトコル [2] は、Git の部分(partial)クローンが作成される以前に、 Git プロジェクトとは別に設計された一連の HTTP 通信端点(endponts)です。 このプロトコルの特徴の 1 つは、 中央サーバーに過負荷をかけずに Git データを転送するために、 ビルド・マシンまたは開発者オフィスと同じ場所に配置できる「キャッシュ・サーバー」のアイデアです。</p></div>
+<div class="paragraph"><p>VFS for Git で有名な通信端点(endpoint)は、 オンデマンドでオブジェクトをダウンロードできる <code>GET /gvfs/objects/{oid}</code> 通信端点(endpoint)です。 これは、 当該製品のファイル・システム仮想化の重要な部分です。</p></div>
+<div class="paragraph"><p>けれども、 <code>GET /gvfs/prefetch?lastPackTimestamp=&lt;t&gt;</code> 通信端点(endpoint)は必要性が薄いです。 オプションのタイムスタンプを指定すると、 キャッシュ・サーバーは、 それらの時間間隔で導入されたコミットとツリーを含む、事前計算されたパックファイルのリストで応答します。</p></div>
+<div class="paragraph"><p>キャッシュ・サーバーは、 以下の戦略を使用してこれらの「プリフェッチ」パックファイルを計算します: The cache server computes these "prefetch" packfiles using the following strategy:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -1324,21 +1162,9 @@ strategy:</p></div>
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>ユーザーがキャッシュ・サーバーを使用して、リポジトリ対して <code>gvfs clone</code> または <code>scalar clone</code> を実行すると、
-クライアントはすべてのプリフェッチ・パック・ファイルを要求します。これは、コミットとツリーのみをダウンロードする、最大で「24 + 30<br />
-1」の数のパックファイルです。 次に、 クライアントは origin サーバーに参照を要求し、その先端参照(tip
-reference)のチェックアウトを試みます。 (コミットがまだプリフェッチ・パック・ファイルに含まれていない場合に備えて、
-特定のコミットから到達可能なすべてのツリーを取得するのに役立つ追加の通信端点(endpoint)があります。)</p></div>
-<div class="paragraph"><p><code>git fetch</code> 中、 フックは、 以前にダウンロードされたプリフェッチ・パック・ファイルからの最新のタイムスタンプを使用して、
-プリフェッチ通信端点(endnpoint)を要求します。 タイムスタンプが新しいパック・ファイルのリストのみがダウンロードされます。
-ほとんどのユーザーは 1 時間ごとにフェッチするため、 1 時間ごとに最大 1 つのプリフェッチ・パックを取得します。
-マシンの電源がオフになっているか、 30 日以上フェッチされていないユーザーは、
-すべてのプリフェッチ・パック・ファイルを再ダウンロードする可能性がありますが、これはまれな事です。</p></div>
-<div class="paragraph"><p>クライアントは常に refs 広告(advertisement)のために origin サーバーに接続するため、 refs
-はプリフェッチされたパック・データよりも「先に」なることが多いことに注意することが重要です。  不足しているオブジェクトは、 <code>git
-checkout</code> や <code>git log</code> などのコマンドで必要になったときに、 <code>GET gvfs/objects/{oid}</code>
-リクエストを使用してオンデマンドでダウンロードされます。 一部の Git
-最適化は、これらのオンデマンド・ダウンロードに積極的になりすぎる原因となるチェックを無効にします。</p></div>
+<div class="paragraph"><p>ユーザーがキャッシュ・サーバーを使用して、リポジトリ対して <code>gvfs clone</code> または <code>scalar clone</code> を実行すると、 クライアントはすべてのプリフェッチ・パック・ファイルを要求します。これは、コミットとツリーのみをダウンロードする、最大で「24 + 30 + 1」の数のパックファイルです。 次に、 クライアントは origin サーバーに参照を要求し、その先端参照(tip reference)のチェックアウトを試みます。 (コミットがまだプリフェッチ・パック・ファイルに含まれていない場合に備えて、 特定のコミットから到達可能なすべてのツリーを取得するのに役立つ追加の通信端点(endpoint)があります。)</p></div>
+<div class="paragraph"><p><code>git fetch</code> 中、 フックは、 以前にダウンロードされたプリフェッチ・パック・ファイルからの最新のタイムスタンプを使用して、 プリフェッチ通信端点(endnpoint)を要求します。 タイムスタンプが新しいパック・ファイルのリストのみがダウンロードされます。 ほとんどのユーザーは 1 時間ごとにフェッチするため、 1 時間ごとに最大 1 つのプリフェッチ・パックを取得します。 マシンの電源がオフになっているか、 30 日以上フェッチされていないユーザーは、 すべてのプリフェッチ・パック・ファイルを再ダウンロードする可能性がありますが、これはまれな事です。</p></div>
+<div class="paragraph"><p>クライアントは常に refs 広告(advertisement)のために origin サーバーに接続するため、 refs はプリフェッチされたパック・データよりも「先に」なることが多いことに注意することが重要です。 不足しているオブジェクトは、 <code>git checkout</code> や <code>git log</code> などのコマンドで必要になったときに、 <code>GET gvfs/objects/{oid}</code> リクエストを使用してオンデマンドでダウンロードされます。 一部の Git 最適化は、これらのオンデマンド・ダウンロードに積極的になりすぎる原因となるチェックを無効にします。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1355,7 +1181,7 @@ checkout</code> や <code>git log</code> などのコマンドで必要になっ
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-10-26 08:00:11 JST
+ 2023-07-18 11:06:02 JST
 </div>
 </div>
 </body>

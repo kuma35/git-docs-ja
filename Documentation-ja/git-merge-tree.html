@@ -758,9 +758,7 @@ git-merge-tree(1) Manual Page
 <div class="sect1">
 <h2 id="NEWMERGE">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>このコマンドには、 モダンな <code>--write-tree</code> モードと非推奨の <code>--trivial-merge</code> モードがあります。 最後の
-<a href="#DEPMERGE">DEPRECATED DESCRIPTION</a> セクションを除いて、このドキュメントの残りの部分では、モダンな
-<code>--write-tree</code> モードについて説明します。</p></div>
+<div class="paragraph"><p>このコマンドには、 モダンな <code>--write-tree</code> モードと非推奨の <code>--trivial-merge</code> モードがあります。 最後の <a href="#DEPMERGE">DEPRECATED DESCRIPTION</a> セクションを除いて、このドキュメントの残りの部分では、モダンな <code>--write-tree</code> モードについて説明します。</p></div>
 <div class="paragraph"><p>マージを実行しますが、新しいコミットは作成せず、作業ツリーまたはインデックスからの読み取りも書き込みも行いません。</p></div>
 <div class="paragraph"><p>実行されるマージは、 以下を含む、「実際」の <a href="git-merge.html">git-merge(1)</a> と同じ機能を使用します:</p></div>
 <div class="ulist"><ul>
@@ -802,9 +800,7 @@ git-merge-tree(1) Manual Page
 </dt>
 <dd>
 <p>
-        &lt;Conflicted file info&gt; セクションでファイル名をクォートしないでください。各ファイル名は、改行(newline)ではなく NUL
-        文字で終了してください。 また、 改行(newline)の代わりに NUL 文字でメッセージ・セクションを開始します。 詳細については、 下記
-        <a href="#OUTPUT">[OUTPUT]</a> を参照してください。
+        &lt;Conflicted file info&gt; セクションでファイル名をクォートしないでください。各ファイル名は、改行(newline)ではなく NUL 文字で終了してください。 また、 改行(newline)の代わりに NUL 文字でメッセージ・セクションを開始します。 詳細については、 下記 <a href="#OUTPUT">[OUTPUT]</a> を参照してください。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -812,9 +808,7 @@ git-merge-tree(1) Manual Page
 </dt>
 <dd>
 <p>
-        競合するファイルの情報(Conflicted file info)セクションでは、競合するファイルの出力に (mode, oid, stage,
-        path) のタプルのリストを書き込む代わりに、
-        競合するファイル名のリストを提供するだけです(そして、複数の競合するステージがある場合、ファイル名を複数回リストしません)。
+        競合するファイルの情報(Conflicted file info)セクションでは、競合するファイルの出力に (mode, oid, stage, path) のタプルのリストを書き込む代わりに、 競合するファイル名のリストを提供するだけです(そして、複数の競合するステージがある場合、ファイル名を複数回リストしません)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -822,8 +816,7 @@ git-merge-tree(1) Manual Page
 </dt>
 <dd>
 <p>
-        「Auto-merging &lt;path&gt;」や CONFLICT 通知などの情報メッセージを stdout の最後に書き込みます。
-        指定されていない場合、デフォルトでは、マージの競合がある場合はこれらのメッセージが含まれ、そうでない場合は省略されます。
+        「Auto-merging &lt;path&gt;」や CONFLICT 通知などの情報メッセージを stdout の最後に書き込みます。 指定されていない場合、デフォルトでは、マージの競合がある場合はこれらのメッセージが含まれ、そうでない場合は省略されます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -831,8 +824,15 @@ git-merge-tree(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定の 2 つのブランチの間に共通の履歴の共有が無い場合、 merge-tree はデフォルトでエラーになります。 このフラグを指定して、
-        そのチェックをオーバーライドし、 とにかくマージを続行させることができます。
+        指定の 2 つのブランチの間に共通の履歴の共有が無い場合、 merge-tree はデフォルトでエラーになります。 このフラグを指定して、 そのチェックをオーバーライドし、 とにかくマージを続行させることができます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--merge-base=&lt;commit&gt;</code>
+</dt>
+<dd>
+<p>
+        Instead of finding the merge-bases for &lt;branch1&gt; and &lt;branch2&gt;, specify a merge-base for the merge, and specifying multiple bases is currently not supported. This option is incompatible with <code>--stdin</code>.
 </p>
 </dd>
 </dl></div>
@@ -854,11 +854,32 @@ git-merge-tree(1) Manual Page
 &lt;Informational messages&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>これらについては、後で個別に説明します。</p></div>
+<div class="paragraph"><p>However, there is an exception. If <code>--stdin</code> is passed, then there is an extra section at the beginning, a NUL character at the end, and then all the sections repeat for each line of input. Thus, if the first merge is conflicted and the second is clean, the output would be of the form:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;Merge status&gt;
+&lt;OID of toplevel tree&gt;
+&lt;Conflicted file info&gt;
+&lt;Informational messages&gt;
+NUL
+&lt;Merge status&gt;
+&lt;OID of toplevel tree&gt;
+NUL</code></pre>
+</div></div>
+<div class="sect2">
+<h3 id="MS">Merge status</h3>
+<div class="paragraph"><p>This is an integer status followed by a NUL character. The integer status is:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>0: merge had conflicts
+1: merge was clean
+&lt;0: something prevented the merge from running (e.g. access to repository
+    objects denied by filesystem)</code></pre>
+</div></div>
+</div>
 <div class="sect2">
 <h3 id="OIDTLT">OID of toplevel tree</h3>
-<div class="paragraph"><p>これは、 <code>git merge</code> の最後に作業ツリーでチェックアウトされるものを表すツリー・オブジェクトです。
-競合があった場合、このツリー内のファイルには競合マーカーが埋め込まれている可能性があります。 このセクションの後には常に改行(newline)(または
-<code>-z</code> が渡された場合は NUL)が続きます。</p></div>
+<div class="paragraph"><p>これは、 <code>git merge</code> の最後に作業ツリーでチェックアウトされるものを表すツリー・オブジェクトです。 競合があった場合、このツリー内のファイルには競合マーカーが埋め込まれている可能性があります。 このセクションの後には常に改行(newline)(または <code>-z</code> が渡された場合は NUL)が続きます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="CFI">Conflicted file info</h3>
@@ -867,14 +888,46 @@ git-merge-tree(1) Manual Page
 <div class="content">
 <pre><code>&lt;mode&gt; &lt;object&gt; &lt;stage&gt; &lt;filename&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>ファイル名は、 構成変数 <code>core.quotePath</code> で説明されているようにクォートされます(<a href="git-config.html">git-config(1)</a> 参照)。
-ただし、 <code>--name-only</code> オプションが渡された場合、モードとオブジェクトとステージは省略されます。 <code>-z</code>
-が渡された場合、「行」は改行文字の代わりに NUL 文字で終了します。</p></div>
+<div class="paragraph"><p>ファイル名は、 構成変数 <code>core.quotePath</code> で説明されているようにクォートされます(<a href="git-config.html">git-config(1)</a> 参照)。 ただし、 <code>--name-only</code> オプションが渡された場合、モードとオブジェクトとステージは省略されます。 <code>-z</code> が渡された場合、「行」は改行文字の代わりに NUL 文字で終了します。</p></div>
 </div>
 <div class="sect2">
 <h3 id="IM">Informational messages</h3>
-<div class="paragraph"><p>これは常に空行(または <code>-z</code> が渡された場合は
-NUL)で始まり、これより前のセクションから区切られていて、その次にマージに関する自由形式のメッセージが続きます:</p></div>
+<div class="paragraph"><p>This section provides informational messages, typically about conflicts. The format of the section varies significantly depending on whether <code>-z</code> is passed.</p></div>
+<div class="paragraph"><p>If <code>-z</code> is passed:</p></div>
+<div class="paragraph"><p>The output format is zero or more conflict informational records, each of the form:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;list-of-paths&gt;&lt;conflict-type&gt;NUL&lt;conflict-message&gt;NUL</code></pre>
+</div></div>
+<div class="paragraph"><p>where &lt;list-of-paths&gt; is of the form</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;number-of-paths&gt;NUL&lt;path1&gt;NUL&lt;path2&gt;NUL...&lt;pathN&gt;NUL</code></pre>
+</div></div>
+<div class="paragraph"><p>and includes paths (or branch names) affected by the conflict or informational message in &lt;conflict-message&gt;. Also, &lt;conflict-type&gt; is a stable string explaining the type of conflict, such as</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+"Auto-merging"
+</p>
+</li>
+<li>
+<p>
+"CONFLICT (rename/delete)"
+</p>
+</li>
+<li>
+<p>
+"CONFLICT (submodule lacks merge base)"
+</p>
+</li>
+<li>
+<p>
+"CONFLICT (binary)"
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>and &lt;conflict-message&gt; is a more detailed message about the conflict which often (but not always) embeds the &lt;stable-short-type-description&gt; within it. These strings may change in future Git versions. Some examples:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -888,7 +941,7 @@ NUL)で始まり、これより前のセクションから区切られていて�
 </li>
 <li>
 <p>
-"Failed to merge submodule &lt;submodule&gt; (&lt;reason&gt;)"
+"Failed to merge submodule &lt;submodule&gt; (no merge base)"
 </p>
 </li>
 <li>
@@ -897,25 +950,21 @@ NUL)で始まり、これより前のセクションから区切られていて�
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>注意: <code>-z</code> が渡された場合でも、これらの自由形式のメッセージには、メッセージ内またはメッセージ間に NUL
-文字が含まれないことに注意してください。 これは、出力の残りを占める大きなテキスト・ブロックです。</p></div>
+<div class="paragraph"><p>If <code>-z</code> is NOT passed:</p></div>
+<div class="paragraph"><p>This section starts with a blank line to separate it from the previous sections, and then only contains the &lt;conflict-message&gt; information from the previous section (separated by newlines). These are non-stable strings that should not be parsed by scripts, and are just meant for human consumption. Also, note that while &lt;conflict-message&gt; strings usually do not contain embedded newlines, they sometimes do. (However, the free-form messages will never have an embedded NUL character). So, the entire block of information is meant for human readers as an agglomeration of all conflict messages.</p></div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_exit_status">EXIT STATUS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>マージが競合せずに成功した場合、終了ステータス(exit status)は 0 です。 マージに競合がある場合、終了ステータスは 1 です。
-何らかのエラーが原因でマージを完了(または開始)できない場合、終了ステータスは 0 や 1 以外の何かになります(そして、出力はありません)。</p></div>
+<div class="paragraph"><p>For a successful, non-conflicted merge, the exit status is 0. When the merge has conflicts, the exit status is 1. If the merge is not able to complete (or start) due to some kind of error, the exit status is something other than 0 or 1 (and the output is unspecified). When --stdin is passed, the return status is 0 for both successful and conflicted merges, and something other than 0 or 1 if it cannot complete all the requested merges.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_usage_notes">USAGE NOTES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>このコマンドは、 <a href="git-hash-object.html">git-hash-object(1)</a> や <a href="git-mktree.html">git-mktree(1)</a> や
-<a href="git-commit-tree.html">git-commit-tree(1)</a> や <a href="git-write-tree.html">git-write-tree(1)</a> や
-<a href="git-update-ref.html">git-update-ref(1)</a> や <a href="git-mktag.html">git-mktag(1)</a>
-と同様に、低レベルの配管コマンドとして意図されています。 したがって、以下のような一連のステップの一部として使用できます:</p></div>
+<div class="paragraph"><p>このコマンドは、 <a href="git-hash-object.html">git-hash-object(1)</a> や <a href="git-mktree.html">git-mktree(1)</a> や <a href="git-commit-tree.html">git-commit-tree(1)</a> や <a href="git-write-tree.html">git-write-tree(1)</a> や <a href="git-update-ref.html">git-update-ref(1)</a> や <a href="git-mktag.html">git-mktag(1)</a> と同様に、低レベルの配管コマンドとして意図されています。 したがって、以下のような一連のステップの一部として使用できます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>NEWTREE=$(git merge-tree --write-tree $BRANCH1 $BRANCH2)
@@ -923,8 +972,7 @@ test $? -eq 0 || die "There were conflicts..."
 NEWCOMMIT=$(git commit-tree $NEWTREE -p $BRANCH1 -p $BRANCH2)
 git update-ref $BRANCH1 $NEWCOMMIT</code></pre>
 </div></div>
-<div class="paragraph"><p>注意: 終了ステータス(exit status)がゼロ以外の場合、このシーケンスの <code>NEWTREE</code>
-には単なるツリーよりも多くの出力が含まれることに注意してください。</p></div>
+<div class="paragraph"><p>注意: 終了ステータス(exit status)がゼロ以外の場合、このシーケンスの <code>NEWTREE</code> には単なるツリーよりも多くの出力が含まれることに注意してください。</p></div>
 <div class="paragraph"><p>競合の場合、出力には <a href="git-merge.html">git-merge(1)</a> で得られるものと同じ情報が含まれます:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -946,52 +994,34 @@ stdout に出力されるメッセージ(<a href="#IM">Informational messages</a
 </div>
 </div>
 <div class="sect1">
+<h2 id="_input_format">INPUT FORMAT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><em>git merge-tree --stdin</em> input format is fully text based. Each line has this format:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>[&lt;base-commit&gt; -- ]&lt;branch1&gt; &lt;branch2&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>If one line is separated by <code>--</code>, the string before the separator is used for specifying a merge-base for the merge and the string after the separator describes the branches to be merged.</p></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_mistakes_to_avoid">MISTAKES TO AVOID</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>結果のトップレベル・ツリーを調べて、競合するファイルを見つけようと試みません。 代わりに <a href="#CFI">Conflicted file info</a>
-セクションをパースします。
-大規模なリポジトリではツリー全体のパースが非常に遅くなるだけでなく、競合マーカーで表現できない競合の種類(変更/削除、モードの競合、両側で変更されたバイナリ・ファイル、ファイル/ディレクトリの競合、さまざまな名前変更の競合順列など)が数多くあります</p></div>
-<div class="paragraph"><p>空の <a href="#CFI">Conflicted file info</a> リストをクリーンなマージ(clean
-merge)として解釈(interpret)しないでください。終了ステータス(exit status)を確認します。
-マージでは、個々のファイルが競合しなくても競合が発生する可能性があります(このカテゴリに分類されるいくつかのタイプのディレクトリ名変更の競合があり、他のものも将来追加される可能性があります)。</p></div>
-<div class="paragraph"><p><a href="#CFI">Conflicted file info</a> リストから競合タイプを推測しようとしたり、ユーザーに推測させたりしないでください。
-そこにある情報はそうするには不十分です。 例: Rename/rename(1to2) 競合(両側が同一ファイルの名前を別々に名前変更)により、3
-つの異なるファイルが上位ステージ (ただし、それぞれ上位ステージは 1 つしかない) になり、 どの 3 つのファイルが関連しているかを
-(<a href="#IM">Informational messages</a> セクション以外で、) 判断する方法がありません。
-ファイル/ディレクトリの競合によっても、1 つだけ上位ステージを持つファイルが生成されます。
-ディレクトリ名の変更に関与する可能性のある(Possibly-involved-in-directory-rename)競合 (
-<code>merge.directoryRenames</code> が設定されていない(unset)か、 あるいは <code>merge.directoryRenames</code> が
-<code>conflicts</code> に設定されている(set)場合)も、正確に 1 つの上位ステージを持つファイルになります。 すべての場合において、
-<a href="#IM">Informational messages</a> セクションには必要な情報が含まれていますが、プログラムでパースできる(machine
-parseable)ようには設計されていません。</p></div>
-<div class="paragraph"><p><a href="#CFI">Conflicted file info</a> からの各パスと、 <a href="#IM">Informational messages</a> の論理的競合が
-1 対 1 のマッピングを持っている、 または 1 対多のマッピングがあると想定しないでください。 マッピングではなく、 多対 1
-のマッピングでもありません。 多対多のマッピングが存在します。つまり、各パスは 1
-回のマージで多くの論理競合タイプを持つことができ、各論理競合タイプは多くのパスに影響を与える可能性があります。</p></div>
-<div class="paragraph"><p><a href="#IM">Informational messages</a> セクションにリストされているすべてのファイル名に競合があったと想定しないでください。
-「Auto-merging &lt;file&gt;」など、競合のないファイルにメッセージを含めることができます。</p></div>
-<div class="paragraph"><p><a href="#CFI">Conflicted file info</a> から OID を取得し、それらを再マージして競合をユーザーに提示することは避けてください。
-これにより、情報が失われます。 代わりに、 <a href="#OIDTLT">OID of toplevel tree</a>
-内で見つかったファイルのバージョンを検索し、代わりにそれを表示します。 特に、 後者には、マージされている元の ブランチ/コミット
-と、名前変更が含まれている場合は元のファイル名で注釈が付けられた競合マーカーがあります。 再マージ時に競合マーカーの注釈に元の ブランチ/コミット
-を含めることはできますが、 元のファイル名は <a href="#CFI">Conflicted file info</a>
-から入手できないため、ユーザーが競合を解決するのに役立つ情報を失うことになります。</p></div>
+<div class="paragraph"><p>結果のトップレベル・ツリーを調べて、競合するファイルを見つけようと試みません。 代わりに <a href="#CFI">Conflicted file info</a> セクションをパースします。 大規模なリポジトリではツリー全体のパースが非常に遅くなるだけでなく、競合マーカーで表現できない競合の種類(変更/削除、モードの競合、両側で変更されたバイナリ・ファイル、ファイル/ディレクトリの競合、さまざまな名前変更の競合順列など)が数多くあります</p></div>
+<div class="paragraph"><p>空の <a href="#CFI">Conflicted file info</a> リストをクリーンなマージ(clean merge)として解釈(interpret)しないでください。終了ステータス(exit status)を確認します。 マージでは、個々のファイルが競合しなくても競合が発生する可能性があります(このカテゴリに分類されるいくつかのタイプのディレクトリ名変更の競合があり、他のものも将来追加される可能性があります)。</p></div>
+<div class="paragraph"><p><a href="#CFI">Conflicted file info</a> リストから競合タイプを推測しようとしたり、ユーザーに推測させたりしないでください。 そこにある情報はそうするには不十分です。 例: Rename/rename(1to2) 競合(両側が同一ファイルの名前を別々に名前変更)により、3 つの異なるファイルが上位ステージ (ただし、それぞれ上位ステージは 1 つしかない) になり、 どの 3 つのファイルが関連しているかを (<a href="#IM">Informational messages</a> セクション以外で、) 判断する方法がありません。 ファイル/ディレクトリの競合によっても、1 つだけ上位ステージを持つファイルが生成されます。 ディレクトリ名の変更に関与する可能性のある(Possibly-involved-in-directory-rename)競合 ( <code>merge.directoryRenames</code> が設定されていない(unset)か、 あるいは <code>merge.directoryRenames</code> が <code>conflicts</code> に設定されている(set)場合)も、正確に 1 つの上位ステージを持つファイルになります。 すべての場合において、 <a href="#IM">Informational messages</a> セクションには必要な情報が含まれていますが、プログラムでパースできる(machine parseable)ようには設計されていません。</p></div>
+<div class="paragraph"><p><a href="#CFI">Conflicted file info</a> からの各パスと、 <a href="#IM">Informational messages</a> の論理的競合が 1 対 1 のマッピングを持っている、 または 1 対多のマッピングがあると想定しないでください。 マッピングではなく、 多対 1 のマッピングでもありません。 多対多のマッピングが存在します。つまり、各パスは 1 回のマージで多くの論理競合タイプを持つことができ、各論理競合タイプは多くのパスに影響を与える可能性があります。</p></div>
+<div class="paragraph"><p><a href="#IM">Informational messages</a> セクションにリストされているすべてのファイル名に競合があったと想定しないでください。 「Auto-merging &lt;file&gt;」など、競合のないファイルにメッセージを含めることができます。</p></div>
+<div class="paragraph"><p><a href="#CFI">Conflicted file info</a> から OID を取得し、それらを再マージして競合をユーザーに提示することは避けてください。 これにより、情報が失われます。 代わりに、 <a href="#OIDTLT">OID of toplevel tree</a> 内で見つかったファイルのバージョンを検索し、代わりにそれを表示します。 特に、 後者には、マージされている元の ブランチ/コミット と、名前変更が含まれている場合は元のファイル名で注釈が付けられた競合マーカーがあります。 再マージ時に競合マーカーの注釈に元の ブランチ/コミット を含めることはできますが、 元のファイル名は <a href="#CFI">Conflicted file info</a> から入手できないため、ユーザーが競合を解決するのに役立つ情報を失うことになります。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="DEPMERGE">DEPRECATED DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><a href="#NEWMERGE">DESCRIPTION</a> に従う、このドキュメントの残りの部分とは異なり、このセクションでは非推奨の
-<code>--trivial-merge</code> モードについて説明します。</p></div>
+<div class="paragraph"><p><a href="#NEWMERGE">DESCRIPTION</a> に従う、このドキュメントの残りの部分とは異なり、このセクションでは非推奨の <code>--trivial-merge</code> モードについて説明します。</p></div>
 <div class="paragraph"><p>オプションの <code>--trivial-merge</code> を除いて、このモードはオプションを受け入れません。</p></div>
-<div class="paragraph"><p>このモードは 3 つのツリーっぽいものを読み取り、些細なマージ(trivial
-merge)結果と競合するステージを準差分(semi-diff)形式で標準出力に出力します。
-これは、高レベルのスクリプトがその結果を使用してインデックスにマージするように設計されているため、 &lt;branch1&gt;
-に一致するエントリが省略されます。 この 2 番目の形式の結果は、 3 方向の <code>git read-tree -m</code>  と似ていますが、
-結果をインデックスに格納する代わりに、そのコマンドはエントリを標準出力に出力します。</p></div>
-<div class="paragraph"><p>この形式は適用範囲が限られている(些細なマージ(trivial merge)では、個々のファイルの内容のマージのや、名前変更の検出や、適切な
-ディレクトリ/ファイル
-の競合の処理などを扱えません)だけでなく、出力形式も扱いにくく、通常、マージが成功した場合でも最初の形式よりもパフォーマンスが低下します(特に大規模なリポジトリで作業している場合)。</p></div>
+<div class="paragraph"><p>このモードは 3 つのツリーっぽいものを読み取り、些細なマージ(trivial merge)結果と競合するステージを準差分(semi-diff)形式で標準出力に出力します。 これは、高レベルのスクリプトがその結果を使用してインデックスにマージするように設計されているため、 &lt;branch1&gt; に一致するエントリが省略されます。 この 2 番目の形式の結果は、 3 方向の <code>git read-tree -m</code> と似ていますが、 結果をインデックスに格納する代わりに、そのコマンドはエントリを標準出力に出力します。</p></div>
+<div class="paragraph"><p>この形式は適用範囲が限られている(些細なマージ(trivial merge)では、個々のファイルの内容のマージのや、名前変更の検出や、適切な ディレクトリ/ファイル の競合の処理などを扱えません)だけでなく、出力形式も扱いにくく、通常、マージが成功した場合でも最初の形式よりもパフォーマンスが低下します(特に大規模なリポジトリで作業している場合)。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1005,7 +1035,7 @@ merge)結果と競合するステージを準差分(semi-diff)形式で標準出
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-10-04 16:02:12 JST
+ 2023-07-18 11:05:35 JST
 </div>
 </div>
 </body>

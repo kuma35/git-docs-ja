@@ -735,13 +735,13 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>How to separate topic branches</h1>
+<span id="revdate">2023-07-22</span>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph"><p>このテキストは元々、git diff コマンドの動作に関する議論の脚注でした。</p></div>
-<div class="paragraph"><p>私はよく、面倒な開発履歴を書き換えながら、[HEAD以外に対するdiffの実行]をしていることに気づきます。
-例えば、どこがどうなっているのかよくわからないまま作業を始めてしまい、以下のような履歴になってしまったとします:</p></div>
+<div class="paragraph"><p>私はよく、面倒な開発履歴を書き換えながら、[HEAD以外に対するdiffの実行]をしていることに気づきます。 例えば、どこがどうなっているのかよくわからないまま作業を始めてしまい、以下のような履歴になってしまったとします:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>    "master"
@@ -749,11 +749,8 @@ o---o
      \                    "topic"
       o---o---o---o---o---o</code></pre>
 </div></div>
-<div class="paragraph"><p>この時点で、「topic」には私が欲しいと思っているものが含まれていますが、完全に独立していることが判明した2つの概念が含まれています。
-そして、多くの場合、あるトピックの構成要素が他よりも大きくなっています。 2つ以上のトピックを含んでいることもあります。</p></div>
-<div class="paragraph"><p>この混乱をより扱いやすくするために、最初に「diff
-master..topic」を実行して、変更を1つのパッチに抽出し、そこから断片を選択して論理的に自己完結型のユニットを取得し、 master
-上に構築を開始します:</p></div>
+<div class="paragraph"><p>この時点で、「topic」には私が欲しいと思っているものが含まれていますが、完全に独立していることが判明した2つの概念が含まれています。 そして、多くの場合、あるトピックの構成要素が他よりも大きくなっています。 2つ以上のトピックを含んでいることもあります。</p></div>
+<div class="paragraph"><p>この混乱をより扱いやすくするために、最初に「diff master..topic」を実行して、変更を1つのパッチに抽出し、そこから断片を選択して論理的に自己完結型のユニットを取得し、 master 上に構築を開始します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git diff master..topic &gt;P.diff
@@ -761,19 +758,13 @@ $ git checkout -b topicA master
 ... pick and apply pieces from P.diff to build
 ... commits on topicA branch.</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>      o---o---o
-     /        "topicA"
+<div class="paragraph"><p>o---o---o
+/        "topicA"
 o---o"master"
-     \                    "topic"
-      o---o---o---o---o---o</code></pre>
-</div></div>
-<div class="paragraph"><p>「topicA」のHEADで各コミットを実行する前に、影響を受けるパスの update-index の前に「diff
-HEAD」を実行するか、その後に「diff --cached HEAD」を実行します。 また、「diff --cached
-master」を実行して、変更が「topicA」に関連するものだけであることを確認します。 通常、私は小さなトピックから順番にこれを行います。</p></div>
-<div class="paragraph"><p>その後、元の「topic」の残りの部分を実行しますが、そのために、最初に使用した「master」と「topic」を比較して抽出したパッチファイルからは開始しません。
-いまだ「topicA」にいて、そこで、「diff topic」を抽出し、それを使用してもう一つのトピックを再構築します:</p></div>
+\                    "topic"
+o---o---o---o---o---o</p></div>
+<div class="paragraph"><p>「topicA」のHEADで各コミットを実行する前に、影響を受けるパスの update-index の前に「diff HEAD」を実行するか、その後に「diff --cached HEAD」を実行します。 また、「diff --cached master」を実行して、変更が「topicA」に関連するものだけであることを確認します。 通常、私は小さなトピックから順番にこれを行います。</p></div>
+<div class="paragraph"><p>その後、元の「topic」の残りの部分を実行しますが、そのために、最初に使用した「master」と「topic」を比較して抽出したパッチファイルからは開始しません。 いまだ「topicA」にいて、そこで、「diff topic」を抽出し、それを使用してもう一つのトピックを再構築します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git diff -R topic &gt;P.diff ;# --cached also would work fine
@@ -781,30 +772,27 @@ $ git checkout -b topicB master
 ... pick and apply pieces from P.diff to build
 ... commits on topicB branch.</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>                        "topicB"
-       o---o---o---o---o
-      /
-     /o---o---o
-    |/        "topicA"
+<div class="paragraph"><p>"topicB"
+o---o---o---o---o
+/
+/o---o---o
+|/        "topicA"
 o---o"master"
-     \                    "topic"
-      o---o---o---o---o---o</code></pre>
-</div></div>
+\                    "topic"
+o---o---o---o---o---o</p></div>
 <div class="paragraph"><p>完了したら、「topicA」と「topicB」の間で擬似的にマージ(pretend-merge)をして、何も見逃していないことを確認します:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>$ git pull . topicA ;# merge it into current "topicB"
-$ git diff topic
-                        "topicB"
-       o---o---o---o---o---* (pretend merge)
-      /                   /
-     /o---o---o----------'
-    |/        "topicA"
+<pre><code>        $ git pull . topicA ;# merge it into current "topicB"
+        $ git diff topic
+                                "topicB"
+               o---o---o---o---o---* (pretend merge)
+/                   /
+/o---o---o----------'
+|/        "topicA"
 o---o"master"
-     \                    "topic"
-      o---o---o---o---o---o</code></pre>
+\                    "topic"
+o---o---o---o---o---o</code></pre>
 </div></div>
 <div class="paragraph"><p>最後のdiffは、クリーンアップするがらくた以外のものは表示しない方がよいでしょう。 そして、最後に、あなたは物事をクリーンアップすることができます:</p></div>
 <div class="literalblock">
@@ -828,7 +816,7 @@ o---o"master"</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-06-19 07:20:51 JST
+ 2023-07-27 05:08:13 JST
 </div>
 </div>
 </body>

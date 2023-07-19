@@ -735,37 +735,16 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Use of index and Racy Git problem</h1>
+<span id="revdate">2023-07-22</span>
 </div>
 <div id="content">
 <div class="sect1">
 <h2 id="_background">Background</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>インデックスは、Gitで最も重要なデータ構造の1つです。
-これは、パスとそのオブジェクト名のリストを記録することによって仮想の作業ツリーの状態を表し、コミットされる次のツリーオブジェクトを書き出すための足場領域(staging
-area)として機能します。 状態は、作業ツリー内のファイルと必ずしも一致する必要はなく、多くの場合一致しないという意味で「仮想」です。</p></div>
-<div class="paragraph"><p>Gitは、インデックス内の仮想作業ツリーの状態と、作業ツリー内のファイルの違いを調べる必要がある場合があります。 最も明白なケースは、ユーザーが
-<code>git diff</code>(またはその低レベルの実装である <code>git diff-files</code>) または <code>git-ls-files --modified</code>
-で問い合わせした場合です。
-さらにGitは、パッチ適用中や、ブランチの切り替え中や、マージ処理中に、作業ツリーのファイルがインデックスに記録されているものと異なるかどうかを内部的にチェックし、それらのローカルな変更を踏みにじらないようにしています。</p></div>
-<div class="paragraph"><p>作業ツリー内のファイルとインデックスエントリ間のこの比較を高速化するために、インデックスエントリは、最後に更新されたときに <code>lstat(2)</code>
-システムコールを介してファイルシステムから取得した情報を記録します。 それらが異なるかどうかを確認するとき、Gitは最初にファイルに対して
-<code>lstat(2)</code> 実行し、結果をこの情報と比較します(これは元々は <code>ce_match_stat()</code>
-関数によって行われてましたが、現在のコードでは <code>ce_match_stat_basic()</code> 関数で行います)。
-これらの「キャッシュされた統計情報」(cached stat
-information)フィールドのいくつかが一致しない場合、Gitは、ファイルの内容を見なくてもファイルが変更されたことを通知できます。</p></div>
-<div class="paragraph"><p>注意:  <code>lstat(2)</code> 介して取得した <code>struct stat</code> のすべてのメンバーがこの比較に使用されるわけではありません。たとえば、
-<code>st_atime</code> は明らかに役に立ちません。現在、Gitは、<code>st_mode</code>
-からのファイルタイプ(通常のファイルとシンボリックリンク)と実行可能ビット(通常のファイルのみ)、 <code>st_mtime</code> と <code>st_ctime</code>
-タイムスタンプ、 <code>st_uid</code> 、 <code>st_gid</code> 、 <code>st_ino</code> 、 <code>st_size</code> を比較します。 <code>USE_STDEV</code>
-コンパイル時オプションを使用すると、 <code>st_dev</code>
-も比較されますが、このメンバーはネットワークファイルシステム上で安定していないため、これはデフォルトでは有効になっていません。 <code>USE_NSEC</code>
-コンパイル時オプションを使用すると、<code>st_mtim.tv_nsec</code> と <code>st_ctim.tv_nsec</code> も比較されます。
-Linuxでは、これはデフォルトでは有効になっていません。これは、コア内のタイムスタンプがディスク上のタイムスタンプよりも細かい粒度である可能性があり、iノードがiノードキャッシュから削除されたときに意味のない変更が発生するためです。
-git://git.kernel.org/pub/scm/linux/kernel/git/tglx/history.git のコミット 8ce13b0
-([PATCH] Sync in core time granularity with filesystems,
-2005-01-04)を参照してください。このパッチはカーネル2.6.11以降に含まれていますが、正確に1nsまたは1sの粒度のファイルシステムの問題のみを修正します。他のファイルシステムは、現在のLinuxカーネル(たとえば
-CEPH, CIFS, NTFS, UDF)ではまだ壊れています。
-<a href="https://lore.kernel.org/lkml/5577240D.7020309@gmail.com/">https://lore.kernel.org/lkml/5577240D.7020309@gmail.com/</a> を参照してください。</p></div>
+<div class="paragraph"><p>インデックスは、Gitで最も重要なデータ構造の1つです。 これは、パスとそのオブジェクト名のリストを記録することによって仮想の作業ツリーの状態を表し、コミットされる次のツリーオブジェクトを書き出すための足場領域(staging area)として機能します。 状態は、作業ツリー内のファイルと必ずしも一致する必要はなく、多くの場合一致しないという意味で「仮想」です。</p></div>
+<div class="paragraph"><p>Gitは、インデックス内の仮想作業ツリーの状態と、作業ツリー内のファイルの違いを調べる必要がある場合があります。 最も明白なケースは、ユーザーが <code>git diff</code>(またはその低レベルの実装である <code>git diff-files</code>) または <code>git-ls-files --modified</code> で問い合わせした場合です。 さらにGitは、パッチ適用中や、ブランチの切り替え中や、マージ処理中に、作業ツリーのファイルがインデックスに記録されているものと異なるかどうかを内部的にチェックし、それらのローカルな変更を踏みにじらないようにしています。</p></div>
+<div class="paragraph"><p>作業ツリー内のファイルとインデックスエントリ間のこの比較を高速化するために、インデックスエントリは、最後に更新されたときに <code>lstat(2)</code> システムコールを介してファイルシステムから取得した情報を記録します。 それらが異なるかどうかを確認するとき、Gitは最初にファイルに対して <code>lstat(2)</code> 実行し、結果をこの情報と比較します(これは元々は <code>ce_match_stat()</code> 関数によって行われてましたが、現在のコードでは <code>ce_match_stat_basic()</code> 関数で行います)。 これらの「キャッシュされた統計情報」(cached stat information)フィールドのいくつかが一致しない場合、Gitは、ファイルの内容を見なくてもファイルが変更されたことを通知できます。</p></div>
+<div class="paragraph"><p>注意: <code>lstat(2)</code> 介して取得した <code>struct stat</code> のすべてのメンバーがこの比較に使用されるわけではありません。たとえば、 <code>st_atime</code> は明らかに役に立ちません。現在、Gitは、<code>st_mode</code> からのファイルタイプ(通常のファイルとシンボリックリンク)と実行可能ビット(通常のファイルのみ)、 <code>st_mtime</code> と <code>st_ctime</code> タイムスタンプ、 <code>st_uid</code> 、 <code>st_gid</code> 、 <code>st_ino</code> 、 <code>st_size</code> を比較します。 <code>USE_STDEV</code> コンパイル時オプションを使用すると、 <code>st_dev</code> も比較されますが、このメンバーはネットワークファイルシステム上で安定していないため、これはデフォルトでは有効になっていません。 <code>USE_NSEC</code> コンパイル時オプションを使用すると、<code>st_mtim.tv_nsec</code> と <code>st_ctim.tv_nsec</code> も比較されます。 Linuxでは、これはデフォルトでは有効になっていません。これは、コア内のタイムスタンプがディスク上のタイムスタンプよりも細かい粒度である可能性があり、iノードがiノードキャッシュから削除されたときに意味のない変更が発生するためです。 git://git.kernel.org/pub/scm/linux/kernel/git/tglx/history.git のコミット 8ce13b0 ([PATCH] Sync in core time granularity with filesystems, 2005-01-04)を参照してください。このパッチはカーネル2.6.11以降に含まれていますが、正確に1nsまたは1sの粒度のファイルシステムの問題のみを修正します。他のファイルシステムは、現在のLinuxカーネル(たとえば CEPH, CIFS, NTFS, UDF)ではまだ壊れています。 <a href="https://lore.kernel.org/lkml/5577240D.7020309@gmail.com/">https://lore.kernel.org/lkml/5577240D.7020309@gmail.com/</a> を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -778,37 +757,22 @@ CEPH, CIFS, NTFS, UDF)ではまだ壊れています。
 $ git update-index 'foo'
 : 再び 'foo' を編集。サイズを変更せずに 'foo' の内容を編集します</code></pre>
 </div></div>
-<div class="paragraph"><p>最初の <code>update-index `は、ファイル `foo</code> の内容のオブジェクト名を計算し、 <code>struct stat</code> 情報とともに <code>foo</code>
-のインデックスエントリを更新します。 その後の変更が非常に高速に行われ、ファイルの <code>st_mtime</code>
-タイムスタンプが変更されない場合、このシーケンスの後、インデックスエントリが記録するキャッシュされた統計情報は、ファイル <code>foo</code>
-は今では異なっいても、ファイルシステムに表示される情報と完全に一致します。
-このように、Gitは、実際には変更されていても、作業ツリー内のファイルが変更されていないと誤って考える可能性があります。 これは「racy
-Git」問題(Paskyによって発見されました)と呼ばれ、この問題が原因ではない可能性があるときにクリーンに見えるエントリは「racily
-clean」と呼ばれます。</p></div>
+<div class="paragraph"><p>最初の <code>update-index `は、ファイル `foo</code> の内容のオブジェクト名を計算し、 <code>struct stat</code> 情報とともに <code>foo</code> のインデックスエントリを更新します。 その後の変更が非常に高速に行われ、ファイルの <code>st_mtime</code> タイムスタンプが変更されない場合、このシーケンスの後、インデックスエントリが記録するキャッシュされた統計情報は、ファイル <code>foo</code> は今では異なっいても、ファイルシステムに表示される情報と完全に一致します。 このように、Gitは、実際には変更されていても、作業ツリー内のファイルが変更されていないと誤って考える可能性があります。 これは「racy Git」問題(Paskyによって発見されました)と呼ばれ、この問題が原因ではない可能性があるときにクリーンに見えるエントリは「racily clean」と呼ばれます。</p></div>
 <div class="paragraph"><p>この問題を回避するために、Gitは2つのことを行います:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-キャッシュされた統計情報によりファイルが変更されていないと言うには、 <code>st_mtime</code>
-  がインデックスファイル自体のタイムスタンプと同じ(またはそれより新しい)場合(これは、上記の例では <code>git update-index foo</code>
-  の実行を終了した時間です)では、コンテンツをインデックスエントリに登録されているオブジェクトと比較して、それらが一致することを確認します。
+キャッシュされた統計情報によりファイルが変更されていないと言うには、 <code>st_mtime</code> がインデックスファイル自体のタイムスタンプと同じ(またはそれより新しい)場合(これは、上記の例では <code>git update-index foo</code> の実行を終了した時間です)では、コンテンツをインデックスエントリに登録されているオブジェクトと比較して、それらが一致することを確認します。
 </p>
 </li>
 <li>
 <p>
-非常にクリーンなエントリを含むインデックスファイルが更新されると、キャッシュされた <code>st_size</code>
-  情報は、新しいバージョンのインデックスファイルを書き込む前にゼロに切り捨てられます。
+非常にクリーンなエントリを含むインデックスファイルが更新されると、キャッシュされた <code>st_size</code> 情報は、新しいバージョンのインデックスファイルを書き込む前にゼロに切り捨てられます。
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>インデックスファイル自体は、更新されたパスからすべての統計情報を収集した後に書き込まれるため、その <code>st_mtime</code>
-タイムスタンプは通常、インデックスに含まれるどのパスと同じか、それよりも新しいものです。 また、 <code>git update-index foo</code>
-に続く変更がどれほど速く終了しても、 <code>foo</code> の結果の <code>st_mtime</code> タイムスタンプはインデックスファイルより前の値を取得できません。
-したがって、迅速にクリーンアップできるインデックスエントリは、インデックスファイル自体と同じタイムスタンプを持つエントリに制限されます。</p></div>
-<div class="paragraph"><p>インデックスエントリが作業ツリー内の対応するファイルと一致するかどうかを確認する呼び出し元は、引き続き <code>ce_match_stat()</code>
-を呼び出しますが、この変更により <code>ce_match_stat()</code> は <code>ce_modified_check_fs()</code> を使用して、
-<code>ce_match_stat_basic()</code> でキャッシュされた統計情報を比較してから racily clean が実際に clean
-かどうかを判断するようになりました。</p></div>
+<div class="paragraph"><p>インデックスファイル自体は、更新されたパスからすべての統計情報を収集した後に書き込まれるため、その <code>st_mtime</code> タイムスタンプは通常、インデックスに含まれるどのパスと同じか、それよりも新しいものです。 また、 <code>git update-index foo</code> に続く変更がどれほど速く終了しても、 <code>foo</code> の結果の <code>st_mtime</code> タイムスタンプはインデックスファイルより前の値を取得できません。 したがって、迅速にクリーンアップできるインデックスエントリは、インデックスファイル自体と同じタイムスタンプを持つエントリに制限されます。</p></div>
+<div class="paragraph"><p>インデックスエントリが作業ツリー内の対応するファイルと一致するかどうかを確認する呼び出し元は、引き続き <code>ce_match_stat()</code> を呼び出しますが、この変更により <code>ce_match_stat()</code> は <code>ce_modified_check_fs()</code> を使用して、 <code>ce_match_stat_basic()</code> でキャッシュされた統計情報を比較してから racily clean が実際に clean かどうかを判断するようになりました。</p></div>
 <div class="paragraph"><p>後者が解決する問題は、以下のシーケンスです:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -817,20 +781,13 @@ clean」と呼ばれます。</p></div>
 : 十分な時間待つ
 $ git update-index 'bar'</code></pre>
 </div></div>
-<div class="paragraph"><p>後者がないと、インデックスファイルのタイムスタンプは新しい値を取得し、誤ってクリーンなエントリ <code>foo</code>
-は、前者のロジックで実行されたタイムスタンプ比較チェックによってキャッチされなくなります。 後者は、 <code>foo</code>
-のキャッシュされた統計情報が作業ツリー内のファイルと決して一致しないことを保証するため、後で <code>ce_match_stat_basic()</code>
-をチェックすると、インデックスエントリがファイルと一致しないことが報告され、Gitはより高価な <code>ce_modified_check_fs()</code>
-にフォールバックする必要がありません。</p></div>
+<div class="paragraph"><p>後者がないと、インデックスファイルのタイムスタンプは新しい値を取得し、誤ってクリーンなエントリ <code>foo</code> は、前者のロジックで実行されたタイムスタンプ比較チェックによってキャッチされなくなります。 後者は、 <code>foo</code> のキャッシュされた統計情報が作業ツリー内のファイルと決して一致しないことを保証するため、後で <code>ce_match_stat_basic()</code> をチェックすると、インデックスエントリがファイルと一致しないことが報告され、Gitはより高価な <code>ce_modified_check_fs()</code> にフォールバックする必要がありません。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_runtime_penalty">Runtime penalty</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>ce_match_stat()</code> から <code>ce_modified_check_fs()</code>
-にフォールバックすることによる実行時のペナルティは、非常にクリーンなエントリが多数ある場合、非常に高くつく可能性があります。
-この状況を人為的に作成する明白な方法は、大規模プロジェクトの作業ツリー内のすべてのファイルに同じタイムスタンプを付け、それらに対して <code>git
-update-index</code> を実行し、インデックスファイルに同じタイムスタンプを付けることです。</p></div>
+<div class="paragraph"><p><code>ce_match_stat()</code> から <code>ce_modified_check_fs()</code> にフォールバックすることによる実行時のペナルティは、非常にクリーンなエントリが多数ある場合、非常に高くつく可能性があります。 この状況を人為的に作成する明白な方法は、大規模プロジェクトの作業ツリー内のすべてのファイルに同じタイムスタンプを付け、それらに対して <code>git update-index</code> を実行し、インデックスファイルに同じタイムスタンプを付けることです。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ date &gt;.datestamp
@@ -838,9 +795,7 @@ $ git ls-files | xargs touch -r .datestamp
 $ git ls-files | git update-index --stdin
 $ touch -r .datestamp .git/index</code></pre>
 </div></div>
-<div class="paragraph"><p>これにより、すべてのインデックスエントリが迅速にクリーンになります。
-たとえば、Linuxプロジェクトでは、作業ツリーに20,000を超えるファイルがあります。 私のAthlon64X2
-3800+で、上記の後に以下を実行します:</p></div>
+<div class="paragraph"><p>これにより、すべてのインデックスエントリが迅速にクリーンになります。 たとえば、Linuxプロジェクトでは、作業ツリーに20,000を超えるファイルがあります。 私のAthlon64X2 3800+で、上記の後に以下を実行します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ /usr/bin/time git diff-files
@@ -851,20 +806,14 @@ $ /usr/bin/time git diff-files
 0.02user 0.12system 0:00.14elapsed 100%CPU (0avgtext+0avgdata 0maxresident)k
 0inputs+0outputs (0major+935minor)pagefaults 0swaps</code></pre>
 </div></div>
-<div class="paragraph"><p>途中で <code>git update-index</code> を実行すると、racily
-cleanなエントリがチェックされ、実際にはクリーンであるため、すべてのパスのキャッシュされた <code>st_mtime</code>
-がそのまま残りました(したがって、このステップには最初の <code>git diff-files</code> とほぼ同じ時間がかかりました)。
-その後、それらはもはやracily cleanではありませんが、本当にクリーンであるため、<code>git diff-files</code>
-の2回目の呼び出しはキャッシュされた統計情報を完全に利用しました。</p></div>
+<div class="paragraph"><p>途中で <code>git update-index</code> を実行すると、racily cleanなエントリがチェックされ、実際にはクリーンであるため、すべてのパスのキャッシュされた <code>st_mtime</code> がそのまま残りました(したがって、このステップには最初の <code>git diff-files</code> とほぼ同じ時間がかかりました)。 その後、それらはもはやracily cleanではありませんが、本当にクリーンであるため、<code>git diff-files</code> の2回目の呼び出しはキャッシュされた統計情報を完全に利用しました。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_avoiding_runtime_penalty">Avoiding runtime penalty</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>上記の実行時のペナルティを回避するために、1.4.2以降のGitには、結果のインデックスファイルと同じタイムスタンプを持つ若いファイルが多数ある場合に、インデックスファイルがインデックス内の最も若いファイルよりも新しいタイムスタンプを取得することを確認するコードがありました。
-それ以外の場合は、インデックスファイルの書き込みが完了する前に待機する必要があります。</p></div>
-<div class="paragraph"><p>実際には、インデックス内の多くのパスがすべて非常にクリーンであるという状況は非常にまれであると私は思いました。
-多数のパスの最近のタイムスタンプを記録できる唯一のコードパスは以下のとおりです:</p></div>
+<div class="paragraph"><p>上記の実行時のペナルティを回避するために、1.4.2以降のGitには、結果のインデックスファイルと同じタイムスタンプを持つ若いファイルが多数ある場合に、インデックスファイルがインデックス内の最も若いファイルよりも新しいタイムスタンプを取得することを確認するコードがありました。 それ以外の場合は、インデックスファイルの書き込みが完了する前に待機する必要があります。</p></div>
+<div class="paragraph"><p>実際には、インデックス内の多くのパスがすべて非常にクリーンであるという状況は非常にまれであると私は思いました。 多数のパスの最近のタイムスタンプを記録できる唯一のコードパスは以下のとおりです:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -877,15 +826,9 @@ cleanなエントリがチェックされ、実際にはクリーンであるた
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>注意: <code>git checkout</code>
-を使用してブランチを切り替えると、現在のブランチと新しいブランチの間で同じである既存の作業ツリーファイルのキャッシュされた統計情報が保持されます。これらはすべて、結果のインデックスファイルよりも古く、racily
-cleanになることはありません。 実際にチェックアウトされたファイルだけが、racily cleanになることができます。</p></div>
-<div class="paragraph"><p>ただし、racy回避コスト(raciness avoidance
-cost)が非常に重要な大規模なプロジェクトでは、インデックス内のすべてのオブジェクト名の初期計算に1秒以上かかり、その後インデックスファイルが書き出されます。
-したがって、インデックスファイルのタイムスタンプは、作業ツリーの最も若いファイルより1秒以上遅くなります。
-これは、これらの場合、結果のインデックスに実際には racily clean なエントリがないことを意味します。</p></div>
-<div class="paragraph"><p>この議論に基づいて、現在のコードは、実際にはもう存在しない実行時のペナルティを回避するために「回避策」を使用していません。
-これは、2006年8月15日にcommit0fc82cffで実行されました。</p></div>
+<div class="paragraph"><p>注意: <code>git checkout</code> を使用してブランチを切り替えると、現在のブランチと新しいブランチの間で同じである既存の作業ツリーファイルのキャッシュされた統計情報が保持されます。これらはすべて、結果のインデックスファイルよりも古く、racily cleanになることはありません。 実際にチェックアウトされたファイルだけが、racily cleanになることができます。</p></div>
+<div class="paragraph"><p>ただし、racy回避コスト(raciness avoidance cost)が非常に重要な大規模なプロジェクトでは、インデックス内のすべてのオブジェクト名の初期計算に1秒以上かかり、その後インデックスファイルが書き出されます。 したがって、インデックスファイルのタイムスタンプは、作業ツリーの最も若いファイルより1秒以上遅くなります。 これは、これらの場合、結果のインデックスに実際には racily clean なエントリがないことを意味します。</p></div>
+<div class="paragraph"><p>この議論に基づいて、現在のコードは、実際にはもう存在しない実行時のペナルティを回避するために「回避策」を使用していません。 これは、2006年8月15日にcommit0fc82cffで実行されました。</p></div>
 </div>
 </div>
 </div>
@@ -893,7 +836,7 @@ cost)が非常に重要な大規模なプロジェクトでは、インデック
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-07-28 03:56:20 JST
+ 2023-07-18 11:06:04 JST
 </div>
 </div>
 </body>

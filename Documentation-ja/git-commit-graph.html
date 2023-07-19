@@ -750,7 +750,10 @@ git-commit-graph(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git commit-graph verify</em> [--object-dir &lt;dir&gt;] [--shallow] [--[no-]progress]
-<em>git commit-graph write</em> &lt;options&gt; [--object-dir &lt;dir&gt;] [--[no-]progress]</pre>
+<em>git commit-graph write</em> [--object-dir &lt;dir&gt;] [--append]
+                        [--split[=&lt;strategy&gt;]] [--reachable | --stdin-packs | --stdin-commits]
+                        [--changed-paths] [--[no-]max-new-filters &lt;n&gt;] [--[no-]progress]
+                        &lt;split options&gt;</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -770,11 +773,7 @@ git-commit-graph(1) Manual Page
 </dt>
 <dd>
 <p>
-        パックファイルとコミットグラフファイルの場所として、指定のディレクトリを使用します。このパラメータは、完全な <code>.git</code>
-        ディレクトリではなく、objectsディレクトリのみを持つ代替の場所を指定するために存在します。コミットグラフファイルは <code>&lt;dir&gt;/info</code>
-        ディレクトリにあり、パックファイルは <code>&lt;dir&gt;/pack</code>
-        にあるものと期待されます。ディレクトリを絶対パスにすることができなかった場合、または既知のオブジェクトディレクトリと一致しない場合、 <code>git
-        commit-graph ...</code> はゼロ以外のステータスで終了します。
+        パックファイルとコミットグラフファイルの場所として、指定のディレクトリを使用します。このパラメータは、完全な <code>.git</code> ディレクトリではなく、objectsディレクトリのみを持つ代替の場所を指定するために存在します。コミットグラフファイルは <code>&lt;dir&gt;/info</code> ディレクトリにあり、パックファイルは <code>&lt;dir&gt;/pack</code> にあるものと期待されます。ディレクトリを絶対パスにすることができなかった場合、または既知のオブジェクトディレクトリと一致しない場合、 <code>git commit-graph ...</code> はゼロ以外のステータスで終了します。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -797,53 +796,31 @@ git-commit-graph(1) Manual Page
 </dt>
 <dd>
 <p>
-パックファイルで見つかったコミットに基づいてコミットグラフファイルを書き出します。構成オプション <code>core.commitGraph</code>
-が無効になっている場合、このコマンドは警告を出力し、コミットグラフファイルを書き込まずに成功を返します。
+パックファイルで見つかったコミットに基づいてコミットグラフファイルを書き出します。構成オプション <code>core.commitGraph</code> が無効になっている場合、このコマンドは警告を出力し、コミットグラフファイルを書き込まずに成功を返します。
 </p>
-<div class="paragraph"><p><code>--stdin-packs</code>
-オプションと共に使用して、指定のパックインデックス内のオブジェクトのみをウォークすることにより、新しいコミットグラフを生成します。
-(<code>--stdin-commits</code> または <code>--reachable</code> と組み合わせることはできません。)</p></div>
-<div class="paragraph"><p><code>--stdin-commits</code>
-オプションと共に使用して、16進数のOIDのリストとしてstdinで指定されたコミットから始まるコミットを1行に1つずつウォークして、新しいコミットグラフを生成します。(直接に、またはタグの皮むきによって、)非コミットに解決されるOIDは黙って無視されます。不正な形式のOID、または存在しないOIDは、エラーを生成します。
-(<code>--stdin-packs</code> または <code>--reachable</code> と組み合わせることはできません。)</p></div>
-<div class="paragraph"><p><code>--reachable</code> オプションと共に使用して、すべての参照で開始するコミットをウォークして、新しいコミットグラフを生成します。
-(<code>--stdin-commits</code> または <code>--stdin-packs</code> と組み合わせることはできません。)</p></div>
+<div class="paragraph"><p><code>--stdin-packs</code> オプションと共に使用して、指定のパックインデックス内のオブジェクトのみをウォークすることにより、新しいコミットグラフを生成します。 (<code>--stdin-commits</code> または <code>--reachable</code> と組み合わせることはできません。)</p></div>
+<div class="paragraph"><p><code>--stdin-commits</code> オプションと共に使用して、16進数のOIDのリストとしてstdinで指定されたコミットから始まるコミットを1行に1つずつウォークして、新しいコミットグラフを生成します。(直接に、またはタグの皮むきによって、)非コミットに解決されるOIDは黙って無視されます。不正な形式のOID、または存在しないOIDは、エラーを生成します。 (<code>--stdin-packs</code> または <code>--reachable</code> と組み合わせることはできません。)</p></div>
+<div class="paragraph"><p><code>--reachable</code> オプションと共に使用して、すべての参照で開始するコミットをウォークして、新しいコミットグラフを生成します。 (<code>--stdin-commits</code> または <code>--stdin-packs</code> と組み合わせることはできません。)</p></div>
 <div class="paragraph"><p><code>--append</code> オプションと共に使用して、既存のコミットグラフファイルに存在するすべてのコミットを含めます。</p></div>
-<div class="paragraph"><p><code>--changed-paths</code> オプションと共に使用すると、コミットとその最初の親(first
-parent)の間で変更されたパスに関する情報を計算して書き込みます。この操作は、大規模なリポジトリでは時間がかかる場合があります。 <code>git log
--- &lt;path&gt;</code>
-を使用すると、ディレクトリまたはファイルの履歴を取得するためのパフォーマンスが大幅に向上します。このオプションが指定されている場合、その後のコミットグラフ書き込みでは、このオプションが指定されたものであると自動的に想定されます。このデータの保存を停止するには、
-<code>--no-changed-paths</code> を使用します。</p></div>
-<div class="paragraph"><p><code>--max-new-filters=&lt;n&gt;</code> オプションと共に使用して、(<code>--changed-paths</code> が指定されている場合、)最大で <code>n</code>
-の新しいブルームフィルター(Bloom filters)を生成します。 <code>n</code> が <code>-1</code>
-の場合、制限は適用されません。この制限に対しては、新しいレイヤーに存在するコミットのみがカウントされます。以前のレイヤーでブルームフィルターをさかのぼって計算するには、
-<code>--split=replace</code> を使用することをお勧めします。 <code>commitGraph.maxNewFilters</code> 構成をオーバーライドします。</p></div>
-<div class="paragraph"><p><code>--split[=&lt;strategy&gt;]</code> オプションと共に使用して、 <code>&lt;dir&gt;/info/commit-graphs</code>
-に格納されている複数のコミットグラフファイルのチェーンとしてコミットグラフを記述します。コミットグラフレイヤーは、戦略およびその他の分割オプションに基づいてマージされます。コミットグラフにまだ含まれていない新しいコミットは、新しい先端ファイル(tip
-file)に追加されます。以下のマージ条件が満たされた場合、このファイルは既存のファイルとマージされます:</p></div>
+<div class="paragraph"><p><code>--changed-paths</code> オプションと共に使用すると、コミットとその最初の親(first parent)の間で変更されたパスに関する情報を計算して書き込みます。この操作は、大規模なリポジトリでは時間がかかる場合があります。 <code>git log -- &lt;path&gt;</code> を使用すると、ディレクトリまたはファイルの履歴を取得するためのパフォーマンスが大幅に向上します。このオプションが指定されている場合、その後のコミットグラフ書き込みでは、このオプションが指定されたものであると自動的に想定されます。このデータの保存を停止するには、 <code>--no-changed-paths</code> を使用します。</p></div>
+<div class="paragraph"><p><code>--max-new-filters=&lt;n&gt;</code> オプションと共に使用して、(<code>--changed-paths</code> が指定されている場合、)最大で <code>n</code> の新しいブルームフィルター(Bloom filters)を生成します。 <code>n</code> が <code>-1</code> の場合、制限は適用されません。この制限に対しては、新しいレイヤーに存在するコミットのみがカウントされます。以前のレイヤーでブルームフィルターをさかのぼって計算するには、 <code>--split=replace</code> を使用することをお勧めします。 <code>commitGraph.maxNewFilters</code> 構成をオーバーライドします。</p></div>
+<div class="paragraph"><p><code>--split[=&lt;strategy&gt;]</code> オプションと共に使用して、 <code>&lt;dir&gt;/info/commit-graphs</code> に格納されている複数のコミットグラフファイルのチェーンとしてコミットグラフを記述します。コミットグラフレイヤーは、戦略およびその他の分割オプションに基づいてマージされます。コミットグラフにまだ含まれていない新しいコミットは、新しい先端ファイル(tip file)に追加されます。以下のマージ条件が満たされた場合、このファイルは既存のファイルとマージされます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>--split=no-merge</code> が指定されている場合、マージは実行されず、残りのオプションは無視されます。 <code>--split=replace</code>
-  は、既存のチェーンを新しいチェーンで上書きします。裸の <code>--split</code> は後続のオプションに従います。 (注意:
-  コミットグラフのチェーンをマージすると、既存のチェーンが長さ1のチェーンに置き換えられ、最初で唯一の増分がグラフ全体を保持することに注意してください)。
+<code>--split=no-merge</code> が指定されている場合、マージは実行されず、残りのオプションは無視されます。 <code>--split=replace</code> は、既存のチェーンを新しいチェーンで上書きします。裸の <code>--split</code> は後続のオプションに従います。 (注意: コミットグラフのチェーンをマージすると、既存のチェーンが長さ1のチェーンに置き換えられ、最初で唯一の増分がグラフ全体を保持することに注意してください)。
 </p>
 </li>
 <li>
 <p>
-<code>--size-multiple=&lt;X&gt;</code> が指定されていない場合は、 Xを2に等しくします。新しい先端ファイル(tip
-  file)にN個のコミットがあり、以前の先端にM個のコミットがあり、「X 掛ける N」が M
-  より大きい場合は、代わりに2つのファイルを1つのファイルにマージします。
+<code>--size-multiple=&lt;X&gt;</code> が指定されていない場合は、 Xを2に等しくします。新しい先端ファイル(tip file)にN個のコミットがあり、以前の先端にM個のコミットがあり、「X 掛ける N」が M より大きい場合は、代わりに2つのファイルを1つのファイルにマージします。
 </p>
 </li>
 <li>
 <p>
-<code>--max-commits=&lt;M&gt;</code> オプションの M が正の整数で指定され、新しい先端ファイル(tip file) に M
-  以上のコミットがある場合は、代わりに新しい先端を以前の先端とマージします。
+<code>--max-commits=&lt;M&gt;</code> オプションの M が正の整数で指定され、新しい先端ファイル(tip file) に M 以上のコミットがある場合は、代わりに新しい先端を以前の先端とマージします。
 </p>
-<div class="paragraph"><p>最後に、 <code>--expire-time=&lt;datetime&gt;</code> が指定されていない場合は、
-datetimeを現在の時刻とします。分割コミットグラフ(split
-commit-graph)を書き込んだ後、変更時刻がdatetimeより古い未使用のコミットグラフをすべて削除します。</p></div>
+<div class="paragraph"><p>最後に、 <code>--expire-time=&lt;datetime&gt;</code> が指定されていない場合は、 datetimeを現在の時刻とします。分割コミットグラフ(split commit-graph)を書き込んだ後、変更時刻がdatetimeより古い未使用のコミットグラフをすべて削除します。</p></div>
 </li>
 </ul></div>
 </dd>
@@ -854,8 +831,7 @@ commit-graph)を書き込んだ後、変更時刻がdatetimeより古い未使�
 <p>
 コミットグラフファイルを読み取り、その内容をオブジェクトデータベースと照合して確認(verify)します。破損したデータをチェックするために使用されます。
 </p>
-<div class="paragraph"><p><code>--shallow</code> オプションと共に使用すると、分割コミットグラフ(split
-commit-graphs)のチェーン内の先端コミットグラフファイルのみをチェックします。</p></div>
+<div class="paragraph"><p><code>--shallow</code> オプションと共に使用すると、分割コミットグラフ(split commit-graphs)のチェーン内の先端コミットグラフファイルのみをチェックします。</p></div>
 </dd>
 </dl></div>
 </div>
@@ -906,17 +882,14 @@ commit-graphs)のチェーン内の先端コミットグラフファイルのみ
 <div class="sect1">
 <h2 id="_configuration">CONFIGURATION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は
-<a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
+<div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は <a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 commitGraph.generationVersion
 </dt>
 <dd>
 <p>
-        commit-graph ファイルの書き込みまたは読み取り時に使用する世代番号バージョン(generation number
-        version)のタイプを指定します。 バージョン 1 が指定されている場合、修正されたコミット日付は書き込まれたり読み取られたりしません。
-        デフォルトは 2 です。
+        commit-graph ファイルの書き込みまたは読み取り時に使用する世代番号バージョン(generation number version)のタイプを指定します。 バージョン 1 が指定されている場合、修正されたコミット日付は書き込まれたり読み取られたりしません。 デフォルトは 2 です。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -924,8 +897,7 @@ commitGraph.maxNewFilters
 </dt>
 <dd>
 <p>
-        <code>git commit-graph write</code> の <code>--max-new-filters</code>
-        オプションのデフォルト値を指定します(<a href="git-commit-graph.html">git-commit-graph(1)</a> 参照)。
+        <code>git commit-graph write</code> の <code>--max-new-filters</code> オプションのデフォルト値を指定します(<a href="git-commit-graph.html">git-commit-graph(1)</a> 参照)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -933,9 +905,7 @@ commitGraph.readChangedPaths
 </dt>
 <dd>
 <p>
-        trueの場合、gitはcommit-graphファイルで変更パスブルームフィルター(the changed-path Bloom
-        filters)を使用します(存在し、有効な場合)。 デフォルトはtrueです。 詳細については、
-        <a href="git-commit-graph.html">git-commit-graph(1)</a> を参照してください。
+        trueの場合、gitはcommit-graphファイルで変更パスブルームフィルター(the changed-path Bloom filters)を使用します(存在し、有効な場合)。 デフォルトはtrueです。 詳細については、 <a href="git-commit-graph.html">git-commit-graph(1)</a> を参照してください。
 </p>
 </dd>
 </dl></div>
@@ -958,7 +928,7 @@ commitGraph.readChangedPaths
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-09-25 22:03:36 JST
+ 2023-07-18 11:05:25 JST
 </div>
 </div>
 </body>
