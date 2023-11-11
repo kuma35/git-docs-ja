@@ -832,16 +832,16 @@ init
 <div class="paragraph"><p>また、かつては、 スパース・チェックアウト・ファイルが既に存在する場合、 <code>init</code> は実際にはそれを初期化しませんでした。 これは、後続の <code>set</code> または <code>add</code> コマンドに渡すパスを覚えていなくても、 スパース・チェックアウトに戻ることができることを意味していました。 ただし、 <code>--cone</code> オプションと <code>--sparse-index</code> オプションは、 <code>disable</code> コマンドまでまたがって記憶される訳では無いため、 単純な <code>init</code> を呼び出す簡単な復元の有用性が低下しました。</p></div>
 </dd>
 <dt class="hdlist1">
-<em>check-rules</em>
+check-rules
 </dt>
 <dd>
 <p>
-        Check whether sparsity rules match one or more paths.
+        スパースのルール(sparsity rules)が 1 つ以上のパスにマッチするかどうかチェックします。
 </p>
-<div class="paragraph"><p>By default <code>check-rules</code> reads a list of paths from stdin and outputs only the ones that match the current sparsity rules. The input is expected to consist of one path per line, matching the output of <code>git ls-tree --name-only</code> including that pathnames that begin with a double quote (") are interpreted as C-style quoted strings.</p></div>
-<div class="paragraph"><p>When called with the <code>--rules-file &lt;file&gt;</code> flag the input files are matched against the sparse checkout rules found in <code>&lt;file&gt;</code> instead of the current ones. The rules in the files are expected to be in the same form as accepted by <code>git sparse-checkout set --stdin</code> (in particular, they must be newline-delimited).</p></div>
-<div class="paragraph"><p>By default, the rules passed to the <code>--rules-file</code> option are interpreted as cone mode directories. To pass non-cone mode patterns with <code>--rules-file</code>, combine the option with the <code>--no-cone</code> option.</p></div>
-<div class="paragraph"><p>When called with the <code>-z</code> flag, the format of the paths input on stdin as well as the output paths are \0 terminated and not quoted. Note that this does not apply to the format of the rules passed with the <code>--rules-file</code> option.</p></div>
+<div class="paragraph"><p>デフォルトでは、 <code>check-rules</code> は stdin からパスのリストを読み取り、 現在のスパースのルール(sparsity rules)にマッチするパスのみを出力します。 入力は一行につき一つのパスで構成され、 二重引用符 (<code>"</code>) で始まるパス名は C 言語スタイルのクォートされた文字列として解釈されることを含めて、 <code>git ls-tree --name-only</code> の出力と一致します。</p></div>
+<div class="paragraph"><p><code>--rules-file &lt;file&gt;</code> フラグを指定して呼び出すと、 入力ファイルは現在のルールの代わりに <code>&lt;file&gt;</code> で探してきたスパース・チェックアウト・ルールとマッチングされます。 ファイル内のルールは、 <code>git sparse-checkout set --stdin</code> で受け入れられるのと同じ形式であることが期待されます(特に、それらは改行で区切られている必要があります)。</p></div>
+<div class="paragraph"><p>デフォルトでは、 <code>--rules-file</code> オプションに渡されたルールはコーン・モード(円錐モード)のディレクトリとして解釈されます。 <code>--rules-file</code> を使用して非コーン・モード・パターンを渡すには、 このオプションを <code>--no-cone</code> オプションと組み合わせます。</p></div>
+<div class="paragraph"><p><code>-z</code> フラグを指定して呼び出すと、出力パスと同様に、 stdin に入力されるパスの形式は \0 で終了し、クォートされません。 これは、<code>--rules-file</code> オプションで渡されるルールの形式には適用されないことに注意してください。</p></div>
 </dd>
 </dl></div>
 </div>
@@ -929,30 +929,41 @@ init
 </li>
 <li>
 <p>
-「正しい」動作が不明確な境界ギリギリのケース(edge cases)があります。 以下に例を2つ挙げます:
+「正しい」振る舞いが不明確な境界ギリギリのケース(edge cases)があります。 以下に例を2つ挙げます:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+最初の例は、 あるサブディレクトリに 2 人のユーザーがいて、 最初のユーザーが以下を実行します
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>`git sparse-checkout set '/toplevel-dir/*.c'`</code></pre>
+</div></div>
+<div class="paragraph"><p>ここで、 2人目のユーザーが以下を実行します</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>`git sparse-checkout set relative-dir`</code></pre>
+</div></div>
+<div class="paragraph"><p>上記2つの引数は以下のように変換されるべきでしょうか？</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>`current/subdirectory/toplevel-dir/*.c`</code></pre>
+</div></div>
+<div class="paragraph"><p>と</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>`current/subdirectory/relative-dir`</code></pre>
+</div></div>
+<div class="paragraph"><p>というのも、 最初のコマンドを入力したユーザーは、 set/add の引数が非円錐(non-cone)モードのパターンであることを認識しており、おそらくこのような変換には満足しないでしょう。 けれども、多くの gitignore スタイルのパターンは単なるパスであり、2 番目のコマンドを入力したユーザーが考えていたものである可能性があり、引数が変換されていないと動揺することでしょう。</p></div>
+</li>
+<li>
+<p>
+２つ目の例は、非コーンのユーザーの set/add コマンドの bash補完で補完させる必要があるのは何でしょうか？という問題です。 パスが提案されている場合、上記の問題を悪化させていませんか？ また、パスが提案されている場合、ユーザーのファイルやディレクトリが <code>!</code> や <code>#</code> で始まっていたり、その名前に <code>*</code> や <code>\</code> や <code>?</code> や <code>[</code> や <code>]</code> が含まれていたらどうなるでしょう？ そしてまた、パスを提案する場合、現在のディレクトリの <code>/progress.txt</code> ではなく、 <code>/pro</code> を (ルート・ファイルシステムの) <code>/proc</code> に補完しますか？ (<code>.gitignore</code> ファイルにあることが多いのと同じ理由で、ユーザーは非コーン・モードで先頭の <code>/</code> でパスを開始する可能性が高いことに注意してください。) これらすべての場合で、ファイルまたはディレクトリを補完すると、厄介なサプライズが生じる可能性があります。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>First, two users are in a subdirectory, and the first runs
-<code>git sparse-checkout set '/toplevel-dir/*.c'</code>
-while the second runs
-<code>git sparse-checkout set relative-dir</code>
-Should those arguments be transliterated into
-<code>current/subdirectory/toplevel-dir/*.c</code>
-and
-<code>current/subdirectory/relative-dir</code>
-before inserting into the sparse-checkout file?  The user who typed
-the first command is probably aware that arguments to set/add are
-supposed to be patterns in non-cone mode, and probably would not be
-happy with such a transliteration.  However, many gitignore-style
-patterns are just paths, which might be what the user who typed the
-second command was thinking, and they&#8217;d be upset if their argument
-wasn&#8217;t transliterated.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Second, what should bash-completion complete on for set/add commands for non-cone users? If it suggests paths, is it exacerbating the problem above? Also, if it suggests paths, what if the user has a file or directory that begins with either a '!' or '#' or has a '*', '\', '?', '[', or ']' in its name? And if it suggests paths, will it complete "/pro" to "/proc" (in the root filesystem) rather than to "/progress.txt" in the current directory? (Note that users are likely to want to start paths with a leading '/' in non-cone mode, for the same reason that .gitignore files often have one.) Completing on files or directories might give nasty surprises in all these cases.</code></pre>
-</div></div>
-<div class="ulist"><ul>
+</li>
 <li>
 <p>
 過度の柔軟性により、他の拡張機能は本質的に実用的ではなくなりました。 <code>--sparse-index</code> 機能は非コーン・モードではおそらく不可能です。 たとえそれが何らかの形で実行可能であったとしても、 実装するにははるかに多くの作業が必要であり、かつ、実際に動かすと遅すぎる可能性があります。 部分(partial)クローンとスパース・チェックアウトの間の結合を追加するためのいくつかのアイデアは、パスのセットがより制限されている場合にのみ実用的です。
@@ -1077,7 +1088,7 @@ A/B/C</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:44 JST
+ 2024-01-28 18:34:37 JST
 </div>
 </div>
 </body>
