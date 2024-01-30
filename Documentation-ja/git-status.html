@@ -1288,34 +1288,30 @@ m
 <div class="sect1">
 <h2 id="_untracked_files_and_performance">UNTRACKED FILES AND PERFORMANCE</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>git status</code> can be very slow in large worktrees if/when it needs to search for untracked files and directories. There are many configuration options available to speed this up by either avoiding the work or making use of cached results from previous Git commands. There is no single optimum set of settings right for everyone. We&#8217;ll list a summary of the relevant options to help you, but before going into the list, you may want to run <code>git status</code> again, because your configuration may already be caching <code>git status</code> results, so it could be faster on subsequent runs.</p></div>
+<div class="paragraph"><p>「git status」は、 大規模なワークツリーで非追跡ファイルやディレクトリを検索する必要がある場合、 非常に遅くなる可能性があります。 この処理を回避するか、 あるいは前に実行した Git コマンドによるキャッシュされた結果を利用することで、 この処理を高速化するために利用できる構成オプションが多数あります。 すべての人にとって最適な単一の設定の組み合わせはありません。 あなたの助けになるように、 関連するオプションの概要を以下にリストします。 ただし、 リストする前に、 「git status」を再度実行するとよいでしょう。 これは、あなたの設定がすでに「git status」の結果をキャッシュしている可能性があるため、以降の実行時により高速になる可能性があるためです。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-The <code>--untracked-files=no</code> flag or the
-        <code>status.showUntrackedfiles=false</code> config (see above for both): indicate that <code>git status</code> should not report untracked files. This is the fastest option. <code>git status</code> will not list the untracked files, so you need to be careful to remember if you create any new files and manually <code>git add</code> them.
+<code>--untracked-files=no</code> フラグまたは <code>status.showUntrackedfiles=false</code> 設定 (双方とも前述を参照): 「git status」に非追跡ファイルを報告すべきでないと指示します。 これが最も速いオプションです。 「git status」は非追跡ファイルをリストしないため、 新しいファイルを作成して手動で <code>git add</code> する場合、 あなたが注意深く覚えておかなければなりません。
 </p>
 </li>
 <li>
 <p>
-<code>advice.statusUoption=false</code> (see <a href="git-config.html">git-config(1)</a>):
-        setting this variable to <code>false</code> disables the warning message given when enumerating untracked files takes more than 2 seconds. In a large project, it may take longer and the user may have already accepted the trade off (e.g. using "-uno" may not be an acceptable option for the user), in which case, there is no point issuing the warning message, and in such a case, disabling the warning may be the best.
+<code>advice.statusUoption=false</code> (<a href="git-config.html">git-config(1)</a> 参照): この変数を <code>false</code> に設定すると、 非追跡ファイルをリストするのに 2 秒以上かかる場合に表示される警告メッセージが無効になります。 大規模なプロジェクトでは、 非追跡ファイルをリストするのにもっと時間がかかりますが、 ユーザーがすでにトレードオフ(例えば <code>-uno</code> の使用はユーザーにとって受け入れられないオプションである可能性がある)を受け入れているかもしれません。 その場合、警告メッセージを発行しても意味がありません。 そのような場合には、 警告を無効にすることが最善の方法であるかもしれません。
 </p>
 </li>
 <li>
 <p>
-<code>core.untrackedCache=true</code> (see <a href="git-update-index.html">git-update-index(1)</a>):
-        enable the untracked cache feature and only search directories that have been modified since the previous <code>git status</code> command. Git remembers the set of untracked files within each directory and assumes that if a directory has not been modified, then the set of untracked files within has not changed. This is much faster than enumerating the contents of every directory, but still not without cost, because Git still has to search for the set of modified directories. The untracked cache is stored in the <code>.git/index</code> file. The reduced cost of searching for untracked files is offset slightly by the increased size of the index and the cost of keeping it up-to-date. That reduced search time is usually worth the additional size.
+<code>core.untrackedCache=true</code> (<a href="git-update-index.html">git-update-index(1)</a> 参照): 非追跡のキャッシュ機能を有効にし、 前の「git status」コマンド以降に変更されたディレクトリのみを検索します。 Git は各ディレクトリ内の非追跡ファイルの組を記憶しており、 ディレクトリが変更されていない場合、 その中の非追跡ファイルの組は変更されていないと想定します。 これは、 すべてのディレクトリの内容をリストするよりもはるかに高速ですが、 それでも Git は変更されたディレクトリの組を検索する必要があるため、 コストがかかります。 非追跡のキャッシュは <code>.git/index</code> ファイルに保存されます。 非追跡ファイルの検索コストの削減は、 インデックスのサイズの増加とインデックスを最新の状態に保つコストによってわずかに相殺されます。 通常は検索時間の短縮の為に、 このサイズ追加を行う価値があります。
 </p>
 </li>
 <li>
 <p>
-<code>core.untrackedCache=true</code> and <code>core.fsmonitor=true</code> or
-        <code>core.fsmonitor=&lt;hook_command_pathname&gt;</code> (see <a href="git-update-index.html">git-update-index(1)</a>): enable both the untracked cache and FSMonitor features and only search directories that have been modified since the previous <code>git status</code> command. This is faster than using just the untracked cache alone because Git can also avoid searching for modified directories. Git only has to enumerate the exact set of directories that have changed recently. While the FSMonitor feature can be enabled without the untracked cache, the benefits are greatly reduced in that case.
+<code>core.untrackedCache=true</code> かつ、 <code>core.fsmonitor=true</code> または <code>core.fsmonitor=&lt;hook_command_pathname&gt;</code> (<a href="git-update-index.html">git-update-index(1)</a> 参照): 非追跡のキャッシュと FSMonitor 機能の両方を有効にし、 前の「git status」コマンド以降に変更されたディレクトリのみを検索します。 Git は変更されたディレクトリの検索も回避できるため、 非追跡のキャッシュだけを単独で使用するよりも高速です。 Git は、 最近変更されたディレクトリの組を正確にリストするだけで済みます。 非追跡のキャッシュがなくても FSMonitor 機能を有効にすることはできますが、 その場合は利点が大幅に減少します。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>Note that after you turn on the untracked cache and/or FSMonitor features it may take a few <code>git status</code> commands for the various caches to warm up before you see improved command times. This is normal.</p></div>
+<div class="paragraph"><p>非追跡のキャッシュや FSMonitor 機能をオンにした後、 コマンド実行時間が改善されるまで、 さまざまなキャッシュをウォームアップするために、いくつかの「git status」コマンドが必要になる場合があることに注意してください。 これは正常な動作です。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1335,7 +1331,7 @@ The <code>--untracked-files=no</code> flag or the
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:44 JST
+ 2024-01-29 07:21:32 JST
 </div>
 </div>
 </body>
