@@ -835,7 +835,7 @@ http と stateless-rpc を念頭に置いて設計されています。明確な
 </div>
 <div class="sect2">
 <h3 id="_http_transport">HTTP Transport</h3>
-<div class="paragraph"><p>http:// 転送または https:// 転送を使用する場合、 クライアントは <a href="gitprotocol-http.html">gitprotocol-http(5)</a> で説明されているように「smart」な info/refs リクエストを作成し、 <code>Git-Protocol</code> ヘッダー内で「version=2」を指定してv2を使用するように要求します。</p></div>
+<div class="paragraph"><p>http:// 輸送または https:// 輸送を使用する場合、 クライアントは <a href="gitprotocol-http.html">gitprotocol-http(5)</a> で説明されているように「smart」な info/refs リクエストを作成し、 <code>Git-Protocol</code> ヘッダー内で「version=2」を指定してv2を使用するように要求します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>C: GET $GIT_URL/info/refs?service=git-upload-pack HTTP/1.0
@@ -858,9 +858,9 @@ S: &lt;capability-advertisement&gt;</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_capability_advertisement">Capability Advertisement</h2>
+<h2 id="_capability_advertisement_機能の広告">Capability Advertisement(機能の広告)</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>(クライアントからの要求に基づいて)プロトコルバージョン2を使用して通信することを決定したサーバーは、初期応答でバージョン文字列を送信し、続いてその機能を広告することによってクライアントに通知します。各機能は、オプションの値を持つキーです。クライアントは、不明なキーをすべて無視する必要があります。未知の値の意味は、各キーの定義に任されています。一部の機能では、クライアントによる実行を要求できるコマンドについて説明します。</p></div>
+<div class="paragraph"><p>(クライアントからの要求に基づいて)プロトコルバージョン2を使用して通信することを決定したサーバーは、初期応答でバージョン文字列を送信し、続いてその機能(capabilities)を広告(advertisement)することによってクライアントに通知します。各機能は、オプションの値を持つキーです。クライアントは、不明なキーをすべて無視する必要があります。未知の値の意味は、各キーの定義に任されています。一部の機能では、クライアントによる実行を要求できるコマンドについて説明します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>capability-advertisement = protocol-version
@@ -906,7 +906,7 @@ command-args = *command-specific-arg</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_capabilities">Capabilities</h2>
+<h2 id="_capabilities_機能">Capabilities(機能)</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>機能には異なる2つのタイプがあります。情報を伝達したり要求の動作を変更したりするために使用できる通常の機能と、クライアントが実行したいコアアクション（フェッチ、プッシュなど）であるコマンドです。</p></div>
 <div class="paragraph"><p>プロトコルバージョン2は、デフォルトではステートレスです。 つまり、クライアントがサーバーで状態を維持する必要があることを指示する機能を要求しない限り、すべてのコマンドは1ラウンドだけ持続し、サーバー側の観点からステートレスである必要があります。クライアントは、正しく機能するためにサーバー側に状態管理を要求してはいけません(MUST NOT)。これにより、サーバー側では状態管理について心配することなく、単純なラウンドロビン負荷分散が可能になります。</p></div>
@@ -1327,14 +1327,28 @@ packfile section
 <p>
 パックファイルのデータ転送は、プロトコルバージョン1の「side-band-64k」機能と同じセマンティクスを使用して、常に多重化されます。つまり、packfileデータストリーム中の各パケットは、先頭の4バイトの pkt-line長(通常はpkt-line形式)、1バイトのストリームコード、実際のデータで構成されます。
 </p>
+<div class="paragraph"><p>ストリーム・コードは以下のいずれかです:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+パックデータ
+</p>
+</li>
+<li>
+<p>
+進行状況メッセージ
+</p>
+</li>
+<li>
+<p>
+ストリームが中止(abort)される直前の致命的なエラーメッセージ
+</p>
+</li>
+</ol></div>
 </li>
 </ul></div>
 </dd>
 </dl></div>
-<div class="paragraph"><p>The stream code can be one of:
-1 - pack data
-2 - progress messages
-3 - fatal error message just before stream aborts</p></div>
 </div>
 <div class="sect2">
 <h3 id="_server_option">server-option</h3>
@@ -1397,117 +1411,117 @@ oid &lt;oid&gt;
 </div>
 <div class="sect2">
 <h3 id="_bundle_uri">bundle-uri</h3>
-<div class="paragraph"><p>If the <em>bundle-uri</em> capability is advertised, the server supports the &#8216;bundle-uri&#8217; command.</p></div>
-<div class="paragraph"><p>The capability is currently advertised with no value (i.e. not "bundle-uri=somevalue"), a value may be added in the future for supporting command-wide extensions. Clients MUST ignore any unknown capability values and proceed with the 'bundle-uri` dialog they support.</p></div>
-<div class="paragraph"><p>The <em>bundle-uri</em> command is intended to be issued before <code>fetch</code> to get URIs to bundle files (see <a href="git-bundle.html">git-bundle(1)</a>) to "seed" and inform the subsequent <code>fetch</code> command.</p></div>
-<div class="paragraph"><p>The client CAN issue <code>bundle-uri</code> before or after any other valid command. To be useful to clients it&#8217;s expected that it&#8217;ll be issued after an <code>ls-refs</code> and before <code>fetch</code>, but CAN be issued at any time in the dialog.</p></div>
+<div class="paragraph"><p><code>bundle-uri</code> 機能が広告されている場合、サーバーは <code>bundle-uri</code> コマンドをサポートします。</p></div>
+<div class="paragraph"><p>現在、この機能は値なし(つまり、 bundle-uri=ほげほげ 形式ではありません)で広告されていますが、コマンド全体の拡張機能をサポートするために、将来値が追加される可能性があります。クライアントは不明な機能値を無視し、サポートする 'bundle-uri` 対話を続行しなければなりません。</p></div>
+<div class="paragraph"><p><em>bundle-uri</em> コマンドは、種(seed)にするためのバンドル・ファイルの URI を取得し、 後続の <code>fetch</code> コマンドに通知するために、 <code>fetch</code> の前に発行されることを目的としています。</p></div>
+<div class="paragraph"><p>クライアントは、他の有効なコマンドの前後に <code>bundle-uri</code> を発行できます。クライアントにとって役立つように、 <code>ls-refs</code> の後でかつ <code>fetch</code> の前に発行されることが期待されますが、対話内のいつでも発行できます。</p></div>
 <div class="sect3">
 <h4 id="_discussion_of_bundle_uri">DISCUSSION of bundle-uri</h4>
-<div class="paragraph"><p>The intent of the feature is optimize for server resource consumption in the common case by changing the common case of fetching a very large PACK during <a href="git-clone.html">git-clone(1)</a> into a smaller incremental fetch.</p></div>
-<div class="paragraph"><p>It also allows servers to achieve better caching in combination with an <code>uploadpack.packObjectsHook</code> (see <a href="git-config.html">git-config(1)</a>).</p></div>
-<div class="paragraph"><p>By having new clones or fetches be a more predictable and common negotiation against the tips of recently produces *.bundle file(s). Servers might even pre-generate the results of such negotiations for the <code>uploadpack.packObjectsHook</code> as new pushes come in.</p></div>
-<div class="paragraph"><p>One way that servers could take advantage of these bundles is that the server would anticipate that fresh clones will download a known bundle, followed by catching up to the current state of the repository using ref tips found in that bundle (or bundles).</p></div>
+<div class="paragraph"><p>この機能の目的は、 <a href="git-clone.html">git-clone(1)</a> 処理中に非常に大きなパックを取得する一般的なケースを、 より小さな増分フェッチに変更することで、 一般的なケースでのサーバー・リソースの消費を最適化することです。</p></div>
+<div class="paragraph"><p>また、 サーバーは <code>uploadpack.packObjectsHook</code> と組み合わせてより優れたキャッシュを実現できます (<a href="git-config.html">git-config(1)</a> 参照)。</p></div>
+<div class="paragraph"><p>新しいクローンやフェッチを、 最近生成された *.bundle ファイルの先端(tips)に対して、より予測可能で一般的なネゴシエーションを行うようにする。 サーバーは、新しいプッシュが来ると <code>uploadpack.packObjectsHook</code> のために、そのようなネゴシエーションの結果を事前に生成するかもしれません。</p></div>
+<div class="paragraph"><p>サーバーがこれらのバンドルを利用する方法の一つは、新しいクローンが既知のバンドルをダウンロードし、その後にそのバンドルにある ref 先端(tips) を使ってリポジトリの現在の状態に追いつくことをサーバーが予測することである。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_protocol_for_bundle_uri">PROTOCOL for bundle-uri</h4>
-<div class="paragraph"><p>A <code>bundle-uri</code> request takes no arguments, and as noted above does not currently advertise a capability value. Both may be added in the future.</p></div>
-<div class="paragraph"><p>When the client issues a <code>command=bundle-uri</code> request, the response is a list of key-value pairs provided as packet lines with value <code>&lt;key&gt;=&lt;value&gt;</code>. Each <code>&lt;key&gt;</code> should be interpreted as a config key from the <code>bundle.*</code> namespace to construct a list of bundles. These keys are grouped by a <code>bundle.&lt;id&gt;.</code> subsection, where each key corresponding to a given <code>&lt;id&gt;</code> contributes attributes to the bundle defined by that <code>&lt;id&gt;</code>. See <a href="git-config.html">git-config(1)</a> for the specific details of these keys and how the Git client will interpret their values.</p></div>
-<div class="paragraph"><p>Clients MUST parse the line according to the above format, lines that do not conform to the format SHOULD be discarded. The user MAY be warned in such a case.</p></div>
+<div class="paragraph"><p><code>bundle-uri</code> 要求は引数無しで、上記の通り、現時点では機能値(capability value)を広告しません。いずれも将来追加される可能性はあります。</p></div>
+<div class="paragraph"><p>クライアントが <code>command=bundle-uri</code> 要求を発行すると、その応答は値 <code>&lt;key&gt;=&lt;value&gt;</code> を持つパケット行として提供される、キーと値のペアのリストです。 各 <code>&lt;key&gt;</code> は、バンドルのリストを作成するための <code>bundle.*</code> 名前空間の設定キーとして解釈される必要があります。これらのキーは <code>bundle.&lt;id&gt;.</code> サブセクションによってグループ化されており、指定された <code>&lt;id&gt;</code> に対応する各キーは、その <code>&lt;id&gt;</code> によって定義されたバンドルに属性を提供します。これらのキーの具体的な詳細と、Git クライアントがそれらの値をどのように解釈するかについては、<a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
+<div class="paragraph"><p>クライアントは上記の形式に従って行をパースしなければいけません(MUST)、形式に従わない行は破棄されるべきです(SHOULD)。そののような場合、ユーザーに警告が表示されることがあります。</p></div>
 </div>
 <div class="sect3">
-<h4 id="_bundle_uri_client_and_server_expectations">bundle-uri CLIENT AND SERVER EXPECTATIONS</h4>
+<h4 id="_bundle_uri_client_and_server_expectations_bundle_uriクライアントとサーバが期待する事">bundle-uri CLIENT AND SERVER EXPECTATIONS(bundle-uriクライアントとサーバが期待する事)</h4>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 URI CONTENTS
 </dt>
 <dd>
 <p>
-The content at the advertised URIs MUST be one of two types.
+広告された URI の内容は、以下の 2 つのタイプのいずれかでなければなりません。
 </p>
-<div class="paragraph"><p>The advertised URI may contain a bundle file that <code>git bundle verify</code> would accept. I.e. they MUST contain one or more reference tips for use by the client, MUST indicate prerequisites (in any) with standard "-" prefixes, and MUST indicate their "object-format", if applicable.</p></div>
-<div class="paragraph"><p>The advertised URI may alternatively contain a plaintext file that <code>git config --list</code> would accept (with the <code>--file</code> option). The key-value pairs in this list are in the <code>bundle.*</code> namespace (see <a href="git-config.html">git-config(1)</a>).</p></div>
+<div class="paragraph"><p>広告された URI には、 <code>git bundle verify</code> が受け入れる事ができるバンドル・ファイルが含まれている場合があります。つまり、それらには、クライアントが使用するための 1 つ以上の参照先端(reference tips)が含まれていなければなりません(MUST)。標準の <code>-</code> プレフィックスを使用して(いずれかの)前提条件を示さなければなりません(MUST)。また、該当する場合は <code>object-format</code>(オブジェクト形式)を示さなければなりません。</p></div>
+<div class="paragraph"><p>広告された URI には、 <code>git config --list</code> が受け入れられるプレーンテキスト・ファイルが含まれる場合もあります(<code>--file</code> オプションを使用)。このリストのキーと値のペアは、 <code>bundle.*</code> 名前空間内にあります (<a href="git-config.html">git-config(1)</a> 参照)。</p></div>
 </dd>
 <dt class="hdlist1">
 bundle-uri CLIENT ERROR RECOVERY
 </dt>
 <dd>
 <p>
-A client MUST above all gracefully degrade on errors, whether that error is because of bad missing/data in the bundle URI(s), because that client is too dumb to e.g. understand and fully parse out bundle headers and their prerequisite relationships, or something else.
+そのエラーが、 バンドルURIの欠落やデータの誤りによるものであれ、クライアントがバンドルヘッダとその前提関係を理解せず解析しきれないほど間抜けであるためであれ、あるいは他の何かによるものであれ、クライアントは何よりもまず、エラーに対してすなおに縮退しなければなりません(MUST)。
 </p>
-<div class="paragraph"><p>Server operators should feel confident in turning on "bundle-uri" and not worry if e.g. their CDN goes down that clones or fetches will run into hard failures. Even if the server bundle(s) are incomplete, or bad in some way the client should still end up with a functioning repository, just as if it had chosen not to use this protocol extension.</p></div>
-<div class="paragraph"><p>All subsequent discussion on client and server interaction MUST keep this in mind.</p></div>
+<div class="paragraph"><p>サーバー管理者は、「bundle-uri」機能をオンにすることで、例えばCDNがダウンした場合でも、クローンやフェッチが重大な失敗することを心配する必要がなくなります。サーバーのバンドルが不完全であったり、何らかの形で不良であったりしても、クライアントは、このプロトコル拡張を使用しないことを選択した場合と同じように、機能するリポジトリを手にすることができます。</p></div>
+<div class="paragraph"><p>クライアントとサーバーの相互作用に関する以降のすべての議論は、これを念頭に置く必要があります。</p></div>
 </dd>
 <dt class="hdlist1">
 bundle-uri SERVER TO CLIENT
 </dt>
 <dd>
 <p>
-The ordering of the returned bundle uris is not significant. Clients MUST parse their headers to discover their contained OIDS and prerequisites. A client MUST consider the content of the bundle(s) themselves and their header as the ultimate source of truth.
+返されるバンドル URI の順序は重要ではありません。クライアントは、ヘッダーを解析して、含まれる OID と前提条件を検出する必要があります。クライアントは、バンドル自体のコンテンツとそのヘッダーを最も信頼できる情報源と見なす必要があります。
 </p>
-<div class="paragraph"><p>A server MAY even return bundle(s) that don&#8217;t have any direct relationship to the repository being cloned (either through accident, or intentional "clever" configuration), and expect a client to sort out what data they&#8217;d like from the bundle(s), if any.</p></div>
+<div class="paragraph"><p>サーバーは(事故または意図的な「賢い」構成によって)、クローン作成されるリポジトリと直接関係のないバンドルを返してもよく、クライアントがそのバンドルからどのようなデータを取得したいかえり分けることを期待します。</p></div>
 </dd>
 <dt class="hdlist1">
 bundle-uri CLIENT TO SERVER
 </dt>
 <dd>
 <p>
-The client SHOULD provide reference tips found in the bundle header(s) as <em>have</em> lines in any subsequent <code>fetch</code> request. A client MAY also ignore the bundle(s) entirely if doing so is deemed worse for some reason, e.g. if the bundles can&#8217;t be downloaded, it doesn&#8217;t like the tips it finds etc.
+クライアントは、バンドル・ヘッダーで見つかった参照先端(reference tips)を、後続の「fetch」要求の「have」行として提供する必要があります。 クライアントは、何らかの理由、バンドルがダウンロードできない場合、見つけた先端(tips)が気に入らない場合など、 バンドル処理するほうがより悪いとみなされる場合、バンドルを完全に無視してもよいです。
 </p>
 </dd>
 <dt class="hdlist1">
-WHEN ADVERTISED BUNDLE(S) REQUIRE NO FURTHER NEGOTIATION
+WHEN ADVERTISED BUNDLE(S) REQUIRE NO FURTHER NEGOTIATION(宣伝されたバンドルにそれ以上ネゴが必要ない場合)
 </dt>
 <dd>
 <p>
-If after issuing <code>bundle-uri</code> and <code>ls-refs</code>, and getting the header(s) of the bundle(s) the client finds that the ref tips it wants can be retrieved entirely from advertised bundle(s), the client MAY disconnect from the Git server. The results of such a <em>clone</em> or <em>fetch</em> should be indistinguishable from the state attained without using bundle-uri.
+<code>bundle-uri</code> と <code>ls-refs</code> を発行し、バンドルのヘッダーを取得後、クライアントが必要なすべての ref 先端(tips)を広告されたバンドルから取得できることがわかった場合、クライアントはGit サーバーから切断してもよいです。このような「clone」または「fetch」の結果は、 bundle-uri を使用せずに得られた状態と区別できないものであるべきです。
 </p>
 </dd>
 <dt class="hdlist1">
-EARLY CLIENT DISCONNECTIONS AND ERROR RECOVERY
+EARLY CLIENT DISCONNECTIONS AND ERROR RECOVERY(クライアントの早期切断とエラーリカバリ)
 </dt>
 <dd>
 <p>
-A client MAY perform an early disconnect while still downloading the bundle(s) (having streamed and parsed their headers). In such a case the client MUST gracefully recover from any errors related to finishing the download and validation of the bundle(s).
+クライアントは、バンドルのダウンロード中(ヘッダーの転送・パース後)、早期切断を実行してもよい。 このような場合、クライアントは、バンドルのダウンロード終了と検証に関連するエラーから適切に回復しなければなりません。
 </p>
-<div class="paragraph"><p>I.e. a client might need to re-connect and issue a <em>fetch</em> command, and possibly fall back to not making use of <em>bundle-uri</em> at all.</p></div>
-<div class="paragraph"><p>This "MAY" behavior is specified as such (and not a "SHOULD") on the assumption that a server advertising bundle uris is more likely than not to be serving up a relatively large repository, and to be pointing to URIs that have a good chance of being in working order. A client MAY e.g. look at the payload size of the bundles as a heuristic to see if an early disconnect is worth it, should falling back on a full "fetch" dialog be necessary.</p></div>
+<div class="paragraph"><p>つまり、クライアントは再接続して「fetch」コマンドを発行する必要がある場合があり、場合によっては「bundle-uri」をまったく使用しないようにフォールバックする可能性があります。</p></div>
+<div class="paragraph"><p>この、 (「しなければならない」(SHOULD)ではなく、)「してもよい」(MAY)という振る舞いは、バンドルURIを広告するサーバーが比較的大きなリポジトリを提供している可能性が高く、かつ、正常である可能性が高いURIを指しているという仮定に基づいています。 クライアントは、例えば、ヒューリスティックとしてバンドルのペイロ ード・サイズを確認して、早期に切断する価値があるかどうか、完全な「fetch」対話にフォールバックする必要があるかどうかを確認「してもよい」です。</p></div>
 </dd>
 <dt class="hdlist1">
-WHEN ADVERTISED BUNDLE(S) REQUIRE FURTHER NEGOTIATION
+WHEN ADVERTISED BUNDLE(S) REQUIRE FURTHER NEGOTIATION(宣伝されているバンドルにさらなるネゴが必要な場合)
 </dt>
 <dd>
 <p>
-A client SHOULD commence a negotiation of a PACK from the server via the "fetch" command using the OID tips found in advertised bundles, even if&#8217;s still in the process of downloading those bundle(s).
+クライアントは、たとえバンドルをダウンロード途中であっても、広告されたバンドルで見つかった OID 先端(tips)を使用して、「fetch」コマンドを介してサーバーから PACK のネゴシエーションを開始する必要があります。
 </p>
-<div class="paragraph"><p>This allows for aggressive early disconnects from any interactive server dialog. The client blindly trusts that the advertised OID tips are relevant, and issues them as <em>have</em> lines, it then requests any tips it would like (usually from the "ls-refs" advertisement) via <em>want</em> lines. The server will then compute a (hopefully small) PACK with the expected difference between the tips from the bundle(s) and the data requested.</p></div>
-<div class="paragraph"><p>The only connection the client then needs to keep active is to the concurrently downloading static bundle(s), when those and the incremental PACK are retrieved they should be inflated and validated. Any errors at this point should be gracefully recovered from, see above.</p></div>
+<div class="paragraph"><p>これにより、対話的なサーバーとの対話からの積極的な早期切断が可能になります。 クライアントは、広告された OID 先端(tips)が自分に関連していることを盲目的に信頼し、それらを「have」行として発行し、その後(通常は「ls-refs」広告から、)「want」行を介して必要な先端(tips)を要求します。次にサーバーは、バンドルからの先端(tips)と要求されたデータの間の期待される差分を使用して、(できれば小さい) PACK を計算します。</p></div>
+<div class="paragraph"><p>クライアントがアクティブに保っておく必要がある唯一の接続は、並列にダウンロードしている静的バンドルへの接続であり、そして、それらと増分 PACK が取得されるときに、解凍して検証する必要があります。 この時点でエラーが発生した場合は、正常に回復する必要があります(上記参照)。</p></div>
 </dd>
 </dl></div>
 </div>
 <div class="sect3">
 <h4 id="_bundle_uri_protocol_features">bundle-uri PROTOCOL FEATURES</h4>
-<div class="paragraph"><p>The client constructs a bundle list from the <code>&lt;key&gt;=&lt;value&gt;</code> pairs provided by the server. These pairs are part of the <code>bundle.*</code> namespace as documented in <a href="git-config.html">git-config(1)</a>. In this section, we discuss some of these keys and describe the actions the client will do in response to this information.</p></div>
-<div class="paragraph"><p>In particular, the <code>bundle.version</code> key specifies an integer value. The only accepted value at the moment is <code>1</code>, but if the client sees an unexpected value here then the client MUST ignore the bundle list.</p></div>
-<div class="paragraph"><p>As long as <code>bundle.version</code> is understood, all other unknown keys MAY be ignored by the client. The server will guarantee compatibility with older clients, though newer clients may be better able to use the extra keys to minimize downloads.</p></div>
-<div class="paragraph"><p>Any backwards-incompatible addition of pre-URI key-value will be guarded by a new <code>bundle.version</code> value or values in <em>bundle-uri</em> capability advertisement itself, and/or by new future <code>bundle-uri</code> request arguments.</p></div>
-<div class="paragraph"><p>Some example key-value pairs that are not currently implemented but could be implemented in the future include:</p></div>
+<div class="paragraph"><p>クライアントは、 サーバーから提供された <code>&lt;key&gt;=&lt;value&gt;</code> ペア達からバンドル・リストを構築します。 これらのペア達は、 <a href="git-config.html">git-config(1)</a> に記載されている <code>bundle.*</code> 名前空間の一部です。 このセクションでは、 これらのキーのいくつかについて説明し、 この情報に応じてクライアントが実行するアクションについて説明します。</p></div>
+<div class="paragraph"><p>特に、 <code>bundle.version</code> キーは整数値を指定します。 現時点で受け入れられる唯一の値は <code>1</code> ですが、クライアントがここで予期しない値を見た場合、クライアントはバンドルリストを無視しなければなりません(MUST)。</p></div>
+<div class="paragraph"><p><code>bundle.version</code> が了解されている限り、他のすべての未知のキーはクライアントによって無視されても構いません(MAY)。サーバーは古いクライアントとの互換性を保証しますが、より新しいクライアントは追加のキーを使用してダウンロードを最小限に抑えることができる場合があります。</p></div>
+<div class="paragraph"><p>pre-URI Key-Value の後方互換性のない追加は 新しい <code>bundle.version</code> 値、または <em>bundle-uri</em> 機能広告自体、 および/または 将来の新しい <code>bundle-uri</code> リクエスト引数によって保護されます。</p></div>
+<div class="paragraph"><p>現在は実装されていないが、将来実装される可能性があるキーと値のペアの例としては、以下のものが挙げられます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Add a "hash=&lt;val&gt;" or "size=&lt;bytes&gt;" advertise the expected hash or size of the bundle file.
+<code>hash=&lt;val&gt;</code> または <code>size=&lt;bytes&gt;</code> を追加して、バンドル・ファイルの予想されるハッシュまたはサイズを広告します。
 </p>
 </li>
 <li>
 <p>
-Advertise that one or more bundle files are the same (to e.g. have clients round-robin or otherwise choose one of N possible files).
+1 つ以上のバンドル・ファイルが同一であることを広告します(たとえば、クライアントにラウンドロビンさせたり、 N 個の可能なファイルから 1 つを選択させるため)。
 </p>
 </li>
 <li>
 <p>
-A "oid=&lt;OID&gt;" shortcut and "prerequisite=&lt;OID&gt;" shortcut. For expressing the common case of a bundle with one tip and no prerequisites, or one tip and one prerequisite.
+<code>oid=&lt;OID&gt;</code> ショートカットと <code>prerequisite=&lt;OID&gt;</code> ショートカット。 1 つの先端(tip)かつ前提条件(prerequisites)無しのバンドル、 または 1 つの先端と 1 つの前提条件を備えたバンドルの一般的なケースを表現します。
 </p>
-<div class="paragraph"><p>This would allow for optimizing the common case of servers who&#8217;d like to provide one "big bundle" containing only their "main" branch, and/or incremental updates thereof.</p></div>
-<div class="paragraph"><p>A client receiving such a a response MAY assume that they can skip retrieving the header from a bundle at the indicated URI, and thus save themselves and the server(s) the request(s) needed to inspect the headers of that bundle or bundles.</p></div>
+<div class="paragraph"><p>これにより、「メイン」ブランチ および/または その増分更新のみを含む 1 つの「大きなバンドル」を提供したいサーバーの一般的なケースを最適化できます。</p></div>
+<div class="paragraph"><p>そのような応答を受信したクライアントは、指定された URI にあるバンドルからヘッダーを取得することをスキップできると想定しても構いません(MAY)。これにより、そのバンドルのヘッダーを検査するために必要なリクエストを自分自身とサーバーが節約することができます。</p></div>
 </li>
 </ul></div>
 </div>
@@ -1525,7 +1539,7 @@ A "oid=&lt;OID&gt;" shortcut and "prerequisite=&lt;OID&gt;" shortcut. For expres
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:54 JST
+ 2024-02-23 03:21:59 JST
 </div>
 </div>
 </body>
