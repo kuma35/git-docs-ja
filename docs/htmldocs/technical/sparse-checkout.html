@@ -740,57 +740,57 @@ asciidoc.install();
 <div class="ulist"><ul>
 <li>
 <p>
-Terminology
+用語定義
 </p>
 </li>
 <li>
 <p>
-Purpose of sparse-checkouts
+sparse-checkouts(まばらなチェックアウト)の目的
 </p>
 </li>
 <li>
 <p>
-Usecases of primary concern
+主たる関心事に関するユースケース
 </p>
 </li>
 <li>
 <p>
-Oversimplified mental models ("Cliff Notes" for this document!)
+すごく単純化された概念モデル(この文書の虎の巻です!)
 </p>
 </li>
 <li>
 <p>
-Desired behavior
+期待される振る舞い
 </p>
 </li>
 <li>
 <p>
-Behavior classes
+振る舞いクラス
 </p>
 </li>
 <li>
 <p>
-Subcommand-dependent defaults
+サブコマンドごとのデフォルト
 </p>
 </li>
 <li>
 <p>
-Sparse specification vs. sparsity patterns
+スパース仕様 V.S. スパース・パターン
 </p>
 </li>
 <li>
 <p>
-Implementation Questions
+実装時の疑問
 </p>
 </li>
 <li>
 <p>
-Implementation Goals/Plans
+実装の 目標/計画
 </p>
 </li>
 <li>
 <p>
-Known bugs
+既知のバグ
 </p>
 </li>
 <li>
@@ -800,200 +800,268 @@ Reference Emails
 </li>
 </ul></div>
 <div class="sect2">
-<h3 id="_terminology">Terminology</h3>
-<div class="paragraph"><p>cone mode: one of two modes for specifying the desired subset of files
-        in a sparse-checkout.  In cone-mode, the user specifies
-        directories (getting both everything under that directory as
-        well as everything in leading directories), while in non-cone
-        mode, the user specifies gitignore-style patterns.  Controlled
-        by the --[no-]cone option to sparse-checkout init|set.</p></div>
-<div class="paragraph"><p>SKIP_WORKTREE: When tracked files do not match the sparse specification and
-        are removed from the working tree, the file in the index is marked
-        with a SKIP_WORKTREE bit.  Note that if a tracked file has the
-        SKIP_WORKTREE bit set but the file is later written by the user to
-        the working tree anyway, the SKIP_WORKTREE bit will be cleared at
-        the beginning of any subsequent Git operation.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Most sparse checkout users are unaware of this implementation
-detail, and the term should generally be avoided in user-facing
-descriptions and command flags.  Unfortunately, prior to the
-`sparse-checkout` subcommand this low-level detail was exposed,
-and as of time of writing, is still exposed in various places.</code></pre>
-</div></div>
-<div class="paragraph"><p>sparse-checkout: a subcommand in git used to reduce the files present in
-        the working tree to a subset of all tracked files.  Also, the
-        name of the file in the $GIT_DIR/info directory used to track
-        the sparsity patterns corresponding to the user&#8217;s desired
-        subset.</p></div>
-<div class="paragraph"><p>sparse cone: see cone mode</p></div>
-<div class="paragraph"><p>sparse directory: An entry in the index corresponding to a directory, which
-        appears in the index instead of all the files under that directory
-        that would normally appear.  See also sparse-index.  Something that
-        can cause confusion is that the "sparse directory" does NOT match
-        the sparse specification, i.e. the directory is NOT present in the
-        working tree.  May be renamed in the future (e.g. to "skipped
-        directory").</p></div>
-<div class="paragraph"><p>sparse index: A special mode for sparse-checkout that also makes the
-        index sparse by recording a directory entry in lieu of all the
-        files underneath that directory (thus making that a "skipped
-        directory" which unfortunately has also been called a "sparse
-        directory"), and does this for potentially multiple
-        directories.  Controlled by the --[no-]sparse-index option to
-        init|set|reapply.</p></div>
-<div class="paragraph"><p>sparsity patterns: patterns from $GIT_DIR/info/sparse-checkout used to
-        define the set of files of interest.  A warning: It is easy to
-        over-use this term (or the shortened "patterns" term), for two
-        reasons: (1) users in cone mode specify directories rather than
-        patterns (their directories are transformed into patterns, but
-        users may think you are talking about non-cone mode if you use the
-        word "patterns"), and (b) the sparse specification might
-        transiently differ in the working tree or index from the sparsity
-        patterns (see "Sparse specification vs. sparsity patterns").</p></div>
-<div class="paragraph"><p>sparse specification: The set of paths in the user&#8217;s area of focus.  This
-        is typically just the tracked files that match the sparsity
-        patterns, but the sparse specification can temporarily differ and
-        include additional files.  (See also "Sparse specification
-        vs. sparsity patterns")</p></div>
+<h3 id="_用語定義">用語定義</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+円錐モード(cone mode)
+</dt>
+<dd>
+<p>
+sparse-checkout で、目的の、ファイル群のサブセットを指定するための 2 つのモードのうちの 1 つ。 円錐モード(cone mode)では、 ユーザーはディレクトリを指定します(そのディレクトリ下にある全てのものと、先頭のディレクトリ内にある全てのものの両方を取得します)。 一方、 非コーン・モードでは、 ユーザーは gitignore スタイルのパターンを指定します。 sparse-checkout init|set への --[no-]cone オプションによって制御されます。
+</p>
+</dd>
+<dt class="hdlist1">
+SKIP_WORKTREE
+</dt>
+<dd>
+<p>
+追跡中のファイルがスパース仕様にマッチせず、 作業ツリーから削除されると、 インデックス内の当該ファイルには SKIP_WORKTREE ビットが設定されます。 追跡中のファイルに SKIP_WORKTREE ビットが設定されているにもかかわらず、 その後に当該ファイルがユーザーによって作業ツリーに書き込まれた場合、 SKIP_WORKTREE ビットは後続の Git 操作の開始時にクリアされることに注意してください。
+</p>
+<div class="paragraph"><p>ほとんどのスパース・チェックアウトの利用者はこの実装の詳細を知らないため、 一般にユーザー向けの説明やコマンド・フラグではこの用語の使用を避ける必要があります。 残念ながら、 この低レベルな詳細は <code>sparse-checkout</code> サブコマンドが使用される前に公開されており、 この記事の執筆時点でもまださまざまな場所で公開されたままです。</p></div>
+</dd>
+<dt class="hdlist1">
+sparse-checkout
+</dt>
+<dd>
+<p>
+作業ツリーに存在するファイルを、 全ての追跡中ファイルのサブセットに減らすために使用される git のサブコマンド。 また、 ユーザーの希望するサブセットに対応するスパース・パターンを追跡するために使用される $GIT_DIR/info ディレクトリ内のファイル名。
+</p>
+</dd>
+<dt class="hdlist1">
+sparse cone
+</dt>
+<dd>
+<p>
+円錐モード(cone mode)参照
+</p>
+</dd>
+<dt class="hdlist1">
+スパース・ディレクトリ
+</dt>
+<dd>
+<p>
+ディレクトリに対応するインデックス内のエントリ。 通常はそのディレクトリ下にあるすべてのファイルの代わりにインデックスに現れます。 「スパースインデックス」(sparse-index)も参照してください。 混乱を引き起こす可能性があるのは、「スパース・ディレクトリ」がスパース仕様と一致しないことです。 つまり、 ディレクトリが作業ツリーに存在しないことです。 将来的に名前が変更される可能性があります(例えば「skipped directory」)。
+</p>
+</dd>
+<dt class="hdlist1">
+スパース・インデックス
+</dt>
+<dd>
+<p>
+ディレクトリ下にあるすべてのファイルの代わりにディレクトリ・エントリを記録することでインデックスをスパース(疎らに)する(つまり、 そのディレクトリは、遺憾ながら「スパース・ディレクトリ」とも呼ばれる、「スキップされたディレクトリ」になります)、 sparse-checkout の特別なモードで、これを複数のディレクトリに対して行う可能性があります。 init|set|reapply への --[no-]sparse-index オプションによって制御されます。
+</p>
+</dd>
+<dt class="hdlist1">
+スパース・パターン(sparsity patterns)
+</dt>
+<dd>
+<p>
+対象のファイルの組を定義するために使用される $GIT_DIR/info/sparse-checkout のパターン。 警告: スパース・パターンという用語(または短い「パターン」) は、 次の 2 つの理由から簡単に乱用されます: (1) 円錐モード(cone mode)の利用者はパターンではなくディレクトリを指定する(ディレクトリの指定はパターンに変換されますが、「パターン」という言葉を使用すると、ユーザーは非円錐モード(non-cone mode)について話していると考えるかもしれません)ため、 (2) 作業ツリーまたはインデックス内のスパース仕様が一時的にスパース・パターンと異なる事があるかもしれません(「スパース仕様 V.S. スパース・パターン」参照)。
+</p>
+</dd>
+<dt class="hdlist1">
+スパース仕様(sparse specification)
+</dt>
+<dd>
+<p>
+利用者の注目領域内のパスの組。 これは通常、 スパース・パターンにマッチする追跡中のファイルだけですが、 スパース仕様が一時的に異なり、 追加のファイルが含まれる場合があります。 (「スパース仕様 V.S. スパース・パターン」も参照下さい)
+</p>
 <div class="ulist"><ul>
 <li>
 <p>
-When working with history, the sparse specification is exactly the set of files matching the sparsity patterns.
+履歴を扱う場合、スパース仕様は正確にスパース・パターンにマッチするファイルの組です。
 </p>
 </li>
 <li>
 <p>
-When interacting with the working tree, the sparse specification is the set of tracked files with a clear SKIP_WORKTREE bit or tracked files present in the working copy.
+作業ツリーと対話する場合、 スパース仕様は、 クリアされた SKIP_WORKTREE ビットを持つ追跡中ファイルの組、 または作業コピーに存在する追跡中ファイルです。
 </p>
 </li>
 <li>
 <p>
-When modifying or showing results from the index, the sparse specification is the set of files with a clear SKIP_WORKTREE bit or that differ in the index from HEAD.
+インデックスの結果を変更または表示する場合、 スパース仕様は、クリアされた SKIP_WORKTREE ビットを持つファイルの組、 または HEAD とはインデックスが異なるファイルの組です。
 </p>
 </li>
 <li>
 <p>
-If working with the index and the working copy, the sparse specification is the union of the paths from above.
+インデックスと作業コピーを使用する場合、スパース仕様は上記のパスを合わせたものです。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>vivifying: When a command restores a tracked file to the working tree (and
-        hopefully also clears the SKIP_WORKTREE bit in the index for that
-        file), this is referred to as "vivifying" the file.</p></div>
+</dd>
+<dt class="hdlist1">
+vivifying
+</dt>
+<dd>
+<p>
+コマンドが追跡中のファイルを作業ツリーに復元する(そして、 たぶん、そのファイルのインデックス内の SKIP_WORKTREE ビットもクリアする)ことを、ファイルの「vivifying」(復活)と呼びます。
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
-<h3 id="_purpose_of_sparse_checkouts">Purpose of sparse-checkouts</h3>
-<div class="paragraph"><p>sparse-checkouts exist to allow users to work with a subset of their files.</p></div>
-<div class="paragraph"><p>You can think of sparse-checkouts as subdividing "tracked" files into two categories&#8201;&#8212;&#8201;a sparse subset, and all the rest. Implementationally, we mark "all the rest" in the index with a SKIP_WORKTREE bit and leave them out of the working tree. The SKIP_WORKTREE files are still tracked, just not present in the working tree.</p></div>
-<div class="paragraph"><p>In the past, sparse-checkouts were defined by "SKIP_WORKTREE means the file is missing from the working tree but pretend the file contents match HEAD". That was not only bogus (it actually meant the file missing from the working tree matched the index rather than HEAD), but it was also a low-level detail which only provided decent behavior for a few commands. There were a surprising number of ways in which that guiding principle gave command results that violated user expectations, and as such was a bad mental model. However, it persisted for many years and may still be found in some corners of the code base.</p></div>
-<div class="paragraph"><p>Anyway, the idea of "working with a subset of files" is simple enough, but there are multiple different high-level usecases which affect how some Git subcommands should behave. Further, even if we only considered one of those usecases, sparse-checkouts can modify different subcommands in over a half dozen different ways. Let&#8217;s start by considering the high level usecases:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>A) Users are _only_ interested in the sparse portion of the repo</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>A*) Users are _only_ interested in the sparse portion of the repo
-    that they have downloaded so far</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>B) Users want a sparse working tree, but are working in a larger whole</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>C) sparse-checkout is a behind-the-scenes implementation detail allowing
-   Git to work with a specially crafted in-house virtual file system;
-   users are actually working with a "full" working tree that is
-   lazily populated, and sparse-checkout helps with the lazy population
-   piece.</code></pre>
-</div></div>
-<div class="paragraph"><p>It may be worth explaining each of these in a bit more detail:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Behavior A) Users are _only_ interested in the sparse portion of the repo</code></pre>
-</div></div>
-<div class="paragraph"><p>These folks might know there are other things in the repository, but don&#8217;t care. They are uninterested in other parts of the repository, and only want to know about changes within their area of interest. Showing them other files from history (e.g. from diff/log/grep/etc.) is a usability annoyance, potentially a huge one since other changes in history may dwarf the changes they are interested in.</p></div>
-<div class="paragraph"><p>Some of these users also arrive at this usecase from wanting to use partial clones together with sparse checkouts (in a way where they have downloaded blobs within the sparse specification) and do disconnected development. Not only do these users generally not care about other parts of the repository, but consider it a blocker for Git commands to try to operate on those. If commands attempt to access paths in history outside the sparsity specification, then the partial clone will attempt to download additional blobs on demand, fail, and then fail the user&#8217;s command. (This may be unavoidable in some cases, e.g. when <code>git merge</code> has non-trivial changes to reconcile outside the sparse specification, but we should limit how often users are forced to connect to the network.)</p></div>
-<div class="paragraph"><p>Also, even for users using partial clones that do not mind being always connected to the network, the need to download blobs as side-effects of various other commands (such as the printed diffstat after a merge or pull) can lead to worries about local repository size growing unnecessarily[10].</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Behavior A*) Users are _only_ interested in the sparse portion of the repo
-    that they have downloaded so far (a variant on the first usecase)</code></pre>
-</div></div>
+<h3 id="_sparse_checkouts_まばらなチェックアウト_の目的">sparse-checkouts(まばらなチェックアウト)の目的</h3>
+<div class="paragraph"><p>sparse-checkout は、 ユーザーのファイル群のサブセットを操作できるようにするために存在します。</p></div>
+<div class="paragraph"><p>sparse-checkouts は、「追跡中のファイル」を 2 つのカテゴリ&#8201;&#8212;&#8201;スパース・サブセットとその他すべて&#8201;&#8212;&#8201;に再分割するものと考えることができます。 その実装としては、 インデックス内の「残りすべて」を SKIP_WORKTREE ビットでマークし、 作業ツリーから除外します。 SKIP_WORKTREE ビットをマークしたファイルは引き続き追跡中ですが、 作業ツリーには存在しないだけです。</p></div>
+<div class="paragraph"><p>以前は、スパース・チェックアウトは「SKIP_WORKTREE とは、 そのファイルが作業ツリーから欠落しているが、 ファイルの内容が HEAD と一致するかのように装うことを意味する」と定義していました。 それはインチキ(実際には、 作業ツリーで欠落しているファイルが HEAD ではなくインデックスと一致することを意味していました)であるだけでなく、いくつかのコマンドにしかまともな動作を提供しない低レベルのものだった。 その指導原理がユーザーの期待に反するような結果をもたらすことは驚くほど多く、 よくない概念モデルであった。 しかし、それは長年にわたって存在したので、 今でもコードベースの片隅に残っているかもしれません。</p></div>
+<div class="paragraph"><p>とにかく、 「ファイル群のサブセットを操作する」という考え方は非常に単純ですが、 一部の Git サブコマンドの動作に影響を与える、 複数の異なる高レベルのユースケースが存在します。 さらに、これらのユースケースの 1 つだけを考慮したとしても、 スパース・チェックアウトはさまざまなサブコマンドを 6 種類以上の異なる方法で変更できます。 まずは、以下のような高レベルのユースケースを検討してみましょう。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+A)
+</dt>
+<dd>
+<p>
+ユーザーはリポジトリのスパース(まばら)な部分「のみ」に関心があります
+</p>
+</dd>
+<dt class="hdlist1">
+A*)
+</dt>
+<dd>
+<p>
+ユーザーは、これまでにダウンロードしたリポジトリのスパース(まばら)な部分「のみ」に関心があります
+</p>
+</dd>
+<dt class="hdlist1">
+B)
+</dt>
+<dd>
+<p>
+ユーザーはスパース(まばら)な作業ツリーを望んでいますが、 より大きな全体で作業しています
+</p>
+</dd>
+<dt class="hdlist1">
+C)
+</dt>
+<dd>
+<p>
+sparse-checkout は、 Git のための特別に作成された内部仮想ファイル・システムと連携できるようにする舞台裏の実装詳細です。 ユーザーは実際には、遅延的に取り込まれた「完全な」作業ツリーを操作しているため、 スパース・チェックアウトは遅延取り込み部分で役立ちます。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>これらのそれぞれをもう少し詳しく説明する価値があるかもしれません:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(振る舞いA)
+</dt>
+<dd>
+<p>
+ユーザーはリポジトリのスパース(まばら)な部分「のみ」に関心があります
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>ユーザーは、 リポジトリに他のものが存在することを知っているかもしれませんが、 気にしません。 ユーザーはリポジトリの他の部分には興味がなく、 関心のある領域内の変更についてのみ知りたいと考えています。 履歴の他のファイル達(たとえば diff/log/grep/ など)を表示することは、有用性を損なう事であり、 履歴の他の部分の変更達が、 ユーザーが興味を持っている変更を矮小化する可能性があるため、 大きな迷惑になる可能性がある。</p></div>
+<div class="paragraph"><p>これらのユーザーの中には、部分(partial)クローンを、(スパース仕様内の BLOB をダウンロードした方法で、)スパース・チェックアウトとともに使用し、 非接続開発を行うことを希望してこのユースケースにたどり着いた人もいます。 これらのユーザーは通常、 リポジトリの他の部分を気にしないだけでなく、 Git コマンドがそれらの部分を操作しようとするのを妨げるものであると考えています。 コマンドがスパース仕様の範囲外の履歴内のパスにアクセスしようとすると、 部分クローンはオンデマンドで追加の BLOB をダウンロードしようとしますが失敗し、 その後ユーザーのコマンドも失敗します。 (これは場合によっては避けられないかもしれません。たとえば、 <code>git merge</code> でスパース仕様の外側で調整するための重要な変更がある場合など、 ユーザーがネットワークに接続することを強制される頻度を制限する必要があります。)</p></div>
+<div class="paragraph"><p>また、 常にネットワークに接続していても構わない部分クローンを使用しているユーザーであっても、 他のさまざまなコマンド(マージまたはプル後に出力される diffstat など)の副作用として BLOB をダウンロードする必要があるため、 ローカル・リポジトリのサイズが不必要に増大するのではないかという懸念につながる可能性があります[10]。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(振る舞いA*)
+</dt>
+<dd>
+<p>
+ユーザーは、 これまでにダウンロードしたリポジトリのスパース(まばら)な部分「のみ」に関心があります(これは最初のユースケースのバリエーションです)
+</p>
+</dd>
+</dl></div>
 <div class="paragraph"><p></p></div>
-<div class="paragraph"><p>This variant could be viewed as Behavior A with the sparse specification for history querying operations modified from "sparsity patterns" to "sparsity patterns limited to the blobs we have already downloaded".</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Behavior B) Users want a sparse working tree, but are working in a
-    larger whole</code></pre>
-</div></div>
-<div class="paragraph"><p>Stolee described this usecase this way[11]:</p></div>
-<div class="paragraph"><p>"I&#8217;m also focused on users that know that they are a part of a larger whole. They know they are operating on a large repository but focus on what they need to contribute their part. I expect multiple "roles" to use very different, almost disjoint parts of the codebase. Some other "architect" users operate across the entire tree or hop between different sections of the codebase as necessary. In this situation, I&#8217;m wary of scoping too many features to the sparse-checkout definition, especially "git log," as it can be too confusing to have their view of the codebase depend on your "point of view."</p></div>
-<div class="paragraph"><p>People might also end up wanting behavior B due to complex inter-project dependencies. The initial attempts to use sparse-checkouts usually involve the directories you are directly interested in plus what those directories depend upon within your repository. But there&#8217;s a monkey wrench here: if you have integration tests, they invert the hierarchy: to run integration tests, you need not only what you are interested in and its in-tree dependencies, you also need everything that depends upon what you are interested in or that depends upon one of your dependencies&#8230;AND you need all the in-tree dependencies of that expanded group. That can easily change your sparse-checkout into a nearly dense one.</p></div>
-<div class="paragraph"><p>Naturally, that tends to kill the benefits of sparse-checkouts. There are a couple solutions to this conundrum: either avoid grabbing in-repo dependencies (maybe have built versions of your in-repo dependencies pulled from a CI cache somewhere), or say that users shouldn&#8217;t run integration tests directly and instead do it on the CI server when they submit a code review. Or do both. Regardless of whether you stub out your in-repo dependencies or stub out the things that depend upon you, there is certainly a reason to want to query and be aware of those other stubbed-out parts of the repository, particularly when the dependencies are complex or change relatively frequently. Thus, for such uses, sparse-checkouts can be used to limit what you directly build and modify, but these users do not necessarily want their sparse checkout paths to limit their queries of versions in history.</p></div>
-<div class="paragraph"><p>Some people may also be interested in behavior B over behavior A simply as a performance workaround: if they are using non-cone mode, then they have to deal with its inherent quadratic performance problems. In that mode, every operation that checks whether paths match the sparsity specification can be expensive. As such, these users may only be willing to pay for those expensive checks when interacting with the working copy, and may prefer getting "unrelated" results from their history queries over having slow commands.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(Behavior C) sparse-checkout is an implementational detail supporting a
-             special VFS.</code></pre>
-</div></div>
-<div class="paragraph"><p>This usecase goes slightly against the traditional definition of sparse-checkout in that it actually tries to present a full or dense checkout to the user. However, this usecase utilizes the same underlying technical underpinnings in a new way which does provide some performance advantages to users. The basic idea is that a company can have an in-house Git-aware Virtual File System which pretends all files are present in the working tree, by intercepting all file system accesses and using those to fetch and write accessed files on demand via partial clones. The VFS uses sparse-checkout to prevent Git from writing or paying attention to many files, and manually updates the sparse checkout patterns itself based on user access and modification of files in the working tree. See commit ecc7c8841d ("repo_read_index: add config to expect files outside sparse patterns", 2022-02-25) and the link at [17] for a more detailed description of such a VFS.</p></div>
-<div class="paragraph"><p>The biggest difference here is that users are completely unaware that the sparse-checkout machinery is even in use. The sparse patterns are not specified by the user but rather are under the complete control of the VFS (and the patterns are updated frequently and dynamically by it). The user will perceive the checkout as dense, and commands should thus behave as if all files are present.</p></div>
+<div class="paragraph"><p>このバリエーションは、 履歴クエリ操作のスパース仕様が、「スパース・パターン」から「既にダウンロードした BLOB に限定されたスパース・パターン」に変更された「振る舞いA」とみなすことができます。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(振る舞いB)
+</dt>
+<dd>
+<p>
+ユーザーはスパース(まばら)な作業ツリーを望んでいますが、 より大きな全体で作業しています
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>Stolee はこのユースケースを以下のように説明しています[11]:</p></div>
+<div class="paragraph"><p>「また、 私はそれが大きな全体の一部であることを認識しているユーザーにも焦点を当てています。 彼らは大規模なリポジトリを操作していることを知っていますが、 自分たちが貢献するために必要な部分は何かに焦点を当てています。 複数の「担当」(roles)が、 まったく異なりほとんど結合していないコードベース部分を使用することが予想されます。 他の「設計」ユーザーの中には、 ツリー全体にわたって操作したり、 必要に応じてコードベースの異なるセクション間を行き来したりします。 この状況では、 スパースチェックアウト定義、 特に <code>git log</code> にあまりにも多くの機能の範囲を設定することには慎重であるべきで、それはコードベースの見方があなたの「観点」に依存すると非常に混乱する可能性があるためです。</p></div>
+<div class="paragraph"><p>また、 プロジェクト間の複雑な依存関係により、 最終的に「振る舞いB」が必要になる場合もあります。 スパース・チェックアウト(まばらなチェックアウト)を使用する最初の試みには、 通常、 直接関心のあるディレクトリと、 それらのディレクトリがリポジトリ内で依存しているものが含まれます。 しかし、 ここにそれを台無しにするものがあります(there&#8217;s a monkey wrench here)。 統合テストを行う場合、 序列が反転します。 統合テストを実行するには、 関心のあるものとそのツリー内の依存関係だけが必要なのではなく、 あなたが興味のあるものに依存するもの、 またはその依存関係のいずれかに依存するもの全ても必要で…そして、その展開されたグループのツリー内の依存関係がすべて必要です。 これにより、 あなたのスパース・チェックアウト(まばらなチェックアウト)をほぼ密なチェックアウトに簡単に変えることができます。</p></div>
+<div class="paragraph"><p>当然ながら、 これはチェックアウトがスパース(まばら)である利点を殺す傾向があります。 この難問に対する解決策がいくつかあります。 それは、 (たぶん、 あなたがどこかの CI キャッシュでプルしたリポジトリ内の依存関係のビルド・バージョンがあるでしょうから、 )リポジトリ内の依存関係を取得しないようにするか、 あるいは、 ユーザーが統合テストを直に実行せずにコード・レビューを送信するときに CI サーバー上で実行するよう指示する事です。 あるいはその両方を行います。 リポジトリ内の依存関係をもみ消すか、 依存しているものをもみ消すかに関係なく、 リポジトリの他のもみ消された部分の問い合わせを行って認識する必要があるのは確かで、 特に依存関係が複雑である場合や、 比較的頻繁に変更される場合には注意が必要です。 したがって、 そのような用途では、 スパース・チェックアウトを使用して、 直接に構築や変更するものを制限できますが、 これらのユーザーは、 スパース・チェックアウト・パスによって履歴内のバージョンの問い合わせを制限することを必ずしも望んでいる訳ではありません。</p></div>
+<div class="paragraph"><p>単純にパフォーマンス上の回避策として、 「振る舞いA」ではなく「振る舞いB」に興味を持つ人もいるかもしれません。 非円錐モードを使用している場合は、 非円錐モード固有の等比級数的パフォーマンス増大の問題に対処する必要があります。 このモードでは、 パスがスパース仕様にマッチするかどうかをチェックするすべての操作にコストがかかる可能性があります。 そのため、 これらのユーザーは、 作業コピーを操作するときにのみ高価なチェックにお金を払うつもりであり、 遅いコマンドを使用するよりも履歴クエリから「無関係な」結果を取得することを好む可能性があります。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(振る舞いC)
+</dt>
+<dd>
+<p>
+sparse-checkout は、特殊な VFS をサポートする実装詳細です。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>このユースケースは、 実際に完全なチェックアウトまたは密なチェックアウトをユーザーに提示しようとするという点で、 スパース・チェックアウトの従来の定義に少々反しています。 ただし、 このユースケースでは、 同一の基礎技術基盤を新しいやりかたで利用することで、 ユーザーにパフォーマンス上の利点をもたらします。 基本的なアイデアとしては、 ある企業で社内用に Git 対応仮想ファイル・システムを持っていて、 そのすべてのファイル・システム・アクセスの傍受により、 部分クローンを介してオンデマンドでアクセスされたファイルを取り出したりしたり書き込んだりすることで、 すべてのファイルが作業ツリーに存在するかのように見せることができるというものです。 VFS はスパース・チェックアウトを使用して、 Git が多くのファイルに書き込んだり注意を払うのを防ぎ、 ユーザー・アクセスと作業ツリー内のファイルの変更に基づいてスパース・チェックアウト・パターン自体を手動で更新します。 このような VFS の詳細な説明については、コミット ecc7c8841d("repo_read_index: add config to expect files outside sparse patterns", 2022-02-25) と [17] のリンクを参照してください。</p></div>
+<div class="paragraph"><p>ここでの最大の違いは、 ユーザーはスパース・チェックアウト機構が使用中であることにまったく気づいていないことです。 スパース・パターンはユーザーによって指定されるのではなく、 VFS の完全な制御下にあります(そして、 パターンは VFS によって頻繁かつ動的に更新されます)。 ユーザーはチェックアウトが高密度(まばらでない)であると認識するため、 コマンドはすべてのファイルが存在するかのように動作する必要があります。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_usecases_of_primary_concern">Usecases of primary concern</h3>
-<div class="paragraph"><p>Most of the rest of this document will focus on Behavior A and Behavior B. Some notes about the other two cases and why we are not focusing on them:</p></div>
+<h3 id="_主たる関心事に関するユースケース">主たる関心事に関するユースケース</h3>
+<div class="paragraph"><p>このドキュメントの残りの大部分は、 振る舞いA と 振る舞いB に焦点を当てます。 他の 2 つのケースと、それらに焦点を当てない理由についてもいくつか書いておきます:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>(Behavior A*)</code></pre>
+<pre><code>(振る舞いA*)</code></pre>
 </div></div>
-<div class="paragraph"><p>Supporting this usecase is estimated to be difficult and a lot of work. There are no plans to implement it currently, but it may be a potential future alternative. Knowing about the existence of additional alternatives may affect our choice of command line flags (e.g. if we need tri-state or quad-state flags rather than just binary flags), so it was still important to at least note.</p></div>
-<div class="paragraph"><p>Further, I believe the descriptions below for Behavior A are probably still valid for this usecase, with the only exception being that it redefines the sparse specification to restrict it to already-downloaded blobs. The hard part is in making commands capable of respecting that modified definition.</p></div>
+<div class="paragraph"><p>このユースケースをサポートすることは難しく、 多大な労力がかかると予想されます。 現時点では実装の予定はありませんが、 将来的には代替手段となる可能性があります。 追加の代替手段の存在を知ることは、 コマンド・ライン・フラグの選択に影響を与える可能性があるため(たとえば、単なる2値フラグではなくトライステート・フラグやクアッドステート・フラグが必要かどうか等)、 少なくとも注意は払っておくことが重要です。</p></div>
+<div class="paragraph"><p>さらに、 振る舞いA に関する以下の説明は、 おそらくこのユースケースでも依然として有効であると思いますが、 唯一の例外は、 スパース仕様を再定義して、 既にダウンロードされた BLOB に制限することです。 難しいのは、その変更された定義を尊重できるコマンドを作成することです。</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>(Behavior C)</code></pre>
+<pre><code>(振る舞いC)</code></pre>
 </div></div>
-<div class="paragraph"><p>This usecase violates some of the early sparse-checkout documented assumptions (since files marked as SKIP_WORKTREE will be displayed to users as present in the working tree). That violation may mean various sparse-checkout related behaviors are not well suited to this usecase and we may need tweaks&#8201;&#8212;&#8201;to both documentation and code&#8201;&#8212;&#8201;to handle it. However, this usecase is also perhaps the simplest model to support in that everything behaves like a dense checkout with a few exceptions (e.g. branch checkouts and switches write fewer things, knowing the VFS will lazily write the rest on an as-needed basis).</p></div>
-<div class="paragraph"><p>Since there is no publically available VFS-related code for folks to try, the number of folks who can test such a usecase is limited.</p></div>
-<div class="paragraph"><p>The primary reason to note the Behavior C usecase is that as we fix things to better support Behaviors A and B, there may be additional places where we need to make tweaks allowing folks in this usecase to get the original non-sparse treatment. For an example, see ecc7c8841d ("repo_read_index: add config to expect files outside sparse patterns", 2022-02-25). The secondary reason to note Behavior C, is so that folks taking advantage of Behavior C do not assume they are part of the Behavior B camp and propose patches that break things for the real Behavior B folks.</p></div>
+<div class="paragraph"><p>この使用例は、 初期のスパース・チェックアウトに関する文書化された前提条件の一部に違反しています(SKIP_WORKTREE としてマークされたファイルは、 作業ツリーに存在するものとしてユーザーに表示されるため)。 この違反は、 スパース・チェックアウトに関連するさまざまな動作がこのユースケースにあまり適していないことを意味する可能性があり、 これを処理するにはドキュメントとコードの両方に調整が必要になる可能性があります。 ただし、 このユースケースは、 いくつかの例外を除いてすべてが高密度(まばらでない)チェックアウトのように動作するという点で、 おそらくサポートする最も単純なモデルでもあります(たとえば、VFS が必要に応じて残りを遅延的に書き込むことがわかっているため、 ブランチ・チェックアウトと switch は書き込む内容が少なくなります)。</p></div>
+<div class="paragraph"><p>一般に公開されて試せる VFS 関連のコードがないため、 そのようなユースケースをテストできる人の数は限られています。</p></div>
+<div class="paragraph"><p>振る舞いC のユースケースに注目する主な理由は、 振る舞いA と 振る舞いB をより適切にサポートするために修正を行う際に、 このユースケースの人々が元の非スパース処理を受けられるように調整する必要がある追加の場所が存在する可能性があるためです。 例については、 ecc7c8841d ("repo_read_index: add config to expect files outside sparse patterns", 2022-02-25)を参照してください。 振る舞いC に注目する 2 番目の理由は、 振る舞いC を利用する人々が自分が 振る舞いB 陣営の一員であると思い込み、 実際の 振る舞いB の人々のために問題を解決するパッチを提案しないようにするためです。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_oversimplified_mental_models">Oversimplified mental models</h3>
-<div class="paragraph"><p>An oversimplification of the differences in the above behaviors is:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Behavior A: Restrict worktree and history operations to sparse specification
-Behavior B: Restrict worktree operations to sparse specification; have any
-            history operations work across all files
-Behavior C: Do not restrict either worktree or history operations to the
-            sparse specification...with the exception of branch checkouts or
-            switches which avoid writing files that will match the index so
-            they can later lazily be populated instead.</code></pre>
-</div></div>
+<h3 id="_思いっきり単純化した概念モデル">思いっきり単純化した概念モデル</h3>
+<div class="paragraph"><p>上記の振る舞いの違いを思いっきり単純化すると以下のようになります:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+振る舞い A
+</dt>
+<dd>
+<p>
+ワークツリーと履歴の操作をスパース仕様に制限する
+</p>
+</dd>
+<dt class="hdlist1">
+振る舞い B
+</dt>
+<dd>
+<p>
+ワークツリーの操作をスパース仕様に制限します。 履歴操作がすべてのファイルにわたって機能するようにします
+</p>
+</dd>
+<dt class="hdlist1">
+振る舞い C
+</dt>
+<dd>
+<p>
+ワークツリーまたは履歴の操作をスパース仕様に制限しないでください。ただし、ブランチのチェックアウトやスイッチは例外で、インデックスにマッチするファイルの書き込みを回避し、代わり後で遅延して行えるようにします。
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
-<h3 id="_desired_behavior">Desired behavior</h3>
-<div class="paragraph"><p>As noted previously, despite the simple idea of just working with a subset of files, there are a range of different behavioral changes that need to be made to different subcommands to work well with such a feature. See [1,2,3,4,5,6,7,8,9,10] for various examples. In particular, at [2], we saw that mere composition of other commands that individually worked correctly in a sparse-checkout context did not imply that the higher level command would work correctly; it sometimes requires further tweaks. So, understanding these differences can be beneficial.</p></div>
+<h3 id="_期待される振る舞い">期待される振る舞い</h3>
+<div class="paragraph"><p>前述したように、 ファイルのサブセットを操作するという単純な考え方にもかかわらず、 このような機能を適切に操作するには、 さまざまなサブコマンドにさまざまな動作変更を加える必要があります。 さまざまな例については、[1,2,3,4,5,6,7,8,9,10] を参照してください。 特に [2] では、スパース・チェックアウト・コンテキストで個別に正しく動作する他のコマンドを単に組み合わせただけでは、 上位レベルのコマンドが正しく動作することを意味しないことが分かります。 場合によってはさらに調整が必要になる場合があります。 したがって、これらの違いを理解することは有益です。</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Commands behaving the same regardless of high-level use-case
+高レベルのユースケースに関係なく、コマンドは同一の振る舞いをします。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+スパース仕様内のファイルのみを参照するコマンド
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+diff (<code>--cached</code> なし、または REVISION 引数なし)
 </p>
 </li>
 <li>
 <p>
-commands that only look at files within the sparsity specification
-</p>
-</li>
-<li>
-<p>
-diff (without --cached or REVISION arguments)
-</p>
-</li>
-<li>
-<p>
-grep (without --cached or REVISION arguments)
+grep (<code>--cached</code> なし、または REVISION 引数なし)
 </p>
 </li>
 <li>
@@ -1001,11 +1069,13 @@ grep (without --cached or REVISION arguments)
 diff-files
 </p>
 </li>
+</ul></div>
+</li>
 <li>
 <p>
-commands that restore files to the working tree that match sparsity patterns, and remove unmodified files that don&#8217;t match those patterns:
+スパース・パターンにマッチするファイルを作業ツリーに復元し、それらのパターンにマッチしない未変更のファイルを削除するコマンド:
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 switch
@@ -1013,7 +1083,7 @@ switch
 </li>
 <li>
 <p>
-checkout (the switch-like half)
+checkout (switch風の部分)
 </p>
 </li>
 <li>
@@ -1026,11 +1096,15 @@ read-tree
 reset --hard
 </p>
 </li>
+</ul></div>
+</li>
 <li>
 <p>
-commands that write conflicted files to the working tree, but otherwise will omit writing files to the working tree that do not match the sparsity patterns:
+競合するファイルを作業ツリーに書き込むコマンドは、スパース・パターンにマッチしないファイルを作業ツリーへ書き込むのを省略します:
 </p>
-</li>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
 <li>
 <p>
 merge
@@ -1053,39 +1127,40 @@ revert
 </li>
 <li>
 <p>
-<code>am</code> and <code>apply --cached</code> should probably be in this section but
-        are buggy (see the "Known bugs" section below)
+<code>am</code> と <code>apply --cached</code> はおそらくこのセクションにあるはずですが、 バグがあります(下記「Known bugs」セクションを参照)
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>The behavior for these commands somewhat depends upon the merge
-strategy being used:
-  * `ort` behaves as described above
-  * `recursive` tries to not vivify files unnecessarily, but does sometimes
-    vivify files without conflicts.
-  * `octopus` and `resolve` will always vivify any file changed in the merge
-    relative to the first parent, which is rather suboptimal.</code></pre>
+</li>
+</ul></div>
 </div></div>
-<div class="literalblock">
+<div class="paragraph"><p>これらのコマンドの動作は、使用されているマージ戦略によって多少異なります:</p></div>
+<div class="openblock">
 <div class="content">
-<pre><code>It is also important to note that these commands WILL update the index
-outside the sparse specification relative to when the operation began,
-BUT these commands often make a commit just before or after such that
-by the end of the operation there is no change to the index outside the
-sparse specification.  Of course, if the operation hits conflicts or
-does not make a commit, then these operations clearly can modify the
-index outside the sparse specification.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Finally, it is important to note that at least the first four of these commands also try to remove differences between the sparse specification and the sparsity patterns (much like the commands in the previous section).</code></pre>
-</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>ort</code> は上記のとおり振る舞います
+</p>
 </li>
 <li>
 <p>
-commands that always ignore sparsity since commits must be full-tree
+<code>recursive</code> はファイルを不必要に復活(vivify)させないよう努めますが、 競合無しでファイルを復活(vivify)させることもあります。
 </p>
 </li>
+<li>
+<p>
+<code>octopus</code> と <code>resolve</code> は、 最初の親を基準にしてマージで変更されたファイルを常に復活(vivify)させますが、 これはむしろ最適ではありません。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="paragraph"><p>これらのコマンドは、 操作の開始時を基準にして、スパース仕様の外側のインデックスを更新する事に注意することも重要ですが、 しかし、 これらのコマンドは多くの場合、 直前または直後にコミットを行うため、 操作の終了までスパース仕様の範囲外のインデックスは変更されません。 もちろん、 その操作が競合に直面するかコミットを行わない場合、 これらの操作は明らかにスパース仕様の範囲外でインデックスを変更する可能性があります。</p></div>
+<div class="paragraph"><p>最後に、 これらのコマンドの少なくとも最初の 4 つは、 (前のセクションのコマンドと同様に、)スパース仕様とスパース・パターンの間の差異を削除しようとしていることに注意することが重要です。</p></div>
+</li>
+<li>
+<p>
+コミットは完全ツリー(full-tree)である必要があるため、 常にスパース性を無視するコマンド群:
+</p>
+<div class="ulist"><ul>
 <li>
 <p>
 archive
@@ -1121,11 +1196,13 @@ fast-import
 commit-tree
 </p>
 </li>
+</ul></div>
+</li>
 <li>
 <p>
-commands that write any modified file to the working tree (conflicted or not, and whether those paths match sparsity patterns or not):
+変更されたファイルを作業ツリーに書き込むコマンド(競合するかどうか、 そしてそれらのパスがスパース・パターンとマッチするかどうか):
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 stash
@@ -1133,25 +1210,26 @@ stash
 </li>
 <li>
 <p>
-apply (without <code>--index</code> or <code>--cached</code>)
+apply (<code>--index</code> 無し、 または <code>--cached</code> 無し)
 </p>
+</li>
+</ul></div>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
-Commands that may slightly differ for behavior A vs. behavior B:
+振る舞いA と 振る舞いB で若干異なる可能性があるコマンド:
 </p>
-<div class="literalblock">
+<div class="paragraph"><p>このカテゴリのコマンドは、 この 2 つの振る舞いにおいてはほとんど同一の動作ですが、 おしゃべり度(verbosity)や警告やエラー・メッセージの種類が異なる場合があります。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+追跡中のファイルを変更するコマンド:
+</p>
+<div class="openblock">
 <div class="content">
-<pre><code>Commands in this category behave mostly the same between the two
-behaviors, but may differ in verbosity and types of warning and error
-messages.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-commands that make modifications to which files are tracked:
-</p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 add
@@ -1171,14 +1249,13 @@ mv
 <p>
 update-index
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>The fact that files can move between the 'tracked' and 'untracked'
-categories means some commands will have to treat untracked files
-differently.  But if we have to treat untracked files differently,
-then additional commands may also need changes:</code></pre>
-</div></div>
 </li>
+</ul></div>
+</div></div>
+<div class="paragraph"><p>ファイルが「追跡中」(tracked)カテゴリと「非追跡」(untracked)カテゴリの間を移動できるということは、 一部のコマンドでは非追跡ファイルを異なる方法で処理する必要があることを意味します。 ただし、 非追跡ファイルを別の方法で処理する必要がある場合、 追加のコマンドも変更する必要がある場合があります:</p></div>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
 <li>
 <p>
 status
@@ -1188,27 +1265,20 @@ status
 <p>
 clean
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>In particular, `status` may need to report any untracked files outside
-the sparsity specification as an erroneous condition (especially to
-avoid the user trying to `git add` them, forcing `git add` to display
-an error).</code></pre>
+</li>
+</ul></div>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>It's not clear to me exactly how (or even if) `clean` would change, but it's the other command that also affects untracked files.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>`update-index` may be slightly special. Its --[no-]skip-worktree flag may need to ignore the sparse specification by its nature. Also, its current --[no-]ignore-skip-worktree-entries default is totally bogus.</code></pre>
-</div></div>
+<div class="paragraph"><p>特に、 <code>status</code> は、 スパース仕様の範囲外にある非追跡ファイルを間違っている状態として報告する必要がある場合があります (特に、 ユーザーがファイルを <code>git add</code> しようとして、<code>git add</code> に強制的にエラーが表示されるのを避けるため)。</p></div>
+<div class="paragraph"><p><code>clean</code> がどのように変更するか(あるいは変更するかどうか)は正確にはわかりませんが、 非追跡ファイルにも影響を与えるもう 1 つのコマンドです。</p></div>
+<div class="paragraph"><p><code>update-index</code> は少し特殊かもしれません。 <code>--[no-]skip-worktree</code> フラグは、 その性質上、スパース仕様を無視する必要がある場合があります。 また、現在の <code>--[no-]ignore-skip-worktree-entries</code> のデフォルトは完全にインチキです。</p></div>
 </li>
 <li>
 <p>
-commands for manually tweaking paths in both the index and the working tree
+インデックスと作業ツリーの両方のパスを手動で調整するためのコマンド
 </p>
-</li>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
 <li>
 <p>
 <code>restore</code>
@@ -1216,53 +1286,52 @@ commands for manually tweaking paths in both the index and the working tree
 </li>
 <li>
 <p>
-the restore-like half of <code>checkout</code>
+<code>checkout</code> の restore風な部分
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>These commands should be similar to add/rm/mv in that they should
-only operate on the sparse specification by default, and require a
-special flag to operate on all files.</code></pre>
+</li>
+</ul></div>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Also, note that these commands currently have a number of issues (see the "Known bugs" section below)</code></pre>
-</div></div>
+<div class="paragraph"><p>これらのコマンドは、 デフォルトではスパース仕様でのみ動作し、 すべてのファイルで動作するには特別なフラグが必要であるという点で add/rm/mv に似ています。</p></div>
+<div class="paragraph"><p>また、 これらのコマンドには現在多くの問題が出ていることに注意してください(下記「Known bugs」セクション参照)</p></div>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
-Commands that significantly differ for behavior A vs. behavior B:
+振る舞いA と 振る舞いB で大きく異なるコマンド:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+履歴を問い合わせ(query)するコマンド
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+diff (<code>--cached</code> または REVISION 引数を伴う)
 </p>
 </li>
 <li>
 <p>
-commands that query history
+grep (<code>--cached</code> または REVISION 引数を伴う)
 </p>
 </li>
 <li>
 <p>
-diff (with --cached or REVISION arguments)
+show (コミット引数が与えられた場合)
 </p>
 </li>
 <li>
 <p>
-grep (with --cached or REVISION arguments)
+blame (1 つ以上の <code>-C</code> フラグが渡された場合にのみこの問題が発生します)
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
-show (when given commit arguments)
+と、 annotate
 </p>
 </li>
-<li>
-<p>
-blame (only matters when one or more -C flags are passed)
-</p>
-</li>
-<li>
-<p>
-and annotate
-</p>
+</ul></div>
 </li>
 <li>
 <p>
@@ -1293,47 +1362,37 @@ diff-tree
 <p>
 ls-tree
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Note: for log and whatchanged, revision walking logic is unaffected
-but displaying of patches is affected by scoping the command to the
-sparse-checkout.  (The fact that revision walking is unaffected is
-why rev-list, shortlog, show-branch, and bisect are not in this
-list.)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>ls-files may be slightly special in that e.g. `git ls-files -t` is often used to see what is sparse and what is not. Perhaps -t should always work on the full tree?</code></pre>
-</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>注意: log と whatchanged の場合、 リビジョン・ウォーキングのロジックは影響を受けませんが、 パッチの表示はコマンドのスコープをスパース・チェックアウトに設定することによって影響を受けます。 (リビジョン・ウォーキングが影響を受けないという事実が、rev-list, shortlog, show-branch, bisect がこのリストに含まれていない理由です。)</p></div>
+<div class="paragraph"><p>ls-files は、 たとえば <code>git ls-files -t</code> が、 何がスパースで何がスパースでないのかを確認するためによく使用されるという点で少し特殊かもしれません。 あるいは、 <code>-t</code> は常に完全なツリーに対して機能するようにすべきかもしれませんね？</p></div>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
-Commands I don&#8217;t know how to classify
+私にはどこに分類すべきか分からないコマンド
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 range-diff
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Is this like `log` or `format-patch`?</code></pre>
-</div></div>
+<div class="paragraph"><p>これは <code>log</code> や <code>format-patch</code> のようなものでしょうか？</p></div>
 </li>
 <li>
 <p>
 cherry
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>See range-diff</code></pre>
-</div></div>
+<div class="paragraph"><p>range-diff 参照</p></div>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
-Commands unaffected by sparse-checkouts
+sparse-checkouts の影響を受けないコマンド
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 shortlog
@@ -1391,7 +1450,7 @@ notes
 </li>
 <li>
 <p>
-pull (merge &amp; rebase have the necessary changes)
+pull (merge と rebase には必要な変更があります)
 </p>
 </li>
 <li>
@@ -1416,7 +1475,7 @@ config
 </li>
 <li>
 <p>
-filter-branch (works in separate checkout without sparse-checkout setup)
+filter-branch (sparse-checkout 設定なしで、 個別のチェックアウトで動作します)
 </p>
 </li>
 <li>
@@ -1476,7 +1535,7 @@ instaweb
 </li>
 <li>
 <p>
-merge-tree (doesn&#8217;t touch worktree or index, and merges always compute full-tree)
+merge-tree (ワークツリーやインデックスには影響せず、マージは常に完全なツリー(full-tree)を計算します)
 </p>
 </li>
 <li>
@@ -1551,7 +1610,7 @@ update-ref
 </li>
 <li>
 <p>
-write-tree (operates on index, possibly optimized to use sparse dir entries)
+write-tree (インデックスを操作します。 スパース・ディレクトリ・エントリを使用するように最適化される可能性があります)
 </p>
 </li>
 <li>
@@ -1571,7 +1630,7 @@ ls-remote
 </li>
 <li>
 <p>
-merge-base (merges are computed full tree, so merge base should be too)
+merge-base (マージは完全ツリー(full tree)を計算するため、 マージ・ベースも同様である必要があります)
 </p>
 </li>
 <li>
@@ -1616,29 +1675,31 @@ verify-pack
 </li>
 <li>
 <p>
-&lt;Everything under <em>Interacting with Others</em> in <em>git help --all</em>&gt;
+＜<code>git help --all</code> の「Interacting with Others」セクションにあるすべて＞
 </p>
 </li>
 <li>
 <p>
-&lt;Everything under <em>Low-level&#8230;Syncing</em> in <em>git help --all</em>&gt;
+＜<code>git help --all</code> の「Low-level Commands / Syncing Repositories」セクションにあるすべて＞
 </p>
 </li>
 <li>
 <p>
-&lt;Everything under <em>Low-level&#8230;Internal Helpers</em> in <em>git help --all</em>&gt;
+＜<code>git help --all</code> の「Low-level Commands / Internal Helpers」セクションにあるすべて＞
 </p>
 </li>
 <li>
 <p>
-&lt;Everything under <em>External commands</em> in <em>git help --all</em>&gt;
+＜<code>git help --all</code> の「External commands」セクションにあるすべて＞
 </p>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
-Commands that might be affected, but who cares?
+影響を受ける可能性のあるコマンド群だけど、 こんなの気にする人いる？
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 merge-file
@@ -1655,103 +1716,79 @@ gitk?
 </p>
 </li>
 </ul></div>
-</div>
-<div class="sect2">
-<h3 id="_behavior_classes">Behavior classes</h3>
-<div class="paragraph"><p>From the above there are a few classes of behavior:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-"restrict"
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Commands in this class only read or write files in the working tree
-within the sparse specification.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>When moving to a new commit (e.g. switch, reset --hard), these commands may update index files outside the sparse specification as of the start of the operation, but by the end of the operation those index files will match HEAD again and thus those files will again be outside the sparse specification.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>When paths are explicitly specified, these paths are intersected with the sparse specification and will only operate on such paths. (e.g. `git restore [--staged] -- '*.png'`, `git reset -p -- '*.md'`)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Some of these commands may also attempt, at the end of their operation, to cull transient differences between the sparse specification and the sparsity patterns (see "Sparse specification vs. sparsity patterns" for details, but this basically means either removing unmodified files not matching the sparsity patterns and marking those files as SKIP_WORKTREE, or vivifying files that match the sparsity patterns and marking those files as !SKIP_WORKTREE).</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-"restrict modulo conflicts"
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Commands in this class generally behave like the "restrict" class,
-except that:
-  (1) they will ignore the sparse specification and write files with
-      conflicts to the working tree (thus temporarily expanding the
-      sparse specification to include such files.)
-  (2) they are grouped with commands which move to a new commit, since
-      they often create a commit and then move to it, even though we
-      know there are many exceptions to moving to the new commit.  (For
-      example, the user may rebase a commit that becomes empty, or have
-      a cherry-pick which conflicts, or a user could run `merge
-      --no-commit`, and we also view `apply --index` kind of like `am
-      --no-commit`.)  As such, these commands can make changes to index
-      files outside the sparse specification, though they'll mark such
-      files with SKIP_WORKTREE.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-"restrict also specially applied to untracked files"
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Commands in this class generally behave like the "restrict" class,
-except that they have to handle untracked files differently too, often
-because these commands are dealing with files changing state between
-'tracked' and 'untracked'.  Often, this may mean printing an error
-message if the command had nothing to do, but the arguments may have
-referred to files whose tracked-ness state could have changed were it
-not for the sparsity patterns excluding them.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-"no restrict"
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Commands in this class ignore the sparse specification entirely.</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-"restrict or no restrict dependent upon behavior A vs. behavior B"
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Commands in this class behave like "no restrict" for folks in the
-behavior B camp, and like "restrict" for folks in the behavior A camp.
-However, when behaving like "restrict" a warning of some sort might be
-provided that history queries have been limited by the sparse-checkout
-specification.</code></pre>
-</div></div>
 </li>
 </ul></div>
 </div>
 <div class="sect2">
-<h3 id="_subcommand_dependent_defaults">Subcommand-dependent defaults</h3>
-<div class="paragraph"><p>Note that we have different defaults depending on the command for the desired behavior :</p></div>
+<h3 id="_振る舞いクラス">振る舞いクラス</h3>
+<div class="paragraph"><p>上記により、 振る舞いクラスがいくつあります:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+"restrict"(制限)
+</dt>
+<dd>
+<p>
+このクラスのコマンドは、 スパース仕様内の作業ツリー内のファイルの読み取りまたは書き込みのみを行います。
+</p>
+<div class="paragraph"><p>(<code>switch</code> や、 <code>reset --hard</code> など、)新しいコミットに移動するとき、 これらのコマンドは操作の開始時点でスパース仕様の範囲外にあるインデックス・ファイルを更新する可能性がありますが、 操作の終了までにそれらのインデックス・ファイルは再び HEAD と一致するため、 これらのファイルは再びスパース仕様の範囲外になります。</p></div>
+<div class="paragraph"><p>パスが明示的に指定されている場合、 これらのパスはスパース仕様と交錯し、 そのようなパス上でのみ動作します。 (例: <code>git restore [--staged] -- '*.png'</code> 、 <code>git reset -p -- '*.md'</code> )</p></div>
+<div class="paragraph"><p>これらのコマンドの一部では、 その操作の最後で、 スパース仕様とスパース・パターンの間の一時的な差異を除去しようとする場合があります(詳細については「"Sparse specification vs. sparsity patterns」を参照してください。 ただし、 これは基本的に、 スパース・パターンにマッチしない未変更のファイルを削除し、それらのファイルを SKIP_WORKTREE としてマークすることを意味するか、 または、 スパース・パターンにマッチするファイルを復活(vivifying)させ、 それらのファイルを !SKIP_WORKTREE としてマークします)。</p></div>
+</dd>
+<dt class="hdlist1">
+"restrict modulo conflicts"(競合外の制限)
+</dt>
+<dd>
+<p>
+このクラスのコマンドは通常、 以下の点を除いて "restrict" クラスと同様に振る舞います:
+</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+これらはスパース仕様を無視し、競合するファイル達を作業ツリーに書き込みます(したがって、 そのようなファイル達を含めるようにスパース仕様を一時的に拡張します。)
+</p>
+</li>
+<li>
+<p>
+これらは、 新しいコミットへ移動させるコマンドとグループ化されています。 これは、 新しいコミットへ移動させるのは多くの例外があることがわかっていても、 コマンドはコミットを作成してからそのコミットに移動させることが多いためです。 (たとえば、ユーザーは空になったコミットを rebase したり、 競合する cherry-pick を使用したり、 <code>merge --no-commit</code> を実行したり、 <code>apply --index</code> も <code>am --no-commit</code> のようなものです。) そのため、 これらのコマンドはスパース仕様外のインデックス・ファイルに変更を加えることはできますが、 そのようなファイルには SKIP_WORKTREE のマークが付けられます。
+</p>
+</li>
+</ol></div>
+</dd>
+<dt class="hdlist1">
+"restrict also specially applied to untracked files"(非追跡ファイルにも特別に適用される制限)
+</dt>
+<dd>
+<p>
+  このクラスのコマンドは通常、 "restrict"(制限)クラスと同様に動作しますが、 非追跡ファイルも別の方法で処理する必要がある点が異なります。 多くの場合、 これらのコマンドは「追跡」(tracked)と「非追跡」(untracked)の間で状態が変化するファイルを処理するためです。 多くの場合、 これは、 コマンドが何も行わなかった場合にエラー・メッセージを出力することを意味しますが、 その引数は、 スパース・パターンが除外していなければ追跡状態が変更された可能性があるファイルを参照している可能性があります。
+</p>
+</dd>
+<dt class="hdlist1">
+"no restrict"(制限しない)
+</dt>
+<dd>
+<p>
+  このクラスのコマンドは、スパース仕様を完全に無視します。
+</p>
+</dd>
+<dt class="hdlist1">
+"restrict or no restrict dependent upon behavior A vs. behavior B"(振る舞いA と 振る舞いB に応じて、 制限する または 制限しない)
+</dt>
+<dd>
+<p>
+  このクラスのコマンドは、 振る舞いB の人々にとっては "no restrict"(制限なし) のように動作し、 振る舞いA の人々にとっては "restrict"(制限) のように振る舞います。ただし、 "restrict"(制限)のように振る舞うと、 履歴クエリがスパース・チェックアウト仕様によって制限されている、 という、 ある種の警告が表示される場合があります。
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_サブコマンドごとのデフォルト">サブコマンドごとのデフォルト</h3>
+<div class="paragraph"><p>注意: 目的の振る舞いを実現するためのコマンドに応じて、異なるデフォルトがあることに注意してください:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Commands defaulting to "restrict":
+デフォルトで "restrict"(制限)に設定されているコマンド
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 diff-files
@@ -1759,12 +1796,12 @@ diff-files
 </li>
 <li>
 <p>
-diff (without --cached or REVISION arguments)
+diff (<code>--cached</code> なし、または REVISION 引数なし)
 </p>
 </li>
 <li>
 <p>
-grep (without --cached or REVISION arguments)
+grep (<code>--cached</code> なし、または REVISION 引数なし)
 </p>
 </li>
 <li>
@@ -1774,7 +1811,7 @@ switch
 </li>
 <li>
 <p>
-checkout (the switch-like half)
+checkout (switch風の部分)
 </p>
 </li>
 <li>
@@ -1789,7 +1826,7 @@ restore
 </li>
 <li>
 <p>
-checkout (the restore-like half)
+checkout (restore風の部分)
 </p>
 </li>
 <li>
@@ -1799,18 +1836,17 @@ checkout-index
 </li>
 <li>
 <p>
-reset (with pathspec)
+reset (pathspec を伴う)
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>This behavior makes sense; these interact with the working tree.</code></pre>
-</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>この振る舞いは理にかなっています。 つまり、これらは作業ツリーと対話します。</p></div>
 </li>
 <li>
 <p>
-Commands defaulting to "restrict modulo conflicts":
+デフォルトで "restrict modulo conflicts"(競合外の制限) に設定されているコマンド:
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 merge
@@ -1838,34 +1874,28 @@ am
 </li>
 <li>
 <p>
-apply --index (which is kind of like an <code>am --no-commit</code>)
+apply --index (これは <code>am --no-commit</code> のようなものです)
 </p>
 </li>
 <li>
 <p>
-read-tree (especially with -m or -u; is kind of like a --no-commit merge)
+read-tree (<code>-m</code> または <code>-u</code> を使用する場合; <code>--no-commit</code> マージのようなもの)
 </p>
 </li>
 <li>
 <p>
-reset (&lt;tree-ish&gt;, due to similarity to read-tree)
+reset (&lt;tree-ish&gt; 、read-tree との類似性による)
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>These also interact with the working tree, but require slightly
-different behavior either so that (a) conflicts can be resolved or (b)
-because they are kind of like a merge-without-commit operation.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>(See also the "Known bugs" section below regarding `am` and `apply`)</code></pre>
-</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>これらも作業ツリーと対話しますが、 (a)競合を解決できるように、 または、 (b)コミットなしのマージ操作のようなもの、 であるため、 微妙に異なる振る舞いが必要です。</p></div>
+<div class="paragraph"><p>( <code>am</code> および <code>apply</code> に関する下記「Known bugs」セクションも参照してください)</p></div>
 </li>
 <li>
 <p>
-Commands defaulting to "no restrict":
+デフォルトで "no restrict" (制限なし)に設定されているコマンド:
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 archive
@@ -1908,31 +1938,20 @@ stash
 </li>
 <li>
 <p>
-apply (without <code>--index</code>)
+apply (<code>--index</code> 無し)
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>These have completely different defaults and perhaps deserve the most
-detailed explanation:</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>In the case of commands in the first group (format-patch, fast-export, bundle, archive, etc.), these are commands for communicating history, which will be broken if they restrict to a subset of the repository. As such, they operate on full paths and have no `--restrict` option for overriding. Some of these commands may take paths for manually restricting what is exported, but it needs to be very explicit.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>In the case of stash, it needs to vivify files to avoid losing the user's changes.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>In the case of apply without `--index`, that command needs to update the working tree without the index (or the index without the working tree if `--cached` is passed), and if we restrict those updates to the sparse specification then we'll lose changes from the user.</code></pre>
-</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>これらのデフォルトは完全に異なるため、 更に詳細な説明が必要でしょう:</p></div>
+<div class="paragraph"><p>最初のグループのコマンド(format-patch、fast-export、bundle、archive など)の場合、 これらは履歴を交信するためのコマンドであり、 リポジトリのサブセットに制限すると壊れます。 そのため、 これらはフルパスで動作するため、 オーバーライドするための <code>--restrict</code> オプションはありません。 これらのコマンドの一部は、 エクスポートされる内容を手動で制限するためのパスを受け付ける場合がありますが、 それは非常に明示的である必要があります。</p></div>
+<div class="paragraph"><p>stash の場合、 ユーザーの変更が失われないように、 ファイルを復活(vivify)させる必要があります。</p></div>
+<div class="paragraph"><p><code>--index</code> なしで適用する場合、 そのコマンドはインデックスなしで作業ツリー(または、 <code>--cached</code> を渡した場合は作業ツリーなしのインデックス)を更新する必要があります。 これらの更新をスパース仕様で制限すると、 ユーザーからの変更が失われます。</p></div>
 </li>
 <li>
 <p>
-Commands defaulting to "restrict also specially applied to untracked files":
+デフォルトで「非追跡ファイルにも特別に適用される制限」が設定されているコマンド:
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 add
@@ -1962,77 +1981,82 @@ status
 <p>
 clean (?)
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>Our original implementation for the first three of these commands was
-"no restrict", but it had some severe usability issues:
-  * `git add &lt;somefile&gt;` if honored and outside the sparse
-    specification, can result in the file randomly disappearing later
-    when some subsequent command is run (since various commands
-    automatically clean up unmodified files outside the sparse
-    specification).
-  * `git rm '*.jpg'` could very negatively surprise users if it deletes
-    files outside the range of the user's interest.
-  * `git mv` has similar surprises when moving into or out of the cone,
-    so best to restrict by default</code></pre>
-</div></div>
 </li>
 </ul></div>
-<div class="paragraph"><p>So, we switched <code>add</code> and <code>rm</code> to default to "restrict", which made
-usability problems much less severe and less frequent, but we still got
-complaints because commands like:
-git add &lt;file-outside-sparse-specification&gt;
-git rm &lt;file-outside-sparse-specification&gt;
-would silently do nothing.  We should instead print an error in those
-cases to get usability right.</p></div>
-<div class="literalblock">
+<div class="paragraph"><p>上記コマンドの上から 3 つの実装は最初、 「制限なし」(no restrict)でしたが、 以下のとおり、ユーザビリティにいくつかの重大な問題がありました:</p></div>
+<div class="openblock">
 <div class="content">
-<pre><code>update-index needs to be updated to match, and status and maybe clean also need to be updated to specially handle untracked paths.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>There may be a difference in here between behavior A and behavior B in terms of verboseness of errors or additional warnings.</code></pre>
-</div></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Commands falling under "restrict or no restrict dependent upon behavior A vs. behavior B"
+<code>git add &lt;somefile&gt;</code> が尊重され、 かつ、 スパース仕様外にある場合、 その後のコマンド実行でファイルがランダムに消える可能性があります(さまざまなコマンドがスパース仕様外の未変更のファイルを自動的にクリーンアップするため)。
 </p>
 </li>
 <li>
 <p>
-diff (with --cached or REVISION arguments)
+<code>git rm '*.jpg'</code> がユーザーの関心の範囲外のファイルを削除すると、 ユーザーは非常に不快な思いをする可能性があります。
 </p>
 </li>
 <li>
 <p>
-grep (with --cached or REVISION arguments)
+<code>git mv</code> は、 コーンの範囲に出入りするときに同様の驚きをもたらすため、 デフォルトで制限(restrict)するのが最善です
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="paragraph"><p>そこで、 私達は <code>add</code> と <code>rm</code> をデフォルトの "restrict" に切り替えました。 これにより、 ユーザビリティの問題が大幅に軽減され、 頻度も減りましたが、 以下のようなコマンドが原因で依然として苦情が寄せられていました:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git add &lt;file-outside-sparse-specification&gt;
+git rm &lt;file-outside-sparse-specification&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>これは何も声を上げず何も行わない事でしょう。 ユーザビリティを適切に保つために、 そのような場合には代わりにエラーを出力する必要があります。</p></div>
+<div class="paragraph"><p>update-index はマッチするように更新する必要があり、 非追跡パスを特別に処理するには、 status と、 おそらく clean も更新する必要があります。</p></div>
+<div class="paragraph"><p>ここで、 エラーまたは追加の警告の詳細さ(verboseness)の点で、 振る舞いA と 振る舞いB の間に違いがある可能性があります。</p></div>
+</li>
+<li>
+<p>
+「振る舞いA や 振る舞いB に応じて制限するか、あるいは制限しない」に該当するコマンド:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+diff (<code>--cached</code> または REVISION 引数を伴う)
 </p>
 </li>
 <li>
 <p>
-show (when given commit arguments)
+grep (<code>--cached</code> または REVISION 引数を伴う)
 </p>
 </li>
 <li>
 <p>
-blame (only matters when one or more -C flags passed)
+show (コミット引数が与えられた場合)
 </p>
 </li>
 <li>
 <p>
-and annotate
+blame (1 つ以上の <code>-C</code> フラグが渡された場合にのみ、この問題が発生します)
 </p>
+<div class="ulist"><ul>
+<li>
+<p>
+と、 annotate
+</p>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
 log
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
-and variants: shortlog, gitk, show-branch, whatchanged, rev-list
+と、その派生: shortlog, gitk, show-branch, whatchanged, rev-list
 </p>
+</li>
+</ul></div>
 </li>
 <li>
 <p>
@@ -2053,102 +2077,93 @@ diff-tree
 <p>
 ls-tree
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>For now, we default to behavior B for these, which want a default of
-"no restrict".</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Note that two of these commands -- diff and grep -- also appeared in a different list with a default of "restrict", but only when limited to searching the working tree. The working tree vs. history distinction is fundamental in how behavior B operates, so this is expected. Note, though, that for diff and grep with --cached, when doing "restrict" behavior, the difference between sparse specification and sparsity patterns is important to handle.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>"restrict" may make more sense as the long term default for these[12]. Also, supporting "restrict" for these commands might be a fair amount of work to implement, meaning it might be implemented over multiple releases. If that behavior were the default in the commands that supported it, that would force behavior B users to need to learn to slowly add additional flags to their commands, depending on git version, to get the behavior they want. That gradual switchover would be painful, so we should avoid it at least until it's fully implemented.</code></pre>
-</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>現時点では、 デフォルトで「制限なし」(no restrict)が必要なため、 これらに対してデフォルトの 振る舞いB を設定します。</p></div>
+<div class="paragraph"><p>注意: これらのコマンドのうち、 diff と grep もまた、 デフォルトの「制限」(restrict)で別のリストに表示されますが、これは作業ツリーの検索に限定されている場合に限られることに注意してください。 作業ツリーと履歴の区別は 振る舞いB の操作の基本であるため、 これは期待どうりのものです。 ただし、 <code>--cached</code> を指定した diff と grep の場合、「制限」(restrict)振る舞いを行う場合、 スパース仕様とスパース・パターンの違いを処理することが重要であることに注意してください。</p></div>
+<div class="paragraph"><p>これらの長期的なデフォルトとしては、「制限」(restrict)の方が合理的かもしれません[12]。 また、これらのコマンドの「制限」(restrict)をサポートするには、 実装にかなりの作業が必要となる可能性があり、 複数のリリースにまたがって実装作業が行われる可能性があります。 その振る舞いが、 それをサポートするコマンドのデフォルトである場合、 振る舞いB のユーザーは、 必要な動作を得るために、 git のバージョンに応じて、 コマンドにフラグを徐々に追加する方法を学ぶ必要があります。 この段階的な対応は苦痛を伴うため、 私達は、 少なくとも完全に実装されるまでは回避するべきです。</p></div>
 </li>
 </ul></div>
 </div>
 <div class="sect2">
-<h3 id="_sparse_specification_vs_sparsity_patterns">Sparse specification vs. sparsity patterns</h3>
-<div class="paragraph"><p>In a well-behaved situation, the sparse specification is given directly by the $GIT_DIR/info/sparse-checkout file. However, it can transiently diverge for a few reasons:</p></div>
+<h3 id="_スパース仕様_v_s_スパース_パターン">スパース仕様 V.S. スパース・パターン</h3>
+<div class="paragraph"><p>正常に動作する状況では、 スパース仕様は $GIT_DIR/info/sparse-checkout ファイルによって直接指定されます。 ただし、 以下のいくつかの理由で過渡的にそこから逸脱する可能性があります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-needing to resolve conflicts (merging will vivify conflicted files)
+競合を解決する必要がある時(マージすると競合したファイルが復活(vivify)します)
 </p>
 </li>
 <li>
 <p>
-running Git commands that implicitly vivify files (e.g. "git stash apply")
+ファイルを暗黙的に復活(vivify)させる Git コマンドの実行中(例: <code>git stash apply</code>)
 </p>
 </li>
 <li>
 <p>
-running Git commands that explicitly vivify files (e.g. "git checkout --ignore-skip-worktree-bits FILENAME")
+ファイルを明示的に復活(vivify)させる Git コマンドの実行中(例: <code>git checkout --ignore-skip-worktree-bits FILENAME</code>)
 </p>
 </li>
 <li>
 <p>
-other commands that write to these files (perhaps a user copies it from elsewhere)
+これらのファイルに書き込む他のコマンド(おそらくユーザーが他の場所からコピーしたもの)
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>For the last item, note that we do automatically clear the SKIP_WORKTREE bit for files that are present in the working tree. This has been true since 82386b4496 ("Merge branch <em>en/present-despite-skipped</em>", 2022-03-09)</p></div>
-<div class="paragraph"><p>However, such a situation is transient because:</p></div>
+<div class="paragraph"><p>上記の最後の項目については、 作業ツリーに存在するファイルの SKIP_WORKTREE ビットが自動的にクリアされることに注意してください。 これはコミット 82386b4496("Merge branch <em>en/present-despite-skipped</em>", 2022-03-09)以降で当てはまります。</p></div>
+<div class="paragraph"><p>ただし、 このような状況は以下の理由により、過渡的なものです:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Such transient differences can and will be automatically removed as a side-effect of commands which call unpack_trees() (checkout, merge, reset, etc.).
+このような過渡的な差異は、 unpack_trees() を呼び出すコマンド(checkout、 merge、 reset 等)の副作用として自動的に取り除かれる可能性があります。
 </p>
 </li>
 <li>
 <p>
-Users can also request such transient differences be corrected via running <code>git sparse-checkout reapply</code>. Various places recommend running that command.
+ユーザーは <code>git sparse-checkout reapply</code> を実行して、 このような過渡的な差異の修正を要求することもできます。 さまざまな場所でこのコマンドの実行が推奨されています。
 </p>
 </li>
 <li>
 <p>
-Additional commands are also welcome to implicitly fix these differences; we may add more in the future.
+これらの違いを暗黙的に修正する追加のコマンドも大歓迎です。 私達は、 将来、さらにこのようなコマンドを追加する可能性があります。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>While we avoid dropping unstaged changes or files which have conflicts, we otherwise aggressively try to fix these transient differences. If users want these differences to persist, they should run the <code>set</code> or <code>add</code> subcommands of <code>git sparse-checkout</code> to reflect their intended sparse specification.</p></div>
-<div class="paragraph"><p>However, when we need to do a query on history restricted to the "relevant subset of files" such a transiently expanded sparse specification is ignored. There are a couple reasons for this:</p></div>
+<div class="paragraph"><p>ステージされてない変更または競合のあるファイルの削除は避けますが、 そうでない場合は、 これらの過渡的な差異を積極的に修正しようとします。 ユーザーがこれらの差異を維持したい場合は、 <code>git sparse-checkout</code> の <code>set</code> または <code>add</code> サブコマンドを実行して、 意図するスパース仕様を反映するべきです。</p></div>
+<div class="paragraph"><p>ただし、 「関連するファイルのサブセット」に限定された履歴に対してクエリを実行する必要がある場合、 そのような過渡的に拡張されたスパース仕様は無視されます。 これには以下のように一組の理由があります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-The behavior wanted when doing something like
-git grep expression REVISION is roughly what the users would expect from git checkout REVISION &amp;&amp; git grep expression (modulo a "REVISION:" prefix), which has a couple ramifications:
+<code>git grepexpression REVISION</code> のようなことを実行するときに必要な振る舞いは、 ユーザーが <code>git checkout REVISION &amp;&amp; git grepexpression</code> (「REVISION:」プレフィックスを適用外)に期待するものとほぼ同じであり、 これには以下のような影響があります:
 </p>
 </li>
 <li>
 <p>
-REVISION may have paths not in the current index, so there is no path we can consult for a SKIP_WORKTREE setting for those paths.
+REVISION には現在のインデックスにないパスが含まれている可能性があるため、 それらのパスの SKIP_WORKTREE 設定を調べる事ができるパスはありません。
 </p>
 </li>
 <li>
 <p>
-Since <code>checkout</code> is one of those commands that tries to remove transient differences in the sparse specification, it makes sense to use the corrected sparse specification (i.e. $GIT_DIR/info/sparse-checkout) rather than attempting to consult SKIP_WORKTREE anyway.
+<code>checkout</code> はスパース仕様の過渡的な差異を削除しようとするコマンドの 1 つであるため、 SKIP_WORKTREE を調べようとするのではなく、 修正されたスパース仕様 (つまり $GIT_DIR/info/sparse-checkout) を使用するのが合理的です。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>So, a transiently expanded (or restricted) sparse specification applies to the working tree, but not to history queries where we always use the sparsity patterns. (See [16] for an early discussion of this.)</p></div>
-<div class="paragraph"><p>Similar to a transiently expanded sparse specification of the working tree based on additional files being present in the working tree, we also need to consider additional files being modified in the index. In particular, if the user has staged changes to files (relative to HEAD) that do not match the sparsity patterns, and the file is not present in the working tree, we still want to consider the file part of the sparse specification if we are specifically performing a query related to the index (e.g. git diff --cached [REVISION], git diff-index [REVISION], git restore --staged --source=REVISION&#8201;&#8212;&#8201;PATHS, etc.) Note that a transiently expanded sparse specification for the index usually only matters under behavior A, since under behavior B index operations are lumped with history and tend to operate full-tree.</p></div>
+<div class="paragraph"><p>したがって、 過渡的に拡張された(または制限された)スパース仕様は作業ツリーには適用されますが、 スパース・パターンを使用する履歴クエリには常に適用されません(これに関する初期の議論については、[16] を参照してください。)</p></div>
+<div class="paragraph"><p>作業ツリーに存在する追加フ​​ァイルに基づいて過渡的に拡張された作業ツリーのスパース仕様と同様に、 インデックス内で変更される追加ファイルも考慮する必要があります。 特に、 ユーザーが、(HEAD に関連した、)スパース・パターンにマッチしないファイルへの変更をステージングしており、 そのファイルが作業ツリーには存在しない場合でも、 スパース仕様のファイル部分を考慮する必要があります。 具体的には、 インデックスに関連する問い合わせを実行します(例: <code>git diff --cached [REVISION]</code>、 <code>git diff-index [REVISION]</code>、 <code>git restore --staged --source=REVISION -- PATHS</code> など)。 過渡的に拡張されたスパースは、 振る舞いB ではインデックス操作を履歴と一緒にまとめ、 フルのツリー(full-tree)で操作する傾向があるため、 通常、 インデックスの指定は 振る舞いA でのみ問題になります。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_implementation_questions">Implementation Questions</h3>
+<h3 id="_実装時の疑問">実装時の疑問</h3>
 <div class="ulist"><ul>
 <li>
 <p>
-Do the options --scope={sparse,all} sound good to others? Are there better options?
+オプション <code>--scope={sparse,all}</code> は、 私達以外の人々にとっても良い書き方に思えますか？ もっと良い選択肢があるでしょうか？
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
-Names in use, or appearing in patches, or previously suggested:
+使用中の名前、またはパッチに登場する名前、または以前に提案された名前:
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 --sparse/--dense
@@ -2199,52 +2214,49 @@ Names in use, or appearing in patches, or previously suggested:
 --limit/--unlimited
 </p>
 </li>
+</ul></div>
+</li>
 <li>
 <p>
-Rationale making me lean slightly towards --scope={sparse,all}:
+`--scope={sparse,all}｀ という表記に少し傾倒している根拠:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+私達は多くのコマンドで機能する名前が必要なので、 それには競合しない名前が必要です
 </p>
 </li>
 <li>
 <p>
-We want a name that works for many commands, so we need a name that
-        does not conflict
+考えられるユースケースが 3 つ以上あることはわかっているので、 2値のように見えるフラグは避けるのが最善です。
 </p>
 </li>
 <li>
 <p>
-We know that we have more than two possible usecases, so it is best
-        to avoid a flag that appears to be binary.
+<code>--scope={sparse,all}</code> はそれほど長くはなく、 比較的説明的に思えます。
 </p>
 </li>
 <li>
 <p>
---scope={sparse,all} isn&#8217;t overly long and seems relatively
-        explanatory
+add/rm/mv で使用される <code>--sparse</code> は、 grep や log などとはまったく逆です。 これらのコマンドの <code>--sparse</code> の意味を変更すると、 後方性互換性は修正されますが、 既存のスクリプトが壊れる可能性があります。 新しい名前のペアを使用すると、 これらのコマンドの <code>--sparse</code> を非推奨のエイリアスとして扱うことができます。
 </p>
 </li>
 <li>
 <p>
-<code>--sparse</code>, as used in add/rm/mv, is totally backwards for
-        grep/log/etc. Changing the meaning of <code>--sparse</code> for these commands would fix the backwardness, but possibly break existing scripts. Using a new name pairing would allow us to treat <code>--sparse</code> in these commands as a deprecated alias.
+There is a different <code>--sparse</code>/<code>--dense</code> pair for commands using revision machinery, so using that naming might cause confusion
 </p>
 </li>
 <li>
 <p>
-There is a different <code>--sparse</code>/<code>--dense</code> pair for commands using
-        revision machinery, so using that naming might cause confusion
+There is also a <code>--sparse</code> in both pack-objects and show-branch, which don&#8217;t conflict but do suggest that <code>--sparse</code> is overloaded
 </p>
 </li>
 <li>
 <p>
-There is also a <code>--sparse</code> in both pack-objects and show-branch, which
-        don&#8217;t conflict but do suggest that <code>--sparse</code> is overloaded
+The name --ignore-skip-worktree-bits is a double negative, is quite a mouthful, refers to an implementation detail that many users may not be familiar with, and we&#8217;d need a negation for it which would probably be even more ridiculously long. (But we can make --ignore-skip-worktree-bits a deprecated alias for --no-restrict.)
 </p>
 </li>
-<li>
-<p>
-The name --ignore-skip-worktree-bits is a double negative, is
-        quite a mouthful, refers to an implementation detail that many users may not be familiar with, and we&#8217;d need a negation for it which would probably be even more ridiculously long. (But we can make --ignore-skip-worktree-bits a deprecated alias for --no-restrict.)
-</p>
+</ul></div>
 </li>
 <li>
 <p>
@@ -2260,7 +2272,7 @@ Is <code>--no-expand</code> a good alias for ls-files&#8217;s <code>--sparse</co
 <p>
 Under Behavior A:
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 Does ls-files' <code>--no-expand</code> override the default <code>--scope=all</code>, or does it need an extra flag?
@@ -2276,15 +2288,19 @@ Does ls-files' <code>-t</code> option imply <code>--scope=all</code>?
 Does update-index&#8217;s <code>--[no-]skip-worktree</code> option imply <code>--scope=all</code>?
 </p>
 </li>
+</ul></div>
+</li>
 <li>
 <p>
 sparse-checkout: once behavior A is fully implemented, should we take an interim measure to ease people into switching the default? Namely, if folks are not already in a sparse checkout, then require <code>sparse-checkout init/set</code> to take a <code>--set-scope=(sparse|worktree-sparse-history-dense|dense)</code> flag (which would set sparse.scope according to the setting given), and throw an error if the flag is not provided? That error would be a great place to warn folks that the default may change in the future, and get them used to specifying what they want so that the eventual default switch is seamless for them.
 </p>
 </li>
 </ul></div>
+</li>
+</ul></div>
 </div>
 <div class="sect2">
-<h3 id="_implementation_goals_plans">Implementation Goals/Plans</h3>
+<h3 id="_実装の_目標_計画">実装の 目標/計画</h3>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -2305,11 +2321,10 @@ Fix bugs in the <em>Known bugs</em> section (below)
 <p>
 Provide some kind of method for backfilling the blobs within the sparse specification in a partial clone
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>[Below here is kind of spitballing since the first two haven't been resolved]</code></pre>
-</div></div>
 </li>
+</ul></div>
+<div class="paragraph"><p>&#91;Below here is kind of spitballing since the first two haven&#8217;t been resolved&#93;</p></div>
+<div class="ulist"><ul>
 <li>
 <p>
 update-index: flip the default to --no-ignore-skip-worktree-entries, nuke this stupid "Oh, there&#8217;s a bug? Let me add a flag to let users request that they not trigger this bug." flag
@@ -2319,7 +2334,7 @@ update-index: flip the default to --no-ignore-skip-worktree-entries, nuke this s
 <p>
 Flags &amp; Config
 </p>
-</li>
+<div class="ulist"><ul>
 <li>
 <p>
 Make <code>--sparse</code> in add/rm/mv a deprecated alias for <code>--scope=all</code>
@@ -2341,11 +2356,13 @@ Add --scope=sparse (and --scope=all) flag to each of the history querying comman
 </p>
 </li>
 </ul></div>
+</li>
+</ul></div>
 </div>
 <div class="sect2">
-<h3 id="_known_bugs">Known bugs</h3>
+<h3 id="_既知のバグ">既知のバグ</h3>
 <div class="paragraph"><p>This list used to be a lot longer (see e.g. [1,2,3,4,5,6,7,8,9]), but we&#8217;ve been working on it.</p></div>
-<div class="olist arabic"><ol class="arabic">
+<div class="olist arabic"><ol class="arabic" start="0">
 <li>
 <p>
 Behavior A is not well supported in Git. (Behavior B didn&#8217;t used to be either, but was the easier of the two to implement.)
@@ -2355,33 +2372,16 @@ Behavior A is not well supported in Git. (Behavior B didn&#8217;t used to be eit
 <p>
 am and apply:
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>apply, without `--index` or `--cached`, relies on files being present
-in the working copy, and also writes to them unconditionally.  As
-such, it should first check for the files' presence, and if found to
-be SKIP_WORKTREE, then clear the bit and vivify the paths, then do
-its work.  Currently, it just throws an error.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>apply, with either `--cached` or `--index`, will not preserve the SKIP_WORKTREE bit. This is fine if the file has conflicts, but otherwise SKIP_WORKTREE bits should be preserved for --cached and probably also for --index.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>am, if there are no conflicts, will vivify files and fail to preserve the SKIP_WORKTREE bit. If there are conflicts and `-3` is not specified, it will vivify files and then complain the patch doesn't apply. If there are conflicts and `-3` is specified, it will vivify files and then complain that those vivified files would be overwritten by merge.</code></pre>
-</div></div>
+<div class="paragraph"><p>apply, without &#8216;--index` or <code>--cached</code>, relies on files being present in the working copy, and also writes to them unconditionally. As such, it should first check for the files&#8217; presence, and if found to be SKIP_WORKTREE, then clear the bit and vivify the paths, then do its work. Currently, it just throws an error.</p></div>
+<div class="paragraph"><p>apply, with either <code>--cached</code> or <code>--index</code>, will not preserve the SKIP_WORKTREE bit. This is fine if the file has conflicts, but otherwise SKIP_WORKTREE bits should be preserved for --cached and probably also for --index.</p></div>
+<div class="paragraph"><p>am, if there are no conflicts, will vivify files and fail to preserve the SKIP_WORKTREE bit. If there are conflicts and <code>-3</code> is not specified, it will vivify files and then complain the patch doesn&#8217;t apply. If there are conflicts and <code>-3</code> is specified, it will vivify files and then complain that those vivified files would be overwritten by merge.</p></div>
 </li>
 <li>
 <p>
 reset --hard:
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>reset --hard provides confusing error message (works correctly, but
-misleads the user into believing it didn't):</code></pre>
-</div></div>
-<div class="literalblock">
+<div class="paragraph"><p>reset --hard provides confusing error message (works correctly, but misleads the user into believing it didn&#8217;t):</p></div>
+<div class="listingblock">
 <div class="content">
 <pre><code>$ touch addme
 $ git add addme
@@ -2398,31 +2398,20 @@ S tracked-but-maybe-skipped
 $ ls -1
 tracked</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>`git reset --hard` DID remove addme from the index and the working tree, contrary to the error message, but in line with how reset --hard should behave.</code></pre>
-</div></div>
+<div class="paragraph"><p><code>git reset --hard</code> DID remove addme from the index and the working tree, contrary to the error message, but in line with how reset --hard should behave.</p></div>
 </li>
 <li>
 <p>
 read-tree
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>`read-tree` doesn't apply the 'SKIP_WORKTREE' bit to *any* of the
-entries it reads into the index, resulting in all your files suddenly
-appearing to be "deleted".</code></pre>
-</div></div>
+<div class="paragraph"><p><code>read-tree</code> doesn&#8217;t apply the <em>SKIP_WORKTREE</em> bit to <strong>any</strong> of the entries it reads into the index, resulting in all your files suddenly appearing to be "deleted".</p></div>
 </li>
 <li>
 <p>
 Checkout, restore:
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>These command do not handle path &amp; revision arguments appropriately:</code></pre>
-</div></div>
-<div class="literalblock">
+<div class="paragraph"><p>These command do not handle path &amp; revision arguments appropriately:</p></div>
+<div class="listingblock">
 <div class="content">
 <pre><code>$ ls
 tracked
@@ -2437,7 +2426,7 @@ tracked-but-maybe-skipped
 $ git checkout HEAD -- '*skipped'
 error: pathspec '*skipped' did not match any file(s) known to git
 $ git ls-tree HEAD | grep skipped
-100644 blob 276f5a64354b791b13840f02047738c77ad0584f        tracked-but-maybe-skipped
+100644 blob 276f5a64354b791b13840f02047738c77ad0584f    tracked-but-maybe-skipped
 $ git status --porcelain
 $ git checkout HEAD~1 -- '*skipped'
 $ git ls-files -t
@@ -2449,102 +2438,188 @@ $ git checkout HEAD -- '*skipped'
 $ git status --porcelain
 $</code></pre>
 </div></div>
-<div class="literalblock">
+<div class="paragraph"><p>Note that checkout without a revision (or restore --staged) fails to find a file to restore from the index, even though ls-files shows such a file certainly exists.</p></div>
+<div class="paragraph"><p>Similar issues occur with HEAD (--source=HEAD in restore&#8217;s case), but suddenly works when HEAD~1 is specified. And then after that it will work with HEAD specified, even though it didn&#8217;t before.</p></div>
+<div class="paragraph"><p>Directories are also an issue:</p></div>
+<div class="listingblock">
 <div class="content">
-<pre><code>Note that checkout without a revision (or restore --staged) fails to find a file to restore from the index, even though ls-files shows such a file certainly exists.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Similar issues occur with HEAD (--source=HEAD in restore's case), but suddenly works when HEAD~1 is specified. And then after that it will work with HEAD specified, even though it didn't before.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Directories are also an issue:</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git sparse-checkout set nomatches $ git status On branch main You are in a sparse checkout with 0% of tracked files present.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>nothing to commit, working tree clean $ git checkout . error: pathspec '.' did not match any file(s) known to git $ git checkout HEAD~1 . Updated 1 path from 58916d9 $ git ls-files -t S tracked H tracked-but-maybe-skipped</code></pre>
+<pre><code>$ git sparse-checkout set nomatches
+$ git status
+On branch main
+You are in a sparse checkout with 0% of tracked files present.
+
+nothing to commit, working tree clean
+$ git checkout .
+error: pathspec '.' did not match any file(s) known to git
+$ git checkout HEAD~1 .
+Updated 1 path from 58916d9
+$ git ls-files -t
+S tracked
+H tracked-but-maybe-skipped</code></pre>
 </div></div>
 </li>
 <li>
 <p>
 checkout and restore --staged, continued:
 </p>
-<div class="literalblock">
+<div class="paragraph"><p>These commands do not correctly scope operations to the sparse specification, and make it worse by not setting important SKIP_WORKTREE bits:</p></div>
+<div class="listingblock">
 <div class="content">
-<pre><code>These commands do not correctly scope operations to the sparse
-specification, and make it worse by not setting important SKIP_WORKTREE
-bits:</code></pre>
+<pre><code>$ git restore --source OLDREV --staged outside-sparse-cone/
+$ git status --porcelain
+MD outside-sparse-cone/file1
+MD outside-sparse-cone/file2
+MD outside-sparse-cone/file3</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git restore --source OLDREV --staged outside-sparse-cone/ $ git status --porcelain MD outside-sparse-cone/file1 MD outside-sparse-cone/file2 MD outside-sparse-cone/file3</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>We can add a --scope=all mode to `git restore` to let it operate outside the sparse specification, but then it will be important to set the SKIP_WORKTREE bits appropriately.</code></pre>
-</div></div>
+<div class="paragraph"><p>We can add a --scope=all mode to <code>git restore</code> to let it operate outside the sparse specification, but then it will be important to set the SKIP_WORKTREE bits appropriately.</p></div>
 </li>
 <li>
 <p>
 Performance issues; see:
-    <a href="https://lore.kernel.org/git/CABPp-BEkJQoKZsQGCYioyga_uoDQ6iBeW+<a href="mailto:FKr8JhyuuTMK1RDw@mail.gmail.com">FKr8JhyuuTMK1RDw@mail.gmail.com</a>/">https://lore.kernel.org/git/CABPp-BEkJQoKZsQGCYioyga_uoDQ6iBeW+<a href="mailto:FKr8JhyuuTMK1RDw@mail.gmail.com">FKr8JhyuuTMK1RDw@mail.gmail.com</a>/</a>
 </p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/CABPp-BEkJQoKZsQGCYioyga_uoDQ6iBeW+<a href="mailto:FKr8JhyuuTMK1RDw@mail.gmail.com">FKr8JhyuuTMK1RDw@mail.gmail.com</a>/">https://lore.kernel.org/git/CABPp-BEkJQoKZsQGCYioyga_uoDQ6iBeW+<a href="mailto:FKr8JhyuuTMK1RDw@mail.gmail.com">FKr8JhyuuTMK1RDw@mail.gmail.com</a>/</a></p></div>
 </li>
 </ol></div>
 </div>
 <div class="sect2">
 <h3 id="_reference_emails">Reference Emails</h3>
 <div class="paragraph"><p>Emails that detail various bugs we&#8217;ve had in sparse-checkout:</p></div>
-<div class="paragraph"><p>[1] (Original descriptions of behavior A &amp; behavior B)
-    <a href="https://lore.kernel.org/git/CABPp-BGJ_Nvi5TmgriD9Bh6eNXE2EDq2f8e8QKXAeYG3BxZafA@mail.gmail.com/">https://lore.kernel.org/git/CABPp-BGJ_Nvi5TmgriD9Bh6eNXE2EDq2f8e8QKXAeYG3BxZafA@mail.gmail.com/</a>
-[2] (Fix stash applications in sparse checkouts; bugs from behavioral differences)
-    <a href="https://lore.kernel.org/git/ccfedc7140dbf63ba26a15f93bd3885180b26517.1606861519.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/ccfedc7140dbf63ba26a15f93bd3885180b26517.1606861519.git.gitgitgadget@gmail.com/</a>
-[3] (Present-despite-skipped entries)
-    <a href="https://lore.kernel.org/git/11d46a399d26c913787b704d2b7169cafc28d639.1642175983.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/11d46a399d26c913787b704d2b7169cafc28d639.1642175983.git.gitgitgadget@gmail.com/</a>
-[4] (Clone --no-checkout interaction)
-    <a href="https://lore.kernel.org/git/pull.801.v2.git.git.1591324899170.gitgitgadget@gmail.com/">https://lore.kernel.org/git/pull.801.v2.git.git.1591324899170.gitgitgadget@gmail.com/</a> (clone --no-checkout)
-[5] (The need for update_sparsity() and avoiding <code>read-tree -mu HEAD</code>)
-    <a href="https://lore.kernel.org/git/3a1f084641eb47515b5a41ed4409a36128913309.1585270142.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/3a1f084641eb47515b5a41ed4409a36128913309.1585270142.git.gitgitgadget@gmail.com/</a>
-[6] (SKIP_WORKTREE is advisory, not mandatory)
-    <a href="https://lore.kernel.org/git/844306c3e86ef67591cc086decb2b760e7d710a3.1585270142.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/844306c3e86ef67591cc086decb2b760e7d710a3.1585270142.git.gitgitgadget@gmail.com/</a>
-[7] (<code>worktree add</code> should copy sparsity settings from current worktree)
-    <a href="https://lore.kernel.org/git/c51cb3714e7b1d2f8c9370fe87eca9984ff4859f.1644269584.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/c51cb3714e7b1d2f8c9370fe87eca9984ff4859f.1644269584.git.gitgitgadget@gmail.com/</a>
-[8] (Avoid negative surprises in add, rm, and mv)
-    <a href="https://lore.kernel.org/git/cover.1617914011.git.matheus.bernardino@usp.br/">https://lore.kernel.org/git/cover.1617914011.git.matheus.bernardino@usp.br/</a>
-    <a href="https://lore.kernel.org/git/pull.1018.v4.git.1632497954.gitgitgadget@gmail.com/">https://lore.kernel.org/git/pull.1018.v4.git.1632497954.gitgitgadget@gmail.com/</a>
-[9] (Move from out-of-cone to in-cone)
-    <a href="https://lore.kernel.org/git/20220630023737.473690-6-shaoxuan.yuan02@gmail.com/">https://lore.kernel.org/git/20220630023737.473690-6-shaoxuan.yuan02@gmail.com/</a>
-    <a href="https://lore.kernel.org/git/20220630023737.473690-4-shaoxuan.yuan02@gmail.com/">https://lore.kernel.org/git/20220630023737.473690-4-shaoxuan.yuan02@gmail.com/</a>
-[10] (Unnecessarily downloading objects outside sparse specification)
-     <a href="https://lore.kernel.org/git/CAOLTT8QfwOi9yx_qZZgyGa8iL8kHWutEED7ok_jxwTcYT_hf9Q@mail.gmail.com/">https://lore.kernel.org/git/CAOLTT8QfwOi9yx_qZZgyGa8iL8kHWutEED7ok_jxwTcYT_hf9Q@mail.gmail.com/</a></p></div>
-<div class="paragraph"><p>[11] (Stolee&#8217;s comments on high-level usecases)
-     <a href="https://lore.kernel.org/git/1a1e33f6-3514-9afc-0a28-5a6b85bd8014@gmail.com/">https://lore.kernel.org/git/1a1e33f6-3514-9afc-0a28-5a6b85bd8014@gmail.com/</a></p></div>
-<div class="paragraph"><p>[12] Others commenting on eventually switching default to behavior A:
-  * <a href="https://lore.kernel.org/git/xmqqh719pcoo.fsf@gitster.g/">https://lore.kernel.org/git/xmqqh719pcoo.fsf@gitster.g/</a>
-  * <a href="https://lore.kernel.org/git/xmqqzgeqw0sy.fsf@gitster.g/">https://lore.kernel.org/git/xmqqzgeqw0sy.fsf@gitster.g/</a>
-  * <a href="https://lore.kernel.org/git/a86af661-cf58-a4e5-0214-a67d3a794d7e@github.com/">https://lore.kernel.org/git/a86af661-cf58-a4e5-0214-a67d3a794d7e@github.com/</a></p></div>
-<div class="paragraph"><p>[13] Previous config name suggestion and description
-  * <a href="https://lore.kernel.org/git/CABPp-BE6zW0nJSStcVU=_DoDBnPgLqOR8pkTXK3dW11=<a href="mailto:T01OhA@mail.gmail.com">T01OhA@mail.gmail.com</a>/">https://lore.kernel.org/git/CABPp-BE6zW0nJSStcVU=_DoDBnPgLqOR8pkTXK3dW11=<a href="mailto:T01OhA@mail.gmail.com">T01OhA@mail.gmail.com</a>/</a></p></div>
-<div class="paragraph"><p>[14] Tangential issue: switch to cone mode as default sparse specification mechanism:
-  <a href="https://lore.kernel.org/git/a1b68fd6126eb341ef3637bb93fedad4309b36d0.1650594746.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/a1b68fd6126eb341ef3637bb93fedad4309b36d0.1650594746.git.gitgitgadget@gmail.com/</a></p></div>
-<div class="paragraph"><p>[15] Lengthy email on grep behavior, covering what should be searched:
-  * <a href="https://lore.kernel.org/git/CABPp-BGVO3QdbfE84uF_3QDF0-y2iHHh6G5FAFzNRfeRitkuHw@mail.gmail.com/">https://lore.kernel.org/git/CABPp-BGVO3QdbfE84uF_3QDF0-y2iHHh6G5FAFzNRfeRitkuHw@mail.gmail.com/</a></p></div>
-<div class="paragraph"><p>[16] Email explaining sparsity patterns vs. SKIP_WORKTREE and history operations,
-     search for the parenthetical comment starting "We do not check".
-    <a href="https://lore.kernel.org/git/CABPp-BFsCPPNOZ92JQRJeGyNd0e-TCW-LcLyr0i_+VSQJP+<a href="mailto:GCg@mail.gmail.com">GCg@mail.gmail.com</a>/">https://lore.kernel.org/git/CABPp-BFsCPPNOZ92JQRJeGyNd0e-TCW-LcLyr0i_+VSQJP+<a href="mailto:GCg@mail.gmail.com">GCg@mail.gmail.com</a>/</a></p></div>
-<div class="paragraph"><p>[17] <a href="https://lore.kernel.org/git/20220207190320.2960362-1-jonathantanmy@google.com/">https://lore.kernel.org/git/20220207190320.2960362-1-jonathantanmy@google.com/</a></p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+(Original descriptions of behavior A &amp; behavior B)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/CABPp-BGJ_Nvi5TmgriD9Bh6eNXE2EDq2f8e8QKXAeYG3BxZafA@mail.gmail.com/">https://lore.kernel.org/git/CABPp-BGJ_Nvi5TmgriD9Bh6eNXE2EDq2f8e8QKXAeYG3BxZafA@mail.gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(Fix stash applications in sparse checkouts; bugs from behavioral differences)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/ccfedc7140dbf63ba26a15f93bd3885180b26517.1606861519.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/ccfedc7140dbf63ba26a15f93bd3885180b26517.1606861519.git.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(Present-despite-skipped entries)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/11d46a399d26c913787b704d2b7169cafc28d639.1642175983.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/11d46a399d26c913787b704d2b7169cafc28d639.1642175983.git.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(Clone --no-checkout interaction)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/pull.801.v2.git.git.1591324899170.gitgitgadget@gmail.com/">https://lore.kernel.org/git/pull.801.v2.git.git.1591324899170.gitgitgadget@gmail.com/</a> (clone --no-checkout)</p></div>
+</li>
+<li>
+<p>
+(The need for update_sparsity() and avoiding <code>read-tree -mu HEAD</code>)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/3a1f084641eb47515b5a41ed4409a36128913309.1585270142.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/3a1f084641eb47515b5a41ed4409a36128913309.1585270142.git.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(SKIP_WORKTREE is advisory, not mandatory)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/844306c3e86ef67591cc086decb2b760e7d710a3.1585270142.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/844306c3e86ef67591cc086decb2b760e7d710a3.1585270142.git.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(<code>worktree add</code> should copy sparsity settings from current worktree)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/c51cb3714e7b1d2f8c9370fe87eca9984ff4859f.1644269584.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/c51cb3714e7b1d2f8c9370fe87eca9984ff4859f.1644269584.git.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(Avoid negative surprises in add, rm, and mv)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/cover.1617914011.git.matheus.bernardino@usp.br/">https://lore.kernel.org/git/cover.1617914011.git.matheus.bernardino@usp.br/</a></p></div>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/pull.1018.v4.git.1632497954.gitgitgadget@gmail.com/">https://lore.kernel.org/git/pull.1018.v4.git.1632497954.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(Move from out-of-cone to in-cone)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/20220630023737.473690-6-shaoxuan.yuan02@gmail.com/">https://lore.kernel.org/git/20220630023737.473690-6-shaoxuan.yuan02@gmail.com/</a></p></div>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/20220630023737.473690-4-shaoxuan.yuan02@gmail.com/">https://lore.kernel.org/git/20220630023737.473690-4-shaoxuan.yuan02@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+(Unnecessarily downloading objects outside sparse specification)
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/CAOLTT8QfwOi9yx_qZZgyGa8iL8kHWutEED7ok_jxwTcYT_hf9Q@mail.gmail.com/">https://lore.kernel.org/git/CAOLTT8QfwOi9yx_qZZgyGa8iL8kHWutEED7ok_jxwTcYT_hf9Q@mail.gmail.com/</a>
+. (Stolee&#8217;s comments on high-level usecases)</p></div>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/1a1e33f6-3514-9afc-0a28-5a6b85bd8014@gmail.com/">https://lore.kernel.org/git/1a1e33f6-3514-9afc-0a28-5a6b85bd8014@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+Others commenting on eventually switching default to behavior A:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://lore.kernel.org/git/xmqqh719pcoo.fsf@gitster.g/">https://lore.kernel.org/git/xmqqh719pcoo.fsf@gitster.g/</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://lore.kernel.org/git/xmqqzgeqw0sy.fsf@gitster.g/">https://lore.kernel.org/git/xmqqzgeqw0sy.fsf@gitster.g/</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://lore.kernel.org/git/a86af661-cf58-a4e5-0214-a67d3a794d7e@github.com/">https://lore.kernel.org/git/a86af661-cf58-a4e5-0214-a67d3a794d7e@github.com/</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Previous config name suggestion and description
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://lore.kernel.org/git/CABPp-BE6zW0nJSStcVU=_DoDBnPgLqOR8pkTXK3dW11=<a href="mailto:T01OhA@mail.gmail.com">T01OhA@mail.gmail.com</a>/">https://lore.kernel.org/git/CABPp-BE6zW0nJSStcVU=_DoDBnPgLqOR8pkTXK3dW11=<a href="mailto:T01OhA@mail.gmail.com">T01OhA@mail.gmail.com</a>/</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Tangential issue: switch to cone mode as default sparse specification mechanism:
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/a1b68fd6126eb341ef3637bb93fedad4309b36d0.1650594746.git.gitgitgadget@gmail.com/">https://lore.kernel.org/git/a1b68fd6126eb341ef3637bb93fedad4309b36d0.1650594746.git.gitgitgadget@gmail.com/</a></p></div>
+</li>
+<li>
+<p>
+Lengthy email on grep behavior, covering what should be searched:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://lore.kernel.org/git/CABPp-BGVO3QdbfE84uF_3QDF0-y2iHHh6G5FAFzNRfeRitkuHw@mail.gmail.com/">https://lore.kernel.org/git/CABPp-BGVO3QdbfE84uF_3QDF0-y2iHHh6G5FAFzNRfeRitkuHw@mail.gmail.com/</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Email explaining sparsity patterns vs. SKIP_WORKTREE and history operations, search for the parenthetical comment starting "We do not check".
+</p>
+<div class="paragraph"><p><a href="https://lore.kernel.org/git/CABPp-BFsCPPNOZ92JQRJeGyNd0e-TCW-LcLyr0i_+VSQJP+<a href="mailto:GCg@mail.gmail.com">GCg@mail.gmail.com</a>/">https://lore.kernel.org/git/CABPp-BFsCPPNOZ92JQRJeGyNd0e-TCW-LcLyr0i_+VSQJP+<a href="mailto:GCg@mail.gmail.com">GCg@mail.gmail.com</a>/</a></p></div>
+</li>
+<li>
+<p>
+<a href="https://lore.kernel.org/git/20220207190320.2960362-1-jonathantanmy@google.com/">https://lore.kernel.org/git/20220207190320.2960362-1-jonathantanmy@google.com/</a>
+</p>
+</li>
+</ol></div>
 </div>
 </div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-08-11 05:21:50 JST
+ 2024-05-12 05:35:15 JST
 </div>
 </div>
 </body>
