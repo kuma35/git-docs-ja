@@ -7,7 +7,6 @@ test_description='test clone --reference'
 GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME=main
 export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
 
-TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 
 base_dir=$(pwd)
@@ -317,7 +316,7 @@ test_expect_success SYMLINKS 'clone repo with symlinked or unknown files at obje
 	for option in --local --no-hardlinks --dissociate
 	do
 		test_must_fail git clone $option T T$option 2>err || return 1 &&
-		test_i18ngrep "symlink.*exists" err || return 1
+		test_grep "symlink.*exists" err || return 1
 	done &&
 
 	# But `--shared` clones should still work, even when specifying

@@ -1,9 +1,11 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
-#include "hash-ll.h"
+#include "hash.h"
 #include "hashmap.h"
 #include "refspec.h"
+#include "string-list.h"
+#include "strvec.h"
 
 struct option;
 struct transport_ls_refs_options;
@@ -46,7 +48,7 @@ struct remote_state {
 	struct hashmap branches_hash;
 
 	struct branch *current_branch;
-	const char *pushremote_name;
+	char *pushremote_name;
 
 	struct rewrites rewrites;
 	struct rewrites rewrites_push;
@@ -65,19 +67,12 @@ struct remote {
 
 	int origin, configured_in_repo;
 
-	const char *foreign_vcs;
+	char *foreign_vcs;
 
 	/* An array of all of the url_nr URLs configured for the remote */
-	const char **url;
-
-	int url_nr;
-	int url_alloc;
-
+	struct strvec url;
 	/* An array of all of the pushurl_nr push URLs configured for the remote */
-	const char **pushurl;
-
-	int pushurl_nr;
-	int pushurl_alloc;
+	struct strvec pushurl;
 
 	struct refspec push;
 
@@ -110,6 +105,8 @@ struct remote {
 
 	/* The method used for authenticating against `http_proxy`. */
 	char *http_proxy_authmethod;
+
+	struct string_list server_options;
 };
 
 /**
@@ -118,6 +115,7 @@ struct remote {
  * and configuration.
  */
 struct remote *remote_get(const char *name);
+struct remote *remote_get_early(const char *name);
 
 struct remote *pushremote_get(const char *name);
 int remote_is_configured(struct remote *remote, int in_repo);
@@ -128,14 +126,17 @@ typedef int each_remote_fn(struct remote *remote, void *priv);
 int for_each_remote(each_remote_fn fn, void *priv);
 
 int remote_has_url(struct remote *remote, const char *url);
+struct strvec *push_url_of_remote(struct remote *remote);
 
 struct ref_push_report {
-	const char *ref_name;
+	char *ref_name;
 	struct object_id *old_oid;
 	struct object_id *new_oid;
 	unsigned int forced_update:1;
 	struct ref_push_report *next;
 };
+
+void ref_push_report_free(struct ref_push_report *);
 
 struct ref {
 	struct ref *next;
@@ -199,7 +200,7 @@ struct ref {
 };
 
 #define REF_NORMAL	(1u << 0)
-#define REF_HEADS	(1u << 1)
+#define REF_BRANCHES	(1u << 1)
 #define REF_TAGS	(1u << 2)
 
 struct ref *find_ref_by_name(const struct ref *list, const char *name);
@@ -308,9 +309,9 @@ struct branch {
 	const char *refname;
 
 	/* The name of the remote listed in the configuration. */
-	const char *remote_name;
+	char *remote_name;
 
-	const char *pushremote_name;
+	char *pushremote_name;
 
 	/* An array of the "merge" lines in the configuration. */
 	const char **merge_name;
@@ -333,7 +334,7 @@ struct branch {
 struct branch *branch_get(const char *name);
 const char *remote_for_branch(struct branch *branch, int *explicit);
 const char *pushremote_for_branch(struct branch *branch, int *explicit);
-const char *remote_ref_for_branch(struct branch *branch, int for_push);
+char *remote_ref_for_branch(struct branch *branch, int for_push);
 
 /* returns true if the given branch has merge configuration given. */
 int branch_has_merge_config(struct branch *branch);
@@ -380,7 +381,8 @@ int stat_tracking_info(struct branch *branch, int *num_ours, int *num_theirs,
 		       const char **upstream_name, int for_push,
 		       enum ahead_behind_flags abf);
 int format_tracking_info(struct branch *branch, struct strbuf *sb,
-			 enum ahead_behind_flags abf);
+			 enum ahead_behind_flags abf,
+			 int show_divergence_advice);
 
 struct ref *get_local_heads(void);
 /*
@@ -399,8 +401,6 @@ struct ref *get_stale_heads(struct refspec *rs, struct ref *fetch_map);
 /*
  * Compare-and-swap
  */
-#define CAS_OPT_NAME "force-with-lease"
-
 struct push_cas_option {
 	unsigned use_tracking_for_rest:1;
 	unsigned use_force_if_includes:1;
@@ -414,6 +414,7 @@ struct push_cas_option {
 };
 
 int parseopt_push_cas_option(const struct option *, const char *arg, int unset);
+void clear_cas_option(struct push_cas_option *);
 
 int is_empty_cas(const struct push_cas_option *);
 void apply_push_cas(struct push_cas_option *, struct remote *, struct ref *);

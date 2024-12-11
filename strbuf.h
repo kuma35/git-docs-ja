@@ -12,9 +12,9 @@
 struct string_list;
 
 /**
- * strbuf's are meant to be used with all the usual C string and memory
+ * strbufs are meant to be used with all the usual C string and memory
  * APIs. Given that the length of the buffer is known, it's often better to
- * use the mem* functions than a str* one (memchr vs. strchr e.g.).
+ * use the mem* functions than a str* one (e.g., memchr vs. strchr).
  * Though, one has to be careful about the fact that str* functions often
  * stop on NULs and that strbufs may have embedded NULs.
  *
@@ -24,7 +24,7 @@ struct string_list;
  * strbufs have some invariants that are very important to keep in mind:
  *
  *  - The `buf` member is never NULL, so it can be used in any usual C
- *    string operations safely. strbuf's _have_ to be initialized either by
+ *    string operations safely. strbufs _have_ to be initialized either by
  *    `strbuf_init()` or by `= STRBUF_INIT` before the invariants, though.
  *
  *    Do *not* assume anything on what `buf` really is (e.g. if it is
@@ -37,7 +37,7 @@ struct string_list;
  *
  *  - The `buf` member is a byte array that has at least `len + 1` bytes
  *    allocated. The extra byte is used to store a `'\0'`, allowing the
- *    `buf` member to be a valid C-string. Every strbuf function ensure this
+ *    `buf` member to be a valid C-string. All strbuf functions ensure this
  *    invariant is preserved.
  *
  *    NOTE: It is OK to "play" with the buffer directly if you work it this
@@ -288,7 +288,7 @@ void strbuf_splice(struct strbuf *sb, size_t pos, size_t len,
  */
 void strbuf_add_commented_lines(struct strbuf *out,
 				const char *buf, size_t size,
-				char comment_line_char);
+				const char *comment_prefix);
 
 
 /**
@@ -309,6 +309,11 @@ static inline void strbuf_addstr(struct strbuf *sb, const char *s)
 {
 	strbuf_add(sb, s, strlen(s));
 }
+
+/**
+ * Add a NUL-terminated string the specified number of times to the buffer.
+ */
+void strbuf_addstrings(struct strbuf *sb, const char *s, size_t n);
 
 /**
  * Copy the contents of another buffer at the end of the current one.
@@ -336,6 +341,11 @@ size_t strbuf_expand_literal(struct strbuf *sb, const char *placeholder);
  * percent sign to `sb`, or the whole string if there is none.
  */
 int strbuf_expand_step(struct strbuf *sb, const char **formatp);
+
+/**
+ * Used with `strbuf_expand_step` to report unknown placeholders.
+ */
+void strbuf_expand_bad_format(const char *format, const char *command);
 
 /**
  * Append the contents of one strbuf to another, quoting any
@@ -379,7 +389,7 @@ void strbuf_addf(struct strbuf *sb, const char *fmt, ...);
  * blank to the buffer.
  */
 __attribute__((format (printf, 3, 4)))
-void strbuf_commented_addf(struct strbuf *sb, char comment_line_char, const char *fmt, ...);
+void strbuf_commented_addf(struct strbuf *sb, const char *comment_prefix, const char *fmt, ...);
 
 __attribute__((format (printf,2,0)))
 void strbuf_vaddf(struct strbuf *sb, const char *fmt, va_list ap);
@@ -513,11 +523,11 @@ int strbuf_getcwd(struct strbuf *sb);
 int strbuf_normalize_path(struct strbuf *sb);
 
 /**
- * Strip whitespace from a buffer. If comment_line_char is non-NUL,
+ * Strip whitespace from a buffer. If comment_prefix is non-NULL,
  * then lines beginning with that character are considered comments,
  * thus removed.
  */
-void strbuf_stripspace(struct strbuf *buf, char comment_line_char);
+void strbuf_stripspace(struct strbuf *buf, const char *comment_prefix);
 
 static inline int strbuf_strip_suffix(struct strbuf *sb, const char *suffix)
 {
@@ -670,5 +680,38 @@ __attribute__((format (printf, 1, 0)))
 char *xstrvfmt(const char *fmt, va_list ap);
 __attribute__((format (printf, 1, 2)))
 char *xstrfmt(const char *fmt, ...);
+
+int starts_with(const char *str, const char *prefix);
+int istarts_with(const char *str, const char *prefix);
+int starts_with_mem(const char *str, size_t len, const char *prefix);
+
+/*
+ * If the string "str" is the same as the string in "prefix", then the "arg"
+ * parameter is set to the "def" parameter and 1 is returned.
+ * If the string "str" begins with the string found in "prefix" and then a
+ * "=" sign, then the "arg" parameter is set to "str + strlen(prefix) + 1"
+ * (i.e., to the point in the string right after the prefix and the "=" sign),
+ * and 1 is returned.
+ *
+ * Otherwise, return 0 and leave "arg" untouched.
+ *
+ * When we accept both a "--key" and a "--key=<val>" option, this function
+ * can be used instead of !strcmp(arg, "--key") and then
+ * skip_prefix(arg, "--key=", &arg) to parse such an option.
+ */
+int skip_to_optional_arg_default(const char *str, const char *prefix,
+				 const char **arg, const char *def);
+
+static inline int skip_to_optional_arg(const char *str, const char *prefix,
+				       const char **arg)
+{
+	return skip_to_optional_arg_default(str, prefix, arg, "");
+}
+
+static inline int ends_with(const char *str, const char *suffix)
+{
+	size_t len;
+	return strip_suffix(str, suffix, &len);
+}
 
 #endif /* STRBUF_H */

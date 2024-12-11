@@ -1,5 +1,6 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "git-compat-util.h"
-#include "blob.h"
 #include "object-store-ll.h"
 #include "dir.h"
 #include "environment.h"
@@ -14,7 +15,6 @@
 #include "fsmonitor.h"
 #include "entry.h"
 #include "parallel-checkout.h"
-#include "wrapper.h"
 
 static void create_directories(const char *path, int path_len,
 			       const struct checkout *state)
@@ -169,6 +169,11 @@ static int remove_available_paths(struct string_list_item *item, void *cb_data)
 	return !available;
 }
 
+static int string_is_not_null(struct string_list_item *item, void *data UNUSED)
+{
+	return !!item->string;
+}
+
 int finish_delayed_checkout(struct checkout *state, int show_progress)
 {
 	int errs = 0;
@@ -186,12 +191,12 @@ int finish_delayed_checkout(struct checkout *state, int show_progress)
 		progress = start_delayed_progress(_("Filtering content"), dco->paths.nr);
 	while (dco->filters.nr > 0) {
 		for_each_string_list_item(filter, &dco->filters) {
-			struct string_list available_paths = STRING_LIST_INIT_NODUP;
+			struct string_list available_paths = STRING_LIST_INIT_DUP;
 
 			if (!async_query_available_blobs(filter->string, &available_paths)) {
 				/* Filter reported an error */
 				errs = 1;
-				filter->string = "";
+				filter->string = NULL;
 				continue;
 			}
 			if (available_paths.nr <= 0) {
@@ -201,7 +206,7 @@ int finish_delayed_checkout(struct checkout *state, int show_progress)
 				 * filter from the list (see
 				 * "string_list_remove_empty_items" call below).
 				 */
-				filter->string = "";
+				filter->string = NULL;
 				continue;
 			}
 
@@ -227,7 +232,7 @@ int finish_delayed_checkout(struct checkout *state, int show_progress)
 					 * Do not ask the filter for available blobs,
 					 * again, as the filter is likely buggy.
 					 */
-					filter->string = "";
+					filter->string = NULL;
 					continue;
 				}
 				ce = index_file_exists(state->istate, path->string,
@@ -240,8 +245,11 @@ int finish_delayed_checkout(struct checkout *state, int show_progress)
 				} else
 					errs = 1;
 			}
+
+			string_list_clear(&available_paths, 0);
 		}
-		string_list_remove_empty_items(&dco->filters, 0);
+
+		filter_string_list(&dco->filters, 0, string_is_not_null, NULL);
 	}
 	stop_progress(&progress);
 	string_list_clear(&dco->filters, 0);
@@ -462,7 +470,7 @@ static void mark_colliding_entries(const struct checkout *state,
 			continue;
 
 		if ((trust_ino && !match_stat_data(&dup->ce_stat_data, st)) ||
-		    (!trust_ino && !fspathcmp(ce->name, dup->name))) {
+		    paths_collide(ce->name, dup->name)) {
 			dup->ce_flags |= CE_MATCHED;
 			break;
 		}
@@ -549,6 +557,20 @@ int checkout_entry_ca(struct cache_entry *ce, struct conv_attrs *ca,
 			/* If it is a gitlink, leave it alone! */
 			if (S_ISGITLINK(ce->ce_mode))
 				return 0;
+			/*
+			 * We must avoid replacing submodules' leading
+			 * directories with symbolic links, lest recursive
+			 * clones can write into arbitrary locations.
+			 *
+			 * Technically, this logic is not limited
+			 * to recursive clones, or for that matter to
+			 * submodules' paths colliding with symbolic links'
+			 * paths. Yet it strikes a balance in favor of
+			 * simplicity, and if paths are colliding, we might
+			 * just as well keep the directories during a clone.
+			 */
+			if (state->clone && S_ISLNK(ce->ce_mode))
+				return 0;
 			remove_subtree(&path);
 		} else if (unlink(path.buf))
 			return error_errno("unable to unlink old '%s'", path.buf);
@@ -581,4 +603,9 @@ void unlink_entry(const struct cache_entry *ce, const char *super_prefix)
 	if (remove_or_warn(ce->ce_mode, ce->name))
 		return;
 	schedule_dir_for_removal(ce->name, ce_namelen(ce));
+}
+
+int remove_or_warn(unsigned int mode, const char *file)
+{
+	return S_ISGITLINK(mode) ? rmdir_or_warn(file) : unlink_or_warn(file);
 }

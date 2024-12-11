@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2007 Johannes E. Schindelin
  */
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
 #include "config.h"
 #include "gettext.h"
@@ -25,7 +26,6 @@
 #include "quote.h"
 #include "remote.h"
 #include "blob.h"
-#include "commit-slab.h"
 
 static const char *fast_export_usage[] = {
 	N_("git fast-export [<rev-list-opts>]"),
@@ -33,9 +33,9 @@ static const char *fast_export_usage[] = {
 };
 
 static int progress;
-static enum { SIGNED_TAG_ABORT, VERBATIM, WARN, WARN_STRIP, STRIP } signed_tag_mode = SIGNED_TAG_ABORT;
-static enum { TAG_FILTERING_ABORT, DROP, REWRITE } tag_of_filtered_mode = TAG_FILTERING_ABORT;
-static enum { REENCODE_ABORT, REENCODE_YES, REENCODE_NO } reencode_mode = REENCODE_ABORT;
+static enum signed_tag_mode { SIGNED_TAG_ABORT, VERBATIM, WARN, WARN_STRIP, STRIP } signed_tag_mode = SIGNED_TAG_ABORT;
+static enum tag_of_filtered_mode { TAG_FILTERING_ABORT, DROP, REWRITE } tag_of_filtered_mode = TAG_FILTERING_ABORT;
+static enum reencode_mode { REENCODE_ABORT, REENCODE_YES, REENCODE_NO } reencode_mode = REENCODE_ABORT;
 static int fake_missing_tagger;
 static int use_done_feature;
 static int no_data;
@@ -43,8 +43,8 @@ static int full_tree;
 static int reference_excluded_commits;
 static int show_original_ids;
 static int mark_tags;
-static struct string_list extra_refs = STRING_LIST_INIT_NODUP;
-static struct string_list tag_refs = STRING_LIST_INIT_NODUP;
+static struct string_list extra_refs = STRING_LIST_INIT_DUP;
+static struct string_list tag_refs = STRING_LIST_INIT_DUP;
 static struct refspec refspecs = REFSPEC_INIT_FETCH;
 static int anonymize;
 static struct hashmap anonymized_seeds;
@@ -53,16 +53,18 @@ static struct revision_sources revision_sources;
 static int parse_opt_signed_tag_mode(const struct option *opt,
 				     const char *arg, int unset)
 {
+	enum signed_tag_mode *val = opt->value;
+
 	if (unset || !strcmp(arg, "abort"))
-		signed_tag_mode = SIGNED_TAG_ABORT;
+		*val = SIGNED_TAG_ABORT;
 	else if (!strcmp(arg, "verbatim") || !strcmp(arg, "ignore"))
-		signed_tag_mode = VERBATIM;
+		*val = VERBATIM;
 	else if (!strcmp(arg, "warn"))
-		signed_tag_mode = WARN;
+		*val = WARN;
 	else if (!strcmp(arg, "warn-strip"))
-		signed_tag_mode = WARN_STRIP;
+		*val = WARN_STRIP;
 	else if (!strcmp(arg, "strip"))
-		signed_tag_mode = STRIP;
+		*val = STRIP;
 	else
 		return error("Unknown signed-tags mode: %s", arg);
 	return 0;
@@ -71,12 +73,14 @@ static int parse_opt_signed_tag_mode(const struct option *opt,
 static int parse_opt_tag_of_filtered_mode(const struct option *opt,
 					  const char *arg, int unset)
 {
+	enum tag_of_filtered_mode *val = opt->value;
+
 	if (unset || !strcmp(arg, "abort"))
-		tag_of_filtered_mode = TAG_FILTERING_ABORT;
+		*val = TAG_FILTERING_ABORT;
 	else if (!strcmp(arg, "drop"))
-		tag_of_filtered_mode = DROP;
+		*val = DROP;
 	else if (!strcmp(arg, "rewrite"))
-		tag_of_filtered_mode = REWRITE;
+		*val = REWRITE;
 	else
 		return error("Unknown tag-of-filtered mode: %s", arg);
 	return 0;
@@ -85,21 +89,23 @@ static int parse_opt_tag_of_filtered_mode(const struct option *opt,
 static int parse_opt_reencode_mode(const struct option *opt,
 				   const char *arg, int unset)
 {
+	enum reencode_mode *val = opt->value;
+
 	if (unset) {
-		reencode_mode = REENCODE_ABORT;
+		*val = REENCODE_ABORT;
 		return 0;
 	}
 
 	switch (git_parse_maybe_bool(arg)) {
 	case 0:
-		reencode_mode = REENCODE_NO;
+		*val = REENCODE_NO;
 		break;
 	case 1:
-		reencode_mode = REENCODE_YES;
+		*val = REENCODE_YES;
 		break;
 	default:
 		if (!strcasecmp(arg, "abort"))
-			reencode_mode = REENCODE_ABORT;
+			*val = REENCODE_ABORT;
 		else
 			return error("Unknown reencoding mode: %s", arg);
 	}
@@ -131,8 +137,7 @@ static int anonymized_entry_cmp(const void *cmp_data UNUSED,
 	a = container_of(eptr, const struct anonymized_entry, hash);
 	if (keydata) {
 		const struct anonymized_entry_key *key = keydata;
-		int equal = !strncmp(a->orig, key->orig, key->orig_len) &&
-			    !a->orig[key->orig_len];
+		int equal = !xstrncmpz(a->orig, key->orig, key->orig_len);
 		return !equal;
 	}
 
@@ -411,7 +416,7 @@ static char *generate_fake_oid(void)
 	struct object_id oid;
 	char *hex = xmallocz(GIT_MAX_HEXSZ);
 
-	oidclr(&oid);
+	oidclr(&oid, the_repository->hash_algo);
 	put_be32(oid.hash + hashsz - 4, counter++);
 	return oid_to_hex_r(hex, &oid);
 }
@@ -897,7 +902,7 @@ static void handle_tag(const char *name, struct tag *tag)
 	free(buf);
 }
 
-static struct commit *get_commit(struct rev_cmdline_entry *e, char *full_name)
+static struct commit *get_commit(struct rev_cmdline_entry *e, const char *full_name)
 {
 	switch (e->item->type) {
 	case OBJ_COMMIT:
@@ -928,14 +933,16 @@ static void get_tags_and_duplicates(struct rev_cmdline_info *info)
 		struct rev_cmdline_entry *e = info->rev + i;
 		struct object_id oid;
 		struct commit *commit;
-		char *full_name;
+		char *full_name = NULL;
 
 		if (e->flags & UNINTERESTING)
 			continue;
 
 		if (repo_dwim_ref(the_repository, e->name, strlen(e->name),
-				  &oid, &full_name, 0) != 1)
+				  &oid, &full_name, 0) != 1) {
+			free(full_name);
 			continue;
+		}
 
 		if (refspecs.nr) {
 			char *private;
@@ -951,6 +958,7 @@ static void get_tags_and_duplicates(struct rev_cmdline_info *info)
 			warning("%s: Unexpected object of type %s, skipping.",
 				e->name,
 				type_name(e->item->type));
+			free(full_name);
 			continue;
 		}
 
@@ -959,10 +967,12 @@ static void get_tags_and_duplicates(struct rev_cmdline_info *info)
 			break;
 		case OBJ_BLOB:
 			export_blob(&commit->object.oid);
+			free(full_name);
 			continue;
 		default: /* OBJ_TAG (nested tags) is already handled */
 			warning("Tag points to object of unexpected type %s, skipping.",
 				type_name(commit->object.type));
+			free(full_name);
 			continue;
 		}
 
@@ -975,6 +985,8 @@ static void get_tags_and_duplicates(struct rev_cmdline_info *info)
 
 		if (!*revision_sources_at(&revision_sources, commit))
 			*revision_sources_at(&revision_sources, commit) = full_name;
+		else
+			free(full_name);
 	}
 
 	string_list_sort(&extra_refs);
@@ -1169,7 +1181,10 @@ static int parse_opt_anonymize_map(const struct option *opt,
 	return 0;
 }
 
-int cmd_fast_export(int argc, const char **argv, const char *prefix)
+int cmd_fast_export(int argc,
+		    const char **argv,
+		    const char *prefix,
+		    struct repository *repo UNUSED)
 {
 	struct rev_info revs;
 	struct commit *commit;
@@ -1274,9 +1289,11 @@ int cmd_fast_export(int argc, const char **argv, const char *prefix)
 	revs.diffopt.format_callback = show_filemodify;
 	revs.diffopt.format_callback_data = &paths_of_changed_objects;
 	revs.diffopt.flags.recursive = 1;
+
 	revs.diffopt.no_free = 1;
 	while ((commit = get_revision(&revs)))
 		handle_commit(commit, &revs, &paths_of_changed_objects);
+	revs.diffopt.no_free = 0;
 
 	handle_tags_and_duplicates(&extra_refs);
 	handle_tags_and_duplicates(&tag_refs);

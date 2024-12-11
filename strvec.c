@@ -1,7 +1,5 @@
 #include "git-compat-util.h"
 #include "strvec.h"
-#include "alloc.h"
-#include "hex.h"
 #include "strbuf.h"
 
 const char *empty_strvec[] = { NULL };
@@ -12,7 +10,7 @@ void strvec_init(struct strvec *array)
 	memcpy(array, &blank, sizeof(*array));
 }
 
-static void strvec_push_nodup(struct strvec *array, const char *value)
+void strvec_push_nodup(struct strvec *array, char *value)
 {
 	if (array->v == empty_strvec)
 		array->v = NULL;
@@ -56,6 +54,45 @@ void strvec_pushv(struct strvec *array, const char **items)
 {
 	for (; *items; items++)
 		strvec_push(array, *items);
+}
+
+void strvec_splice(struct strvec *array, size_t idx, size_t len,
+		   const char **replacement, size_t replacement_len)
+{
+	if (idx + len > array->nr)
+		BUG("range outside of array boundary");
+	if (replacement_len > len)
+		ALLOC_GROW(array->v, array->nr + (replacement_len - len) + 1,
+			   array->alloc);
+	for (size_t i = 0; i < len; i++)
+		free((char *)array->v[idx + i]);
+	if (replacement_len != len) {
+		memmove(array->v + idx + replacement_len, array->v + idx + len,
+			(array->nr - idx - len + 1) * sizeof(char *));
+		array->nr += (replacement_len - len);
+	}
+	for (size_t i = 0; i < replacement_len; i++)
+		array->v[idx + i] = xstrdup(replacement[i]);
+}
+
+const char *strvec_replace(struct strvec *array, size_t idx, const char *replacement)
+{
+	char *to_free;
+	if (idx >= array->nr)
+		BUG("index outside of array boundary");
+	to_free = (char *) array->v[idx];
+	array->v[idx] = xstrdup(replacement);
+	free(to_free);
+	return array->v[idx];
+}
+
+void strvec_remove(struct strvec *array, size_t idx)
+{
+	if (idx >= array->nr)
+		BUG("index outside of array boundary");
+	free((char *)array->v[idx]);
+	memmove(array->v + idx, array->v + idx + 1, (array->nr - idx) * sizeof(char *));
+	array->nr--;
 }
 
 void strvec_pop(struct strvec *array)

@@ -186,6 +186,28 @@ test_expect_success 'clone from password-protected repository' '
 	test_cmp expect actual
 '
 
+test_expect_success 'credential.interactive=false skips askpass' '
+	set_askpass bogus nonsense &&
+	(
+		GIT_TRACE2_EVENT="$(pwd)/interactive-true" &&
+		export GIT_TRACE2_EVENT &&
+		test_must_fail git clone --bare "$HTTPD_URL/auth/smart/repo.git" interactive-true-dir &&
+		test_region credential interactive interactive-true &&
+
+		GIT_TRACE2_EVENT="$(pwd)/interactive-false" &&
+		export GIT_TRACE2_EVENT &&
+		test_must_fail git -c credential.interactive=false \
+			clone --bare "$HTTPD_URL/auth/smart/repo.git" interactive-false-dir &&
+		test_region ! credential interactive interactive-false &&
+
+		GIT_TRACE2_EVENT="$(pwd)/interactive-never" &&
+		export GIT_TRACE2_EVENT &&
+		test_must_fail git -c credential.interactive=never \
+			clone --bare "$HTTPD_URL/auth/smart/repo.git" interactive-never-dir &&
+		test_region ! credential interactive interactive-never
+	)
+'
+
 test_expect_success 'clone from auth-only-for-push repository' '
 	echo two >expect &&
 	set_askpass wrong &&
@@ -275,7 +297,7 @@ test_expect_success 'GIT_SMART_HTTP can disable smart http' '
 
 test_expect_success 'invalid Content-Type rejected' '
 	test_must_fail git clone $HTTPD_URL/broken_smart/repo.git 2>actual &&
-	test_i18ngrep "not valid:" actual
+	test_grep "not valid:" actual
 '
 
 test_expect_success 'create namespaced refs' '
@@ -359,7 +381,9 @@ create_tags () {
 
 	# now assign tags to all the dangling commits we created above
 	tag=$(perl -e "print \"bla\" x 30") &&
-	sed -e "s|^:\([^ ]*\) \(.*\)$|\2 refs/tags/$tag-\1|" <marks >>packed-refs
+	sed -e "s|^:\([^ ]*\) \(.*\)$|create refs/tags/$tag-\1 \2|" <marks >input &&
+	git update-ref --stdin <input &&
+	rm input
 }
 
 test_expect_success 'create 2,000 tags in the repo' '
@@ -558,7 +582,7 @@ test_expect_success 'GIT_TRACE_CURL_NO_DATA prevents data from being traced' '
 
 test_expect_success 'server-side error detected' '
 	test_must_fail git clone $HTTPD_URL/error_smart/repo.git 2>actual &&
-	test_i18ngrep "server-side error" actual
+	test_grep "server-side error" actual
 '
 
 test_expect_success 'http auth remembers successful credentials' '
@@ -641,7 +665,6 @@ test_expect_success 'clone empty SHA-256 repository with protocol v0' '
 test_expect_success 'passing hostname resolution information works' '
 	BOGUS_HOST=gitbogusexamplehost.invalid &&
 	BOGUS_HTTPD_URL=$HTTPD_PROTO://$BOGUS_HOST:$LIB_HTTPD_PORT &&
-	test_must_fail git ls-remote "$BOGUS_HTTPD_URL/smart/repo.git" >/dev/null &&
 	git -c "http.curloptResolve=$BOGUS_HOST:$LIB_HTTPD_PORT:127.0.0.1" ls-remote "$BOGUS_HTTPD_URL/smart/repo.git" >/dev/null
 '
 
@@ -729,6 +752,24 @@ test_expect_success 'no empty path components' '
 
 	strip_access_log >log &&
 	! grep "//" log
+'
+
+test_expect_success 'tag following always works over v0 http' '
+	upstream=$HTTPD_DOCUMENT_ROOT_PATH/tags &&
+	git init "$upstream" &&
+	(
+		cd "$upstream" &&
+		git commit --allow-empty -m base &&
+		git tag not-annotated &&
+		git tag -m foo annotated
+	) &&
+	git init tags &&
+	git -C tags -c protocol.version=0 \
+		fetch --depth 1 $HTTPD_URL/smart/tags \
+		refs/tags/annotated:refs/tags/annotated &&
+	git -C "$upstream" for-each-ref refs/tags >expect &&
+	git -C tags for-each-ref >actual &&
+	test_cmp expect actual
 '
 
 test_done

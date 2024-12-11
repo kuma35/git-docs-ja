@@ -1,18 +1,21 @@
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
 #include "config.h"
 #include "fmt-merge-msg.h"
 #include "gettext.h"
 #include "parse-options.h"
-#include "wrapper.h"
 
 static const char * const fmt_merge_msg_usage[] = {
 	N_("git fmt-merge-msg [-m <message>] [--log[=<n>] | --no-log] [--file <file>]"),
 	NULL
 };
 
-int cmd_fmt_merge_msg(int argc, const char **argv, const char *prefix)
+int cmd_fmt_merge_msg(int argc,
+		      const char **argv,
+		      const char *prefix,
+		      struct repository *repo UNUSED)
 {
-	const char *inpath = NULL;
+	char *inpath = NULL;
 	const char *message = NULL;
 	char *into_name = NULL;
 	int shortlog_len = -1;
@@ -67,5 +70,9 @@ int cmd_fmt_merge_msg(int argc, const char **argv, const char *prefix)
 	if (ret)
 		return ret;
 	write_in_full(STDOUT_FILENO, output.buf, output.len);
+
+	strbuf_release(&input);
+	strbuf_release(&output);
+	free(inpath);
 	return 0;
 }

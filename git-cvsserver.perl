@@ -15,7 +15,7 @@
 ####
 ####
 
-use 5.008;
+require v5.26;
 use strict;
 use warnings;
 use bytes;

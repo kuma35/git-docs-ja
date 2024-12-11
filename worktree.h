@@ -6,6 +6,8 @@
 struct strbuf;
 
 struct worktree {
+	/* The repository this worktree belongs to. */
+	struct repository *repo;
 	char *path;
 	char *id;
 	char *head_ref;		/* NULL if HEAD is broken or detached */
@@ -56,6 +58,13 @@ const char *get_worktree_git_dir(const struct worktree *wt);
 struct worktree *find_worktree(struct worktree **list,
 			       const char *prefix,
 			       const char *arg);
+
+/*
+ * Look up the worktree corresponding to `id`, or NULL of no such worktree
+ * exists.
+ */
+struct worktree *get_linked_worktree(const char *id,
+				     int skip_reading_head);
 
 /*
  * Return the worktree corresponding to `path`, or NULL if no such worktree
@@ -123,6 +132,16 @@ typedef void (* worktree_repair_fn)(int iserr, const char *path,
 void repair_worktrees(worktree_repair_fn, void *cb_data);
 
 /*
+ * Repair the linked worktrees after the gitdir has been moved.
+ */
+void repair_worktrees_after_gitdir_move(const char *old_path);
+
+/*
+ * Repair the linked worktree after the gitdir has been moved.
+ */
+void repair_worktree_after_gitdir_move(struct worktree *wt, const char *old_path);
+
+/*
  * Repair administrative files corresponding to the worktree at the given path.
  * The worktree's .git file pointing at the repository must be intact for the
  * repair to succeed. Useful for re-associating an orphaned worktree with the
@@ -133,6 +152,11 @@ void repair_worktrees(worktree_repair_fn, void *cb_data);
  * user-data.
  */
 void repair_worktree_at_path(const char *, worktree_repair_fn, void *cb_data);
+
+/*
+ * Free up the memory for a worktree.
+ */
+void free_worktree(struct worktree *);
 
 /*
  * Free up the memory for worktree(s)
@@ -162,14 +186,6 @@ int other_head_refs(each_ref_fn fn, void *cb_data);
 
 int is_worktree_being_rebased(const struct worktree *wt, const char *target);
 int is_worktree_being_bisected(const struct worktree *wt, const char *target);
-
-/*
- * Similar to git_path() but can produce paths for a specified
- * worktree instead of current one
- */
-const char *worktree_git_path(const struct worktree *wt,
-			      const char *fmt, ...)
-	__attribute__((format (printf, 2, 3)));
 
 /*
  * Return a refname suitable for access from the current ref store.

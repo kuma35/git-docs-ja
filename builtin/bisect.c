@@ -1,3 +1,4 @@
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
 #include "copy.h"
 #include "environment.h"
@@ -7,7 +8,6 @@
 #include "parse-options.h"
 #include "bisect.h"
 #include "refs.h"
-#include "dir.h"
 #include "strvec.h"
 #include "run-command.h"
 #include "oid-array.h"
@@ -15,10 +15,8 @@
 #include "prompt.h"
 #include "quote.h"
 #include "revision.h"
-#include "wrapper.h"
 
 static GIT_PATH_FUNC(git_path_bisect_terms, "BISECT_TERMS")
-static GIT_PATH_FUNC(git_path_bisect_expected_rev, "BISECT_EXPECTED_REV")
 static GIT_PATH_FUNC(git_path_bisect_ancestors_ok, "BISECT_ANCESTORS_OK")
 static GIT_PATH_FUNC(git_path_bisect_start, "BISECT_START")
 static GIT_PATH_FUNC(git_path_bisect_log, "BISECT_LOG")
@@ -27,7 +25,7 @@ static GIT_PATH_FUNC(git_path_bisect_first_parent, "BISECT_FIRST_PARENT")
 static GIT_PATH_FUNC(git_path_bisect_run, "BISECT_RUN")
 
 #define BUILTIN_GIT_BISECT_START_USAGE \
-	N_("git bisect start [--term-{new,bad}=<term> --term-{old,good}=<term>]" \
+	N_("git bisect start [--term-(new|bad)=<term> --term-(old|good)=<term>]" \
 	   "    [--no-checkout] [--first-parent] [<bad> [<good>...]] [--]" \
 	   "    [<pathspec>...]")
 #define BUILTIN_GIT_BISECT_STATE_USAGE \
@@ -47,7 +45,7 @@ static GIT_PATH_FUNC(git_path_bisect_run, "BISECT_RUN")
 #define BUILTIN_GIT_BISECT_LOG_USAGE \
 	"git bisect log"
 #define BUILTIN_GIT_BISECT_RUN_USAGE \
-	N_("git bisect run <cmd>...")
+	N_("git bisect run <cmd> [<arg>...]")
 
 static const char * const git_bisect_usage[] = {
 	BUILTIN_GIT_BISECT_START_USAGE,
@@ -234,11 +232,10 @@ static int bisect_reset(const char *commit)
 	struct strbuf branch = STRBUF_INIT;
 
 	if (!commit) {
-		if (strbuf_read_file(&branch, git_path_bisect_start(), 0) < 1) {
+		if (!strbuf_read_file(&branch, git_path_bisect_start(), 0))
 			printf(_("We are not bisecting.\n"));
-			return 0;
-		}
-		strbuf_rtrim(&branch);
+		else
+			strbuf_rtrim(&branch);
 	} else {
 		struct object_id oid;
 
@@ -247,7 +244,7 @@ static int bisect_reset(const char *commit)
 		strbuf_addstr(&branch, commit);
 	}
 
-	if (!ref_exists("BISECT_HEAD")) {
+	if (branch.len && !refs_ref_exists(get_main_ref_store(the_repository), "BISECT_HEAD")) {
 		struct child_process cmd = CHILD_PROCESS_INIT;
 
 		cmd.git_cmd = 1;
@@ -266,7 +263,8 @@ static int bisect_reset(const char *commit)
 	return bisect_clean_state();
 }
 
-static void log_commit(FILE *fp, char *fmt, const char *state,
+static void log_commit(FILE *fp,
+		       const char *fmt, const char *state,
 		       struct commit *commit)
 {
 	struct pretty_print_context pp = {0};
@@ -306,8 +304,8 @@ static int bisect_write(const char *state, const char *rev,
 		goto finish;
 	}
 
-	if (update_ref(NULL, tag.buf, &oid, NULL, 0,
-		       UPDATE_REFS_MSG_ON_ERR)) {
+	if (refs_update_ref(get_main_ref_store(the_repository), NULL, tag.buf, &oid, NULL, 0,
+			    UPDATE_REFS_MSG_ON_ERR)) {
 		res = -1;
 		goto finish;
 	}
@@ -359,6 +357,7 @@ static int check_and_set_terms(struct bisect_terms *terms, const char *cmd)
 }
 
 static int inc_nr(const char *refname UNUSED,
+		  const char *referent UNUSED,
 		  const struct object_id *oid UNUSED,
 		  int flag UNUSED, void *cb_data)
 {
@@ -420,11 +419,12 @@ static void bisect_status(struct bisect_state *state,
 	char *bad_ref = xstrfmt("refs/bisect/%s", terms->term_bad);
 	char *good_glob = xstrfmt("%s-*", terms->term_good);
 
-	if (ref_exists(bad_ref))
+	if (refs_ref_exists(get_main_ref_store(the_repository), bad_ref))
 		state->nr_bad = 1;
 
-	for_each_glob_ref_in(inc_nr, good_glob, "refs/bisect/",
-			     (void *) &state->nr_good);
+	refs_for_each_glob_ref_in(get_main_ref_store(the_repository), inc_nr,
+				  good_glob, "refs/bisect/",
+				  (void *) &state->nr_good);
 
 	free(good_glob);
 	free(bad_ref);
@@ -547,7 +547,7 @@ finish:
 	return res;
 }
 
-static int add_bisect_ref(const char *refname, const struct object_id *oid,
+static int add_bisect_ref(const char *refname, const char *referent UNUSED, const struct object_id *oid,
 			  int flags UNUSED, void *cb)
 {
 	struct add_bisect_ref_data *data = cb;
@@ -578,11 +578,13 @@ static int prepare_revs(struct bisect_terms *terms, struct rev_info *revs)
 	reset_revision_walk();
 	repo_init_revisions(the_repository, revs, NULL);
 	setup_revisions(0, NULL, revs, NULL);
-	for_each_glob_ref_in(add_bisect_ref, bad, "refs/bisect/", &cb);
+	refs_for_each_glob_ref_in(get_main_ref_store(the_repository),
+				  add_bisect_ref, bad, "refs/bisect/", &cb);
 	cb.object_flags = UNINTERESTING;
-	for_each_glob_ref_in(add_bisect_ref, good, "refs/bisect/", &cb);
+	refs_for_each_glob_ref_in(get_main_ref_store(the_repository),
+				  add_bisect_ref, good, "refs/bisect/", &cb);
 	if (prepare_revision_walk(revs))
-		res = error(_("revision walk setup failed\n"));
+		res = error(_("revision walk setup failed"));
 
 	free(good);
 	free(bad);
@@ -640,7 +642,7 @@ static int bisect_successful(struct bisect_terms *terms)
 	char *bad_ref = xstrfmt("refs/bisect/%s",terms->term_bad);
 	int res;
 
-	read_ref(bad_ref, &oid);
+	refs_read_ref(get_main_ref_store(the_repository), bad_ref, &oid);
 	commit = lookup_commit_reference_by_name(bad_ref);
 	repo_format_commit_message(the_repository, commit, "%s", &commit_name,
 				   &pp);
@@ -783,7 +785,8 @@ static enum bisect_error bisect_start(struct bisect_terms *terms, int argc,
 	/*
 	 * Verify HEAD
 	 */
-	head = resolve_ref_unsafe("HEAD", 0, &head_oid, &flags);
+	head = refs_resolve_ref_unsafe(get_main_ref_store(the_repository),
+				       "HEAD", 0, &head_oid, &flags);
 	if (!head)
 		if (repo_get_oid(the_repository, "HEAD", &head_oid))
 			return error(_("bad HEAD - I need a HEAD"));
@@ -842,8 +845,8 @@ static enum bisect_error bisect_start(struct bisect_terms *terms, int argc,
 			res = error(_("invalid ref: '%s'"), start_head.buf);
 			goto finish;
 		}
-		if (update_ref(NULL, "BISECT_HEAD", &oid, NULL, 0,
-			       UPDATE_REFS_MSG_ON_ERR)) {
+		if (refs_update_ref(get_main_ref_store(the_repository), NULL, "BISECT_HEAD", &oid, NULL, 0,
+				    UPDATE_REFS_MSG_ON_ERR)) {
 			res = BISECT_FAILED;
 			goto finish;
 		}
@@ -922,7 +925,6 @@ static enum bisect_error bisect_state(struct bisect_terms *terms, int argc,
 	const char *state;
 	int i, verify_expected = 1;
 	struct object_id oid, expected;
-	struct strbuf buf = STRBUF_INIT;
 	struct oid_array revs = OID_ARRAY_INIT;
 
 	if (!argc)
@@ -977,10 +979,8 @@ static enum bisect_error bisect_state(struct bisect_terms *terms, int argc,
 		oid_array_append(&revs, &commit->object.oid);
 	}
 
-	if (strbuf_read_file(&buf, git_path_bisect_expected_rev(), 0) < the_hash_algo->hexsz ||
-	    get_oid_hex(buf.buf, &expected) < 0)
+	if (refs_read_ref(get_main_ref_store(the_repository), "BISECT_EXPECTED_REV", &expected))
 		verify_expected = 0; /* Ignore invalid file contents */
-	strbuf_release(&buf);
 
 	for (i = 0; i < revs.nr; i++) {
 		if (bisect_write(state, oid_to_hex(&revs.oid[i]), terms, 0)) {
@@ -989,7 +989,9 @@ static enum bisect_error bisect_state(struct bisect_terms *terms, int argc,
 		}
 		if (verify_expected && !oideq(&revs.oid[i], &expected)) {
 			unlink_or_warn(git_path_bisect_ancestors_ok());
-			unlink_or_warn(git_path_bisect_expected_rev());
+			refs_delete_ref(get_main_ref_store(the_repository),
+					NULL, "BISECT_EXPECTED_REV", NULL,
+					REF_NO_DEREF);
 			verify_expected = 0;
 		}
 	}
@@ -1107,7 +1109,7 @@ static enum bisect_error bisect_skip(struct bisect_terms *terms, int argc,
 			setup_revisions(2, argv + i - 1, &revs, NULL);
 
 			if (prepare_revision_walk(&revs))
-				die(_("revision walk setup failed\n"));
+				die(_("revision walk setup failed"));
 			while ((commit = get_revision(&revs)) != NULL)
 				strvec_push(&argv_state,
 						oid_to_hex(&commit->object.oid));
@@ -1162,6 +1164,7 @@ static int bisect_visualize(struct bisect_terms *terms, int argc,
 }
 
 static int get_first_good(const char *refname UNUSED,
+			  const char *referent UNUSED,
 			  const struct object_id *oid,
 			  int flag UNUSED, void *cb_data)
 {
@@ -1186,13 +1189,15 @@ static int verify_good(const struct bisect_terms *terms, const char *command)
 	struct object_id good_rev;
 	struct object_id current_rev;
 	char *good_glob = xstrfmt("%s-*", terms->term_good);
-	int no_checkout = ref_exists("BISECT_HEAD");
+	int no_checkout = refs_ref_exists(get_main_ref_store(the_repository),
+					  "BISECT_HEAD");
 
-	for_each_glob_ref_in(get_first_good, good_glob, "refs/bisect/",
-			     &good_rev);
+	refs_for_each_glob_ref_in(get_main_ref_store(the_repository),
+				  get_first_good, good_glob, "refs/bisect/",
+				  &good_rev);
 	free(good_glob);
 
-	if (read_ref(no_checkout ? "BISECT_HEAD" : "HEAD", &current_rev))
+	if (refs_read_ref(get_main_ref_store(the_repository), no_checkout ? "BISECT_HEAD" : "HEAD", &current_rev))
 		return -1;
 
 	res = bisect_checkout(&good_rev, no_checkout);
@@ -1307,7 +1312,8 @@ static int bisect_run(struct bisect_terms *terms, int argc, const char **argv)
 	return res;
 }
 
-static int cmd_bisect__reset(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__reset(int argc, const char **argv, const char *prefix UNUSED,
+			     struct repository *repo UNUSED)
 {
 	if (argc > 1)
 		return error(_("'%s' requires either no argument or a commit"),
@@ -1315,7 +1321,8 @@ static int cmd_bisect__reset(int argc, const char **argv, const char *prefix UNU
 	return bisect_reset(argc ? argv[0] : NULL);
 }
 
-static int cmd_bisect__terms(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__terms(int argc, const char **argv, const char *prefix UNUSED,
+			     struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1328,7 +1335,8 @@ static int cmd_bisect__terms(int argc, const char **argv, const char *prefix UNU
 	return res;
 }
 
-static int cmd_bisect__start(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__start(int argc, const char **argv, const char *prefix UNUSED,
+			     struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1339,7 +1347,8 @@ static int cmd_bisect__start(int argc, const char **argv, const char *prefix UNU
 	return res;
 }
 
-static int cmd_bisect__next(int argc, const char **argv UNUSED, const char *prefix)
+static int cmd_bisect__next(int argc, const char **argv UNUSED, const char *prefix,
+			    struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1353,12 +1362,15 @@ static int cmd_bisect__next(int argc, const char **argv UNUSED, const char *pref
 	return res;
 }
 
-static int cmd_bisect__log(int argc UNUSED, const char **argv UNUSED, const char *prefix UNUSED)
+static int cmd_bisect__log(int argc UNUSED, const char **argv UNUSED,
+			   const char *prefix UNUSED,
+			   struct repository *repo UNUSED)
 {
 	return bisect_log();
 }
 
-static int cmd_bisect__replay(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__replay(int argc, const char **argv, const char *prefix UNUSED,
+			      struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1371,7 +1383,8 @@ static int cmd_bisect__replay(int argc, const char **argv, const char *prefix UN
 	return res;
 }
 
-static int cmd_bisect__skip(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__skip(int argc, const char **argv, const char *prefix UNUSED,
+			    struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1383,7 +1396,8 @@ static int cmd_bisect__skip(int argc, const char **argv, const char *prefix UNUS
 	return res;
 }
 
-static int cmd_bisect__visualize(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__visualize(int argc, const char **argv, const char *prefix UNUSED,
+				 struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1394,7 +1408,8 @@ static int cmd_bisect__visualize(int argc, const char **argv, const char *prefix
 	return res;
 }
 
-static int cmd_bisect__run(int argc, const char **argv, const char *prefix UNUSED)
+static int cmd_bisect__run(int argc, const char **argv, const char *prefix UNUSED,
+			   struct repository *repo UNUSED)
 {
 	int res;
 	struct bisect_terms terms = { 0 };
@@ -1407,7 +1422,10 @@ static int cmd_bisect__run(int argc, const char **argv, const char *prefix UNUSE
 	return res;
 }
 
-int cmd_bisect(int argc, const char **argv, const char *prefix)
+int cmd_bisect(int argc,
+	       const char **argv,
+	       const char *prefix,
+	       struct repository *repo)
 {
 	int res = 0;
 	parse_opt_subcommand_fn *fn = NULL;
@@ -1443,7 +1461,7 @@ int cmd_bisect(int argc, const char **argv, const char *prefix)
 	} else {
 		argc--;
 		argv++;
-		res = fn(argc, argv, prefix);
+		res = fn(argc, argv, prefix, repo);
 	}
 
 	return is_bisect_success(res) ? 0 : -res;

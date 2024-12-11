@@ -1,8 +1,10 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "git-compat-util.h"
 #include "advice.h"
 #include "strvec.h"
 #include "repository.h"
-#include "config.h"
+#include "parse.h"
 #include "dir.h"
 #include "environment.h"
 #include "gettext.h"
@@ -208,6 +210,7 @@ void clear_unpack_trees_porcelain(struct unpack_trees_options *opts)
 {
 	strvec_clear(&opts->internal.msgs_to_free);
 	memset(opts->internal.msgs, 0, sizeof(opts->internal.msgs));
+	discard_index(&opts->internal.result);
 }
 
 static int do_add_entry(struct unpack_trees_options *o, struct cache_entry *ce,
@@ -805,6 +808,8 @@ static int traverse_by_cache_tree(int pos, int nr_entries, int nr_names,
 
 	if (!o->merge)
 		BUG("We need cache-tree to do this optimization");
+	if (nr_entries + pos > o->src_index->cache_nr)
+		return error(_("corrupted cache-tree has entries not present in index"));
 
 	/*
 	 * Do what unpack_callback() and unpack_single_entry() normally
@@ -864,8 +869,8 @@ static int traverse_trees_recursive(int n, unsigned long dirmask,
 	struct unpack_trees_options *o = info->data;
 	int i, ret, bottom;
 	int nr_buf = 0;
-	struct tree_desc t[MAX_UNPACK_TREES];
-	void *buf[MAX_UNPACK_TREES];
+	struct tree_desc *t;
+	void **buf;
 	struct traverse_info newinfo;
 	struct name_entry *p;
 	int nr_entries;
@@ -902,6 +907,9 @@ static int traverse_trees_recursive(int n, unsigned long dirmask,
 	newinfo.pathlen = st_add3(newinfo.pathlen, tree_entry_len(p), 1);
 	newinfo.df_conflicts |= df_conflicts;
 
+	ALLOC_ARRAY(t, n);
+	ALLOC_ARRAY(buf, n);
+
 	/*
 	 * Fetch the tree from the ODB for each peer directory in the
 	 * n commits.
@@ -937,6 +945,8 @@ static int traverse_trees_recursive(int n, unsigned long dirmask,
 
 	for (i = 0; i < nr_buf; i++)
 		free(buf[i]);
+	free(buf);
+	free(t);
 
 	return ret;
 }
@@ -2062,9 +2072,13 @@ int unpack_trees(unsigned len, struct tree_desc *t, struct unpack_trees_options 
 	if (o->dst_index) {
 		move_index_extensions(&o->internal.result, o->src_index);
 		if (!ret) {
-			if (git_env_bool("GIT_TEST_CHECK_CACHE_TREE", 0))
-				cache_tree_verify(the_repository,
-						  &o->internal.result);
+			if (git_env_bool("GIT_TEST_CHECK_CACHE_TREE", 0) &&
+			    cache_tree_verify(the_repository,
+					      &o->internal.result) < 0) {
+				ret = -1;
+				goto done;
+			}
+
 			if (!o->skip_cache_tree_update &&
 			    !cache_tree_fully_valid(o->internal.result.cache_tree))
 				cache_tree_update(&o->internal.result,
@@ -2075,6 +2089,7 @@ int unpack_trees(unsigned len, struct tree_desc *t, struct unpack_trees_options 
 		o->internal.result.updated_workdir = 1;
 		discard_index(o->dst_index);
 		*o->dst_index = o->internal.result;
+		memset(&o->internal.result, 0, sizeof(o->internal.result));
 	} else {
 		discard_index(&o->internal.result);
 	}
@@ -2313,7 +2328,8 @@ static int verify_clean_subdirectory(const struct cache_entry *ce,
 
 	if (S_ISGITLINK(ce->ce_mode)) {
 		struct object_id oid;
-		int sub_head = resolve_gitlink_ref(ce->name, "HEAD", &oid);
+		int sub_head = repo_resolve_gitlink_ref(the_repository, ce->name,
+							"HEAD", &oid);
 		/*
 		 * If we are not going to update the submodule, then
 		 * we don't care.

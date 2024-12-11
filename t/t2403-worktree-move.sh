@@ -2,7 +2,6 @@
 
 test_description='test git worktree move, remove, lock and unlock'
 
-TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 
 test_expect_success 'setup' '
@@ -202,7 +201,7 @@ test_expect_success 'proper error when worktree not found' '
 	for i in noodle noodle/bork
 	do
 		test_must_fail git worktree lock $i 2>err &&
-		test_i18ngrep "not a working tree" err || return 1
+		test_grep "not a working tree" err || return 1
 	done
 '
 

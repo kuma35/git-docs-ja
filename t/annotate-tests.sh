@@ -83,6 +83,15 @@ test_expect_success 'blame with --contents' '
 	check_count --contents=file A 2
 '
 
+test_expect_success 'blame with --contents in a bare repo' '
+	git clone --bare . bare-contents.git &&
+	(
+		cd bare-contents.git &&
+		echo "1A quick brown fox jumps over the" >contents &&
+		check_count --contents=contents A 1
+	)
+'
+
 test_expect_success 'blame with --contents changed' '
 	echo "1A quick brown fox jumps over the" >contents &&
 	echo "another lazy dog" >>contents &&
@@ -523,7 +532,7 @@ test_expect_success 'blame -L :funcname with userdiff driver' '
 		"$(cat file.template)" &&
 	test_commit --author "B <B@test.git>" \
 		"change" "$fortran_file" \
-		"$(cat file.template | sed -e s/ChangeMe/IWasChanged/)" &&
+		"$(sed -e s/ChangeMe/IWasChanged/ file.template)" &&
 	check_count -f "$fortran_file" -L:RIGHT A 3 B 1
 '
 

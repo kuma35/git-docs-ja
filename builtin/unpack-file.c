@@ -1,9 +1,9 @@
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
 #include "config.h"
 #include "hex.h"
 #include "object-name.h"
 #include "object-store-ll.h"
-#include "wrapper.h"
 
 static char *create_temp_file(struct object_id *oid)
 {
@@ -26,7 +26,10 @@ static char *create_temp_file(struct object_id *oid)
 	return path;
 }
 
-int cmd_unpack_file(int argc, const char **argv, const char *prefix UNUSED)
+int cmd_unpack_file(int argc,
+		    const char **argv,
+		    const char *prefix UNUSED,
+		    struct repository *repo UNUSED)
 {
 	struct object_id oid;
 

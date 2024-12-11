@@ -3,22 +3,24 @@
  *
  * Copyright (C) Linus Torvalds, 2005
  */
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
 #include "config.h"
 #include "diff.h"
 #include "diff-merges.h"
 #include "commit.h"
 #include "preload-index.h"
-#include "repository.h"
 #include "revision.h"
-#include "submodule.h"
 
 static const char diff_files_usage[] =
 "git diff-files [-q] [-0 | -1 | -2 | -3 | -c | --cc] [<common-diff-options>] [<path>...]"
 "\n"
 COMMON_DIFF_OPTIONS_HELP;
 
-int cmd_diff_files(int argc, const char **argv, const char *prefix)
+int cmd_diff_files(int argc,
+		   const char **argv,
+		   const char *prefix,
+		   struct repository *repo UNUSED)
 {
 	struct rev_info rev;
 	int result;
@@ -80,14 +82,10 @@ int cmd_diff_files(int argc, const char **argv, const char *prefix)
 	    (rev.diffopt.output_format & DIFF_FORMAT_PATCH))
 		diff_merges_set_dense_combined_if_unset(&rev);
 
-	if (repo_read_index_preload(the_repository, &rev.diffopt.pathspec, 0) < 0) {
-		perror("repo_read_index_preload");
-		result = -1;
-		goto cleanup;
-	}
-	result = run_diff_files(&rev, options);
-	result = diff_result_code(&rev.diffopt, result);
-cleanup:
+	if (repo_read_index_preload(the_repository, &rev.diffopt.pathspec, 0) < 0)
+		die_errno("repo_read_index_preload");
+	run_diff_files(&rev, options);
+	result = diff_result_code(&rev);
 	release_revisions(&rev);
 	return result;
 }

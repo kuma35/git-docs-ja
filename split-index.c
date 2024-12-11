@@ -1,5 +1,6 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "git-compat-util.h"
-#include "alloc.h"
 #include "gettext.h"
 #include "hash.h"
 #include "mem-pool.h"
@@ -30,7 +31,7 @@ int read_link_extension(struct index_state *istate,
 	if (sz < the_hash_algo->rawsz)
 		return error("corrupt link extension (too short)");
 	si = init_split_index(istate);
-	oidread(&si->base_oid, data);
+	oidread(&si->base_oid, data, the_repository->hash_algo);
 	data += the_hash_algo->rawsz;
 	sz -= the_hash_algo->rawsz;
 	if (!sz)
@@ -96,7 +97,11 @@ void move_cache_to_base_index(struct index_state *istate)
 		mem_pool_combine(istate->ce_mem_pool, istate->split_index->base->ce_mem_pool);
 	}
 
-	ALLOC_ARRAY(si->base, 1);
+	if (si->base)
+		release_index(si->base);
+	else
+		ALLOC_ARRAY(si->base, 1);
+
 	index_state_init(si->base, istate->repo);
 	si->base->version = istate->version;
 	/* zero timestamp disables racy test in ce_write_index() */

@@ -1,8 +1,10 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "git-compat-util.h"
 #include "abspath.h"
-#include "alloc.h"
 #include "config.h"
 #include "environment.h"
+#include "gettext.h"
 #include "path.h"
 #include "pkt-line.h"
 #include "protocol.h"
@@ -10,7 +12,6 @@
 #include "setup.h"
 #include "strbuf.h"
 #include "string-list.h"
-#include "wrapper.h"
 
 #ifdef NO_INITGROUPS
 #define initgroups(x, y) (0) /* nothing */
@@ -1177,13 +1178,13 @@ static int service_loop(struct socketlist *socklist)
 
 struct credentials;
 
-static void drop_privileges(struct credentials *cred)
+static void drop_privileges(struct credentials *cred UNUSED)
 {
 	/* nothing */
 }
 
-static struct credentials *prepare_credentials(const char *user_name,
-    const char *group_name)
+static struct credentials *prepare_credentials(const char *user_name UNUSED,
+					       const char *group_name UNUSED)
 {
 	die("--user not supported on this platform");
 }
@@ -1245,19 +1246,20 @@ static int serve(struct string_list *listen_addr, int listen_port,
 int cmd_main(int argc, const char **argv)
 {
 	int listen_port = 0;
-	struct string_list listen_addr = STRING_LIST_INIT_NODUP;
+	struct string_list listen_addr = STRING_LIST_INIT_DUP;
 	int serve_mode = 0, inetd_mode = 0;
 	const char *pid_file = NULL, *user_name = NULL, *group_name = NULL;
 	int detach = 0;
 	struct credentials *cred = NULL;
 	int i;
+	int ret;
 
 	for (i = 1; i < argc; i++) {
 		const char *arg = argv[i];
 		const char *v;
 
 		if (skip_prefix(arg, "--listen=", &v)) {
-			string_list_append(&listen_addr, xstrdup_tolower(v));
+			string_list_append_nodup(&listen_addr, xstrdup_tolower(v));
 			continue;
 		}
 		if (skip_prefix(arg, "--port=", &v)) {
@@ -1307,17 +1309,20 @@ int cmd_main(int argc, const char **argv)
 			continue;
 		}
 		if (skip_prefix(arg, "--timeout=", &v)) {
-			timeout = atoi(v);
+			if (strtoul_ui(v, 10, &timeout))
+				die(_("invalid timeout '%s', expecting a non-negative integer"), v);
 			continue;
 		}
 		if (skip_prefix(arg, "--init-timeout=", &v)) {
-			init_timeout = atoi(v);
+			if (strtoul_ui(v, 10, &init_timeout))
+				die(_("invalid init-timeout '%s', expecting a non-negative integer"), v);
 			continue;
 		}
 		if (skip_prefix(arg, "--max-connections=", &v)) {
-			max_connections = atoi(v);
+			if (strtol_i(v, 10, &max_connections))
+				die(_("invalid max-connections '%s', expecting an integer"), v);
 			if (max_connections < 0)
-				max_connections = 0;	        /* unlimited */
+				max_connections = 0;  /* unlimited */
 			continue;
 		}
 		if (!strcmp(arg, "--strict-paths")) {
@@ -1439,22 +1444,26 @@ int cmd_main(int argc, const char **argv)
 			die_errno("failed to redirect stderr to /dev/null");
 	}
 
-	if (inetd_mode || serve_mode)
-		return execute();
+	if (inetd_mode || serve_mode) {
+		ret = execute();
+	} else {
+		if (detach) {
+			if (daemonize())
+				die("--detach not supported on this platform");
+		}
 
-	if (detach) {
-		if (daemonize())
-			die("--detach not supported on this platform");
+		if (pid_file)
+			write_file(pid_file, "%"PRIuMAX, (uintmax_t) getpid());
+
+		/* prepare argv for serving-processes */
+		strvec_push(&cld_argv, argv[0]); /* git-daemon */
+		strvec_push(&cld_argv, "--serve");
+		for (i = 1; i < argc; ++i)
+			strvec_push(&cld_argv, argv[i]);
+
+		ret = serve(&listen_addr, listen_port, cred);
 	}
 
-	if (pid_file)
-		write_file(pid_file, "%"PRIuMAX, (uintmax_t) getpid());
-
-	/* prepare argv for serving-processes */
-	strvec_push(&cld_argv, argv[0]); /* git-daemon */
-	strvec_push(&cld_argv, "--serve");
-	for (i = 1; i < argc; ++i)
-		strvec_push(&cld_argv, argv[i]);
-
-	return serve(&listen_addr, listen_port, cred);
+	string_list_clear(&listen_addr, 0);
+	return ret;
 }

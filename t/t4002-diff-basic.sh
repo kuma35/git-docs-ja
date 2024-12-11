@@ -7,7 +7,6 @@ test_description='Test diff raw-output.
 
 '
 
-TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 
 . "$TEST_DIRECTORY"/lib-read-tree-m-3way.sh
@@ -403,9 +402,9 @@ test_expect_success 'diff-tree -r B A == diff-tree -r -R A B' '
 	git diff-tree -r -R $tree_A $tree_B >.test-b &&
 	cmp -s .test-a .test-b'
 
-test_expect_success'diff can read from stdin' '
+test_expect_success 'diff can read from stdin' '
 	test_must_fail git diff --no-index -- MN - < NN |
-		grep -v "^index" | sed "s#/-#/NN#" >.test-a &&
+		sed "/^index/d; s#/-#/NN#" >.test-a &&
 	test_must_fail git diff --no-index -- MN NN |
 		grep -v "^index" >.test-b &&
 	test_cmp .test-a .test-b

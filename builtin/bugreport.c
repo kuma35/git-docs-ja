@@ -1,3 +1,4 @@
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
 #include "abspath.h"
 #include "editor.h"
@@ -11,7 +12,6 @@
 #include "diagnose.h"
 #include "object-file.h"
 #include "setup.h"
-#include "wrapper.h"
 
 static void get_system_info(struct strbuf *sys_info)
 {
@@ -59,13 +59,14 @@ static void get_populated_hooks(struct strbuf *hook_info, int nongit)
 	for (p = hook_name_list; *p; p++) {
 		const char *hook = *p;
 
-		if (hook_exists(hook))
+		if (hook_exists(the_repository, hook))
 			strbuf_addf(hook_info, "%s\n", hook);
 	}
 }
 
 static const char * const bugreport_usage[] = {
-	N_("git bugreport [(-o | --output-directory) <path>] [(-s | --suffix) <format>]\n"
+	N_("git bugreport [(-o | --output-directory) <path>]\n"
+	   "              [(-s | --suffix) <format> | --no-suffix]\n"
 	   "              [--diagnose[=<mode>]]"),
 	NULL
 };
@@ -98,7 +99,10 @@ static void get_header(struct strbuf *buf, const char *title)
 	strbuf_addf(buf, "\n\n[%s]\n", title);
 }
 
-int cmd_bugreport(int argc, const char **argv, const char *prefix)
+int cmd_bugreport(int argc,
+		  const char **argv,
+		  const char *prefix,
+		  struct repository *repo UNUSED)
 {
 	struct strbuf buffer = STRBUF_INIT;
 	struct strbuf report_path = STRBUF_INIT;
@@ -107,7 +111,7 @@ int cmd_bugreport(int argc, const char **argv, const char *prefix)
 	struct tm tm;
 	enum diagnose_mode diagnose = DIAGNOSE_NONE;
 	char *option_output = NULL;
-	char *option_suffix = "%Y-%m-%d-%H%M";
+	const char *option_suffix = "%Y-%m-%d-%H%M";
 	const char *user_relative_path = NULL;
 	char *prefixed_filename;
 	size_t output_path_len;
@@ -127,6 +131,11 @@ int cmd_bugreport(int argc, const char **argv, const char *prefix)
 	argc = parse_options(argc, argv, prefix, bugreport_options,
 			     bugreport_usage, 0);
 
+	if (argc) {
+		error(_("unknown argument `%s'"), argv[0]);
+		usage(bugreport_usage[0]);
+	}
+
 	/* Prepare the path to put the result */
 	prefixed_filename = prefix_filename(prefix,
 					    option_output ? option_output : "");
@@ -134,8 +143,11 @@ int cmd_bugreport(int argc, const char **argv, const char *prefix)
 	strbuf_complete(&report_path, '/');
 	output_path_len = report_path.len;
 
-	strbuf_addstr(&report_path, "git-bugreport-");
-	strbuf_addftime(&report_path, option_suffix, localtime_r(&now, &tm), 0, 0);
+	strbuf_addstr(&report_path, "git-bugreport");
+	if (option_suffix) {
+		strbuf_addch(&report_path, '-');
+		strbuf_addftime(&report_path, option_suffix, localtime_r(&now, &tm), 0, 0);
+	}
 	strbuf_addstr(&report_path, ".txt");
 
 	switch (safe_create_leading_directories(report_path.buf)) {

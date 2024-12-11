@@ -12,8 +12,9 @@ https://developers.google.com/open-source/licenses/bsd
 /* This header glues the reftable library to the rest of Git */
 
 #include "git-compat-util.h"
-#include "strbuf.h"
-#include "hash-ll.h" /* hash ID, sizes.*/
+#include "lockfile.h"
+#include "tempfile.h"
+#include "hash.h" /* hash ID, sizes.*/
 #include "dir.h" /* remove_dir_recursively, for tests.*/
 
 int hash_size(uint32_t id);

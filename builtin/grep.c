@@ -3,21 +3,17 @@
  *
  * Copyright (c) 2006 Junio C Hamano
  */
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
-#include "alloc.h"
+#include "abspath.h"
 #include "gettext.h"
 #include "hex.h"
-#include "repository.h"
 #include "config.h"
-#include "blob.h"
-#include "tree.h"
-#include "commit.h"
 #include "tag.h"
 #include "tree-walk.h"
 #include "parse-options.h"
 #include "string-list.h"
 #include "run-command.h"
-#include "userdiff.h"
 #include "grep.h"
 #include "quote.h"
 #include "dir.h"
@@ -531,7 +527,7 @@ static int grep_submodule(struct grep_opt *opt,
 		strbuf_addstr(&base, filename);
 		strbuf_addch(&base, '/');
 
-		init_tree_desc(&tree, data, size);
+		init_tree_desc(&tree, oid, data, size);
 		hit = grep_tree(&subopt, pathspec, &tree, &base, base.len,
 				object_type == OBJ_COMMIT);
 		strbuf_release(&base);
@@ -575,7 +571,9 @@ static int grep_cache(struct grep_opt *opt,
 
 			data = repo_read_object_file(the_repository, &ce->oid,
 						     &type, &size);
-			init_tree_desc(&tree, data, size);
+			if (!data)
+				die(_("unable to read tree %s"), oid_to_hex(&ce->oid));
+			init_tree_desc(&tree, &ce->oid, data, size);
 
 			hit |= grep_tree(opt, pathspec, &tree, &name, 0, 0);
 			strbuf_setlen(&name, name_base_len);
@@ -644,7 +642,7 @@ static int grep_tree(struct grep_opt *opt, const struct pathspec *pathspec,
 			strbuf_addstr(&name, base->buf + tn_len);
 			match = tree_entry_interesting(repo->index,
 						       &entry, &name,
-						       0, pathspec);
+						       pathspec);
 			strbuf_setlen(&name, name_base_len);
 
 			if (match == all_entries_not_interesting)
@@ -671,7 +669,7 @@ static int grep_tree(struct grep_opt *opt, const struct pathspec *pathspec,
 				    oid_to_hex(&entry.oid));
 
 			strbuf_addch(base, '/');
-			init_tree_desc(&sub, data, size);
+			init_tree_desc(&sub, &entry.oid, data, size);
 			hit |= grep_tree(opt, pathspec, &sub, base, tn_len,
 					 check_attr);
 			free(data);
@@ -715,7 +713,7 @@ static int grep_object(struct grep_opt *opt, const struct pathspec *pathspec,
 			strbuf_add(&base, name, len);
 			strbuf_addch(&base, ':');
 		}
-		init_tree_desc(&tree, data, size);
+		init_tree_desc(&tree, &obj->oid, data, size);
 		hit = grep_tree(opt, pathspec, &tree, &base, base.len,
 				obj->type == OBJ_COMMIT);
 		strbuf_release(&base);
@@ -813,14 +811,20 @@ static int file_callback(const struct option *opt, const char *arg, int unset)
 {
 	struct grep_opt *grep_opt = opt->value;
 	int from_stdin;
+	const char *filename = arg;
 	FILE *patterns;
 	int lno = 0;
 	struct strbuf sb = STRBUF_INIT;
 
 	BUG_ON_OPT_NEG(unset);
 
-	from_stdin = !strcmp(arg, "-");
-	patterns = from_stdin ? stdin : fopen(arg, "r");
+	if (!*filename)
+		; /* leave it as-is */
+	else
+		filename = prefix_filename_except_for_dash(grep_prefix, filename);
+
+	from_stdin = !strcmp(filename, "-");
+	patterns = from_stdin ? stdin : fopen(filename, "r");
 	if (!patterns)
 		die_errno(_("cannot open '%s'"), arg);
 	while (strbuf_getline(&sb, patterns) == 0) {
@@ -834,6 +838,8 @@ static int file_callback(const struct option *opt, const char *arg, int unset)
 	if (!from_stdin)
 		fclose(patterns);
 	strbuf_release(&sb);
+	if (filename != arg)
+		free((void *)filename);
 	return 0;
 }
 
@@ -882,7 +888,10 @@ static int pattern_callback(const struct option *opt, const char *arg,
 	return 0;
 }
 
-int cmd_grep(int argc, const char **argv, const char *prefix)
+int cmd_grep(int argc,
+	     const char **argv,
+	     const char *prefix,
+	     struct repository *repo UNUSED)
 {
 	int hit = 0;
 	int cached = 0, untracked = 0, opt_exclude = -1;
@@ -897,6 +906,7 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 	int dummy;
 	int use_index = 1;
 	int allow_revs;
+	int ret;
 
 	struct option options[] = {
 		OPT_BOOL(0, "cached", &cached,
@@ -925,9 +935,8 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 			 N_("process binary files with textconv filters")),
 		OPT_SET_INT('r', "recursive", &opt.max_depth,
 			    N_("search in subdirectories (default)"), -1),
-		{ OPTION_INTEGER, 0, "max-depth", &opt.max_depth, N_("depth"),
-			N_("descend at most <depth> levels"), PARSE_OPT_NONEG,
-			NULL, 1 },
+		OPT_INTEGER_F(0, "max-depth", &opt.max_depth,
+			N_("descend at most <n> levels"), PARSE_OPT_NONEG),
 		OPT_GROUP(""),
 		OPT_SET_INT('E', "extended-regexp", &opt.pattern_type_option,
 			    N_("use extended POSIX regular expressions"),
@@ -991,7 +1000,7 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 		OPT_CALLBACK_F(0, "and", &opt, NULL,
 			N_("combine patterns specified with -e"),
 			PARSE_OPT_NOARG | PARSE_OPT_NONEG, and_callback),
-		OPT_BOOL(0, "or", &dummy, ""),
+		OPT_BOOL_F(0, "or", &dummy, "", PARSE_OPT_NONEG),
 		OPT_CALLBACK_F(0, "not", &opt, NULL, "",
 			PARSE_OPT_NOARG | PARSE_OPT_NONEG, not_callback),
 		OPT_CALLBACK_F('(', NULL, &opt, NULL, "",
@@ -1109,7 +1118,7 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 	for (i = 0; i < argc; i++) {
 		const char *arg = argv[i];
 		struct object_id oid;
-		struct object_context oc;
+		struct object_context oc = {0};
 		struct object *object;
 
 		if (!strcmp(arg, "--")) {
@@ -1128,6 +1137,7 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 					 &oid, &oc)) {
 			if (seen_dashdash)
 				die(_("unable to resolve revision: %s"), arg);
+			object_context_release(&oc);
 			break;
 		}
 
@@ -1135,7 +1145,7 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 		if (!seen_dashdash)
 			verify_non_filename(prefix, arg);
 		add_object_array_with_path(object, arg, &list, oc.mode, oc.path);
-		free(oc.path);
+		object_context_release(&oc);
 	}
 
 	/*
@@ -1163,8 +1173,10 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 	 * Optimize out the case where the amount of matches is limited to zero.
 	 * We do this to keep results consistent with GNU grep(1).
 	 */
-	if (opt.max_count == 0)
-		return 1;
+	if (opt.max_count == 0) {
+		ret = 1;
+		goto out;
+	}
 
 	if (show_in_pager) {
 		if (num_threads > 1)
@@ -1258,10 +1270,14 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 		hit |= wait_all();
 	if (hit && show_in_pager)
 		run_pager(&opt, prefix);
+
+	ret = !hit;
+
+out:
 	clear_pathspec(&pathspec);
 	string_list_clear(&path_list, 0);
 	free_grep_patterns(&opt);
 	object_array_clear(&list);
 	free_repos();
-	return !hit;
+	return ret;
 }

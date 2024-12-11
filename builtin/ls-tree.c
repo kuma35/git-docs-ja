@@ -3,15 +3,15 @@
  *
  * Copyright (C) Linus Torvalds, 2005
  */
+#define USE_THE_REPOSITORY_VARIABLE
 #include "builtin.h"
+
 #include "config.h"
 #include "gettext.h"
 #include "hex.h"
 #include "object-name.h"
 #include "object-store-ll.h"
-#include "blob.h"
 #include "tree.h"
-#include "commit.h"
 #include "path.h"
 #include "quote.h"
 #include "parse-options.h"
@@ -50,8 +50,7 @@ struct ls_tree_options {
 		LS_SHOW_TREES = 1 << 2,
 	} ls_options;
 	struct pathspec pathspec;
-	int chomp_prefix;
-	const char *ls_tree_prefix;
+	const char *prefix;
 	const char *format;
 };
 
@@ -103,19 +102,12 @@ static int show_tree_fmt(const struct object_id *oid, struct strbuf *base,
 		return 0;
 
 	while (strbuf_expand_step(&sb, &format)) {
-		const char *end;
 		size_t len;
 
 		if (skip_prefix(format, "%", &format))
 			strbuf_addch(&sb, '%');
 		else if ((len = strbuf_expand_literal(&sb, format)))
 			format += len;
-		else if (*format != '(')
-			die(_("bad ls-tree format: element '%s' "
-			      "does not start with '('"), format);
-		else if (!(end = strchr(format + 1, ')')))
-			die(_("bad ls-tree format: element '%s' "
-			      "does not end in ')'"), format);
 		else if (skip_prefix(format, "(objectmode)", &format))
 			strbuf_addf(&sb, "%06o", mode);
 		else if (skip_prefix(format, "(objecttype)", &format))
@@ -128,8 +120,7 @@ static int show_tree_fmt(const struct object_id *oid, struct strbuf *base,
 			strbuf_add_unique_abbrev(&sb, oid, options->abbrev);
 		else if (skip_prefix(format, "(path)", &format)) {
 			const char *name;
-			const char *prefix = options->chomp_prefix ?
-					     options->ls_tree_prefix : NULL;
+			const char *prefix = options->prefix;
 			struct strbuf sbuf = STRBUF_INIT;
 			size_t baselen = base->len;
 
@@ -139,8 +130,7 @@ static int show_tree_fmt(const struct object_id *oid, struct strbuf *base,
 			strbuf_setlen(base, baselen);
 			strbuf_release(&sbuf);
 		} else
-			die(_("bad ls-tree format: %%%.*s"),
-			    (int)(end - format + 1), format);
+			strbuf_expand_bad_format(format, "ls-tree");
 	}
 	strbuf_addch(&sb, options->null_termination ? '\0' : '\n');
 	fwrite(sb.buf, sb.len, 1, stdout);
@@ -173,7 +163,7 @@ static void show_tree_common_default_long(struct ls_tree_options *options,
 					  const char *pathname,
 					  const size_t baselen)
 {
-	const char *prefix = options->chomp_prefix ? options->ls_tree_prefix : NULL;
+	const char *prefix = options->prefix;
 
 	strbuf_addstr(base, pathname);
 
@@ -243,7 +233,8 @@ static int show_tree_long(const struct object_id *oid, struct strbuf *base,
 	return recurse;
 }
 
-static int show_tree_name_only(const struct object_id *oid, struct strbuf *base,
+static int show_tree_name_only(const struct object_id *oid UNUSED,
+			       struct strbuf *base,
 			       const char *pathname, unsigned mode,
 			       void *context)
 {
@@ -258,7 +249,7 @@ static int show_tree_name_only(const struct object_id *oid, struct strbuf *base,
 	if (early >= 0)
 		return early;
 
-	prefix = options->chomp_prefix ? options->ls_tree_prefix : NULL;
+	prefix = options->prefix;
 	strbuf_addstr(base, pathname);
 	if (options->null_termination) {
 		struct strbuf sb = STRBUF_INIT;
@@ -340,11 +331,15 @@ static struct ls_tree_cmdmode_to_fmt ls_tree_cmdmode_format[] = {
 	},
 };
 
-int cmd_ls_tree(int argc, const char **argv, const char *prefix)
+int cmd_ls_tree(int argc,
+		const char **argv,
+		const char *prefix,
+		struct repository *repo UNUSED)
 {
 	struct object_id oid;
 	struct tree *tree;
 	int i, full_tree = 0;
+	int full_name = !prefix || !*prefix;
 	read_tree_fn_t fn = NULL;
 	enum ls_tree_cmdmode cmdmode = MODE_DEFAULT;
 	int null_termination = 0;
@@ -366,8 +361,7 @@ int cmd_ls_tree(int argc, const char **argv, const char *prefix)
 			    MODE_NAME_STATUS),
 		OPT_CMDMODE(0, "object-only", &cmdmode, N_("list only objects"),
 			    MODE_OBJECT_ONLY),
-		OPT_SET_INT(0, "full-name", &options.chomp_prefix,
-			    N_("use full path names"), 0),
+		OPT_BOOL(0, "full-name", &full_name, N_("use full path names")),
 		OPT_BOOL(0, "full-tree", &full_tree,
 			 N_("list entire tree; not just current directory "
 			    "(implies --full-name)")),
@@ -378,21 +372,19 @@ int cmd_ls_tree(int argc, const char **argv, const char *prefix)
 		OPT_END()
 	};
 	struct ls_tree_cmdmode_to_fmt *m2f = ls_tree_cmdmode_format;
+	struct object_context obj_context = {0};
 	int ret;
 
 	git_config(git_default_config, NULL);
-	options.ls_tree_prefix = prefix;
-	if (prefix)
-		options.chomp_prefix = strlen(prefix);
 
 	argc = parse_options(argc, argv, prefix, ls_tree_options,
 			     ls_tree_usage, 0);
 	options.null_termination = null_termination;
 
-	if (full_tree) {
-		options.ls_tree_prefix = prefix = NULL;
-		options.chomp_prefix = 0;
-	}
+	if (full_tree)
+		prefix = NULL;
+	options.prefix = full_name ? NULL : prefix;
+
 	/*
 	 * We wanted to detect conflicts between --name-only and
 	 * --name-status, but once we're done with that subsequent
@@ -412,7 +404,9 @@ int cmd_ls_tree(int argc, const char **argv, const char *prefix)
 			ls_tree_usage, ls_tree_options);
 	if (argc < 1)
 		usage_with_options(ls_tree_usage, ls_tree_options);
-	if (repo_get_oid(the_repository, argv[0], &oid))
+	if (get_oid_with_context(the_repository, argv[0],
+				 GET_OID_HASH_ANY, &oid,
+				 &obj_context))
 		die("Not a valid object name %s", argv[0]);
 
 	/*
@@ -452,5 +446,6 @@ int cmd_ls_tree(int argc, const char **argv, const char *prefix)
 
 	ret = !!read_tree(the_repository, tree, &options.pathspec, fn, &options);
 	clear_pathspec(&options.pathspec);
+	object_context_release(&obj_context);
 	return ret;
 }
