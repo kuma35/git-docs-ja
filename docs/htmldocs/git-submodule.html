@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-submodule(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -778,7 +778,7 @@ git-submodule(1) Manual Page
 <div class="paragraph"><p>引数なしで、既存のサブモジュールのステータスを示します。 サブモジュールで操作を実行するために、いくつかのサブコマンドを使用できます。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-add [-b &lt;branch&gt;] [-f|--force] [--name &lt;name&gt;] [--reference &lt;repository&gt;] [--depth &lt;depth&gt;] [--] &lt;repository&gt; [&lt;path&gt;]
+add [-b &lt;branch&gt;] [-f|--force] [--name &lt;name&gt;] [--reference &lt;repository&gt;] [--ref-format &lt;format&gt;] [--depth &lt;depth&gt;] [--] &lt;repository&gt; [&lt;path&gt;]
 </dt>
 <dd>
 <p>
@@ -788,6 +788,7 @@ add [-b &lt;branch&gt;] [-f|--force] [--name &lt;name&gt;] [--reference &lt;repo
 <div class="paragraph"><p>デフォルトのリモートは、現在のブランチのリモート追跡ブランチのリモートです。そのようなリモート追跡ブランチが存在しないか、または、HEADが切り離されている場合、「origin」がデフォルトのリモートであると見なされます。 スーパープロジェクトにデフォルトのリモートが構成されていない場合、スーパープロジェクトはそれ自身に権限のあるアップストリームであり、代わりに現在の作業ディレクトリが使用されます。</p></div>
 <div class="paragraph"><p>オプションの引数 &lt;path&gt; は、複製されたサブモジュールがスーパープロジェクト内で存在するための相対的な場所です。 &lt;path&gt; が指定されていない場合、ソースリポジトリの正規部分(canonical part)が使用されます(<code>/path/to/repo.git</code> の場合は「repo」、 <code>host.xz:foo/.git</code> の場合は「foo」)。 &lt;path&gt; が存在し、すでに有効なGitリポジトリである場合、クローンを作成せずにコミット用にステージングされます。 &lt;path&gt; は、 <code>--name</code> を使用して論理名を指定しない限り、構成エントリでサブモジュールの論理名としても使用されます。</p></div>
 <div class="paragraph"><p>指定のURLは、スーパープロジェクトのクローンを作成する後続のユーザーが使用できるように <code>.gitmodules</code> に記録されます。 URLがスーパープロジェクトのリポジトリに関連して指定されている場合、スーパープロジェクトとサブモジュールのリポジトリは同じ相対位置にまとめられ、スーパープロジェクトのURLのみを指定する必要があると想定します。 git-submoduleは、 <code>.gitmodules</code> の相対URLを使用してサブモジュールを正しく検索します。</p></div>
+<div class="paragraph"><p>If <code>--ref-format &lt;format&gt;</code> is specified, the ref storage format of newly cloned submodules will be set accordingly.</p></div>
 </dd>
 <dt class="hdlist1">
 status [--cached] [--recursive] [--] [&lt;path&gt;&#8230;]
@@ -805,10 +806,11 @@ init [--] [&lt;path&gt;&#8230;]
 </dt>
 <dd>
 <p>
-        インデックスに記録されたサブモジュール(他の場所で追加およびコミットされたサブモジュール)を初期化するには、 <code>.git/config</code> に <code>submodule.$name.url</code> を設定します。テンプレートとして <code>.gitmodules</code> と同じ設定を使用します。URLが相対的な場合は、デフォルトのリモートを使用して解決されます。デフォルトのリモートがない場合、現在のリポジトリはアップストリームであると見なされます。
+        Initialize the submodules recorded in the index (which were added and committed elsewhere) by setting <code>submodule.$name.url</code> in <code>.git/config</code>, using the same setting from <code>.gitmodules</code> as a template. If the URL is relative, it will be resolved using the default remote. If there is no default remote, the current repository will be assumed to be upstream.
 </p>
 <div class="paragraph"><p>オプションの &lt;path&gt; 引数は、初期化されるサブモジュールを制限します。パスが指定されておらず、 submodule.active が構成されている場合、アクティブになるように構成されたサブモジュールが初期化されます。そうでない場合、すべてのサブモジュールが初期化されます。</p></div>
-<div class="paragraph"><p>存在する場合は、 <code>submodule.$name.update</code> の値もコピーします。このコマンドは、 <code>.git/config</code> の既存の情報を変更しません。あなたは次に、ローカル設定用に <code>.git/config</code> のサブモジュールクローンURLをカスタマイズして、 <code>git submodule update</code> に進むことができます。サブモジュールの場所をカスタマイズする予定がない場合は、明示的な「init」ステップなしで <code>git submodule update --init</code> を使用することもできます。</p></div>
+<div class="paragraph"><p>It will also copy the value of <code>submodule.$name.update</code>, if present in the <code>.gitmodules</code> file, to <code>.git/config</code>, but (1) this command does not alter existing information in <code>.git/config</code>, and (2) <code>submodule.$name.update</code> that is set to a custom command is <strong>not</strong> copied for security reasons.</p></div>
+<div class="paragraph"><p>You can then customize the submodule clone URLs in <code>.git/config</code> for your local setup and proceed to <code>git submodule update</code>; you can also just use <code>git submodule update --init</code> without the explicit <em>init</em> step if you do not intend to customize any submodule locations.</p></div>
 <div class="paragraph"><p>デフォルトのリモートの定義については、add サブコマンドを参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -823,12 +825,12 @@ deinit [-f|--force] (--all|[--] &lt;path&gt;&#8230;)
 <div class="paragraph"><p>あなたが本当にリポジトリからサブモジュールを削除してコミットしたい場合は、代わりに <a href="git-rm.html">git-rm(1)</a> を使用してください。削除オプションについては、 <a href="gitsubmodules.html">gitsubmodules(7)</a> を参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
-update [--init] [--remote] [-N|--no-fetch] [--[no-]recommend-shallow] [-f|--force] [--checkout|--rebase|--merge] [--reference &lt;repository&gt;] [--depth &lt;depth&gt;] [--recursive] [--jobs &lt;n&gt;] [--[no-]single-branch] [--filter &lt;filter spec&gt;] [--] [&lt;path&gt;&#8230;]
+update [--init] [--remote] [-N|--no-fetch] [--[no-]recommend-shallow] [-f|--force] [--checkout|--rebase|--merge] [--reference &lt;repository&gt;] [--ref-format &lt;format&gt;] [--depth &lt;depth&gt;] [--recursive] [--jobs &lt;n&gt;] [--[no-]single-branch] [--filter &lt;filter-spec&gt;] [--] [&lt;path&gt;&#8230;]
 </dt>
 <dd>
 <div class="openblock">
 <div class="content">
-<div class="paragraph"><p>登録されたサブモジュールを更新して、欠落しているサブモジュールのクローンを作成し、サブモジュールで欠落しているコミットをフェッチし、サブモジュールの作業ツリーを更新して、スーパープロジェクトが期待するものと一致させます。「更新」は、コマンドラインオプションと <code>submodule.&lt;name&gt;.update</code> 構成変数の値に応じていくつかの方法で実行できます。 コマンドラインオプションは、構成変数よりも優先されます。 どちらも指定されていない場合、「checkout」が実行されます。 コマンドラインと <code>submodule.&lt;name&gt;.update</code> 構成の両方でサポートされる「update」手順は以下のとおりです:</p></div>
+<div class="paragraph"><p>Update the registered submodules to match what the superproject expects by cloning missing submodules, fetching missing commits in submodules and updating the working tree of the submodules. The "updating" can be done in several ways depending on command line options and the value of <code>submodule.&lt;name&gt;.update</code> configuration variable. The command line option takes precedence over the configuration variable. If neither is given, a <em>checkout</em> is performed. (note: what is in <code>.gitmodules</code> file is irrelevant at this point; see <code>git submodule init</code> above for how <code>.gitmodules</code> is used). The <em>update</em> procedures supported both from the command line as well as through the <code>submodule.&lt;name&gt;.update</code> configuration are:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 checkout
@@ -862,18 +864,14 @@ merge
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>以下の「update」手順は、 <code>submodule.&lt;name&gt;.update</code> 構成変数を介してのみ使用できます:</p></div>
+<div class="paragraph"><p>The following update procedures have additional limitations:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 custom command
 </dt>
 <dd>
 <p>
-            単一の引数
-            (スーパープロジェクトに記録されたコミットのsha1)をとる
-            任意のシェルコマンドが実行されます。
-            <code>submodule.&lt;name&gt;.update</code> が <code>!command</code> に設定されている場合、
-            感嘆符(<code>!</code>)の後の残りはカスタムコマンドです。
+mechanism for running arbitrary commands with the commit ID as an argument. Specifically, if the <code>submodule.&lt;name&gt;.update</code> configuration variable is set to <code>!custom command</code>, the object name of the commit recorded in the superproject for the submodule is appended to the <code>custom command</code> string and executed. Note that this mechanism is not supported in the <code>.gitmodules</code> file or on the command line.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -881,13 +879,14 @@ none
 </dt>
 <dd>
 <p>
-            サブモジュールは更新されません。
+the submodule is not updated. This update procedure is not allowed on the command line.
 </p>
 </dd>
 </dl></div>
 <div class="paragraph"><p>サブモジュールがまだ初期化されておらず、 <code>.gitmodules</code> に格納されている設定を使用するだけの場合、 あなたは <code>--init</code> オプションを使用してサブモジュールを自動的に初期化できます。</p></div>
 <div class="paragraph"><p><code>--recursive</code> が指定されている場合、このコマンドは登録されたサブモジュールに再帰し、その中でネストされたサブモジュールを更新します。</p></div>
-<div class="paragraph"><p><code>--filter &lt;filter spec&gt;</code> が指定されている場合、 指定の部分(partial)クローン・フィルタがサブモジュールに適用されます。 フィルター仕様の詳細については、 <a href="git-rev-list.html">git-rev-list(1)</a> を参照してください。</p></div>
+<div class="paragraph"><p>If <code>--ref-format &lt;format&gt;</code> is specified, the ref storage format of newly cloned submodules will be set accordingly.</p></div>
+<div class="paragraph"><p>If <code>--filter &lt;filter-spec&gt;</code> is specified, the given partial clone filter will be applied to the submodule. See <a href="git-rev-list.html">git-rev-list(1)</a> for details on filter specifications.</p></div>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -1193,7 +1192,7 @@ absorbgitdirs
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-12 09:15:37 JST
+ 2024-12-11 23:59:08 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-merge(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -762,33 +762,26 @@ git-merge(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>名前付きのコミット(その履歴が現在のブランチから分岐した時点以降のもの)からの変更を現在のブランチに取り込みます。 このコマンドは、別のリポジトリからの変更を組み込むために <code>git pull</code> によって使用され、そして、あるブランチから別のブランチに変更をマージするために手動で使用できます。</p></div>
-<div class="paragraph"><p>以下の履歴が存在し、現在のブランチが <code>master</code> であるとします:</p></div>
+<div class="paragraph"><p>Incorporates changes from the named commits (since the time their histories diverged from the current branch) into the current branch. This command is used by <code>git pull</code> to incorporate changes from another repository and can be used by hand to merge changes from one branch into another.</p></div>
+<div class="paragraph"><p>Assume the following history exists and the current branch is <code>master</code>:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>          A---B---C topic
          /
     D---E---F---G master</code></pre>
 </div></div>
-<div class="paragraph"><p>次に、 <code>git merge topic</code> は、 <code>master</code> から分岐(ここでは <code>E</code>)してから、 <code>topic</code> ブランチの現在のコミット(<code>C</code>)まで <code>topic`ブランチに加えられた変更を `master</code> 上で再生(replay)します。 その結果を、 2つの親コミットの名前と、 変更を説明するユーザーからのログメッセージとともに、 新しいコミットに記録します。 操作前に <code>ORIG_HEAD</code> が現在のブランチの先端(<code>C</code>)に設定されます。</p></div>
+<div class="paragraph"><p>Then <code>git merge topic</code> will replay the changes made on the <code>topic</code> branch since it diverged from <code>master</code> (i.e., <code>E</code>) until its current commit (<code>C</code>) on top of <code>master</code>, and record the result in a new commit along with the names of the two parent commits and a log message from the user describing the changes. Before the operation, <code>ORIG_HEAD</code> is set to the tip of the current branch (<code>C</code>).</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>          A---B---C topic
          /         \
     D---E---F---G---H master</code></pre>
 </div></div>
-<div class="paragraph"><p>2番目の構文(<code>git merge --abort</code>)は、マージによって競合が発生した後にのみ実行できます。 <code>git merge --abort`はマージ処理を中止し、マージ前の状態を再構築しようとします。 ただし、マージの開始時にコミットされていない変更があった場合(特に、マージの開始後にそれらの変更がさらに変更された場合)、 `git merge --abort</code> は、元の(マージ前の)変更を再構築できない場合があります。つまり以下の事が言えます:</p></div>
-<div class="admonitionblock">
-<table><tr>
-<td class="icon">
-<div class="title">Warning</div>
-</td>
-<td class="content">自明でない未コミットの変更に対して <code>git merge</code> を実行することは推奨されません。
-可能ではありますが、
-競合が発生した場合に元に戻すのが難しい状態になる可能性があります。</td>
-</tr></table>
-</div>
-<div class="paragraph"><p>3番目の構文(<code>git merge --continue</code>)は、マージによって競合が発生した後にのみ実行できます。</p></div>
+<div class="paragraph"><p>A merge stops if there&#8217;s a conflict that cannot be resolved automatically or if <code>--no-commit</code> was provided when initiating the merge. At that point you can run <code>git merge --abort</code> or <code>git merge --continue</code>.</p></div>
+<div class="paragraph"><p><code>git merge --abort</code> will abort the merge process and try to reconstruct the pre-merge state. However, if there were uncommitted changes when the merge started (and especially if those changes were further modified after the merge was started), <code>git merge --abort</code> will in some cases be unable to reconstruct the original (pre-merge) changes. Therefore:</p></div>
+<div class="paragraph"><p><strong>Warning</strong>: Running <code>git merge</code> with non-trivial uncommitted changes is
+discouraged: while possible, it may leave you in a state that is hard to
+back out of in the case of a conflict.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -883,7 +876,7 @@ git-merge(1) Manual Page
 </dt>
 <dd>
 <p>
-        コミットログメッセージの最後に、コミッターによる「Signed-off-by」トレーラーを追加します。signoffの意味は、コミットしているプロジェクトによって異なります。たとえば、コミッターがプロジェクトのライセンスに基づいて作品を提出する権利を持っていることを証明したり、開発者の原産地証明書などの寄稿者の代表に同意したりする場合があります。(LinuxカーネルおよびGitプロジェクトで使用されるものについては、http：//developercertificate.orgを参照してください)。プロジェクトでsignoffがどのように使用されるかを理解するには、貢献しているプロジェクトのドキュメントまたはリーダーシップ(leadership)を参照してください。
+        Add a <code>Signed-off-by</code> trailer by the committer at the end of the commit log message. The meaning of a signoff depends on the project to which you&#8217;re committing. For example, it may certify that the committer has the rights to submit the work under the project&#8217;s license or agrees to some contributor representation, such as a Developer Certificate of Origin. (See <a href="https://developercertificate.org">https://developercertificate.org</a> for the one used by the Linux kernel and Git projects.) Consult the documentation or leadership of the project to which you&#8217;re contributing to understand how the signoffs are used in that project.
 </p>
 <div class="paragraph"><p><code>--no-signoff</code> オプションを使用すると、コマンドラインで以前の <code>--signoff</code> オプションを無効にすることができます。</p></div>
 </dd>
@@ -1008,7 +1001,7 @@ git-merge(1) Manual Page
 </dt>
 <dd>
 <p>
-        操作を開始する前に一時的なスタッシュエントリを自動的に作成し、それを特別なref <code>MERGE_AUTOSTASH</code> に記録し、操作の終了後にapplyします。 これは、ダーティワークツリーで操作を実行できることを意味します。 ただし、注意して使用してください。マージが成功した後の最後のstashアプリケーションは、深刻な競合を引き起こす可能性があります。
+        Automatically create a temporary stash entry before the operation begins, record it in the ref <code>MERGE_AUTOSTASH</code> and apply it after the operation ends. This means that you can run the operation on a dirty worktree. However, use with care: the final stash application after a successful merge might result in non-trivial conflicts.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1027,7 +1020,7 @@ git-merge(1) Manual Page
         マージコミットに使用するコミットメッセージを設定します(マージコミットが作成された場合)。
 </p>
 <div class="paragraph"><p><code>--log</code> が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。</p></div>
-<div class="paragraph"><p><code>git fmt-merge-msg</code> コマンドを使用して、自動化された <code>git merge</code> 呼び出しに適切なデフォルトを与えることができます。 自動メッセージには、ブランチの説明を含めることができます。</p></div>
+<div class="paragraph"><p>The <code>git fmt-merge-msg</code> command can be used to give a good default for automated <code>git merge</code> invocations. The automated message can include the branch description.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--into-name &lt;branch&gt;</code>
@@ -1078,8 +1071,8 @@ git-merge(1) Manual Page
 <p>
         現在の競合解決プロセスを中止(abort)し、マージ前の状態を再構築してみてください。 自動スタッシュエントリが存在する場合は、それをワークツリーに適用します。
 </p>
-<div class="paragraph"><p>マージの開始時にコミットされていないワークツリーの変更が存在した場合、 <code>git merge --abort</code> は、これらの変更を再構築できない場合があります。 したがって、 <code>git merge</code> を実行する前に、常にあなたの変更をコミット、またはスタッシュしておくことをお勧めします。</p></div>
-<div class="paragraph"><p><code>git merge --abort</code> は、 <code>MERGE_HEAD</code> がある場合は <code>git reset --merge</code> と同じです。ただし <code>MERGE_AUTOSTASH</code> もある場合は <code>git merge --abort</code> はスタッシュエントリをワークツリーに適用しますが、 <code>git reset --merge</code> は スタッシュリストにスタッシュした変更を保持したままにします。</p></div>
+<div class="paragraph"><p>If there were uncommitted worktree changes present when the merge started, <code>git merge --abort</code> will in some cases be unable to reconstruct these changes. It is therefore recommended to always commit or stash your changes before running <code>git merge</code>.</p></div>
+<div class="paragraph"><p><code>git merge --abort</code> is equivalent to <code>git reset --merge</code> when <code>MERGE_HEAD</code> is present unless <code>MERGE_AUTOSTASH</code> is also present in which case <code>git merge --abort</code> applies the stash entry to the worktree whereas <code>git reset --merge</code> will save the stashed changes in the stash list.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--quit</code>
@@ -1094,7 +1087,7 @@ git-merge(1) Manual Page
 </dt>
 <dd>
 <p>
-        競合が原因で <code>git merge</code> が停止(stop)した後で、 <code>git merge --continue</code> を実行してマージを終了できます(下記「HOW TO RESOLVE CONFLICTS」セクション参照)。
+        After a <code>git merge</code> stops due to conflicts you can conclude the merge by running <code>git merge --continue</code> (see "HOW TO RESOLVE CONFLICTS" section below).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1113,15 +1106,15 @@ git-merge(1) Manual Page
 <div class="sect1">
 <h2 id="_pre_merge_checks">PRE-MERGE CHECKS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>外部の変更を適用する前に、自分の作業を良好な状態にしてローカルでコミットしとく必要があります。これにより、競合が発生した場合に作業が中断されることはなくなります。 <a href="git-stash.html">git-stash(1)</a> も参照してください。 <code>git pull</code>/<code>git merge</code> は、ローカルのコミットされていない変更が <code>git pull</code>/<code>git merge</code> の更新が必要なファイルと重複する場合、何もせずに停止(stop)します。</p></div>
-<div class="paragraph"><p>マージコミットに無関係な変更が記録されないようにするために、 <code>HEAD</code> コミットに関連する変更がインデックスに登録されている場合、 <code>git pull</code> と <code>git merge</code> も中止(abort)されます。 (使用されているマージ戦略によっては、このルールに対する特別な狭い例外が存在する場合がありますが、通常、インデックスはHEADと一致する必要があります。)</p></div>
-<div class="paragraph"><p>すべての名前付きコミットがすでに <code>HEAD</code> の祖先である場合、<code>git merge</code> は "Already up to date." (既に最新です)というメッセージで早期に終了(exit)します。</p></div>
+<div class="paragraph"><p>Before applying outside changes, you should get your own work in good shape and committed locally, so it will not be clobbered if there are conflicts. See also <a href="git-stash.html">git-stash(1)</a>. <code>git pull</code> and <code>git merge</code> will stop without doing anything when local uncommitted changes overlap with files that <code>git pull</code>/<code>git merge</code> may need to update.</p></div>
+<div class="paragraph"><p>To avoid recording unrelated changes in the merge commit, <code>git pull</code> and <code>git merge</code> will also abort if there are any changes registered in the index relative to the <code>HEAD</code> commit. (Special narrow exceptions to this rule may exist depending on which merge strategy is in use, but generally, the index must match HEAD.)</p></div>
+<div class="paragraph"><p>If all named commits are already ancestors of <code>HEAD</code>, <code>git merge</code> will exit early with the message "Already up to date."</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_fast_forward_merge">FAST-FORWARD MERGE</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>多くの場合、現在のブランチヘッドは、指定のコミットの祖先です。 これは、特に <code>git pull</code> から呼び出された場合に最も一般的なケースです: 例えば、あなたはアップストリームリポジトリを追跡していて、ローカルの変更をコミットしていないので、新しいアップストリームリビジョンに更新する必要があります。 この場合、結合された履歴を保存するために新しいコミットは必要ありませんが、代わりに、「HEAD」（およびインデックス）は、追加のマージコミットを作成せずに、指定のコミットを指すように更新されます。</p></div>
+<div class="paragraph"><p>Often the current branch head is an ancestor of the named commit. This is the most common case especially when invoked from <code>git pull</code>: you are tracking an upstream repository, you have committed no local changes, and now you want to update to a newer upstream revision. In this case, a new commit is not needed to store the combined history; instead, the <code>HEAD</code> (along with the index) is updated to point at the named commit, without creating an extra merge commit.</p></div>
 <div class="paragraph"><p>この振る舞いは、<code>--no-ff</code> オプションで抑制できます。</p></div>
 </div>
 </div>
@@ -1154,7 +1147,7 @@ git-merge(1) Manual Page
 </li>
 <li>
 <p>
-特別なref <code>AUTO_MERGE</code> が書き込まれ、 作業ツリーの現在の内容に対応するツリーを指します(テキストの競合のための競合マーカーを含む)。 この ref は、 <code>ort</code> マージ戦略が使用される(これがデフォルトです)場合にのみ書き込まれることに注意してください。
+A ref named <code>AUTO_MERGE</code> is written, pointing to a tree corresponding to the current content of the working tree (including conflict markers for textual conflicts). Note that this ref is only written when the <em>ort</em> merge strategy is used (the default).
 </p>
 </li>
 <li>
@@ -1200,7 +1193,7 @@ And here is another line that is cleanly resolved or unmodified.</code></pre>
 </div></div>
 <div class="paragraph"><p>競合する変更のペアが発生した領域は、マーカー <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 、 <code>=======</code> 、 <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> でマークされます。 <code>=======</code> の前の部分は通常あなた側(your side)であり、後の部分は通常彼ら側(their side)です。</p></div>
 <div class="paragraph"><p>デフォルトの形式では、競合している部分でオリジナルが何を言っているのかは分かりません。 自分側の何行が削除され、バービー人形の発言に置き換えられているのかは分かりません。 唯一わかるのは、あなた側(your side)は大変だから買い物に行きたいと言いたいのに、相手側(the other size)は簡単だと主張したいということです。</p></div>
-<div class="paragraph"><p><code>merge.conflictStyle</code> 構成変数を <code>diff3</code> または <code>zdiff3</code> に設定することで、別のスタイルを使用できます。 <code>diff3</code> スタイルでは、上記の競合は以下のようになります:</p></div>
+<div class="paragraph"><p>An alternative style can be used by setting the <code>merge.conflictStyle</code> configuration variable to either "diff3" or "zdiff3". In "diff3" style, the above conflict may look like this:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>Here are lines that are either unchanged from the common
@@ -1250,7 +1243,7 @@ And here is another line that is cleanly resolved or unmodified.</code></pre>
 </li>
 <li>
 <p>
-競合を解決します。 Gitは、作業ツリーの競合をマークします。 ファイルを編集して形にし、<code>git add</code> してインデックスに追加します。 <code>git commit</code> または <code>git merge --continue</code> を使用して、取引を成立させます。 後者のコマンドは、 <code>git commit</code> を呼び出す前に、進行中の(中断(interrupted)された)マージがあるかどうかをチェックします。
+Resolve the conflicts. Git will mark the conflicts in the working tree. Edit the files into shape and <code>git add</code> them to the index. Use <code>git commit</code> or <code>git merge --continue</code> to seal the deal. The latter command checks whether there is a (interrupted) merge in progress before calling <code>git commit</code>.
 </p>
 </li>
 </ul></div>
@@ -1258,7 +1251,7 @@ And here is another line that is cleanly resolved or unmodified.</code></pre>
 <div class="ulist"><ul>
 <li>
 <p>
-mergetoolの利用。 あなたが <code>git mergetool</code> を実行すると、グラフィカルな mergetool が起動し、マージ作業を行えます。
+Use a mergetool. <code>git mergetool</code> to launch a graphical mergetool which will work through the merge with you.
 </p>
 </li>
 <li>
@@ -1502,7 +1495,7 @@ branch.&lt;name&gt;.mergeOptions
 </dt>
 <dd>
 <p>
-        ブランチ &lt;name&gt; にマージするためのデフォルトオプションを設定します。 構文とサポートされているオプションは <code>git merge</code> のものと同じですが、空白文字を含むオプション値は現在サポートされていません。
+        Sets default options for merging into branch &lt;name&gt;. The syntax and supported options are the same as those of <code>git merge</code>, but option values containing whitespace characters are currently not supported.
 </p>
 </dd>
 </dl></div>
@@ -1513,7 +1506,7 @@ merge.conflictStyle
 </dt>
 <dd>
 <p>
-        マージ時に競合するハンクが作業ツリーファイルに書き出されるスタイルを指定します。 デフォルトは <code>merge`です。これは、 `&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 競合マーカー、一方の側で行われた変更、 <code>=======</code> マーカー、もう一方の側で行われた変更、そして <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> マーカーというスタイルです。 別のスタイル「diff3」は、 <code>|||||||</code> マーカーと元のテキストを <code>=======</code> マーカーの前に追加します。 <code>merge</code> スタイルは、元のテキストの除外と、行のサブセットが、両側で一致する場合に競合領域から引き抜かれるため、 <code>diff3</code> よりも小さな競合領域を生成する傾向があります。 もう 1 つの代替スタイル <code>zdiff3</code> は <code>diff3</code> に似ていますが、 両側で一致する行が競合領域の開始または最後近くに現れる場合、競合領域から削除します。
+        Specify the style in which conflicted hunks are written out to working tree files upon merge. The default is "merge", which shows a <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> conflict marker, changes made by one side, a <code>=======</code> marker, changes made by the other side, and then a <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> marker. An alternate style, "diff3", adds a <code>|||||||</code> marker and the original text before the <code>=======</code> marker. The "merge" style tends to produce smaller conflict regions than diff3, both because of the exclusion of the original text, and because when a subset of lines match on the two sides, they are just pulled out of the conflict region. Another alternate style, "zdiff3", is similar to diff3 but removes matching lines on the two sides from the conflict region when those matching lines appear near either the beginning or end of a conflict region.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1878,6 +1871,14 @@ Use Vim where only the MERGED file is shown
 </p>
 </dd>
 <dt class="hdlist1">
+<code>vscode</code>
+</dt>
+<dd>
+<p>
+Use Visual Studio Code (requires a graphical session)
+</p>
+</dd>
+<dt class="hdlist1">
 <code>winmerge</code>
 </dt>
 <dd>
@@ -1947,7 +1948,7 @@ merge.&lt;driver&gt;.recursive
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-01-10 07:59:34 JST
+ 2024-12-11 23:58:56 JST
 </div>
 </div>
 </body>

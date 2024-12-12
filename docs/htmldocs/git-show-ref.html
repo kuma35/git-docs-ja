@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-show-ref(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -749,10 +749,14 @@ git-show-ref(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git show-ref</em> [-q | --quiet] [--verify] [--head] [-d | --dereference]
-             [-s | --hash[=&lt;n&gt;]] [--abbrev[=&lt;n&gt;]] [--tags]
-             [--heads] [--] [&lt;pattern&gt;&#8230;]
-<em>git show-ref</em> --exclude-existing[=&lt;pattern&gt;]</pre>
+<pre class="content"><em>git show-ref</em> [--head] [-d | --dereference]
+             [-s | --hash[=&lt;n&gt;]] [--abbrev[=&lt;n&gt;]] [--branches] [--tags]
+             [--] [&lt;pattern&gt;&#8230;]
+<em>git show-ref</em> --verify [-q | --quiet] [-d | --dereference]
+             [-s | --hash[=&lt;n&gt;]] [--abbrev[=&lt;n&gt;]]
+             [--] [&lt;ref&gt;&#8230;]
+<em>git show-ref</em> --exclude-existing[=&lt;pattern&gt;]
+<em>git show-ref</em> --exists &lt;ref&gt;</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -763,6 +767,7 @@ git-show-ref(1) Manual Page
 <div class="paragraph"><p>ローカルリポジトリで使用可能な参照を、関連するコミットIDとともに表示します。結果はパターンを使用してフィルタリングでき、タグはオブジェクトIDに逆参照できます。さらに、特定のrefが存在するかどうかをテストするために使用できます。</p></div>
 <div class="paragraph"><p>デフォルトでは、タグとヘッドとリモートrefを表示します。</p></div>
 <div class="paragraph"><p><code>--exclude-existing</code> 形式は、逆を行うフィルターです。 stdinから1行に1つのrefを読み取り、ローカルリポジトリに存在しないものを表示します。</p></div>
+<div class="paragraph"><p>The <code>--exists</code> form can be used to check for the existence of a single references. This form does not verify whether the reference resolves to an actual object.</p></div>
 <div class="paragraph"><p><code>.git</code> ディレクトリの下のファイルに直接アクセスするために、このユーティリティの使用をお勧めします。</p></div>
 </div>
 </div>
@@ -779,14 +784,14 @@ git-show-ref(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--heads</code>
+<code>--branches</code>
 </dt>
 <dt class="hdlist1">
 <code>--tags</code>
 </dt>
 <dd>
 <p>
-        それぞれ「refs/heads」と「refs/tags」に制限します。これらのオプションは相互に排他的ではありません。 両方を指定すると、「refs/heads」と「refs/tags」に保存されている参照が表示されます。
+        Limit to local branches and local tags, respectively. These options are not mutually exclusive; when given both, references stored in "refs/heads" and "refs/tags" are displayed. Note that <code>--heads</code> is a deprecated synonym for <code>--branches</code> and may be removed in the future.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -797,7 +802,7 @@ git-show-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        タグをオブジェクトIDに対しても逆参照します。 <code>^{}</code> を付加して表示されます。
+        Dereference tags into object IDs as well. They will be shown with <code>^{}</code> appended.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -820,6 +825,14 @@ git-show-ref(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--exists</code>
+</dt>
+<dd>
+<p>
+        Check whether the given reference exists. Returns an exit code of 0 if it does, 2 if it is missing, and 1 in case looking up the reference failed with an error other than the reference being missing.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>--abbrev[=&lt;n&gt;]</code>
 </dt>
 <dd>
@@ -835,7 +848,7 @@ git-show-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        結果をstdoutに出力しないでください。 <code>--verify</code> と組み合わせると、参照が存在するかどうかを、結果出力せずに黙って(silently)チェックするために使用できます。
+        Do not print any results to stdout. Can be used with <code>--verify</code> to silently check if a reference exists.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -844,7 +857,7 @@ git-show-ref(1) Manual Page
 <dd>
 <p>
         <code>^(?:&lt;anything&gt;\s)?&lt;refname&gt;(?:\^{})?$</code> 形式でstdinからrefを読み取り、そのそれぞれに対して以下のアクションを実行するフィルターとして <code>git show-ref</code> を使います:
-        (1) 行末の <code>^{}</code> を削除します
+        (1) strip <code>^{}</code> at the end of line if any;
         (2) パターンが指定されていて、refnameとヘッドが一致(head-match)しない場合は無視します
         (3) refnameが整形式(well-formed)のrefnameでない場合は警告し、スキップします
         (4) refnameがローカルリポジトリに存在するrefである場合は無視
@@ -891,7 +904,7 @@ git-show-ref(1) Manual Page
 <div class="paragraph"><p>これは例えば以下のようになります</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ git show-ref --heads --hash
+<pre><code>$ git show-ref --branches --hash
 2e3ba0114a1f52b47df29743d6915d056be13278
 185008ae97960c8d551adcd9e23565194651b5d1
 03adf42c988195b50e1a1935ba5fcbc39b2b029b
@@ -907,7 +920,7 @@ git-show-ref(1) Manual Page
 <div class="content">
 <pre><code>        git show-ref master</code></pre>
 </div></div>
-<div class="paragraph"><p>これには、「refs/heads/master」だけでなく、「refs/remote/other-repo/master」も表示されます(そのような参照が存在する場合)。</p></div>
+<div class="paragraph"><p>This will show "refs/heads/master" but also "refs/remote/other-repo/master", if such references exist.</p></div>
 <div class="paragraph"><p><code>--verify</code> フラグを使用する場合、コマンドには正確なパスが必要です:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -922,7 +935,7 @@ git-show-ref(1) Manual Page
                 echo "$headname is not a valid branch"</code></pre>
 </div></div>
 <div class="paragraph"><p>これは、特定のブランチが存在するかどうかを確認します(実際には結果を表示したくないので、あいまいな部分一致で問題が発生しないように、完全なrefnameを使用します)。</p></div>
-<div class="paragraph"><p>タグのみ、または適切なブランチヘッドのみを表示するには、それぞれ <code>--tags</code> かつ/または <code>--heads</code> を使用します(両方を使用すると、タグとヘッドが表示されますが、 refs/ サブディレクトリの下にある他のランダムな参照は表示されません)。</p></div>
+<div class="paragraph"><p>To show only tags, or only proper branch heads, use <code>--tags</code> and/or <code>--branches</code> respectively (using both means that it shows tags and branches, but not other random references under the refs/ subdirectory).</p></div>
 <div class="paragraph"><p>タグオブジェクトの自動逆参照を行うには、 <code>-d</code> または <code>--dereference</code> フラグを使用すると、以下のようにできます</p></div>
 <div class="listingblock">
 <div class="content">
@@ -954,7 +967,7 @@ git-show-ref(1) Manual Page
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-01-27 03:13:02 JST
+ 2024-12-11 23:59:07 JST
 </div>
 </div>
 </body>

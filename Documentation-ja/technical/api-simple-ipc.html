@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>Simple-IPC API</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -735,22 +735,22 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Simple-IPC API</h1>
-<span id="revdate">2023-07-22</span>
+<span id="revdate">2024-12-12</span>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>Simple-IPC APIは、 <code>ipc_</code> プレフィックス付きライブラリルーチンと基本的な通信プロトコルのコレクションであり、IPCクライアントプロセスがアプリケーション固有のIPC要求メッセージをIPCサーバープロセスに送信し、アプリケーション固有のIPC応答メッセージを受信できるようにします。</p></div>
+<div class="paragraph"><p>The Simple-IPC API is a collection of <code>ipc_</code> prefixed library routines and a basic communication protocol that allows an IPC-client process to send an application-specific IPC-request message to an IPC-server process and receive an application-specific IPC-response message.</p></div>
 <div class="paragraph"><p>通信は、Windowsでは名前付きパイプを介して、他のプラットフォームではUnixドメインソケットを介して行われます。 IPCクライアントとIPCサーバーは、コンピューターシステムに対してローカルである、以前に合意されたアプリケーション固有のパス名(この設計の範囲外)で会合(rendezvous)します。</p></div>
 <div class="paragraph"><p>サーバーアプリケーションプロセス内のIPCサーバールーチンは、接続をリッスンし、複数の同時IPCクライアントから要求メッセージを受信するためのスレッドプールを作成します。 受信すると、これらのメッセージは処理のためにサーバーアプリケーションのコールバックまでディスパッチされます。 次に、IPCサーバールーチンは、応答をIPCクライアントに段階的にリレー(incrementally relay)します。</p></div>
-<div class="paragraph"><p>クライアントアプリケーションプロセス内のIPCクライアントルーチンはIPCサーバーに接続し、要求メッセージを送信して応答を待ちます。 受信すると、応答は呼び出し元に返されます。</p></div>
-<div class="paragraph"><p>たとえば、 <code>fsmonitor--daemon</code> 機能は、IPCサーバーライブラリルーチンの上にサーバーアプリケーションとして構築されます。 ファイルシステムイベントを監視するスレッドと、クライアント接続を待機するスレッドプールがあります。 <code>git status</code> などのクライアントは、ある時点以降のファイルシステムイベントのリストを要求し、サーバーは変更されたファイルとディレクトリのリストで応答します。 要求と応答の形式はアプリケーション固有です。 IPCクライアントおよびIPCサーバールーチンは、それらを不透明なバイトストリームとして扱います。</p></div>
+<div class="paragraph"><p>The IPC-client routines within a client application process connect to the IPC-server and send a request message and wait for a response. When received, the response is returned back to the caller.</p></div>
+<div class="paragraph"><p>For example, the <code>fsmonitor--daemon</code> feature will be built as a server application on top of the IPC-server library routines. It will have threads watching for file system events and a thread pool waiting for client connections. Clients, such as <code>git status</code>, will request a list of file system events since a point in time and the server will respond with a list of changed files and directories. The formats of the request and response are application-specific; the IPC-client and IPC-server routines treat them as opaque byte streams.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_サブプロセスモデルとの比較">サブプロセスモデルとの比較</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Simple-IPCメカニズムは、既存の <code>sub-process.c</code> モデル(Documentation/technical/long-running-process-protocol.txt)とは異なり、Git-LFSなどのアプリケーションで使用されます。 LFSスタイルのサブプロセスモデルでは、ヘルパーはフォアグラウンドプロセスによって開始され、通信はサブプロセスの stdin/stdout にバインドされたファイル・デスクリプタのペアを介して行われ、サブプロセスは現在のフォアグラウンドプロセスのみを提供します。 フォアグラウンドプロセスが終了すると、サブプロセスは終了します。</p></div>
+<div class="paragraph"><p>The Simple-IPC mechanism differs from the existing <code>sub-process.c</code> model (Documentation/technical/long-running-process-protocol.txt) and used by applications like Git-LFS. In the LFS-style sub-process model, the helper is started by the foreground process, communication happens via a pair of file descriptors bound to the stdin/stdout of the sub-process, the sub-process only serves the current foreground process, and the sub-process exits when the foreground process terminates.</p></div>
 <div class="paragraph"><p>Simple-IPCモデルでは、サーバーは非常に長時間実行されるサービスです。 同時に多くのクライアントにサービスを提供でき、アクティブな各クライアントへのプライベートソケットまたは名前付きパイプ接続があります。 現在のクライアントプロセスによって(オンデマンドで)開始されたか、以前のクライアントまたは起動時にOSによって開始された可能性があります。 サーバープロセスは端末に関連付けられておらず、クライアントが終了した後も存続します。 クライアントはサーバープロセスの stdin/stdout にアクセスできないため、ソケットまたは名前付きパイプを介して通信する必要があります。</p></div>
 </div>
 </div>
@@ -772,7 +772,7 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="_summary">Summary</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>概念的には、Simple-IPCプロトコルは HTTP REST 要求に似ています。 クライアントは接続し、アプリケーション固有のステートレス要求を作成し、アプリケーション固有の応答を受信して、切断します。 これは、サーバーでクエリを実行するための1回の往復機能です。 Simple-IPCルーチンは、ソケットや、名前付きパイプや、スレッドプールの詳細を非表示にし、アプリケーション層が手元のアプリケーションに集中できるようにします。</p></div>
+<div class="paragraph"><p>Conceptually, the Simple-IPC protocol is similar to an HTTP REST request. Clients connect, make an application-specific and stateless request, receive an application-specific response, and disconnect. It is a one round trip facility for querying the server. The Simple-IPC routines hide the socket, named pipe, and thread pool details and allow the application layer to focus on the task at hand.</p></div>
 </div>
 </div>
 </div>
@@ -780,7 +780,7 @@ asciidoc.install();
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:06:01 JST
+ 2024-12-11 23:59:29 JST
 </div>
 </div>
 </body>

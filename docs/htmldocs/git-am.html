@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-am(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -752,13 +752,13 @@ git-am(1) Manual Page
 <pre class="content"><em>git am</em> [--signoff] [--keep] [--[no-]keep-cr] [--[no-]utf8] [--no-verify]
          [--[no-]3way] [--interactive] [--committer-date-is-author-date]
          [--ignore-date] [--ignore-space-change | --ignore-whitespace]
-         [--whitespace=&lt;option&gt;] [-C&lt;n&gt;] [-p&lt;n&gt;] [--directory=&lt;dir&gt;]
+         [--whitespace=&lt;action&gt;] [-C&lt;n&gt;] [-p&lt;n&gt;] [--directory=&lt;dir&gt;]
          [--exclude=&lt;path&gt;] [--include=&lt;path&gt;] [--reject] [-q | --quiet]
          [--[no-]scissors] [-S[&lt;keyid&gt;]] [--patch-format=&lt;format&gt;]
          [--quoted-cr=&lt;action&gt;]
          [--empty=(stop|drop|keep)]
          [(&lt;mbox&gt; | &lt;Maildir&gt;)&#8230;]
-<em>git am</em> (--continue | --skip | --abort | --quit | --show-current-patch[=(diff|raw)] | --allow-empty)</pre>
+<em>git am</em> (--continue | --skip | --abort | --quit | --retry | --show-current-patch[=(diff|raw)] | --allow-empty)</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -766,7 +766,7 @@ git-am(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>メールボックス内のメールメッセージを、 コミットログメッセージと作者情報とパッチに分割し、 それらを現在のブランチに適用します。 これは、 マージのない真っ直ぐな履歴を持つブランチで実行される <a href="git-format-patch.html">git-format-patch(1)</a> の逆の操作と考えることができます。</p></div>
+<div class="paragraph"><p>Splits mail messages in a mailbox into commit log messages, authorship information, and patches, and applies them to the current branch. You could think of it as a reverse operation of <a href="git-format-patch.html">git-format-patch(1)</a> run on a branch with a straight history without merges.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -847,12 +847,41 @@ git-am(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--empty=(stop|drop|keep)</code>
+<code>--empty=(drop|keep|stop)</code>
 </dt>
 <dd>
 <p>
-        デフォルト、またはオプションが <code>stop</code> に設定されている場合、パッチの欠落した入力の電子メール・メッセージでコマンドがエラーになり、現在の am セッションの途中で停止(stop)します。 このオプションが <code>drop</code> に設定されている場合、代わりにそのような電子メール・メッセージをスキップします。 このオプションが <code>keep</code> に設定されている場合、空のコミットを作成し、電子メール・メッセージの内容をログとして記録します。
+        How to handle an e-mail message lacking a patch:
 </p>
+<div class="openblock">
+<div class="content">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>drop</code>
+</dt>
+<dd>
+<p>
+        The e-mail message will be skipped.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>keep</code>
+</dt>
+<dd>
+<p>
+        An empty commit will be created, with the contents of the e-mail message as its log.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>stop</code>
+</dt>
+<dd>
+<p>
+        The command will fail, stopping in the middle of the current <code>am</code> session. This is the default behavior.
+</p>
+</dd>
+</dl></div>
+</div></div>
 </dd>
 <dt class="hdlist1">
 <code>-m</code>
@@ -892,7 +921,7 @@ git-am(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>-u</code> フラグを <code>git mailinfo</code> に渡します（linkgit：git-mailinfo [1]を参照）。 電子メールから取得された、提案されたコミットログメッセージは、UTF-8エンコーディングに再コーディングされます(UTF-8でない場合は、構成変数 <code>i18n.commitEncoding</code> を使用して、プロジェクトの優先エンコーディングを指定できます)。
+        Pass <code>-u</code> flag to <em>git mailinfo</em> (see <a href="git-mailinfo.html">git-mailinfo(1)</a>). The proposed commit log message taken from the e-mail is re-coded into UTF-8 encoding (configuration variable <code>i18n.commitEncoding</code> can be used to specify the project&#8217;s preferred encoding if it is not UTF-8).
 </p>
 <div class="paragraph"><p>これは以前のバージョンのgitではオプションでしたが、現在はデフォルトです。
 <code>--no-utf8</code> を使用してこれをオーバーライドできます。</p></div>
@@ -937,7 +966,7 @@ git-am(1) Manual Page
 <code>--ignore-whitespace</code>
 </dt>
 <dt class="hdlist1">
-<code>--whitespace=&lt;option&gt;</code>
+<code>--whitespace=&lt;action&gt;</code>
 </dt>
 <dt class="hdlist1">
 <code>-C&lt;n&gt;</code>
@@ -961,13 +990,14 @@ git-am(1) Manual Page
 <p>
         これらのフラグは、パッチを適用する <code>git apply</code> (<a href="git-apply.html">git-apply(1)</a> 参照)プログラムに渡されます。
 </p>
+<div class="paragraph"><p>Valid &lt;action&gt; for the <code>--whitespace</code> option are: <code>nowarn</code>, <code>warn</code>, <code>fix</code>, <code>error</code>, and <code>error-all</code>.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--patch-format</code>
 </dt>
 <dd>
 <p>
-        デフォルトでは、コマンドはパッチ形式を自動的に検出しようとします。 このオプションを使用すると、ユーザーは自動検出をバイパスして、パッチを解釈するパッチ形式を指定できます。 有効な形式は、mbox、mboxrd、stgit、stgit-series、hg です。
+        By default the command will try to detect the patch format automatically. This option allows the user to bypass the automatic detection and specify the patch format that the patch(es) should be interpreted as. Valid formats are mbox, mboxrd, stgit, stgit-series, and hg.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1057,7 +1087,7 @@ git-am(1) Manual Page
 </dt>
 <dd>
 <p>
-        元のブランチを復元(restore)し、パッチ操作を中止(abort)します。 am操作に関係するファイルの内容をam前の状態(pre-am state)に戻します(revert)。
+        Restore the original branch and abort the patching operation. Revert the contents of files involved in the am operation to their pre-am state.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1066,6 +1096,14 @@ git-am(1) Manual Page
 <dd>
 <p>
         パッチ適用操作を中止しますが、HEADとインデックスはそのままにしておきます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--retry</code>
+</dt>
+<dd>
+<p>
+        Try to apply the last conflicting patch again. This is generally only useful for passing extra options to the retry attempt (e.g., <code>--3way</code>), since otherwise you&#8217;ll just see the same failure again.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1176,7 +1214,7 @@ am.threeWay
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-18 07:48:07 JST
+ 2024-12-11 23:58:36 JST
 </div>
 </div>
 </body>

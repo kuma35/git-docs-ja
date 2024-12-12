@@ -1,0 +1,377 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2024-12-11 23:59+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Title =
+#: ../Documentation-sedout/gitpacking.txt:2
+#, no-wrap
+msgid "gitpacking(7)"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/gitpacking.txt:5
+#, no-wrap
+msgid "NAME"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:7
+msgid "gitpacking - Advanced concepts related to packing in Git"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/gitpacking.txt:9
+#, no-wrap
+msgid "SYNOPSIS"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:11
+msgid "gitpacking"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/gitpacking.txt:13
+#, no-wrap
+msgid "DESCRIPTION"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:17
+msgid ""
+"This document aims to describe some advanced concepts related to packing in "
+"Git."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:22
+msgid ""
+"Many concepts are currently described scattered between manual pages of "
+"various Git commands, including linkgit:git-pack-objects[1], "
+"linkgit:git-repack[1], and others, as well as linkgit:gitformat-pack[5], and "
+"parts of the `Documentation/technical` tree."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:26
+msgid ""
+"There are many aspects of packing in Git that are not covered in this "
+"document that instead live in the aforementioned areas. Over time, those "
+"scattered bits may coalesce into this document."
+msgstr ""
+
+#. type: Title ==
+#: ../Documentation-sedout/gitpacking.txt:27
+#, no-wrap
+msgid "Pseudo-merge bitmaps"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:31
+msgid ""
+"Pseudo-merge bitmaps are considered an experimental feature, so the "
+"configuration and many of the ideas are subject to change."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation-sedout/gitpacking.txt:32
+#, no-wrap
+msgid "Background"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:38
+msgid ""
+"Reachability bitmaps are most efficient when we have on-disk stored bitmaps "
+"for one or more of the starting points of a traversal. For this reason, Git "
+"prefers storing bitmaps for commits at the tips of refs, because traversals "
+"tend to start with those points."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:42
+msgid ""
+"But if you have a large number of refs, it's not feasible to store a bitmap "
+"for _every_ ref tip. It takes up space, and just OR-ing all of those bitmaps "
+"together is expensive."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:49
+msgid ""
+"One way we can deal with that is to create bitmaps that represent _groups_ "
+"of refs. When a traversal asks about the entire group, then we can use this "
+"single bitmap instead of considering each ref individually.  Because these "
+"bitmaps represent the set of objects which would be reachable in a "
+"hypothetical merge of all of the commits, we call them pseudo-merge bitmaps."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation-sedout/gitpacking.txt:50
+#, no-wrap
+msgid "Overview"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:54
+msgid "A \"pseudo-merge bitmap\" is used to refer to a pair of bitmaps, as follows:"
+msgstr ""
+
+#. type: Labeled list
+#: ../Documentation-sedout/gitpacking.txt:55
+#, no-wrap
+msgid "Commit bitmap"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:59
+msgid ""
+"A bitmap whose set bits describe the set of commits included in the "
+"pseudo-merge's \"merge\" bitmap (as below)."
+msgstr ""
+
+#. type: Labeled list
+#: ../Documentation-sedout/gitpacking.txt:60
+#, no-wrap
+msgid "Merge bitmap"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:66
+msgid ""
+"A bitmap whose set bits describe the reachability closure over the set of "
+"commits in the pseudo-merge's \"commits\" bitmap (as above). An identical "
+"bitmap would be generated for an octopus merge with the same set of parents "
+"as described in the commits bitmap."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:72
+msgid ""
+"Pseudo-merge bitmaps can accelerate bitmap traversals when all commits for a "
+"given pseudo-merge are listed on either side of the traversal, either "
+"directly (by explicitly asking for them as part of the `HAVES` or `WANTS`) "
+"or indirectly (by encountering them during a fill-in traversal)."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation-sedout/gitpacking.txt:73
+#, no-wrap
+msgid "Use-cases"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:85
+msgid ""
+"For example, suppose there exists a pseudo-merge bitmap with a large number "
+"of commits, all of which are listed in the `WANTS` section of some bitmap "
+"traversal query. When pseudo-merge bitmaps are enabled, the bitmap machinery "
+"can quickly determine there is a pseudo-merge which satisfies some subset of "
+"the wanted objects on either side of the query.  Then, we can inflate the "
+"EWAH-compressed bitmap, and `OR` it in to the resulting bitmap. By contrast, "
+"without pseudo-merge bitmaps, we would have to repeat the decompression and "
+"`OR`-ing step over a potentially large number of individual bitmaps, which "
+"can take proportionally more time."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:98
+msgid ""
+"Another benefit of pseudo-merges arises when there is some combination of "
+"(a) a large number of references, with (b) poor bitmap coverage, and (c) "
+"deep, nested trees, making fill-in traversal relatively expensive.  For "
+"example, suppose that there are a large enough number of tags where "
+"bitmapping each of the tags individually is infeasible. Without pseudo-merge "
+"bitmaps, computing the result of, say, `git rev-list --use-bitmap-index "
+"--count --objects --tags` would likely require a large amount of fill-in "
+"traversal. But when a large quantity of those tags are stored together in a "
+"pseudo-merge bitmap, the bitmap machinery can take advantage of the fact "
+"that we only care about the union of objects reachable from all of those "
+"tags, and answer the query much faster."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation-sedout/gitpacking.txt:99
+#, no-wrap
+msgid "Configuration"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:105
+msgid ""
+"Reference tips are grouped into different pseudo-merge groups according to "
+"two criteria. A reference name matches one or more of the defined "
+"pseudo-merge patterns, and optionally one or more capture groups within that "
+"pattern which further partition the group."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:110
+msgid ""
+"Within a group, commits may be considered \"stable\", or \"unstable\" "
+"depending on their age. These are adjusted by setting the "
+"`bitmapPseudoMerge.<name>.stableThreshold` and "
+"`bitmapPseudoMerge.<name>.threshold` configuration values, respectively."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:116
+msgid ""
+"All stable commits are grouped into pseudo-merges of equal size "
+"(`bitmapPseudoMerge.<name>.stableSize`). If the `stableSize` configuration "
+"is set to, say, 100, then the first 100 commits (ordered by committer date) "
+"which are older than the `stableThreshold` value will form one group, the "
+"next 100 commits will form another group, and so on."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:122
+msgid ""
+"Among unstable commits, the pseudo-merge machinery will attempt to combine "
+"older commits into large groups as opposed to newer commits which will "
+"appear in smaller groups. This is based on the heuristic that references "
+"whose tip commit is older are less likely to be modified to point at a "
+"different commit than a reference whose tip commit is newer."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:131
+msgid ""
+"The size of groups is determined by a power-law decay function, and the "
+"decay parameter roughly corresponds to \"k\" in `f(n) = C*n^(-k/100)`, where "
+"`f(n)` describes the size of the `n`-th pseudo-merge group. The sample rate "
+"controls what percentage of eligible commits are considered as "
+"candidates. The threshold parameter indicates the minimum age (so as to "
+"avoid including too-recent commits in a pseudo-merge group, making it less "
+"likely to be valid). The \"maxMerges\" parameter sets an upper-bound on the "
+"number of pseudo-merge commits an individual group"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:136
+msgid ""
+"The \"stable\"-related parameters control \"stable\" pseudo-merge groups, "
+"comprised of a fixed number of commits which are older than the configured "
+"\"stable threshold\" value and may be grouped together in chunks of "
+"\"stableSize\" in order of age."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:138
+msgid "The exact configuration for pseudo-merges is as follows:"
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation-sedout/gitpacking.txt:141
+#, no-wrap
+msgid "Examples"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:147
+msgid ""
+"Suppose that you have a repository with a large number of references, and "
+"you want a bare-bones configuration of pseudo-merge bitmaps that will "
+"enhance bitmap coverage of the `refs/` namespace. You may start with a "
+"configuration like so:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation-sedout/gitpacking.txt:155
+#, no-wrap
+msgid ""
+"[bitmapPseudoMerge \"all\"]\n"
+"\tpattern = \"refs/\"\n"
+"\tthreshold = now\n"
+"\tstableThreshold = never\n"
+"\tsampleRate = 100\n"
+"\tmaxMerges = 64\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:159
+msgid ""
+"This will create pseudo-merge bitmaps for all references, regardless of "
+"their age, and group them into 64 pseudo-merge commits."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:163
+msgid ""
+"If you wanted to separate tags from branches when generating pseudo-merge "
+"commits, you would instead define the pattern with a capture group, like so:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation-sedout/gitpacking.txt:167
+#, no-wrap
+msgid ""
+"[bitmapPseudoMerge \"all\"]\n"
+"\tpattern = \"refs/(heads/tags)/\"\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:174
+msgid ""
+"Suppose instead that you are working in a fork-network repository, with each "
+"fork specified by some numeric ID, and whose refs reside in "
+"`refs/virtual/NNN/` (where `NNN` is the numeric ID corresponding to some "
+"fork) in the network. In this instance, you may instead write something "
+"like:"
+msgstr ""
+
+#. type: delimited block -
+#: ../Documentation-sedout/gitpacking.txt:182
+#, no-wrap
+msgid ""
+"[bitmapPseudoMerge \"all\"]\n"
+"\tpattern = \"refs/virtual/([0-9]+)/(heads|tags)/\"\n"
+"\tthreshold = now\n"
+"\tstableThreshold = never\n"
+"\tsampleRate = 100\n"
+"\tmaxMerges = 64\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:187
+msgid ""
+"Which would generate pseudo-merge group identifiers like \"1234-heads\", and "
+"\"5678-tags\" (for branches in fork \"1234\", and tags in remote \"5678\", "
+"respectively)."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/gitpacking.txt:189
+#, no-wrap
+msgid "SEE ALSO"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:192
+msgid "linkgit:git-pack-objects[1] linkgit:git-repack[1]"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/gitpacking.txt:194
+#, no-wrap
+msgid "GIT"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/gitpacking.txt:195
+msgid "Part of the linkgit:git[1] suite"
+msgstr ""

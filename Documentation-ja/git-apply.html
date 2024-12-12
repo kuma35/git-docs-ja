@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-apply(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -749,7 +749,8 @@ git-apply(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git apply</em> [--stat] [--numstat] [--summary] [--check] [--index | --intent-to-add] [--3way]
+<pre class="content"><em>git apply</em> [--stat] [--numstat] [--summary] [--check]
+          [--index | --intent-to-add] [--3way] [--ours | --theirs | --union]
           [--apply] [--no-add] [--build-fake-ancestor=&lt;file&gt;] [-R | --reverse]
           [--allow-binary-replacement | --binary] [--reject] [-z]
           [-p&lt;n&gt;] [-C&lt;n&gt;] [--inaccurate-eof] [--recount] [--cached]
@@ -764,7 +765,7 @@ git-apply(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>提供されたdiff出力(つまり「パッチ」)を読み取り、ファイルに適用します。 リポジトリ内のサブディレクトリから実行する場合、ディレクトリ外のパスへのパッチは無視されます。 <code>--index</code> オプションを使用すると、パッチはインデックスにも適用され、 <code>--cached</code> オプションを使用すると、パッチはインデックスにのみ適用されます。 これらのオプションがない場合、コマンドはパッチをファイルにのみ適用し、Gitリポジトリにいる必要はありません。</p></div>
+<div class="paragraph"><p>Reads the supplied diff output (i.e. "a patch") and applies it to files. When running from a subdirectory in a repository, patched paths outside the directory are ignored. With the <code>--index</code> option, the patch is also applied to the index, and with the <code>--cached</code> option, the patch is only applied to the index. Without these options, the command applies the patch only to files, and does not require them to be in a Git repository.</p></div>
 <div class="paragraph"><p>このコマンドはパッチを適用しますが、コミットは作成しません。 <a href="git-format-patch.html">git-format-patch(1)</a> によって生成されたパッチや、電子メールで受信されたパッチから、 <a href="git-am.html">git-am(1)</a> を使用してコミットを作成します。</p></div>
 </div>
 </div>
@@ -801,7 +802,7 @@ git-apply(1) Manual Page
 </dt>
 <dd>
 <p>
-        パッチを適用する代わりに、ファイル作成、名前変更、モード変更など、git diff 拡張ヘッダーから取得した情報の要約を出力します。 ※applyはオフです(適用操作しません)。
+        Instead of applying the patch, output a condensed summary of information obtained from git diff extended headers, such as creations, renames, and mode changes. Turns off "apply".
 </p>
 </dd>
 <dt class="hdlist1">
@@ -845,6 +846,20 @@ git-apply(1) Manual Page
 <dd>
 <p>
         パッチが適用する予定のブロブのIDを記録していて、それらのブロブがローカルで利用可能である場合、3方向マージを試みます。作業ツリーのファイルに競合マーカーを残して、ユーザーが解決できるようにするかもしれません。 このオプションは、 <code>--cached</code> オプションが使用されていない限り、 <code>--index</code> オプションを意味し、 <code>--reject</code> オプションと互換性がありません。 また、 <code>--reject</code> オプションと互換性がありません。 <code>--cached</code> オプションと一緒に使用すると、競合があってもキャッシュの上位に残されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ours</code>
+</dt>
+<dt class="hdlist1">
+<code>--theirs</code>
+</dt>
+<dt class="hdlist1">
+<code>--union</code>
+</dt>
+<dd>
+<p>
+        Instead of leaving conflicts in the file, resolve conflicts favouring our (or their or both) side of the lines. Requires --3way.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -907,7 +922,7 @@ git-apply(1) Manual Page
 <p>
         デフォルトでは、 <code>git apply</code> は、適用されるパッチが少なくとも1行のコンテキストを持つ統一された差分(unified diff)であることを想定しています。 これは優れた安全索を提供しますが、 <code>--unified=0</code> で生成されたdiffを適用すると機能しなくなります。 これらのチェックをバイパスするには、 <code>--unidiff-zero</code> を使用します。
 </p>
-<div class="paragraph"><p>注意: 上記の理由により、文脈自由パッチ(context-free patches)の使用は推奨されないことに注意してください。</p></div>
+<div class="paragraph"><p>Note, for the reasons stated above, the usage of context-free patches is discouraged.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--apply</code>
@@ -933,7 +948,7 @@ git-apply(1) Manual Page
 </dt>
 <dd>
 <p>
-        Gitの歴史上、ユーザーからの明示的な許可なしにバイナリパッチを適用することは許可されていませんでした。このフラグは、そのための方法でした。 現在、バイナリパッチの適用は常に許可されているため、これは何の操作も行いません(no-op)。
+        Historically we did not allow binary patch application without an explicit permission from the user, and this flag was the way to do so. Currently, we always allow binary patch application, so this is a no-op.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1062,7 +1077,7 @@ git-apply(1) Manual Page
 </dt>
 <dd>
 <p>
-        diff を含まないパッチに対してエラーを返さないでください。 空のパッチやコミット・テキストのみのパッチもこの対象になります。
+        Don&#8217;t return an error for patches containing no diff. This includes empty patches and patches with commit text only.
 </p>
 </dd>
 </dl></div>
@@ -1078,7 +1093,7 @@ apply.ignoreWhitespace
 </dt>
 <dd>
 <p>
-        <code>change</code> に設定すると、 <code>--ignore-space-change</code> オプションと同じように、空白の変更を無視するように <code>git apply</code> に指示します。 <code>no</code>, <code>none</code>, <code>never</code>, <code>false</code> のいずれかに設定すると、すべての空白の違いを尊重するように <code>git apply</code> に指示されます。 <a href="git-apply.html">git-apply(1)</a> を参照してください。
+        When set to <em>change</em>, tells <em>git apply</em> to ignore changes in whitespace, in the same way as the <code>--ignore-space-change</code> option. When set to one of: no, none, never, false, it tells <em>git apply</em> to respect all whitespace differences. See <a href="git-apply.html">git-apply(1)</a>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1086,7 +1101,7 @@ apply.whitespace
 </dt>
 <dd>
 <p>
-        <code>--whitespace</code> オプションと同じ方法で、 <code>git apply</code> に空白の処理方法を指示します。 <a href="git-apply.html">git-apply(1)</a> を参照してください。
+        Tells <em>git apply</em> how to handle whitespace, in the same way as the <code>--whitespace</code> option. See <a href="git-apply.html">git-apply(1)</a>.
 </p>
 </dd>
 </dl></div>
@@ -1117,7 +1132,7 @@ apply.whitespace
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-11 07:53:49 JST
+ 2024-12-11 23:58:36 JST
 </div>
 </div>
 </body>

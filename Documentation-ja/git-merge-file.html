@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-merge-file(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -751,7 +751,7 @@ git-merge-file(1) Manual Page
 <div class="verseblock">
 <pre class="content"><em>git merge-file</em> [-L &lt;current-name&gt; [-L &lt;base-name&gt; [-L &lt;other-name&gt;]]]
         [--ours|--theirs|--union] [-p|--stdout] [-q|--quiet] [--marker-size=&lt;n&gt;]
-        [--[no-]diff3] &lt;current-file&gt; &lt;base-file&gt; &lt;other-file&gt;</pre>
+        [--[no-]diff3] [--object-id] &lt;current&gt; &lt;base&gt; &lt;other&gt;</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -759,8 +759,8 @@ git-merge-file(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>git merge-file</code> は、 <code>&lt;base-file&gt;</code> から <code>&lt;other-file&gt;</code> へのすべての変更を <code>&lt;current-file&gt;</code> に組み込みます。結果は通常 <code>&lt;current-file&gt;</code> に入ります。 <code>git merge-file</code> は、元のファイルへの個別の変更を組み合わせるのに役立ちます。 <code>&lt;base-file&gt;</code> がオリジナルであり、 <code>&lt;current-file&gt;</code> と <code>&lt;other-file&gt;</code> の両方が <code>&lt;base-file&gt;</code> の変更であるとすると、 <code>git merge-file</code> は両方の変更を結合します。</p></div>
-<div class="paragraph"><p><code>&lt;current-file&gt;</code> と <code>&lt;other-file&gt;</code> の両方の行の共通セグメントに変更がある場合、競合が発生します。競合が見つかった場合、「git merge-file」は通常、警告を出力し、 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> および <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> マーカーを含む行で競合を囲みます。典型的な競合は以下のようになります:</p></div>
+<div class="paragraph"><p>Given three files <code>&lt;current&gt;</code>, <code>&lt;base&gt;</code> and <code>&lt;other&gt;</code>, <em>git merge-file</em> incorporates all changes that lead from <code>&lt;base&gt;</code> to <code>&lt;other&gt;</code> into <code>&lt;current&gt;</code>. The result ordinarily goes into <code>&lt;current&gt;</code>. <em>git merge-file</em> is useful for combining separate changes to an original. Suppose <code>&lt;base&gt;</code> is the original, and both <code>&lt;current&gt;</code> and <code>&lt;other&gt;</code> are modifications of <code>&lt;base&gt;</code>, then <em>git merge-file</em> combines both changes.</p></div>
+<div class="paragraph"><p>A conflict occurs if both <code>&lt;current&gt;</code> and <code>&lt;other&gt;</code> have changes in a common segment of lines. If a conflict is found, <em>git merge-file</em> normally outputs a warning and brackets the conflict with lines containing &lt;&lt;&lt;&lt;&lt;&lt;&lt; and &gt;&gt;&gt;&gt;&gt;&gt;&gt; markers. A typical conflict will look like this:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; A
@@ -769,7 +769,8 @@ lines in file A
 lines in file B
 &gt;&gt;&gt;&gt;&gt;&gt;&gt; B</code></pre>
 </div></div>
-<div class="paragraph"><p>競合がある場合、ユーザーは結果を編集して、選択肢の1つを削除する必要があります。 ただし <code>--ours</code> または <code>--theirs</code> または <code>--union</code> オプションが有効な場合、これらの競合は、 <code>&lt;current-file&gt;</code> の行または <code>&lt;other-file&gt;</code> の行または両方からの行を優先して解決します。競合マーカーの長さは <code>--marker-size</code> オプションで指定できます。</p></div>
+<div class="paragraph"><p>If there are conflicts, the user should edit the result and delete one of the alternatives. When <code>--ours</code>, <code>--theirs</code>, or <code>--union</code> option is in effect, however, these conflicts are resolved favouring lines from <code>&lt;current&gt;</code>, lines from <code>&lt;other&gt;</code>, or lines from both respectively. The length of the conflict markers can be given with the <code>--marker-size</code> option.</p></div>
+<div class="paragraph"><p>If <code>--object-id</code> is specified, exactly the same behavior occurs, except that instead of specifying what to merge as files, it is specified as a list of object IDs referring to blobs.</p></div>
 <div class="paragraph"><p>このプログラムの終了値は、エラーの場合は負数であり、それ以外の場合は競合した数です(競合たくさんの場合は127に切り捨てられます)。マージがクリーンだった場合、終了値は0です。</p></div>
 <div class="paragraph"><p><code>git merge-file</code> は、RCS用マージの最小限のクローンになるように設計されています。つまり <a href="git.html">git(1)</a> に必要なRCSのマージ機能をすべて実装します。</p></div>
 </div>
@@ -778,6 +779,15 @@ lines in file B
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
 <div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--object-id</code>
+</dt>
+<dd>
+<p>
+        Specify the contents to merge as blobs in the current repository instead of files. In this case, the operation must take place within a valid repository.
+</p>
+<div class="paragraph"><p>If the <code>-p</code> option is specified, the merged file (including conflicts, if any) goes to standard output as normal; otherwise, the merged file is written to the object store and the object ID of its blob is written to standard output.</p></div>
+</dd>
 <dt class="hdlist1">
 <code>-L &lt;label&gt;</code>
 </dt>
@@ -791,7 +801,7 @@ lines in file B
 </dt>
 <dd>
 <p>
-        <code>&lt;current-file&gt;</code> を上書きする代わりに、結果を標準出力に送信します。
+        Send results to standard output instead of overwriting <code>&lt;current&gt;</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -832,6 +842,14 @@ lines in file B
         ファイルに競合を残す代わりに、競合部分の、our (または their または 両方)側に有利な競合解決します。
 </p>
 </dd>
+<dt class="hdlist1">
+<code>--diff-algorithm={patience|minimal|histogram|myers}</code>
+</dt>
+<dd>
+<p>
+        Use a different diff algorithm while merging. The current default is "myers", but selecting more recent algorithm such as "histogram" can help avoid mismerges that occur due to unimportant matching lines (such as braces from distinct functions). See also <a href="git-diff.html">git-diff(1)</a> <code>--diff-algorithm</code>.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -855,6 +873,14 @@ lines in file B
         tmp/a123 と tmp/c345 をベースの tmp/b234 とマージしますが、 <code>tmp/a123</code> と <code>tmp/c345</code> の代わりにラベル <code>a</code> と <code>c</code> を使用します。
 </p>
 </dd>
+<dt class="hdlist1">
+<code>git merge-file -p --object-id abc1234 def567 890abcd</code>
+</dt>
+<dd>
+<p>
+        combines the changes of the blob abc1234 and 890abcd since def567, tries to merge them and writes the result to standard output
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -869,7 +895,7 @@ lines in file B
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:35 JST
+ 2024-12-11 23:58:55 JST
 </div>
 </div>
 </body>

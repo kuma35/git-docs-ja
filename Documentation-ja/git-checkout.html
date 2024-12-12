@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-checkout(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -753,8 +753,10 @@ git-checkout(1) Manual Page
 <em>git checkout</em> [-q] [-f] [-m] --detach [&lt;branch&gt;]
 <em>git checkout</em> [-q] [-f] [-m] [--detach] &lt;commit&gt;
 <em>git checkout</em> [-q] [-f] [-m] [[-b|-B|--orphan] &lt;new-branch&gt;] [&lt;start-point&gt;]
-<em>git checkout</em> [-f|--ours|--theirs|-m|--conflict=&lt;style&gt;] [&lt;tree-ish&gt;] [--] &lt;pathspec&gt;&#8230;
-<em>git checkout</em> [-f|--ours|--theirs|-m|--conflict=&lt;style&gt;] [&lt;tree-ish&gt;] --pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]
+<em>git checkout</em> [-f] &lt;tree-ish&gt; [--] &lt;pathspec&gt;&#8230;
+<em>git checkout</em> [-f] &lt;tree-ish&gt; --pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]
+<em>git checkout</em> [-f|--ours|--theirs|-m|--conflict=&lt;style&gt;] [--] &lt;pathspec&gt;&#8230;
+<em>git checkout</em> [-f|--ours|--theirs|-m|--conflict=&lt;style&gt;] --pathspec-from-file=&lt;file&gt; [--pathspec-file-nul]
 <em>git checkout</em> (-p|--patch) [&lt;tree-ish&gt;] [--] [&lt;pathspec&gt;&#8230;]</pre>
 <div class="attribution">
 </div></div>
@@ -777,7 +779,7 @@ git-checkout(1) Manual Page
 <div class="content">
 <pre><code>$ git checkout -b &lt;branch&gt; --track &lt;remote&gt;/&lt;branch&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>あなたは <code>&lt;branch&gt;</code> を省略できます。この場合、コマンドは「現在のブランチをチェックアウトする」ことになり、(もし存在すれば)現在のブランチの追跡情報だけを表示するという、かなり高価な副作用のある、見栄えの良いノー・オペレーション(no-op)となります。</p></div>
+<div class="paragraph"><p>You could omit <code>&lt;branch&gt;</code>, in which case the command degenerates to "check out the current branch", which is a glorified no-op with rather expensive side-effects to show only the tracking information, if it exists, for the current branch.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>git checkout -b|-B &lt;new-branch&gt; [&lt;start-point&gt;]</code>
@@ -792,7 +794,7 @@ git-checkout(1) Manual Page
 <pre><code>$ git branch -f &lt;branch&gt; [&lt;start-point&gt;]
 $ git checkout &lt;branch&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>つまり、 <code>git checkout</code> が成功しない限り、ブランチは リセット/作成 されません。</p></div>
+<div class="paragraph"><p>that is to say, the branch is not reset/created unless "git checkout" is successful (e.g., when the branch is in use in another worktree, not just the current branch stays the same, but the branch is not reset to the start-point, either).</p></div>
 </dd>
 <dt class="hdlist1">
 <code>git checkout --detach [&lt;branch&gt;]</code>
@@ -959,7 +961,7 @@ $ git checkout &lt;branch&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        <code>&lt;start-point&gt;</code> から開始された <code>&lt;new-branch&gt;</code> という名前の新しい「孤立した」(orphan) ブランチを作成し、それに切り替えます。 この新しいブランチで行われた最初のコミットには親がなく、他のすべてのブランチとコミットから完全に切断された新しい履歴のルートになります。
+        Create a new unborn branch, named <code>&lt;new-branch&gt;</code>, started from <code>&lt;start-point&gt;</code> and switch to it. The first commit made on this new branch will have no parents and it will be the root of a new history totally disconnected from all the other branches and commits.
 </p>
 <div class="paragraph"><p>インデックスと作業ツリーは、以前に <code>git checkout &lt;start-point&gt;</code> を実行した場合と同じように調整されます。これにより、 ルート(root)をコミットするために容易に <code>git commit -a</code> 実行をでき、 <code>&lt;start-point&gt;</code> と同様のパスのセットを記録する新しい履歴を開始できます。</p></div>
 <div class="paragraph"><p>これは、ツリーの完全な履歴を公開せずにコミットからツリーを公開する場合に便利です。これは、現在のツリーが「クリーン」であるが、完全な履歴にはプロプライエタリなコードやその他の邪魔なコードが含まれているプロジェクトの、オープンソースブランチを公開するためにこれを行うことができます。</p></div>
@@ -984,7 +986,7 @@ $ git checkout &lt;branch&gt;</code></pre>
         ブランチを切り替えるときに、現在のブランチと切り替え先のブランチの間で異なる1つ以上のファイルにローカルの変更がある場合、コマンドは、コンテキストでの変更を保持するためにブランチの切り替えを拒否します。ただし、このオプションを使用すると、現在のブランチ、作業ツリーの内容、および新しいブランチの間の3方向のマージを実行してから新しいブランチに移動します。
 </p>
 <div class="paragraph"><p>マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになります。競合を解決し、解決されたパスを <code>git add</code>（またはマージによってパスが削除される場合は <code>git rm</code>)でマークする必要があります。</p></div>
-<div class="paragraph"><p>インデックスからパスをチェックアウトする場合、このオプションを使用すると、指定したパスで競合するマージを再作成できます。</p></div>
+<div class="paragraph"><p>When checking out paths from the index, this option lets you recreate the conflicted merge in the specified paths. This option cannot be used when checking out paths from a tree-ish.</p></div>
 <div class="paragraph"><p><code>--merge</code> でブランチを切り替えると、ステージされた変更が失われる可能性があります。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1013,7 +1015,7 @@ $ git checkout &lt;branch&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        <code>git checkout</code> は、必要なrefが別のワークツリーによってすでにチェックアウトされている場合に拒否します。このオプションを使用すると、とにかくrefをチェックアウトできます。つまり、refを複数のワークツリーで保持できます。
+        <code>git checkout</code> refuses when the wanted branch is already checked out or otherwise in use by another worktree. This option makes it check the branch out anyway. In other words, the branch can be in use by more than one worktree.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1354,14 +1356,14 @@ checkout.workers
 <p>
         作業ツリーを更新するときに使用する並列ワーカーの数。デフォルトは1、つまり順次実行です。 1未満の値に設定すると、Gitは使用可能な論理コアの数と同じ数のワーカーを使用します。 この設定と <code>checkout.thresholdForParallelism</code> は、チェックアウトを実行するすべてのコマンドに影響します。 例えば、 checkout, clone, reset, sparse-checkout, などです。
 </p>
-<div class="paragraph"><p>注意: 並列チェックアウトは通常、SSDまたはNFS上にあるリポジトリのパフォーマンスを向上させます。 回転するディスクやコアの数が少ないマシン上のリポジトリの場合、デフォルトのシーケンシャルチェックアウトの方がパフォーマンスが向上することがよくあります。 リポジトリのサイズと圧縮レベルも、並列バージョンのパフォーマンスに影響を与える可能性があります。</p></div>
+<div class="paragraph"><p>Note: Parallel checkout usually delivers better performance for repositories located on SSDs or over NFS. For repositories on spinning disks and/or machines with a small number of cores, the default sequential checkout often performs better. The size and compression level of a repository might also influence how well the parallel version performs.</p></div>
 </dd>
 <dt class="hdlist1">
 checkout.thresholdForParallelism
 </dt>
 <dd>
 <p>
-        少数のファイルで並列チェックアウトを実行する場合、サブプロセスの生成とプロセス間通信のコストが並列化のメリットを上回る可能性があります。 この設定により、並列チェックアウトを試行する必要のあるファイルの最小数を定義できます。 デフォルトは100です。
+        When running parallel checkout with a small number of files, the cost of subprocess spawning and inter-process communication might outweigh the parallelization gains. This setting allows you to define the minimum number of files for which parallel checkout should be attempted. The default is 100.
 </p>
 </dd>
 </dl></div>
@@ -1384,7 +1386,7 @@ checkout.thresholdForParallelism
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-05-12 05:35:10 JST
+ 2024-12-11 23:58:40 JST
 </div>
 </div>
 </body>

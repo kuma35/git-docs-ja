@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-clone(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -748,25 +748,22 @@ git-clone(1) Manual Page
 <div class="sect1">
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
-<div class="verseblock">
-<pre class="content"><em>git clone</em> [--template=&lt;template-directory&gt;]
+<div class="paragraph"><p>git clone [--template=&lt;template-directory&gt;]
           [-l] [-s] [--no-hardlinks] [-q] [-n] [--bare] [--mirror]
           [-o &lt;name&gt;] [-b &lt;name&gt;] [-u &lt;upload-pack&gt;] [--reference &lt;repository&gt;]
           [--dissociate] [--separate-git-dir &lt;git-dir&gt;]
           [--depth &lt;depth&gt;] [--[no-]single-branch] [--no-tags]
           [--recurse-submodules[=&lt;pathspec&gt;]] [--[no-]shallow-submodules]
           [--[no-]remote-submodules] [--jobs &lt;n&gt;] [--sparse] [--[no-]reject-shallow]
-          [--filter=&lt;filter&gt; [--also-filter-submodules]] [--] &lt;repository&gt;
-          [&lt;directory&gt;]</pre>
-<div class="attribution">
-</div></div>
+          [--filter=&lt;filter-spec&gt;] [--also-filter-submodules]] [--] &lt;repository&gt;
+          [&lt;directory&gt;]</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>リポジトリを新しく作成されたディレクトリにクローン(clone;複製)し、複製されたリポジトリ内の各ブランチのリモート追跡ブランチを作成し(<code>git branch --remotes</code> を使用して表示できます)、複製されたリポジトリの現在アクティブなブランチからフォークされた初期ブランチを作成してチェックアウトします。</p></div>
-<div class="paragraph"><p>クローン後、引数のない <code>git fetch</code> は、すべてのリモート追跡ブランチを更新し、加えて、引数のない <code>git pull</code> は、存在する場合、リモートのmasterブランチを現在のmasterブランチにマージします（これは、 <code>--single-branch</code> が指定されている場合は当てはまりません。以下参照)。</p></div>
+<div class="paragraph"><p>After the clone, a plain <code>git fetch</code> without arguments will update all the remote-tracking branches, and a <code>git pull</code> without arguments will in addition merge the remote master branch into the current master branch, if any (this is untrue when <code>--single-branch</code> is given; see below).</p></div>
 <div class="paragraph"><p>このデフォルト設定は、 <code>refs/remotes/origin</code> の下にリモートブランチヘッドへの参照を作成し、<code>remote.origin.url</code> と <code>remote.origin.fetch</code> 設定変数を初期化することによって実現されます。</p></div>
 </div>
 </div>
@@ -782,13 +779,13 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        複製元のリポジトリがローカルマシン上にある場合、このフラグは通常の 「Git対応」転送メカニズムをバイパスし、オブジェクトおよびrefsディレクトリの下にあるHEADおよびすべてのコピーを作成することでリポジトリを複製します。 <code>.git/objects/</code> ディレクトリの下のファイルは、可能な場合はスペースを節約するためにハードリンクされています。
+        When the repository to clone from is on a local machine, this flag bypasses the normal "Git aware" transport mechanism and clones the repository by making a copy of <code>HEAD</code> and everything under objects and refs directories. The files under <code>.git/objects/</code> directory are hardlinked to save space when possible.
 </p>
-<div class="paragraph"><p>リポジトリがローカルパス(例: <code>/path/to/repo</code>)として指定されている場合、これがデフォルトであり、 <code>--local</code> は基本的に何も操作しません(no-op)です。 リポジトリがURLとして指定されている場合、このフラグは無視されます(ローカル最適化は使用されません)。 <code>--no-local</code> を指定すると、 <code>/path/to/repo</code> が指定されたときデフォルトが上書きされ、代わりに通常のGit転送が使用されます。</p></div>
+<div class="paragraph"><p>If the repository is specified as a local path (e.g., <code>/path/to/repo</code>), this is the default, and <code>--local</code> is essentially a no-op. If the repository is specified as a URL, then this flag is ignored (and we never use the local optimizations). Specifying <code>--no-local</code> will override the default when <code>/path/to/repo</code> is given, using the regular Git transport instead.</p></div>
 <div class="paragraph"><p>リポジトリの <code>$GIT_DIR/objects</code> にシンボリック・リンクがある場合、 または <code>$GIT_DIR/objects</code> がシンボリック・リンクである場合、 クローンは失敗します。 これは、 シンボリック・リンクの参照を解除(デリファレンス)することにより、 ファイルが意図せずコピーされるのを防ぐためのセキュリティ対策です。</p></div>
-<div class="paragraph"><p><strong>注意</strong>: この操作は、 <code>src</code> を変更しながら <code>cp -r src dst</code> を実行するのと同様に、
-ソースリポジトリへの同時変更と競合する可能性が
-あります。</p></div>
+<div class="paragraph"><p><strong>NOTE</strong>: this operation can race with concurrent modification to the
+source repository, similar to running <code>cp -r &lt;src&gt; &lt;dst&gt;</code> while modifying
+<em>&lt;src&gt;</em>.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--no-hardlinks</code>
@@ -824,7 +821,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        参照リポジトリがローカルマシン上にある場合は、参照リポジトリからオブジェクトを取得するように <code>.git/objects/info/alternates</code> を自動的に設定します。 既存のリポジトリをalternateとして使用すると、クローンされるリポジトリからコピーする必要のあるオブジェクトが少なくなり、ネットワークとローカルのストレージコストが削減されます。 <code>--reference-if-able</code> を使用すると、存在しないディレクトリはクローンを中断する代わりに警告を出してスキップします。
+        If the reference <em>&lt;repository&gt;</em> is on the local machine, automatically setup <code>.git/objects/info/alternates</code> to obtain objects from the reference <em>&lt;repository&gt;</em>. Using an already existing repository as an alternate will require fewer objects to be copied from the repository being cloned, reducing network and local storage costs. When using the <code>--reference-if-able</code>, a non existing directory is skipped with a warning instead of aborting the clone.
 </p>
 <div class="admonitionblock">
 <table><tr>
@@ -878,7 +875,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        プロトコルバージョン2を使用して通信する場合、指定の文字列をサーバーに送信します。指定の文字列には、NULまたはLF文字を含めることはできません。 不明なオプションを含むサーバーオプションのサーバー処理は、サーバー固有です。 複数の <code>--server-option=&lt;option&gt;</code> が指定されている場合、それらはすべてコマンドラインにリストされている順序で相手側に送信されます。
+        Transmit the given string to the server when communicating using protocol version 2. The given string must not contain a NUL or LF character. The server&#8217;s handling of server options, including unknown ones, is server-specific. When multiple <code>--server-option=&lt;option&gt;</code> are given, they are all sent to the other side in the order listed on the command line. When no <code>--server-option=</code><em>&lt;option&gt;</em> is given from the command line, the values of configuration variable <code>remote.&lt;name&gt;.serverOption</code> are used instead.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -889,15 +886,15 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        クローンの完了後、HEADのチェックアウトは実行されません。
+        No checkout of <code>HEAD</code> is performed after the clone is complete.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--[no-]reject-shallow</code>
+<code>--</code>[<code>no-</code>]<code>reject-shallow</code>
 </dt>
 <dd>
 <p>
-        ソースリポジトリが浅い(shallow)リポジトリの場合は失敗します。 <code>clone.rejectShallow</code> 構成変数を使用して、デフォルトを指定できます。
+        Fail if the source repository is a shallow repository. The <code>clone.rejectShallow</code> configuration variable can be used to specify the default.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -905,7 +902,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        「ベア」(bare=裸の)Gitリポジトリを作成します。 つまり、 <code>&lt;directory&gt;</code> を作成して管理ファイルを <code>&lt;directory&gt;/.git</code> に配置する代わりに、 <code>&lt;directory&gt;</code> 自体を <code>$GIT_DIR</code> にします。 作業ツリーをチェックアウトする場所がないため、これは明らかに <code>--no-checkout</code> を意味します。 また、リモートのブランチヘッドは、 <code>refs/remotes/origin/</code> にマッピングせずに、対応するローカルブランチヘッドに直接コピーされます。 このオプションを使用すると、リモート追跡ブランチも関連する構成変数も作成されません。
+        Make a <em>bare</em> Git repository. That is, instead of creating <em>&lt;directory&gt;</em> and placing the administrative files in <code>&lt;directory&gt;/.git</code>, make the <em>&lt;directory&gt;</em> itself the <code>$GIT_DIR</code>. This obviously implies the <code>--no-checkout</code> because there is nowhere to check out the working tree. Also the branch heads at the remote are copied directly to corresponding local branch heads, without mapping them to <code>refs/remotes/origin/</code>. When this option is used, neither remote-tracking branches nor the related configuration variables are created.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -921,7 +918,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        部分クローン(partial clone)機能を使用して、サーバーが特定のオブジェクトフィルターに従って到達可能なオブジェクトのサブセットを送信するように要求します。 <code>--filter</code> を使用する場合、提供された <code>&lt;filter-spec&gt;</code> が部分クローンフィルターに使用されます。 たとえば、 <code>--filter=blob:none</code> は、Gitで必要になるまで、すべてのブロブ(ファイルの内容)を除外します。 また、 <code>--filter=blob:limit=&lt;size&gt;</code> は、少なくとも <code>&lt;size&gt;</code> のサイズのすべてのブロブを除外します。 フィルタ仕様の詳細については、 <a href="git-rev-list.html">git-rev-list(1)</a> の <code>--filter</code> オプションを参照してください。
+        Use the partial clone feature and request that the server sends a subset of reachable objects according to a given object filter. When using <code>--filter</code>, the supplied <em>&lt;filter-spec&gt;</em> is used for the partial clone filter. For example, <code>--filter=blob:none</code> will filter out all blobs (file contents) until needed by Git. Also, <code>--filter=blob:limit=&lt;size&gt;</code> will filter out all blobs of size at least <em>&lt;size&gt;</em>. For more details on filter specifications, see the <code>--filter</code> option in <a href="git-rev-list.html">git-rev-list(1)</a>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -941,32 +938,32 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>-o &lt;name&gt;</code>
+<code>-o</code> <em>&lt;name&gt;</em>
 </dt>
 <dt class="hdlist1">
-<code>--origin &lt;name&gt;</code>
-</dt>
-<dd>
-<p>
-        リモート名 <code>origin</code> を使用してアップストリームリポジトリを追跡する代わりに、<code>&lt;name&gt;</code> を使用します。 構成(config)の <code>clone.defaultRemoteName</code> をオーバーライドします。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>-b &lt;name&gt;</code>
-</dt>
-<dt class="hdlist1">
-<code>--branch &lt;name&gt;</code>
+<code>--origin</code> <em>&lt;name&gt;</em>
 </dt>
 <dd>
 <p>
-        新しく作成されたHEADを、複製されたリポジトリのHEADが指すブランチにポイントする代わりに、代わりに <code>&lt;name&gt;</code> ブランチをポイントします。 非ベアリポジトリでは、これはチェックアウトされるブランチです。 <code>--branch</code> はタグを取得し、結果のリポジトリでそのコミット時にHEADを切り離す(detach)こともできます。
+        Instead of using the remote name <code>origin</code> to keep track of the upstream repository, use <em>&lt;name&gt;</em>. Overrides <code>clone.defaultRemoteName</code> from the config.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>-u &lt;upload-pack&gt;</code>
+<code>-b</code> <em>&lt;name&gt;</em>
 </dt>
 <dt class="hdlist1">
-<code>--upload-pack &lt;upload-pack&gt;</code>
+<code>--branch</code> <em>&lt;name&gt;</em>
+</dt>
+<dd>
+<p>
+        Instead of pointing the newly created <code>HEAD</code> to the branch pointed to by the cloned repository&#8217;s <code>HEAD</code>, point to <em>&lt;name&gt;</em> branch instead. In a non-bare repository, this is the branch that will be checked out. <code>--branch</code> can also take tags and detaches the <code>HEAD</code> at that commit in the resulting repository.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-u</code> <em>&lt;upload-pack&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--upload-pack</code> <em>&lt;upload-pack&gt;</em>
 </dt>
 <dd>
 <p>
@@ -982,14 +979,14 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>-c &lt;key&gt;=&lt;value&gt;</code>
+<code>-c</code> <code>&lt;key&gt;=&lt;value&gt;</code>
 </dt>
 <dt class="hdlist1">
-<code>--config &lt;key&gt;=&lt;value&gt;</code>
+<code>--config</code> <code>&lt;key&gt;=&lt;value&gt;</code>
 </dt>
 <dd>
 <p>
-        新しく作成されたリポジトリに構成変数を設定します。 これは、リポジトリが初期化された直後または、リモート履歴がフェッチされる前または、ファイルがチェックアウトされる前に有効になります。 キーは、 <a href="git-config.html">git-config(1)</a> で期待されるものと同じ形式です(例: <code>core.eol=true</code>)。 同じキーに複数値が指定されている場合、各値は構成ファイルに書き込まれます。 これにより、たとえば、originのリモートにフェッチrefspecを追加しても安全になります。
+        Set a configuration variable in the newly-created repository; this takes effect immediately after the repository is initialized, but before the remote history is fetched or any files checked out. The <em>&lt;key&gt;</em> is in the same format as expected by <a href="git-config.html">git-config(1)</a> (e.g., <code>core.eol=true</code>). If multiple values are given for the same key, each value will be written to the config file. This makes it safe, for example, to add additional fetch refspecs to the origin remote.
 </p>
 <div class="paragraph"><p>現在の実装の制限により、一部の構成変数は、最初のフェッチとチェックアウトが完了するまで有効になりません。 有効にならないことがわかっている構成変数は、 <code>remote.&lt;name&gt;.mirror</code> と <code>remote.&lt;name&gt;.tagOpt</code> です。 代わりに、対応する <code>--mirror</code> および <code>--no-tags</code> オプションを使用してください。</p></div>
 </dd>
@@ -1010,7 +1007,7 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--shallow-exclude=&lt;revision&gt;</code>
+<code>--shallow-exclude=&lt;ref&gt;</code>
 </dt>
 <dd>
 <p>
@@ -1022,7 +1019,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>--branch</code> オプションで指定された、またはリモートのプライマリブランチの <code>HEAD</code> が指す単一のブランチの先端につながる履歴のみをクローンします。 結果のリポジトリにさらにフェッチすると、このオプションが最初のクローン作成に使用されたブランチのリモート追跡ブランチのみが更新されます。 <code>--single-branch</code> クローンが作成されたときに、リモートのHEADがどのブランチも指さなかった場合、リモート追跡ブランチは作成されません。
+        Clone only the history leading to the tip of a single branch, either specified by the <code>--branch</code> option or the primary branch remote&#8217;s <code>HEAD</code> points at. Further fetches into the resulting repository will only update the remote-tracking branch for the branch this option was used for the initial cloning. If the <code>HEAD</code> at the remote did not point at any branch when <code>--single-branch</code> clone was made, no remote-tracking branch is created.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1039,7 +1036,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        クローンが作成されたら、提供されたパススペックに基づいてサブモジュールを初期化し、クローンを作成します。 パススペックが指定されていない場合、すべてのサブモジュールが初期化され、クローン化されます。 このオプションは、複数のエントリで構成されるパススペックに対して複数回指定できます。 結果として得られるクローンには <code>submodule.active</code> が指定され、パス指定がない場合は <code>.</code> (すべてのサブモジュールを意味します) が設定されます。
+        After the clone is created, initialize and clone submodules within based on the provided <em>&lt;pathspec&gt;</em>. If no <code>=&lt;pathspec&gt;</code> is provided, all submodules are initialized and cloned. This option can be given multiple times for pathspecs consisting of multiple entries. The resulting clone has <code>submodule.active</code> set to the provided pathspec, or "<code>.</code>" (meaning all submodules) if no pathspec is provided.
 </p>
 <div class="paragraph"><p>サブモジュールは、デフォルト設定を使用して初期化およびクローン化されます。 これは、クローンが終了した直後に <code>git submodule update --init --recursive &lt;pathspec&gt;</code> を実行するのと同じです。 クローンされたリポジトリに ワークツリー/チェックアウト がない場合(つまり、 <code>--no-checkout</code>/<code>-n</code> または <code>--bare</code> または <code>--mirror</code> のいずれかが指定されている場合)、このオプションは無視されます。</p></div>
 </dd>
@@ -1068,10 +1065,30 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>-j &lt;n&gt;</code>
+<code>--ref-format=&lt;ref-format&gt;</code>
+</dt>
+<dd>
+<p>
+Specify the given ref storage format for the repository. The valid values are:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>files</code> for loose files with packed-refs. This is the default.
+</p>
+</li>
+<li>
+<p>
+<code>reftable</code> for the reftable format. This format is experimental and its internals are subject to change.
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+<code>-j</code> <em>&lt;n&gt;</em>
 </dt>
 <dt class="hdlist1">
-<code>--jobs &lt;n&gt;</code>
+<code>--jobs</code> <em>&lt;n&gt;</em>
 </dt>
 <dd>
 <p>
@@ -1079,19 +1096,19 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-&lt;repository&gt;
+<em>&lt;repository&gt;</em>
 </dt>
 <dd>
 <p>
-        クローンを作成する(場合によってはリモートの)リポジトリ。 リポジトリの指定の詳細については、下記 <a href="#URLS">GIT URLS</a> セクションを参照してください。
+        The (possibly remote) <em>&lt;repository&gt;</em> to clone from. See the <a href="#URLS">GIT URLS</a> section below for more information on specifying repositories.
 </p>
 </dd>
 <dt class="hdlist1">
-&lt;directory&gt;
+<em>&lt;directory&gt;</em>
 </dt>
 <dd>
 <p>
-        クローンを作成する新しいディレクトリの名前。 ディレクトリが明示的に指定されていない場合は、ソースリポジトリの「人間味のある」(humanish)部分が使用されます(<code>/path/to/repo.git</code> の場合は <code>repo</code> 、 <code>host.xz:foo/.git</code> の場合は <code>foo</code> )。 既存のディレクトリへのクローン作成は、ディレクトリが空の場合にのみ許可されます。
+        The name of a new directory to clone into. The "humanish" part of the source repository is used if no <em>&lt;directory&gt;</em> is explicitly given (<code>repo</code> for <code>/path/to/repo.git</code> and <code>foo</code> for <code>host.xz:foo/.git</code>). Cloning into an existing directory is only allowed if the directory is empty.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1099,7 +1116,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        リモートからフェッチする前に、指定された <code>&lt;uri&gt;</code> からバンドルをフェッチし、データをローカル・リポジトリで非バンドル化(unbundle)します。 バンドル内のrefは、 非表示の <code>refs/bundle/*</code> 名前空間に保存されます。 このオプションは、 <code>--depth</code> や`--shallow-since` や <code>--shallow-exclude</code> と互換性がありません。
+        Before fetching from the remote, fetch a bundle from the given <em>&lt;uri&gt;</em> and unbundle the data into the local repository. The refs in the bundle will be stored under the hidden <code>refs/bundle/*</code> namespace. This option is incompatible with <code>--depth</code>, <code>--shallow-since</code>, and <code>--shallow-exclude</code>.
 </p>
 </dd>
 </dl></div>
@@ -1109,28 +1126,28 @@ git-clone(1) Manual Page
 <h2 id="_git_urls_a_id_urls_a">GIT URLS<a id="URLS"></a></h2>
 <div class="sectionbody">
 <div class="paragraph"><p>一般に、URLには、トランスポートプロトコル、リモートサーバーのアドレス、およびリポジトリへのパスに関する情報が含まれています。トランスポートプロトコルによっては、一部の情報が欠落している場合があります。</p></div>
-<div class="paragraph"><p>Gitはsshとgitとhttpとhttpsプロトコルをサポートします(さらにftpとftpsをフェッチに使用できますが、これは非効率的で非推奨です。使用しないでください)。</p></div>
-<div class="paragraph"><p>ネイティブトランスポート(つまり、 git:// URL)は認証を行わないため、セキュリティで保護されていないネットワークでは注意して使用する必要があります。</p></div>
+<div class="paragraph"><p>Git supports ssh, git, http, and https protocols (in addition, ftp and ftps can be used for fetching, but this is inefficient and deprecated; do not use them).</p></div>
+<div class="paragraph"><p>The native transport (i.e. <code>git://</code> URL) does no authentication and should be used with caution on unsecured networks.</p></div>
 <div class="paragraph"><p>以下の構文を使用できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-ssh://&#91;user@&#93;host.xz&#91;:port&#93;/path/to/repo.git/
+<code>ssh://[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-git://host.xz&#91;:port&#93;/path/to/repo.git/
+<code>git://&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-http&#91;s&#93;://host.xz&#91;:port&#93;/path/to/repo.git/
+<code>http[s]://&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-ftp&#91;s&#93;://host.xz&#91;:port&#93;/path/to/repo.git/
+<code>ftp[s]://&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 </ul></div>
@@ -1138,26 +1155,26 @@ ftp&#91;s&#93;://host.xz&#91;:port&#93;/path/to/repo.git/
 <div class="ulist"><ul>
 <li>
 <p>
-&#91;user@&#93;host.xz:path/to/repo.git/
+<code>[&lt;user&gt;@]&lt;host&gt;:/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 </ul></div>
 <div class="paragraph"><p>この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカルパスを区別するのに役立ちます。たとえば、ローカルパス <code>foo:bar</code> を、絶対パスまたは <code>./foo:bar</code> として指定して、 ssh url として誤って解釈されないようにすることができます。</p></div>
-<div class="paragraph"><p>sshおよびgitプロトコルは、さらに ~username 拡張をサポートします:</p></div>
+<div class="paragraph"><p>The ssh and git protocols additionally support <code>~&lt;username&gt;</code> expansion:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-ssh://&#91;user@&#93;host.xz&#91;:port&#93;/~&#91;user&#93;/path/to/repo.git/
+<code>ssh://[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;]/~&lt;user&gt;/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-git://host.xz&#91;:port&#93;/~&#91;user&#93;/path/to/repo.git/
+<code>git://&lt;host&gt;[:&lt;port&gt;]/~&lt;user&gt;/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-&#91;user@&#93;host.xz:/~&#91;user&#93;/path/to/repo.git/
+<code>[&lt;user&gt;@]&lt;host&gt;:~&lt;user&gt;/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 </ul></div>
@@ -1165,31 +1182,31 @@ git://host.xz&#91;:port&#93;/~&#91;user&#93;/path/to/repo.git/
 <div class="ulist"><ul>
 <li>
 <p>
-/path/to/repo.git/
+<code>/path/to/repo.git/</code>
 </p>
 </li>
 <li>
 <p>
-file:///path/to/repo.git/
+<code>file:///path/to/repo.git/</code>
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>これらの2つの構文は、前者が <code>--local</code> オプションを含むことを除いて、ほとんど同等です。</p></div>
-<div class="paragraph"><p>「git clone」と「git fetch」と「git pull」は、「git push」と違って適切なバンドルファイルを受け入れます。 <a href="git-bundle.html">git-bundle(1)</a> を参照してください。</p></div>
-<div class="paragraph"><p>Gitが特定のトランスポートプロトコルを処理する方法を知らない場合、Gitは <em>remote-&lt;transport&gt;</em> リモートヘルパー(存在する場合)を使用しようとします。リモートヘルパーを明示的に要求するには、以下の構文を使用できます:</p></div>
+<div class="paragraph"><p>These two syntaxes are mostly equivalent, except the former implies <code>--local</code> option.</p></div>
+<div class="paragraph"><p><code>git clone</code>, <code>git fetch</code> and <code>git pull</code>, but not <code>git push</code>, will also accept a suitable bundle file. See <a href="git-bundle.html">git-bundle(1)</a>.</p></div>
+<div class="paragraph"><p>When Git doesn&#8217;t know how to handle a certain transport protocol, it attempts to use the <code>remote-&lt;transport&gt;</code> remote helper, if one exists. To explicitly request a remote helper, the following syntax may be used:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-&lt;transport&gt;::&lt;address&gt;
+<code>&lt;transport&gt;::&lt;address&gt;</code>
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>ここで、 &lt;address&gt; は、パス、サーバーとパス、または呼び出されている特定のリモートヘルパーによって認識される任意のURLのような文字列です。詳細については、 <a href="gitremote-helpers.html">gitremote-helpers(7)</a> を参照してください。</p></div>
+<div class="paragraph"><p>where <em>&lt;address&gt;</em> may be a path, a server and path, or an arbitrary URL-like string recognized by the specific remote helper being invoked. See <a href="gitremote-helpers.html">gitremote-helpers(7)</a> for details.</p></div>
 <div class="paragraph"><p>同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:</p></div>
-<div class="listingblock">
-<div class="content">
-<pre><code>        [url "&lt;actual url base&gt;"]
-                insteadOf = &lt;other url base&gt;</code></pre>
+<div class="verseblock">
+<pre class="content">        [url "<em>&lt;actual-url-base&gt;</em>"]
+                insteadOf = <em>&lt;other-url-base&gt;</em></pre>
+<div class="attribution">
 </div></div>
 <div class="paragraph"><p>例えば、以下のようになります:</p></div>
 <div class="listingblock">
@@ -1200,10 +1217,10 @@ file:///path/to/repo.git/
 </div></div>
 <div class="paragraph"><p>"work:repo.git" や "host.xz:/path/to/repo.git" のようなURLは、任意のコンテキストで、"git://git.host.xz/repo.git" に書き換えられます。</p></div>
 <div class="paragraph"><p>プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:</p></div>
-<div class="listingblock">
-<div class="content">
-<pre><code>        [url "&lt;actual url base&gt;"]
-                pushInsteadOf = &lt;other url base&gt;</code></pre>
+<div class="verseblock">
+<pre class="content">        [url "<em>&lt;actual-url-base&gt;</em>"]
+                pushInsteadOf = <em>&lt;other-url-base&gt;</em></pre>
+<div class="attribution">
 </div></div>
 <div class="paragraph"><p>例えば、以下のようになります:</p></div>
 <div class="listingblock">
@@ -1270,15 +1287,15 @@ $ cd my-linux</code></pre>
 <div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は <a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-init.templateDir
+<code>init.templateDir</code>
 </dt>
 <dd>
 <p>
-        テンプレートのコピー元のディレクトリを指定します。 (<a href="git-init.html">git-init(1)</a> の「TEMPLATE DIRECTORY」セクションを参照してください。)
+        Specify the directory from which templates will be copied. (See the "TEMPLATE DIRECTORY" section of <a href="git-init.html">git-init(1)</a>.)
 </p>
 </dd>
 <dt class="hdlist1">
-init.defaultBranch
+<code>init.defaultBranch</code>
 </dt>
 <dd>
 <p>
@@ -1286,23 +1303,41 @@ init.defaultBranch
 </p>
 </dd>
 <dt class="hdlist1">
-clone.defaultRemoteName
+<code>init.defaultObjectFormat</code>
 </dt>
 <dd>
 <p>
-        リポジトリのクローンを作成するときに作成するリモートの名前。 デフォルトは <code>origin</code> で、 <code>--origin</code> コマンドラインオプションを <a href="git-clone.html">git-clone(1)</a> に渡すことでオーバーライドできます。
+        Allows overriding the default object format for new repositories. See <code>--object-format=</code> in <a href="git-init.html">git-init(1)</a>. Both the command line option and the <code>GIT_DEFAULT_HASH</code> environment variable take precedence over this config.
 </p>
 </dd>
 <dt class="hdlist1">
-clone.rejectShallow
+<code>init.defaultRefFormat</code>
 </dt>
 <dd>
 <p>
-        リポジトリが浅い(shallow)場合は、リポジトリの複製(clone)を拒否します。コマンドラインでオプション <code>--reject-shallow</code> を渡すことでオーバーライドできます。 <a href="git-clone.html">git-clone(1)</a> を参照してください
+        Allows overriding the default ref storage format for new repositories. See <code>--ref-format=</code> in <a href="git-init.html">git-init(1)</a>. Both the command line option and the <code>GIT_DEFAULT_REF_FORMAT</code> environment variable take precedence over this config.
 </p>
 </dd>
 <dt class="hdlist1">
-clone.filterSubmodules
+<code>clone.defaultRemoteName</code>
+</dt>
+<dd>
+<p>
+        The name of the remote to create when cloning a repository. Defaults to <code>origin</code>.
+        It can be overridden by passing the <code>--origin</code> command-line
+        option.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>clone.rejectShallow</code>
+</dt>
+<dd>
+<p>
+        Reject cloning a repository if it is a shallow one; this can be overridden by passing the <code>--reject-shallow</code> option on the command line.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>clone.filterSubmodules</code>
 </dt>
 <dd>
 <p>
@@ -1323,7 +1358,7 @@ clone.filterSubmodules
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-23 08:15:10 JST
+ 2024-12-11 23:58:41 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-maintenance(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -863,7 +863,8 @@ prefetch
 <p>
         <code>prefetch</code> タスクは、登録されているすべてのリモートからの最新のオブジェクトでオブジェクトディレクトリを更新します。 リモートごとに、 <code>git fetch</code> コマンドが実行されます。 構成されたrefspecは、要求されたすべてのrefを <code>refs/prefetch/</code> 内に配置するように変更されます。 また、タグは更新されません。
 </p>
-<div class="paragraph"><p>これは、リモート追跡ブランチの一時不通(disrupting)を回避するために行われます。 エンドユーザーは、フェッチを開始しない限り、これらのrefが移動されないままになることを期待しています。 ただし、prefetchタスクでは、後で実際のフェッチを完了するために必要なオブジェクトがすでに取得されているため、実際のフェッチはより高速になります。 理想的なケースでは、オブジェクトを転送せずに、一連のリモート追跡ブランチの更新ができます。</p></div>
+<div class="paragraph"><p>This is done to avoid disrupting the remote-tracking branches. The end users expect these refs to stay unmoved unless they initiate a fetch. However, with the prefetch task, the objects necessary to complete a later real fetch would already be obtained, making the real fetch faster. In the ideal case, it will just become an update to a bunch of remote-tracking branches without any object transfer.</p></div>
+<div class="paragraph"><p>The <code>remote.&lt;name&gt;.skipFetchAll</code> configuration can be used to exclude a particular remote from getting prefetched.</p></div>
 </dd>
 <dt class="hdlist1">
 gc
@@ -952,7 +953,7 @@ pack-refs
 <div class="sectionbody">
 <div class="paragraph"><p><code>git maintenance</code> コマンドは、Gitコマンド実行中のユーザーの待ち時間を最小限に抑えながら、リポジトリのメンテナンスパターンを簡素化するように設計されています。この処理をカスタマイズできるように、さまざまな構成オプションを利用できます。 デフォルトのメンテナンスオプションは、大規模なリポジトリであっても、迅速に完了する操作に重点を置いています。</p></div>
 <div class="paragraph"><p>スケジュールされたメンテナンスタスクが、ユーザーが意図したほど頻繁に実行されない場合があります。 各 <code>git maintenance run</code> コマンドは、リポジトリのオブジェクトデータベースをロックします。これにより、他の並列の <code>git maintenance run</code> コマンドが同じリポジトリで実行されなくなります。この安全柵がないと、競合するプロセスによってリポジトリが予測できない状態になる可能性があります。</p></div>
-<div class="paragraph"><p>バックグラウンドメンテナンススケジュールは、1時間ごとに <code>git maintenance run</code> プロセスを実行します。 実行するたびに、「毎時」のタスクが実行されます。 深夜に、そのプロセスは「毎日」のタスクも実行します。 週の最初の日の深夜に、そのプロセスは「毎週」のタスクも実行します。 単一のプロセスが登録された各リポジトリを反復処理し、その頻度でスケジュールされたタスクを実行します。 登録されているリポジトリの数とそのサイズによっては、このプロセスに1時間以上かかる場合があります。 この場合、複数の <code>git maintenance run</code> コマンドが同じリポジトリで同時に実行され、オブジェクトデータベースのロックを引き起こす可能性があります。 これにより、2つのタスクのどちらかが実行されなくなります。</p></div>
+<div class="paragraph"><p>The background maintenance schedule runs <code>git maintenance run</code> processes on an hourly basis. Each run executes the "hourly" tasks. At midnight, that process also executes the "daily" tasks. At midnight on the first day of the week, that process also executes the "weekly" tasks. A single process iterates over each registered repository, performing the scheduled tasks for that frequency. The processes are scheduled to a random minute of the hour per client to spread out the load that multiple clients might generate (e.g. from prefetching). Depending on the number of registered repositories and their sizes, this process may take longer than an hour. In this case, multiple <code>git maintenance run</code> commands may run on the same repository at the same time, colliding on the object database lock. This results in one of the two tasks not running.</p></div>
 <div class="paragraph"><p>一部のメンテナンスウィンドウの完了に1時間以上かかる場合は、メンテナンスタスクの複雑さを軽減することを検討してください。 たとえば、 <code>incremental-repack</code> タスクは <code>gc</code> タスクよりもはるかに高速です。しかし、その代償として、オブジェクトデータベースが若干大きくなってしまいます。 より高価なタスクを移動して、実行頻度を減らすことを検討してください。</p></div>
 <div class="paragraph"><p>エキスパートユーザーは、 <code>git maintenance start</code> およびGit構成オプションで利用できるスケジュールとは異なるスケジュールを使用して独自のメンテナンスタスクをスケジュールすることを検討できます。 これらのユーザーは、オブジェクトデータベースのロックと、並列実行の <code>git maintenance run</code> コマンドの動作に注意する必要があります。 さらに、<code>git gc</code> コマンドを <code>git maintenance run</code> コマンドと組み合わせないでください。 <code>git gc</code> はオブジェクトデータベースを変更しますが、 <code>git maintenance run</code> のようにロックを取得しません。 可能であれば、 <code>git gc</code> の代わりに <code>git maintenance run --task=gc</code> を使用してください。</p></div>
 <div class="paragraph"><p>次のセクションでは、 <code>git maintenance start</code> によるバックグラウンドメンテナンスを実行するために導入されたメカニズムとそれらをカスタマイズする方法について説明します。</p></div>
@@ -1050,6 +1051,15 @@ maintenance.auto
 </p>
 </dd>
 <dt class="hdlist1">
+maintenance.autoDetach
+</dt>
+<dd>
+<p>
+        Many Git commands trigger automatic maintenance after they have written data into the repository. This boolean config option controls whether this automatic maintenance shall happen in the foreground or whether the maintenance process shall detach and continue to run in the background.
+</p>
+<div class="paragraph"><p>If unset, the value of <code>gc.autoDetach</code> is used as a fallback. Defaults to true if both are unset, meaning that the maintenance process will detach.</p></div>
+</dd>
+<dt class="hdlist1">
 maintenance.strategy
 </dt>
 <dd>
@@ -1059,7 +1069,7 @@ maintenance.strategy
 <div class="ulist"><ul>
 <li>
 <p>
-<code>none</code>: このデフォルト設定は、どのスケジュールでもタスクが実行されないことを意味します。
+<code>none</code>: This default setting implies no tasks are run at any schedule.
 </p>
 </li>
 <li>
@@ -1123,7 +1133,7 @@ maintenance.incremental-repack.auto
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-12-29 08:22:56 JST
+ 2024-12-11 23:58:54 JST
 </div>
 </div>
 </body>

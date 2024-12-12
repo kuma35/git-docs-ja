@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -751,9 +751,10 @@ git(1) Manual Page
 <div class="verseblock">
 <pre class="content"><em>git</em> [-v | --version] [-h | --help] [-C &lt;path&gt;] [-c &lt;name&gt;=&lt;value&gt;]
     [--exec-path[=&lt;path&gt;]] [--html-path] [--man-path] [--info-path]
-    [-p|--paginate|-P|--no-pager] [--no-replace-objects] [--bare]
-    [--git-dir=&lt;path&gt;] [--work-tree=&lt;path&gt;] [--namespace=&lt;name&gt;]
-    [--config-env=&lt;name&gt;=&lt;envvar&gt;] &lt;command&gt; [&lt;args&gt;]</pre>
+    [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]
+    [--no-optional-locks] [--no-advice] [--bare] [--git-dir=&lt;path&gt;]
+    [--work-tree=&lt;path&gt;] [--namespace=&lt;name&gt;] [--config-env=&lt;name&gt;=&lt;envvar&gt;]
+    &lt;command&gt; [&lt;args&gt;]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -825,7 +826,7 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 <p>
         <code>-c &lt;name&gt;=&lt;value&gt;</code> と同様に、構成変数 <code>&lt;name&gt;</code> に値を指定します。ここで、 &lt;envvar&gt; は、値を取得する環境変数の名前です。 <code>-c</code> とは異なり、値を空の文字列に直接設定するためのショートカットはありません。代わりに、環境変数自体を空の文字列に設定する必要があります。 <code>&lt;envvar&gt;</code> が環境に存在しない場合はエラーになります。 <code>&lt;envvar&gt;</code> には等号を含めることはできません。これは、 <code>&lt;name&gt;</code> に等号が含まれている場合のあいまいさを避けるためです。
 </p>
-<div class="paragraph"><p>これは、あなたが一時的な構成オプションをgitに渡したいが、他のプロセスで、あなたのコマンドライン(たとえば <code>/proc/self/cmdline</code>)は読み取れるが、あなたの環境(たとえば <code>/proc/self/environ</code>)は読み取れない可能性があるOS上で作業している場合に役立ちます。この動作はLinuxのデフォルトですが、あなたのシステムでは設定されてない場合があります。</p></div>
+<div class="paragraph"><p>This is useful for cases where you want to pass transitory configuration options to git, but are doing so on operating systems where other processes might be able to read your command line (e.g. <code>/proc/self/cmdline</code>), but not your environment (e.g. <code>/proc/self/environ</code>). That behavior is the default on Linux, but may not be on your system.</p></div>
 <div class="paragraph"><p>注意:これにより、機密情報が値の一部である <code>http.extraHeader</code> などの変数のセキュリティが追加される可能性がありますが、機密情報をキーの一部にすることができるモノ、例えば <code>url.&lt;base&gt;.insteadOf</code> は使用できません。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -921,7 +922,31 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 </dt>
 <dd>
 <p>
-        Gitオブジェクトを置き換えるための置換refを使用しません。 詳細については <a href="git-replace.html">git-replace(1)</a> を参照してください。
+        Do not use replacement refs to replace Git objects. This is equivalent to exporting the <code>GIT_NO_REPLACE_OBJECTS</code> environment variable with any value. See <a href="git-replace.html">git-replace(1)</a> for more information.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-lazy-fetch</code>
+</dt>
+<dd>
+<p>
+        Do not fetch missing objects from the promisor remote on demand. Useful together with <code>git cat-file -e &lt;object&gt;</code> to see if the object is locally available. This is equivalent to setting the <code>GIT_NO_LAZY_FETCH</code> environment variable to <code>1</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-optional-locks</code>
+</dt>
+<dd>
+<p>
+        ロック(lock)を必要とするオプションの操作は実行しないでください。これは、 <code>GIT_OPTIONAL_LOCKS</code> を <code>0</code> に設定するのと同じです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-advice</code>
+</dt>
+<dd>
+<p>
+        Disable all advice hints from being printed.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -957,15 +982,7 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--no-optional-locks</code>
-</dt>
-<dd>
-<p>
-        ロック(lock)を必要とするオプションの操作は実行しないでください。これは、 <code>GIT_OPTIONAL_LOCKS</code> を <code>0</code> に設定するのと同じです。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--list-cmds=group[,group...]</code>
+<code>--list-cmds=&lt;group&gt;[,&lt;group&gt;...]</code>
 </dt>
 <dd>
 <p>
@@ -1419,6 +1436,14 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a href="git-refs.html">git-refs(1)</a>
+</dt>
+<dd>
+<p>
+        Low-level access to refs.
+</p>
+</dd>
+<dt class="hdlist1">
 <a href="git-remote.html">git-remote(1)</a>
 </dt>
 <dd>
@@ -1570,7 +1595,7 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 </dt>
 <dd>
 <p>
-        各コミットでの差分のログを表示.
+        Show logs with differences each commit introduces.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1815,6 +1840,14 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a href="git-replay.html">git-replay(1)</a>
+</dt>
+<dd>
+<p>
+        EXPERIMENTAL: Replay commits on a new base, works with bare repos too.
+</p>
+</dd>
+<dt class="hdlist1">
 <a href="git-symbolic-ref.html">git-symbolic-ref(1)</a>
 </dt>
 <dd>
@@ -1864,7 +1897,7 @@ git --git-dir=c/a.git --work-tree=c/b status</code></pre>
 </dt>
 <dd>
 <p>
-        リポジトリオブジェクトのコンテンツまたはタイプとサイズの情報を提供します.
+        Provide contents or details of repository objects.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2794,7 +2827,15 @@ HEAD
 </dt>
 <dd>
 <p>
-        この変数が設定されている場合、新しいリポジトリのデフォルトのハッシュ・アルゴリズムはこの値に設定されます。クローン作成時にはこの値は無視され、常にリモート・リポジトリの設定が使用されます。デフォルトは <code>sha1</code> です。この変数は実験的です！(「THIS VARIABLE IS EXPERIMENTAL!」) <a href="git-init.html">git-init(1)</a> の <code>--object-format</code> を参照してください。
+        If this variable is set, the default hash algorithm for new repositories will be set to this value. This value is ignored when cloning and the setting of the remote repository is always used. The default is "sha1". See <code>--object-format</code> in <a href="git-init.html">git-init(1)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_DEFAULT_REF_FORMAT</code>
+</dt>
+<dd>
+<p>
+        If this variable is set, the default reference backend format for new repositories will be set to this value. The default is "files". See <code>--ref-format</code> in <a href="git-init.html">git-init(1)</a>.
 </p>
 </dd>
 </dl></div>
@@ -2915,6 +2956,14 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <div class="paragraph"><p>ファイル・パラメータは、ユーザーの作業ファイル(たとえば "git-diff-files" の <code>new-file</code> )、または <code>/dev/null</code> (たとえば、新しいファイルが追加されたときの <code>old-file</code> )、または一時ファイル(たとえば インデックスの <code>old-file</code>) を指し示す事ができます。 <code>GIT_EXTERNAL_DIFF</code> は、一時ファイルの削除(unlink)を心配する必要はありません。一時ファイルは <code>GIT_EXTERNAL_DIFF</code> の指定したプログラムの呼び出しが終了すると削除されます。</p></div>
 <div class="paragraph"><p>パスがマージされていない場合、 <code>GIT_EXTERNAL_DIFF</code> は1つのパラメーター &lt;path&gt; で呼び出されます。</p></div>
 <div class="paragraph"><p>パス <code>GIT_EXTERNAL_DIFF</code> が呼び出されるたびに、 <code>GIT_DIFF_PATH_COUNTER</code> と <code>GIT_DIFF_PATH_TOTAL</code> の2つの環境変数が設定されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>GIT_EXTERNAL_DIFF_TRUST_EXIT_CODE</code>
+</dt>
+<dd>
+<p>
+        If this Boolean environment variable is set to true then the <code>GIT_EXTERNAL_DIFF</code> command is expected to return exit code 0 if it considers the input files to be equal or 1 if it considers them to be different, like <code>diff(1)</code>. If it is set to false, which is the default, then the command is expected to return exit code 0 regardless of equality. Any other exit code causes Git to report a fatal error.
+</p>
 </dd>
 <dt class="hdlist1">
 <code>GIT_DIFF_PATH_COUNTER</code>
@@ -3054,16 +3103,15 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 </dt>
 <dd>
 <p>
-
-        この環境変数が <code>1</code> に設定されている場合、
-        <code>git blame</code> (インクリメンタルモード)、 <code>git rev-list</code> 、 <code>git log</code> 、
-        <code>git check-attr</code> 、 <code>git check-ignore</code> などのコマンドは、
-        各レコードがフラッシュされた後に出力ストリームを強制的にフラッシュします。
-        この変数が <code>0</code> に設定されている場合、
-        これらのコマンドの出力は、完全にバッファリングされた入出力を使用して実行されます。
-        この環境変数が設定されていない場合、
-        Gitは、標準出力がファイルにリダイレクトされているように見えるかどうかに基づいて、
-        バッファリングするか、またはレコード指向のフラッシュを選択します。
+        If this Boolean environment variable is set to true, then commands such
+        as <em>git blame</em> (in incremental mode), <em>git rev-list</em>, <em>git log</em>,
+        <em>git check-attr</em> and <em>git check-ignore</em> will
+        force a flush of the output stream after each record have been
+        flushed. If this
+        variable is set to false, the output of these commands will be done
+        using completely buffered I/O.   If this environment variable is
+        not set, Git will choose buffered or record-oriented flushing
+        based on whether stdout appears to be redirected to a file or not.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3169,7 +3217,7 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <div class="paragraph"><p>この変数が <code>1</code> または <code>2</code> または <code>true</code> に設定されている場合(比較では英大文字小文字は区別されません)、トレースメッセージがstderrに出力されます。</p></div>
 <div class="paragraph"><p>変数が2より大きく10より小さい整数値(訳注:つまり 2 &lt; 変数 &lt; 10)に設定されている場合、(厳密には、)Gitはこの値を、開いているファイルデスクリプターとして解釈し、トレースメッセージをこのファイルデスクリプターに書き込もうとします。</p></div>
 <div class="paragraph"><p>あるいは、変数が絶対パス(`/`文字で始まる)に設定されている場合、Gitはこれをファイルパスとして解釈し、トレースメッセージをそのファイルに追加しようとします。パスがすでに存在し、ディレクトリである場合、トレースメッセージは、SIDの最後のコンポーネントと(ファイル名の衝突を回避するための)オプションのカウンタに従って名前が付けられた、そのディレクトリ内のファイル(プロセスごとに1つ)に書き込まれます。</p></div>
-<div class="paragraph"><p>加えて、変数が <code>af_unix:[&lt;socket_type&gt;:]&lt;absolute-pathname&gt;</code> に設定されている場合、GitはパスをUnixドメインソケットとして開こうとします。ソケットタイプは、 <code>stream</code> または <code>dgram</code> のいずれかです。</p></div>
+<div class="paragraph"><p>In addition, if the variable is set to <code>af_unix:[&lt;socket-type&gt;:]&lt;absolute-pathname&gt;</code>, Git will try to open the path as a Unix Domain Socket. The socket type can be either <code>stream</code> or <code>dgram</code>.</p></div>
 <div class="paragraph"><p>変数の設定を解除(unset)するか、空(empty) または <code>0</code> または <code>false</code> (英大文字小文字を区別しない)に設定すると、トレースメッセージが無効になります。</p></div>
 <div class="paragraph"><p>完全な詳細については <a href="technical/api-trace2.html">Trace2 documentation</a> を参照してください。</p></div>
 </dd>
@@ -3195,6 +3243,14 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <dd>
 <p>
         デフォルトでは、 トレースがアクティブ化されると、Git は クッキーと <code>Authorization:</code> ヘッダーと <code>Proxy-Authorization:</code> ヘッダーとパックファイル URI の値を編集します。 この編集を防ぐには、このブール値環境変数を false に設定します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_NO_REPLACE_OBJECTS</code>
+</dt>
+<dd>
+<p>
+        Setting and exporting this environment variable tells Git to ignore replacement refs and do not replace Git objects.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3230,6 +3286,14 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 </p>
 </dd>
 <dt class="hdlist1">
+<code>GIT_NO_LAZY_FETCH</code>
+</dt>
+<dd>
+<p>
+        Setting this Boolean environment variable to true tells Git not to lazily fetch missing objects from the promisor remote on demand.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>GIT_REFLOG_ACTION</code>
 </dt>
 <dd>
@@ -3244,6 +3308,15 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <p>
         このブール値環境変数を false に設定すると、 ref のリストを繰り返し処理するときに、 壊れたref や 不適切な名前の ref を無視します。 通常、 Git はそのような ref をインクルードしようと試みますが、 一部の操作が失敗する可能性があります。 これは、 破壊的な操作（たとえば <a href="git-prune.html">git-prune(1)</a>）を行う可能性がある場合、 壊れたrefを無視するよりも(そしてそれが指す履歴を保存する価値がないとするよりも)、 中断(abort)したほうが良いからです。 デフォルト値は <code>1</code> です(つまり、 偏執狂的に全ての操作で(壊れたrefを)検出して中止(abort)するようにします)。 通常、 これを <code>0</code> に設定する必要はありませんが、 破損したリポジトリからデータを回収しようとする場合に役立つ場合があります。
 </p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_COMMIT_GRAPH_PARANOIA</code>
+</dt>
+<dd>
+<p>
+        When loading a commit object from the commit-graph, Git performs an existence check on the object in the object database. This is done to avoid issues with stale commit-graphs that contain references to already-deleted commits, but comes with a performance penalty.
+</p>
+<div class="paragraph"><p>The default is "false", which disables the aforementioned behavior. Setting this to "true" enables the existence check so that stale commits will never be returned from the commit-graph at the cost of performance.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>GIT_ALLOW_PROTOCOL</code>
@@ -3266,7 +3339,7 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 </dt>
 <dd>
 <p>
-        内部使用のみ。ワイヤープロトコルのハンドシェイクで使用されます。オプションで値 <code>key[=value]</code> を持つ、 コロン(<code>:</code>)で区切られたリストを含んでいます。不明なキーと値は無視する必要があります。
+        For internal use only. Used in handshaking the wire protocol. Contains a colon <em>:</em> separated list of keys with optional values <em>&lt;key&gt;[=&lt;value&gt;]</em>. Presence of unknown keys and values must be ignored.
 </p>
 <div class="paragraph"><p>注意:この変数が一部のトランスポートを通過できるようにサーバーを構成する必要がある場合があることに注意してください。ローカルリポジトリ(つまり、 <code>file://</code> またはファイルシステムパス)にアクセスするとき、および <code>git://</code> プロトコルを介して自動的に伝播されます。 git-over-http の場合、ほとんどの構成で自動的に機能するはずですが、 <a href="git-http-backend.html">git-http-backend(1)</a> の説明を参照してください。 git-over-ssh の場合、クライアントがこの変数を渡すことができるようにsshサーバーを構成する必要がある場合があります(たとえば、OpenSSHで <code>AcceptEnv GIT_PROTOCOL</code> を使用することにより)。</p></div>
 <div class="paragraph"><p>この構成はオプションです。変数が伝播されない場合、クライアントは元の "v0" プロトコルにフォールバックします(ただし、パフォーマンスの向上や機能の一部を見逃す可能性があります)。この変数は現在、cloneとfetchにのみ影響します。pushにはまだ使用されていません(ただし、将来的に使用される可能性があります)。</p></div>
@@ -3302,6 +3375,14 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
         (非推奨): <code>yes</code> に設定されている場合、(省略形の)SHA-1値の後に省略記号を出力します。これは、切り離されたHEAD(detached HEAD)の表示(<a href="git-checkout.html">git-checkout(1)</a>)と生のdiff出力(<a href="git-diff.html">git-diff(1)</a>)に影響します。上記の場合に省略記号を印刷することはもはや適切であるとは見なされておらず、そのサポートは(この変数と一緒に)近い将来削除される可能性があります。
 </p>
 </dd>
+<dt class="hdlist1">
+<code>GIT_ADVICE</code>
+</dt>
+<dd>
+<p>
+        If set to <code>0</code>, then disable all advice messages. These messages are intended to provide hints to human users that may help them get out of problematic situations or take advantage of new features. Users can disable individual messages using the <code>advice.*</code> config keys. These messages may be disruptive to tools that execute Git processes, so this variable is available to disable the messages. (The <code>--no-advice</code> global option is also available, but old Git versions may fail when this option is not understood. The environment variable will be ignored by Git versions that do not understand it.)
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -3315,9 +3396,18 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <div class="paragraph"><p>コミットは、他のシステムが「チェンジセット」または「バージョン」と呼ぶものと同等であり、プロジェクトの履歴のステップを表し、各親は直前のステップを表します。複数の親とのコミットは、それぞれ独立していた開発ラインの統合(マージ;merge)を表します。</p></div>
 <div class="paragraph"><p>すべてのオブジェクトは、その内容のSHA-1ハッシュによって名前が付けられ、通常は40桁の16進数の文字列として記述されます。このような名前はグローバルに一意です。コミットに至るまでの履歴全体は、そのコミットだけに署名することで保証できます。この目的のために、4番目のオブジェクトタイプであるタグ(tag)が提供されます。</p></div>
 <div class="paragraph"><p>最初に作成されたとき、オブジェクトは個々のファイルに保存されますが、効率を上げるために、後で「パックファイル」にまとめて圧縮される場合があります。</p></div>
-<div class="paragraph"><p>ref(refs)と呼ばれる名前付きポインターは、履歴の中で興味深い点を指し示しています。refには、オブジェクトのSHA-1名または別のrefの名前を含めることができます。名前が <code>ref/head/</code> で始まるrefには、開発中のブランチの最新のコミット(または「head」)のSHA-1名が含まれます。対象のタグのSHA-1名は、 <code>ref/tags/</code> の下に保存されます。 <code>HEAD</code> という名前の特別な参照には、現在チェックアウトされているブランチの名前が含まれています。</p></div>
+<div class="paragraph"><p>Named pointers called refs mark interesting points in history. A ref may contain the SHA-1 name of an object or the name of another ref (the latter is called a "symbolic ref"). Refs with names beginning <code>refs/head/</code> contain the SHA-1 name of the most recent commit (or "head") of a branch under development. SHA-1 names of tags of interest are stored under <code>refs/tags/</code>. A symbolic ref named <code>HEAD</code> contains the name of the currently checked-out branch.</p></div>
 <div class="paragraph"><p>インデックスファイルは、すべてのパスのリストと、パスごとのブロブオブジェクトと属性のセットで初期化されます。ブロブオブジェクトは、現在のブランチの先端にあるファイルの内容を表します。属性(最終変更時刻、サイズなど)は、作業ツリー内の対応するファイルから取得されます。作業ツリーへのその後の変更は、これらの属性を比較することで見つけることができます。インデックスは新しいコンテンツで更新される可能性があり、新しいコミットはインデックスに保存されているコンテンツから作成される可能性があります。</p></div>
 <div class="paragraph"><p>インデックスは、特定のパス名の複数のエントリ(「ステージ」と呼ばれる)を格納することもできます。これらのステージは、マージの進行中に、マージされていないさまざまなバージョンのファイルを保持するために使用されます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_security">SECURITY</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Some configuration options and hook files may cause Git to run arbitrary shell commands. Because configuration and hooks are not copied using <code>git clone</code>, it is generally safe to clone remote repositories with untrusted content, inspect them with <code>git log</code>, and so on.</p></div>
+<div class="paragraph"><p>However, it is not safe to run Git commands in a <code>.git</code> directory (or the working tree that surrounds it) when that <code>.git</code> directory itself comes from an untrusted source. The commands in its config and hooks are executed in the usual way.</p></div>
+<div class="paragraph"><p>By default, Git will refuse to run when the repository is owned by someone other than the user running the command. See the entry for <code>safe.directory</code> in <a href="git-config.html">git-config(1)</a>. While this can help protect you in a multi-user environment, note that you can also acquire untrusted repositories that are owned by you (for example, if you extract a zip file or tarball from an untrusted source). In such cases, you&#8217;d need to "sanitize" the untrusted repository first.</p></div>
+<div class="paragraph"><p>If you have an untrusted <code>.git</code> directory, you should first clone it with <code>git clone --no-local</code> to obtain a clean copy. Git does restrict the set of options and hooks that will be run by <code>upload-pack</code>, which handles the server side of a clone or fetch, but beware that the surface area for attack against <code>upload-pack</code> is large, so this does carry some risk. The safest thing is to serve the repository as an unprivileged user (either via <a href="git-daemon.html">git-daemon(1)</a>, ssh, or using other tools to change user ids). See the discussion in the <code>SECURITY</code> section of <a href="git-upload-pack.html">git-upload-pack(1)</a>.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -3334,7 +3424,7 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <div class="sect1">
 <h2 id="_authors">Authors</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>GitはLinus Torvalds(リーナス トーバルズ)によって開始され、現在はJunio C Hamano(濱野 純)によって保守されています。Gitメーリングリスト &lt;<a href="mailto:git@vger.kernel.org">git@vger.kernel.org</a>&gt; から多くの貢献がありました。 <a href="http://www.openhub.net/p/git/contributors/summary">http://www.openhub.net/p/git/contributors/summary</a> は、貢献者のより完全なリストを提供します。</p></div>
+<div class="paragraph"><p>Git was started by Linus Torvalds, and is currently maintained by Junio C Hamano. Numerous contributions have come from the Git mailing list &lt;<a href="mailto:git@vger.kernel.org">git@vger.kernel.org</a>&gt;. <a href="https://openhub.net/p/git/contributors/summary">https://openhub.net/p/git/contributors/summary</a> gives you a more complete list of contributors.</p></div>
 <div class="paragraph"><p>あなたが git.git 自体のクローンを持っている場合、 <a href="git-shortlog.html">git-shortlog(1)</a> と <a href="git-blame.html">git-blame(1)</a> の出力は、プロジェクトの特定の部分の作者を表示することができます。</p></div>
 </div>
 </div>
@@ -3362,7 +3452,7 @@ GIT_EXTERNAL_DIFF が &lt;old|new&gt; の内容を読み取るために使用で
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-02-01 17:36:51 JST
+ 2024-12-11 23:59:13 JST
 </div>
 </div>
 </body>

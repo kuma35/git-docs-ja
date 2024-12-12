@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-tag(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -750,6 +750,7 @@ git-tag(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git tag</em> [-a | -s | -u &lt;key-id&gt;] [-f] [-m &lt;msg&gt; | -F &lt;file&gt;] [-e]
+        [(--trailer &lt;token&gt;[(=|:)&lt;value&gt;])&#8230;]
         &lt;tagname&gt; [&lt;commit&gt; | &lt;object&gt;]
 <em>git tag</em> -d &lt;tagname&gt;&#8230;
 <em>git tag</em> [-n[&lt;num&gt;]] -l [--contains &lt;commit&gt;] [--no-contains &lt;commit&gt;]
@@ -767,7 +768,7 @@ git-tag(1) Manual Page
 <div class="paragraph"><p>タグを削除、一覧表示、検証するために <code>-d/-l/-v</code> が指定されていない限り、 <code>refs/tags/</code> にタグ参照を追加します。</p></div>
 <div class="paragraph"><p><code>-f</code> が指定されていない限り、名前付きタグはまだ存在してはいけません。</p></div>
 <div class="paragraph"><p><code>-a</code>, <code>-s</code>, <code>-u &lt;key-id&gt;</code> のいずれかが渡されると、 コマンドは「タグ」オブジェクトを作成し、 タグ・メッセージを要求します。 <code>-m&lt;msg&gt;</code> または <code>-F&lt;file&gt;</code> が指定されていない限り、 ユーザーがタグ・メッセージを入力するためのエディターを起動します。</p></div>
-<div class="paragraph"><p><code>-m&lt;msg&gt;</code> または <code>-F&lt;file&gt;</code> が指定され、 <code>-a</code> と <code>-s</code> と <code>-u &lt;key-id&gt;</code> がない場合、 <code>-a</code> が暗黙に指定されます。</p></div>
+<div class="paragraph"><p>If <code>-m &lt;msg&gt;</code> or <code>-F &lt;file&gt;</code> or <code>--trailer &lt;token&gt;[=&lt;value&gt;]</code> is given and <code>-a</code>, <code>-s</code>, and <code>-u &lt;key-id&gt;</code> are absent, <code>-a</code> is implied.</p></div>
 <div class="paragraph"><p>それ以外の場合は、指定されたオブジェクトを直接指すタグ参照(つまり、軽量タグ)が作成されます。</p></div>
 <div class="paragraph"><p><code>-s</code> または <code>-u&lt;key-id&gt;</code> を使用すると、GnuPG署名付きタグオブジェクトが作成されます。 <code>-u &lt;key-id&gt;</code> が使用されていない場合、現在のユーザーのコミッターIDを使用して、署名用のGnuPGキーが検索されます。 構成変数 <code>gpg.program</code> は、カスタムGnuPGバイナリを指定するために使用されます。</p></div>
 <div class="paragraph"><p>(<code>-a</code> または <code>-s</code> または <code>-u</code> で作成した)タグオブジェクトは「注釈付き」タグ(annotated tags)と呼ばれます。 これらには、作成日や、タグ付け者(tagger)の名前と電子メールアドレスや、タグ付けメッセージや、オプションのGnuPG署名が含まれています。 一方、「軽量」タグ(lightweight tag)は単にオブジェクト(通常はコミットオブジェクト)の名前が含まれています。</p></div>
@@ -984,6 +985,14 @@ git-tag(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--trailer &lt;token&gt;[(=|:)&lt;value&gt;]</code>
+</dt>
+<dd>
+<p>
+        Specify a (&lt;token&gt;, &lt;value&gt;) pair that should be applied as a trailer. (e.g. <code>git tag --trailer "Custom-Key: value"</code> will add a "Custom-Key" trailer to the tag message.) The <code>trailer.*</code> configuration variables (<a href="git-interpret-trailers.html">git-interpret-trailers(1)</a>) can be used to define if a duplicated trailer is omitted, where in the run of trailers each trailer would appear, and other details. The trailers can be extracted in <code>git tag --list</code>, using <code>--format="%(trailers)"</code> placeholder.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>-e</code>
 </dt>
 <dt class="hdlist1">
@@ -1047,7 +1056,7 @@ git-tag(1) Manual Page
 <div class="listingblock">
 <div class="content">
 <pre><code>[user]
-    signingKey = &lt;gpg-key_id&gt;</code></pre>
+    signingKey = &lt;gpg-key-id&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p><code>pager.tag</code> は、タグを一覧表示する場合、つまり <code>-l</code> が使用または暗示されている場合にのみ尊重されます。 デフォルトではpagerを使用します。 <a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
 </div>
@@ -1150,7 +1159,7 @@ RFC 2822
 </dt>
 <dd>
 <p>
-        RFC 2822で説明されている標準の電子メール形式。たとえば、 <code>Thu, 07 Apr 2005 22:13:13 +0200</code> 。
+        The standard date format as described by RFC 2822, for example <code>Thu, 07 Apr 2005 22:13:13 +0200</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1211,7 +1220,7 @@ ISO 8601
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-01-30 01:31:34 JST
+ 2024-12-11 23:59:10 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-rev-parse(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -749,7 +749,7 @@ git-rev-parse(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git rev-parse</em> [&lt;options&gt;] &lt;args&gt;&#8230;</pre>
+<pre class="content"><em>git rev-parse</em> [&lt;options&gt;] &lt;arg&gt;&#8230;</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -757,7 +757,8 @@ git-rev-parse(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>多くのGit磁器コマンドは、内部で使用されベースとなる <code>git rev-list</code> コマンド用のフラグとパラメーターの組み合わせと、 <code>git rev-list</code> の下流で使用する他のコマンドのフラグとパラメーターの組み合わせを使用します。このコマンドは、それらを識別するために使用されます。</p></div>
+<div class="paragraph"><p>Many Git porcelainish commands take a mixture of flags (i.e. parameters that begin with a dash <em>-</em>) and parameters meant for the underlying <em>git rev-list</em> command they use internally and flags and parameters for the other commands they use downstream of <em>git rev-list</em>. The primary purpose of this command is to allow calling programs to distinguish between them. There are a few other operation modes that have nothing to do with the above "help parse command line options".</p></div>
+<div class="paragraph"><p>Unless otherwise specified, most of the options and operation modes require you to run this command inside a git repository or a working tree that is under the control of a git repository, and will give you a fatal error otherwise.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -772,7 +773,7 @@ git-rev-parse(1) Manual Page
 </dt>
 <dd>
 <p>
-        オプション解析モードで <code>git rev-parse</code> を使用します(以下の PARSEOPT セクションを参照)。
+        Use <em>git rev-parse</em> in option parsing mode (see PARSEOPT section below). The command in this mode can be used outside a repository or a working tree controlled by a repository.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -780,7 +781,7 @@ git-rev-parse(1) Manual Page
 </dt>
 <dd>
 <p>
-        シェルクォートモードで <em>git rev-parse</em> を使用します(以下の SQ-QUOTE セクションを参照)。以下の <code>--sq</code> オプションとは対照的に、このモードはクォートのみを実行します。コマンド入力に対して他に何も行われません。
+        Use <em>git rev-parse</em> in shell quoting mode (see SQ-QUOTE section below). In contrast to the <code>--sq</code> option below, this mode only does quoting. Nothing else is done to command input. The command in this mode can be used outside a repository or a working tree controlled by a repository.
 </p>
 </dd>
 </dl></div>
@@ -908,7 +909,7 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--short[=length]</code>
+<code>--short[=&lt;length&gt;]</code>
 </dt>
 <dd>
 <p>
@@ -944,8 +945,28 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 </dt>
 <dd>
 <p>
-        これは <code>--symbolic</code> に似ていますが、ref(つまり、ブランチ名とタグ名。または、残念ながら <code>master</code> と名付けられたタグがあるとき <code>master</code> ブランチに名前を付けたい場合はより明確な <code>heads/master</code> 形式である)ではない入力を省略し、完全なrefname(例: "refs/heads/master")として表示します。
+        This is similar to --symbolic, but it omits input that are not refs (i.e. branch or tag names; or more explicitly disambiguating "heads/master" form, when you want to name the "master" branch when there is an unfortunately named tag "master"), and shows them as full refnames (e.g. "refs/heads/master").
 </p>
+</dd>
+<dt class="hdlist1">
+<code>--output-object-format=(sha1|sha256|storage)</code>
+</dt>
+<dd>
+<p>
+        Allow oids to be input from any object format that the current repository supports.
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>Specifying "sha1" translates if necessary and returns a sha1 oid.</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Specifying "sha256" translates if necessary and returns a sha256 oid.</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Specifying "storage" translates if necessary and returns an oid in encoded in the storage hash algorithm.</code></pre>
+</div></div>
 </dd>
 </dl></div>
 </div>
@@ -961,13 +982,13 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--branches[=pattern]</code>
+<code>--branches[=&lt;pattern&gt;]</code>
 </dt>
 <dt class="hdlist1">
-<code>--tags[=pattern]</code>
+<code>--tags[=&lt;pattern&gt;]</code>
 </dt>
 <dt class="hdlist1">
-<code>--remotes[=pattern]</code>
+<code>--remotes[=&lt;pattern&gt;]</code>
 </dt>
 <dd>
 <p>
@@ -976,7 +997,7 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 <div class="paragraph"><p><code>pattern</code> が指定されている場合、指定されたシェルグロブに一致するrefのみが表示されます。パターンにグロビング文字(<code>?</code> または <code>*</code> または <code>[</code>)が含まれていない場合は、 <code>/*</code> を追加することでプレフィックス一致に変換されます。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--glob=pattern</code>
+<code>--glob=&lt;pattern&gt;</code>
 </dt>
 <dd>
 <p>
@@ -993,7 +1014,7 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 <div class="paragraph"><p>与えられたパターンは、それぞれ <code>--branches</code> または <code>--tags</code> または <code>--remotes</code> に適用される場合、それぞれ <code>refs/heads</code> 、 <code>refs/tags</code> 、<code>refs/remotes</code> で始まるべきではありません。 <code>--glob</code> または <code>--all</code> に適用する場合は、 <code>refs/</code> で始める必要があります。末尾の <em>/&#42;</em> を意図している場合は、それを明示的に指定する必要があります。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--exclude-hidden=[fetch|receive|uploadpack]</code>
+<code>--exclude-hidden=(fetch|receive|uploadpack)</code>
 </dt>
 <dd>
 <p>
@@ -1157,16 +1178,24 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
         <code>.git</code> ディレクトリ内でリポジトリのために使われるストレージ(storage)、または入力(input)、または出力(output)に使われるオブジェクト形式(ハッシュアルゴリズム)を表示します。入力(input)の場合、複数のアルゴリズムがスペースで区切られて出力される場合があります。形式を指定しない場合、デフォルトは <code>storage</code> です。
 </p>
 </dd>
+<dt class="hdlist1">
+<code>--show-ref-format</code>
+</dt>
+<dd>
+<p>
+        Show the reference storage format used for the repository.
+</p>
+</dd>
 </dl></div>
 </div>
 <div class="sect2">
 <h3 id="_other_options">Other Options</h3>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>--since=datestring</code>
+<code>--since=&lt;datestring&gt;</code>
 </dt>
 <dt class="hdlist1">
-<code>--after=datestring</code>
+<code>--after=&lt;datestring&gt;</code>
 </dt>
 <dd>
 <p>
@@ -1174,10 +1203,10 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--until=datestring</code>
+<code>--until=&lt;datestring&gt;</code>
 </dt>
 <dt class="hdlist1">
-<code>--before=datestring</code>
+<code>--before=&lt;datestring&gt;</code>
 </dt>
 <dd>
 <p>
@@ -1185,7 +1214,7 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-&lt;args&gt;&#8230;
+&lt;arg&gt;&#8230;
 </dt>
 <dd>
 <p>
@@ -1393,7 +1422,7 @@ eval "set $(git rev-parse --sq --prefix "$prefix" -- "$@")"</code></pre>
 </dt>
 <dd>
 <p>
-  接尾辞 <code>@\{push}</code> は、 <code>branchname</code> がチェックアウトされているときに <code>git push</code> が実行された場合(またはブランチ名が指定されていない場合は現在の <code>HEAD</code> )、「プッシュ先」のブランチを報告します。 <code>@\{upstream\}</code> の場合と同様に、リモートのブランチに対応するリモート・トラッキング・ブランチを報告します。
+  接尾辞 <code>@{push}</code> は、 <code>branchname</code> がチェックアウトされているときに <code>git push</code> が実行された場合(またはブランチ名が指定されていない場合は現在の <code>HEAD</code> )、「プッシュ先」のブランチを報告します。 <code>@{upstream\}</code> の場合と同様に、リモートのブランチに対応するリモート・トラッキング・ブランチを報告します。
 </p>
 <div class="paragraph"><p>ここで、よりはっきり分かる例を以下に示します:</p></div>
 <div class="listingblock">
@@ -1408,7 +1437,7 @@ refs/remotes/origin/master
 $ git rev-parse --symbolic-full-name @{push}
 refs/remotes/myfork/mybranch</code></pre>
 </div></div>
-<div class="paragraph"><p>注意: この例では、ある場所からプルして別の場所にプッシュする三角形のワークフローを設定していることに注意してください。非三角形のワークフローでは、 <code>@\{push}</code> は <code>@\{upstream}</code> と同じであり、このようなことをする必要はありません。</p></div>
+<div class="paragraph"><p>注意: この例では、ある場所からプルして別の場所にプッシュする三角形のワークフローを設定していることに注意してください。非三角形のワークフローでは、 <code>@{push}</code> は <code>@{upstream}</code> と同じであり、このようなことをする必要はありません。</p></div>
 <div class="paragraph"><p>この接尾辞は大文字で綴る場合にも受け入れられ、大文字と小文字を問わず同じことを意味します。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1722,7 +1751,7 @@ J = F^2  = B^3^2   = A^^3^2</code></pre>
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>スペースを取り除いた後の行の残りの部分は、オプションに関連付けられたヘルプとして使用されます。</p></div>
+<div class="paragraph"><p>The remainder of the line, after stripping the spaces, is used as the help associated with the option.</p></div>
 <div class="paragraph"><p>空白行は無視され、この仕様に一致しない行はオプショングループヘッダーとして使用されます(意図的にそのような行を作成するためにはスペースで行を開始します)。</p></div>
 </div>
 <div class="sect2">
@@ -1734,7 +1763,7 @@ some-command [&lt;options&gt;] &lt;args&gt;...
 
 some-command does foo and bar!
 --
-h,help    show the help
+h,help!   show the help
 
 foo       some nifty option --foo
 bar=      some cool option --bar with an argument
@@ -1757,10 +1786,10 @@ eval "$(echo "$OPTS_SPEC" | git rev-parse --parseopt -- "$@" || echo exit $?)"</
     some-command does foo and bar!
 
     -h, --help            show the help
-    --foo                 some nifty option --foo
-    --bar ...             some cool option --bar with an argument
-    --baz &lt;arg&gt;           another cool option --baz with a named argument
-    --qux[=&lt;path&gt;]        qux may take a path argument but has meaning by itself
+    --[no-]foo            some nifty option --foo
+    --[no-]bar ...        some cool option --bar with an argument
+    --[no-]baz &lt;arg&gt;      another cool option --baz with a named argument
+    --[no-]qux[=&lt;path&gt;]   qux may take a path argument but has meaning by itself
 
 An option group Header
     -C[...]               option C with an optional argument</code></pre>
@@ -1837,7 +1866,7 @@ $REV シェル変数のリビジョンからコミットオブジェクト名を
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-01-26 04:07:33 JST
+ 2024-12-11 23:59:04 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-bundle(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -762,9 +762,8 @@ git-bundle(1) Manual Page
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>「バンドル」(bundle)ファイルを作成や解凍や操作します。 バンドルは、ネットワーク接続の反対側にアクティブな「サーバー」がない時に、Gitオブジェクトの「オフライン」転送に使用されます。</p></div>
-<div class="paragraph"><p>これらを使用して、リポジトリの増分(incremental)バックアップと完全(full)バックアップの両方を作成し、あるリポジトリ内の参照の状態を別のリポジトリに取り次ぐことができます。</p></div>
+<div class="paragraph"><p>They can be used to create both incremental and full backups of a repository (see the "full backup" example in "EXAMPLES"), and to relay the state of the references in one repository to another (see the second example).</p></div>
 <div class="paragraph"><p><code>ssh://</code> や <code>https://</code> などのプロトコルを介してフェッチまたは「読み取り」するGitコマンドも、バンドルファイルを操作できます。 バンドルから新しいリポジトリを作成するために <a href="git-clone.html">git-clone(1)</a> を使うことができ、そして、バンドルからリポジトリを取得するために <a href="git-fetch.html">git-fetch(1)</a> を使うことができ、そして、バンドルの中に含まれる参照を <a href="git-ls-remote.html">git-ls-remote(1)</a> でリストすることが可能です。 対応する「書き込み」サポートはありません。 つまり、バンドルへの <code>git push</code> はサポートされていません。</p></div>
-<div class="paragraph"><p>バンドルの使用方法例については、以下の「EXAMPLES」セクションを参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -862,7 +861,7 @@ unbundle &lt;file&gt;
 <div class="sect1">
 <h2 id="_specifying_references">SPECIFYING REFERENCES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>リビジョンは、バンドルにパッケージ化される参照名を伴う必要があります。</p></div>
+<div class="paragraph"><p>Revisions must be accompanied by reference names to be packaged in a bundle. Alternatively <code>--all</code> can be used to package all refs.</p></div>
 <div class="paragraph"><p>複数の参照をパッケージ化でき、複数の前提条件オブジェクトのセットを指定できます。 パッケージ化されたオブジェクトは、前提条件の結合に含まれていないオブジェクトです。</p></div>
 <div class="paragraph"><p><code>git bundle create</code> コマンドは、 <code>git rev-parse --abbrev-ref=loose</code> と同じルールを使用して参照名を解決します。 各前提条件は、明示的に指定することも(例: <code>^master~10</code>)、暗黙的に指定することもできます(例: <code>master~10..master</code>, <code>--since=10.days.ago master</code>)。</p></div>
 <div class="paragraph"><p>これらの単純なケースはすべてOKです(「master」ブランチと「next」ブランチがあると仮定します):</p></div>
@@ -905,14 +904,38 @@ fatal: Refusing to create empty bundle.</code></pre>
 </div></div>
 <div class="paragraph"><p>前提条件のない自己完結型のバンドルは、空のリポジトリにさえもどこにでも抽出できます。または、そのバンドルからcloneすることもできます(つまり、 <code>new</code> ですが、 <code>old..new</code> ではありません)。</p></div>
 <div class="paragraph"><p>注意: バンドルファイルには、宛先に既に存在するオブジェクトが含まれていても、宛先で解凍する際には無視されますので、注意してください。</p></div>
-<div class="paragraph"><p><code>refs/remotes/*</code> などの参照を含む <code>git clone --mirror</code> と一致させる場合は、 <code>--all</code> を使用します。 ソースリポジトリから直接クローンが取得するのと同じ参照セットを提供する場合は、 <code>&lt;git-rev-list-args&gt;</code> に <code>--branches --tags</code> を使用します。</p></div>
+<div class="paragraph"><p>If you want to provide the same set of refs that a clone directly from the source repository would get, use <code>--branches --tags</code> for the <code>&lt;git-rev-list-args&gt;</code>.</p></div>
 <div class="paragraph"><p><code>git bundle verify</code> コマンドを使用して、受信者リポジトリにバンドルに必要な前提条件のコミットがあるかどうかを確認できます。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_examples">EXAMPLES</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>あなたが、マシンAのリポジトリR1から、マシンBの別のリポジトリR2に、履歴を転送するとします。 何らかの理由で、AとBの間の直接接続は許可されていませんが、何らかのメカニズム(CD、電子メールなど)を介してAからBにデータを移動することはできます。 私達は、R1のmasterブランチで行われた開発で、R2を更新したいと思います。</p></div>
+<div class="paragraph"><p>We&#8217;ll discuss two cases:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Taking a full backup of a repository
+</p>
+</li>
+<li>
+<p>
+Transferring the history of a repository to another machine when the two machines have no direct connection
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>First let&#8217;s consider a full backup of the repository. The following command will take a full backup of the repository in the sense that all refs are included in the bundle:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bundle create backup.bundle --all</code></pre>
+</div></div>
+<div class="paragraph"><p>But note again that this is only for the refs, i.e. you will only include refs and commits reachable from those refs. You will not include other local state, such as the contents of the index, working tree, the stash, per-repository configuration, hooks, etc.</p></div>
+<div class="paragraph"><p>You can later recover that repository by using for example <a href="git-clone.html">git-clone(1)</a>:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git clone backup.bundle &lt;new directory&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>For the next example, assume you want to transfer the history from a repository R1 on machine A to another repository R2 on machine B. For whatever reason, direct connection between A and B is not allowed, but we can move data from A to B via some mechanism (CD, email, etc.). We want to update R2 with development made on the branch master in R1.</p></div>
 <div class="paragraph"><p>開発プロセスをブートストラップするために、あなたは、最初に前提条件のないバンドルを作成します。あなたはタグを使用して、最後に処理したコミットまでを記憶し、後で他のリポジトリを増分バンドル(incremental bundle)で簡単に更新できるようにすることができます:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -981,6 +1004,14 @@ machineB$ git pull</code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_discussion">DISCUSSION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>A naive way to make a full backup of a repository is to use something to the effect of <code>cp -r &lt;repo&gt; &lt;destination&gt;</code>. This is discouraged since the repository could be written to during the copy operation. In turn some files at <code>&lt;destination&gt;</code> could be corrupted.</p></div>
+<div class="paragraph"><p>This is why it is recommended to use Git tooling for making repository backups, either with this command or with e.g. <a href="git-clone.html">git-clone(1)</a>. But keep in mind that these tools will not help you backup state other than refs and commits. In other words they will not help you backup contents of the index, working tree, the stash, per-repository configuration, hooks, etc.</p></div>
+<div class="paragraph"><p>See also <a href="gitfaq.html">gitfaq(7)</a>, section "TRANSFERS" for a discussion of the problems associated with file syncing across systems.</p></div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_file_format">FILE FORMAT</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>See <a href="gitformat-bundle.html">gitformat-bundle(5)</a>.</p></div>
@@ -997,7 +1028,7 @@ machineB$ git pull</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-18 08:06:57 JST
+ 2024-12-11 23:58:38 JST
 </div>
 </div>
 </body>

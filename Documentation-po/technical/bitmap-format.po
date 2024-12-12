@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: git-docs-ja 3.0\n"
-"POT-Creation-Date: 2023-07-18 11:06+0900\n"
+"POT-Creation-Date: 2024-12-11 23:59+0900\n"
 "PO-Revision-Date: 2024-03-01 16:53+0900\n"
 "Last-Translator: kuma35\n"
 "Language-Team: Japanese\n"
@@ -353,8 +353,12 @@ msgstr ""
 
 #. type: Plain text
 #: ../Documentation-sedout/technical/bitmap-format.txt:119
+#, fuzzy
+#| msgid ""
+#| "Where `N` is the total amount of entries in this bitmap index.  Each "
+#| "entry contains the following:"
 msgid ""
-"Where `N` is the total amount of entries in this bitmap index.  Each entry "
+"Where `N` is the total number of entries in this bitmap index.  Each entry "
 "contains the following:"
 msgstr ""
 "「N」は、このビットマップ インデックス内のエントリの合計量です。 各エントリに"
@@ -385,10 +389,16 @@ msgstr "1バイト。 XORオフセット:"
 
 #. type: Plain text
 #: ../Documentation-sedout/technical/bitmap-format.txt:133
-#, no-wrap
+#, fuzzy, no-wrap
+#| msgid ""
+#| "The xor offset used to compress this bitmap. For an entry\n"
+#| "in position `x`, a XOR offset of `y` means that the actual\n"
+#| "bitmap representing this commit is composed by XORing the\n"
+#| "bitmap for this entry with the bitmap in entry `x-y` (i.e.\n"
+#| "the bitmap `y` entries before this one).\n"
 msgid ""
 "The xor offset used to compress this bitmap. For an entry\n"
-"in position `x`, a XOR offset of `y` means that the actual\n"
+"in position `x`, an XOR offset of `y` means that the actual\n"
 "bitmap representing this commit is composed by XORing the\n"
 "bitmap for this entry with the bitmap in entry `x-y` (i.e.\n"
 "the bitmap `y` entries before this one).\n"
@@ -664,11 +674,17 @@ msgstr ""
 
 #. type: Plain text
 #: ../Documentation-sedout/technical/bitmap-format.txt:240
+#, fuzzy
+#| msgid ""
+#| "For a `.bitmap` containing `nr_entries` reachability bitmaps, the table "
+#| "contains a list of `nr_entries` <commit_pos, offset, xor_row> triplets "
+#| "(sorted in the ascending order of `commit_pos`). The content of i'th "
+#| "triplet is -"
 msgid ""
 "For a `.bitmap` containing `nr_entries` reachability bitmaps, the table "
 "contains a list of `nr_entries` <commit_pos, offset, xor_row> triplets "
-"(sorted in the ascending order of `commit_pos`). The content of i'th triplet "
-"is -"
+"(sorted in the ascending order of `commit_pos`). The content of the i'th "
+"triplet is -"
 msgstr ""
 "`nr_entries` 到達可能性ビットマップを含む `.bitmap` の場合、 表には "
 "`nr_entries` <commit_pos, offset, xor_row> 三つ組(triplet) (`commit_pos` の昇"
@@ -704,10 +720,249 @@ msgid "xor_row (4 byte integer, network byte order): "
 msgstr "xor_row (4バイト。整数。 ネットワーク・バイト順):"
 
 #. type: Plain text
-#: ../Documentation-sedout/technical/bitmap-format.txt:253
+#: ../Documentation-sedout/technical/bitmap-format.txt:254
 msgid ""
 "The position of the triplet whose bitmap is used to compress this one, or "
 "`0xffffffff` if no such bitmap exists."
 msgstr ""
 "このビットマップを圧縮するために使用される三つ組の位置、 またはそのようなビッ"
 "トマップが存在しない場合は `0xffffffff` 。"
+
+#. type: Title -
+#: ../Documentation-sedout/technical/bitmap-format.txt:256
+#, no-wrap
+msgid "Pseudo-merge bitmaps"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:261
+msgid ""
+"If the `BITMAP_OPT_PSEUDO_MERGES` flag is set, a variable number of bytes "
+"(preceding the name-hash cache, commit lookup table, and trailing checksum) "
+"of the `.bitmap` file is used to store pseudo-merge bitmaps."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:264
+msgid ""
+"For more information on what pseudo-merges are, why they are useful, and how "
+"to configure them, see the information in linkgit:gitpacking[7]."
+msgstr ""
+
+#. type: Title ===
+#: ../Documentation-sedout/technical/bitmap-format.txt:265
+#, fuzzy, no-wrap
+#| msgid "On-disk format"
+msgid "File format"
+msgstr "On-disk format"
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:269
+msgid ""
+"If enabled, pseudo-merge bitmaps are stored in an optional section at the "
+"end of a `.bitmap` file. The format is as follows:"
+msgstr ""
+
+#. type: delimited block .
+#: ../Documentation-sedout/technical/bitmap-format.txt:332
+#, no-wrap
+msgid ""
+"+-------------------------------------------+\n"
+"|               .bitmap File                |\n"
+"+-------------------------------------------+\n"
+"|                                           |\n"
+"|  Pseudo-merge bitmaps (Variable Length)   |\n"
+"|  +---------------------------+            |\n"
+"|  | commits_bitmap (EWAH)     |            |\n"
+"|  +---------------------------+            |\n"
+"|  | merge_bitmap (EWAH)       |            |\n"
+"|  +---------------------------+            |\n"
+"|                                           |\n"
+"+-------------------------------------------+\n"
+"|                                           |\n"
+"|  Lookup Table                             |\n"
+"|  +---------------------------+            |\n"
+"|  | commit_pos (4 bytes)      |            |\n"
+"|  +---------------------------+            |\n"
+"|  | offset (8 bytes)          |            |\n"
+"|  +------------+--------------+            |\n"
+"|                                           |\n"
+"|  Offset Cases:                            |\n"
+"|  -------------                            |\n"
+"|                                           |\n"
+"|  1. MSB Unset: single pseudo-merge bitmap |\n"
+"|     + offset to pseudo-merge bitmap       |\n"
+"|                                           |\n"
+"|  2. MSB Set: multiple pseudo-merges       |\n"
+"|     + offset to extended lookup table     |\n"
+"|                                           |\n"
+"+-------------------------------------------+\n"
+"|                                           |\n"
+"|  Extended Lookup Table (Optional)         |\n"
+"|  +----+----------+----------+----------+  |\n"
+"|  | N  | Offset 1 |   ....   | Offset N |  |\n"
+"|  +----+----------+----------+----------+  |\n"
+"|  |    |  8 bytes |   ....   |  8 bytes |  |\n"
+"|  +----+----------+----------+----------+  |\n"
+"|                                           |\n"
+"+-------------------------------------------+\n"
+"|                                           |\n"
+"|  Pseudo-merge position table              |\n"
+"|  +----+----------+----------+----------+  |\n"
+"|  | N  | Offset 1 |   ....   | Offset N |  |\n"
+"|  +----+----------+----------+----------+  |\n"
+"|  |    |  8 bytes |   ....   |  8 bytes |  |\n"
+"|  +----+----------+----------+----------+  |\n"
+"|                                           |\n"
+"+-------------------------------------------+\n"
+"|                                           |\n"
+"|  Pseudo-merge Metadata                    |\n"
+"|  +-----------------------------------+    |\n"
+"|  | # pseudo-merges (4 bytes)         |    |\n"
+"|  +-----------------------------------+    |\n"
+"|  | # commits (4 bytes)               |    |\n"
+"|  +-----------------------------------+    |\n"
+"|  | Lookup offset (8 bytes)           |    |\n"
+"|  +-----------------------------------+    |\n"
+"|  | Extension size (8 bytes)          |    |\n"
+"|  +-----------------------------------+    |\n"
+"|                                           |\n"
+"+-------------------------------------------+\n"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:335
+msgid "One or more pseudo-merge bitmaps, each containing:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:338
+msgid ""
+"`commits_bitmap`, an EWAH-compressed bitmap describing the set of commits "
+"included in the this psuedo-merge."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:342
+msgid ""
+"`merge_bitmap`, an EWAH-compressed bitmap describing the union of the set of "
+"objects reachable from all commits listed in the `commits_bitmap`."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:347
+msgid ""
+"A lookup table, mapping pseudo-merged commits to the pseudo-merges they "
+"belong to. Entries appear in increasing order of each commit's bit position. "
+"Each entry is 12 bytes wide, and is comprised of the following:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:350
+msgid ""
+"`commit_pos`, a 4-byte unsigned value (in network byte-order)  containing "
+"the bit position for this commit."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:352
+#, fuzzy
+#| msgid "offset (8 byte integer, network byte order): "
+msgid "`offset`, an 8-byte unsigned value (also in network byte-order)"
+msgstr "offset (8バイト。 整数。 ネットワークバイト順):"
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:354
+msgid ""
+"containing either one of two possible offsets, depending on whether or not "
+"the most-significant bit is set."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:356
+msgid "If unset (i.e. `offset & ((uint64_t)1<<63) == 0`), the offset"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:359
+msgid ""
+"(relative to the beginning of the `.bitmap` file) at which the pseudo-merge "
+"bitmap for this commit can be read. This indicates only a single pseudo-"
+"merge bitmap contains this commit."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:361
+msgid "If set (i.e. `offset & ((uint64_t)1<<63) != 0`), the offset"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:365
+msgid ""
+"(again relative to the beginning of the `.bitmap` file) at which the "
+"extended offset table can be located describing the set of pseudo-merge "
+"bitmaps which contain this commit. This indicates that multiple pseudo-merge "
+"bitmaps contain this commit."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:370
+msgid ""
+"An (optional) extended lookup table (written if and only if there is at "
+"least one commit which appears in more than one pseudo-merge).  There are as "
+"many entries as commits which appear in multiple pseudo-merges. Each entry "
+"contains the following:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:373
+msgid ""
+"`N`, a 4-byte unsigned value equal to the number of pseudo-merges which "
+"contain a given commit."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:378
+msgid ""
+"An array of `N` 8-byte unsigned values, each of which is interpreted as an "
+"offset (relative to the beginning of the `.bitmap` file) at which a pseudo-"
+"merge bitmap for this commit can be read. These values occur in no "
+"particular order."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:382
+msgid ""
+"Positions for all pseudo-merges, each stored as an 8-byte unsigned value (in "
+"network byte-order) containing the offset (relative to the beginning of the "
+"`.bitmap` file) of each consecutive pseudo-merge."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:385
+msgid ""
+"A 4-byte unsigned value (in network byte-order) equal to the number of "
+"pseudo-merges."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:388
+msgid ""
+"A 4-byte unsigned value (in network byte-order) equal to the number of "
+"unique commits which appear in any pseudo-merge."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:392
+msgid ""
+"An 8-byte unsigned value (in network byte-order) equal to the number of "
+"bytes between the start of the pseudo-merge section and the beginning of the "
+"lookup table."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/bitmap-format.txt:394
+msgid ""
+"An 8-byte unsigned value (in network byte-order) equal to the number of "
+"bytes in the pseudo-merge section (including this field)."
+msgstr ""

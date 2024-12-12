@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-gc(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -749,7 +749,7 @@ git-gc(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git gc</em> [--aggressive] [--auto] [--quiet] [--prune=&lt;date&gt; | --no-prune] [--force] [--keep-largest-pack]</pre>
+<pre class="content"><em>git gc</em> [--aggressive] [--auto] [--[no-]detach] [--quiet] [--prune=&lt;date&gt; | --no-prune] [--force] [--keep-largest-pack]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -785,11 +785,27 @@ git-gc(1) Manual Page
 <div class="paragraph"><p><code>gc.auto</code> や <code>gc.autoPackLimit</code> などの構成オプションの制限を超えてハウスキーピングがトリガーされると、他のすべてのハウスキーピングタスク（rerere、working tree、reflogなど）も実行されます。</p></div>
 </dd>
 <dt class="hdlist1">
+<code>--[no-]detach</code>
+</dt>
+<dd>
+<p>
+        Run in the background if the system supports it. This option overrides the <code>gc.autoDetach</code> config.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>--[no-]cruft</code>
 </dt>
 <dd>
 <p>
         到達不能なオブジェクトを期限切れにするときは、緩いオブジェクトとして保管するのではなく、クラフト・パック(cruft pack)に個別にパックします。 <code>--cruft</code> はデフォルトでオンになっています。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--max-cruft-size=&lt;n&gt;</code>
+</dt>
+<dd>
+<p>
+        When packing unreachable objects into a cruft pack, limit the size of new cruft packs to be at most <code>&lt;n&gt;</code> bytes. Overrides any value specified via the <code>gc.maxCruftSize</code> configuration. See the <code>--max-cruft-size</code> option of <a href="git-repack.html">git-repack(1)</a> for more.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -874,7 +890,7 @@ gc.auto
 <p>
         リポジトリにおおよそ指定の値より多くのルーズオブジェクトがある場合、 <code>git gc --auto</code> はそれらをパックします。一部の磁器コマンドは、このコマンドを使用して、軽量のガベージコレクションを時々実行します。デフォルト値は6700です。
 </p>
-<div class="paragraph"><p>これを0に設定すると、ルーズオブジェクトの数に基づく自動パッキングが無効にななります。また、他のヒューリスティックな <code>git gc --auto</code> が、 <code>gc.autoPackLimit</code> などの作業があるかどうかを判断するためにこの値を使用します。</p></div>
+<div class="paragraph"><p>Setting this to 0 disables not only automatic packing based on the number of loose objects, but also any other heuristic <code>git gc --auto</code> will otherwise use to determine if there&#8217;s work to do, such as <code>gc.autoPackLimit</code>.</p></div>
 </dd>
 <dt class="hdlist1">
 gc.autoPackLimit
@@ -890,7 +906,7 @@ gc.autoDetach
 </dt>
 <dd>
 <p>
-        システムがサポートしている場合は <code>git gc --auto</code> は即座戻り、実行はバックグラウンドで行われます。デフォルトはtrueです。
+        Make <code>git gc --auto</code> return immediately and run in the background if the system supports it. Default is true. This config variable acts as a fallback in case <code>maintenance.autoDetach</code> is not set.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -933,6 +949,14 @@ gc.cruftPacks
 <dd>
 <p>
         到達不能なオブジェクトを緩いオブジェクトとしてではなく、クラフト・パック(cruft pack)(<a href="git-repack.html">git-repack(1)</a> 参照)に格納します。 デフォルトは <code>true</code> です。
+</p>
+</dd>
+<dt class="hdlist1">
+gc.maxCruftSize
+</dt>
+<dd>
+<p>
+        Limit the size of new cruft packs when repacking. When specified in addition to <code>--max-cruft-size</code>, the command line option takes priority. See the <code>--max-cruft-size</code> option of <a href="git-repack.html">git-repack(1)</a>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -982,6 +1006,22 @@ gc.recentObjectsHook
         オブジェクトを削除するかどうかを検討するとき(クラフト・パックを生成するとき、 または到達できないオブジェクトを緩いオブジェクトとして保存するとき)、 指定のコマンドを実行するためにシェルを使用します。 出力は、その古さに関係なく、 Git が "recent" と見なすオブジェクト ID として解釈されます。 mtime を "now" として扱うことにより、 出力に記載されているすべてのオブジェクト(およびその子孫)は、 実際の古さに関係なく保持されます。
 </p>
 <div class="paragraph"><p>出力は、 1 行あたり 16 進オブジェクト ID が 1 つだけ含まれ、 それ以外は何も含まれない必要があります。 リポジトリ内で見つからないオブジェクトは無視されます。 複数のフックがサポートされていますが、 それら全てのフックが正常に終了(exit)する必要があり、 そうでないと、操作(クラフト・パックの生成または到達不能なオブジェクトの解凍)が停止(halt)します。</p></div>
+</dd>
+<dt class="hdlist1">
+gc.repackFilter
+</dt>
+<dd>
+<p>
+        When repacking, use the specified filter to move certain objects into a separate packfile. See the <code>--filter=&lt;filter-spec&gt;</code> option of <a href="git-repack.html">git-repack(1)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+gc.repackFilterTo
+</dt>
+<dd>
+<p>
+        When repacking and using a filter, see <code>gc.repackFilter</code>, the specified location will be used to create the packfile containing the filtered out objects. <strong>WARNING:</strong> The specified location should be accessible, using for example the Git alternates mechanism, otherwise the repo could be considered corrupt by Git as it might not be able to access the objects in that packfile. See the <code>--filter-to=&lt;dir&gt;</code> option of <a href="git-repack.html">git-repack(1)</a> and the <code>objects/info/alternates</code> section of <a href="gitrepository-layout.html">gitrepository-layout(5)</a>.
+</p>
 </dd>
 <dt class="hdlist1">
 gc.rerereResolved
@@ -1045,7 +1085,7 @@ gc.rerereUnresolved
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-11-11 09:24:56 JST
+ 2024-12-11 23:58:49 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>gitdiffcore(7)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -876,7 +876,7 @@ diffcore-rotate
 :100644 100644 0123456... bcd3456... C100 fileY file0</code></pre>
 </div></div>
 <div class="paragraph"><p>名前の変更とコピーの検出の両方で、diffcore-breakで使用されるのと同じ「変更の範囲」(extent of changes)アルゴリズムを使用して、2つのファイルが「十分に類似」しているかどうかを判断し、デフォルトの50%とは異なる類似スコアを使用するようにカスタマイズできます。 <code>-M</code> または <code>-C</code> オプションの後に番号を付けます(たとえば、 <code>-M8</code> で 8/10 = 80% にするように指示します)。</p></div>
-<div class="paragraph"><p>注意: 名前変更検出がオンで、コピーとブレークの両方の検出がオフの場合、名前変更検出は、ファイル名を同じに保ちながらファイルがディレクトリ間で移動されるかどうかを最初にチェックする予備ステップを追加することに注意してください。 別のディレクトリから削除された同じ名前のファイルと内容が十分に類似しているファイルがディレクトリに追加されている場合、それらを名前変更としてマークし、後の2次ステップ(一致しないすべてのファイルをペアごとに比較して、コンテンツの類似性が最も高いことによって決定される「最良の」一致を見つけるステップ)から除外します。したがって、たとえば、削除された docs/ext.txt と追加された docs/config/ext.txt が十分に類似している場合、それらは名前変更としてマークされ、削除された docs/ext.txt にさらに類似している可能性のある、追加された docs/ext.md が後のステップで名前変更先と見なされないようにします。 このため、予備の「同じファイル名に一致」ステップでは、少し高いしきい値を使用してファイルペアを名前変更としてマークし、他の候補をより適切に一致させることを検討しなくなります。 この予備ステップでは、ファイルごとに最大で1つの比較が行われます。したがって、正確な名前変更が検出された後、ディレクトリ階層全体にext.txtファイルがいくつか残っている場合は、これらのファイルのこの準備手順をスキップできます。</p></div>
+<div class="paragraph"><p>Note that when rename detection is on but both copy and break detection are off, rename detection adds a preliminary step that first checks if files are moved across directories while keeping their filename the same. If there is a file added to a directory whose contents are sufficiently similar to a file with the same name that got deleted from a different directory, it will mark them as renames and exclude them from the later quadratic step (the one that pairwise compares all unmatched files to find the "best" matches, determined by the highest content similarity). So, for example, if a deleted docs/ext.txt and an added docs/config/ext.txt are similar enough, they will be marked as a rename and prevent an added docs/ext.md that may be even more similar to the deleted docs/ext.txt from being considered as the rename destination in the later step. For this reason, the preliminary "match same filename" step uses a bit higher threshold to mark a file pair as a rename and stop considering other candidates for better matches. At most, one comparison is done per file in this preliminary pass; so if there are several remaining ext.txt files throughout the directory hierarchy after exact rename detection, this preliminary step may be skipped for those files.</p></div>
 <div class="paragraph"><p>注意: <code>-C</code> オプションを <code>--find-copies-harder</code> オプションとともに使用すると、 <code>git diff-{asterisk}</code> コマンド群は、変更されていないファイルペアと変更されたファイルペアをdiffcoreメカニズムに送ります。これにより、コピー検出器は、ファイルの速度を低下させる代わりに、変更されていないファイルをコピーソース候補と見なすことができます。 <code>--find-copies-harder</code> がないと、 <code>git diff-{asterisk}</code> コマンド群は、コピーされたファイルがたまたま同じチェンジセットで変更された場合にのみコピーを検出できます。</p></div>
 </div>
 </div>
@@ -884,7 +884,7 @@ diffcore-rotate
 <h2 id="_diffcore_merge_broken_完全な書き換えを元に戻すため">diffcore-merge-broken: 完全な書き換えを元に戻すため</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>この変換は、diffcore-breakによって分割したファイルペアをマージするために使用され、 diffcore-rename によって rename/copy に変換されず、単一の変更に戻されます。これは、diffcore-breakが使用されている場合は常に実行されます。</p></div>
-<div class="paragraph"><p>分割したファイルペアをマージする目的で、 diffcore-break および diffcore-rename で使用されるものとは異なる「変更の範囲」の計算を使用します。オリジナルからの削除のみをカウントし、挿入はカウントしません。100行のドキュメントから10行だけを削除した場合、新しい1000行のドキュメントを作成するために910行を追加しても、完全な書き換えは行われたとは見なしません。 diffcore-break は、 diffcore-renameがそのようなファイルペアを 名前変更/コピー 検出の候補と見なすのを助けるためにそのような場合のを分割しますが、その方法で分割したファイルペアが他のファイルペアと一致して 名前変更/コピー を作成しなかった場合、この変換でそれらをマージして「元の変更」に戻します 。</p></div>
+<div class="paragraph"><p>For the purpose of merging broken filepairs back, it uses a different "extent of changes" computation from the ones used by diffcore-break and diffcore-rename. It counts only the deletion from the original, and does not count insertion. If you removed only 10 lines from a 100-line document, even if you added 910 new lines to make a new 1000-line document, you did not do a complete rewrite. diffcore-break breaks such a case in order to help diffcore-rename to consider such filepairs as a candidate of rename/copy detection, but if filepairs broken that way were not matched with other filepairs to create rename/copy, then this transformation merges them back into the original "modification".</p></div>
 <div class="paragraph"><p>「変更の範囲」パラメータは、 <code>-B</code> に2番目の数値を指定することで、デフォルトの80%から微調整できます(つまり、元のマテリアルの80%以上が削除されない限り、分割されたペアは1つの変更にマージされます)。以下のように指定できます:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -898,15 +898,15 @@ diffcore-rotate
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>注意:以前の実装では、個別の作成パッチと削除パッチとして分割したペアが残っていたことに注意してください。これは不必要なハックであり、最新の実装では常にすべての分割されたペアが変更にマージされます。ただし、結果のパッチ出力は、 <code>-</code> で始まる古いバージョンのコンテンツ全体を表示することにより、このような完全な書き換えの場合に簡単に確認できるように、異なる形式になっています。その後に、接頭辞 <code>+</code> が付いた新しいバージョンのコンテンツ全体が続きます。</p></div>
+<div class="paragraph"><p>Note that earlier implementation left a broken pair as separate creation and deletion patches. This was an unnecessary hack, and the latest implementation always merges all the broken pairs back into modifications, but the resulting patch output is formatted differently for easier review in case of such a complete rewrite by showing the entire contents of the old version prefixed with <em>-</em>, followed by the entire contents of the new version prefixed with <em>+</em>.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_diffcore_pickaxe_指定の文字列_string_の追加_削除の検知のため">diffcore-pickaxe: 指定の文字列(string)の追加/削除の検知のため</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>この変換により、ファイルペアの組が、特定の方法でプリイメージとポストイメージの間で指した文字列を変更するものに制限されます。 <code>-S&lt;テキストのブロック&gt;</code> および <code>-G&lt;正規表現&gt;</code> オプションは、これらの文字列を検索するさまざまな方法を指定するために使用されます。</p></div>
-<div class="paragraph"><p><code>-S&lt;テキストブロック&gt;</code> は、指定されたテキストのブロックの出現回数がプリイメージとポストイメージで異なるファイルペアを検出します。定義上、ファイル内の移動は検出されません。また、チェンジセットが対象の文字列に影響を与えずにファイルを大規模に移動すると、通常どおりdiffcore-renameが開始され、<code>-S</code> はファイルペアを省略します(その文字列の出現回数は、名前変更で検出されたファイルペアで変更されなかったため)。 <code>--pickaxe-regex</code> と一緒に使用する場合、&lt;テキストブロック&gt;は、リテラル文字列ではなく、マッチする拡張POSIX正規表現として扱います。</p></div>
-<div class="paragraph"><p><code>-G&lt;正規表現&gt;</code> (grep文法)は、指定された正規表現にマッチする行が追加または削除されたテキスト差分を持つファイルペアを検出します。これは、ノイズであるファイル内の移動(またはrename-detectionが同じファイルと見なすもの)を検出することを意味します。実装はdiffを2回実行してgrepsしますが、これは非常にコストがかかる可能性があります。高速化のため、textconvフィルタがないバイナリファイルは無視されます。</p></div>
+<div class="paragraph"><p>This transformation limits the set of filepairs to those that change specified strings between the preimage and the postimage in a certain way. -S&lt;block-of-text&gt; and -G&lt;regular-expression&gt; options are used to specify different ways these strings are sought.</p></div>
+<div class="paragraph"><p>"-S&lt;block-of-text&gt;" detects filepairs whose preimage and postimage have different number of occurrences of the specified block of text. By definition, it will not detect in-file moves. Also, when a changeset moves a file wholesale without affecting the interesting string, diffcore-rename kicks in as usual, and <code>-S</code> omits the filepair (since the number of occurrences of that string didn&#8217;t change in that rename-detected filepair). When used with <code>--pickaxe-regex</code>, treat the &lt;block-of-text&gt; as an extended POSIX regular expression to match, instead of a literal string.</p></div>
+<div class="paragraph"><p>"-G&lt;regular-expression&gt;" (mnemonic: grep) detects filepairs whose textual diff has an added or a deleted line that matches the given regular expression. This means that it will detect in-file (or what rename-detection considers the same file) moves, which is noise. The implementation runs diff twice and greps, and this can be quite expensive. To speed things up, binary files without textconv filters will be ignored.</p></div>
 <div class="paragraph"><p><code>-S</code> または <code>-G</code> を <code>--pickaxe-all</code> なしで使用すると、それぞれの基準に一致するファイルペアのみが出力に保持されます。 <code>--pickaxe-all</code> が使用されている場合、1つのファイルペアでもチェンジセット内のそれぞれの基準に一致すると、チェンジセット全体が保持されます。この振る舞いは、チェンジセット全体のコンテキストでの変更のレビューを容易にするために設計されています。</p></div>
 </div>
 </div>
@@ -951,7 +951,7 @@ t</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:50 JST
+ 2024-12-11 23:59:15 JST
 </div>
 </div>
 </body>

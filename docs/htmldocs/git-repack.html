@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-repack(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -809,6 +809,14 @@ git-repack(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--max-cruft-size=&lt;n&gt;</code>
+</dt>
+<dd>
+<p>
+        Repack cruft objects into packs as large as <code>&lt;n&gt;</code> bytes before creating new packs. As long as there are enough cruft packs smaller than <code>&lt;n&gt;</code>, repacking will cause a new cruft pack to be created containing objects from any combined cruft packs, along with any new unreachable objects. Cruft packs larger than <code>&lt;n&gt;</code> will not be modified. When the new cruft pack is larger than <code>&lt;n&gt;</code> bytes, it will be split into multiple packs, all of which are guaranteed to be at most <code>&lt;n&gt;</code> bytes in size. Only useful with <code>--cruft -d</code>.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>--expire-to=&lt;dir&gt;</code>
 </dt>
 <dd>
@@ -896,6 +904,22 @@ git-repack(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--filter=&lt;filter-spec&gt;</code>
+</dt>
+<dd>
+<p>
+        Remove objects matching the filter specification from the resulting packfile and put them into a separate packfile. Note that objects used in the working directory are not filtered out. So for the split to fully work, it&#8217;s best to perform it in a bare repo and to use the <code>-a</code> and <code>-d</code> options along with this option. Also <code>--no-write-bitmap-index</code> (or the <code>repack.writebitmaps</code> config option set to <code>false</code>) should be used otherwise writing bitmap index will fail, as it supposes a single packfile containing all the objects. See <a href="git-rev-list.html">git-rev-list(1)</a> for valid <code>&lt;filter-spec&gt;</code> forms.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--filter-to=&lt;dir&gt;</code>
+</dt>
+<dd>
+<p>
+        Write the pack containing filtered out objects to the directory <code>&lt;dir&gt;</code>. Only useful with <code>--filter</code>. This can be used for putting the pack on a separate object directory that is accessed through the Git alternates mechanism. <strong>WARNING:</strong> If the packfile containing the filtered out objects is not accessible, the repo can become corrupt as it might not be possible to access the objects in that packfile. See the <code>objects</code> and <code>objects/info/alternates</code> sections of <a href="gitrepository-layout.html">gitrepository-layout(5)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>-b</code>
 </dt>
 <dt class="hdlist1">
@@ -919,7 +943,7 @@ git-repack(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定されたパックを再パックから除外します。 これは、パックに <code>.keep</code> ファイルがあるのと同じです。 <code>&lt;pack-name&gt;</code> は、先頭にディレクトリがないパックファイル名です(例: <code>pack-123.pack</code>)。このオプションは、複数のパックを保持するために複数回指定できます。
+        Exclude the given pack from repacking. This is the equivalent of having <code>.keep</code> file on the pack. <code>&lt;pack-name&gt;</code> is the pack file name without leading directory (e.g. <code>pack-123.pack</code>). The option can be specified multiple times to keep multiple packs.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -953,7 +977,7 @@ git-repack(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>-g=&lt;factor&gt;</code>
+<code>-g&lt;factor&gt;</code>
 </dt>
 <dt class="hdlist1">
 <code>--geometric=&lt;factor&gt;</code>
@@ -964,7 +988,7 @@ git-repack(1) Manual Page
 </p>
 <div class="paragraph"><p><code>git repack</code> が、等比数列を確実にするために1つに再パックする必要があるパックファイルの「切り分け」を決断することによってこれを保証します。 大きいパックファイルの多く(そのパックに含まれるオブジェクトの数による)がそのまま残るように、パックファイルの最小セットを選択します。</p></div>
 <div class="paragraph"><p>他の再パックモードとは異なり、梱包するオブジェクトのセットは、「ロールアップ」(rolled-up)されるパックのセットによって一意に決定されます。言い換えれば、等比数列を復元するために組み合わせる必要があると判断されたパックです。</p></div>
-<div class="paragraph"><p><code>--unpacked</code> が指定されている場合、ルーズオブジェクトは、到達可能性に関係なく、この「ロールアップ」に暗黙的に含まれます。 これは将来変更される可能性があります。このオプション(大幅に異なる再パックモードを意味する)は、 <code>git repack</code> の他のすべてのオプションの組み合わせで機能することが保証されていません。</p></div>
+<div class="paragraph"><p>Loose objects are implicitly included in this "roll-up", without respect to their reachability. This is subject to change in the future.</p></div>
 <div class="paragraph"><p>マルチパック・ビットマップを書き込む場合、 <code>git repack</code> は結果として最大のパックを MIDX によるオブジェクト選択の優先パックとして選択します(<a href="git-multi-pack-index.html">git-multi-pack-index(1)</a> 参照)。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1006,7 +1030,7 @@ git-repack(1) Manual Page
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-01-26 03:53:35 JST
+ 2024-12-11 23:59:03 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>My First Object Walk</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>My First Object Walk</h1>
-<span id="revdate">2023-07-22</span>
+<span id="revdate">2024-12-12</span>
 </div>
 <div id="content">
 <div class="sect1">
@@ -783,6 +783,7 @@ asciidoc.install();
  */
 
 #include "builtin.h"
+#include "trace.h"
 
 int cmd_walken(int argc, const char **argv, const char *prefix)
 {
@@ -795,7 +796,7 @@ int cmd_walken(int argc, const char **argv, const char *prefix)
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content"><code>trace_printf()</code> は、実行時にオンまたはオフにできるという点で <code>printf()</code> とは異なります。このチュートリアルでは、「配管」コマンドとして使用することを目的としているかのように「walken」を記述します。つまり人間が対話的に使用する(「磁器」)コマンドではなく、主にスクリプトで使用されるコマンドとして使用します。そのため、代わりにデバッグ出力を <code>trace_printf()</code> に送信します。実行時に、環境変数 <code>GIT_TRACE</code> を設定して、トレース出力を有効にします。</td>
+<td class="content"><code>trace_printf()</code>, defined in <code>trace.h</code>, differs from <code>printf()</code> in that it can be turned on or off at runtime. For the purposes of this tutorial, we will write <code>walken</code> as though it is intended for use as a "plumbing" command: that is, a command which is used primarily in scripts, rather than interactively by humans (a "porcelain" command). So we will send our debug output to <code>trace_printf()</code> instead. When running, enable trace output by setting the environment variable <code>GIT_TRACE</code>.</td>
 </tr></table>
 </div>
 <div class="paragraph"><p>すべてのサブコマンドで一貫して行う必要があるように、使用法テキストと <code>-h</code> 処理を追加します(そうしないと、テストスイートが気づいて文句を言います)。 <code>parse-options.h</code> ヘッダーをインクルードする必要があります。</p></div>
@@ -932,13 +933,14 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken</code></pre>
 
 ...
 
-static int git_walken_config(const char *var, const char *value, void *cb)
+static int git_walken_config(const char *var, const char *value,
+                             const struct config_context *ctx, void *cb)
 {
         /*
          * For now, we don't have any custom configuration, so fall back to
          * the default config.
          */
-        return git_default_config(var, value, cb);
+        return git_default_config(var, value, ctx, cb);
 }</code></pre>
 </div></div>
 <div class="paragraph"><p>必ずあなたの <code>cmd_walken()</code> で <code>git_config()</code> を呼び出してください:</p></div>
@@ -1053,7 +1055,11 @@ int cmd_walken(int argc, const char **argv, const char *prefix)
 <div class="paragraph"><p>ついに散歩を始める準備ができました！ これで、 <code>rev_info</code> がイテレータとしても使用できることがわかります。 <code>get_revision()</code> を繰り返し使用して、散歩の次のアイテムに移動します。リストされた変数宣言を上部に追加し、散歩ループを <code>walken_commit_walk()</code> 内の <code>prepare_revision_walk()</code> 呼び出しの下に追加します:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>static void walken_commit_walk(struct rev_info *rev)
+<pre><code>#include "pretty.h"
+
+...
+
+static void walken_commit_walk(struct rev_info *rev)
 {
         struct commit *commit;
         struct strbuf prettybuf = STRBUF_INIT;
@@ -1091,10 +1097,11 @@ $ ./bin-wrappers/git walken</code></pre>
 <div class="paragraph"><p>最初にいくつかのセットアップを行います。 <code>grep_config()</code> を <code>git_walken_config()</code> に追加:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>static int git_walken_config(const char *var, const char *value, void *cb)
+<pre><code>static int git_walken_config(const char *var, const char *value,
+                             const struct config_context *ctx, void *cb)
 {
-        grep_config(var, value, cb);
-        return git_default_config(var, value, cb);
+        grep_config(var, value, ctx, cb);
+        return git_default_config(var, value, ctx, cb);
 }</code></pre>
 </div></div>
 <div class="paragraph"><p>次に、 <code>grep_filter</code> を変更できます。 これは、 <code>grep.h</code> にある便利な関数を使用して行います。戯れに、私達は <code>gmail.com</code> メールアドレスを使用している人々からのコミットのみにフィルタリングしています(これは、誰が趣味としてGitに取り組んでいるかについての情報とするには、あまり正確ではありませんが)。ヘッダーの特定の行である作者をチェックしているので、 <code>append_header_grep_pattern()</code> ヘルパーを使用します。 <code>enum grep_header_field</code> を使用して、コミットヘッダーのどの部分を検索するかを指定できます。</p></div>
@@ -1201,7 +1208,7 @@ $ ./bin-wrappers/git walken &gt; author-date.txt</code></pre>
 <h2 id="_basic_object_walk">Basic Object Walk</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>これまでのところ、私達はコミットのみを歩いてきました。しかし、Gitにはもっと多くの種類のオブジェクトがあります！ 全てのオブジェクトを散歩することができるかどうかを確かめて、それぞれについていくつかの情報を見つけるとしましょう。</p></div>
-<div class="paragraph"><p>私達の例に基づいて作業を行うとすると、 <code>git pack-objects</code> は、ビットマップまたはパックファイルにパックするためのあらゆる種類のオブジェクトを準備します。私たちが興味を持っている作業は、 <code>builtins/pack-objects.c:get_object_list()</code> にあります。その関数を調べると、すべてのオブジェクトの散歩が <code>traverse_commit_list()</code> または <code>traverse_commit_list_filtered()</code> によって実行されていることがわかります。これらの2つの関数は <code>list-objects.c</code> にあります。ソースを調べると、名前にもかかわらず、これらの関数はすべての種類のオブジェクトをトラバースすることがわかります。それでは、 <code>traverse_commit_list_filtered()</code> の引数を見てみましょう。</p></div>
+<div class="paragraph"><p>We can base our work on an example. <code>git pack-objects</code> prepares all kinds of objects for packing into a bitmap or packfile. The work we are interested in resides in <code>builtin/pack-objects.c:get_object_list()</code>; examination of that function shows that the all-object walk is being performed by <code>traverse_commit_list()</code> or <code>traverse_commit_list_filtered()</code>. Those two functions reside in <code>list-objects.c</code>; examining the source shows that, despite the name, these functions traverse all kinds of objects. Let&#8217;s have a look at the arguments to <code>traverse_commit_list()</code>.</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1361,8 +1368,8 @@ static int tree_count;</code></pre>
         } else {
                 trace_printf(
                         _("Filtered object walk with filterspec 'tree:1'.\n"));
-                CALLOC_ARRAY(rev-&gt;filter, 1);
-                parse_list_objects_filter(rev-&gt;filter, "tree:1");
+
+                parse_list_objects_filter(&amp;rev-&gt;filter, "tree:1");
         }
         traverse_commit_list(rev, walken_show_commit,
                              walken_show_object, NULL);</code></pre>
@@ -1372,11 +1379,15 @@ static int tree_count;</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_counting_omitted_objects">Counting Omitted Objects</h3>
-<div class="paragraph"><p>私達は、 <code>git log --filter=&lt;spec&gt; --filter-print-omitted</code> のように、フィルターによって省略されたすべてのオブジェクトを列挙する機能も持っています。 <code>traverse_commit_list_filtered()</code> に <code>omitted</code> リストにデータを入力するように要求することは、オブジェクト散歩が、フィルタリングされていないオブジェクト散歩より優れたパフォーマンスを発揮し無いことを意味します。リストにデータを入力するために、到達可能なすべてのオブジェクトを散歩します。</p></div>
+<div class="paragraph"><p>We also have the capability to enumerate all objects which were omitted by a filter, like with <code>git log --filter=&lt;spec&gt; --filter-print-omitted</code>. To do this, change <code>traverse_commit_list()</code> to <code>traverse_commit_list_filtered()</code>, which is able to populate an <code>omitted</code> list. Asking for this list of filtered objects may cause performance degradations, however, because in this case, despite filtering objects, the possibly much larger set of all reachable objects must be processed in order to populate that list.</p></div>
 <div class="paragraph"><p>まず、反復処理に使用する <code>struct oidset</code> と関連アイテムを追加します:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>static void walken_object_walk(
+<pre><code>#include "oidset.h"
+
+...
+
+static void walken_object_walk(
         ...
 
         struct oidset omitted;
@@ -1387,7 +1398,7 @@ static int tree_count;</code></pre>
 
         ...</code></pre>
 </div></div>
-<div class="paragraph"><p><code>traverse_commit_list_filtered()</code> の呼び出しを変更して、 あなたの <code>omitted</code> オブジェクトを含めます:</p></div>
+<div class="paragraph"><p>Replace the call to <code>traverse_commit_list()</code> with <code>traverse_commit_list_filtered()</code> and pass a pointer to the <code>omitted</code> oidset defined and initialized above:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>        ...
@@ -1416,7 +1427,11 @@ static int tree_count;</code></pre>
 <div class="paragraph"><p>最後に、コミットの散歩だけでなく、すべてのオブジェクトの散歩を並べ替えることもできることを示しましょう。まず、ハンドラーをおしゃべりにします。 <code>walken_show_commit()</code> と <code>walken_show_object()</code> を変更して、オブジェクトを出力します:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>static void walken_show_commit(struct commit *cmt, void *buf)
+<pre><code>#include "hex.h"
+
+...
+
+static void walken_show_commit(struct commit *cmt, void *buf)
 {
         trace_printf("commit: %s\n", oid_to_hex(&amp;cmt-&gt;object.oid));
         commit_count++;
@@ -1441,7 +1456,7 @@ static void walken_show_object(struct object *obj, const char *str, void *buf)
 <div class="paragraph"><p>その変更だけで、もう一度実行します(ただし、スクロールバックは少し我慢してください):</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ GIT_TRACE=1 ./bin-wrappers/git walken | head -n 10</code></pre>
+<pre><code>$ GIT_TRACE=1 ./bin-wrappers/git walken 2&gt;&amp;1 | head -n 10</code></pre>
 </div></div>
 <div class="paragraph"><p><code>git show</code> を使用したトップコミットと印刷した場合のオブジェクトを見てください。 <code>git show HEAD</code> の出力と同じである必要があります。</p></div>
 <div class="paragraph"><p>次に、 <code>walken_object_walk()</code> 内の <code>struct rev_info</code> の設定を変更しましょう。 <code>rev-&gt;tree_objects</code> や <code>rev-&gt;tree_blobs_in_commit_order</code> など、 <code>rev</code> の他の設定を変更する場所を見つけて、下部に <code>reverse</code> 設定を追加します:</p></div>
@@ -1461,7 +1476,7 @@ static void walken_show_object(struct object *obj, const char *str, void *buf)
 <div class="listingblock">
 <div class="content">
 <pre><code>$ make
-$ GIT_TRACE=1 ./bin-wrappers git walken | tail -n 10</code></pre>
+$ GIT_TRACE=1 ./bin-wrappers/git walken 2&gt;&amp;1 | tail -n 10</code></pre>
 </div></div>
 <div class="paragraph"><p>与えられた最後のコミットオブジェクトは、前に見たものと同じOIDを持つ必要があり、そのOIDで <code>git show &lt;oid&gt;</code> を実行すると、再び <code>git show HEAD</code> と同じ結果が得られます。さらに、最初の10行を再度実行して調べると(「reverse」設定を適用する前に行ったように「tail」ではなく「head」を使用)、最初に出力されるコミットが最初のコミット「e83c5163」であることがわかります。</p></div>
 </div>
@@ -1510,7 +1525,7 @@ $ GIT_TRACE=1 ./bin-wrappers git walken | tail -n 10</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-19 18:45:34 JST
+ 2024-12-11 23:58:33 JST
 </div>
 </div>
 </body>

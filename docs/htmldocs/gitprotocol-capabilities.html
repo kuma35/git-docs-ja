@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>gitprotocol-capabilities(5)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -768,7 +768,7 @@ gitprotocol-capabilities(5) Manual Page
 <div class="paragraph"><p>サーバーは、このドキュメントで定義されているすべての機能をサポートするべきです。</p></div>
 <div class="paragraph"><p>receive-pack および upload-pack の最初のサーバー応答の最初の行で、最初の参照の後に NUL バイトが続き、次にスペースで区切られたサーバー機能のリストが続きます。 これらにより、サーバーはクライアントに対してサポートできるものとサポートできないものを宣言できます。</p></div>
 <div class="paragraph"><p>次に、クライアントは、有効にしたい機能のスペース区切りのリストを送信します。 クライアントは、サーバーがサポートしているとは言っていない機能を要求してはいけません。</p></div>
-<div class="paragraph"><p>サーバーは送信された機能について診断し、理解できない機能が送信された場合、中止(abort)しなければなりません。サーバーは、クライアントが要求し、かつ、サーバーが宣伝(advertise)した機能の実行を無視してはなりません。 これらのルールの結果として、サーバーは理解できない機能を宣伝してはなりません。</p></div>
+<div class="paragraph"><p>Server MUST diagnose and abort if capabilities it does not understand were sent. Server MUST NOT ignore capabilities that client requested and server advertised. As a consequence of these rules, server MUST NOT advertise capabilities it does not understand.</p></div>
 <div class="paragraph"><p>atomic 機能と report-status 機能と report-status-v2 機能と delete-refs 機能と quiet 機能と push-cert 機能が送信され、 receive-pack 処理(サーバーへのプッシュ処理)によって認識されます。</p></div>
 <div class="paragraph"><p><code>ofs-delta</code> と <code>side-band-64k</code> 機能は、 upload-pack プロトコルと receive-pack プロトコルの両方によって送信および認識されます。 agent 機能と session-id 機能は、オプションで両方のプロトコルで送信できます。</p></div>
 <div class="paragraph"><p>他のすべての機能は、upload-pack (サーバーからのフェッチ) 処理によってのみ認識されます。</p></div>
@@ -779,7 +779,7 @@ gitprotocol-capabilities(5) Manual Page
 <div class="sectionbody">
 <div class="paragraph"><p>「multi_ack」機能により、サーバーは、クライアントの要求セットと所持しているセットの間で、共通のベースとして使用できるコミットを見つけるとすぐに「ACK obj-id continue」を返すことができます。</p></div>
 <div class="paragraph"><p>これを早期に送信することで、サーバーは、クライアントがクライアントのリポジトリ履歴の特定のブランチをさらにたどり下っていくのを防ぐことができます。 クライアントは、サーバーが DAG を完全に通過するまで、またはクライアントが「完了」と言うまで、他のブランチをたどってそれらのラインを送信する必要がある場合があります。</p></div>
-<div class="paragraph"><p>multi_ack がない場合、サーバーが共通のベースを見つけるまで、クライアントは <code>--date-order</code> で have 行を送信します。 つまり、クライアントは、サーバーが既に共通であると認識している行を送信します。これは、サーバーがまだ共通のベースを見つけていない別のブランチと時間的に重複するためです。</p></div>
+<div class="paragraph"><p>Without multi_ack, a client sends have lines in --date-order until the server has found a common base. That means the client will send have lines that are already known by the server to be common, because they overlap in time with another branch on which the server hasn&#8217;t found a common base yet.</p></div>
 <div class="paragraph"><p>たとえば、以下の図のように、クライアントにはサーバーにない大文字で表されるのコミットがあり、サーバーにはクライアントにはない小文字で表されるコミットがあるとします:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -797,7 +797,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_multi_ack_detailed">multi_ack_detailed</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>これは、クライアントがサーバーのメモリ内状態をよりよく理解できるようにする multi_ack の拡張です。 詳細については、 <a href="gitprotocol-pack.html">gitprotocol-pack(5)</a> の「Packfile Negotiation」セクションを参照してください。</p></div>
+<div class="paragraph"><p>This is an extension of multi_ack that permits the client to better understand the server&#8217;s in-memory state. See <a href="gitprotocol-pack.html">gitprotocol-pack(5)</a>, section "Packfile Negotiation" for more information.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -819,7 +819,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_side_band_side_band_64k">side-band, side-band-64k</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>この機能は、サーバーが送信できることを意味し、クライアントは、パックファイル自体に差し挟まれた多重化された進行状況レポートとエラー情報を理解します。</p></div>
+<div class="paragraph"><p>This capability means that the server can send, and the client can understand, multiplexed progress reports and error info interleaved with the packfile itself.</p></div>
 <div class="paragraph"><p>これら 2 つのオプションは相互に排他的です。 最新のクライアントは、常に「side-band-64k」を好みます。</p></div>
 <div class="paragraph"><p>いずれのモードも、パックファイルデータが「side_band」の場合は最大 1000 バイト、「side_band_64k」の場合は 65520 バイトのパケットに分割されてストリーミングされることを示します。 各パケットは、パケット内のデータ量を示す先頭の 4 バイトの pkt-line 長と、その後に続く 1 バイトのストリームコード、および実際のデータで構成されます。</p></div>
 <div class="paragraph"><p>ストリームコードは以下のいずれか一つです:</p></div>
@@ -831,13 +831,13 @@ a -- b -- c -- d -- E -- F
 </div></div>
 <div class="paragraph"><p>「side-band-64k」機能は、古いクライアントとの下位互換性を維持しながら、実際にはほぼいっぱいに詰め込まれたパケットを要求するために、はるかに大きなパケットを処理できる新しいクライアントの方法として生まれました。</p></div>
 <div class="paragraph"><p>さらに、 side-band とその最大 1000 バイトのメッセージを使用すると、実際には 999 バイトのペイロードと 1 バイトのストリームコードになります。 side-band-64k を使用すると、同じ取引で、最大 65519 バイトのデータと 1 バイトのストリームコードで使用できます。</p></div>
-<div class="paragraph"><p>クライアントは、 "side-band" と "side-band-64k" の最大値のどちらか 1 つだけ送信しなければなりません。 クライアントが両方を要求した場合、サーバーはそれをエラーとして診断しなければなりません。</p></div>
+<div class="paragraph"><p>The client MUST send only one of "side-band" and "side- band-64k". The server MUST diagnose it as an error if client requests both.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_ofs_delta">ofs-delta</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>サーバーは送信でき、クライアントは、obj-id ではなくパック内の位置によってベースを参照するデルタを使用して PACKv2 を理解します。 つまり、パックファイルで OBJ_OFS_DELTA (別名:タイプ 6) を 送信/読み取り することができます。</p></div>
+<div class="paragraph"><p>The server can send, and the client can understand, PACKv2 with delta referring to its base by position in pack rather than by an obj-id. That is, they can send/read OBJ_OFS_DELTA (aka type 6) in a packfile.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -889,7 +889,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_no_progress">no-progress</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>クライアントは「git clone -q」などで開始され、その サイドバンド 2 は必要ありません。基本的に、クライアントは「私はサイドバンドでストリーム 2 を受信したくないので、送信しないでください。 もし送信されたら、とにかく破棄します。(I will drop it on the floor anyway)」 ただし、サイドバンド チャネル 3 はエラー応答に引き続き使用されます。</p></div>
+<div class="paragraph"><p>The client was started with "git clone -q" or something similar, and doesn&#8217;t want that side band 2. Basically the client just says "I do not wish to receive stream 2 on sideband, so do not send it to me, and if you did, I will drop it on the floor anyway". However, the sideband channel 3 is still used for error responses.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -897,7 +897,7 @@ a -- b -- c -- d -- E -- F
 <div class="sectionbody">
 <div class="paragraph"><p>「include-tag」機能は、それらが指すオブジェクトを送信する場合に、注釈付きタグを送信することに関するものです。 オブジェクトをクライアントにパックし、タグ オブジェクトがそのオブジェクトを正確に指す場合、タグオブジェクトもパックします。 一般に、これにより、クライアントは単一のネットワーク接続でブランチをフェッチするときに、すべての新しい注釈付きタグを取得できます。</p></div>
 <div class="paragraph"><p>クライアントは、サーバーがこの機能を宣伝するときに、常に include-tag を要求にハードコーディングして送信しても構いません。 クライアントが include-tag を要求するかどうかの決定は、サーバーが <code>refs/tags/*</code> 名前空間でオブジェクトを宣伝したかどうかに関係なく、タグデータに対するクライアントの要求にのみ関係があります。</p></div>
-<div class="paragraph"><p>サーバーは、リファラント(referrant)がパックされていて、クライアントが include-tags を要求している場合、タグをパックする必要があります。</p></div>
+<div class="paragraph"><p>Servers MUST pack the tags if their referent is packed and the client has requested include-tags.</p></div>
 <div class="paragraph"><p>クライアントは、サーバーが include-tag を無視し、パック内のタグを実際に送信していない場合に備えなければなりません。 そのような場合、クライアントは後続のフェッチを発行して、そうでなければ include-tag がクライアントに与えるタグを取得する必要があります。</p></div>
 <div class="paragraph"><p>サーバーは、使用可能なタグがあるかどうかに関係なく、サポートしている場合、 include-tag を送信すべきです。</p></div>
 </div>
@@ -963,7 +963,7 @@ a -- b -- c -- d -- E -- F
 </div>
 </div>
 <div class="sect1">
-<h2 id="_session_id_lt_session_id_gt">session-id=&lt;session id&gt;</h2>
+<h2 id="_session_id_lt_session_id_gt">session-id=&lt;session-id&gt;</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>サーバーは、複数のリクエストでこのプロセスを識別するために使用できるセッション ID を宣伝する場合があります。 クライアントは、独自のセッション ID をサーバーに宣伝することもできます。</p></div>
 <div class="paragraph"><p>セッション ID は、特定のプロセスに対して一意である必要があります。 それらはパケット行内に収まる必要があり、印刷できない文字や空白文字を含んではなりません。 現在の実装では trace2 セッション ID を使用していますが (詳細については、 <a href="technical/api-trace2.html">api-trace2</a> を参照してください)、これは変更される可能性があり、セッション ID のユーザーはこの事実に依存しないでください。</p></div>
@@ -980,7 +980,7 @@ a -- b -- c -- d -- E -- F
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:53 JST
+ 2024-12-11 23:59:19 JST
 </div>
 </div>
 </body>

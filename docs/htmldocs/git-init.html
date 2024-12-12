@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-init(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -748,22 +748,20 @@ git-init(1) Manual Page
 <div class="sect1">
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
-<div class="verseblock">
-<pre class="content"><em>git init</em> [-q | --quiet] [--bare] [--template=&lt;template-directory&gt;]
-          [--separate-git-dir &lt;git-dir&gt;] [--object-format=&lt;format&gt;]
-          [-b &lt;branch-name&gt; | --initial-branch=&lt;branch-name&gt;]
-          [--shared[=&lt;permissions&gt;]] [&lt;directory&gt;]</pre>
-<div class="attribution">
-</div></div>
+<div class="paragraph"><p>git init [-q | --quiet] [--bare] [--template=&lt;template-directory&gt;]
+         [--separate-git-dir &lt;git-dir&gt;] [--object-format=&lt;format&gt;]
+         [--ref-format=&lt;format&gt;]
+         [-b &lt;branch-name&gt; | --initial-branch=&lt;branch-name&gt;]
+         [--shared[=&lt;permissions&gt;]] [&lt;directory&gt;]</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>このコマンドは、空のGitリポジトリを作成します。基本的には、 <code>objects</code> と <code>refs/heads</code> と <code>refs/tags</code> と テンプレートファイルのためのサブディレクトリを持つ <code>.git</code> ディレクトリです。コミットのない初期ブランチが作成されます(初期ブランチの名前については、以下の <code>--initial-branch</code> オプションを参照してください)。</p></div>
-<div class="paragraph"><p><code>$GIT_DIR</code> 環境変数が設定されている場合、リポジトリのベースに <code>./.git</code> の代わりに、 <code>$GIT_DIR</code> で指定されたパスを使います。</p></div>
-<div class="paragraph"><p>オブジェクトストレージディレクトリが <code>$GIT_OBJECT_DIRECTORY</code> 環境変数を介して指定されている場合、sha1ディレクトリがその下に作成されます。それ以外の場合は、デフォルトの <code>$GIT_DIR/objects</code> ディレクトリが使用されます。</p></div>
-<div class="paragraph"><p>既存のリポジトリで「git init」を実行しても安全です。すでに存在するものを上書きすることはありません。「git init」を再実行する主な理由は、新しく追加されたテンプレートを取得することです(または、 <code>--separate-git-dir</code> が指定されている場合はリポジトリを別の場所に移動します)。</p></div>
+<div class="paragraph"><p>If the <code>GIT_DIR</code> environment variable is set then it specifies a path to use instead of <code>./.git</code> for the base of the repository.</p></div>
+<div class="paragraph"><p>If the object storage directory is specified via the <code>GIT_OBJECT_DIRECTORY</code> environment variable then the sha1 directories are created underneath; otherwise, the default <code>$GIT_DIR/objects</code> directory is used.</p></div>
+<div class="paragraph"><p>Running <code>git init</code> in an existing repository is safe. It will not overwrite things that are already there. The primary reason for rerunning <code>git init</code> is to pick up newly added templates (or to move the repository to another place if <code>--separate-git-dir</code> is given).</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -794,9 +792,32 @@ git-init(1) Manual Page
 </dt>
 <dd>
 <p>
-リポジトリに設定するブジェクト形式(ハッシュアルゴリズム)を指定します。 有効な値は「sha1」および、(有効な場合、)「sha256」です。「sha1」がデフォルトです。
+Specify the given object <em>&lt;format&gt;</em> (hash algorithm) for the repository. The valid values are <code>sha1</code> and (if enabled) <code>sha256</code>. <code>sha1</code> is the default.
 </p>
-<div class="paragraph"><p>このオプションは実験的なものです！ SHA-256のサポートは実験的なものであり、まだ初期段階です。 SHA-256リポジトリは、通常、「通常の」SHA-1リポジトリと作業を共有できません。 たとえば、SHA-256リポジトリに関連するGit内部ファイル形式は、下位互換性のない方法で変更される可能性があると想定する必要があります。テスト目的でのみ <code>--object-format=sha256</code> を使用してください。</p></div>
+<div class="paragraph"><p>Note: At present, there is no interoperability between SHA-256 repositories and SHA-1 repositories.</p></div>
+</dd>
+</dl></div>
+<div class="paragraph"><p>Historically, we warned that SHA-256 repositories may later need backward incompatible changes when we introduce such interoperability features. Today, we only expect compatible changes. Furthermore, if such changes prove to be necessary, it can be expected that SHA-256 repositories created with today&#8217;s Git will be usable by future versions of Git without data loss.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--ref-format=&lt;format&gt;</code>
+</dt>
+<dd>
+<p>
+Specify the given ref storage <em>&lt;format&gt;</em> for the repository. The valid values are:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>files</code> for loose files with packed-refs. This is the default.
+</p>
+</li>
+<li>
+<p>
+<code>reftable</code> for the reftable format. This format is experimental and its internals are subject to change.
+</p>
+</li>
+</ul></div>
 </dd>
 <dt class="hdlist1">
 <code>--template=&lt;template-directory&gt;</code>
@@ -811,9 +832,9 @@ git-init(1) Manual Page
 </dt>
 <dd>
 <p>
-リポジトリをディレクトリとして <code>$GIT_DIR</code> または <code>./.git/</code> に初期化する代わりに、実際のリポジトリへのパスを含むテキストファイルをそこに作成します。 このファイルは、ファイルシステムに依存しない、リポジトリへのGitシンボリックリンクとして機能します。
+Instead of initializing the repository as a directory to either <code>$GIT_DIR</code> or <code>./.git/</code>, create a text file there containing the path to the actual repository. This file acts as a filesystem-agnostic Git symbolic link to the repository.
 </p>
-<div class="paragraph"><p>これが再初期化の場合、リポジトリは指定されたパスに移動されます。</p></div>
+<div class="paragraph"><p>If this is a reinitialization, the repository will be moved to the specified path.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>-b &lt;branch-name&gt;</code>
@@ -823,7 +844,7 @@ git-init(1) Manual Page
 </dt>
 <dd>
 <p>
-新しく作成されたリポジトリの最初のブランチには、指定された名前を使用します。 指定しない場合は、デフォルト名にフォールバックします(現在は <code>master</code> ですが、将来変更される可能性があります。名前は <code>init.defaultBranch</code> 構成変数を使用してカスタマイズできます)。
+Use <em>&lt;branch-name&gt;</em> for the initial branch in the newly created repository. If not specified, fall back to the default name (currently <code>master</code>, but this is subject to change in the future; the name can be customized via the <code>init.defaultBranch</code> configuration variable).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -831,42 +852,54 @@ git-init(1) Manual Page
 </dt>
 <dd>
 <p>
-Gitリポジトリを複数のユーザー間で共有することを指定します。 これにより、同じグループに属するユーザーがそのリポジトリにプッシュできるようになります。 指定すると、構成変数 <code>core.sharedRepository</code> が設定され、 <code>$GIT_DIR</code> の下のファイルとディレクトリが要求された権限で作成されます。 指定しない場合、Gitは umask(2) によって報告された権限を使用します。
+Specify that the Git repository is to be shared amongst several users. This allows users belonging to the same group to push into that repository. When specified, the config variable <code>core.sharedRepository</code> is set so that files and directories under <code>$GIT_DIR</code> are created with the requested permissions. When not specified, Git will use permissions reported by <code>umask</code>(2).
 </p>
-<div class="paragraph"><p>オプションには以下の値を指定できます。値が指定されていない場合、デフォルトで <code>group</code> になります。</p></div>
+<div class="paragraph"><p>The option can have the following values, defaulting to <code>group</code> if no value is given:</p></div>
 <div class="openblock">
 <div class="content">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>umask</code> (or <code>false</code>)
+<code>umask</code>
+</dt>
+<dt class="hdlist1">
+<code>false</code>
 </dt>
 <dd>
 <p>
-umask(2) によって報告されたアクセス許可を使用します。 <code>--shared</code> が指定されていない場合のデフォルトです。
+Use permissions reported by <code>umask</code>(2). The default, when <code>--shared</code> is not specified.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>group</code> (or <code>true</code>)
+<code>group</code>
+</dt>
+<dt class="hdlist1">
+<code>true</code>
 </dt>
 <dd>
 <p>
-リポジトリをグループ書き込み可能にします(gitグループがすべてのユーザーのプライマリグループではない可能性があるため、 <code>g+sx</code> )。 これは、そうしないでいれば安全な umask(2) 値の権限を緩めるために使用されます。 注意: umaskは他の権限ビットにも適用されることに注意してください(たとえば、umaskが <code>0022</code> の場合、 <code>group</code> を使用しても他の(グループ以外の)ユーザーからの読み取り権限は削除されません)。 リポジトリの権限を正確に指定する方法については、 <code>0xxx</code> を参照してください。
+Make the repository group-writable, (and <code>g+sx</code>, since the git group may not be the primary group of all users). This is used to loosen the permissions of an otherwise safe <code>umask</code>(2) value. Note that the umask still applies to the other permission bits (e.g. if umask is <code>0022</code>, using <code>group</code> will not remove read privileges from other (non-group) users). See <code>0xxx</code> for how to exactly specify the repository permissions.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>all</code> (または <code>world</code> または <code>everybody</code>)
+<code>all</code>
+</dt>
+<dt class="hdlist1">
+<code>world</code>
+</dt>
+<dt class="hdlist1">
+<code>everybody</code>
 </dt>
 <dd>
 <p>
-<code>group</code> と同じですが、すべてのユーザーからリポジトリを読めるようにします。
+Same as <code>group</code>, but make the repository readable by all users.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>&lt;perm&gt;</code>
+<em>&lt;perm&gt;</em>
 </dt>
 <dd>
 <p>
-各ファイルはモード <code>&lt;perm&gt;</code> を持ち、 <code>&lt;perm&gt;</code> は、 (訳注:C言語流に、) <code>0</code> が先頭に付いた 3 桁の 8 進数です。 <code>&lt;perm&gt;</code> は、ユーザーの umask(2) 値を上書きします(<code>group</code> や <code>all</code> のように許可を緩めるだけではありません)。 <code>0640</code> は、 グループで読み取り可能であるが、 グループで書き込み可能でなく、 他のユーザーがアクセスできないリポジトリを作成します。 <code>0660</code> は、現在のユーザーとグループが読み書きできるが、 他のユーザーがアクセスできないリポジトリを作成します(ディレクトリと実行可能ファイルは、ユーザーの対応するクラスの <code>r</code> ビットから <code>x</code> ビットを取得します)。
+<em>&lt;perm&gt;</em> is a 3-digit octal number prefixed with &#8216;0` and each file will have mode <em>&lt;perm&gt;</em>. <em>&lt;perm&gt;</em> will override users&#8217; <code>umask</code>(2) value (and not only loosen permissions as <code>group</code> and <code>all</code> do). <code>0640</code> will create a repository which is group-readable, but not group-writable or accessible to others. <code>0660</code> will create a repo that is readable and writable to the current user and group, but inaccessible to others (directories and executable files get their <code>x</code> bit from the <code>r</code> bit for corresponding classes of users).
 </p>
 </dd>
 </dl></div>
@@ -874,7 +907,7 @@ umask(2) によって報告されたアクセス許可を使用します。 <cod
 </dd>
 </dl></div>
 <div class="paragraph"><p>デフォルトでは、共有リポジトリ内で、構成フラグ <code>receive.denyNonFastForwards</code> が有効(ture)になっているため、早送り(fast-forward)以外のプッシュを強制することはできません。</p></div>
-<div class="paragraph"><p>directory(ディレクトリ)を指定すると、コマンドはその内部で実行されます。指定のディレクトリが存在しない場合は、作成されます。</p></div>
+<div class="paragraph"><p>If you provide a <em>&lt;directory&gt;</em>, the command is run inside it. If this directory does not exist, it will be created.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -927,7 +960,7 @@ $ git commit    <b>&lt;3&gt;</b></code></pre>
 <div class="colist arabic"><ol>
 <li>
 <p>
-/path/to/my/codebase/.git ディレクトリを作成します。
+Create a <code>/path/to/my/codebase/.git</code> directory.
 </p>
 </li>
 <li>
@@ -951,19 +984,35 @@ $ git commit    <b>&lt;3&gt;</b></code></pre>
 <div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は <a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-init.templateDir
+<code>init.templateDir</code>
 </dt>
 <dd>
 <p>
-        テンプレートのコピー元のディレクトリを指定します。 (<a href="git-init.html">git-init(1)</a> の「TEMPLATE DIRECTORY」セクションを参照してください。)
+        Specify the directory from which templates will be copied. 
 </p>
 </dd>
 <dt class="hdlist1">
-init.defaultBranch
+<code>init.defaultBranch</code>
 </dt>
 <dd>
 <p>
         デフォルトのブランチ名を上書きできます。例えば、新しいリポジトリを初期化するとき。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>init.defaultObjectFormat</code>
+</dt>
+<dd>
+<p>
+        Allows overriding the default object format for new repositories. See <code>--object-format=</code> in <a href="git-init.html">git-init(1)</a>. Both the command line option and the <code>GIT_DEFAULT_HASH</code> environment variable take precedence over this config.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>init.defaultRefFormat</code>
+</dt>
+<dd>
+<p>
+        Allows overriding the default ref storage format for new repositories. See <code>--ref-format=</code> in <a href="git-init.html">git-init(1)</a>. Both the command line option and the <code>GIT_DEFAULT_REF_FORMAT</code> environment variable take precedence over this config.
 </p>
 </dd>
 </dl></div>
@@ -980,7 +1029,7 @@ init.defaultBranch
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:33 JST
+ 2024-12-11 23:58:52 JST
 </div>
 </div>
 </body>

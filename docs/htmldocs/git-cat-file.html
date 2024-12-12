@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-cat-file(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -740,7 +740,7 @@ git-cat-file(1) Manual Page
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>git-cat-file -
-   リポジトリオブジェクトのコンテンツまたはタイプとサイズの情報を提供します
+   Provide contents or details of repository objects
 </p>
 </div>
 </div>
@@ -752,11 +752,11 @@ git-cat-file(1) Manual Page
 <pre class="content"><em>git cat-file</em> &lt;type&gt; &lt;object&gt;
 <em>git cat-file</em> (-e | -p) &lt;object&gt;
 <em>git cat-file</em> (-t | -s) [--allow-unknown-type] &lt;object&gt;
+<em>git cat-file</em> (--textconv | --filters)
+             [&lt;rev&gt;:&lt;path|tree-ish&gt; | --path=&lt;path|tree-ish&gt; &lt;rev&gt;]
 <em>git cat-file</em> (--batch | --batch-check | --batch-command) [--batch-all-objects]
              [--buffer] [--follow-symlinks] [--unordered]
-             [--textconv | --filters] [-Z]
-<em>git cat-file</em> (--textconv | --filters)
-             [&lt;rev&gt;:&lt;path|tree-ish&gt; | --path=&lt;path|tree-ish&gt; &lt;rev&gt;]</pre>
+             [--textconv | --filters] [-Z]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -764,8 +764,10 @@ git-cat-file(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>SYNOPSISの最初の形式では、コマンドはリポジトリ内のオブジェクトのコンテンツまたはタイプを提供します。 オブジェクトのタイプを調べるために <code>-t</code> や <code>-p</code> が使われているか、オブジェクトのサイズを調べるために <code>-s</code> が使われているか、あるいは <code>--textconv</code> や <code>--filters</code> が使われている(これらはタイプ <code>blob</code> を意味する)場合を除いて、タイプは必須となります。</p></div>
-<div class="paragraph"><p>SYNOPSISの2番目の形式では、オブジェクトのリスト(改行で区切られている)がstdinに提供され、各オブジェクトのSHA-1のタイプとサイズがstdoutに出力されます。 オプションの <code>&lt;format&gt;</code> 引数を使用して、出力形式をオーバーライドできます。 <code>--textconv</code> または <code>--filters</code> のいずれかが指定された場合、入力は、適切なドライバーを決定できるように、オブジェクト名とそれに続くパス名を単一の空白で区切ってリストすることが期待されます。</p></div>
+<div class="paragraph"><p>Output the contents or other properties such as size, type or delta information of one or more objects.</p></div>
+<div class="paragraph"><p>This command can operate in two modes, depending on whether an option from the <code>--batch</code> family is specified.</p></div>
+<div class="paragraph"><p>In non-batch mode, the command provides information on an object named on the command line.</p></div>
+<div class="paragraph"><p>In batch mode, arguments are read from standard input.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -801,7 +803,7 @@ git-cat-file(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>&lt;object&gt;</code> が存在し、有効なオブジェクトである場合、ステータスはゼロで終了(exit)します。 <code>&lt;object&gt;</code> が無効な形式の場合、ゼロ以外で終了(exit)し、stderrでエラーを発行します。
+        Exit with zero status if <code>&lt;object&gt;</code> exists and is a valid object. If <code>&lt;object&gt;</code> is of an invalid format, exit with non-zero status and emit an error on stderr.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1080,7 +1082,7 @@ alink は /etc/passwd への symlink です。</code></pre>
 <div class="sect1">
 <h2 id="_batch_output">BATCH OUTPUT</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>--batch</code> または <code>--batch-check</code> が指定されている場合、 <code>cat-file</code> はstdinからオブジェクトを1行に1つずつ読み取り、それらに関する情報を出力します。 デフォルトでは、 <a href="git-rev-parse.html">git-rev-parse(1)</a> にフィードされたかのように、行全体がオブジェクトと見なされます。</p></div>
+<div class="paragraph"><p>If <code>--batch</code> or <code>--batch-check</code> is given, <code>cat-file</code> will read objects from stdin, one per line, and print information about them in the same order as they have been read. By default, the whole line is considered as an object, as if it were fed to <a href="git-rev-parse.html">git-rev-parse(1)</a>.</p></div>
 <div class="paragraph"><p><code>--batch-command</code> が指定されると、 <code>cat-file</code> は標準入力からコマンドを 1 行に 1 つずつ読み取り、指定されたコマンドに基づいて情報を出力します。 <code>--batch-command</code> を使用すると、 <code>info</code> コマンドの後にオブジェクトが続くと <code>--batch-check</code> と同一の方法でオブジェクトに関する情報が出力され、 <code>contents</code> コマンドの後にオブジェクトが続くと <code>--batch</code> と同一の方法で内容が出力されます。</p></div>
 <div class="paragraph"><p>カスタム <code>&lt;format&gt;</code> を使用して、オブジェクトごとに表示される情報を指定できます。 <code>&lt;format&gt;</code> は、各オブジェクトのstdoutに文字通りコピーされ、 <code>%(atom)</code> `形式のプレースホルダーが展開され、その後に改行が続きます。 使用可能なatomは以下のとおりです:</p></div>
 <div class="dlist"><dl>
@@ -1208,7 +1210,7 @@ alink は /etc/passwd への symlink です。</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-22 05:59:23 JST
+ 2024-12-11 23:58:39 JST
 </div>
 </div>
 </body>

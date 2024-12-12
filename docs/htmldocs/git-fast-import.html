@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-fast-import(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -1009,7 +1009,7 @@ fastimport.unpackLimit
 </dt>
 <dd>
 <p>
-        これは、RFC2822で説明されている標準の電子メール形式です。
+        This is the standard date format as described by RFC 2822.
 </p>
 <div class="paragraph"><p>この値は例えば <code>Tue Feb 6 11:22:18 2007 -0500</code> です。 Gitパーサーは正確ですが、ちょっぴり寛大です。 これは、電子メールから受信したパッチを適用するときに <code>git am</code> によって使用されるのと同じパーサーです。</p></div>
 <div class="paragraph"><p>一部の不正な形式の文字列が、有効な日付として受け入れられる場合があります。 これらの場合のいくつかでは、Gitは不正な形式の文字列から正しい日付を取得できます。 また、Gitが誤ってパースし、それでも有効と見なす不正な形式の文字列の種類もあります。 ひどくおかしい文字列は拒否されます。</p></div>
@@ -1274,7 +1274,7 @@ Inline data format
 </li>
 <li>
 <p>
-<code>160000</code> : gitlink、オブジェクトのSHA-1は、他のリポジトリのコミットを参照しています。 Gitリンクは、SHAまたはコミットマークを介してのみ指定できます。 これらは、サブモジュールを実装するために使用されます。
+<code>160000</code>: A gitlink, SHA-1 of the object refers to a commit in another repository. Git links can only be specified either by SHA or through a commit mark. They are used to implement submodules.
 </p>
 </li>
 <li>
@@ -1284,9 +1284,10 @@ Inline data format
 </li>
 </ul></div>
 <div class="paragraph"><p>どちらの形式でも、 <code>&lt;path&gt;</code> は、追加(まだ存在しない場合)または変更(すでに存在する場合)するファイルの完全なパスです。</p></div>
-<div class="paragraph"><p><code>&lt;path&gt;</code> 文字列はUNIXスタイルのディレクトリ区切り文字(スラッシュ <code>/</code>)を使用する必要があり、 <code>LF</code> 以外のバイトを含めることができ、二重引用符(<code>"</code>)で始めることはできません。</p></div>
-<div class="paragraph"><p>パスはC言語スタイルの文字列クォートを使用できます。 これはすべての場合に受け入れられ、ファイル名が二重引用符で始まるか、<code>LF</code> を含む場合は必須です。 C言語スタイルのクォートでは、完全な名前を二重引用符で囲み、 <code>LF</code>、 バックスラッシュ(<code>\</code>)、または二重引用符の文字の前に円記号を付けてエスケープする必要があります(例: <code>"path/with\n, \\ and \" in it"</code> )。</p></div>
-<div class="paragraph"><p><code>&lt;path&gt;</code> の値は標準形(canonical form)でなければなりません。以下は禁止です:</p></div>
+<div class="paragraph"><p>A <code>&lt;path&gt;</code> can be written as unquoted bytes or a C-style quoted string.</p></div>
+<div class="paragraph"><p>When a <code>&lt;path&gt;</code> does not start with a double quote (<code>"</code>), it is an unquoted string and is parsed as literal bytes without any escape sequences. However, if the filename contains <code>LF</code> or starts with double quote, it cannot be represented as an unquoted string and must be quoted. Additionally, the source <code>&lt;path&gt;</code> in <code>filecopy</code> or <code>filerename</code> must be quoted if it contains SP.</p></div>
+<div class="paragraph"><p>When a <code>&lt;path&gt;</code> starts with a double quote (<code>"</code>), it is a C-style quoted string, where the complete filename is enclosed in a pair of double quotes and escape sequences are used. Certain characters must be escaped by preceding them with a backslash: <code>LF</code> is written as <code>\n</code>, backslash as <code>\\</code>, and double quote as <code>\"</code>. Some characters may optionally be written with escape sequences: <code>\a</code> for bell, <code>\b</code> for backspace, <code>\f</code> for form feed, <code>\n</code> for line feed, <code>\r</code> for carriage return, <code>\t</code> for horizontal tab, and <code>\v</code> for vertical tab. Any byte can be written with 3-digit octal codes (e.g., <code>\033</code>). All filenames can be represented as quoted strings.</p></div>
+<div class="paragraph"><p>A <code>&lt;path&gt;</code> must use UNIX-style directory separators (forward slash <code>/</code>) and its value must be in canonical form. That is it must not:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1310,7 +1311,7 @@ Inline data format
 </li>
 </ul></div>
 <div class="paragraph"><p>ツリーのルートは、 <code>&lt;path&gt;</code> に空の文字列を指定します。</p></div>
-<div class="paragraph"><p><code>&lt;path&gt;</code> は常にUTF-8を使用してエンコードすることをお勧めします。</p></div>
+<div class="paragraph"><p><code>&lt;path&gt;</code> cannot contain NUL, either literally or escaped as <code>\000</code>. It is recommended that <code>&lt;path&gt;</code> always be encoded using UTF-8.</p></div>
 </div>
 <div class="sect3">
 <h4 id="_code_filedelete_code"><code>filedelete</code></h4>
@@ -1354,7 +1355,7 @@ Inline data format
 </div>
 <div class="sect3">
 <h4 id="_code_notemodify_code"><code>notemodify</code></h4>
-<div class="paragraph"><p><code>&lt;commit-ish&gt;</code> に注釈する新しいノートを追加したり、この注釈の内容を変更したりするために <code>commit</code> <code>&lt;notes_ref&gt;</code> コマンドに含まれています。 内部的には、 <code>&lt;commit-ish&gt;</code> パスの <code>filemodify 100644</code> に似ています(サブディレクトリに分割されている可能性があります)。 <code>filedeleteall</code> 以外のコマンドを使用して <code>&lt;notes_ref&gt;</code> ツリーに書き込み、このツリー内の既存のノートをすべて削除することはお勧めしません。 このコマンドには、ノートの内容を指定する2つの異なる方法があります。</p></div>
+<div class="paragraph"><p>Included in a <code>commit</code> <code>&lt;notes-ref&gt;</code> command to add a new note annotating a <code>&lt;commit-ish&gt;</code> or change this annotation contents. Internally it is similar to filemodify 100644 on <code>&lt;commit-ish&gt;</code> path (maybe split into subdirectories). It&#8217;s not advised to use any other commands to write to the <code>&lt;notes-ref&gt;</code> tree except <code>filedeleteall</code> to delete all existing notes in this tree. This command has two different means of specifying the content of the note.</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 External data format
@@ -1834,7 +1835,7 @@ git fast-import &gt;fast-import-output</code></pre>
 <div class="sect2">
 <h3 id="_use_one_mark_per_commit">Use One Mark Per Commit</h3>
 <div class="paragraph"><p>リポジトリ変換を行うときは、コミットごとに一意のマーク(<code>mark :&lt;n&gt;</code>)を使用し、コマンドラインで <code>--export-marks</code> オプションを指定します。 fast-importは、すべてのマークとそれに対応するGitオブジェクトSHA-1をリストするファイルをダンプします。 フロントエンドがマークをソースリポジトリに結び付けることができる場合、各Gitコミットを対応するソースリビジョンと比較することで、インポートの正確性と完全性を簡単に確認できます。</p></div>
-<div class="paragraph"><p>PerforceやSubversionなどのシステムから来る場合、これは非常に単純なはずです。fast-importマークは、Perforceのチェンジセット番号またはSubversionのリビジョン番号でもある可能性があるためです。</p></div>
+<div class="paragraph"><p>Coming from a system such as Perforce or Subversion, this should be quite simple, as the fast-import mark can also be the Perforce changeset number or the Subversion revision number.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_freely_skip_around_branches">Freely Skip Around Branches</h3>
@@ -1927,7 +1928,7 @@ fastimport.unpackLimit
 </dt>
 <dd>
 <p>
-        <a href="git-fast-import.html">git-fast-import(1)</a> によってインポートされたオブジェクトの数がこの制限を下回る場合、オブジェクトは緩いオブジェクト(loose object)ファイルに解凍されます。 ただし、インポートされたオブジェクトの数がこの制限以上の場合、パックはパックとして保存されます。 fast-import(高速インポート)からパックを保存すると、特に低速のファイルシステムで、インポート操作をより速く完了することができます。 設定されていない場合は、代わりに <code>transfer.unpackLimit</code> の値が使用されます。
+        If the number of objects imported by <a href="git-fast-import.html">git-fast-import(1)</a> is below this limit, then the objects will be unpacked into loose object files. However, if the number of imported objects equals or exceeds this limit, then the pack will be stored as a pack. Storing the pack from a fast-import can make the import operation complete faster, especially on slow filesystems. If not set, the value of <code>transfer.unpackLimit</code> is used instead.
 </p>
 </dd>
 </dl></div>
@@ -1950,7 +1951,7 @@ fastimport.unpackLimit
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-10-27 08:07:23 JST
+ 2024-12-11 23:58:47 JST
 </div>
 </div>
 </body>

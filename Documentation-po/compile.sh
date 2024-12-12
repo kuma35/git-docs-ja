@@ -8,6 +8,8 @@ do
     fi
 done
 cd ${PROJ}/Documentation-po
+# using python3 venv for asciidoc
+source ${PROJ}/Documentation-po/venv/bin/activate
 make ja
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then

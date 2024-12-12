@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>How to maintain Git</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>How to maintain Git</h1>
-<span id="revdate">2024-02-10</span>
+<span id="revdate">2024-12-12</span>
 </div>
 <div id="content">
 <div class="sect1">
@@ -767,7 +767,7 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="_the_policy">The Policy</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>統合に関するポリシーは、「A Note from the maintainer」メッセージに非公式に記載されています。このメッセージは、各機能のリリースが行われた後、このメーリングリストに定期的に投稿されます。</p></div>
+<div class="paragraph"><p>The policy on Integration is informally mentioned in "A Note from the maintainer" message, which is periodically posted to the mailing list after each feature release is made:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -776,17 +776,12 @@ asciidoc.install();
 </li>
 <li>
 <p>
-機能リリースのリリースサイクルは、8〜10週間と想定されています。
+Maintenance releases are numbered as vX.Y.Z (0 &lt; Z) and are meant to contain only bugfixes for the corresponding vX.Y.0 feature release and earlier maintenance releases vX.Y.W (W &lt; Z).
 </p>
 </li>
 <li>
 <p>
-メンテナンスリリースにはvX.Y.Zという番号が付けられており、対応する vX.Y.0 機能リリースと以前のメンテナンスリリース vX.Y.W(W&lt;Z) の、バグ修正のみが含まれていることを意味します。
-</p>
-</li>
-<li>
-<p>
-「master」ブランチは、次の機能リリースの準備に使用されます。 つまり、ある時点で、「master」ブランチの先端に vX.Y.0 のタグが付けられます。
+The <em>master</em> branch is used to prepare for the next feature release. In other words, at some point, the tip of <em>master</em> branch is tagged as vX.(Y+1).0, when vX.Y.0 is the latest feature release.
 </p>
 </li>
 <li>
@@ -796,12 +791,22 @@ asciidoc.install();
 </li>
 <li>
 <p>
-「next」ブランチは、 (1)価値のある目標があり、 (2)日常の使用に適したかなり良好な状態であり、 (3)デグレがないことがまだ実証されていない変更(拡張と修正の両方)を公開するために使用されます。 新しい変更は、「master」にマージされる前に「next」でテストされます。
+<em>next</em> branch is used to publish changes (both enhancements and fixes) that (1) have worthwhile goal, (2) are in a fairly good shape suitable for everyday use, (3) but have not yet demonstrated to be regression free. Reviews from contributors on the mailing list help to make the determination. After a topic is merged to <em>next</em>, it is tested for at least 7 calendar days before getting merged to <em>master</em>.
 </p>
 </li>
 <li>
 <p>
-「seen」ブランチは、「next」に設定された基準をまだパスしていない他の提案された変更を公開するために使用されます。
+<em>seen</em> branch is used to publish other proposed changes that do not yet pass the criteria set for <em>next</em> (see above), but there is no promise that <em>seen</em> will contain everything. A topic that had no reviewer reaction may not be picked up.
+</p>
+</li>
+<li>
+<p>
+A new topic will first get merged to <em>seen</em>, unless it is trivially correct and clearly urgent, in which case it may be directly merged to <em>next</em> or even to <em>master</em>.
+</p>
+</li>
+<li>
+<p>
+If a topic that was picked up to <em>seen</em> becomes and stays inactive for 3 calendar weeks without having seen a clear consensus that it is good enough to be moved to <em>next</em>, the topic may be discarded from <em>seen</em>. Interested parties are still free to revive the topic. For the purpose of this guideline, the definition of being "inactive" is that nobody has discussed the topic, no new iteration of the topic was posted, and no responses to the review comments were given.
 </p>
 </li>
 <li>
@@ -824,8 +829,34 @@ asciidoc.install();
 「next」ブランチは新しいアクションが行われる場所であり、新しいトピックが「master」にマージされる前にデグレとバグが見つかるように、ユーザーはそれをテストすることをお勧めします。
 </p>
 </li>
+<li>
+<p>
+When a problem is found in a topic in <em>next</em>, the topic is marked not to be merged to <em>master</em>. Follow-up patches are discussed on the mailing list and applied to the topic after being reviewed and then the topic is merged (again) to <em>next</em>. After going through the usual testing in <em>next</em>, the entire (fixed) topic is merged to <em>master</em>.
+</p>
+</li>
+<li>
+<p>
+One release cycle for a feature release is expected to last for eight to ten weeks. A few "release candidate" releases are expected to be tagged about a week apart before the final release, and a "preview" release is tagged about a week before the first release candidate gets tagged.
+</p>
+</li>
+<li>
+<p>
+After the preview release is tagged, topics that were well reviewed may be merged to <em>master</em> before spending the usual 7 calendar days in <em>next</em>, with the expectation that any bugs in them can be caught and fixed in the release candidates before the final release.
+</p>
+</li>
+<li>
+<p>
+After the first release candidate is tagged, the contributors are strongly encouraged to focus on finding and fixing new regressions introduced during the cycle, over addressing old bugs and any new features. Topics stop getting merged down from <em>next</em> to <em>master</em>, and new topics stop getting merged to <em>next</em>. Unless they are fixes to new regressions in the cycle, that is.
+</p>
+</li>
+<li>
+<p>
+Soon after a feature release is made, the tip of <em>maint</em> gets fast-forwarded to point at the release. Topics that have been kept in <em>next</em> are merged down to <em>master</em> and a new development cycle starts.
+</p>
+</li>
 </ul></div>
 <div class="paragraph"><p>注意: v1.9.0リリース以前は、バージョン番号の構造が少し異なっていたことに注意してください。 vX.Y.Z は機能リリースであり、vX.Y.Z.W は vX.Y.Z のメンテナンスリリースでした。</p></div>
+<div class="paragraph"><p>Because most of the lines of code in Git are written by individual contributors, and contributions come in the form of e-mailed patches published on the mailing list, the project maintains a mapping from individual commits to the Message-Id of the e-mail that resulted in the commit, to help tracking the origin of the changes. The notes in "refs/notes/amlog" are used for this purpose, and are published along with the broken-out branches to the maintainer&#8217;s repository.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -840,7 +871,7 @@ asciidoc.install();
 </li>
 <li>
 <p>
-メーリングリストで提起されたが、誰も解決に乗り出していない問題に対処するために自身でパッチを書きます。 他の貢献者と同じように送信し、他の貢献者からのパッチと同じように受け取ります(上記参照)。
+Write his own patches to address issues raised on the list but nobody has stepped up to solve. Send it out just like other contributors do, and pick them up just like patches from other contributors (see above).
 </p>
 </li>
 <li>
@@ -876,13 +907,72 @@ $ make test</code></pre>
 </div></div>
 <div class="paragraph"><p>実際には、 <code>master</code> または <code>maint</code> に直接行くパッチはほとんどありません。</p></div>
 </li>
+<li>
+<p>
+Obviously correct fixes that pertain to the tip of <em>maint</em>
+   are directly applied to <em>maint</em>.
+</p>
+</li>
+<li>
+<p>
+Obviously correct fixes that pertain to the tip of <em>master</em>
+   are directly applied to <em>master</em>.
+</p>
+</li>
+<li>
+<p>
+他のトピックはこのステップでは処理されません。
+</p>
+<div class="paragraph"><p>このステップは 「git am」で実行されます。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git checkout master    ;# or "git checkout maint"
+$ git am -sc3 mailbox
+$ make test</code></pre>
+</div></div>
+<div class="paragraph"><p>実際には、 <code>master</code> または <code>maint</code> に直接行くパッチはほとんどありません。</p></div>
+<div class="paragraph"><p>Applying the e-mailed patches using "git am" automatically records the mappings from <em>Message-Id</em> to the applied commit in the "amlog" notes. Periodically check that this is working with "git show -s --notes=amlog $commit".</p></div>
+<div class="paragraph"><p>This mapping is maintained with the aid of the "post-applypatch" hook found in the <em>todo</em> branch. That hook should be installed before applying patches. It is also helpful to carry forward any relevant amlog entries when rebasing, so the following config may be useful:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>      [notes]
+        rewriteRef = refs/notes/amlog</code></pre>
+</div></div>
+<div class="paragraph"><p>Avoid "cherry-pick", as it does not propagate notes by design. Use
+either "git commit --amend" or "git rebase" to make corrections to
+an existing commit, even for a single-patch topic.</p></div>
+<div class="paragraph"><p>Make sure that a push refspec for <em>refs/notes/amlog</em> is in the
+remote configuration for publishing repositories. A few sample
+configurations look like the following:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>      [remote "github"]
+        url = https://github.com/gitster/git
+        pushurl = github.com:gitster/git.git
+        mirror
+
+      [remote "github2"]
+        url = https://github.com/git/git
+        fetch = +refs/heads/*:refs/remotes/github2/*
+        pushurl = github.com:git/git.git
+        push = refs/heads/maint:refs/heads/maint
+        push = refs/heads/master:refs/heads/master
+        push = refs/heads/next:refs/heads/next
+        push = +refs/heads/seen:refs/heads/seen
+        push = +refs/notes/amlog</code></pre>
+</div></div>
+</li>
 </ul></div>
 </li>
 <li>
 <p>
-「What&#8217;s cooking」メッセージの最後の号を確認し、マージの準備ができているトピックを確認します(topic→master と topic→maint)。 このステップを支援するために、 <code>Meta/cook -w</code> スクリプト( Meta/ には「todo」ブランチのチェックアウトが含まれています)を使用します。
+Review the last issue of "What&#8217;s cooking" message, review the
+   topics ready for merging (topic&#8594;master and topic&#8594;maint).  Use
+   "Meta/cook -w" script (where Meta/ contains a checkout of the
+   <em>todo</em> branch) to aid this step.
 </p>
-<div class="paragraph"><p>そして、マージを実行します。 この手順を支援するには、 <code>Meta/Reintegrate -e</code> スクリプト(後述)を使用します。</p></div>
+<div class="paragraph"><p>And perform the merge.  Use "Meta/Reintegrate -e" script (see
+later) to aid this step.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ Meta/cook -w last-issue-of-whats-cooking.mbox</code></pre>
@@ -895,297 +985,336 @@ $ git log -p ORIG_HEAD.. ;# final review
 $ git diff ORIG_HEAD..   ;# final review
 $ make test              ;# final review</code></pre>
 </div></div>
+<div class="paragraph"><p>And perform the merge.  Use "Meta/Reintegrate -e" script (see
+later) to aid this step.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ Meta/cook -w last-issue-of-whats-cooking.mbox</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git checkout master    ;# or "git checkout maint"
+$ echo ai/topic | Meta/Reintegrate -e ;# "git merge ai/topic"
+$ git log -p ORIG_HEAD.. ;# final review
+$ git diff ORIG_HEAD..   ;# final review
+$ make test              ;# final review</code></pre>
+</div></div>
+<div class="paragraph"><p>If the tip of <em>master</em> is updated, also generate the preformatted
+documentation and push the out result to git-htmldocs and
+git-manpages repositories.</p></div>
 </li>
 <li>
 <p>
-残りのパッチを処理します:
+Handle the remaining patches:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-「master」に適用可能で(つまり、「next」にあり、「master」にないものに依存しません)明らかでないものはすべて、「master」の先端から分岐した新しいトピックブランチ(または「master」より少し古い最後の機能リリース)に適用されます。これには、「master」の機能強化と明らかでない修正の両方が含まれます。 トピックブランチの名前は ai/topic です。ここで、「ai」は作成者の頭文字にちなんで名付けられた2文字の文字列であり、「topic」はトピックの説明的な名前です(つまり、「そのシリーズが何に付いてであるか」です)。
+Anything unobvious that is applicable to <em>master</em> (in other
+    words, does not depend on anything that is still in <em>next</em>
+    and not in <em>master</em>) is applied to a new topic branch that
+    is forked from the tip of <em>master</em> (or the last feature release,
+    which is a bit older than <em>master</em>).  This includes both
+    enhancements and unobvious fixes to <em>master</em>.  A topic
+    branch is named as ai/topic where "ai" is two-letter string
+    named after author&#8217;s initial and "topic" is a descriptive name
+    of the topic (in other words, "what&#8217;s the series is about").
 </p>
 </li>
 <li>
 <p>
-「maint」を対象とした明白でない修正が、「maint」の先端から分岐した新しいトピックブランチ(または最も古く、まだ関連するメンテナンスブランチ)に適用されます。 トピックには、 ai/maint-topic という名前を付けることができます。
+An unobvious fix meant for <em>maint</em> is applied to a new
+    topic branch that is forked from the tip of <em>maint</em> (or the
+    oldest and still relevant maintenance branch).  The
+    topic may be named as ai/maint-topic.
 </p>
 </li>
 <li>
 <p>
-既存のトピックに関連する変更はブランチに適用されますが、以下のようになります:
+Changes that pertain to an existing topic are applied to
+    the branch, but:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-明らかに正しいものが最初に適用されます
+obviously correct ones are applied first;
 </p>
 </li>
 <li>
 <p>
-疑わしいものは廃棄されるか、先端近くで適用されます
+questionable ones are discarded or applied to near the tip;
 </p>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-既存のトピックへの置換パッチは、 <code>next</code> にないコミットに対してのみ受け入れられます。
+Replacement patches to an existing topic are accepted only
+    for commits not in <em>next</em>.
 </p>
-<div class="paragraph"><p>最初のラウンドは以下のように行われます:</p></div>
+<div class="paragraph"><p>The initial round is done with:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout ai/topic ;# or "git checkout -b ai/topic master"
-$ git am -sc3 mailbox</code></pre>
+$ git am -sc3 --whitespace=warn mailbox</code></pre>
 </div></div>
-<div class="paragraph"><p>既存のトピックを次のラウンドに置き換えるには、以下のようにします:</p></div>
+<div class="paragraph"><p>and replacing an existing topic with subsequent round is done with:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout master...ai/topic ;# try to reapply to the same base
-$ git am -sc3 mailbox</code></pre>
+$ git am -sc3 --whitespace=warn mailbox</code></pre>
 </div></div>
-<div class="paragraph"><p>切り離されたHEAD(detached HEAD)で新しいラウンドを準備し、それから以下のようにします</p></div>
+<div class="paragraph"><p>to prepare the new round on a detached HEAD, and then</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git range-diff @{-1}...
 $ git diff @{-1}</code></pre>
 </div></div>
-<div class="paragraph"><p>前回のラウンドから何が変わったかを再確認し、最後に以下のようにします</p></div>
+<div class="paragraph"><p>to double check what changed since the last round, and finally</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout -B @{-1}</code></pre>
 </div></div>
-<div class="paragraph"><p>これで完結させます(最後のステップは、なぜ、すでに「next」にあるトピックが置き換えられず、段階的に更新されるかを示しています)。</p></div>
-<div class="paragraph"><p>それが最初のラウンドであろうと後続ラウンドであろうと、トピックは単独でも構築されない可能性があり、または、バグが原因で統合ブランチにマージされたときにビルドが破損する可能性があります。メーリングリストには、すでに明白で些細な改善が提案されている可能性があります。 メンテナは、統合ブランチを公開して、他の開発者がテストに使用できるようにする前に、物事を修正するために、そのタイトルに「SQUASH???」を使用して余分のコミットを追加することがよくあります。 これらの変更は、メンテナが100％コミットしているわけではないため(些細なタイプミスなどは、個別の「SQUASH???」コミットとして適用されることなく、修正が必要なパッチに直接押しつぶされる(squash)ことがよくあります)、必要に応じて簡単に削除できます。</p></div>
-</li>
-</ul></div>
+<div class="paragraph"><p>to conclude (the last step is why a topic already in <em>next</em> is
+not replaced but updated incrementally).</p></div>
+<div class="paragraph"><p>Whether it is the initial round or a subsequent round, the topic
+may not build even in isolation, or may break the build when
+merged to integration branches due to bugs.  There may already
+be obvious and trivial improvements suggested on the list.  The
+maintainer often adds an extra commit, with "SQUASH???" in its
+title, to fix things up, before publishing the integration
+branches to make it usable by other developers for testing.
+These changes are what the maintainer is not 100% committed to
+(trivial typofixes etc. are often squashed directly into the
+patches that need fixing, without being applied as a separate
+"SQUASH???" commit), so that they can be removed easily as needed.
+The expectation is that the original author will make corrections
+in a reroll.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+By now, new topic branches are created and existing topic
+     branches are updated.  The integration branches <em>next</em>, <em>jch</em>,
+     and <em>seen</em> need to be updated to contain them.
+</p>
 </li>
 <li>
 <p>
-必要に応じて、maint を master にマージ:
+If there are topics that have been merged to <em>master</em> and should
+     be merged to <em>maint</em>, merge them to <em>maint</em>, and update the
+     release notes to the next maintenance release.
+</p>
+</li>
+<li>
+<p>
+Review the latest issue of "What&#8217;s cooking" again.  Are topics
+     that have been sufficiently long in <em>next</em> ready to be merged to
+     <em>master</em>?  Are topics we saw earlier and are in <em>seen</em> now got
+     positive reviews and are ready to be merged to <em>next</em>?
+</p>
+</li>
+<li>
+<p>
+If there are topics that have been cooking in <em>next</em> long enough
+     and should be merged to <em>master</em>, merge them to <em>master</em>, and
+     update the release notes to the next feature release.
+</p>
+</li>
+<li>
+<p>
+If there were patches directly made on <em>maint</em>, merge <em>maint</em> to
+     <em>master</em>; make sure that the result is what you want.
 </p>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout master
-$ git merge maint
+$ git merge -m "Sync with 'maint'" --no-log maint
+$ git log -p --first-parent ORIG_HEAD..
 $ make test</code></pre>
 </div></div>
 </li>
 <li>
 <p>
-必要に応じて master を next にマージ:
+Prepare to update the <em>jch</em> branch, which is used to represent
+     somewhere between <em>master</em> and <em>seen</em> and often is slightly ahead
+     of <em>next</em>, and the <em>seen</em> branch, which is used to hold the rest.
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git checkout next
-$ git merge master
-$ make test</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-「What&#8217;s cooking」の最後の号をもう一度レビューし、「next」にマージする準備ができているトピックがまだ良好な状態であるかどうかを確認します(たとえば、このシリーズのリストに新しい問題が提起されていませんか？)
-</p>
-</li>
-<li>
-<p>
-<code>jch</code> ブランチを準備します。これは、 <code>master</code> と <code>seen</code> の間のどこかを表すために使用され、多くの場合、 <code>next</code> よりわずかに進んでいます。
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ Meta/Reintegrate master..seen &gt;Meta/redo-jch.sh</code></pre>
-</div></div>
-<div class="paragraph"><p>結果は、Meta/Reintegrate スクリプトへの入力として「seen」を再構築するためにマージされるトピックをリストするスクリプトです。 まだ「jch」に含まれていてはならない後続のトピックを削除します。 出力の最初のトピックの名前の前に <code>### match next</code> という行を追加します。これは、「jch」に含まれている必要がありますが、「next」には含まれていません。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ Meta/Reintegrate master..jch &gt;Meta/redo-jch.sh</code></pre>
 </div></div>
-<div class="paragraph"><p>結果は、Meta/Reintegrate スクリプトへの入力として「seen」を再構築するためにマージされるトピックをリストするスクリプトです。 まだ「jch」に含まれていてはならない後続のトピックを削除します。 出力の最初のトピックの名前の前に <code>### match next</code> という行を追加します。これは、「jch」に含まれている必要がありますが、「next」には含まれていません。</p></div>
-<div class="ulist"><ul>
+<div class="paragraph"><p>The result is a script that lists topics to be merged in order to
+rebuild the current <em>jch</em>.  Do the same for <em>seen</em>.</p></div>
+</li>
 <li>
 <p>
-これで、トピックを「next」にマージする準備が整いました。 先端が「next」にマージされていないブランチごとに、以下の3つのいずれかが発生する可能性があります:
-</p>
-<div class="ulist"><ul>
-<li>
-<p>
-コミットはすべてnextにマージする価値があります。 トピックをnextにマージします。
+Review the Meta/redo-jch.sh and Meta/redo-seen.sh scripts.  The
+     former should have a line <em># match next</em>---the idea is that
+     merging the topics listed before the line on top of <em>master</em>
+     should result in a tree identical to that of <em>next</em>.
 </p>
 </li>
 <li>
 <p>
-新しい部品は混合品質ですが、初期の部品はnextにマージする価値があります。 初期の部品をnextにマージします。
+As newly created topics are usually merged near the tip of
+     <em>seen</em>, add them to the end of the Meta/redo-seen.sh script.
+     Among the topics that were in <em>seen</em>, there may be ones that
+     are not quite ready for <em>next</em> but are getting there.  Move
+     them from Meta/redo-seen.sh to the end of Meta/redo-jch.sh.
+     The expectation is that you&#8217;d use <em>jch</em> as your daily driver
+     as the first guinea pig, so you should choose carefully.
 </p>
 </li>
 <li>
 <p>
-nextにマージする価値のあるものはありません。何もしません。
+Now we are ready to start rebuilding <em>jch</em> and merging topics to
+     <em>next</em>.  For each branch whose tip is not merged to <em>next</em>, one
+     of three things can happen:
 </p>
-<div class="paragraph"><p>この手順は、以前に作成した Meta/redo-jch.sh スクリプトを使用して支援されます。 すでに「next」にあるトピックにパッチが適用された場合、スクリプトはそれを <code>ai/topic~1</code> としてリストします。 更新された「next」に新しいパッチを含めるには、 <code>~1</code> の部分を削除します。除外したいモノの行はそのままにしてください。 <code>next</code> になかったトピックを <code>next</code> にマージする必要がある場合は、リストの最後に追加します。 それから以下のようにします:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The commits are all next-worthy; merge the topic to next;
+</p>
+</li>
+<li>
+<p>
+The new parts are of mixed quality, but earlier ones are
+      next-worthy; merge the early parts to next;
+</p>
+</li>
+<li>
+<p>
+Nothing is next-worthy; do not do anything.
+</p>
+<div class="paragraph"><p>This step is aided with Meta/redo-jch.sh script created earlier.
+If a topic that was already in <em>next</em> gained a patch, the script
+would list it as "ai/topic<sub>1".  To include the new patch to the
+updated <em>next</em>, drop the "</sub>1" part; to keep it excluded, do not
+touch the line.</p></div>
+<div class="paragraph"><p>If a topic that was not in <em>next</em> should be merged to <em>next</em>, add
+it before the <em># match next</em> line.  Then:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>$ git checkout -B jch master
-$ Meta/redo-jch.sh -c1</code></pre>
+<pre><code>$ git checkout --detach master
+$ sh Meta/redo-jch.sh -c1</code></pre>
 </div></div>
-<div class="paragraph"><p>これは <code>jch</code> ブランチを最初から再構築します。 <code>-c1</code> は、 <code>###</code> で始まる最初の行(つまり、以前に追加した <code>### match next</code> 行)でマージを停止するようにスクリプトに指示します。</p></div>
-<div class="paragraph"><p>この時点で、結果をビルドテストします。 セマンティックの競合が明らかになる場合があります(たとえば、トピックが変数の名前を変更し、別のトピックが古い名前で変数への新しい参照を追加したとか)。その場合、最初に適切なマージ修正(merge-fix)を準備し(appendix参照)、そしてゼロからから「jch」ブランチを再構築し。 「master」の先端から始めます。</p></div>
-<div class="paragraph"><p>それから同じ事を「next」に行います</p></div>
+<div class="paragraph"><p>to rebuild the <em>jch</em> branch from scratch.  "-c1" tells the script
+to stop merging at the first line that begins with <em></em>
+(i.e. the " match next" line you added earlier).</p></div>
+<div class="paragraph"><p>At this point, build-test the result.  It may reveal semantic
+conflicts (e.g. a topic renamed a variable, another added a new
+reference to the variable under its old name), in which case
+prepare an appropriate merge-fix first (see appendix), and
+rebuild the <em>jch</em> branch from scratch, starting at the tip of
+<em>master</em>, this time without using "-c1" to merge all topics.</p></div>
+<div class="paragraph"><p>Then do the same to <em>next</em>.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout next
 $ sh Meta/redo-jch.sh -c1 -e</code></pre>
 </div></div>
-<div class="paragraph"><p><code>-e</code> オプションを使用すると、トピックの履歴からのマージメッセージと「What&#8217;s cooking」のコメントを編集できます。 同じトピックのセットが「master」にマージされるため、結果のツリーは「jch」と一致する必要があります。 そうでなければ、ミスマージがあります。 理由を調査し、ミスマージが検出されて修正されるまで続行しないでください。</p></div>
+<div class="paragraph"><p>The "-e" option allows the merge message that comes from the
+history of the topic and the comments in the "What&#8217;s cooking" to
+be edited.  The resulting tree should match <em>jch<sup>{/</sup># match next</em>}'
+as the same set of topics are merged on <em>master</em>; otherwise there
+is a mismerge. Investigate why and do not proceed until the mismerge
+is found and rectified.</p></div>
+<div class="paragraph"><p>If <em>master</em> was updated before you started redoing <em>next</em>, then</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>$ git diff jch next</code></pre>
+<pre><code>$ git diff 'jch^{/^### match next}' next</code></pre>
 </div></div>
-<div class="paragraph"><p>全てOKになったら、 redo-jch.sh スクリプトで以下のようにクリーンアップします</p></div>
+<div class="paragraph"><p>would show differences that went into <em>master</em> (which <em>jch</em> has,
+but <em>next</em> does not yet---often it is updates to the release
+notes).  Merge <em>master</em> back to <em>next</em> if that is the case.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git merge -m "Sync with 'master'" --no-log master</code></pre>
+</div></div>
+<div class="paragraph"><p>When all is well, clean up the redo-jch.sh script with</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ sh Meta/redo-jch.sh -u</code></pre>
 </div></div>
-<div class="paragraph"><p>これにより、スクリプト内にリストされてる、「master」にすでにマージされているトピックを削除します。 これにより、「# match next」マーカーが失われる可能性があります。 もし「# match next」マーカーが失われたら、適切な場所に再度追加します。</p></div>
+<div class="paragraph"><p>This removes topics listed in the script that have already been
+merged to <em>master</em>.  This may lose <em># match next</em> marker;
+add it again to the appropriate place when it happens.</p></div>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-コミットはすべてnextにマージする価値があります。 トピックをnextにマージします。
+Rebuild <em>seen</em> on top of <em>jch</em>.
 </p>
-</li>
-<li>
-<p>
-新しい部品は混合品質ですが、初期の部品はnextにマージする価値があります。 初期の部品をnextにマージします。
-</p>
-</li>
-<li>
-<p>
-nextにマージする価値のあるものはありません。何もしません。
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>この手順は、以前に作成した Meta/redo-jch.sh スクリプトを使用して支援されます。
-すでに「next」にあるトピックにパッチが適用された場合、スクリプトはそれを `ai/topic~1` としてリストします。
-更新された「next」に新しいパッチを含めるには、 `~1` の部分を削除します。
-除外したいモノの行はそのままにしてください。
-`next` になかったトピックを `next` にマージする必要がある場合は、リストの最後に追加します。
-それから以下のようにします:</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git checkout -B jch master
-$ sh Meta/redo-jch.sh -c1</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>これは `jch` ブランチを最初から再構築します。 `-c1` は、 `###` で始まる最初の行(つまり、以前に追加した `### match next` 行)でマージを停止するようにスクリプトに指示します。</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>この時点で、結果をビルドテストします。 セマンティックの競合が明らかになる場合があります(たとえば、トピックが変数の名前を変更し、別のトピックが古い名前で変数への新しい参照を追加したとか)。その場合、最初に適切なマージ修正(merge-fix)を準備し(appendix参照)、そしてゼロからから「jch」ブランチを再構築し。 「master」の先端から始めます。</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>それから同じ事を「next」に行います</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git checkout next
-$ sh Meta/redo-jch.sh -c1 -e</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>`-e` オプションを使用すると、トピックの履歴からのマージメッセージと「What's cooking」のコメントを編集できます。 同じトピックのセットが「master」にマージされるため、結果のツリーは「jch」と一致する必要があります。 そうでなければ、ミスマージがあります。 理由を調査し、ミスマージが検出されて修正されるまで続行しないでください。</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git diff jch next</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>次に、残りの「jch」をビルドします:</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ git checkout jch
-$ sh Meta/redo-jch.sh</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>全てOKになったら、 redo-jch.sh スクリプトで以下のようにクリーンアップします</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ sh Meta/redo-jch.sh -u</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>これにより、スクリプト内にリストされてる、「master」にすでにマージされているトピックを削除します。 これにより、「### match next」マーカーが失われる可能性があります。 もし「### match next」マーカーが失われたら、適切な場所に再度追加します。</code></pre>
-</div></div>
-</li>
-<li>
-<p>
-「seen」を再構築します。
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>$ Meta/Reintegrate jch..seen &gt;Meta/redo-seen.sh</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>スクリプトに、まだ「表示」(seen)されていない新しいトピックを追加して、結果を編集します。 それから以下のようにします</code></pre>
-</div></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git checkout -B seen jch
 $ sh Meta/redo-seen.sh</code></pre>
 </div></div>
-<div class="paragraph"><p>これが全てがOKになったら、redo-seen.sh スクリプトで以下のようにしてクリーンアップします</p></div>
+<div class="paragraph"><p>When all is well, clean up the redo-seen.sh script with</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ sh Meta/redo-seen.sh -u</code></pre>
 </div></div>
-<div class="paragraph"><p>実行して再確認(double check)します</p></div>
+<div class="paragraph"><p>Double check by running</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>$ git branch --no-merged seen</code></pre>
+<pre><code>$ git branch --no-merged seen '??/*'</code></pre>
 </div></div>
-<div class="paragraph"><p>予期しない残りのトピックがないことを確認します。</p></div>
-<div class="paragraph"><p>この時点で、結果をビルドテストします。 セマンティックの競合が明らかになる場合があります(たとえば、トピックが変数の名前を変更し、別のトピックが古い名前で変数への新しい参照を追加したとか)。その場合、最初に適切なマージ修正(merge-fix)を準備し(appendix参照)、そしてゼロからから「seen」ブランチを再構築し。 「jch」の先端から始めます。</p></div>
+</li>
+</ul></div>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-「What&#8217;s cooking」メッセージを更新して、既存のトピック、新しく追加されたトピック、および段階的なトピックの更新を確認します。
+Update "What&#8217;s cooking" message to review the updates to
+   existing topics, newly added topics and graduated topics.
 </p>
-<div class="paragraph"><p>このステップは 「git am」で実行されます。</p></div>
+<div class="paragraph"><p>This step is helped with Meta/cook script.</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ Meta/cook</code></pre>
 </div></div>
-<div class="paragraph"><p>このスクリプトは、 <code>master..seen</code> 間の履歴を検査し、トピックブランチの先端を見つけ、見つかったものを Meta/whats-cooking.txt の現在の内容と比較し、 Meta/whats-cooking.txt を更新します。 ファイルにリストされていないが <code>master..seen</code> にあるトピックは、「New topics」セクションに追加されます。ファイルにリストされ、 <code>master..seen</code> に見つからなくなったトピックは、「Graduated to master」セクションに移動されます。 コミットによって状態が変更されたトピック(たとえば、以前は「seen」のみでしたが、現在は「next」にマージされていますとか）は、変更マーカー <code>&lt;&lt;</code> および <code>&gt;&gt;</code> で更新されます。</p></div>
-<div class="paragraph"><p><code>&lt;&lt;</code> と <code>&gt;&gt;</code> で囲まれた行を探します。 これらは、この統合ラウンドによって置き換えられた古いファイルのコンテンツを保持します。 それらを確認(verify)した後、古い部分を削除します。 各トピックの説明を確認し、必要に応じてその完成度と計画を更新します。 更新された計画を確認するには、以下を実行します</p></div>
+<div class="paragraph"><p>This script inspects the history between master..seen, finds tips
+of topic branches, compares what it found with the current
+contents in Meta/whats-cooking.txt, and updates that file.
+Topics not listed in the file but are found in master..seen are
+added to the "New topics" section, topics listed in the file that
+are no longer found in master..seen are moved to the "Graduated to
+master" section, and topics whose commits changed their states
+(e.g. used to be only in <em>seen</em>, now merged to <em>next</em>) are updated
+with change markers "<a href="# and ">[ and ]</a>".</p></div>
+<div class="paragraph"><p>Look for lines enclosed in "<a href="# and ">[ and ]</a>"; they hold contents from
+old file that are replaced by this integration round.  After
+verifying them, remove the old part.  Review the description for
+each topic and update its doneness and plan as needed.  To review
+the updated plan, run</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ Meta/cook -w</code></pre>
 </div></div>
-<div class="paragraph"><p>これは、 "Will merge to <em>next</em>" などの、トピックに付けられたコメントを取得します(サポートされているフレーズの種類については、 Meta/cook を参照してください)。</p></div>
+<div class="paragraph"><p>which will pick up comments given to the topics, such as "Will
+merge to <em>next</em>", etc. (see Meta/cook script to learn what kind
+of phrases are supported).</p></div>
 </li>
 <li>
 <p>
-4つ(5つ)すべての統合ブランチをコンパイル、テスト、およびインストールします。 Meta/Dothem スクリプトは、このステップで役立つでしょう。
+Compile, test and install all four (five) integration branches;
+   Meta/Dothem script may aid this step.
 </p>
 </li>
 <li>
 <p>
-<code>master</code> ブランチが更新された場合は、ドキュメントをフォーマットします。 Meta/dodoc.sh スクリプトがこのステップに役立つでしょう。
+Format documentation if the <em>master</em> branch was updated;
+   Meta/dodoc.sh script may aid this step.
 </p>
 </li>
 <li>
 <p>
-統合ブランチを公共の場所にプッシュします。 Meta/pushall スクリプトがこのステップに役立つでしょう。
+Push the integration branches out to public places; Meta/pushall
+   script may aid this step.
 </p>
 </li>
 </ul></div>
@@ -1244,8 +1373,8 @@ $ sh Meta/redo-seen.sh</code></pre>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_preparing_a_merge_fix">Preparing a "merge-fix"</h3>
-<div class="paragraph"><p>2つのトピックのマージは、字面的には競合しなくても、意味レベルでは競合が発生する場合があります。 古典的な例は、あるトピックで変数とそのすべての使用法の名前を変更し、別のトピックで変数の新しい使用法を古い名前で追加する場合です。 これらの2つのトピックがマージされた場合、後者のトピックによって新しく追加された変数への参照は、結果的に古い名前を引き続き使用します。</p></div>
-<div class="paragraph"><p>redo-jch および redo-seen スクリプトで使用される Meta/Reintegrate スクリプトは、この問題を回避するための大雑把ですが使用可能な方法を実装しています。 スクリプトがブランチ$Xをマージするとき、「refs/merge-fix/$X」が存在するかどうかをチェックし、存在する場合、その効果は機械的マージの結果に押しつぶされ(squash)ます。 言い換えると、</p></div>
+<div class="paragraph"><p>A merge of two topics may not textually conflict but still have conflict at the semantic level. A classic example is for one topic to rename a variable and all its uses, while another topic adds a new use of the variable under its old name. When these two topics are merged together, the reference to the variable newly added by the latter topic will still use the old name in the result.</p></div>
+<div class="paragraph"><p>The Meta/Reintegrate script that is used by redo-jch and redo-seen scripts implements a crude but usable way to work around this issue. When the script merges branch $X, it checks if "refs/merge-fix/$X" exists, and if so, the effect of it is squashed into the result of the mechanical merge. In other words,</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ echo $X | Meta/Reintegrate</code></pre>
@@ -1296,7 +1425,7 @@ $ git update-ref -d $mf/ai/topic</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-02-29 16:55:40 JST
+ 2024-12-12 07:13:33 JST
 </div>
 </div>
 </body>

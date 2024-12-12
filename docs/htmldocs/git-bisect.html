@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-bisect(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -760,17 +760,17 @@ git-bisect(1) Manual Page
 <div class="paragraph"><p>このコマンドは、さまざまなサブコマンドと、サブコマンドに応じて異なるオプションを取ります:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>git bisect start [--term-{new,bad}=&lt;term&gt; --term-{old,good}=&lt;term&gt;]
-                 [--no-checkout] [--first-parent] [&lt;bad&gt; [&lt;good&gt;...]] [--] [&lt;paths&gt;...]
+<pre><code>git bisect start [--term-(bad|new)=&lt;term-new&gt; --term-(good|old)=&lt;term-old&gt;]
+                 [--no-checkout] [--first-parent] [&lt;bad&gt; [&lt;good&gt;...]] [--] [&lt;pathspec&gt;...]
 git bisect (bad|new|&lt;term-new&gt;) [&lt;rev&gt;]
 git bisect (good|old|&lt;term-old&gt;) [&lt;rev&gt;...]
-git bisect terms [--term-good | --term-bad]
+git bisect terms [--term-(good|old) | --term-(bad|new)]
 git bisect skip [(&lt;rev&gt;|&lt;range&gt;)...]
 git bisect reset [&lt;commit&gt;]
 git bisect (visualize|view)
 git bisect replay &lt;logfile&gt;
 git bisect log
-git bisect run &lt;cmd&gt;...
+git bisect run &lt;cmd&gt; [&lt;arg&gt;...]
 git bisect help</code></pre>
 </div></div>
 <div class="paragraph"><p>このコマンドは、二分木検索アルゴリズムを使用して、プロジェクトの履歴のどのコミットでバグが発生したかを検出します。 最初に、バグが含まれていることがわかっている「bad」コミットと、バグが発生する前にあることがわかっている「good」コミットを伝えることで使用します。 次に、 <code>git bisect</code> は、これら2つのエンドポイントの中間のコミットを選択し、選択したコミットが「good」か「bad」かを尋ねます。 変更を導入した正確なコミットが見つかるまで、範囲を絞り込み続けます。</p></div>
@@ -843,7 +843,7 @@ $ git bisect good v2.6.13-rc2    # v2.6.13-rc2 is known to be good</code></pre>
 <div class="content">
 <pre><code>git bisect terms</code></pre>
 </div></div>
-<div class="paragraph"><p>old(または new)の用語(term)は、 <code>git bisect terms --term-old</code> または <code>git bisect terms --term-good</code> で取得できます。</p></div>
+<div class="paragraph"><p>You can get just the old term with <code>git bisect terms --term-old</code> or <code>git bisect terms --term-good</code>; <code>git bisect terms --term-new</code> and <code>git bisect terms --term-bad</code> can be used to learn how to call the commits more recent than the sought change.</p></div>
 <div class="paragraph"><p>bad/good または new/old の代わりに独自の用語(terms)を使用する場合は、以下を使用してbisectを開始することにより、(<code>reset</code> 、<code>start</code> などの既存のbisectサブコマンドを除く)任意の名前を選択できます</p></div>
 <div class="listingblock">
 <div class="content">
@@ -868,7 +868,8 @@ $ git bisect good v2.6.13-rc2    # v2.6.13-rc2 is known to be good</code></pre>
 <div class="content">
 <pre><code>$ git bisect visualize</code></pre>
 </div></div>
-<div class="paragraph"><p><code>DISPLAY</code> 環境変数が設定されていない場合、代わりに <code>git log</code> が使用されます。 <code>-p</code> や <code>--stat</code> などのコマンドラインオプションを指定することもできます。</p></div>
+<div class="paragraph"><p>Git detects a graphical environment through various environment variables: <code>DISPLAY</code>, which is set in X Window System environments on Unix systems. <code>SESSIONNAME</code>, which is set under Cygwin in interactive desktop sessions. <code>MSYSTEM</code>, which is set under Msys2 and Git for Windows. <code>SECURITYSESSIONID</code>, which may be set on macOS in interactive desktop sessions.</p></div>
+<div class="paragraph"><p>If none of these environment variables is set, <em>git log</em> is used instead. You can also give command-line options such as <code>-p</code> and <code>--stat</code>.</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git bisect visualize --stat</code></pre>
@@ -925,7 +926,7 @@ $ git reset --hard HEAD~3               # try 3 revisions before what
 </div>
 <div class="sect2">
 <h3 id="_bisect_startでより多くのパラメータを与えて探索量削減">bisect startでより多くのパラメータを与えて探索量削減</h3>
-<div class="paragraph"><p>あなたが追跡している問題にツリーのどの部分が関係しているかがわかっている場合は、 <code>bisect start</code> コマンドを発行するときにパスパラメータを指定することで、試行回数をさらに減らすことができます:</p></div>
+<div class="paragraph"><p>You can further cut down the number of trials, if you know what part of the tree is involved in the problem you are tracking down, by specifying pathspec parameters when issuing the <code>bisect start</code> command:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git bisect start -- arch/i386 include/asm-i386</code></pre>
@@ -961,7 +962,7 @@ $ git reset --hard HEAD~3               # try 3 revisions before what
 <code>--no-checkout</code>
 </dt>
 <dd>
-<div class="paragraph"><p>bisectプロセスの各反復で新しい作業ツリーをチェックアウトしないでください。 代わりに、 <code>BISECT_HEAD</code> という名前の特別な参照を更新して、テストする必要のあるコミットを指すようにします。</p></div>
+<div class="paragraph"><p>Do not checkout the new working tree at each iteration of the bisection process. Instead just update the reference named <code>BISECT_HEAD</code> to make it point to the commit that should be tested.</p></div>
 <div class="paragraph"><p>このオプションは、各ステップで実行するテストで、チェックアウトされたツリーが必要ない場合に役立つことがあります。</p></div>
 <div class="paragraph"><p>ベアリポジトリの場合、 <code>--no-checkout</code> が想定されます。</p></div>
 </dd>
@@ -1122,7 +1123,7 @@ $ git bisect broken HEAD~10</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:21 JST
+ 2024-12-11 23:58:37 JST
 </div>
 </div>
 </body>

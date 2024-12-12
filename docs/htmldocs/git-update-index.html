@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-update-index(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -765,6 +765,7 @@ git-update-index(1) Manual Page
              [--really-refresh] [--unresolve] [--again | -g]
              [--info-only] [--index-info]
              [-z] [--stdin] [--index-version &lt;n&gt;]
+             [--show-index-version]
              [--verbose]
              [--] [&lt;file&gt;&#8230;]</pre>
 <div class="attribution">
@@ -796,7 +797,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-指定のファイルがインデックスに含まれているが欠落している場合、そのファイルは削除されます。 デフォルトの動作では、削除済のファイルは無視されます。
+If a specified file is in the index but is missing then it&#8217;s removed. Default behavior is to ignore removed files.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -871,7 +872,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        このフラグを指定すると、パスに記録されているオブジェクト名は更新されません。 代わりに、このオプションは、パスの「assume unchanged」(無変更仮定)ビットを 設定(1)/設定解除(0) します。 「assume unchanged」ビットがオンの場合、ユーザーはファイルを変更しないことを約束し、作業ツリーファイルがインデックスに記録されているものと一致するとGitに想定させます。 作業ツリーファイルを変更する場合は、Gitに通知するビットを設定解除する必要があります。 これは、 lstat(2) システムコールが非常に遅いファイルシステム(cifsなど)で大きなプロジェクトを操作する場合に役立つことがあります。
+        When this flag is specified, the object names recorded for the paths are not updated. Instead, this option sets/unsets the "assume unchanged" bit for the paths. When the "assume unchanged" bit is on, the user promises not to change the file and allows Git to assume that the working tree file matches what is recorded in the index. If you want to change the working tree file, you need to unset the bit to tell Git. This is sometimes helpful when working with a big project on a filesystem that has a very slow lstat(2) system call (e.g. cifs).
 </p>
 <div class="paragraph"><p>インデックス内のこのファイルを変更する必要がある場合、例えばコミットにマージするとき、Gitは(正常に)失敗します。 したがって、追跡されていないと仮定されるファイルがアップストリームで変更された場合、あなたは状況を手動で処理する必要があります。</p></div>
 </dd>
@@ -888,7 +889,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        これらのフラグのいずれかが指定されている場合、パスに記録されているオブジェクト名は更新されません。 代わりに、これらのオプションは、パスの「skip-worktree」ビットを設定および設定解除します。 詳細については、下記「Skip-worktree bit」のセクションを参照してください。
+        When one of these flags is specified, the object names recorded for the paths are not updated. Instead, these options set and unset the "skip-worktree" bit for the paths. See section "Skip-worktree bit" below for more information.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -904,7 +905,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        これらのフラグのいずれかが指定されている場合、パスに記録されているオブジェクト名は更新されません。 代わりに、これらのオプションは、パスの「fsmonitor valid」ビットを設定および設定解除します。 詳細については、下記「File System Monitor」のセクションを参照してください。
+        When one of these flags is specified, the object names recorded for the paths are not updated. Instead, these options set and unset the "fsmonitor valid" bit for the paths. See section "File System Monitor" below for more information.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -915,7 +916,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        インデックスエントリが <code>HEAD</code> コミットとは異なるパスで <code>git update-index</code> 自体を実行します。
+        Runs <em>git update-index</em> itself on the paths whose index entries are different from those of the <code>HEAD</code> commit.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -955,7 +956,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        コマンドラインからパスのリストを取得する代わりに、標準入力からパスのリストを読み取ります。 デフォルトでは、パスはLFで区切られます(つまり、1行に1つのパス)。
+        Instead of taking a list of paths from the command line, read a list of paths from the standard input. Paths are separated by LF (i.e. one path per line) by default.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -963,7 +964,7 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        インデックスに 追加・削除 されているものを報告します。
+        Report what is being added and removed from the index.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -971,9 +972,17 @@ git-update-index(1) Manual Page
 </dt>
 <dd>
 <p>
-        結果のインデックスを、指定のディスク上のフォーマットバージョン(on-disk format version)で書き出します。 サポートされているバージョンは 2 と 3 と 4 です。現在のデフォルトバージョンは、 <code>git add -N</code> などの追加機能が使用されているかどうかに応じて、 2 または 3 です。
+        Write the resulting index out in the named on-disk format version. Supported versions are 2, 3, and 4. The current default version is 2 or 3, depending on whether extra features are used, such as <code>git add -N</code>. With <code>--verbose</code>, also report the version the index file uses before and after this command.
 </p>
-<div class="paragraph"><p>バージョン4は、単純なパス名圧縮を実行し、大規模なリポジトリでインデックスサイズを30%〜50%削減します。これにより、読み込み時間が短縮されます。 バージョン4は比較的若いです(2012年10月の1.8.0で最初にリリースされました)。 JGitやlibgit2などの他のGit実装は、まだサポートしていない可能性があります。</p></div>
+<div class="paragraph"><p>Version 4 performs a simple pathname compression that reduces index size by 30%-50% on large repositories, which results in faster load time. Git supports it since version 1.8.0, released in October 2012, and support for it was added to libgit2 in 2016 and to JGit in 2020. Older versions of this manual page called it "relatively young", but it should be considered mature technology these days.</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--show-index-version</code>
+</dt>
+<dd>
+<p>
+        Report the index format version used by the on-disk index file. See <code>--index-version</code> above.
+</p>
 </dd>
 <dt class="hdlist1">
 <code>-z</code>
@@ -1298,7 +1307,7 @@ lstat(2) に、インデックスに一致するパスに「assume unchanged」(
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:46 JST
+ 2024-12-11 23:59:10 JST
 </div>
 </div>
 </body>

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-fetch(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -772,11 +772,11 @@ git-fetch(1) Manual Page
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>--all</code>
+<code>--[no-]all</code>
 </dt>
 <dd>
 <p>
-        すべてのリモートをフェッチします。
+        Fetch all remotes, except for the ones that has the <code>remote.&lt;name&gt;.skipFetchAll</code> configuration variable set. This overrides the configuration variable fetch.all`.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -823,7 +823,7 @@ git-fetch(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--shallow-exclude=&lt;revision&gt;</code>
+<code>--shallow-exclude=&lt;ref&gt;</code>
 </dt>
 <dd>
 <p>
@@ -844,7 +844,7 @@ git-fetch(1) Manual Page
 </dt>
 <dd>
 <p>
-        デフォルトでは、浅い(shallow)リポジトリからフェッチする場合、 <code>git fetch</code> は <code>.git/shallow</code> の更新が必要なrefを拒否します。 このオプションは <code>.git/should</code> を更新し、そのようなrefを受け入れます。
+        By default when fetching from a shallow repository, <code>git fetch</code> refuses refs that require updating .git/shallow. This option updates .git/shallow and accepts such refs.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -900,7 +900,7 @@ git-fetch(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>git fetch</code> を <code>&lt;src&gt;:&lt;dst&gt;</code> refspecと一緒に使用すると、既に説明したようにローカルブランチの更新を拒否する場合があります
+        When <em>git fetch</em> is used with <code>&lt;src&gt;:&lt;dst&gt;</code> refspec, it may refuse to update the local branch as discussed
         以下の <code>&lt;refspec&gt;</code> の部分にあります。
         このオプションは、そのチェックをオーバーライドします。
 </p>
@@ -1014,7 +1014,7 @@ git-fetch(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--recurse-submodules[=yes|on-demand|no]</code>
+<code>--recurse-submodules[=(yes|on-demand|no)]</code>
 </dt>
 <dd>
 <p>
@@ -1125,7 +1125,7 @@ git-fetch(1) Manual Page
 </dt>
 <dd>
 <p>
-        プロトコルバージョン2を使用して通信する場合は、指定された文字列をサーバーに送信します。 指定された文字列には、NUL文字またはLF文字を含めることはできません。 不明なオプションを含むサーバーオプションのサーバー処理は、サーバー固有です。 複数の <code>--server-option=&lt;option&gt;</code> が指定されている場合、それらはすべてコマンドラインにリストされている順序で相手側に送信されます。
+        Transmit the given string to the server when communicating using protocol version 2. The given string must not contain a NUL or LF character. The server&#8217;s handling of server options, including unknown ones, is server-specific. When multiple <code>--server-option=&lt;option&gt;</code> are given, they are all sent to the other side in the order listed on the command line. When no <code>--server-option=&lt;option&gt;</code> is given from the command line, the values of configuration variable <code>remote.&lt;name&gt;.serverOption</code> are used instead.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1190,22 +1190,22 @@ git-fetch(1) Manual Page
         フェッチするrefと更新するローカルrefを指定します。コマンドラインに &lt;refspec&gt; がない場合、フェッチするrefは代わりに <code>remote.&lt;repository&gt;.fetch</code> 変数から読み取られます。
         (下記 <a href="#CRTB">CONFIGURED REMOTE-TRACKING BRANCHES</a> 参照)
 </p>
-<div class="paragraph"><p>&lt;refspec&gt; パラメータの組織は、オプションのプラス <code>+</code> に続いて ソースの &lt;src&gt; 、コロン <code>:</code> 宛先refの &lt;dst&gt; の順です。 &lt;dst&gt; が空の場合、コロン(<code>:</code>)は省略できます。 &lt;src&gt; は通常、refですが、フルスペルの16進オブジェクト名にすることもできます。</p></div>
-<div class="paragraph"><p>&lt;refspec&gt; の &lt;src&gt; には、単純なパターン一致を示すための <code>*</code> が含まれている場合があります。このようなrefspecは、同じプレフィックスを持つ任意のrefに一致するglobのように機能します。パターン&lt;refspec&gt;では、 &lt;src&gt; と &lt;dst&gt; の両方に <code>*</code> が含まれている必要があります。 <code>*</code> をソースから一致したコンテンツに置き換えることにより、refを宛先にマッピングします。</p></div>
+<div class="paragraph"><p>The format of a &lt;refspec&gt; parameter is an optional plus <code>+</code>, followed by the source &lt;src&gt;, followed by a colon <code>:</code>, followed by the destination &lt;dst&gt;. The colon can be omitted when &lt;dst&gt; is empty. &lt;src&gt; is typically a ref, or a glob pattern with a single <code>*</code> that is used to match a set of refs, but it can also be a fully spelled hex object name.</p></div>
+<div class="paragraph"><p>A &lt;refspec&gt; may contain a <code>*</code> in its &lt;src&gt; to indicate a simple pattern match. Such a refspec functions like a glob that matches any ref with the pattern. A pattern &lt;refspec&gt; must have one and only one <code>*</code> in both the &lt;src&gt; and &lt;dst&gt;. It will map refs to the destination by replacing the <code>*</code> with the contents matched from the source.</p></div>
 <div class="paragraph"><p>refspecの前に <code>^</code> が付いている場合、それはネガティブのrefspecとして解釈されます。このようなrefspecは、フェッチするrefや更新するローカルrefを指定するのではなく、除外するrefを指定します。 refは、少なくとも1つのポジティブ(通常)のrefspecと一致し、ネガティブのrefspecと一致しない場合、一致すると見なされます。ネガティブのrefspecは、特定のrefが含まれないように、パターンrefspecのスコープを制限するのに役立ちます。ネガティブのrefspecは、それ自体がパターンrefspecである可能性があります。 ただし、 &lt;src&gt; のみを含めることができ、 &lt;dst&gt; を指定することはできません。 フルスペルの16進オブジェクト名もサポートされていません。</p></div>
 <div class="paragraph"><p><code>tag &lt;tag&gt;</code> は、 <code>refs/tags/&lt;tag&gt;:refs/tags/&lt;tag&gt;</code> と同じ意味です。指定されたタグまでのすべてをフェッチするように要求します。</p></div>
 <div class="paragraph"><p>&lt;src&gt; に一致するリモートrefがフェッチされ、 &lt;dst&gt; が空の文字列でない場合は、それに一致するローカルrefを更新しようとします。</p></div>
 <div class="paragraph"><p>その更新が <code>--force</code> なしで許可されるかどうかは、フェッチ先のref名前空間、フェッチされるオブジェクトのタイプ、および更新がfast-forwardであると見なされるかどうかによって異なります。一般に、プッシュする場合と同じルールがフェッチに適用されます。それらが何であるかについては、 <a href="git-push.html">git-push(1)</a>の <code>&lt;refspec&gt;...</code> セクションを参照してください。 <code>git fetch</code> に固有の例外ルールを以下に示します。</p></div>
 <div class="paragraph"><p>Gitバージョン2.20までは、 <a href="git-push.html">git-push(1)</a> でプッシュする場合とは異なり、 <code>refs/tags/*</code> の更新は、 refspec に <code>+</code> がなくても(または <code>--force</code> 指定が無くても)受け入れられます。フェッチするとき、リモートからのすべてのタグ更新を強制フェッチとしていました。Gitバージョン2.20以降では、 <code>refs/tags/*</code> を更新するためのフェッチは、プッシュする場合と同じように機能します。 つまり refspecに <code>+</code> が無い場合(または <code>--force</code> が無い場合)、更新は拒否されます。</p></div>
-<div class="paragraph"><p><a href="git-push.html">git-push(1)</a> でプッシュするときとは異なり、 <code>refs/{tags,heads}/*</code> 以外の更新は、 refspecに <code>+</code> がなくても(あるいは <code>--force</code> 指定が無くても)受け付けられます。例えば、ツリーオブジェクトとブロブを交換したり、あるコミットを、祖先を持たない別のコミットと交換したりできます。</p></div>
+<div class="paragraph"><p>Unlike when pushing with <a href="git-push.html">git-push(1)</a>, any updates outside of <code>refs/{tags,heads}/*</code> will be accepted without <code>+</code> in the refspec (or <code>--force</code>), whether that&#8217;s swapping e.g. a tree object for a blob, or a commit for another commit that doesn&#8217;t have the previous commit as an ancestor etc.</p></div>
 <div class="paragraph"><p><a href="git-push.html">git-push(1)</a> でプッシュする場合とは異なり、これらのルールを修正する構成はなく、 <code>pre-receive</code> フックに類似した <code>pre-fetch</code> フックのようなものはありません。</p></div>
-<div class="paragraph"><p><a href="git-push.html">git-push(1)</a> を使用したプッシュと同様に、更新として許可されないものに関する上記のすべてのルールは、refspec先頭にオプションで <code>+</code> をに追加する(または <code>--force</code> コマンドラインオプションを使用する)ことでオーバーライドできます。これに対する唯一の例外は、 <code>refs/heads/*</code> 名前空間が非コミットオブジェクトを受け入れるように強制することはないということです。</p></div>
+<div class="paragraph"><p>As with pushing with <a href="git-push.html">git-push(1)</a>, all of the rules described above about what&#8217;s not allowed as an update can be overridden by adding an optional leading <code>+</code> to a refspec (or using the <code>--force</code> command line option). The only exception to this is that no amount of forcing will make the <code>refs/heads/*</code> namespace accept a non-commit object.</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">フェッチするリモートブランチが定期的に巻き戻されてリベースされることがわかっている場合、その新しい先端は(最後にフェッチしたときにリモートトラッキングブランチに保存された)以前の先端の子孫ではないことが予想されます。あなたは <code>+</code> 記号を使用して、そのようなブランチにnon-fast-forwardの更新が必要であることを指示します。この操作でブランチがリポジトリで使用可能になることを決定または宣言する方法はありません。プルするユーザーは、これがブランチの予想される使用パターンであることを知っている必要があります。</td>
+<td class="content">When the remote branch you want to fetch is known to be rewound and rebased regularly, it is expected that its new tip will not be a descendant of its previous tip (as stored in your remote-tracking branch the last time you fetched). You would want to use the <code>+</code> sign to indicate non-fast-forward updates will be needed for such branches. There is no way to determine or declare that a branch will be made available in a repository with this behavior; the pulling user simply must know this is the expected usage pattern for a branch.</td>
 </tr></table>
 </div>
 </dd>
@@ -1224,28 +1224,28 @@ git-fetch(1) Manual Page
 <h2 id="_git_urls_a_id_urls_a">GIT URLS<a id="URLS"></a></h2>
 <div class="sectionbody">
 <div class="paragraph"><p>一般に、URLには、トランスポートプロトコル、リモートサーバーのアドレス、およびリポジトリへのパスに関する情報が含まれています。トランスポートプロトコルによっては、一部の情報が欠落している場合があります。</p></div>
-<div class="paragraph"><p>Gitはsshとgitとhttpとhttpsプロトコルをサポートします(さらにftpとftpsをフェッチに使用できますが、これは非効率的で非推奨です。使用しないでください)。</p></div>
-<div class="paragraph"><p>ネイティブトランスポート(つまり、 git:// URL)は認証を行わないため、セキュリティで保護されていないネットワークでは注意して使用する必要があります。</p></div>
+<div class="paragraph"><p>Git supports ssh, git, http, and https protocols (in addition, ftp and ftps can be used for fetching, but this is inefficient and deprecated; do not use them).</p></div>
+<div class="paragraph"><p>The native transport (i.e. <code>git://</code> URL) does no authentication and should be used with caution on unsecured networks.</p></div>
 <div class="paragraph"><p>以下の構文を使用できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-ssh://&#91;user@&#93;host.xz&#91;:port&#93;/path/to/repo.git/
+<code>ssh://[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-git://host.xz&#91;:port&#93;/path/to/repo.git/
+<code>git://&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-http&#91;s&#93;://host.xz&#91;:port&#93;/path/to/repo.git/
+<code>http[s]://&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-ftp&#91;s&#93;://host.xz&#91;:port&#93;/path/to/repo.git/
+<code>ftp[s]://&lt;host&gt;[:&lt;port&gt;]/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 </ul></div>
@@ -1253,26 +1253,26 @@ ftp&#91;s&#93;://host.xz&#91;:port&#93;/path/to/repo.git/
 <div class="ulist"><ul>
 <li>
 <p>
-&#91;user@&#93;host.xz:path/to/repo.git/
+<code>[&lt;user&gt;@]&lt;host&gt;:/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 </ul></div>
 <div class="paragraph"><p>この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカルパスを区別するのに役立ちます。たとえば、ローカルパス <code>foo:bar</code> を、絶対パスまたは <code>./foo:bar</code> として指定して、 ssh url として誤って解釈されないようにすることができます。</p></div>
-<div class="paragraph"><p>sshおよびgitプロトコルは、さらに ~username 拡張をサポートします:</p></div>
+<div class="paragraph"><p>The ssh and git protocols additionally support <code>~&lt;username&gt;</code> expansion:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-ssh://&#91;user@&#93;host.xz&#91;:port&#93;/~&#91;user&#93;/path/to/repo.git/
+<code>ssh://[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;]/~&lt;user&gt;/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-git://host.xz&#91;:port&#93;/~&#91;user&#93;/path/to/repo.git/
+<code>git://&lt;host&gt;[:&lt;port&gt;]/~&lt;user&gt;/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 <li>
 <p>
-&#91;user@&#93;host.xz:/~&#91;user&#93;/path/to/repo.git/
+<code>[&lt;user&gt;@]&lt;host&gt;:~&lt;user&gt;/&lt;path-to-git-repo&gt;</code>
 </p>
 </li>
 </ul></div>
@@ -1280,31 +1280,31 @@ git://host.xz&#91;:port&#93;/~&#91;user&#93;/path/to/repo.git/
 <div class="ulist"><ul>
 <li>
 <p>
-/path/to/repo.git/
+<code>/path/to/repo.git/</code>
 </p>
 </li>
 <li>
 <p>
-file:///path/to/repo.git/
+<code>file:///path/to/repo.git/</code>
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>これらの2つの構文は、前者が <code>--local</code> オプションの機能を含むクローン作成の場合を除いて、ほとんど同等です。 詳細については、 <a href="git-clone.html">git-clone(1)</a> を参照してください。</p></div>
-<div class="paragraph"><p>「git clone」と「git fetch」と「git pull」は、「git push」と違って適切なバンドルファイルを受け入れます。 <a href="git-bundle.html">git-bundle(1)</a> を参照してください。</p></div>
-<div class="paragraph"><p>Gitが特定のトランスポートプロトコルを処理する方法を知らない場合、Gitは <em>remote-&lt;transport&gt;</em> リモートヘルパー(存在する場合)を使用しようとします。リモートヘルパーを明示的に要求するには、以下の構文を使用できます:</p></div>
+<div class="paragraph"><p>These two syntaxes are mostly equivalent, except when cloning, when the former implies <code>--local</code> option. See <a href="git-clone.html">git-clone(1)</a> for details.</p></div>
+<div class="paragraph"><p><code>git clone</code>, <code>git fetch</code> and <code>git pull</code>, but not <code>git push</code>, will also accept a suitable bundle file. See <a href="git-bundle.html">git-bundle(1)</a>.</p></div>
+<div class="paragraph"><p>When Git doesn&#8217;t know how to handle a certain transport protocol, it attempts to use the <code>remote-&lt;transport&gt;</code> remote helper, if one exists. To explicitly request a remote helper, the following syntax may be used:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-&lt;transport&gt;::&lt;address&gt;
+<code>&lt;transport&gt;::&lt;address&gt;</code>
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>ここで、 &lt;address&gt; は、パス、サーバーとパス、または呼び出されている特定のリモートヘルパーによって認識される任意のURLのような文字列です。詳細については、 <a href="gitremote-helpers.html">gitremote-helpers(7)</a> を参照してください。</p></div>
+<div class="paragraph"><p>where <em>&lt;address&gt;</em> may be a path, a server and path, or an arbitrary URL-like string recognized by the specific remote helper being invoked. See <a href="gitremote-helpers.html">gitremote-helpers(7)</a> for details.</p></div>
 <div class="paragraph"><p>同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:</p></div>
-<div class="listingblock">
-<div class="content">
-<pre><code>        [url "&lt;actual url base&gt;"]
-                insteadOf = &lt;other url base&gt;</code></pre>
+<div class="verseblock">
+<pre class="content">        [url "<em>&lt;actual-url-base&gt;</em>"]
+                insteadOf = <em>&lt;other-url-base&gt;</em></pre>
+<div class="attribution">
 </div></div>
 <div class="paragraph"><p>例えば、以下のようになります:</p></div>
 <div class="listingblock">
@@ -1315,10 +1315,10 @@ file:///path/to/repo.git/
 </div></div>
 <div class="paragraph"><p>"work:repo.git" や "host.xz:/path/to/repo.git" のようなURLは、任意のコンテキストで、"git://git.host.xz/repo.git" に書き換えられます。</p></div>
 <div class="paragraph"><p>プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:</p></div>
-<div class="listingblock">
-<div class="content">
-<pre><code>        [url "&lt;actual url base&gt;"]
-                pushInsteadOf = &lt;other url base&gt;</code></pre>
+<div class="verseblock">
+<pre class="content">        [url "<em>&lt;actual-url-base&gt;</em>"]
+                pushInsteadOf = <em>&lt;other-url-base&gt;</em></pre>
+<div class="attribution">
 </div></div>
 <div class="paragraph"><p>例えば、以下のようになります:</p></div>
 <div class="listingblock">
@@ -1362,14 +1362,14 @@ Git構成ファイル(configuration file)内のリモート(remote)として、 
                 push = &lt;refspec&gt;
                 fetch = &lt;refspec&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p><code>&lt;pushurl&gt;</code> はプッシュでのみ使用されます。 これはオプションであり、 デフォルトは <code>&lt;URL&gt;</code> です。 リモートへのプッシュは、 定義されているすべての pushurl に影響します。 pushurl が定義されていない場合は、 すべての定義された url に影響します。 ただし、 複数の url が定義されている場合、 Fetch は最初に定義された url からのみ取得します。</p></div>
+<div class="paragraph"><p>The <code>&lt;pushurl&gt;</code> is used for pushes only. It is optional and defaults to <code>&lt;URL&gt;</code>. Pushing to a remote affects all defined pushurls or all defined urls if no pushurls are defined. Fetch, however, will only fetch from the first defined url if multiple urls are defined.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_named_file_in_code_git_dir_remotes_code">Named file in <code>$GIT_DIR/remotes</code></h3>
 <div class="paragraph"><p>あなたは、 <code>$GIT_DIR/remotes</code> でファイル名を指定できます。このファイルのURLは、リポジトリへのアクセスに使用されます。コマンドラインでrefspecを指定しない場合、このファイルのrefspecがデフォルトとして使用されます。このファイルの形式は以下のとおりです:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>        URL: one of the above URL format
+<pre><code>        URL: one of the above URL formats
         Push: &lt;refspec&gt;
         Pull: &lt;refspec&gt;</code></pre>
 </div></div>
@@ -1457,8 +1457,8 @@ $ git fetch --no-tags --prune-tags origin</code></pre>
 <div class="content">
 <pre><code>$ git fetch origin --prune --prune-tags
 $ git fetch origin --prune 'refs/tags/*:refs/tags/*'
-$ git fetch &lt;url of origin&gt; --prune --prune-tags
-$ git fetch &lt;url of origin&gt; --prune 'refs/tags/*:refs/tags/*'</code></pre>
+$ git fetch &lt;url-of-origin&gt; --prune --prune-tags
+$ git fetch &lt;url-of-origin&gt; --prune 'refs/tags/*:refs/tags/*'</code></pre>
 </div></div>
 </div>
 </div>
@@ -1700,11 +1700,19 @@ fetch.pruneTags
 </p>
 </dd>
 <dt class="hdlist1">
+fetch.all
+</dt>
+<dd>
+<p>
+        If true, fetch will attempt to update all available remotes. This behavior can be overridden by passing <code>--no-all</code> or by explicitly specifying one or more remote(s) to fetch from. Defaults to false.
+</p>
+</dd>
+<dt class="hdlist1">
 fetch.output
 </dt>
 <dd>
 <p>
-        ref updateステータスの出力方法を制御します。 有効な値は <code>full</code> と <code>compact</code> です。 デフォルト値は <code>full</code> です。 詳細については、 <a href="git-fetch.html">git-fetch(1)</a> の「OUTPUT」セクションを参照してください。
+        Control how ref update status is printed. Valid values are <code>full</code> and <code>compact</code>. Default value is <code>full</code>. See the OUTPUT section in <a href="git-fetch.html">git-fetch(1)</a> for details.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1786,7 +1794,7 @@ fetch.bundleCreationToken
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-02-01 09:15:34 JST
+ 2024-12-11 23:58:47 JST
 </div>
 </div>
 </body>

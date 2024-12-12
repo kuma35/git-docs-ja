@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-interpret-trailers(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -750,7 +750,7 @@ git-interpret-trailers(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git interpret-trailers</em> [--in-place] [--trim-empty]
-                        [(--trailer &lt;token&gt;[(=|:)&lt;value&gt;])&#8230;]
+                        [(--trailer (&lt;key&gt;|&lt;key-alias&gt;)[(=|:)&lt;value&gt;])&#8230;]
                         [--parse] [&lt;file&gt;&#8230;]</pre>
 <div class="attribution">
 </div></div>
@@ -770,22 +770,29 @@ Signed-off-by: Alice &lt;alice@example.com&gt;
 Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>ここで、「Signed-off-by」で始まる最後の 2 行はトレーラーです。</p></div>
-<div class="paragraph"><p>このコマンドは、 &lt;file&gt; 引数、 または &lt;file&gt; が指定されていない場合は標準入力からコミット・メッセージを読み取ります。 <code>--parse</code> が指定されている場合、 出力はパースされたトレーラーで構成されます。 それ以外の場合、 このコマンドは、 <code>--trailer</code> オプションを使用して渡された引数(存在する場合)を各入力ファイルに適用します。 結果は標準出力に出力されます。</p></div>
+<div class="paragraph"><p>This command reads commit messages from either the &lt;file&gt; arguments or the standard input if no &lt;file&gt; is specified. If <code>--parse</code> is specified, the output consists of the parsed trailers coming from the input, without influencing them with any command line options or configuration variables.</p></div>
+<div class="paragraph"><p>Otherwise, this command applies <code>trailer.*</code> configuration variables (which could potentially add new trailers, as well as reposition them), as well as any command line arguments that can override configuration variables (such as <code>--trailer=...</code> which could also add new trailers), to each input file. The result is emitted on the standard output.</p></div>
 <div class="paragraph"><p>このコマンドでは <a href="git-format-patch.html">git-format-patch(1)</a> の出力を操作することもできます。 これは、 素のコミット・メッセージよりも複雑です。 つまり、 このような出力には、 (上記のとおりの)コミット・メッセージと <code>---</code> 区切り線とパッチ部分が含まれます。 これらの入力の場合 <code>--no-divider</code> が指定されない限り、 区切り線以下とパッチ部分はこのコマンドによって変更されず、 そのまま出力されます。</p></div>
 <div class="paragraph"><p>いくつかの設定変数は <code>--trailer</code> 引数が各入力に適用される方法と、 入力内の既存のトレーラーが変更される方法を制御します。 また、 いくつかのトレーラを自動的に追加することもできます。</p></div>
-<div class="paragraph"><p>デフォルトでは、 <code>--trailer</code> で指定された <code>&lt;token&gt;=&lt;value&gt;</code> または <code>&lt;token&gt;:&lt;value&gt;</code> 引数は、既存の最後のトレーラーのペア(&lt;token&gt;, &lt;value&gt;)が指定のペア異なる場合(または、既存のに無い場合)にのみ、指定したモノが既存のトレーラーの後に追加されます。 &lt;token&gt;と&lt;value&gt;の部分は、先頭と末尾の空白がトリミングされ、以下のように出力に表示されます:</p></div>
+<div class="paragraph"><p>By default, a <em>&lt;key&gt;=&lt;value&gt;</em> or <em>&lt;key&gt;:&lt;value&gt;</em> argument given using <code>--trailer</code> will be appended after the existing trailers only if the last trailer has a different (&lt;key&gt;, &lt;value&gt;) pair (or if there is no existing trailer). The &lt;key&gt; and &lt;value&gt; parts will be trimmed to remove starting and trailing whitespace, and the resulting trimmed &lt;key&gt; and &lt;value&gt; will appear in the output like this:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>token: value</code></pre>
+<pre><code>key: value</code></pre>
 </div></div>
-<div class="paragraph"><p>これは、 トリミングされた &lt;token&gt; と &lt;value&gt; が ": " (1つのコロンと1つのスペース)で区切られることを意味します。 簡便にするために &lt;token&gt; は出力の区切り文字の前に表示されべきである完全な文字列(例: <code>Signed-off-by</code>) の代わりに、 短縮された文字列キー(例: <code>sign</code>)にすることができます。 これは、 <code>trailer.&lt;token&gt;.key</code> 構成変数を使用して構成できます。</p></div>
+<div class="paragraph"><p>This means that the trimmed &lt;key&gt; and &lt;value&gt; will be separated by <code>': '</code> (one colon followed by one space).</p></div>
+<div class="paragraph"><p>For convenience, a &lt;key-alias&gt; can be configured to make using <code>--trailer</code> shorter to type on the command line. This can be configured using the <em>trailer.&lt;key-alias&gt;.key</em> configuration variable. The &lt;keyAlias&gt; must be a prefix of the full &lt;key&gt; string, although case sensitivity does not matter. For example, if you have</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>trailer.sign.key "Signed-off-by: "</code></pre>
+</div></div>
+<div class="paragraph"><p>in your configuration, you only need to specify <code>--trailer="sign: foo"</code> on the command line instead of <code>--trailer="Signed-off-by: foo"</code>.</p></div>
 <div class="paragraph"><p>デフォルトでは、 すべての既存のトレーラーの末尾の後ろに新しいトレーラーが出力されます。 既存のトレーラーがない場合は、 新しいトレーラーが入力の末尾の後ろに出力表示されます。 その新しいトレーラーの前にまだ空行がない場合は、 空行が追加されます。</p></div>
 <div class="paragraph"><p>入力から、 (i) すべてのトレーラーを含むか、 または (ii) 1つ以上の Git 生成またはユーザー構成のトレーラーを含む25％以上のトレーラーで構成される、 1行以上のグループから、 既存のトレーラーを探し出して抽出します。 そのグループの前には、 1行以上の空行(または空白のみの行)が必要です。 そのグループは、 入力の末尾にあるか、 あるいは <code>---</code> で始まる行より前の最後の非空白行達である必要があります(その後にスペースまたは行の終わりが続きます)。</p></div>
-<div class="paragraph"><p>トレーラーを読み取る場合、 &lt;token&gt; の前または内部に空白(whitespace)を含めることはできませんが、 &lt;token&gt; とセパレーターの間には、 任意の数の通常の空白(space)文字達とタブ文字達を使用できます。 &lt;value&gt; の前または内部または後ろに空白達(whitespaces)を入れることができます。 RFC 822 の「folding」(折り畳み)のように、 &lt;value&gt; は複数の行に分割され、 後続の各行の先頭は1つ以上の空白(whitespace)で始まります。</p></div>
+<div class="paragraph"><p>When reading trailers, there can be no whitespace before or inside the &lt;key&gt;, but any number of regular space and tab characters are allowed between the &lt;key&gt; and the separator. There can be whitespaces before, inside or after the &lt;value&gt;. The &lt;value&gt; may be split over multiple lines with each subsequent line starting with at least one whitespace, like the "folding" in RFC 822. Example:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>token: これは非常に長い値であり、
-空白や改行が含まれます。</code></pre>
+<pre><code>key: This is a very long value, with spaces and
+  newlines in it.</code></pre>
 </div></div>
 <div class="paragraph"><p>注意: トレーラーはRFC822ヘッダー規則の多くに従うことを意図してませんし、 従わないことに注意してください。 たとえば、 それらはエンコーディング規則に従いません。</p></div>
 </div>
@@ -811,11 +818,11 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--trailer &lt;token&gt;[(=|:)&lt;value&gt;]</code>
+<code>--trailer &lt;key&gt;[(=|:)&lt;value&gt;]</code>
 </dt>
 <dd>
 <p>
-        入力のトレーラーとして適用する必要があるペア(&lt;token&gt;、&lt;value&gt;)を指定します。 詳しくはこのコマンドの説明を参照してください。
+        Specify a (&lt;key&gt;, &lt;value&gt;) pair that should be applied as a trailer to the inputs. See the description of this command.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -826,7 +833,7 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        すべての新しいトレーラーが追加される場所を指定します。 <code>--where</code> で指定する設定は、すべての構成変数をオーバーライドし、 <code>--where</code> または <code>--no-where</code> が次に出現するまですべての <code>--trailer</code> オプションに適用されます。 &lt;placement&gt; として可能な値は、 <code>after</code> または <code>before</code> または <code>end</code> または <code>start</code> です。
+        Specify where all new trailers will be added. A setting provided with <em>--where</em> overrides the <code>trailer.where</code> and any applicable <code>trailer.&lt;keyAlias&gt;.where</code> configuration variables and applies to all <em>--trailer</em> options until the next occurrence of <em>--where</em> or <em>--no-where</em>. Upon encountering <em>--no-where</em>, clear the effect of any previous use of <em>--where</em>, such that the relevant configuration variables are no longer overridden. Possible placements are <code>after</code>, <code>before</code>, <code>end</code> or <code>start</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -837,7 +844,7 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        入力に同一の &lt;token&gt; を持つトレーラーがすでに少なくとも1つある場合に実行される操作を指定します。 <code>--if-exists</code> で指定する設定は、 すべての構成変数をオーバーライドし、 <code>--if-exists</code> または <code>--no-if-exists</code> が次に出現するまですべての <code>--trailer</code> オプションに適用されます。 可能な操作は <code>addIfDifferent</code>, <code>addIfDifferentNeighbor</code>, <code>add</code>, <code>replace</code>, <code>doNothing</code> です。
+        Specify what action will be performed when there is already at least one trailer with the same &lt;key&gt; in the input. A setting provided with <em>--if-exists</em> overrides the <code>trailer.ifExists</code> and any applicable <code>trailer.&lt;keyAlias&gt;.ifExists</code> configuration variables and applies to all <em>--trailer</em> options until the next occurrence of <em>--if-exists</em> or <em>--no-if-exists</em>. Upon encountering '--no-if-exists, clear the effect of any previous use of '--if-exists, such that the relevant configuration variables are no longer overridden. Possible actions are <code>addIfDifferent</code>, <code>addIfDifferentNeighbor</code>, <code>add</code>, <code>replace</code> and <code>doNothing</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -848,7 +855,7 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        入力に同一の &lt;token&gt; を持つ他のトレーラーが無い場合に実行される操作を指定します。 <code>--if-missing</code> で指定する設定は、 すべての構成変数をオーバーライドし、 <code>--if-missing</code> または <code>--no-if-missing</code> が次に出現するまですべての <code>--trailer</code> オプションに適用されます。 可能な操作は <code>doNothing</code>, <code>add</code> です。
+        Specify what action will be performed when there is no other trailer with the same &lt;key&gt; in the input. A setting provided with <em>--if-missing</em> overrides the <code>trailer.ifMissing</code> and any applicable <code>trailer.&lt;keyAlias&gt;.ifMissing</code> configuration variables and applies to all <em>--trailer</em> options until the next occurrence of <em>--if-missing</em> or <em>--no-if-missing</em>. Upon encountering '--no-if-missing, clear the effect of any previous use of '--if-missing, such that the relevant configuration variables are no longer overridden. Possible actions are <code>doNothing</code> or <code>add</code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -864,7 +871,7 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        入力に存在するトレーラーのみを出力します。コマンドラインや、構成された <code>trailer.*</code> ルールに従って追加することはありません。
+        Output only trailers that exist in the input; do not add any from the command-line or by applying <code>trailer.*</code> configuration variables.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -872,7 +879,7 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        トレーラーの複数行に渡る先頭空白による継続を解除して、各トレーラーが1行で完結するよう出力します。
+        If a trailer has a value that runs over multiple lines (aka "folded"), reformat the value into a single line.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -880,7 +887,7 @@ Signed-off-by: Bob &lt;bob@example.com&gt;</code></pre>
 </dt>
 <dd>
 <p>
-        <code>--only-trailers --only-input --unfold</code> の便利なエイリアス。
+        A convenience alias for <code>--only-trailers --only-input --unfold</code>. This makes it easier to only see the trailers coming from the input without influencing them with any command line options or configuration variables, while also making the output machine-friendly with --unfold.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -906,7 +913,7 @@ trailer.separators
         このオプションは、どの文字がトレーラー区切り文字として認識されるかを示します。 デフォルトでは、 <code>:</code> のみがトレーラー区切り文字として認識されます。ただし、他のgitコマンドとの互換性のために、コマンドラインでは <code>=</code> が常に受け入れられます。
 </p>
 <div class="paragraph"><p>このオプションで指定された最初の1文字は、このトレーラーの構成で別の区切り文字が指定されていない場合に使用されるデフォルトの文字になります。</p></div>
-<div class="paragraph"><p>たとえば、このオプションの値が "%=$" の場合、 <code>&lt;token&gt;&lt;sep&gt;&lt;value&gt;</code> の形式を使用し、&lt;sep&gt; に <code>%</code> または <code>=</code> または <code>$</code> と、空白達を含む行のみトレーラーと見なされます。 また、 <code>%</code> がデフォルトの区切り文字として使用されるため、デフォルトでは、トレーラーは <code>&lt;token&gt;% &lt;value&gt;</code> と出力されます(デフォルトの場合はこのようにトークンと値の間に1つの区切り文字列の最初の文字(パーセント記号)と「1つのスペース」が出力されます)。</p></div>
+<div class="paragraph"><p>For example, if the value for this option is "%=$", then only lines using the format <em>&lt;key&gt;&lt;sep&gt;&lt;value&gt;</em> with &lt;sep&gt; containing <em>%</em>, <em>=</em> or <em>$</em> and then spaces will be considered trailers. And <em>%</em> will be the default separator used, so by default trailers will appear like: <em>&lt;key&gt;% &lt;value&gt;</em> (one percent sign and one space will appear between the key and the value).</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.where
@@ -918,86 +925,87 @@ trailer.where
 <div class="paragraph"><p>これは、デフォルトの <code>end</code> の他に <code>start</code> または <code>after</code> または <code>before</code> にすることができます。</p></div>
 <div class="paragraph"><p><code>end</code> の場合、新しいトレーラーはそれぞれ、既存のトレーラーの最後に出力されます。</p></div>
 <div class="paragraph"><p><code>start</code> の場合、新しい各トレーラーは、既存のトレーラーの最後ではなく、最初に出力されます。</p></div>
-<div class="paragraph"><p><code>after</code> の場合、新しいトレーラーはそれぞれ、同じ &lt;token&gt; を持つ最後のトレーラーの直後に出力されます。</p></div>
-<div class="paragraph"><p><code>before</code> の場合、新しい各トレーラーは、同じ &lt;token&gt; を持つ最初のトレーラーの直前に出力されます。</p></div>
+<div class="paragraph"><p>If it is <code>after</code>, then each new trailer will appear just after the last trailer with the same &lt;key&gt;.</p></div>
+<div class="paragraph"><p>If it is <code>before</code>, then each new trailer will appear just before the first trailer with the same &lt;key&gt;.</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.ifexists
 </dt>
 <dd>
 <p>
-        このオプションを使用すると、 入力に同一の &lt;token&gt; を持つトレーラーがすでに少なくとも1つある場合に実行する操作を選択できます。
+        This option makes it possible to choose what action will be performed when there is already at least one trailer with the same &lt;key&gt; in the input.
 </p>
 <div class="paragraph"><p>このオプションの有効な値は、 <code>addIfDifferentNeighbor</code> (デフォルト)、 または <code>addIfDifferent</code> または <code>add</code> または <code>replace</code> または <code>doNothing</code> です。</p></div>
-<div class="paragraph"><p><code>addIfDifferentNeighbor</code> を使用すると、同一のペア(&lt;token&gt;、&lt;value&gt;)のトレーラーが、新しいトレーラーが追加される行の上または下にない場合にのみ、新しいトレーラーが追加されます。</p></div>
-<div class="paragraph"><p><code>addIfDifferent</code> を使用すると、 同一のペア(&lt;token&gt;、&lt;value&gt;)のトレーラーが入力に含まれてい無い場合にのみ、 新しいトレーラーが追加されます。</p></div>
-<div class="paragraph"><p><code>add</code> を使用すると、 同一のペア(&lt;token&gt;, &lt;value&gt;)のトレーラーがすでにメッセージに含まれている場合でも、 新しいトレーラーが追加されます。</p></div>
-<div class="paragraph"><p><code>replace</code> を使用すると、同じ &lt;token&gt; を持つ既存のトレーラーが削除され、新しいトレーラーが追加されます。削除されるトレーラーは、新しいトレーラーが追加される場所に最も近い(同じ &lt;token&gt; を持つ)トレーラーになります。</p></div>
-<div class="paragraph"><p><code>doNothing</code> を使用すると、 何も実行されません。 つまり、 メッセージに同一の &lt;token&gt; を持つトレーラーがすでに存在する場合、 新しいトレーラーは追加されません。</p></div>
+<div class="paragraph"><p>With <code>addIfDifferentNeighbor</code>, a new trailer will be added only if no trailer with the same (&lt;key&gt;, &lt;value&gt;) pair is above or below the line where the new trailer will be added.</p></div>
+<div class="paragraph"><p>With <code>addIfDifferent</code>, a new trailer will be added only if no trailer with the same (&lt;key&gt;, &lt;value&gt;) pair is already in the input.</p></div>
+<div class="paragraph"><p>With <code>add</code>, a new trailer will be added, even if some trailers with the same (&lt;key&gt;, &lt;value&gt;) pair are already in the input.</p></div>
+<div class="paragraph"><p>With <code>replace</code>, an existing trailer with the same &lt;key&gt; will be deleted and the new trailer will be added. The deleted trailer will be the closest one (with the same &lt;key&gt;) to the place where the new one will be added.</p></div>
+<div class="paragraph"><p>With <code>doNothing</code>, nothing will be done; that is no new trailer will be added if there is already one with the same &lt;key&gt; in the input.</p></div>
 </dd>
 <dt class="hdlist1">
 trailer.ifmissing
 </dt>
 <dd>
 <p>
-        このオプションを使用すると、 入力に同一の &lt;token&gt; を持つトレーラーがまだ無い場合に実行する操作を選択できます。
+        This option makes it possible to choose what action will be performed when there is not yet any trailer with the same &lt;key&gt; in the input.
 </p>
 <div class="paragraph"><p>このオプションの有効な値は、 <code>add</code> (デフォルト)と <code>doNothing</code> です。</p></div>
 <div class="paragraph"><p>`add`を使用すると、新しいトレーラーが追加されます。</p></div>
 <div class="paragraph"><p><code>doNothing</code> を使用すると、何も実行されません。</p></div>
 </dd>
 <dt class="hdlist1">
-trailer.&lt;token&gt;.key
+trailer.&lt;keyAlias&gt;.key
 </dt>
 <dd>
 <p>
-        この キー(key) は、トレーラーで &lt;token&gt; の代わりに使用されます。このキーの後ろに、区切り文字を出力してから、いくつかのスペース文字を出力できます。デフォルトでは、有効な区切り文字は <code>:</code> のみですが、これは <code>trailer.separators</code> 構成変数を使用して変更できます。
+        Defines a &lt;keyAlias&gt; for the &lt;key&gt;. The &lt;keyAlias&gt; must be a prefix (case does not matter) of the &lt;key&gt;. For example, in <code>git config trailer.ack.key "Acked-by"</code> the "Acked-by" is the &lt;key&gt; and the "ack" is the &lt;keyAlias&gt;. This configuration allows the shorter <code>--trailer "ack:..."</code> invocation on the command line using the "ack" &lt;keyAlias&gt; instead of the longer <code>--trailer "Acked-by:..."</code>.
 </p>
-<div class="paragraph"><p>トレーラーを追加するときに、この構成値内に区切り文字がある場合、 &lt;token&gt; とデフォルトの区切り文字の両方(つまり、&lt;token&gt;&lt;区切り文字&gt;&lt;空白1つ&gt;)がキーで置き換えられます。</p></div>
+<div class="paragraph"><p>At the end of the &lt;key&gt;, a separator can appear and then some space characters. By default the only valid separator is <em>:</em>, but this can be changed using the <code>trailer.separators</code> config variable.</p></div>
+<div class="paragraph"><p>If there is a separator in the key, then it overrides the default separator when adding the trailer.</p></div>
 </dd>
 <dt class="hdlist1">
-trailer.&lt;token&gt;.where
+trailer.&lt;keyAlias&gt;.where
 </dt>
 <dd>
 <p>
-        このオプションは、「trailer.where」構成変数と同じ値を取り、指定された &lt;token&gt; を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
-</p>
-</dd>
-<dt class="hdlist1">
-trailer.&lt;token&gt;.ifexists
-</dt>
-<dd>
-<p>
-        このオプションは、「trailer.ifexists」構成変数と同じ値を取り、指定された &lt;token&gt; を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+        This option takes the same values as the <em>trailer.where</em> configuration variable and it overrides what is specified by that option for trailers with the specified &lt;keyAlias&gt;.
 </p>
 </dd>
 <dt class="hdlist1">
-trailer.&lt;token&gt;.ifmissing
+trailer.&lt;keyAlias&gt;.ifexists
 </dt>
 <dd>
 <p>
-        このオプションは、「trailer.ifmissing」構成変数と同じ値を取り、指定された &lt;token&gt; を持つトレーラーに対してそのオプションで指定されたものをオーバーライドします。
+        This option takes the same values as the <em>trailer.ifexists</em> configuration variable and it overrides what is specified by that option for trailers with the specified &lt;keyAlias&gt;.
 </p>
 </dd>
 <dt class="hdlist1">
-trailer.&lt;token&gt;.command
+trailer.&lt;keyAlias&gt;.ifmissing
 </dt>
 <dd>
 <p>
-        非推奨: <code>trailer.&lt;token&gt;.cmd</code> に取って代わられ、 非推奨となりました。 このオプションは、 指定のコマンドに引数として何も渡さないことを除いて、 <code>trailer.&lt;token&gt;.cmd</code> と同じように動作します。 その代わりに、 文字列に最初に現れる置換文字列 $ARG のみ、 引数として渡される値に置き換えられます。
+        This option takes the same values as the <em>trailer.ifmissing</em> configuration variable and it overrides what is specified by that option for trailers with the specified &lt;keyAlias&gt;.
+</p>
+</dd>
+<dt class="hdlist1">
+trailer.&lt;keyAlias&gt;.command
+</dt>
+<dd>
+<p>
+        Deprecated in favor of <em>trailer.&lt;keyAlias&gt;.cmd</em>. This option behaves in the same way as <em>trailer.&lt;keyAlias&gt;.cmd</em>, except that it doesn&#8217;t pass anything as argument to the specified command. Instead the first occurrence of substring $ARG is replaced by the &lt;value&gt; that would be passed as argument.
 </p>
 <div class="paragraph"><p>注意: ユーザーのコマンド内の $ARG は一度しか置き換えられず、 $ARG を置き換えるこのオリジナルの方法は安全ではないことに注意してください。</p></div>
-<div class="paragraph"><p><code>trailer.&lt;token&gt;.cmd</code> と <code>trailer.&lt;token&gt;.command</code> の両方が同じ&lt;token&gt;で指定されている場合、 <code>trailer.&lt;token&gt;.cmd</code> が使用され、 <code>trailer.&lt;token&gt;.command</code> は無視されます。</p></div>
+<div class="paragraph"><p>When both <em>trailer.&lt;keyAlias&gt;.cmd</em> and <em>trailer.&lt;keyAlias&gt;.command</em> are given for the same &lt;keyAlias&gt;, <em>trailer.&lt;keyAlias&gt;.cmd</em> is used and <em>trailer.&lt;keyAlias&gt;.command</em> is ignored.</p></div>
 </dd>
 <dt class="hdlist1">
-trailer.&lt;token&gt;.cmd
+trailer.&lt;keyAlias&gt;.cmd
 </dt>
 <dd>
 <p>
-        このオプションは、 指定された &lt;token&gt; のトレーラを自動的に追加するために一度だけ呼び出され、 かつ、 追加後は、 このオプションが生成するトレーラの &lt;value&gt; を変更するために <em>--trailer &lt;token&gt;=&lt;value&gt;</em> 引数が指定されるたびに呼び出されるシェルコマンド、 を指定するために使うことができる。
+        This option can be used to specify a shell command that will be called once to automatically add a trailer with the specified &lt;keyAlias&gt;, and then called each time a <em>--trailer &lt;keyAlias&gt;=&lt;value&gt;</em> argument is specified to modify the &lt;value&gt; of the trailer that this option would produce.
 </p>
-<div class="paragraph"><p>指定のコマンドを最初に呼び出して、指定の &lt;token&gt; のトレーラーを追加すると、動作は、「git interpret-trailers」コマンドの先頭に特別な <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数が追加されたかのように振る舞います。ここで、 &lt;value&gt; は、先頭と末尾の空白が削除された、コマンドからの標準出力と見なされます。</p></div>
-<div class="paragraph"><p>いくつかの <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数がコマンドラインで渡された場合、同じ &lt;token&gt; を持つこれらの引数ごとにコマンドが1回呼び出されます。そして、これらの引数の &lt;value&gt; 部分は、もしあれば、最初の引数としてコマンドに渡されます。このようにして、コマンドは <code>--trailer &lt;token&gt;=&lt;value&gt;</code> 引数で渡された &lt;value&gt; から計算された &lt;value&gt; を生成できます。</p></div>
+<div class="paragraph"><p>When the specified command is first called to add a trailer with the specified &lt;keyAlias&gt;, the behavior is as if a special <em>--trailer &lt;keyAlias&gt;=&lt;value&gt;</em> argument was added at the beginning of the "git interpret-trailers" command, where &lt;value&gt; is taken to be the standard output of the command with any leading and trailing whitespace trimmed off.</p></div>
+<div class="paragraph"><p>If some <em>--trailer &lt;keyAlias&gt;=&lt;value&gt;</em> arguments are also passed on the command line, the command is called again once for each of these arguments with the same &lt;keyAlias&gt;. And the &lt;value&gt; part of these arguments, if any, will be passed to the command as its first argument. This way the command can produce a &lt;value&gt; computed from the &lt;value&gt; passed in the <em>--trailer &lt;keyAlias&gt;=&lt;value&gt;</em> argument.</p></div>
 </dd>
 </dl></div>
 </div>
@@ -1227,7 +1235,7 @@ $ chmod +x .git/hooks/commit-msg</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-11-23 03:55:42 JST
+ 2024-12-11 23:58:53 JST
 </div>
 </div>
 </body>

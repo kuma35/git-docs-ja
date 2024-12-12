@@ -1088,7 +1088,7 @@ $ git status        # 上記のファイルごとの簡単な要約。
 @node 適切なコミットメッセージの作成, Ignoring files, How to make a commit, Gitでの開発作業
 @section 適切なコミットメッセージの作成
 
-必須ではありませんが、変更を要約した1行の短い行(50文字未満)でコミットメッセージを開始し、その後に空行を続け、さらに詳細な説明を続けることをお勧めします。 コミットメッセージの最初の空行までのテキストはコミットタイトルとして扱われ、そのタイトルはGit全体で使用されます。たとえば、 @uref{git-format-patch.html,git-format-patch(1)} はコミットを電子メールに変換し、コミットタイトルを件名に使用し、コミットタイトル以降を本文として使用します。
+Though not required, it’s a good idea to begin the commit message with a single short (no more than 50 characters) line summarizing the change, followed by a blank line and then a more thorough description. The text up to the first blank line in a commit message is treated as the commit title, and that title is used throughout Git. For example, @uref{git-format-patch.html,git-format-patch(1)} turns a commit into email, and it uses the title on the Subject line and the rest of the commit in the body.
 
 @node Ignoring files, How to merge, 適切なコミットメッセージの作成, Gitでの開発作業
 @section Ignoring files
@@ -1239,7 +1239,7 @@ $ git diff -3 file.txt          # diff against stage 3
 $ git diff --theirs file.txt    # same as the above.
 @end example
 
-(デフォルトの)「ort」マージ戦略を使用する場合、 Git は、マージの結果で作業ツリー(working tree)を更新する前に、 書き込もうとしているツリーの状態を反映する AUTO_MERGE という名前の特別な ref を書き込みます。 自動的にマージができなかったテキストの競合を伴う競合パスは、 作業ツリーと同様に、 競合マーカーとともにこのツリーに書き込まれます。 したがって、AUTO_MERGE を @uref{git-diff.html,git-diff(1)} とともに使用すると、 競合を解決するためにこれまでに行った変更を表示できます。 上記と同じ例を使用して競合を解決すると、以下のようになります:
+When using the @emph{ort} merge strategy (the default), before updating the working tree with the result of the merge, Git writes a ref named AUTO_MERGE reflecting the state of the tree it is about to write. Conflicted paths with textual conflicts that could not be automatically merged are written to this tree with conflict markers, just as in the working tree. AUTO_MERGE can thus be used with @uref{git-diff.html,git-diff(1)} to show the changes you’ve made so far to resolve conflicts. Using the same example as above, after resolving the conflict we get:
 
 @example
 $ git diff AUTO_MERGE
@@ -3348,9 +3348,41 @@ $ git merge-index git-merge-one-file hello.c
 
 すべてのオブジェクトには、オブジェクトの形式(つまり、オブジェクトの使用方法や他のオブジェクトの参照方法)を識別する、静的に決定された「タイプ」( "type" )があります。 現在、「blob」、「tree」、「commit」、「tag」の4つの異なるオブジェクトタイプがあります。
 
-オブジェクトタイプに関係なく、すべてのオブジェクトは次の特性を共有します: すべてzlibで圧縮され、タイプを指定するだけでなく、オブジェクト内のデータに関するサイズ情報も提供するヘッダーがあります。オブジェクトの名前付けに使用されるSHA-1ハッシュは、 元のデータ＋ヘッダー のハッシュであるため、 @samp{sha1sum} @emph{file} は @emph{file} のオブジェクト名と一致しないことに注意してください。
+Regardless of object type, all objects share the following characteristics: they are all deflated with zlib, and have a header that not only specifies their type, but also provides size information about the data in the object. It’s worth noting that the SHA-1 hash that is used to name the object is the hash of the original data plus this header, so @samp{sha1sum} @emph{file} does not match the object name for @emph{file} (the earliest versions of Git hashed slightly differently but the conclusion is still the same).
 
-その結果、オブジェクトの一般的な整合性は、オブジェクトの内容やタイプに関係なく常にテストできます。すべてのオブジェクトは、 (a)ハッシュがファイルの内容と一致、かつ、 (b)オブジェクトが、 @samp{<ascii type without space> + <space> + <ascii decimal size> + <byte\0> + <binary object data>} というシーケンスのバイトストリームへちゃんと解凍できることで検証できます。
+The following is a short example that demonstrates how these hashes can be generated manually:
+
+Let’s assume a small text file with some simple content:
+
+@example
+$ echo "Hello world" >hello.txt
+@end example
+
+We can now manually generate the hash Git would use for this file:
+
+@itemize 
+
+@item
+The object we want the hash for is of type "blob" and its size is 12 bytes.
+
+@item
+Prepend the object header to the file content and feed this to @samp{sha1sum}:
+@end itemize
+
+@example
+$ @{ printf "blob 12\0"; cat hello.txt; @} | sha1sum
+802992c4220de19a90767f3000a79a31b98d0df7  -
+@end example
+
+This manually constructed hash can be verified using @samp{git hash-object} which of course hides the addition of the header:
+
+@example
+$ git hash-object hello.txt
+802992c4220de19a90767f3000a79a31b98d0df7
+@end example
+
+As a result, the general consistency of an object can always be tested independently of the contents or the type of the object: all objects can be validated by verifying that (a) their hashes match the content of the file and (b) the object successfully inflates to a stream of bytes that forms a sequence of @samp{<ascii-type-without-space> + <space> + <ascii-decimal-size> +
+<byte\0> + <binary-object-data>}.
 
 構造化オブジェクトは、その構造と他のオブジェクトへの接続をさらに検証できます。 これは通常、すべてのオブジェクトの完全な依存関係グラフを生成し、（ハッシュを介して表面的な一貫性を検証するだけでなく）内部の一貫性を検証する @samp{gitfsck} プログラムを使用して行われます。
 
@@ -3365,7 +3397,7 @@ $ git merge-index git-merge-one-file hello.c
 $ git switch --detach e83c5163
 @end example
 
-最初のリビジョンは、Gitが今日持っているほとんどすべての基礎を築きますが、一度に読むには十分小さくまとまっています。
+The initial revision lays the foundation for almost everything Git has today (even though details may differ in a few places), but is small enough to read in one sitting.
 
 そのリビジョン以降、用語が変更されていることに注意してください。 たとえば、そのリビジョンのREADMEは、 "changeset" という単語を使用して、今、 commit (@pxref{[def_commit_object]}) と呼んでいるものを説明しています。
 
@@ -3558,7 +3590,7 @@ SCM (@pxref{[def_SCM]}) の専門用語では、 "cherry pick" (つまみ食い)
 親 (@pxref{[def_parent]})、コミッター、作者、日付、保存されたリビジョンの最上位ディレクトリ (@pxref{[def_directory]})に対応するツリーオブジェクト (@pxref{[def_tree_object]})など、特定のリビジョン (@pxref{[def_revision]})に関する情報を含むオブジェクト (@pxref{[def_object]})。
 
 @item  @anchor{[def_commit-ish]}commit-ish (also committish)(コミットっぽい;コミット風) 
-コミットオブジェクト (@pxref{[def_commit_object]})または、コミットオブジェクト (@pxref{[def_commit_object]})に再帰的に逆参照可能なオブジェクト (@pxref{[def_object]})。 コミットオブジェクト (@pxref{[def_commit_object]})や、コミットオブジェクト (@pxref{[def_commit_object]})を指すタグオブジェクト (@pxref{[def_tag_object]})や、コミットオブジェクト (@pxref{[def_commit_object]})を指すタグオブジェクト (@pxref{[def_tag_object]})を指すタグオブジェクト (@pxref{[def_tag_object]})などは全てcommit-ish(commit-ishes)です。
+A commit object (@pxref{[def_commit_object]}) or an object (@pxref{[def_object]}) that can be recursively dereferenced (@pxref{[def_dereference]}) to a commit object. The following are all commit-ishes: a commit object, a tag object (@pxref{[def_tag_object]}) that points to a commit object, a tag object that points to a tag object that points to a commit object, etc.
 
 @item  @anchor{[def_core_git]}core Git 
 Gitの基本的なデータ構造とユーティリティ。これは、限定的なソースコード管理ツールのみです。
@@ -3568,6 +3600,15 @@ Gitの基本的なデータ構造とユーティリティ。これは、限定�
 
 @item  @anchor{[def_dangling_object]}dangling object 
 (ぶらぶら揺れるオブジェクト)他の到達不能オブジェクト (@pxref{[def_unreachable_object]})からでも到達できない到達不能オブジェクト (@pxref{[def_unreachable_object]})。 danglingオブジェクトには、リポジトリ (@pxref{[def_repository]})内の任意のrefまたはオブジェクト (@pxref{[def_object]})からの参照はありません。
+
+@item  @anchor{[def_dereference]}dereference 
+Referring to a symbolic ref (@pxref{[def_symref]}): the action of accessing the reference (@pxref{[def_ref]}) pointed at by a symbolic ref. Recursive dereferencing involves repeating the aforementioned process on the resulting ref until a non-symbolic reference is found.
+
+Referring to a tag object (@pxref{[def_tag_object]}): the action of accessing the object (@pxref{[def_object]}) a tag points at. Tags are recursively dereferenced by repeating the operation on the result object until the result has either a specified object type (@pxref{[def_object_type]}) (where applicable) or any non-"tag" object type. A synonym for "recursive dereference" in the context of tags is "peel (@pxref{[def_peel]})".
+
+Referring to a commit object (@pxref{[def_commit_object]}): the action of accessing the commit’s tree object. Commits cannot be dereferenced recursively.
+
+Unless otherwise specified, "dereferencing" as it used in the context of Git commands or protocols is implicitly recursive.
 
 @item  @anchor{[def_detached_HEAD]}detached HEAD 
 通常、HEAD (@pxref{[def_HEAD]})はブランチ (@pxref{[def_branch]})の名前を格納し、HEADが示す履歴を操作するコマンドは、HEADが指すブランチの先端につながる履歴を操作します。 ただし、Gitでは、必ずしも特定のブランチの先端ではない任意のコミット (@pxref{[def_commit]})をチェックアウト (@pxref{[def_checkout]})することもできます。このような状態のHEADを「detached」(切り離されている、デタッチされている)と呼びます。
@@ -3596,10 +3637,10 @@ fast-forward(早送り)は、とあるリビジョン (@pxref{[def_revision]})�
 リポジトリ (@pxref{[def_repository]}) の同義語(arch people 向け)。
 
 @item  @anchor{[def_gitfile]}gitfile 
-実際のリポジトリであるディレクトリを指す、作業ツリーのルートにあるプレーンファイル @samp{.git}
+A plain file @samp{.git} at the root of a working tree that points at the directory that is the real repository. For proper use see @uref{git-worktree.html,git-worktree(1)} or @uref{git-submodule.html,git-submodule(1)}. For syntax see @uref{gitrepository-layout.html,gitrepository-layout(5)}.
 
 @item  @anchor{[def_grafts]}grafts 
-graftsは、コミットの偽の祖先情報を記録することで、他の点では異なる2つの開発ラインを結合できます。こうすることで、あるコミット (@pxref{[def_commit]})が持つ親 (@pxref{[def_parent]})の組を、コミット作成時に記録されたものとは異なるものとして Git に見せかけることができるのです。これは @samp{.git/info/grafts} ファイルを介して構成されます。
+Grafts enable two otherwise different lines of development to be joined together by recording fake ancestry information for commits. This way you can make Git pretend the set of parents (@pxref{[def_parent]}) a commit (@pxref{[def_commit]}) has is different from what was recorded when the commit was created. Configured via the @samp{.git/info/grafts} file.
 
 注意: graftsメカニズムは時代遅れであり、リポジトリ間でオブジェクトを転送する際に問題が発生する可能性があることに注意してください。 同じことを行うためのより柔軟で堅牢なシステムについては、 @uref{git-replace.html,git-replace(1)} を参照してください。
 
@@ -3649,6 +3690,9 @@ object name (@pxref{[def_object_name]}) (オブジェクト名)の同義語
 
 @item  @anchor{[def_octopus]}octopus 
 3つ以上(more than two)のブランチをマージします
+
+@item  @anchor{[def_orphan]}orphan 
+The act of getting on a branch (@pxref{[def_branch]}) that does not exist yet (i.e., an unborn (@pxref{[def_unborn]}) branch). After such an operation, the commit first created becomes a commit without a parent, starting a new history.
 
 @item  @anchor{[def_origin]}origin 
 デフォルトの上流(upstream)リポジトリ (@pxref{[def_repository]})。ほとんどのプロジェクトには、追跡する上流プロジェクトが少なくとも1つあります。デフォルトでは、「origin」がその目的で使用されます。新しい上流更新分は、 origin/name-of-upstream-branch という名前の リモート追跡ブランチ (@pxref{[def_remote_tracking_branch]})にフェッチされます。これは、 @samp{git branch-r} を使用して確認できます。
@@ -3749,6 +3793,9 @@ Gitはパターンを、 FNM_PATHNAMEフラグを指定した fnmatch(3) に消�
 @item  @anchor{[def_parent]}parent(親) 
 コミットオブジェクト (@pxref{[def_commit_object]})には、開発ラインで論理的に前にあったもののリスト、つまり親が含まれています(あるいは、前・親が無い場合は空です)。
 
+@item  @anchor{[def_peel]}peel 
+The action of recursively dereferencing (@pxref{[def_dereference]}) a tag object (@pxref{[def_tag_object]}).
+
 @item  @anchor{[def_pickaxe]}pickaxe 
 pickaxe (@pxref{[def_pickaxe]})(ピカクス;十字鋤;鶴嘴;つるはし)という用語は、特定のテキスト文字列を追加または削除する変更を選択するのに役立つdiffcoreルーチンのオプションを指します。 @samp{--pickaxe-all} オプションを使用すると、特定のテキスト行などを導入または削除した完全なチェンジセット (@pxref{[def_changeset]})を表示するために使用できます。 @uref{git-diff.html,git-diff(1)} を参照してください。
 
@@ -3762,7 +3809,18 @@ core Git (@pxref{[def_core_git]})に依存するプログラムとプログラ�
 グローバルではなく、 worktree (@pxref{[def_worktree]})ごとのref。これは現在、HEAD (@pxref{[def_HEAD]})と @samp{refs/bisect/} で始まるすべてのrefのみですが、今後、他の普通でないrefが含まれる可能性があります。
 
 @item  @anchor{[def_pseudoref]}pseudoref 
-疑似参照(pseudoref)は @samp{$GIT_DIR} の下にあるファイルのクラスであり、rev-parseしたときrefのように動作しますが、それはgitによって特別扱されます。疑似参照はすべて大文字の名前を持ち、かつ、常にSHA-1 (@pxref{[def_SHA1]})とそれに続く空白(whitespace)で構成される行で始まります。したがって、HEADは疑似参照ではありません。なぜならHEADはシンボリック参照である場合があるためです。オプションで、いくつかの追加データが含まれる場合があります。例としては @samp{MERGE_HEAD} と @samp{CHERRY_PICK_HEAD} があります。 per-worktree refs (@pxref{[def_per_worktree_ref]}) とは異なり、これらのファイルはシンボリックrefにすることはできず、reflogを含めることはできません。 また、通常のref更新機構を使用して更新することもできません。代わりに、ファイルに直接書き込むことによって更新されます。ただし、それらはrefであるかのように読み取ることができるため、 @samp{git rev-parse MERGE_HEAD} は機能します。
+A ref that has different semantics than normal refs. These refs can be read via normal Git commands, but cannot be written to by commands like @uref{git-update-ref.html,git-update-ref(1)}.
+
+The following pseudorefs are known to Git:
+
+@itemize 
+
+@item
+@samp{FETCH_HEAD} is written by @uref{git-fetch.html,git-fetch(1)} or @uref{git-pull.html,git-pull(1)}. It may refer to multiple object IDs. Each object ID is annotated with metadata indicating where it was fetched from and its fetch status.
+
+@item
+@samp{MERGE_HEAD} is written by @uref{git-merge.html,git-merge(1)} when resolving merge conflicts. It contains all commit IDs which are being merged.
+@end itemize
 
 @item  @anchor{[def_pull]}pull 
 ブランチ (@pxref{[def_branch]})をプルするとは、それをフェッチ (@pxref{[def_fetch]})しマージ (@pxref{[def_merge]})することを意味します。 @uref{git-pull.html,git-pull(1)} も参照してください。
@@ -3780,17 +3838,43 @@ core Git (@pxref{[def_core_git]})に依存するプログラムとプログラ�
 一連の変更をブランチ (@pxref{[def_branch]})から別のベースに再適用し、そのブランチのヘッド (@pxref{[def_head]})を再適用した結果にリセットします。
 
 @item  @anchor{[def_ref]}ref 
-オブジェクト名または別のrefを指す @samp{refs/} で始まる名前(例: @samp{refs/heads/master};別のrefを指すrefは シンボリックref (@pxref{[def_symref]}) と呼ぶ)。便宜上、Gitコマンドの引数として使用する場合は @samp{refs/} を省略できる場合があります。詳細については @uref{gitrevisions.html,gitrevisions(7)} を参照してください。 refs は repository (@pxref{[def_repository]}) に保存されます。
+A name that points to an object name (@pxref{[def_object_name]}) or another ref (the latter is called a symbolic ref (@pxref{[def_symref]})). For convenience, a ref can sometimes be abbreviated when used as an argument to a Git command; see @uref{gitrevisions.html,gitrevisions(7)} for details. Refs are stored in the repository (@pxref{[def_repository]}).
 
-ref名前空間は階層的です。さまざまなサブ階層がさまざまな目的で使用されます(たとえば、 @samp{refs/heads/} 階層はローカルブランチを表すために使用されます)。
+The ref namespace is hierarchical. Ref names must either start with @samp{refs/} or be located in the root of the hierarchy. For the latter, their name must follow these rules:
 
-@samp{refs/} で始まらない特別な目的のrefがいくつかあります。最も注目すべき例は @samp{HEAD} です。
+@itemize 
+
+@item
+The name consists of only upper-case characters or underscores.
+
+@item
+The name ends with "@samp{_HEAD}" or is equal to "@samp{HEAD}".
+
+There are some irregular refs in the root of the hierarchy that do not match these rules. The following list is exhaustive and shall not be extended in the future:
+
+@item
+@samp{AUTO_MERGE}
+
+@item
+@samp{BISECT_EXPECTED_REV}
+
+@item
+@samp{NOTES_MERGE_PARTIAL}
+
+@item
+@samp{NOTES_MERGE_REF}
+
+@item
+@samp{MERGE_AUTOSTASH}
+
+Different subhierarchies are used for different purposes. For example, the @samp{refs/heads/} hierarchy is used to represent local branches whereas the @samp{refs/tags/} hierarchy is used to represent local tags..
+@end itemize
 
 @item  @anchor{[def_reflog]}reflog 
 reflogは、refのローカルの「履歴」を示します。 つまり、このリポジトリの最後の3番目のリビジョンが何であったか、およびこのリポジトリの昨日の午後9時14分時点での「現在の状態」が何であったかを知ることができます。詳細については @uref{git-reflog.html,git-reflog(1)} を参照してください。
 
 @item  @anchor{[def_refspec]}refspec 
-「refspec」は、フェッチ (@pxref{[def_fetch]})やプッシュ (@pxref{[def_push]})によって使用され、リモートref (@pxref{[def_ref]})とローカルrefの間のマッピングを記述します。
+A "refspec" is used by fetch (@pxref{[def_fetch]}) and push (@pxref{[def_push]}) to describe the mapping between remote ref (@pxref{[def_ref]}) and local ref. See @uref{git-fetch.html,git-fetch(1)} or @uref{git-push.html,git-push(1)} for details.
 
 @item  @anchor{[def_remote]}remote repository 
 同じプロジェクトを追跡するために使用されるが、別の場所にあるリポジトリ (@pxref{[def_repository]})。リモートと通信するには、フェッチ (@pxref{[def_fetch]})またはプッシュ (@pxref{[def_push]})を参照してください。
@@ -3832,7 +3916,7 @@ Source code management (tool).
 作業ツリー内の他のプロジェクトのリポジトリを サブモジュール (@pxref{[def_submodule]}) として参照する リポジトリ (@pxref{[def_repository]}) 。 スーパープロジェクトは、含まれているサブモジュールのコミットオブジェクトの名前を知っています(ただし、そのコピーは保持していません)。
 
 @item  @anchor{[def_symref]}symref 
-シンボリックref: SHA-1 (@pxref{[def_SHA1]}) ID自体を含む代わりに「ref: refs/some/thing」の形式であり、参照されると、この参照を再帰的に逆参照します。 @samp{<<def_HEAD,HEAD>>} はsymrefの代表的な例です。シンボリックrefは @uref{git-symbolic-ref.html,git-symbolic-ref(1)} コマンドで操作されます。
+Symbolic reference: instead of containing the SHA-1 (@pxref{[def_SHA1]}) id itself, it is of the format @emph{ref: refs/some/thing} and when referenced, it recursively dereferences (@pxref{[def_dereference]}) to this reference. @emph{HEAD (@pxref{[def_HEAD]})} is a prime example of a symref. Symbolic references are manipulated with the @uref{git-symbolic-ref.html,git-symbolic-ref(1)} command.
 
 @item  @anchor{[def_tag]}tag 
 任意のタイプのオブジェクトを指す @samp{refs/tags/} 名前空間の下のref (@pxref{[def_ref]})(通常、タグは タグ (@pxref{[def_tag_object]}) または コミットオブジェクト (@pxref{[def_commit_object]}) のいずれかを指します)。head (@pxref{[def_head]})とは対照的に、タグは @samp{commit} コマンドによって更新されません。Gitタグは、Lispタグとは何の関係もありません(Git界隈では、それはオブジェクトタイプ (@pxref{[def_object_type]})と呼ばれます)。タグは通常、コミットの祖先チェーン (@pxref{[def_chain]})の特定のポイントをマークするために使用されます。
@@ -3843,6 +3927,9 @@ Source code management (tool).
 @item  @anchor{[def_topic_branch]}topic branch 
 開発者が概念的な開発ラインを識別するために使用する通常のGitブランチ (@pxref{[def_branch]})。(従来のSCMに比べて)ブランチは非常に簡単で処理コストが掛からないため、それぞれが非常に明確に定義された概念または小さな増分であるが関連する変更を含む、いくつかの小さなブランチを持つことが望ましい場合がよくあります。
 
+@item  @anchor{[def_trailer]}trailer 
+Key-value metadata. Trailers are optionally found at the end of a commit message. Might be called "footers" or "tags" in other communities. See @uref{git-interpret-trailers.html,git-interpret-trailers(1)}.
+
 @item  @anchor{[def_tree]}tree 
 作業ツリー (@pxref{[def_working_tree]})、または、ツリーオブジェクト (@pxref{[def_tree_object]})とそれに依存するブロブ (@pxref{[def_blob_object]})やツリーオブジェクト(つまり、作業ツリーの保存された表現)、のいずれか。
 
@@ -3850,7 +3937,10 @@ Source code management (tool).
 ファイル名とモードのリスト、および関連するブロブやツリーオブジェクトへのrefを含むオブジェクト (@pxref{[def_object]})。<< def_tree,ツリー>>とディレクトリ (@pxref{[def_directory]})は同じ意味です。
 
 @item  @anchor{[def_tree-ish]}tree-ish (also treeish) 
-ツリーっぽい何か。ツリーオブジェクトに再帰的に逆参照できる ツリーオブジェクト (@pxref{[def_tree_object]}) または オブジェクト (@pxref{[def_object]}) です。 コミットオブジェクト (@pxref{[def_commit_object]}) を逆参照すると、その リビジョン (@pxref{[def_revision]}) の最上位 ディレクトリ> に対応するツリーオブジェクトが生成されます。※右記は全てツリーっぽい(tree-ish)モノです: <<def_commit-ish (@pxref{[def_directory]}) 、ツリーオブジェクト、ツリーオブジェクトを指す タグオブジェクト (@pxref{[def_tag_object]}) 、タグオブジェクトを指すタグオブジェクト
+A tree object (@pxref{[def_tree_object]}) or an object (@pxref{[def_object]}) that can be recursively dereferenced (@pxref{[def_dereference]}) to a tree object. Dereferencing a commit object (@pxref{[def_commit_object]}) yields the tree object corresponding to the revision (@pxref{[def_revision]})'s top directory (@pxref{[def_directory]}). The following are all tree-ishes: a commit-ish (@pxref{[def_commit-ish]}), a tree object, a tag object (@pxref{[def_tag_object]}) that points to a tree object, a tag object that points to a tag object that points to a tree object, etc.
+
+@item  @anchor{[def_unborn]}unborn 
+The HEAD (@pxref{[def_HEAD]}) can point at a branch (@pxref{[def_branch]}) that does not yet exist and that does not have any commit on it yet, and such a branch is called an unborn branch. The most typical way users encounter an unborn branch is by creating a repository anew without cloning from elsewhere. The HEAD would point at the @emph{main} (or @emph{master}, depending on your configuration) branch that is yet to be born. Also some operations can get you on an unborn branch with their orphan (@pxref{[def_orphan]}) option.
 
 @item  @anchor{[def_unmerged_index]}unmerged index 
 マージされていないインデックスエントリ (@pxref{[def_index_entry]})を含むインデックス (@pxref{[def_index]})。

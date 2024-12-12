@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>git-rebase(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -753,7 +753,7 @@ git-rebase(1) Manual Page
         [--onto &lt;newbase&gt; | --keep-base] [&lt;upstream&gt; [&lt;branch&gt;]]
 <em>git rebase</em> [-i | --interactive] [&lt;options&gt;] [--exec &lt;cmd&gt;] [--onto &lt;newbase&gt;]
         --root [&lt;branch&gt;]
-<em>git rebase</em> (--continue | --skip | --abort | --quit | --edit-todo | --show-current-patch)</pre>
+<em>git rebase</em> (--continue|--skip|--abort|--quit|--edit-todo|--show-current-patch)</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -999,12 +999,44 @@ git rebase master topic</code></pre>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--empty={drop,keep,ask}</code>
+<code>--empty=(drop|keep|stop)</code>
 </dt>
 <dd>
 <p>
-        任意のアップストリームコミットの、開始時は空ではなく、かつ、クリーンでは無いチェリーピックであるが、(すでにアップストリームの変更のサブセットが含まれているため、)リベース後に空になるコミットを処理する方法。dropを使用すると、空になるコミットはドロップされます(これがデフォルトです)。keepを使用すると、そのようなコミットは保持されます。 ask を使用すると、空のコミットが適用されるとリベースが停止し、ドロップするか、ファイルをさらに編集するか、空の変更をコミットするかを選択できます(<code>--interactive</code> の指定を含んでいます)。<code>--exec</code> などの他のオプションでは、 <code>-i</code>/<code>--interactive</code> が明示的に指定されていない限り、デフォルトのドロップが使用されます。
+        How to handle commits that are not empty to start and are not clean cherry-picks of any upstream commit, but which become empty after rebasing (because they contain a subset of already upstream changes):
 </p>
+<div class="openblock">
+<div class="content">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>drop</code>
+</dt>
+<dd>
+<p>
+        The commit will be dropped. This is the default behavior.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>keep</code>
+</dt>
+<dd>
+<p>
+        The commit will be kept. This option is implied when <code>--exec</code> is specified unless <code>-i</code>/<code>--interactive</code> is also specified.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>stop</code>
+</dt>
+<dt class="hdlist1">
+<code>ask</code>
+</dt>
+<dd>
+<p>
+        The rebase will halt when the commit is applied, allowing you to choose whether to drop it, edit files more, or just commit the empty changes. This option is implied when <code>-i</code>/<code>--interactive</code> is specified. <code>ask</code> is a deprecated synonym of <code>stop</code>.
+</p>
+</dd>
+</dl></div>
+</div></div>
 <div class="paragraph"><p>注意: (<code>--no-keep-empty</code> が指定されていない場合、)空で開始するコミットは保持され、(<code>--reapply-cherry-picks</code> または <code>--keep-base</code> が渡されない限り)準備ステップとして、( <code>git log --cherry-mark ...</code> によって決定される)クリーンなチェリーピックであるコミットが検出・ドロップされます。</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
@@ -1278,7 +1310,7 @@ merge backend
 <p>
         リベースされようとしているコミットのリストを作成します。リベースする前に、ユーザーにそのリストを編集させます。このモードは、コミットの分割にも使用できます（以下の「SPLITTING COMMITS」を参照）。
 </p>
-<div class="paragraph"><p>コミットリストの書式は、構成オプション rebase.instructionFormat を設定することで変更できます。カスタマイズされた命令書式では、書式の前に長いコミットハッシュが自動的に追加されます。</p></div>
+<div class="paragraph"><p>The commit list format can be changed by setting the configuration option rebase.instructionFormat. A customized instruction format will automatically have the commit hash prepended to the format.</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1339,9 +1371,11 @@ merge backend
 </dt>
 <dd>
 <p>
-        コミットログメッセージが「squash! &#8230;」または「fixup! &#8230;」または「amend! &#8230;」で始まり、同一の <code>...</code> に一致するコミットがすでにtodoリストにある場合、 <code>rebase -i</code> のtodoリストを自動的に変更して、squashするようにマークされたコミットが、変更するコミットの直後に来るようにし、移動したコミットのアクションをそれぞれ <code>pick</code> から、 <code>squash</code> または <code>fixup</code> または <code>fixup-C</code> に変更します。 コミットの件名が一致する場合、または <code>...</code> がコミットのハッシュを参照する場合、コミットは <code>...</code> と一致します。フォールバックとして、コミットサブジェクトの部分一致も機能します。 fixup/amend/squash コミットを作成するための推奨される方法は、 <a href="git-commit.html">git-commit(1)</a> のそれぞれ <code>--fixup</code> または <code>--fixup=amend:</code> または <code>--fixup=reword:</code> と、<code>--squash</code> オプションを使用することです。
+        Automatically squash commits with specially formatted messages into previous commits being rebased. If a commit message starts with "squash! ", "fixup! " or "amend! ", the remainder of the subject line is taken as a commit specifier, which matches a previous commit if it matches the subject line or the hash of that commit. If no commit matches fully, matches of the specifier with the start of commit subjects are considered.
 </p>
-<div class="paragraph"><p>構成変数 <code>rebase.autoSquash</code> を使用して <code>--autosquash</code> オプションがデフォルトで有効になっている場合、このオプションを使用して、この設定をオーバーライドおよび無効にすることができます。</p></div>
+<div class="paragraph"><p>In the rebase todo list, the actions of squash, fixup and amend commits are changed from <code>pick</code> to <code>squash</code>, <code>fixup</code> or <code>fixup -C</code>, respectively, and they are moved right after the commit they modify. The <code>--interactive</code> option can be used to review and edit the todo list before proceeding.</p></div>
+<div class="paragraph"><p>The recommended way to create commits with squash markers is by using the <code>--squash</code>, <code>--fixup</code>, <code>--fixup=amend:</code> or <code>--fixup=reword:</code> options of <a href="git-commit.html">git-commit(1)</a>, which take the target commit as an argument and automatically fill in the subject line of the new commit from that.</p></div>
+<div class="paragraph"><p>Setting configuration variable <code>rebase.autoSquash</code> to true enables auto-squashing by default for interactive rebase. The <code>--no-autosquash</code> option can be used to override that setting.</p></div>
 <div class="paragraph"><p>下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1365,7 +1399,8 @@ merge backend
 <p>
         失敗した <code>exec</code> コマンドを自動的に再スケジュールします。 これは、対話モード(または <code>--exec</code> オプションが提供された場合)でのみ意味があります。
 </p>
-<div class="paragraph"><p>このオプションは、リベースが開始されると適用されますが、これは、 <code>rebase.rescheduleFailedExec</code> 構成(<a href="git-config.html">git-config(1)</a> または 下記「CONFIGURATION」参照)、またはこのオプションが提供されているかどうかに基づいて、最初にリベース全体に設定されます。でなければ、開始時の明示的な <code>--no-reschedule-failed-exec</code> が、 <code>rebase.rescheduleFailedExec=true</code> 構成の存在によって上書きされます。</p></div>
+<div class="paragraph"><p>This option applies once a rebase is started. It is preserved for the whole rebase based on, in order, the command line option provided to the initial <code>git rebase</code>, the <code>rebase.rescheduleFailedExec</code> configuration (see <a href="git-config.html">git-config(1)</a> or "CONFIGURATION" below), or it defaults to false.</p></div>
+<div class="paragraph"><p>Recording this option for the whole rebase is a convenience feature. Otherwise an explicit <code>--no-reschedule-failed-exec</code> at the start would be overridden by the presence of a <code>rebase.rescheduleFailedExec=true</code> configuration when <code>git rebase --continue</code> is invoked. Currently, you cannot pass <code>--[no-]reschedule-failed-exec</code> to <code>git rebase --continue</code>.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--update-refs</code>
@@ -1495,7 +1530,7 @@ merge backend
 <h3 id="_空のコミット">空のコミット</h3>
 <div class="paragraph"><p><code>apply</code> バックエンドは、残念ながら意図的に空のコミット、つまり空で開始されたコミットを削除しますが、これらは実際にはまれです。また、空になるコミットを削除したり、その振る舞いを制御するオプションがありません。</p></div>
 <div class="paragraph"><p><code>merge</code> バックエンドは、デフォルトで意図的に空のコミットを保持します(ただし、 <code>-i</code> を使用すると、todoリストエディタでemptyとしてマークされます。または、 <code>--no-keep-empty</code> を使用して自動的に削除できます)。</p></div>
-<div class="paragraph"><p>適用バックエンドと同様に、デフォルトでは、mergeバックエンドは、 <code>-i</code>/<code>--interactive</code> が指定されていない限り、空になるコミットをドロップします(この場合、mergeバックエンドは停止(stop)し、ユーザーに何をすべきかを尋ねます)。mergeバックエンドには、空になったコミットの処理動作を変更するための <code>--empty={drop,keep,ask}</code> オプションもあります。</p></div>
+<div class="paragraph"><p>Similar to the apply backend, by default the merge backend drops commits that become empty unless <code>-i</code>/<code>--interactive</code> is specified (in which case it stops and asks the user what to do). The merge backend also has an <code>--empty=(drop|keep|stop)</code> option for changing the behavior of handling commits that become empty.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_ディレクトリ名変更の検知">ディレクトリ名変更の検知</h3>
@@ -1504,7 +1539,7 @@ merge backend
 </div>
 <div class="sect2">
 <h3 id="_context">Context</h3>
-<div class="paragraph"><p>適用バックエンドは、（内部で <code>format-patch</code> を呼び出すことにより、）パッチのシーケンスを作成し、次にパッチを順番に適用することにより（内部で <code>am</code> を呼び出すことにより）機能します。パッチは複数のハンクで構成されており、それぞれに行番号、コンテキストリージョン、および実際の変更が含まれています。反対側がファイルの前に行を挿入または削除した可能性があるため、行番号はある程度曖昧にする必要があります。コンテキスト領域(context region)は、正しい行に変更を適用するために行番号を調整する方法を見つけるのに役立つことを目的としています。ただし、コードの複数の領域に同じ周囲のコンテキスト行がある場合、間違った領域が選択される可能性があります。これにより、競合が報告されずにコミットが誤って再適用される実際のケースがあります。 <code>diff.context</code> をより大きな値に設定すると、このようなタイプの問題を防ぐことができますが、誤った競合の可能性が高くなります（適用するには、一致するコンテキストの行がより多く必要になるため）。</p></div>
+<div class="paragraph"><p>The <em>apply</em> backend works by creating a sequence of patches (by calling <code>format-patch</code> internally), and then applying the patches in sequence (calling <code>am</code> internally). Patches are composed of multiple hunks, each with line numbers, a context region, and the actual changes. The line numbers have to be taken with some offset, since the other side will likely have inserted or deleted lines earlier in the file. The context region is meant to help find how to adjust the line numbers in order to apply the changes to the right lines. However, if multiple areas of the code have the same surrounding lines of context, the wrong one can be picked. There are real-world cases where this has caused commits to be reapplied incorrectly with no conflicts reported. Setting <code>diff.context</code> to a larger value may prevent such types of problems, but increases the chance of spurious conflicts (since it will require more lines of matching context to apply).</p></div>
 <div class="paragraph"><p><code>merge</code> バックエンドは、関連する各ファイルの完全なコピーを使って動作し、これらの種類の問題からファイルを保護します。</p></div>
 </div>
 <div class="sect2">
@@ -1846,7 +1881,7 @@ exec cd subdir; make test
 ...</code></pre>
 </div></div>
 <div class="paragraph"><p>コマンドが失敗すると（つまり、0以外のステータスで終了すると）、対話的リベースが停止(stop)し、あなたには問題を修正する機会が与えられます。あなたは <code>git rebase --continue</code> で続行できます。</p></div>
-<div class="paragraph"><p>「exec」コマンドは、シェル(<code>$SHELL</code> で指定されたもの、または <code>$SHELL</code> が設定されていない場合はデフォルトのシェル)でコマンドを起動するため、シェル機能("cd"、"&gt;"、";" など)を使用できます。コマンドは、作業ツリーのルートから実行されます。</p></div>
+<div class="paragraph"><p>The "exec" command launches the command in a shell (the default one, usually /bin/sh), so you can use shell features (like "cd", "&gt;", ";" &#8230;). The command is run from the root of the working tree.</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git rebase -i --exec "make test"</code></pre>
@@ -2115,7 +2150,7 @@ rebase.autoSquash
 </dt>
 <dd>
 <p>
-        trueに設定されている場合、デフォルトで <code>--autosquash</code> オプションを有効にします。
+        If set to true, enable the <code>--autosquash</code> option of <a href="git-rebase.html">git-rebase(1)</a> by default for interactive mode. This can be overridden with the <code>--no-autosquash</code> option.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2147,7 +2182,7 @@ rebase.instructionFormat
 </dt>
 <dd>
 <p>
-        <a href="git-log.html">git-log(1)</a> で指定されている、対話的リベース中にToDoリストに使用される書式文字列。書式では、自動的に長いコミットハッシュが書式の前に付加されます。
+        A format string, as specified in <a href="git-log.html">git-log(1)</a>, to be used for the todo list during an interactive rebase. The format will automatically have the commit hash prepended to the format.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2197,11 +2232,19 @@ rebase.rebaseMerges
 </p>
 </dd>
 <dt class="hdlist1">
+rebase.maxLabelLength
+</dt>
+<dd>
+<p>
+        When generating label names from commit subjects, truncate the names to this length. By default, the names are truncated to a little less than <code>NAME_MAX</code> (to allow e.g. <code>.lock</code> files to be written for the corresponding loose refs).
+</p>
+</dd>
+<dt class="hdlist1">
 sequence.editor
 </dt>
 <dd>
 <p>
-        リベース命令ファイル(rebase instruction file)を編集するために <code>git rebase -i</code> によって使用されるテキストエディタ。この値は、使用時にシェルによって解釈されることを意図しています。 これは、 <code>GIT_SEQUENCE_EDITOR</code> 環境変数によってオーバーライドできます。構成されていない場合は、代わりにデフォルトのコミットメッセージエディタが使用されます。
+        Text editor used by <code>git rebase -i</code> for editing the rebase instruction file. The value is meant to be interpreted by the shell when it is used. It can be overridden by the <code>GIT_SEQUENCE_EDITOR</code> environment variable. When not configured, the default commit message editor is used instead.
 </p>
 </dd>
 </dl></div>
@@ -2218,7 +2261,7 @@ sequence.editor
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-01-25 05:56:18 JST
+ 2024-12-11 23:59:01 JST
 </div>
 </div>
 </body>

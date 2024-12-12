@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>gitprotocol-http(5)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -771,7 +771,7 @@ gitprotocol-http(5) Manual Page
 </div></div>
 <div class="paragraph"><p>このドキュメントでは、プレースホルダー <code>$GIT_URL</code> は、エンドユーザーが入力した http:// リポジトリ URL を表すことにします。</p></div>
 <div class="paragraph"><p>サーバーは、<code>$GIT_URL</code> に一致する場所へのすべてのリクエストを処理するべきです。 これは、Git で使用される「スマート」および「バカ」(dumb) HTTP プロトコルの両方が、ユーザーが指定した <code>$GIT_URL</code> 文字列の末尾に追加のパスコンポーネントを追加することによって動作するためです。</p></div>
-<div class="paragraph"><p>ルーズオブジェクトをリクエストするバカ(dumb)クライアントの例:</p></div>
+<div class="paragraph"><p>An example of a dumb client requesting a loose object:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$GIT_URL:     http://example.com:8080/git/repo.git
@@ -1009,8 +1009,8 @@ cap_list          =  capability *(SP capability)</code></pre>
 <div class="paragraph"><p>C: 検出したオブジェクトを <code>advertised</code> セットに配置します。</p></div>
 <div class="paragraph"><p>C: 後で両端にあると判断されるかもしれないオブジェクトを保持するために、
    空のセット <code>common</code> を作成します。</p></div>
-<div class="paragraph"><p>C: ref検出中に発見したものに基づいて、クライアントが取得(fetch)したい
-   <code>advertised</code> オブジェクトの <code>want</code> セットを構築します。</p></div>
+<div class="paragraph"><p>C: Build a set, <code>want</code>, of the objects from <code>advertised</code> that the client
+   wants to fetch, based on what it saw during ref discovery.</p></div>
 <div class="paragraph"><p>C: コミット時間順に並べられたキュー <code>c_pending</code> を開始(最新のものを最初に取り出す(pop))。
    すべてのクライアントrefを追加します。
    コミットがキューから取り出される(pop)と、その親が自動的に挿入し直されます(SHOULD)。
@@ -1019,14 +1019,14 @@ cap_list          =  capability *(SP capability)</code></pre>
 <div class="paragraph"><p>C: <code>$GIT_URL/git-upload-pack</code> リクエストを1つ送信します:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>C: 0032want &lt;want #1&gt;...............................
-C: 0032want &lt;want #2&gt;...............................
+<pre><code>C: 0032want &lt;want-#1&gt;...............................
+C: 0032want &lt;want-#2&gt;...............................
 ....
-C: 0032have &lt;common #1&gt;.............................
-C: 0032have &lt;common #2&gt;.............................
+C: 0032have &lt;common-#1&gt;.............................
+C: 0032have &lt;common-#2&gt;.............................
 ....
-C: 0032have &lt;have #1&gt;...............................
-C: 0032have &lt;have #2&gt;...............................
+C: 0032have &lt;have-#1&gt;...............................
+C: 0032have &lt;have-#2&gt;...............................
 ....
 C: 0000</code></pre>
 </div></div>
@@ -1046,7 +1046,7 @@ C: 0000</code></pre>
 </ul></div>
 <div class="paragraph"><p>ストリームは pkt-line フラッシュ(<code>0000</code>)によって終了します。</p></div>
 <div class="paragraph"><p>単一の <code>want</code> または <code>have</code> コマンドは、その値として 1 つの 16 進形式のオブジェクト名を持たなければなりません。 複数のオブジェクト名は複数のコマンドを送信する必要があります。 オブジェクト名は、 <code>object-format</code> 機能 (デフォルト SHA-1) によってネゴシエートされたオブジェクトフォーマットを使用して与える必要があります。</p></div>
-<div class="paragraph"><p><code>have</code> リストは、 <code>c_pending</code> から最初の 32 個のコミットを取り出す(pop)ことによって作成されます。 <code>c_pending</code> が空である場合、供給できる量が少なくなります。</p></div>
+<div class="paragraph"><p>The <code>have</code> list is created by popping the first 32 commits from <code>c_pending</code>. Fewer can be supplied if <code>c_pending</code> empties.</p></div>
 <div class="paragraph"><p>クライアントが 256 の <code>have</code> コミットを送信し、 <code>s_common</code> からそれらの 1 つをまだ受信していない場合、またはクライアントが <code>c_pending</code> を空にした場合、サーバーに続行しないことを知らせる <code>done</code> コマンドを含める必要があります:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1104,7 +1104,7 @@ S: ....</code></pre>
 <div class="literalblock">
 <div class="content">
 <pre><code>update_request  =  command_list
-                   "PACK" &lt;binary data&gt;</code></pre>
+                   "PACK" &lt;binary-data&gt;</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
@@ -1129,12 +1129,12 @@ update          =  old_id SP new_id SP name</code></pre>
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="http://www.ietf.org/rfc/rfc1738.txt">RFC 1738: Uniform Resource Locators (URL)</a>
+<a href="https://www.ietf.org/rfc/rfc1738.txt">RFC 1738: Uniform Resource Locators (URL)</a>
 </p>
 </li>
 <li>
 <p>
-<a href="http://www.ietf.org/rfc/rfc2616.txt">RFC 2616: Hypertext Transfer Protocol&#8201;&#8212;&#8201;HTTP/1.1</a>
+<a href="https://www.ietf.org/rfc/rfc2616.txt">RFC 2616: Hypertext Transfer Protocol&#8201;&#8212;&#8201;HTTP/1.1</a>
 </p>
 </li>
 </ul></div>
@@ -1157,7 +1157,7 @@ update          =  old_id SP new_id SP name</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2023-07-18 11:05:54 JST
+ 2024-12-11 23:59:20 JST
 </div>
 </div>
 </body>

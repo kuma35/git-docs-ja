@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.1" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
 <title>gitweb.conf(5)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -785,7 +785,7 @@ our $site_name = 'Example.org &gt;&gt; Repos';</code></pre>
 </li>
 <li>
 <p>
-インスタンスごとの構成ファイル(デフォルトでは、インストールされたgitwebと同じディレクトリにある <code>gitweb_config.perl</code> になります)。または、存在しない場合は、システム全体の構成ファイル(デフォルトは <code>/etc/gitweb.conf</code>)にフォールバックします。
+either per-instance configuration file (defaults to <em>gitweb_config.perl</em> in the same directory as the installed gitweb), or if it does not exist then fallback system-wide configuration file (defaults to <code>/etc/gitweb.conf</code>).
 </p>
 </li>
 </ul></div>
@@ -921,7 +921,7 @@ $highlight_bin
 </dt>
 <dd>
 <p>
-        使用するhighlight実行可能ファイルのパス(パラメーターと出力に関して仮定してあるため、 <a href="http://www.andre-simon.de">http://www.andre-simon.de</a> からのものである必要があります)。デフォルトでは <code>highlight</code> に設定されています。WebサーバーのPATHが通ったところにインストールされていない場合は、highlight実行可能ファイルへのフルパスを設定します。gitwebが実際に構文の強調表示(syntax highlighting)を使用するには、 <code>highlight</code> 機能を設定する必要があることに注意してください。
+        Path to the highlight executable to use (it must be the one from <a href="http://andre-simon.de/zip/download.php">http://andre-simon.de/zip/download.php</a> due to assumptions about parameters and output). By default set to <em>highlight</em>; set it to full path to highlight executable if it is not installed on your web server&#8217;s PATH. Note that <em>highlight</em> feature must be set for gitweb to actually use syntax highlighting.
 </p>
 <div class="paragraph"><p><strong>注意</strong> : ファイルを強調表示するには、その構文タイプを検出し、
 その構文を <code>highlight</code> でサポートする必要があります。
@@ -1005,7 +1005,7 @@ $home_link_str
 </dt>
 <dd>
 <p>
-        すべてのページの上部にある「home link」のラベルで、<code>$home_link</code> に誘導します(通常、プロジェクトリストを含むメインのgitwebページです)。 <code>&lt;home link&gt; / &lt;project&gt; / &lt;action&gt;</code> は、gitwebの「パンくずリスト」の最初のコンポーネントとして使用されます。 <code>GITWEB_HOME_LINK_STR</code> 変数を使用してビルド時に設定できます。このリンクからプロジェクトのリストが表示されるため、デフォルトではラベルは "projects" に設定されています。もう1つの一般的な選択肢は、サイトの名前に設定することです。生のHTMLとして扱われるため、信頼できないソースからは設定しないでください。
+        Label for the "home link" at the top of all pages, leading to <code>$home_link</code> (usually the main gitweb page, which contains the projects list). It is used as the first component of gitweb&#8217;s "breadcrumb trail": <code>&lt;home-link&gt; / &lt;project&gt; / &lt;action&gt;</code>. Can be set at build time using the <code>GITWEB_HOME_LINK_STR</code> variable. By default it is set to "projects", as this link leads to the list of projects. Another popular choice is to set it to the name of site. Note that it is treated as raw HTML so it should not be set from untrusted sources.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1274,16 +1274,16 @@ $base_url
 <div class="paragraph"><p>各 <code>％feature</code> ハッシュ(連想配列)要素はハッシュへの参照であり、以下の構造を持っています:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>"&lt;feature_name&gt;" =&gt; {
-        "sub" =&gt; &lt;feature-sub (subroutine)&gt;,
-        "override" =&gt; &lt;allow-override (boolean)&gt;,
+<pre><code>"&lt;feature-name&gt;" =&gt; {
+        "sub" =&gt; &lt;feature-sub-(subroutine)&gt;,
+        "override" =&gt; &lt;allow-override-(boolean)&gt;,
         "default" =&gt; [ &lt;options&gt;... ]
 },</code></pre>
 </div></div>
 <div class="paragraph"><p>一部の機能は、プロジェクトごとにオーバーライドできません。 これらの機能の場合、適切な <code>%feature</code> ハッシュ要素の構造はより単純な形式になります:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>"&lt;feature_name&gt;" =&gt; {
+<pre><code>"&lt;feature-name&gt;" =&gt; {
         "override" =&gt; 0,
         "default" =&gt; [ &lt;options&gt;... ]
 },</code></pre>
@@ -1435,9 +1435,14 @@ forks
 </dt>
 <dd>
 <p>
-        この機能が有効になっている場合、gitwebは、プロジェクトルート(ベース名)のサブディレクトリ内のプロジェクトを既存のプロジェクトのフォークと見なします。 <code>$projname.git</code> プロジェクトごとに、 <code>$projname/</code> ディレクトリ内のプロジェクトとそのサブディレクトリはメインプロジェクトリストに表示されません。代わりに、 <code>$projname</code> の横に <code>+</code> マークが表示されます。これは、すべてのフォーク(<code>$projname/</code> サブディレクトリ内のすべてのプロジェクト)を一覧表示する "forks" ビューにリンクしています。さらに、プロジェクトの「fork」ビューは、プロジェクトの概要ページからリンクされています。
+        この機能が有効になっている場合、gitwebは、プロジェクトルート(ベース名)のサブディレクトリ内のプロジェクトを既存のプロジェクトのフォークと見なします。
+        <code>$projname.git</code> プロジェクトごとに、 <code>$projname/</code>
+        ディレクトリ内のプロジェクトとそのサブディレクトリはメインプロジェクトリストに表示されません。代わりに、  <code>$projname</code> の横に <code>+</code>
+        マークが表示されます。これは、すべてのフォーク(<code>$projname/</code> サブディレクトリ内のすべてのプロジェクト)を一覧表示する "forks"
+        ビューにリンクしています。さらに、プロジェクトの「fork」ビューは、プロジェクトの概要ページからリンクされています。
 </p>
-<div class="paragraph"><p>プロジェクトリストがファイルから取得された場合( <code>$projects_list</code> はファイルを指している)、フォーク(fork)は、そのファイルのメインプロジェクトの後にリストされている場合にのみ認識されます。</p></div>
+<div class="paragraph"><p>プロジェクトリストがファイルから取得された場合( <code>$projects_list</code>
+はファイルを指している)、フォーク(fork)は、そのファイルのメインプロジェクトの後にリストされている場合にのみ認識されます。</p></div>
 <div class="paragraph"><p>プロジェクト固有のオーバーライドはサポートされていません。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1448,7 +1453,7 @@ actions
         すべてのプロジェクトページのアクションバーへのカスタムリンクを挿入します。これにより、あなたはgitwebに統合されているサードパーティのスクリプトにリンクできます。
 </p>
 <div class="paragraph"><p>「default」値は、 <code>("&lt;label&gt;", "&lt;link&gt;", "&lt;position&gt;")</code> という3要素組形式の、リストで構成されます。ここで、 "position" は、リンクを挿入するラベルです。 "link" はフォーマット文字列で、 <code>%n</code> はプロジェクト名に展開され、 <code>%f</code> はファイルシステム内のプロジェクトパス(つまり "$projectroot/$project")に展開され、 <code>%h</code> は現在のハッシュ(<code>h</code> gitwebパラメーター)、 <code>%b</code> は現在のハッシュベース(<code>hb</code> 'gitwebパラメーター) です。<code>%%</code> は <code>%</code> に展開されます。</p></div>
-<div class="paragraph"><p>たとえば、このページが作成された時点で、 <a href="http://repo.or.cz">http://repo.or.cz</a> Gitホスティングサイトは、グラフィカルログを有効にするために次のように設定しました(サードパーティツール git-browser を使用):</p></div>
+<div class="paragraph"><p>For example, at the time this page was written, the <a href="https://repo.or.cz">https://repo.or.cz</a> Git hosting site set it to the following to enable graphical log (using the third party tool <strong>git-browser</strong>):</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$feature{'actions'}{'default'} =
@@ -1624,7 +1629,7 @@ GITWEB_CONFIG_COMMON
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-05-12 05:35:14 JST
+ 2024-12-11 23:59:22 JST
 </div>
 </div>
 </body>
