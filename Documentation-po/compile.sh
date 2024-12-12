@@ -1,5 +1,6 @@
 #!/bin/sh
 PROJ=${HOME}/work/git-docs-ja
+BRANCH=docs-ja-4
 cd ${PROJ}/Documentation-sedout
 for dst_dir in technical RelNotes config howto includes mergetools
 do
@@ -10,7 +11,7 @@ done
 cd ${PROJ}/Documentation-po
 # using python3 venv for asciidoc
 source ${PROJ}/Documentation-po/venv/bin/activate
-make ja
+make ja BRANCH=${BRANCH}
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then
     notify-send -u critical git-docs-ja "Documentation-po/Makefile エラー"
@@ -24,7 +25,7 @@ if [ ${exitcode} -ne 0 ]; then
     exit ${exitcode}
 fi
 # gen file "dir" for info. and publish to docs/info/
-make -f ${PROJ}/Documentation-po/publish-info.mak
+make -f ${PROJ}/Documentation-po/publish-info.mak BRANCH=${BRANCH}
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then
     notify-send -u critical git-docs-ja "publish-info.mak エラー"
@@ -34,15 +35,15 @@ fi
 ${PROJ}/Documentation-po/restore-htmls.sh
 ${PROJ}/Documentation-po/restore-manpages.sh
 # for github pages
-DIFF=diff ${PROJ}/Documentation-po/install-webdoc-only-html.sh ${PROJ}/docs/htmldocs
-gawk -f ${PROJ}/Documentation-po/publish-index.awk TEMPLATE=${PROJ}/Documentation-po/index.html.template OUTPUT=${PROJ}/docs/index.html < ${PROJ}/../git/GIT-VERSION-FILE
+DIFF=diff ${PROJ}/Documentation-po/install-webdoc-only-html.sh ${PROJ}/docs/${BRANCH}/htmldocs
+gawk -f ${PROJ}/Documentation-po/publish-index.awk TEMPLATE=${PROJ}/Documentation-po/index.html.template OUTPUT=${PROJ}/docs/${BRANCH}/index.html < ${PROJ}/../git/GIT-VERSION-FILE
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then
     notify-send -u critical git-docs-ja "publish-index.awk エラー"
     exit ${exitcode}
 fi
 # restore htmls in docs
-cd ${PROJ}/docs
+cd ${PROJ}/docs/${BRANCH}
 ${PROJ}/Documentation-po/restore-htmls.sh
 #
 notify-send -u normal git-docs-ja "compile完了。"
