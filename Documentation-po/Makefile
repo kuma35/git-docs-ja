@@ -1,20 +1,71 @@
-# $(BRANCH) specify make argument 
+# $(BRANCH) specify make argument
+# directries:
+# |= Documentation (source directory)
+# | |- technical
+# | |- RelNotes
+# | |- config
+# | |- howto
+# | |- includes
+# | |- mergetools
+# |
+# |= Documentation-po (current directory) *.txt.po, *.txt.po4a-cfg
+# | |- technical
+# | |- RelNotes
+# | |- config
+# | |- howto
+# | |- includes
+# | |- mergetools
+# | |- pot
+# | | |- technical
+# | | |- RelNotes
+# | | |- config
+# | | |- howto
+# | | |- includes
+# | | |- mergetools
+# |
+# |- Dcumentation-ja ( translated directory)
+# | |- technical
+# | |- RelNotes
+# | |- config
+# | |- howto
+# | |- includes
+# | |- mergetools
+# |
+# |- docs ( for github pages )
+# | |- docs-ja-1 (old ver)
+# | |- docs-ja-2 (old ver)
+# | |- docs-ja-3 (old ver)
+# | |- docs-ja-4 (current ver at 2024/12)
+
 SRC_DIR = ../Documentation
 SEDOUT_DIR = ../Documentation-sedout
 SEDOUT_EXT = .txt
 ASCIIDOC_EXT = .txt
-PO_DIR = .
+# PO_DIR = . ( current directory )
 PO_EXT = .po
+POT_DIR = pot
+
+# PO4A_CFG_DIR = ( current directory )
+PO4A_CFG_EXT = .po4cfg
+
+# vpath %$(PO4A_CFG_EXT) $(PO4A_CFG_DIR)
+
 DST_DIR = ../Documentation-ja
+
 TECHNICAL_DIR = technical
 RELNOTES_DIR = RelNotes
 CONFIG_DIR = config
 HOWTO_DIR = howto
 INCLUDES_DIR = includes
 MERGETOOLS_DIR = mergetools
+
+SRC_SUB_DIRS = $(TECHNICAL_DIR) $(RELNOTES_DIR) $(CONFIG_DIR) $(HOWTO_DIR) $(INCLUDES_DIR) $(MERGETOOLS_DIR)
+# vpath %$(PO_EXT) $(SRC_SUB_DIRS)
+
 SRC_INSTALL_TEXT = ../INSTALL
-PO_INSTALL_TEXT = $(addprefix $(PO_DIR)/,INSTALL.po)
+PO_INSTALL_TEXT = INSTALL.po
 DST_INSTALL_TEXT = ../docs/$(BRANCH)/INSTALL.txt
+
 
 # $(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
 
@@ -30,56 +81,70 @@ cmds_txt = cmds-ancillaryinterrogators.txt \
 	cmds-purehelpers.txt \
 	cmds-foreignscminterface.txt
 
+# $(warning cmds_txt= $(wildcard $(SRC_DIR)/cmds-*$(ASCIIDOC_EXT)))
+# $(error "cmds_txt")
+
 mergetools_txt = mergetools-diff.txt mergetools-merge.txt
 
 EXCLUDE_TXT = $(cmds_txt) $(mergetools_txt)
 
-SRC_CURRENT = $(filter-out $(EXCLUDE_TXT),$(notdir $(wildcard $(SRC_DIR)/*$(ASCIIDOC_EXT))))
-SRC_TECHNICAL = $(addprefix $(TECHNICAL_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(TECHNICAL_DIR)/*$(ASCIIDOC_EXT))))
-SRC_RELNOTES = $(addprefix $(RELNOTES_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(RELNOTES_DIR)/*$(ASCIIDOC_EXT))))
-SRC_CONFIG = $(addprefix $(CONFIG_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(CONFIG_DIR)/*$(ASCIIDOC_EXT))))
-SRC_HOWTO = $(addprefix $(HOWTO_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(HOWTO_DIR)/*$(ASCIIDOC_EXT))))
-SRC_INCLUDES = $(addprefix $(INCLUDES_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(INCLUDES_DIR)/*$(ASCIIDOC_EXT))))
-SRC_MERGETOOLS = $(addprefix $(MERGETOOLS_DIR)/,$(notdir $(wildcard $(SRC_DIR)/$(MERGETOOLS_DIR)/*$(ASCIIDOC_EXT))))
+SRC_PACKAGE = $(filter-out $(EXCLUDE_TXT),$(notdir $(wildcard $(SRC_DIR)/*$(ASCIIDOC_EXT))))
+SRC_PACKAGE += $(foreach sub_dir, $(SRC_SUB_DIRS), $(addprefix $(sub_dir)/,$(notdir $(wildcard $(SRC_DIR)/$(sub_dir)/*$(ASCIIDOC_EXT)))))
 
-SRC_PACKAGE = $(SRC_CURRENT)
-SRC_PACKAGE += $(SRC_TECHNICAL)
-SRC_PACKAGE += $(SRC_RELNOTES)
-SRC_PACKAGE += $(SRC_CONFIG)
-SRC_PACKAGE += $(SRC_HOWTO)
-SRC_PACKAGE += $(SRC_INCLUDES)
-SRC_PACKAGE += $(SRC_MERGETOOLS)
+# $(error "SRC_PACKAGE = $(SRC_PACKAGE)")
 
 SRC_FILES = $(addprefix $(SRC_DIR)/,$(SRC_PACKAGE))
 
-# $(warning SRC_FILES = $(SRC_FILES))
+# $(error "SRC_FILES = $(SRC_FILES)")
 
 SEDOUT_FILES = $(addprefix $(SEDOUT_DIR)/,$(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(SEDOUT_EXT)))
 
 # $(warning SEDOUT_FILES = $(SEDOUT_FILES))
 
-PO_FILES = $(addprefix $(PO_DIR)/,$(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(PO_EXT)))
+PO_FILES = $(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(PO_EXT))
 
-# $(warning PO_FILES = $(PO_FILES))
+# $(error "PO_FILES = $(PO_FILES)")
+
+PO4A_CFG_FILES = $(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(PO4A_CFG_EXT))
+
+# $(error "PO4A_CFG_FILES = $(PO4A_CFG_FILES)")
 
 DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
 
 # $(warning DST_FILES = $(DST_FILES))
 
+DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
+
+# $(warning DST_FILES = $(DST_FILES))
+
+# $(error "debug stop")
+
+$(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
+	./mk-po4a-cfg.sh $< > $@
+
+# po4a: $(PO4A_CFG_FILES)
+
+# $(error "debug stop")
+
+
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
-$(PO_FILES): $(PO_DIR)/%$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
-	po4a-updatepo -M utf8 -f asciidoc -m $< -p $@
+# $(PO_FILES): $(PO_DIR)/%$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
+# 	po4a-updatepo -M utf8 -f asciidoc -m $< -p $@
+$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
+	@# po4a --verbose --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
+	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
-	po4a-updatepo -M utf8 -f text -m $< -p $@
+	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
-$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : $(PO_DIR)/%$(PO_EXT)
-	po4a-translate -f asciidoc -keep 0 -M utf8 -m $(subst $(DST_DIR),$(SEDOUT_DIR),$(@:$(PO_EXT)=$(ASCIIDOC_EXT))) -p $< -l $@
+$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT)
+	@# po4a --verbose --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
+	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
-	po4a-translate -f text -keep 0 -M utf8 -m $(SRC_INSTALL_TEXT) -p $< -l $@
+	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 # Documentation/Makefile に 追加した場合に反映させる。 (technicalに一部html化されてないのがあった)
 $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
