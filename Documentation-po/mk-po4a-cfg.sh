@@ -6,5 +6,5 @@ DST_FILE=../Documantation-ja/${BASE_FILE}
 BASE_BODY=${BASE_FILE%.txt}
 echo "# generate by $0" `date`
 echo "[po4a_langs] ja"
-echo "[type: texinfo] ${SRC_FILE} \$lang:${DST_FILE}"
+echo "[type: asciidoc] ${SRC_FILE} \$lang:${DST_FILE}"
 echo "[po4a_paths] pot/${BASE_BODY}.pot ja:${BASE_BODY}.po"
