@@ -1,11 +1,10 @@
 #!/usr/bin/sh
-# mk-po4a-cfg.sh <<src-pathfile(relative)>> <<pot-path(relative)>> <<lang(e.g: ja)>> <<po-path(relative)>> <<dst-pathfile(relative)>>
+# mk-po4a-cfg.sh <<src-pathfile(relative)>>
 SRC_FILE=$1
-POT_PATH=$2
-LANGCODE=$3
-PO_PATH=$4
-DST_FILE=$5
+BASE_FILE=${SRC_FILE#../Documentation/}
+DST_FILE=../Documantation-ja/${BASE_FILE}
+BASE_BODY=${BASE_FILE%.txt}
 echo "# generate by $0" `date`
-echo "[po4a_langs] ${LANGCODE}"
+echo "[po4a_langs] ja"
 echo "[type: texinfo] ${SRC_FILE} \$lang:${DST_FILE}"
-echo "[po4a_paths] ${POT_PATH}/\$master.pot \$lang:${PO_PATH}/\$master.po"
+echo "[po4a_paths] pot/${BASE_BODY}.pot ja:${BASE_BODY}.po"
