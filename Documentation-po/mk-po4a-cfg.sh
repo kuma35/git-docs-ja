@@ -2,7 +2,7 @@
 # mk-po4a-cfg.sh <<src-pathfile(relative)>>
 SRC_FILE=$1
 BASE_FILE=${SRC_FILE#../Documentation/}
-DST_FILE=../Documantation-ja/${BASE_FILE}
+DST_FILE=../Documentation-ja/${BASE_FILE}
 BASE_BODY=${BASE_FILE%.txt}
 echo "# generate by $0" `date`
 echo "[po4a_langs] ja"

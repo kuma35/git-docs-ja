@@ -8,6 +8,8 @@
 # | |- includes
 # | |- mergetools
 # |
+# |- Documentation-sedout ( sed working directory)
+# |
 # |= Documentation-po (current directory) *.txt.po, *.txt.po4a-cfg
 # | |- technical
 # | |- RelNotes
@@ -130,17 +132,13 @@ $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
-# $(PO_FILES): $(PO_DIR)/%$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
-# 	po4a-updatepo -M utf8 -f asciidoc -m $< -p $@
-$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
-	@# po4a --verbose --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
-	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
+# $(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
+#	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
-$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT)
-	@# po4a --verbose --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
+$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT) %$(PO4A_CFG_EXT)
 	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
