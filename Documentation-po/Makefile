@@ -117,6 +117,11 @@ DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
 # $(warning DST_FILES = $(DST_FILES))
 # $(error "debug stop")
 
+help:
+	@echo "instead, please run from compile.sh"
+
+.DEFAULT_GOAL := help
+
 $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	./mk-po4a-cfg.sh $< > $@
 
@@ -161,4 +166,4 @@ clean:
 	find $(DST_DIR) -empty | xargs rmdir
 	rsync -av --include "cmds-*.txt" --include "mergetools-*.txt" --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
 
-.PHONEY: ja clean
+.PHONEY: ja clean help
