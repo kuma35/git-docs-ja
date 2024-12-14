@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/bash
 PROJ=${HOME}/work/git-docs-ja
 BRANCH=docs-ja-4
 cd ${PROJ}/Documentation-sedout
@@ -11,6 +11,7 @@ done
 cd ${PROJ}/Documentation-po
 # using python3 venv for asciidoc
 source ${PROJ}/Documentation-po/venv/bin/activate
+
 make ja BRANCH=${BRANCH}
 exitcode=$?
 if [ ${exitcode} -ne 0 ]; then

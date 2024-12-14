@@ -66,6 +66,7 @@ SRC_SUB_DIRS = $(TECHNICAL_DIR) $(RELNOTES_DIR) $(CONFIG_DIR) $(HOWTO_DIR) $(INC
 
 SRC_INSTALL_TEXT = ../INSTALL
 PO_INSTALL_TEXT = INSTALL.po
+PO4A_CFG_INSTALL_TEXT = INSTALL.po4cfg
 DST_INSTALL_TEXT = ../docs/$(BRANCH)/INSTALL.txt
 
 
@@ -114,17 +115,13 @@ PO4A_CFG_FILES = $(SRC_PACKAGE:$(ASCIIDOC_EXT)=$(PO4A_CFG_EXT))
 DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
 
 # $(warning DST_FILES = $(DST_FILES))
-
-DST_FILES = $(addprefix $(DST_DIR)/,$(SRC_PACKAGE))
-
-# $(warning DST_FILES = $(DST_FILES))
-
 # $(error "debug stop")
 
 $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	./mk-po4a-cfg.sh $< > $@
 
-# po4a: $(PO4A_CFG_FILES)
+$(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
+	./mk-po4a-cfg-install-text.sh $< $(DST_INSTALL_TEXT) > $@
 
 # $(error "debug stop")
 
@@ -132,10 +129,12 @@ $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
-# $(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
+#$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
 #	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
+$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
+	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
-$(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
+$(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT) $(PO4A_CFG_INSTALL_TEXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT) %$(PO4A_CFG_EXT)
