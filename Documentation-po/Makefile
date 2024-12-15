@@ -134,10 +134,10 @@ $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
-$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
+$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
-$(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT) $(PO4A_CFG_INSTALL_TEXT)
+$(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT) %$(PO4A_CFG_EXT)
