@@ -1,0 +1,86 @@
+git-check-ref-format(1)
+=======================
+
+NAME
+----
+git-check-ref-format - 参照名が整形式であることを確認します
+
+SYNOPSIS
+--------
+[verse]
+'git check-ref-format' [--normalize]
+       [--[no-]allow-onelevel] [--refspec-pattern]
+       <refname>
+'git check-ref-format' --branch <branchname-shorthand>
+
+DESCRIPTION
+-----------
+指定の refname が受け入れ可能かどうかを確認し、受け入れられない場合はゼロ以外のステータスで終了します。
+
+参照はGitでブランチとタグを指定するために使用されます。ブランチヘッドは `refs/heads` 階層に格納され、タグはref名前空間の `refs/tags` 階層に格納されます(通常は `$GIT_DIR/refs/heads` ディレクトリと `$GIT_DIR/refs/tags` ディレクトリに、または refが `git gc` によってパックされている場合はファイル `$GIT_DIR/packed-refs` のエントリとしてあります)。
+
+Gitは、参照の命名方法に以下のルールを課しています:
+
+. 階層(ディレクトリ)グループ化のためにスラッシュ(`/`)を含めることができますが、スラッシュで区切られたコンポーネントは、ドット(`.`)で開始したり、シーケンス `.lock` で終了したりすることはできません。
+
+. 少なくとも1つのスラッシュ(`/`)が含まれている必要があります。これにより、 `heads/` 、 `tags/` などのカテゴリの存在が強制されますが、実際の名前は制限されません。 `--allow-onelevel` オプションが使用されている場合、このルールは放棄されます。
+
+. どこにも2つの連続したドット(`..`)を含めることはできません。
+
+. ASCII制御文字(つまり、値が \040 未満のバイト または \177(`DEL`))、スペース、チルダ(`~`)、キャレット(`^`)、コロン(`:`)はどこにでも含めることはできません。
+
+. 疑問符(`？`)、アスタリスク(`*`)、角かっこ(`[`)がどこにあってもいけません。この規則の例外については、以下の `--refspec-pattern` オプションを参照してください。
+
+. They cannot begin or end with a slash `/` or contain multiple consecutive slashes (see the `--normalize` option below for an exception to this rule).
+
+. ドット(`.`)で終わらせることはできません。
+
+. シーケンス `@{` を含めることはできません。
+
+. 単一の文字 `@` にすることはできません。
+
+. `\` を含めることはできません。
+
+これらのルールにより、シェルスクリプトをベースにしたツールで参照名を簡単にパースできるようになり、参照名が(誤って)引用符なしで使われたときにシェルでパス名を展開したり、特定の参照名表現におけるあいまいさを回避することができます(linkgit:gitrevisions[7] を参照)。
+
+. 二重ドット(`..`)は、 `ref1..ref2` などとよく使用されます。一部のコンテキストでは、この表記は `^ref1 ref2` を意味します(つまり、`ref1` に無く かつ `ref2` にある)。
+
+. チルダ(`~`)とキャレット(`^`)は、接尾辞 'nth parent' (n番目の親)と 'peel onion' (玉ねぎ剥き)操作を導入するために使用されます。
+
+. コロン(`：`)は、 `srcref:dstref` のように、フェッチおよびプッシュ操作で「srcrefの値を使用してdstrefに格納する」ことを意味するために使用されます。 `git cat-file blob v1.3.3:refs.c` のようにして `git cat-file` などで特定のオブジェクトを選択するためにも使用できます。
+
+. at-open-brace(`@{`)は、reflogエントリにアクセスするための表記法として使用されます。
+
+With the `--branch` option, the command takes a name and checks if it can be used as a valid branch name (e.g. when creating a new branch). But be cautious when using the previous checkout syntax that may refer to a detached HEAD state. The rule `git check-ref-format --branch $name` implements may be stricter than what `git check-ref-format refs/heads/$name` says (e.g. a dash may appear at the beginning of a ref component, but it is explicitly forbidden at the beginning of a branch name). When run with the `--branch` option in a repository, the input is first expanded for the ``previous checkout syntax'' `@{-n}`. For example, `@{-1}` is a way to refer the last thing that was checked out using "git switch" or "git checkout" operation. This option should be used by porcelains to accept this syntax anywhere a branch name is expected, so they can act as if you typed the branch name. As an exception note that, the ``previous checkout operation'' might result in a commit object name when the N-th last thing checked out was not a branch.
+
+OPTIONS
+-------
+`--[no-]allow-onelevel`::
+	1レベルのrefnameを受け入れるかどうかを制御します(つまり、複数の `/` で区切られたコンポーネントを含まないrefname)。 デフォルトは `--no-allow-onelevel` です。
+
+`--refspec-pattern`::
+	<refname>を(リモートリポジトリで使用される)refspecの参照名パターンとして解釈します。このオプションを有効にすると、<refname>はrefspecに単一の `*` を含めることができます(例: `foo/bar*/baz` または `foo/bar*baz/` はOKですが、 `foo/bar*/baz*` はダメです)。
+
+`--normalize`::
+	先行スラッシュ(`/`)文字を削除し、名前コンポーネント間の隣接するスラッシュを1つのスラッシュに折りたたむことにより、 'refname' を正規化します。正規化されたrefnameが有効な場合は、それを標準出力に出力し、ステータス0で終了します。それ以外の場合は、ゼロ以外のステータスで終了します。 ( `--print` は `--normalize` を綴る非推奨の方法です。)
+
+
+EXAMPLES
+--------
+
+* チェックアウトしたのモノの一つ前のものの名前を印刷します:
++
+------------
+$ git check-ref-format --branch @{-1}
+------------
+
+* 新しいブランチに使用する参照名を決定します:
++
+------------
+$ ref=$(git check-ref-format --normalize "refs/heads/$newbranch")||
+{ echo "we do not like '$newbranch' as a branch name." >&2 ; exit 1 ; }
+------------
+
+GIT
+---
+Part of the linkgit:git[1] suite

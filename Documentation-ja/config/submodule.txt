@@ -1,0 +1,43 @@
+submodule.<name>.url::
+	The URL for a submodule. This variable is copied from the .gitmodules file to the git config via 'git submodule init'. The user can change the configured URL before obtaining the submodule via 'git submodule update'. If neither submodule.<name>.active nor submodule.active are set, the presence of this variable is used as a fallback to indicate whether the submodule is of interest to git commands. See linkgit:git-submodule[1] and linkgit:gitmodules[5] for details.
+
+submodule.<name>.update::
+	影響を受ける唯一のコマンドである `git submodule update` によってサブモジュールが更新される方法。 `git checkout --recurse-submodules` などの他のコマンドは影響を受けません。 `git submodule` がサブモジュールと対話する唯一のコマンドであった場合、これは歴史的な理由で存在します。 `submodule.active`や `pull.rebase` などの設定はより具体的です。 これは、linkgit:gitmodules[5] ファイルから `git submodule init` によって入力されます。 linkgit:git-submodule[1] のupdateコマンドの説明を参照してください。
+
+submodule.<name>.branch::
+	`git submodule update --remote` によって使用されるサブモジュールのリモートブランチ名。 このオプションを設定すると、 `.gitmodules` ファイルにある値が上書きされます。 詳細については、 linkgit:git-submodule[1] および linkgit:gitmodules[5] を参照してください。
+
+submodule.<name>.fetchRecurseSubmodules::
+	このオプションは、このサブモジュールの再帰的フェッチを制御するために使用できます。 `--[no-]recurse-submodules` コマンドラインオプションを使用して `git fetch` と `git pull` をオーバーライドすることでオーバーライドできます。 この設定は、 linkgit:gitmodules[5] ファイルの設定を上書きします。
+
+submodule.<name>.ignore::
+	Defines under what circumstances "git status" and the diff family show a submodule as modified. When set to "all", it will never be considered modified (but it will nonetheless show up in the output of status and commit when it has been staged), "dirty" will ignore all changes to the submodule's work tree and takes only differences between the HEAD of the submodule and the commit recorded in the superproject into account. "untracked" will additionally let submodules with modified tracked files in their work tree show up. Using "none" (the default when this option is not set) also shows submodules that have untracked files in their work tree as changed. This setting overrides any setting made in .gitmodules for this submodule, both settings can be overridden on the command line by using the "--ignore-submodules" option. The 'git submodule' commands are not affected by this setting.
+
+submodule.<name>.active::
+	サブモジュールがgitコマンドに関係するかどうかを示すブール値。 この構成オプションは、 `submodule.active` 構成オプションよりも優先されます。 詳細については、 linkgit:gitsubmodules[7] を参照してください。
+
+submodule.active::
+	サブモジュールが git コマンドの対象かどうかを判断するためにサブモジュールのパスと照合するために使用される pathspec を含む繰り返しフィールド。詳細は linkgit:gitsubmodules[7] を参照してください。
+
+submodule.recurse::
+	コマンドがデフォルトで `--recurse-submodules` オプションを有効にするかどうかを示すブール値。 デフォルトは false です。
++
+true に設定すると、 `--no-recurse-submodules` オプションで非アクティブ化できます。 このオプションがない一部の Git コマンドは、 `submodule.recurse` の影響を受ける上記のコマンドの一部を呼び出す可能性があることに注意してください。 たとえば、`git remote update` は `git fetch` を呼び出しますが、`--no-recurse-submodules` オプションはありません。 これらのコマンドの回避策は、 `git -c submodule.recurse=0` を使用して構成値を一時的に変更することです。
++
+以下のリストは、 `--recurse-submodules` を受け入れるコマンドと、それらがこの設定でサポートされているかどうかを示しています。
+
+* checkout、fetch、grep、pull、push、read-tree、reset、restore、switch は常にサポートされています。
+* `clone` と `ls-files` はサポートされていません。
+* `branch` は、 `submodule.propagateBranches` が有効な場合にのみサポートされます
+
+submodule.propagateBranches::
+	[実験的] `--recurse-submodules` または `submodule.recurse=true` を使用するときに分岐サポート(branching support)を有効にするブール値。 これを有効にすると、特定のコマンドが `--recurse-submodules` を受け入れるようになり、すでに `--recurse-submodules` を受け入れている特定のコマンドが分岐(branches)を考慮するようになります。 デフォルトは false です。
+
+submodule.fetchJobs::
+	同時に フェッチ/クローン されるサブモジュールの数を指定します。 正の整数を使用すると、その数までのサブモジュールを並列にフェッチできます。 値0は、適切なデフォルトを提供します。 設定されていない場合、デフォルトで1になります。
+
+submodule.alternateLocation::
+	サブモジュールがcloneされるときに、サブモジュールがalternateを取得する方法を指定します。 可能な値は `no` 、`superproject` です。 デフォルトでは、参照を追加しない `no` が想定されています。 値が `superproject` に設定されている場合、cloneされるサブモジュールは、スーパープロジェクトのalternates locationを基準にしてalternates locationを計算します。
+
+submodule.alternateErrorStrategy::
+	`submodule.alternateLocation` を介して計算されたサブモジュールのalternateでエラーを処理する方法を指定します。 可能な値は `ignore` 、 `info` 、 `die` です。デフォルトは `die` です。 `ignore` または `info` に設定されていて、計算されたalternateにエラーがある場合、alternateが指定されていないかのようにクローンが進行することに注意してください。

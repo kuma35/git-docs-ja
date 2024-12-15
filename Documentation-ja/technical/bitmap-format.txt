@@ -1,0 +1,292 @@
+GIT bitmap v1 format
+====================
+
+== Pack and multi-pack bitmaps
+
+ビットマップは、オブジェクトのセットに関する到達可能性情報をパックファイルまたはマルチパック インデックス (MIDX) に格納します。 前者の定義は明白であり、後者は MIDX に含まれるパック内のオブジェクトの結合として定義されます。
+
+ビットマップは、1 つのパックまたはリポジトリのマルチパック インデックス (存在する場合) のいずれかに属します。 リポジトリには、最大で 1 つのビットマップを含めることができます。
+
+オブジェクトは、ビットマップ内のビット位置によって一意に記述されます:
+
+- ビットマップがパックファイルに属している場合、__n__ 番目のビットはパック順で __n__ 番目のオブジェクトに対応します。 オブジェクトをパック内のバイト オフセットにマップする関数 `offset` の場合、パックの順序は以下のように定義されます:
++
+	o1 <= o2 <==> offset(o1) <= offset(o2)
++
+- ビットマップが MIDX に属する場合、__n__ 番目のビットは MIDX 順で __n__ 番目のオブジェクトに対応します。 オブジェクトを MIDX によって選択されたパックにマップする追加関数「pack」を使用すると、MIDX の順序は以下のように定義されます:
++
+	o1 <= o2 <==> pack(o1) <= pack(o2) /\ offset(o1) <= offset(o2)
++
+パック間の順序付けは、MIDX の .rev ファイルに従って行われます。 特に、優先パックは他のすべてのパックよりも先にソートされます。
+
+ビットマップのディスク上の表現 (後述) は、そのビットマップがパックファイルまたは MIDX に属しているかどうかに関係なく同じです。 唯一の違いは、上記で説明したビットの解釈です。
+
+特定のビットマップ拡張がサポートされています (付録 B を参照)。 パックファイルに対応するビットマップには拡張子は必要ありません。 MIDX に対応するビットマップの場合、bit-cache 拡張と rev-cache 拡張の両方が必要です。
+
+== On-disk format
+
+    * ヘッダーから始まります:
+
+	4バイト。 シグネチャ::: 	{`B`, `I`, `T`, `M`}
+
+	2バイト。 バージョン番号(ネットワーク・バイト順):::
+
+	    現在の実装では、 ビット・マップ・インデックスの
+	    バージョン 1 のみがサポートされています(JGitも同一)。
+
+	2バイト。 フラグ達 (ネットワーク・バイト順):::
+
+	    以下のフラグがサポートされています:
+
+	    ** {empty}
+	    BITMAP_OPT_FULL_DAG (0x1) 必須::::
+
+	    このフラグは常に存在する必要があります。 これは、パックファイルまたはマルチパックインデックス (MIDX) のビットマップ インデックスが完全閉鎖(closure)(つまり、 パックファイル/MIDX 内のすべての単一オブジェクトが 同一 パックファイル/MIDX 内に親リンクを見つけることができる)で生成されたことを意味します。 これは、JGit にも存在するビットマップ インデックス形式の要件であり、実装の複雑さを大幅に軽減します。
+
+	    ** {empty}
+	    BITMAP_OPT_HASH_CACHE (0x4): :::
+
+	    存在する場合、ビットマップ ファイルの末尾には、パック/MIDX 内のオブジェクトごとに 1 つの 32 ビットの名前ハッシュ値(Nとする)が含まれます。 name-hash の形式と意味については後述します。
+
+		** {empty}
+		BITMAP_OPT_LOOKUP_TABLE (0x10): :::
+		存在する場合、 ビット・マップ・ファイルの末尾には、 <commit_pos, offset, xor_row> という3つの値の組(triplets)(これを `N` とする)のリストを持つ表が含まれます。
++
+NOTE: 個々のビットマップを圧縮するために使用される xor_offset とは異なり、 `xor_row` は、 現在のエントリからの相対位置ではなく、 「絶対」インデックスをルックアップ表に格納します。
+
+	4バイト。 エントリ数(ネットワーク・バイト順):::
+	    このビットマップ インデックス内のエントリ(ビットマップ化したコミット)の総数。
+
+	20バイト。 チェックサム:::
+	    このビットマップ インデックスが属する パック/MIDX の
+	    SHA1 チェックサム。
+
+    * 型インデックスとして機能する 4 つの EWAH ビットマップ
++
+タイプ インデックスは、ハッシュ キャッシュの後ろに、連続して格納された 4 つの EWAH ビットマップの形でシリアル化されます (EWAH ビットマップのシリアル化形式については、付録 A を参照してください)。
++
+Git オブジェクト タイプごとにビットマップがあり、以下の順序で格納されます:
++
+    - Commits
+    - Trees
+    - Blobs
+    - Tags
+
++
+各ビットマップでは、パックファイルまたはマルチパック インデックスの n 番目のオブジェクトがそのタイプの場合、n 番目のビットが true に設定されます。
++
+よって、 4 つのビットマップすべての OR はフル セット (すべてのビット セット) になり、4 つのビットマップすべての AND は空のビットマップ (ビット セットなし) になります。
+
+    * インデックス付きコミットごとに 1 つずつの、圧縮されたビットマップを含む N エントリ
++
+Where `N` is the total number of entries in this bitmap index. Each entry contains the following:
+
+	** {empty}
+	4バイト。 オブジェクト位置(ネットワーク・バイト順):::
+	    このコミットのビットマップが見つかった
+	    「パックファイルまたはマルチパックインデックス内」の位置。
+
+	** {empty}
+	1バイト。 XORオフセット:::
+	    The xor offset used to compress this bitmap. For an entry
+	    in position `x`, an XOR offset of `y` means that the actual
+	    bitmap representing this commit is composed by XORing the
+	    bitmap for this entry with the bitmap in entry `x-y` (i.e.
+	    the bitmap `y` entries before this one).
++
+NOTE: この圧縮は再帰的に行うことができる。 このエントリを前のエントリと XOR するには、 前のエントリを最初に解凍する必要があります。
++
+このオフセットのハード リミットは 160 です (エントリは、その前の 160 エントリの 1 つに対してのみ xor できます)。 この数は常に正であるため、エントリは常に **前の** ビットマップと xor 演算されます。後でインデックスに追加されるビットマップではありません。
+
+	** {empty}
+	1バイト。 このビットマップのフラグ達:::
+	    現時点で使用可能なフラグは「0x1」のみです。
+	    これは、リポジトリのビットマップ インデックスを再構築するときに、
+	    このビットマップを再利用できることを示唆しています。
+
+	** 圧縮されたビットマップ自体については、付録 A を参照してください。
+
+	* {empty}
+	TRAILER: ::
+		前の内容の末尾のチェックサム。
+
+== 付録 A: EWAH ビットマップのシリアル化形式
+
+Ewah ビットマップは JAVAEWAH ライブラリと同じプロトコルでシリアル化されるため、JGit 実装と下位互換性があります。
+
+	- 4バイト 結果の非圧縮ビットマップのビット数
+
+	- 4バイト 保存時の「圧縮」ビットマップのワード数
+
+	- N × 8バイト ワード。Nは前のフィールドで指定されたとおり
++
+これは、圧縮されたビットマップの実際の内容です。
+
+	- 4バイト。 圧縮されたビットマップの現在の RLW の位置
+
+すべてのワードは、対応するサイズのネットワークバイトオーダーで格納されます。
+
+圧縮されたビットマップは、以下のようにランレングス エンコーディングの形式で格納されます。 これは、任意の数のチャンクの連結で構成されます。 各チャンクは 1 つ以上の 64 ビット ワードで構成されます
+
+     H  L_1  L_2  L_3 .... L_M
+
+H は RLW (run length word)と呼ばれる。 それは（下位ビットから上位ビットへの順番で)で構成されています:
+
+* 1 bit: 繰り返しビット B
+* 32 bits: 繰り返し回数 K (unsigned)
+* 31 bits: literal word count M (unsigned)
+
+上記のチャンクで表されるビットストリームは以下のようになります:
+
+* B の K 回の繰り返し
+* `L_1` 〜 `L_M` に格納されているビット。 ワード内では、下位のビットが上位のビットよりもストリーム内で先に到着します。
+
+`L_M` の後の次のワード (存在する場合) は、次のチャンクの RLW でなければなりません。 ビットストリームに効率的に追加するために、EWAH はストリーム内の最後の RLW へのポインターを格納します。
+
+
+== Appendix B: Optional Bitmap Sections
+
+これらのセクションは、 `.bitmap` ファイルに存在する場合と存在しない場合があります。 それらの存在は、上記のヘッダー フラグ セクションによって示されます。
+
+Name-hash cache
+---------------
+
+BITMAP_OPT_HASH_CACHE フラグが設定されている場合、ビットマップの末尾には、pack/MIDX 内のオブジェクトごとに 1 つずつ、32 ビット値のキャッシュが含まれます。 位置 `i` の値は、パック/MIDX 内の `i` 番目のオブジェクト (インデックスまたはマルチパック インデックス順でカウント) が見つかるパス名のハッシュです。 これをデルタ ヒューリスティックに入力して、同様のパス名を持つオブジェクトを比較できます。
+
+使用されるハッシュ アルゴリズムは以下のとおりです:
+
+    hash = 0;
+    while ((c = *name++))
+	    if (!isspace(c))
+		    hash = (hash >> 2) + (c << 24);
+
+注意: このハッシュ スキームは、BITMAP_OPT_HASH_CACHE フラグに関連付けられていることに注意してください。 実装が別のハッシュ スキームを選択する場合は、自由に選択できますが、新しいヘッダー フラグを割り当てなければなりません (2 つの異なるスキームで作成されたハッシュを比較しても意味がないため)。
+
+Commit lookup table
+-------------------
+
+BITMAP_OPT_LOOKUP_TABLE フラグが設定されている場合、 `.bitmap` ファイルの最後の `N * (4 + 8 + 4)` バイト(名前ハッシュ(name-hash)キャッシュの前と、 後続ハッシュ)は、 以前の不要なビットマップを解析せずにエントリから目的のビットマップを取得するために必要な情報を指定するルックアップ表を含んでいます。
+
+For a `.bitmap` containing `nr_entries` reachability bitmaps, the table contains a list of `nr_entries` <commit_pos, offset, xor_row> triplets (sorted in the ascending order of `commit_pos`). The content of the i'th triplet is -
+
+	* {empty}
+	commit_pos (4バイト。 整数。 ネットワーク・バイト順):::
+	コミットのオブジェクト位置を格納します(midx または pack インデックス内)。
+
+	* {empty}
+	offset (8バイト。 整数。 ネットワークバイト順):::
+	そのコミットのビットマップを読み取ることができるオフセット。
+
+	* {empty}
+	xor_row (4バイト。整数。 ネットワーク・バイト順):::
+	このビットマップを圧縮するために使用される三つ組の位置、 またはそのようなビットマップが存在しない場合は `0xffffffff` 。
+
+Pseudo-merge bitmaps
+--------------------
+
+If the `BITMAP_OPT_PSEUDO_MERGES` flag is set, a variable number of bytes (preceding the name-hash cache, commit lookup table, and trailing checksum) of the `.bitmap` file is used to store pseudo-merge bitmaps.
+
+For more information on what pseudo-merges are, why they are useful, and how to configure them, see the information in linkgit:gitpacking[7].
+
+=== File format
+
+If enabled, pseudo-merge bitmaps are stored in an optional section at the end of a `.bitmap` file. The format is as follows:
+
+....
++-------------------------------------------+
+|               .bitmap File                |
++-------------------------------------------+
+|                                           |
+|  Pseudo-merge bitmaps (Variable Length)   |
+|  +---------------------------+            |
+|  | commits_bitmap (EWAH)     |            |
+|  +---------------------------+            |
+|  | merge_bitmap (EWAH)       |            |
+|  +---------------------------+            |
+|                                           |
++-------------------------------------------+
+|                                           |
+|  Lookup Table                             |
+|  +---------------------------+            |
+|  | commit_pos (4 bytes)      |            |
+|  +---------------------------+            |
+|  | offset (8 bytes)          |            |
+|  +------------+--------------+            |
+|                                           |
+|  Offset Cases:                            |
+|  -------------                            |
+|                                           |
+|  1. MSB Unset: single pseudo-merge bitmap |
+|     + offset to pseudo-merge bitmap       |
+|                                           |
+|  2. MSB Set: multiple pseudo-merges       |
+|     + offset to extended lookup table     |
+|                                           |
++-------------------------------------------+
+|                                           |
+|  Extended Lookup Table (Optional)         |
+|  +----+----------+----------+----------+  |
+|  | N  | Offset 1 |   ....   | Offset N |  |
+|  +----+----------+----------+----------+  |
+|  |    |  8 bytes |   ....   |  8 bytes |  |
+|  +----+----------+----------+----------+  |
+|                                           |
++-------------------------------------------+
+|                                           |
+|  Pseudo-merge position table              |
+|  +----+----------+----------+----------+  |
+|  | N  | Offset 1 |   ....   | Offset N |  |
+|  +----+----------+----------+----------+  |
+|  |    |  8 bytes |   ....   |  8 bytes |  |
+|  +----+----------+----------+----------+  |
+|                                           |
++-------------------------------------------+
+|                                           |
+|  Pseudo-merge Metadata                    |
+|  +-----------------------------------+    |
+|  | # pseudo-merges (4 bytes)         |    |
+|  +-----------------------------------+    |
+|  | # commits (4 bytes)               |    |
+|  +-----------------------------------+    |
+|  | Lookup offset (8 bytes)           |    |
+|  +-----------------------------------+    |
+|  | Extension size (8 bytes)          |    |
+|  +-----------------------------------+    |
+|                                           |
++-------------------------------------------+
+....
+
+* One or more pseudo-merge bitmaps, each containing:
+
+  ** `commits_bitmap`, an EWAH-compressed bitmap describing the set of commits included in the this psuedo-merge.
+
+  ** `merge_bitmap`, an EWAH-compressed bitmap describing the union of the set of objects reachable from all commits listed in the `commits_bitmap`.
+
+* A lookup table, mapping pseudo-merged commits to the pseudo-merges they belong to. Entries appear in increasing order of each commit's bit position. Each entry is 12 bytes wide, and is comprised of the following:
+
+  ** `commit_pos`, a 4-byte unsigned value (in network byte-order) containing the bit position for this commit.
+
+  ** `offset`, an 8-byte unsigned value (also in network byte-order)
+  containing either one of two possible offsets, depending on whether or not the most-significant bit is set.
+
+    *** If unset (i.e. `offset & ((uint64_t)1<<63) == 0`), the offset
+	(relative to the beginning of the `.bitmap` file) at which the pseudo-merge bitmap for this commit can be read. This indicates only a single pseudo-merge bitmap contains this commit.
+
+    *** If set (i.e. `offset & ((uint64_t)1<<63) != 0`), the offset
+	(again relative to the beginning of the `.bitmap` file) at which the extended offset table can be located describing the set of pseudo-merge bitmaps which contain this commit. This indicates that multiple pseudo-merge bitmaps contain this commit.
+
+* An (optional) extended lookup table (written if and only if there is at least one commit which appears in more than one pseudo-merge). There are as many entries as commits which appear in multiple pseudo-merges. Each entry contains the following:
+
+  ** `N`, a 4-byte unsigned value equal to the number of pseudo-merges which contain a given commit.
+
+  ** An array of `N` 8-byte unsigned values, each of which is interpreted as an offset (relative to the beginning of the `.bitmap` file) at which a pseudo-merge bitmap for this commit can be read. These values occur in no particular order.
+
+* Positions for all pseudo-merges, each stored as an 8-byte unsigned value (in network byte-order) containing the offset (relative to the beginning of the `.bitmap` file) of each consecutive pseudo-merge.
+
+* A 4-byte unsigned value (in network byte-order) equal to the number of pseudo-merges.
+
+* A 4-byte unsigned value (in network byte-order) equal to the number of unique commits which appear in any pseudo-merge.
+
+* An 8-byte unsigned value (in network byte-order) equal to the number of bytes between the start of the pseudo-merge section and the beginning of the lookup table.
+
+* An 8-byte unsigned value (in network byte-order) equal to the number of bytes in the pseudo-merge section (including this field).

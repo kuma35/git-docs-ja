@@ -735,63 +735,212 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Submitting Patches</h1>
-<span id="revdate">2024-12-12</span>
+<span id="revdate">2024-12-15</span>
 </div>
 <div id="content">
 <div class="sect1">
 <h2 id="_guidelines">Guidelines</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Here are some guidelines for people who want to contribute their code to this
-software. There is also a <a href="MyFirstContribution.html">step-by-step tutorial</a>
+<div class="paragraph"><p>Here are some guidelines for contributing back to this
+project. There is also a <a href="MyFirstContribution.html">step-by-step tutorial</a>
 available which covers many of these same guidelines.</p></div>
 <div class="sect2">
-<h3 id="base-branch">Decide what to base your work on.</h3>
-<div class="paragraph"><p>In general, always base your work on the oldest branch that your
-change is relevant to.</p></div>
+<h3 id="patch-flow">A typical life cycle of a patch series</h3>
+<div class="paragraph"><p>To help us understand the reason behind various guidelines given later
+in the document, first let&#8217;s understand how the life cycle of a
+typical patch series for this project goes.</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+You come up with an itch.  You code it up.  You do not need any
+  pre-authorization from the project to do so.
+</p>
+<div class="paragraph"><p>Your patches will be reviewed by other contributors on the mailing
+list, and the reviews will be done to assess the merit of various
+things, like the general idea behind your patch (including "is it
+solving a problem worth solving in the first place?"), the reason
+behind the design of the solution, and the actual implementation.
+The guidelines given here are there to help your patches by making
+them easier to understand by the reviewers.</p></div>
+</li>
+<li>
+<p>
+You send the patches to the list and cc people who may need to know
+  about the change.  Your goal is <strong>not</strong> necessarily to convince others
+  that what you are building is good.  Your goal is to get help in
+  coming up with a solution for the "itch" that is better than what
+  you can build alone.
+</p>
+<div class="paragraph"><p>The people who may need to know are the ones who worked on the code
+you are touching.  These people happen to be the ones who are
+most likely to be knowledgeable enough to help you, but
+they have no obligation to help you (i.e. you ask them for help,
+you don&#8217;t demand).  <code>git log -p &#45;&#45; <em>$area_you_are_modifying</em></code> would
+help you find out who they are.</p></div>
+</li>
+<li>
+<p>
+You get comments and suggestions for improvements.  You may even get
+  them in an "on top of your change" patch form.  You are expected to
+  respond to them with "Reply-All" on the mailing list, while taking
+  them into account while preparing an updated set of patches.
+</p>
+</li>
+<li>
+<p>
+Polish, refine, and re-send your patches to the list and to the people
+  who spent their time to improve your patch.  Go back to step (2).
+</p>
+</li>
+<li>
+<p>
+While the above iterations improve your patches, the maintainer may
+  pick the patches up from the list and queue them to the <code>seen</code>
+  branch, in order to make it easier for people to play with it
+  without having to pick up and apply the patches to their trees
+  themselves.  Being in <code>seen</code> has no other meaning.  Specifically, it
+  does not mean the patch was "accepted" in any way.
+</p>
+</li>
+<li>
+<p>
+When the discussion reaches a consensus that the latest iteration of
+  the patches are in good enough shape, the maintainer includes the
+  topic in the "What&#8217;s cooking" report that are sent out a few times a
+  week to the mailing list, marked as "Will merge to <em>next</em>."  This
+  decision is primarily made by the maintainer with help from those
+  who participated in the review discussion.
+</p>
+</li>
+<li>
+<p>
+After the patches are merged to the <em>next</em> branch, the discussion
+  can still continue to further improve them by adding more patches on
+  top, but by the time a topic gets merged to <em>next</em>, it is expected
+  that everybody agrees that the scope and the basic direction of the
+  topic are appropriate, so such an incremental updates are limited to
+  small corrections and polishing.  After a topic cooks for some time
+  (like 7 calendar days) in <em>next</em> without needing further tweaks on
+  top, it gets merged to the <em>master</em> branch and wait to become part
+  of the next major release.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>In the following sections, many techniques and conventions are listed
+to help your patches get reviewed effectively in such a life cycle.</p></div>
+</div>
+<div class="sect2">
+<h3 id="choose-starting-point">Choose a starting point.</h3>
+<div class="paragraph"><p>As a preliminary step, you must first choose a starting point for your
+work. Typically this means choosing a branch, although technically
+speaking it is actually a particular commit (typically the HEAD, or tip,
+of the branch).</p></div>
+<div class="paragraph"><p>There are several important branches to be aware of. Namely, there are
+four integration branches as discussed in <a href="gitworkflows.html">gitworkflows(7)</a>:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-A bugfix should be based on <code>maint</code> in general. If the bug is not
-  present in <code>maint</code>, base it on <code>master</code>. For a bug that&#8217;s not yet
-  in <code>master</code>, find the topic that introduces the regression, and
-  base your work on the tip of the topic.
+maint
 </p>
 </li>
 <li>
 <p>
-A new feature should be based on <code>master</code> in general. If the new
-  feature depends on a topic that is in <code>seen</code>, but not in <code>master</code>,
-  base your work on the tip of that topic.
+master
 </p>
 </li>
 <li>
 <p>
-Corrections and enhancements to a topic not yet in <code>master</code> should
-  be based on the tip of that topic. If the topic has not been merged
-  to <code>next</code>, it&#8217;s alright to add a note to squash minor corrections
-  into the series.
+next
 </p>
 </li>
 <li>
 <p>
-In the exceptional case that a new feature depends on several topics
-  not in <code>master</code>, start working on <code>next</code> or <code>seen</code> privately and send
-  out patches for discussion. Before the final merge, you may have to
-  wait until some of the dependent topics graduate to <code>master</code>, and
-  rebase your work.
-</p>
-</li>
-<li>
-<p>
-Some parts of the system have dedicated maintainers with their own
-  repositories (see the section "Subsystems" below).  Changes to
-  these parts should be based on their trees.
+seen
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>To find the tip of a topic branch, run <code>git log --first-parent
-master..seen</code> and look for the merge commit. The second parent of this
-commit is the tip of the topic branch.</p></div>
+<div class="paragraph"><p>The branches lower on the list are typically descendants of the ones
+that come before it. For example, <code>maint</code> is an "older" branch than
+<code>master</code> because <code>master</code> usually has patches (commits) on top of
+<code>maint</code>.</p></div>
+<div class="paragraph"><p>There are also "topic" branches, which contain work from other
+contributors.  Topic branches are created by the Git maintainer (in
+their fork) to organize the current set of incoming contributions on
+the mailing list, and are itemized in the regular "What&#8217;s cooking in
+git.git" announcements.  To find the tip of a topic branch, run <code>git</code> <code>log</code>
+<code>--first-parent</code> <code>master</code><code>..</code><code>seen</code> and look for the merge commit. The second
+parent of this commit is the tip of the topic branch.</p></div>
+<div class="paragraph"><p>There is one guiding principle for choosing the right starting point: in
+general, always base your work on the oldest integration branch that
+your change is relevant to (see "Merge upwards" in
+<a href="gitworkflows.html">gitworkflows(7)</a>).  What this principle means is that for the
+vast majority of cases, the starting point for new work should be the
+latest HEAD commit of <code>maint</code> or <code>master</code> based on the following cases:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+If you are fixing bugs in the released version, use <code>maint</code> as the
+  starting point (which may mean you have to fix things without using
+  new API features on the cutting edge that recently appeared in
+  <code>master</code> but were not available in the released version).
+</p>
+</li>
+<li>
+<p>
+Otherwise (such as if you are adding new features) use <code>master</code>.
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">In exceptional cases, a bug that was introduced in an old
+version may have to be fixed for users of releases that are much older
+than the recent releases.  <code>git</code> <code>describe</code> <code>--contains</code> <code>X</code> may describe
+<code>X</code> as <code>v2.30.0-rc2-gXXXXXX</code> for the commit <code>X</code> that introduced the
+bug, and the bug may be so high-impact that we may need to issue a new
+maintenance release for Git 2.30.x series, when "Git 2.41.0" is the
+current release.  In such a case, you may want to use the tip of the
+maintenance branch for the 2.30.x series, which may be available in the
+<code>maint-2.30</code> branch in <a href="https://github.com/gitster/git">the maintainer&#8217;s
+"broken out" repo</a>.</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>This also means that <code>next</code> or <code>seen</code> are inappropriate starting points
+for your work, if you want your work to have a realistic chance of
+graduating to <code>master</code>.  They are simply not designed to be used as a
+base for new work; they are only there to make sure that topics in
+flight work well together. This is why both <code>next</code> and <code>seen</code> are
+frequently re-integrated with incoming patches on the mailing list and
+force-pushed to replace previous versions of themselves. A topic that is
+literally built on top of <code>next</code> cannot be merged to <code>master</code> without
+dragging in all the other topics in <code>next</code>, some of which may not be
+ready.</p></div>
+<div class="paragraph"><p>For example, if you are making tree-wide changes, while somebody else is
+also making their own tree-wide changes, your work may have severe
+overlap with the other person&#8217;s work.  This situation may tempt you to
+use <code>next</code> as your starting point (because it would have the other
+person&#8217;s work included in it), but doing so would mean you&#8217;ll not only
+depend on the other person&#8217;s work, but all the other random things from
+other contributors that are already integrated into <code>next</code>.  And as soon
+as <code>next</code> is updated with a new version, all of your work will need to
+be rebased anyway in order for them to be cleanly applied by the
+maintainer.</p></div>
+<div class="paragraph"><p>Under truly exceptional circumstances where you absolutely must depend
+on a select few topic branches that are already in <code>next</code> but not in
+<code>master</code>, you may want to create your own custom base-branch by forking
+<code>master</code> and merging the required topic branches into it. You could then
+work on top of this base-branch.  But keep in mind that this base-branch
+would only be known privately to you.  So when you are ready to send
+your patches to the list, be sure to communicate how you created it in
+your cover letter.  This critical piece of information would allow
+others to recreate your base-branch on their end in order for them to
+try out your work.</p></div>
+<div class="paragraph"><p>Finally, note that some parts of the system have dedicated maintainers
+with their own separate source code repositories (see the section
+"Subsystems" below).</p></div>
 </div>
 <div class="sect2">
 <h3 id="separate-commits">Make separate commits for logically separate changes.</h3>
@@ -817,8 +966,13 @@ to have.</p></div>
 <code>t/README</code> for guidance.</p></div>
 <div class="paragraph" id="tests"><p>When adding a new feature, make sure that you have new tests to show
 the feature triggers the new behavior when it should, and to show the
-feature does not trigger when it shouldn&#8217;t.  After any code change, make
-sure that the entire test suite passes.</p></div>
+feature does not trigger when it shouldn&#8217;t.  After any code change,
+make sure that the entire test suite passes.  When fixing a bug, make
+sure you have new tests that break if somebody else breaks what you
+fixed by accident to avoid regression.  Also, try merging your work to
+<em>next</em> and <em>seen</em> and make sure the tests still pass; topics by others
+that are still in flight may have unexpected interactions with what
+you are trying to do in your topic.</p></div>
 <div class="paragraph"><p>Pushing to a fork of <a href="https://github.com/git/git">https://github.com/git/git</a> will use their CI
 integration to test your changes on Linux, Mac and Windows. See the
 <a href="#GHCI">GitHub CI</a> section for details.</p></div>
@@ -839,10 +993,46 @@ patches separate from other documentation changes.</p></div>
 <div class="paragraph" id="whitespace-check"><p>Oh, another thing.  We are picky about whitespaces.  Make sure your
 changes do not trigger errors with the sample pre-commit hook shipped
 in <code>templates/hooks--pre-commit</code>.  To help ensure this does not happen,
-run <code>git diff --check</code> on your changes before you commit.</p></div>
+run <code>git</code> <code>diff</code> <code>--check</code> on your changes before you commit.</p></div>
 </div>
 <div class="sect2">
 <h3 id="describe-changes">Describe your changes well.</h3>
+<div class="paragraph"><p>The log message that explains your changes is just as important as the
+changes themselves.  Your code may be clearly written with in-code
+comment to sufficiently explain how it works with the surrounding
+code, but those who need to fix or enhance your code in the future
+will need to know <em>why</em> your code does what it does, for a few
+reasons:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Your code may be doing something differently from what you wanted it
+  to do.  Writing down what you actually wanted to achieve will help
+  them fix your code and make it do what it should have been doing
+  (also, you often discover your own bugs yourself, while writing the
+  log message to summarize the thought behind it).
+</p>
+</li>
+<li>
+<p>
+Your code may be doing things that were only necessary for your
+  immediate needs (e.g. "do X to directories" without implementing or
+  even designing what is to be done on files).  Writing down why you
+  excluded what the code does not do will help guide future developers.
+  Writing down "we do X to directories, because directories have
+  characteristic Y" would help them infer "oh, files also have the same
+  characteristic Y, so perhaps doing X to them would also make sense?".
+  Saying "we don&#8217;t do the same X to files, because &#8230;" will help them
+  decide if the reasoning is sound (in which case they do not waste
+  time extending your code to cover files), or reason differently (in
+  which case, they can explain why they extend your code to cover
+  files, too).
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>The goal of your log message is to convey the <em>why</em> behind your change
+to help future developers.  The reviewers will also make sure that
+your proposed log message will serve this purpose well.</p></div>
 <div class="paragraph"><p>The first line of the commit message should be a short description (50
 characters is the soft limit, see DISCUSSION in <a href="git-commit.html">git-commit(1)</a>),
 and should skip the full stop.  It is also conventional in most cases to
@@ -860,10 +1050,12 @@ githooks.txt: improve the intro section
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>If in doubt which identifier to use, run <code>git log --no-merges</code> on the
+<div class="paragraph"><p>If in doubt which identifier to use, run <code>git</code> <code>log</code> <code>--no-merges</code> on the
 files you are modifying to see the current conventions.</p></div>
 <div class="paragraph" id="summary-section"><p>The title sentence after the "area:" prefix omits the full stop at the
-end, and its first word is not capitalized unless there is a reason to
+end, and its first word is not capitalized (the omission
+of capitalization applies only to the word after the "area:"
+prefix of the title) unless there is a reason to
 capitalize it other than because it is the first word in the sentence.
 E.g. "doc: clarify&#8230;", not "doc: Clarify&#8230;", or "githooks.txt:
 improve&#8230;", not "githooks.txt: Improve&#8230;".  But "refs: HEAD is also
@@ -889,22 +1081,49 @@ alternate solutions considered but discarded, if any.
 </p>
 </li>
 </ol></div>
+<div class="paragraph" id="present-tense"><p>The problem statement that describes the status quo is written in the
+present tense.  Write "The code does X when it is given input Y",
+instead of "The code used to do Y when given input X".  You do not
+have to say "Currently"---the status quo in the problem statement is
+about the code <em>without</em> your change, by project convention.</p></div>
 <div class="paragraph" id="imperative-mood"><p>Describe your changes in imperative mood, e.g. "make xyzzy do frotz"
 instead of "[This patch] makes xyzzy do frotz" or "[I] changed xyzzy
 to do frotz", as if you are giving orders to the codebase to change
 its behavior.  Try to make sure your explanation can be understood
 without external resources. Instead of giving a URL to a mailing list
 archive, summarize the relevant points of the discussion.</p></div>
-<div class="paragraph" id="commit-reference"><p>If you want to reference a previous commit in the history of a stable
-branch, use the format "abbreviated hash (subject, date)", like this:</p></div>
+<div class="paragraph" id="commit-reference"><p>There are a few reasons why you may want to refer to another commit in
+the "more stable" part of the history (i.e. on branches like <code>maint</code>,
+<code>master</code>, and <code>next</code>):</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+A commit that introduced the root cause of a bug you are fixing.
+</p>
+</li>
+<li>
+<p>
+A commit that introduced a feature that you are enhancing.
+</p>
+</li>
+<li>
+<p>
+A commit that conflicts with your work when you made a trial merge
+  of your work into <code>next</code> and <code>seen</code> for testing.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>When you reference a commit on a more stable branch (like <code>master</code>,
+<code>maint</code> and <code>next</code>), use the format "abbreviated hash (subject,
+date)", like this:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>        Commit f86a374 (pack-bitmap.c: fix a memleak, 2015-03-30)
         noticed that ...</code></pre>
 </div></div>
-<div class="paragraph"><p>The "Copy commit summary" command of gitk can be used to obtain this
+<div class="paragraph"><p>The "Copy commit reference" command of gitk can be used to obtain this
 format (with the subject enclosed in a pair of double-quotes), or this
-invocation of <code>git show</code>:</p></div>
+invocation of <code>git</code> <code>show</code>:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>        git show -s --pretty=reference &lt;commit&gt;</code></pre>
@@ -984,7 +1203,7 @@ your patch differs from project to project, so it may be different
 from that of the project you are accustomed to.</p></div>
 <div class="paragraph" id="real-name"><p>Also notice that a real name is used in the <code>Signed-off-by</code> trailer. Please
 don&#8217;t hide your real name.</p></div>
-<div class="paragraph" id="commit-trailers"><p>If you like, you can put extra tags at the end:</p></div>
+<div class="paragraph" id="commit-trailers"><p>If you like, you can put extra trailers at the end:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -1000,7 +1219,7 @@ don&#8217;t hide your real name.</p></div>
 </li>
 <li>
 <p>
-<code>Reviewed-by:</code>, unlike the other tags, can only be offered by the
+<code>Reviewed-by:</code>, unlike the other trailers, can only be offered by the
   reviewers themselves when they are completely satisfied with the
   patch after a detailed analysis.
 </p>
@@ -1011,43 +1230,125 @@ don&#8217;t hide your real name.</p></div>
   and found it to have the desired effect.
 </p>
 </li>
+<li>
+<p>
+<code>Co-authored-by:</code> is used to indicate that people exchanged drafts
+   of a patch before submitting it.
+</p>
+</li>
+<li>
+<p>
+<code>Helped-by:</code> is used to credit someone who suggested ideas for
+  changes without providing the precise changes in patch form.
+</p>
+</li>
+<li>
+<p>
+<code>Mentored-by:</code> is used to credit someone with helping develop a
+  patch as part of a mentorship program (e.g., GSoC or Outreachy).
+</p>
+</li>
+<li>
+<p>
+<code>Suggested-by:</code> is used to credit someone with suggesting the idea
+  for a patch.
+</p>
+</li>
 </ol></div>
-<div class="paragraph"><p>You can also create your own tag or use one that&#8217;s in common usage
-such as "Thanks-to:", "Based-on-patch-by:", or "Mentored-by:".</p></div>
+<div class="paragraph"><p>While you can also create your own trailer if the situation warrants it, we
+encourage you to instead use one of the common trailers in this project
+highlighted above.</p></div>
+<div class="paragraph"><p>Only capitalize the very first letter of the trailer, i.e. favor
+"Signed-off-by" over "Signed-Off-By" and "Acked-by:" over "Acked-By".</p></div>
 </div>
 <div class="sect2">
 <h3 id="git-tools">Generate your patch using Git tools out of your commits.</h3>
 <div class="paragraph"><p>Git based diff tools generate unidiff which is the preferred format.</p></div>
-<div class="paragraph"><p>You do not have to be afraid to use <code>-M</code> option to <code>git diff</code> or
-<code>git format-patch</code>, if your patch involves file renames.  The
+<div class="paragraph"><p>You do not have to be afraid to use <code>-M</code> option to <code>git</code> <code>diff</code> or
+<code>git</code> <code>format-patch</code>, if your patch involves file renames.  The
 receiving end can handle them just fine.</p></div>
 <div class="paragraph" id="review-patch"><p>Please make sure your patch does not add commented out debugging code,
 or include any extra files which do not relate to what your patch
 is trying to achieve. Make sure to review
 your patch after generating it, to ensure accuracy.  Before
-sending out, please make sure it cleanly applies to the <code>master</code>
-branch head.  If you are preparing a work based on "next" branch,
-that is fine, but please mark it as such.</p></div>
+sending out, please make sure it cleanly applies to the starting point you
+have chosen in the "Choose a starting point" section.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">From the perspective of those reviewing your patch, the <code>master</code>
+branch is the default expected starting point.  So if you have chosen a
+different starting point, please communicate this choice in your cover
+letter.</td>
+</tr></table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="send-patches">Sending your patches.</h3>
-<div class="paragraph"><p>Before sending any patches, please note that patches that may be
+<div class="sect3">
+<h4 id="_choosing_your_reviewers">Choosing your reviewers</h4>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Patches that may be
 security relevant should be submitted privately to the Git Security
-mailing list<span class="footnote" id="_footnote_security-ml"><br />[The Git Security mailing list: <a href="mailto:git-security@googlegroups.com">git-security@googlegroups.com</a>]<br /></span>, instead of the public mailing list.</p></div>
-<div class="paragraph"><p>Learn to use format-patch and send-email if possible.  These commands
+mailing list<span class="footnote" id="_footnote_security-ml"><br />[The Git Security mailing list: <a href="mailto:git-security@googlegroups.com">git-security@googlegroups.com</a>]<br /></span>, instead of the public mailing list.</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Send your patch with "To:" set to the mailing list, with "cc:" listing
+people who are involved in the area you are touching (the <code>git-contacts</code>
+script in <code>contrib/contacts/</code><span class="footnote" id="_footnote_contrib-scripts"><br />[Scripts under <code>ontrib</code> are not part of the core <code>i</code> binary and must be called directly. Clone the Git codebase and run <code>erl</code> <code>contrib/contacts/git-contact</code>.]<br /></span> can help to
+identify them), to solicit comments and reviews.  Also, when you made
+trial merges of your topic to <code>next</code> and <code>seen</code>, you may have noticed
+work by others conflicting with your changes.  There is a good possibility
+that these people may know the area you are touching well.</p></div>
+<div class="paragraph"><p>If you are using <code>send-email</code>, you can feed it the output of <code>git-contacts</code> like
+this:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>        git send-email --cc-cmd='perl contrib/contacts/git-contacts' feature/*.patch</code></pre>
+</div></div>
+<div class="paragraph"><p>After the list reached a consensus that it is a good idea to apply the
+patch, re-send it with "To:" set to the maintainer<span class="footnote"><br />[The current maintainer: <a href="mailto:gitster@pobox.com">gitster@pobox.com</a>]<br /></span>
+and "cc:" the list<span class="footnote"><br />[The mailing list: <a href="mailto:git@vger.kernel.org">git@vger.kernel.org</a>]<br /></span> for inclusion.  This is especially relevant
+when the maintainer did not heavily participate in the discussion and
+instead left the review to trusted others.</p></div>
+<div class="paragraph"><p>Do not forget to add trailers such as <code>Acked-by:</code>, <code>Reviewed-by:</code> and
+<code>Tested-by:</code> lines as necessary to credit people who helped your
+patch, and "cc:" them when sending such a final version for inclusion.</p></div>
+</div>
+<div class="sect3">
+<h4 id="_code_format_patch_code_and_code_send_email_code"><code>format-patch</code> and <code>send-email</code></h4>
+<div class="paragraph"><p>Learn to use <code>format-patch</code> and <code>send-email</code> if possible.  These commands
 are optimized for the workflow of sending patches, avoiding many ways
-your existing e-mail client that is optimized for "multipart/*" mime
-type e-mails to corrupt and render your patches unusable.</p></div>
+your existing e-mail client (often optimized for "multipart/*" MIME
+type e-mails) might render your patches unusable.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Here we outline the procedure using <code>format-patch</code> and
+<code>send-email</code>, but you can instead use GitGitGadget to send in your
+patches (see <a href="MyFirstContribution.html">MyFirstContribution</a>).</td>
+</tr></table>
+</div>
 <div class="paragraph"><p>People on the Git mailing list need to be able to read and
 comment on the changes you are submitting.  It is important for
 a developer to be able to "quote" your changes, using standard
 e-mail tools, so that they may comment on specific portions of
 your code.  For this reason, each patch should be submitted
 "inline" in a separate message.</p></div>
-<div class="paragraph"><p>Multiple related patches should be grouped into their own e-mail
-thread to help readers find all parts of the series.  To that end,
-send them as replies to either an additional "cover letter" message
-(see below), the first patch, or the respective preceding patch.</p></div>
+<div class="paragraph"><p>All subsequent versions of a patch series and other related patches should be
+grouped into their own e-mail thread to help readers find all parts of the
+series.  To that end, send them as replies to either an additional "cover
+letter" message (see below), the first patch, or the respective preceding patch.
+Here is a <a href="MyFirstContribution.html#v2-git-send-email">step-by-step guide</a> on
+how to submit updated versions of a patch series.</p></div>
 <div class="paragraph"><p>If your log message (including your name on the
 <code>Signed-off-by</code> trailer) is not writable in ASCII, make sure that
 you send off a message in the correct encoding.</p></div>
@@ -1070,7 +1371,7 @@ comments") is often used to indicate a patch needs further
 discussion before being accepted, [PATCH v2], [PATCH v3] etc.
 are often seen when you are sending an update to what you have
 previously sent.</p></div>
-<div class="paragraph"><p>The <code>git format-patch</code> command follows the best current practice to
+<div class="paragraph"><p>The <code>git</code> <code>format-patch</code> command follows the best current practice to
 format the body of an e-mail message.  At the beginning of the
 patch should come your commit message, ending with the
 <code>Signed-off-by</code> trailers, and a line that consists of three dashes,
@@ -1079,16 +1380,25 @@ you are forwarding a patch from somebody else, optionally, at
 the beginning of the e-mail message just before the commit
 message starts, you can put a "From: " line to name that person.
 To change the default "[PATCH]" in the subject to "[&lt;text&gt;]", use
-<code>git format-patch --subject-prefix=&lt;text&gt;</code>.  As a shortcut, you
-can use <code>--rfc</code> instead of <code>--subject-prefix="RFC PATCH"</code>, or
-<code>-v &lt;n&gt;</code> instead of <code>--subject-prefix="PATCH v&lt;n&gt;"</code>.</p></div>
+<code>git</code> <code>format-patch</code> <code>--subject-prefix=</code><em>&lt;text&gt;</em>.  As a shortcut, you
+can use <code>--rfc</code> instead of <code>--subject-prefix=</code>"RFC <code>PATCH</code>", or
+<code>-v</code> <em>&lt;n&gt;</em> instead of <code>--subject-prefix=</code>"PATCH <code>v</code><em>&lt;n&gt;</em>".</p></div>
 <div class="paragraph"><p>You often want to add additional explanation about the patch,
 other than the commit message itself.  Place such "cover letter"
 material between the three-dash line and the diffstat.  For
 patches requiring multiple iterations of review and discussion,
 an explanation of changes between each iteration can be kept in
 Git-notes and inserted automatically following the three-dash
-line via <code>git format-patch --notes</code>.</p></div>
+line via <code>git</code> <code>format-patch</code> <code>--notes</code>.</p></div>
+<div class="paragraph" id="the-topic-summary"><p><strong>This is EXPERIMENTAL</strong>.</p></div>
+<div class="paragraph"><p>When sending a topic, you can propose a one-paragraph summary that
+should appear in the "What&#8217;s cooking" report when it is picked up to
+explain the topic.  If you choose to do so, please write a 2-5 line
+paragraph that will fit well in our release notes (see many bulleted
+entries in the Documentation/RelNotes/* files for examples), and make
+it the first paragraph of the cover letter.  For a single-patch
+series, use the space between the three-dash line and the diffstat, as
+described earlier.</p></div>
 <div class="paragraph" id="attachment"><p>Do not attach the patch as a MIME attachment, compressed or not.
 Do not let your e-mail client send quoted-printable.  Do not let
 your e-mail client send format=flowed which would destroy
@@ -1108,24 +1418,114 @@ has a far better chance of being accepted than a patch from a known, respected
 origin that is done poorly or does incorrect things.</p></div>
 <div class="paragraph"><p>If you really really really really want to do a PGP signed
 patch, format it as "multipart/signed", not a text/plain message
-that starts with <code>-----BEGIN PGP SIGNED MESSAGE-----</code>.  That is
+that starts with <code>-----BEGIN</code> <code>PGP</code> <code>SIGNED</code> <code>MESSAGE-----</code>.  That is
 not a text/plain, it&#8217;s something else.</p></div>
-<div class="paragraph"><p>As mentioned at the beginning of the section, patches that may be
-security relevant should not be submitted to the public mailing list
-mentioned below, but should instead be sent privately to the Git
-Security mailing list<span class="footnoteref"><br /><a href="#_footnote_security-ml">[security-ml]</a><br /></span>.</p></div>
-<div class="paragraph"><p>Send your patch with "To:" set to the mailing list, with "cc:" listing
-people who are involved in the area you are touching (the <code>git
-contacts</code> command in <code>contrib/contacts/</code> can help to
-identify them), to solicit comments and reviews.</p></div>
-<div class="paragraph"><p>After the list reached a consensus that it is a good idea to apply the
-patch, re-send it with "To:" set to the maintainer<span class="footnote"><br />[The current maintainer: <a href="mailto:gitster@pobox.com">gitster@pobox.com</a>]<br /></span>
-and "cc:" the list<span class="footnote"><br />[The mailing list: <a href="mailto:git@vger.kernel.org">git@vger.kernel.org</a>]<br /></span> for inclusion.  This is especially relevant
-when the maintainer did not heavily participate in the discussion and
-instead left the review to trusted others.</p></div>
-<div class="paragraph"><p>Do not forget to add trailers such as <code>Acked-by:</code>, <code>Reviewed-by:</code> and
-<code>Tested-by:</code> lines as necessary to credit people who helped your
-patch, and "cc:" them when sending such a final version for inclusion.</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_handling_conflicts_and_iterating_patches">Handling Conflicts and Iterating Patches</h3>
+<div class="paragraph"><p>When revising changes made to your patches, it&#8217;s important to
+acknowledge the possibility of conflicts with other ongoing topics. To
+navigate these potential conflicts effectively, follow the recommended
+steps outlined below:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Build on a suitable base branch, see the <a href="#choose-starting-point">section above</a>,
+and format-patch the series. If you are doing "rebase -i" in-place to
+update from the previous round, this will reuse the previous base so
+(2) and (3) may become trivial.
+</p>
+</li>
+<li>
+<p>
+Find the base of where the last round was queued
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ mine='kn/ref-transaction-symref'
+$ git checkout "origin/seen^{/^Merge branch '$mine'}...master"</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+Apply your format-patch result.  There are two cases
+</p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+Things apply cleanly and tests fine.  Go to (4).
+</p>
+</li>
+<li>
+<p>
+Things apply cleanly but does not build or test fails, or things do
+not apply cleanly.
+</p>
+<div class="paragraph"><p>In the latter case, you have textual or semantic conflicts coming from
+the difference between the old base and the base you used to build in
+(1).  Identify what caused the breakages (e.g., a topic or two may have
+merged since the base used by (2) until the base used by (1)).</p></div>
+<div class="paragraph"><p>Check out the latest <em>origin/master</em> (which may be newer than the base
+used by (2)), "merge --no-ff" the topics you newly depend on in there,
+and use the result of the merge(s) as the base, rebuild the series and
+test again.  Run format-patch from the last such merges to the tip of
+your topic.  If you did</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git checkout origin/master
+$ git merge --no-ff --into-name kn/ref-transaction-symref fo/obar
+$ git merge --no-ff --into-name kn/ref-transaction-symref ba/zqux
+... rebuild the topic ...</code></pre>
+</div></div>
+<div class="paragraph"><p>Then you&#8217;d just format your topic above these "preparing the ground"
+merges, e.g.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git format-patch "HEAD^{/^Merge branch 'ba/zqux'}"..HEAD</code></pre>
+</div></div>
+<div class="paragraph"><p>Do not forget to write in the cover letter you did this, including the
+topics you have in your base on top of <em>master</em>.  Then go to (4).</p></div>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+Make a trial merge of your topic into <em>next</em> and <em>seen</em>, e.g.
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git checkout --detach 'origin/seen'
+$ git revert -m 1 &lt;the merge of the previous iteration into seen&gt;
+$ git merge kn/ref-transaction-symref</code></pre>
+</div></div>
+<div class="paragraph"><p>The "revert" is needed if the previous iteration of your topic is
+already in <em>seen</em> (like in this case).  You could choose to rebuild
+master..origin/seen from scratch while excluding your previous
+iteration, which may emulate what happens on the maintainers end more
+closely.</p></div>
+<div class="paragraph"><p>This trial merge may conflict.  It is primarily to see what conflicts
+<em>other</em> topics may have with your topic.  In other words, you do not
+have to depend on it to make your topic work on <em>master</em>.  It may
+become the job of the other topic owners to resolve conflicts if your
+topic goes to <em>next</em> before theirs.</p></div>
+<div class="paragraph"><p>Make a note on what conflict you saw in the cover letter.  You do not
+necessarily have to resolve them, but it would be a good opportunity to
+learn what others are doing in related areas.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git checkout --detach 'origin/next'
+$ git merge kn/ref-transaction-symref</code></pre>
+</div></div>
+<div class="paragraph"><p>This is to see what conflicts your topic has with other topics that are
+already cooking.  This should not conflict if (3)-2 prepared a base on
+top of updated master plus dependent topics taken from <em>next</em>.  Unless
+the context is severe (one way to tell is try the same trial merge with
+your old iteration, which may conflict in a similar way), expect that it
+will be handled on maintainers end (if it gets unmanageable, I&#8217;ll ask to
+rebase when I receive your patches).</p></div>
+</li>
+</ol></div>
 </div>
 </div>
 </div>
@@ -1137,11 +1537,11 @@ repositories.</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>git-gui/</code> comes from git-gui project, maintained by Pratyush Yadav:
+<code>git-gui/</code> comes from git-gui project, maintained by Johannes Sixt:
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>https://github.com/prati0100/git-gui.git</code></pre>
+<pre><code>https://github.com/j6t/git-gui</code></pre>
 </div></div>
 </li>
 <li>
@@ -1150,7 +1550,12 @@ repositories.</p></div>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>git://ozlabs.org/~paulus/gitk</code></pre>
+<pre><code>git://git.ozlabs.org/~paulus/gitk</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Those who are interested in improving gitk can volunteer to help Paul
+maintain it, cf. &lt;YntxL/fTplFm8lr6@cleo&gt;.</code></pre>
 </div></div>
 </li>
 <li>
@@ -1164,88 +1569,23 @@ repositories.</p></div>
 </li>
 </ul></div>
 <div class="paragraph"><p>Patches to these parts should be based on their trees.</p></div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="patch-flow">An ideal patch flow</h2>
-<div class="sectionbody">
-<div class="paragraph"><p>Here is an ideal patch flow for this project the current maintainer
-suggests to the contributors:</p></div>
-<div class="olist arabic"><ol class="arabic">
-<li>
-<p>
-You come up with an itch.  You code it up.
-</p>
-</li>
-<li>
-<p>
-Send it to the list and cc people who may need to know about
-  the change.
-</p>
-<div class="paragraph"><p>The people who may need to know are the ones whose code you
-are butchering.  These people happen to be the ones who are
-most likely to be knowledgeable enough to help you, but
-they have no obligation to help you (i.e. you ask for help,
-don&#8217;t demand).  <code>git log -p &#45;&#45; <em>$area_you_are_modifying</em></code> would
-help you find out who they are.</p></div>
-</li>
-<li>
-<p>
-You get comments and suggestions for improvements.  You may
-  even get them in an "on top of your change" patch form.
-</p>
-</li>
-<li>
-<p>
-Polish, refine, and re-send to the list and the people who
-  spend their time to improve your patch.  Go back to step (2).
-</p>
-</li>
-<li>
-<p>
-The list forms consensus that the last round of your patch is
-  good.  Send it to the maintainer and cc the list.
-</p>
-</li>
-<li>
-<p>
-A topic branch is created with the patch and is merged to <code>next</code>,
-  and cooked further and eventually graduates to <code>master</code>.
-</p>
-</li>
-</ol></div>
-<div class="paragraph"><p>In any time between the (2)-(3) cycle, the maintainer may pick it up
-from the list and queue it to <code>seen</code>, in order to make it easier for
-people play with it without having to pick up and apply the patch to
-their trees themselves.</p></div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="patch-status">Know the status of your patch after submission</h2>
-<div class="sectionbody">
 <div class="ulist"><ul>
 <li>
 <p>
-You can use Git itself to find out when your patch is merged in
-  master. <code>git pull --rebase</code> will automatically skip already-applied
-  patches, and will let you know. This works only if you rebase on top
-  of the branch in which your patch has been merged (i.e. it will not
-  tell you if your patch is merged in <code>seen</code> if you rebase on top of
-  master).
+The "Git documentation translations" project, led by Jean-Noël
+  Avila, translates our documentation pages.  Their work products are
+  maintained separately from this project, not as part of our tree:
 </p>
-</li>
-<li>
-<p>
-Read the Git mailing list, the maintainer regularly posts messages
-  entitled "What&#8217;s cooking in git.git" and "What&#8217;s in git.git" giving
-  the status of various proposed changes.
-</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>https://github.com/jnavila/git-manpages-l10n/</code></pre>
+</div></div>
 </li>
 </ul></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_github_ci_a_id_ghci_a">GitHub CI<a id="GHCI"></a>]</h2>
+<h2 id="_github_ci_a_id_ghci_a">GitHub CI<a id="GHCI"></a></h2>
 <div class="sectionbody">
 <div class="paragraph"><p>With an account at GitHub, you can use GitHub CI to test your changes
 on Linux, Mac and Windows. See
@@ -1263,12 +1603,13 @@ Fork <a href="https://github.com/git/git">https://github.com/git/git</a> to your
 </ol></div>
 <div class="paragraph"><p>After the initial setup, CI will run whenever you push new changes
 to your fork of Git on GitHub.  You can monitor the test state of all your
-branches here: <a href="https://github.com/&lt;Your">https://github.com/&lt;Your</a> GitHub handle&gt;/git/actions/workflows/main.yml</p></div>
-<div class="paragraph"><p>If a branch did not pass all test cases then it is marked with a red
-cross. In that case you can click on the failing job and navigate to
-"ci/run-build-and-tests.sh" and/or "ci/print-test-failures.sh". You
-can also download "Artifacts" which are tarred (or zipped) archives
-with test data relevant for debugging.</p></div>
+branches here: <code>https://github.com/</code>&lt;Your <code>GitHub</code> <code>handle</code>&gt;<code>/git/actions/workflows/main.yml</code></p></div>
+<div class="paragraph"><p>If a branch does not pass all test cases then it will be marked with a
+red <code>x</code>, instead of a green check. In that case, you can click on the
+failing job and navigate to "ci/run-build-and-tests.sh" and/or
+"ci/print-test-failures.sh". You can also download "Artifacts" which
+are zip archives containing tarred (or zipped) archives with test data
+relevant for debugging.</p></div>
 <div class="paragraph"><p>Then fix the problem and push your fix to your GitHub fork. This will
 trigger a new CI build to ensure all tests pass.</p></div>
 </div>
@@ -1276,7 +1617,7 @@ trigger a new CI build to ensure all tests pass.</p></div>
 <div class="sect1">
 <h2 id="mua">MUA specific hints</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Some of patches I receive or pick up from the list share common
+<div class="paragraph"><p>Some of the patches I receive or pick up from the list share common
 patterns of breakage.  Please make sure your MUA is set up
 properly not to corrupt whitespaces.</p></div>
 <div class="paragraph"><p>See the DISCUSSION section of <a href="git-format-patch.html">git-format-patch(1)</a> for hints on
@@ -1349,12 +1690,12 @@ it.</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_gnus">Gnus</h3>
-<div class="paragraph"><p>"|" in the <code>*Summary*</code> buffer can be used to pipe the current
+<div class="paragraph"><p>"|" in the *Summary* buffer can be used to pipe the current
 message to an external program, and this is a handy way to drive
-<code>git am</code>.  However, if the message is MIME encoded, what is
+<code>git</code> <code>am</code>.  However, if the message is MIME encoded, what is
 piped into the program is the representation you see in your
-<code>*Article*</code> buffer after unwrapping MIME.  This is often not what
-you would want for two reasons.  It tends to screw up non ASCII
+*Article* buffer after unwrapping MIME.  This is often not what
+you would want for two reasons.  It tends to screw up non-ASCII
 characters (most notably in people&#8217;s names), and also
 whitespaces (fatal in patches).  Running "C-u g" to display the
 message in raw form before using "|" to run the pipe can work
@@ -1367,7 +1708,7 @@ this problem around.</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-12 00:00:57 JST
+ 2024-12-15 06:48:57 JST
 </div>
 </div>
 </body>

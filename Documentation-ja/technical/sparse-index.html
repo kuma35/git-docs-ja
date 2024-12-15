@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Git Sparse-Index Design Document</h1>
-<span id="revdate">2024-12-12</span>
+<span id="revdate">2024-12-15</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -761,7 +761,7 @@ asciidoc.install();
 </ul></div>
 <div class="paragraph"><p>ランダウの漸近記法(big-O notation) O(X) を使用して、特定の操作がこれらの側面に関してどれだけコストがかかるかを示します。</p></div>
 <div class="paragraph"><p>これらの側面は、その大きさの順に並べられています。ユーザーは (通常)、入力されたファイルよりも少ないファイルを変更します。また、私達は <code>HEAD</code> でのみファイルを入力できます。</p></div>
-<div class="paragraph"><p>これらの側面に極度の不均衡がある場合、問題が発生します。 たとえば、<code>HEAD</code> に数百万のパスが含まれているが、入力されたセットには数万しかない場合、 <code>git status</code> や <code>git add</code> などのコマンドは、 O(入力) ではなく O(<code>HEAD</code>) 操作を必要とする操作によって支配される可能性があります。 主に、コストはインデックスの解析と再書き込みにあります。インデックスは主に、 <code>SKIP_WORKTREE</code> ビットでマークされた <code>HEAD</code> のファイルで満たされます。</p></div>
+<div class="paragraph"><p>これらの側面に極度の不均衡がある場合、問題が発生します。 たとえば、<code>HEAD</code> に数百万のパスが含まれているが、入力されたセットには数万しかない場合、 <code>git</code> <code>status</code> や <code>git</code> <code>add</code> などのコマンドは、 O(入力) ではなく O(<code>HEAD</code>) 操作を必要とする操作によって支配される可能性があります。 主に、コストはインデックスの解析と再書き込みにあります。インデックスは主に、 <code>SKIP_WORKTREE</code> ビットでマークされた <code>HEAD</code> のファイルで満たされます。</p></div>
 <div class="paragraph"><p>スパースインデックス(sparse-index)は、インデックスを読み取り、O(<code>HEAD</code>) から O(Populated) に変更するこれらのコマンドを使用することを意図しています。 これを行うには、インデックス形式を大幅に変更する必要があります。つまり「sparse directory」エントリを追加します。</p></div>
 <div class="paragraph"><p>コーンモードパターンを使用すると、ディレクトリ全体の内容がスパースチェックアウト定義の範囲外になる時期を検出できます。 含まれるすべてのファイルを個別のエントリとしてリストする代わりに、スパースインデックス(sparse-index)にはディレクトリ名を持つエントリが含まれ、 <code>HEAD</code> でツリーのオブジェクト ID を参照し、 <code>SKIP_WORKTREE</code> ビットでマークされます。 そのディレクトリ内のパスの詳細を見つける必要がある場合は、ツリーを解析してそのリストを見つけることができます。</p></div>
 <div class="paragraph"><p>執筆時点では、スパースディレクトリエントリ(sparse-directory entries)は、インデックス形式とそのメモリ内データ構造に関する期待に反しています。 コードベースには、すべてのインデックスエントリを反復処理してファイルのみを表示することを期待する利用者がが多数います。 実際、これらのループは、ステージングされたすべてのファイルへの参照を想定しています。 これを処理する 1 つの方法は、ツリーを解析して、インデックスが読み込まれるときに、スパース ディレクトリ エントリをそのツリー内のすべてのファイルに置き換えることです。 ただし、ツリーの解析はインデックス形式の解析よりも遅いため、インデックスをそのままにしておいた場合よりも処理が遅くなります。 計画では、これらの統合をすべて「疎認識」(sparse aware)にすることで、ツリー解析によるこの拡張が不要になり、完全なインデックスを使用する場合よりも使用するリソースが少なくなります。</p></div>
@@ -772,9 +772,9 @@ asciidoc.install();
 <h2 id="_phase_i_format_and_initial_speedups">Phase I: Format and initial speedups</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>このフェイズで、Git はスパース インデックスを有効にして安全に解析する方法を学習します。 メモリ内データ構造を利用する全ての機構が、すべてのファイルが「HEAD」にあるという現在の想定で動作できるように、保護が配置されます。</p></div>
-<div class="paragraph"><p>最初に、すべてのインデックス解析でヘルパーメソッド <code>ensure_full_index()</code> が呼び出されます。このメソッドは、インデックスをスキャンして (ツリーを指している) スパースディレクトリ エントリを探し、ツリー オブジェクトを解析することによって (ブロブの内容を含む) パスの完全なリストに置き換えます。 これは、すべてのケースで遅くなります。 動作の唯一の顕著な変更点は、シリアル化されたインデックス ファイルにスパース ディレクトリ エントリが含まれていることです。</p></div>
+<div class="paragraph"><p>最初に、すべてのインデックス解析でヘルパーメソッド <code>ensure_full_index</code>() が呼び出されます。このメソッドは、インデックスをスキャンして (ツリーを指している) スパースディレクトリ エントリを探し、ツリー オブジェクトを解析することによって (ブロブの内容を含む) パスの完全なリストに置き換えます。 これは、すべてのケースで遅くなります。 動作の唯一の顕著な変更点は、シリアル化されたインデックス ファイルにスパース ディレクトリ エントリが含まれていることです。</p></div>
 <div class="paragraph"><p>まず、私達は新しい必須インデックス拡張子 <code>sdir</code> を使用して、ファイル形式バージョン 2と3と4 のインデックスにスパース ディレクトリ エントリを挿入できるようにします。 これは、sparse-indexを理解しないGitのバージョンが操作することを防ぐ一方で、sparse-indexを理解しないツールは、インデックスと対話しない限り、リポジトリ上で操作することを可能にします。 新しいフォーマットであるインデックスv5が導入されると、デフォルトでスパースディレクトリのエントリーが含まれるようになる予定です。また、インデックスを改善するために検討されている他の機能も導入される可能性があります。</p></div>
-<div class="paragraph"><p>次に、 <code>ensure_full_index()</code> または <code>expand_index_to_path()</code> への呼び出しを挿入することにより、インデックスの利用側がスパースインデックスでの操作から保護されます。 特定のパスが要求された場合、それらは <code>index_file_exists()</code> や <code>index_name_pos()</code> API 呼び出し内から保護され、必要に応じて <code>ensure_full_index()</code> を呼び出します。 ここでの意図は、sparse-checkout と対話するときに既存の動作を維持することです。 私達はテストなしで偶然に変更が発生することは臨んでいません。 これらの場所の多くは、保護ガードを削除する前に変更する必要はありませんが、期待される動作が発生することを確認するためのテストなしで変更するべきではありません。</p></div>
+<div class="paragraph"><p>次に、 <code>ensure_full_index</code>() または <code>expand_index_to_path</code>() への呼び出しを挿入することにより、インデックスの利用側がスパースインデックスでの操作から保護されます。 特定のパスが要求された場合、それらは <code>index_file_exists</code>() や <code>index_name_pos</code>() API 呼び出し内から保護され、必要に応じて <code>ensure_full_index</code>() を呼び出します。 ここでの意図は、sparse-checkout と対話するときに既存の動作を維持することです。 私達はテストなしで偶然に変更が発生することは臨んでいません。 これらの場所の多くは、保護ガードを削除する前に変更する必要はありませんが、期待される動作が発生することを確認するためのテストなしで変更するべきではありません。</p></div>
 <div class="paragraph"><p>まばらなインデックスが存在する場合、またはより一般的には、スパースチェックアウトのシナリオで、一部のコマンドの動作を「変更」することが望ましい場合があります。 そのような場合、これらは慎重に伝達され、テストされるべきです。 このフェーズにおいては、このような動作の変更は意図されていません。</p></div>
 <div class="paragraph"><p>コードベースのスキャン中、キャッシュ エントリのすべての反復で「ensure_full_index()」チェックが必要なわけではありません。 基本的な理由は以下のとおりです:</p></div>
 <div class="olist arabic"><ol class="arabic">
@@ -810,7 +810,7 @@ asciidoc.install();
 </li>
 </ol></div>
 <div class="paragraph"><p>これらのガードを挿入した後でも、<code>command_requires_full_index</code> リポジトリ設定を使用して、ほとんどの Git コマンドのスパース インデックスを拡張し続けます。この設定はデフォルトでオンになり、すべてのインデックス操作が適切にガードされているという十分な確信が得られるまで、1つずつビルトインを無効にしていきます。</p></div>
-<div class="paragraph"><p>このフェーズを完了するために、コマンド <code>git status</code> と <code>git add</code> は sparse-index と統合され、O(Populated) パフォーマンスで動作するようになります。 これらは、sparse-checkout 定義の内外での操作について慎重にテストされます。</p></div>
+<div class="paragraph"><p>このフェーズを完了するために、コマンド <code>git</code> <code>status</code> と <code>git</code> <code>add</code> は sparse-index と統合され、O(Populated) パフォーマンスで動作するようになります。 これらは、sparse-checkout 定義の内外での操作について慎重にテストされます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -840,36 +840,36 @@ Untracked cache
 <div class="ulist"><ul>
 <li>
 <p>
-<code>git commit</code>
+<code>git</code> <code>commit</code>
 </p>
 </li>
 <li>
 <p>
-<code>git checkout</code>
+<code>git</code> <code>checkout</code>
 </p>
 </li>
 <li>
 <p>
-<code>git merge</code>
+<code>git</code> <code>merge</code>
 </p>
 </li>
 <li>
 <p>
-<code>git rebase</code>
+<code>git</code> <code>rebase</code>
 </p>
 </li>
 </ul></div>
 <div class="paragraph"><p>うまくいけば、「git merge」や「git rebase」などのコマンドは、代わりに、マージ ORT 戦略などのインデックスをデータ構造として使用しないマージ アルゴリズムの恩恵を受けることができます。 これらのトピックが成熟するにつれて、sparse-index 機能を使用して、デフォルトでリポジトリの ORT 戦略を有効にする可能性があります。</p></div>
-<div class="paragraph"><p><code>git status</code> および <code>git add</code> とともに、これらのコマンドは、作業ディレクトリとのユーザーの対話の大部分をカバーします。 さらに、以下のコマンドと統合できます:</p></div>
+<div class="paragraph"><p><code>git</code> <code>status</code> および <code>git</code> <code>add</code> とともに、これらのコマンドは、作業ディレクトリとのユーザーの対話の大部分をカバーします。 さらに、以下のコマンドと統合できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>git grep</code>
+<code>git</code> <code>grep</code>
 </p>
 </li>
 <li>
 <p>
-<code>git rm</code>
+<code>git</code> <code>rm</code>
 </p>
 </li>
 </ul></div>
@@ -887,22 +887,22 @@ Untracked cache
 <div class="ulist"><ul>
 <li>
 <p>
-<code>git sparse-checkout set</code>
+<code>git</code> <code>sparse-checkout</code> <code>set</code>
 </p>
 </li>
 <li>
 <p>
-<code>git am</code>
+<code>git</code> <code>am</code>
 </p>
 </li>
 <li>
 <p>
-<code>git clean</code>
+<code>git</code> <code>clean</code>
 </p>
 </li>
 <li>
 <p>
-<code>git stash</code>
+<code>git</code> <code>stash</code>
 </p>
 </li>
 </ul></div>
@@ -913,7 +913,7 @@ Untracked cache
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-11 23:59:35 JST
+ 2024-12-15 12:50:14 JST
 </div>
 </div>
 </body>

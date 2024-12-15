@@ -1,0 +1,108 @@
+git-check-attr(1)
+=================
+
+NAME
+----
+git-check-attr - gitattributes情報を表示
+
+
+SYNOPSIS
+--------
+[verse]
+'git check-attr' [--source <tree-ish>] [-a | --all | <attr>...] [--] <pathname>...
+'git check-attr' --stdin [-z] [--source <tree-ish>] [-a | --all | <attr>...]
+
+DESCRIPTION
+-----------
+このコマンドは、すべてのパス名について、gitattributesとしての各属性を `unspecified`(未指定)または `set` または `unset` であるかどうか一覧表示します。
+
+OPTIONS
+-------
+`-a, --all`::
+	指定されたパスに関連付けられているすべての属性を一覧表示します。 このオプションを使用すると、 'unspecified' (指定されていない)属性は出力に含まれません。
+
+`--cached`::
+	作業ツリーを無視して、インデックス内のみに対して `.gitattributes` を考慮してください。
+
+`--stdin`::
+	Read pathnames from the standard input, one per line, instead of from the command line.
+
+`-z`::
+	出力形式は、 機械的にパースできるように変更されます。 `--stdin` も指定されている場合、 入力パス(path)は改行文字ではなくNUL文字で区切ります。
+
+`--source=<tree-ish>`::
+	Check attributes against the specified tree-ish. It is common to specify the source tree by naming a commit, branch, or tag associated with it.
+
+`--`::
+	先行するすべての引数を属性として解釈し、後続のすべての引数をパス名として解釈します。
+
+`--stdin` と `--all` と `--` のいずれも使用されていない場合、最初の引数は属性として扱われ、残りの引数はパス名として扱われます。
+
+OUTPUT
+------
+
+出力形式: <path> COLON SP <attribute> COLON SP <info> LF
+
+`-z` が有効の場合はNULが区切り文字として使用されます: <path> NUL <attribute> NUL <info> NUL
+
+
+<path> is the path of a file being queried, <attribute> is an attribute being queried, and <info> can be either:
+
+`unspecified`;; (未指定)パスにその属性が定義されていない場合。
+`unset`;;	属性がfalseとして定義されている場合。
+`set`;;		属性がtrueとして定義されている場合。
+<value>;;	属性に値が割り当てられたとき。
+
+バッファリングは、 linkgit:git[1] の `GIT_FLUSH` オプションに記載されているように行われます。呼び出し元は、入力バッファーのオーバーフィル(overfilling)または空の出力バッファーからの読み取りによって引き起こされるデッドロックを回避する責任があります。
+
+EXAMPLES
+--------
+
+これらの例では、以下の `.gitattributes` ファイルが使用されています:
+---------------
+*.java diff=java -crlf myAttr
+NoMyAttr.java !myAttr
+README caveat=unspecified
+---------------
+
+* 単一の属性のリスト:
+---------------
+$ git check-attr diff org/example/MyClass.java
+org/example/MyClass.java: diff: java
+---------------
+
+* ファイルの複数の属性の一覧表示:
+---------------
+$ git check-attr crlf diff myAttr -- org/example/MyClass.java
+org/example/MyClass.java: crlf: unset
+org/example/MyClass.java: diff: java
+org/example/MyClass.java: myAttr: set
+---------------
+
+* ファイルのすべての属性を一覧表示:
+---------------
+$ git check-attr --all -- org/example/MyClass.java
+org/example/MyClass.java: diff: java
+org/example/MyClass.java: myAttr: set
+---------------
+
+* 複数のファイルの属性を一覧表示:
+---------------
+$ git check-attr myAttr -- org/example/MyClass.java org/example/NoMyAttr.java
+org/example/MyClass.java: myAttr: set
+org/example/NoMyAttr.java: myAttr: unspecified
+---------------
+
+* すべての値が等しく明確であるわけではありません:
+---------------
+$ git check-attr caveat README
+README: caveat: unspecified
+---------------
+
+SEE ALSO
+--------
+linkgit:gitattributes[5].
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -1,0 +1,88 @@
+git-diff-tree(1)
+================
+
+NAME
+----
+git-diff-tree - 2つのツリーオブジェクト間で、ブロブの内容とモードを比較します
+
+
+SYNOPSIS
+--------
+[verse]
+'git diff-tree' [--stdin] [-m] [-s] [-v] [--no-commit-id] [--pretty]
+	      [-t] [-r] [-c | --cc] [--combined-all-paths] [--root] [--merge-base]
+	      [<common-diff-options>] <tree-ish> [<tree-ish>] [<path>...]
+
+DESCRIPTION
+-----------
+Compare the content and mode of blobs found via two tree objects.
+
+<tree-ish> が1つだけ指定されている場合、コミットはその親と比較されます(以下の `--stdin` 参照)。
+
+注意: `git diff-tree` は、コミットオブジェクトにカプセル化されたツリーを使用できます。
+
+OPTIONS
+-------
+include::diff-options.txt[]
+
+<tree-ish>::
+	ツリーオブジェクトのID。
+
+<path>...::
+	<path>... が提供された場合、結果は提供されたパススペックの1つに一致するファイルのサブセットに制限されます。
+
+`-r`::
+	Recurse into sub-trees.
+
+`-t`::
+	Show tree entry itself as well as subtrees. Implies -r.
+
+`--root`::
+	`--root` が指定されている場合、最初のコミット(initial commit)は大きな作成イベント(big creation event)として表示されます。これは、NULLツリーに対する差分と同等です。
+
+`--merge-base`::
+	<tree-ish>を直接比較する代わりに、2つの<tree-ish>間のマージベースをbefore側として使用します。2つの<tree-ish>が指定されている必要があり、両方ともコミットである必要があります。
+
+`--stdin`::
+	`--stdin`が指定されている場合、コマンドはコマンドラインから<tree-ish>引数を取りません。代わりに、2つの<tree> または 1つの<commit> または <commit>のリストのいずれかを含む行を標準入力から読み取ります。（区切り文字として空白1文字を使用します。）
++
+2つのツリーが与えられると、最初のツリーと2番目のツリーが比較されます。単一のコミットが与えられると、そのコミットをその親と比較します。 残りのコミットは、指定されると、最初のコミットの親であるかのように使用されます。
++
+2つのツリーを比較する場合、違いの前に両方のツリーのID(スペースで区切られ、改行で終了)が出力されます。コミットを比較する場合、最初の(または唯一の)コミットのIDと、それに続く改行が出力されます。
++
+以下のフラグは、(ツリーではなく、)コミットを比較するときの動作に影響します。
+
+`-m`::
+	デフォルトでは、 `git diff-tree --stdin` はマージコミットの違いを表示しません。 このフラグを使用すると、すべての親からのコミットとの違いが示されます。 `-c` も参照してください。
+
+`-s`::
+	By default, 'git diff-tree --stdin' shows differences, either in machine-readable form (without `-p`) or in patch form (with `-p`). This output can be suppressed. It is only useful with the `-v` flag.
+
+`-v`::
+	このフラグにより、 `git diff-tree --stdin` は、違いの前にコミットメッセージも表示します。
+
+include::pretty-options.txt[]
+
+`--no-commit-id`::
+	'git diff-tree' outputs a line with the commit ID when applicable. This flag suppresses the commit ID output.
+
+`-c`::
+	このフラグは、マージコミットの表示方法を変更します(つまり、コマンドに1つの <tree-ish> 、または `--stdin` が指定されている場合にのみ役立ちます)。これは、親と結果を一度に1つずつ表示するのではなく、各親とマージ結果の違いを同時に表示します(これは、 `-m` オプションが行うことです)。さらに、すべての親から変更されたファイルのみが一覧表示されます。
+
+`--cc`::
+	This flag changes the way a merge commit patch is displayed, in a similar way to the `-c` option. It implies the `-c` and `-p` options and further compresses the patch output by omitting uninteresting hunks whose contents in the parents have only two variants and the merge result picks one of them without modification. When all hunks are uninteresting, the commit itself and the commit log message are not shown, just like in any other "empty diff" case.
+
+`--combined-all-paths`::
+	このフラグにより、結合された差分(combined diff)(マージコミットに使用)にすべての親からのファイルの名前が一覧表示されます。したがって、 `-c` または `--cc` が指定されている場合にのみ有効であり、ファイル名の変更が検出された場合(つまり、名前変更またはコピーの検出が要求された場合)にのみ役立つ可能性があります。
+
+`--always`::
+	差分自体が空の場合でも、コミット自体とコミットログメッセージを表示します。
+
+
+include::pretty-formats.txt[]
+
+include::diff-format.txt[]
+
+GIT
+---
+Part of the linkgit:git[1] suite

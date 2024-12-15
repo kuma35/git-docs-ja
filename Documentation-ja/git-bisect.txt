@@ -1,0 +1,394 @@
+git-bisect(1)
+=============
+
+NAME
+----
+git-bisect - 二分木検索を使用して、バグを引き起こしたコミットを見つけます
+
+
+SYNOPSIS
+--------
+[verse]
+'git bisect' <subcommand> <options>
+
+DESCRIPTION
+-----------
+このコマンドは、さまざまなサブコマンドと、サブコマンドに応じて異なるオプションを取ります:
+
+ git bisect start [--term-(bad|new)=<term-new> --term-(good|old)=<term-old>]
+		  [--no-checkout] [--first-parent] [<bad> [<good>...]] [--] [<pathspec>...]
+ git bisect (bad|new|<term-new>) [<rev>]
+ git bisect (good|old|<term-old>) [<rev>...]
+ git bisect terms [--term-(good|old) | --term-(bad|new)]
+ git bisect skip [(<rev>|<range>)...]
+ git bisect reset [<commit>]
+ git bisect (visualize|view)
+ git bisect replay <logfile>
+ git bisect log
+ git bisect run <cmd> [<arg>...]
+ git bisect help
+
+このコマンドは、二分木検索アルゴリズムを使用して、プロジェクトの履歴のどのコミットでバグが発生したかを検出します。 最初に、バグが含まれていることがわかっている「bad」コミットと、バグが発生する前にあることがわかっている「good」コミットを伝えることで使用します。 次に、 `git bisect` は、これら2つのエンドポイントの中間のコミットを選択し、選択したコミットが「good」か「bad」かを尋ねます。 変更を導入した正確なコミットが見つかるまで、範囲を絞り込み続けます。
+
+実際、 `git bisect` を使用して、プロジェクトの *任意の* プロパティを変更したコミットを見つけることができます。 例：バグを修正したコミット、またはベンチマークのパフォーマンスを向上させたコミット。 このより一般的な使用法をサポートするために、「good」と「bad」の代わりに「old」と「new」という用語(terms)を使用することも、独自の用語(terms)を選択することもできます。 詳細については、以下の「Alternate terms」(代替用語)のセクションを参照してください。
+
+Basic bisect commands: start, bad, good
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+例として、プロジェクトのバージョン `v2.6.13-rc2` では動作することがわかっている機能を壊したコミットを見つけようとしているとします。以下のようにbisectセッションを開始します:
+
+------------------------------------------------
+$ git bisect start
+$ git bisect bad                 # Current version is bad
+$ git bisect good v2.6.13-rc2    # v2.6.13-rc2 is known to be good
+------------------------------------------------
+
+少なくとも1つのbadコミットと1つのgoodコミットを指定すると、 `git bisect` はその範囲の履歴の真ん中でコミットを選択し、それをチェックアウトして、以下のようなものを出力します(訳注:テスト対象残り675リビジョン(ざっくり10ステップ)):
+
+------------------------------------------------
+Bisecting: 675 revisions left to test after this (roughly 10 steps)
+------------------------------------------------
+
+あなたはチェックアウトしたバージョンをコンパイルしてテストする必要があります。 もし、そのバージョンが正しく機能する場合は、次のように入力します
+
+------------------------------------------------
+$ git bisect good
+------------------------------------------------
+
+もし、そのバージョンが壊れている場合は、以下のように入力します
+
+------------------------------------------------
+$ git bisect bad
+------------------------------------------------
+
+そうすると、 `git bisect` は以下のように応答します
+
+------------------------------------------------
+Bisecting: 337 revisions left to test after this (roughly 9 steps)
+------------------------------------------------
+
+このプロセスを繰り返します: ツリーをコンパイルしてテストし、それがgoodかbadかに応じて、 `git bisect good` または `git bisect bad` を実行して、テストが必要な次のコミットを要求します。
+
+最終的には、検査するリビジョンがなくなり、コマンドは最初の不正なコミットの説明を出力します。 参照 `refs/bisect/bad` は、そのコミットを指したままになります。
+
+
+Bisect reset
+~~~~~~~~~~~~
+
+bisectセッションの後、bisect状態をクリーンアップして元のHEADに戻すには、以下のコマンドを発行します:
+
+------------------------------------------------
+$ git bisect reset
+------------------------------------------------
+
+デフォルトでは、これにより、あなたのツリーは `git bisect start` の前にチェックアウトされたコミットに戻ります。 (新しく行う `git bisect start` も、古いbisect状態をクリーンアップするため、これを実行します。)
+
+オプションの引数を使用すると、代わりに異なるコミットに戻ることができます:
+
+------------------------------------------------
+$ git bisect reset <commit>
+------------------------------------------------
+
+たとえば、 `git bisect reset bisect/bad` は最初のbadリビジョンをチェックアウトしますが、 `git bisect reset HEAD` は現在のbisectコミットのままにし、コミットの切り替えを完全に回避します。
+
+
+Alternate terms(代替用語)
+~~~~~~~~~~~~~~~~~~~~~
+
+破損を引き起こしたコミットではなく、他の「old」状態と「new」状態の間で変化を引き起こしたコミットを探している場合があります。 たとえば、特定の修正を導入したコミットを探している場合があります。 または、ソースコードのファイル名がすべて最終的に会社の命名基準に変換された最初のコミットを探しているかもしれません。その他何でもありです。
+
+このような場合、「変更前の状態」と「変更後の状態」を指すのに「good」と「bad」という用語(terms)を使用することは非常に混乱する可能性があります。 したがって、「good」と「bad」の代わりに、それぞれ「old」と「new」という用語を使用できます。 (ただし、単一のセッション内で「good」と「bad」を「old」と「new」と混在させることはできないことに注意してください。)
+
+このより一般的な使用法では、 `git bisect` に、いくつかのプロパティを持つ「new」コミットと、そのプロパティを持たない「old」コミットを提供します。 `git bisect` がコミットをチェックアウトするたびに、そのコミットにそのプロパティがあるかどうかをテストします。 含まれている場合は、コミットを「new」としてマークします。 それ以外の場合は、「old」とマークします。 bisectが行われると、 `git bisect` はどのコミットがそのプロパティを導入したかを報告します。
+
+「good」と「bad」の代わりに「old」と「new」を使用するには、引数としてcommitを指定せずに `git bisect start` を実行してから、以下のコマンドを実行してコミットを追加する必要があります:
+
+------------------------------------------------
+git bisect old [<rev>]
+------------------------------------------------
+
+これは、コミットが求められた変更の前であったことを知らせるためで、あるいは、
+
+------------------------------------------------
+git bisect new [<rev>...]
+------------------------------------------------
+
+これはコミットが求められた変更より新しい事を知らせます。
+
+現在使用している用語(terms)を思い出したいときは、以下を入力します。
+
+------------------------------------------------
+git bisect terms
+------------------------------------------------
+
+You can get just the old term with `git bisect terms --term-old` or `git bisect terms --term-good`; `git bisect terms --term-new` and `git bisect terms --term-bad` can be used to learn how to call the commits more recent than the sought change.
+
+bad/good または new/old の代わりに独自の用語(terms)を使用する場合は、以下を使用してbisectを開始することにより、(`reset` 、`start` などの既存のbisectサブコマンドを除く)任意の名前を選択できます
+
+------------------------------------------------
+git bisect start --term-old <term-old> --term-new <term-new>
+------------------------------------------------
+
+たとえば、あなたがパフォーマンスの低下をもたらすコミットを探している場合は、以下のように使用できます
+
+------------------------------------------------
+git bisect start --term-old fast --term-new slow
+------------------------------------------------
+
+または、あなたがバグを修正したコミットを探している場合は、以下のようにします
+
+------------------------------------------------
+git bisect start --term-new fixed --term-old broken
+------------------------------------------------
+
+次に、コミットをマークするために、 `git bisect good` や `git bisect bad` の代わりに、 `git bisect <term-old>` や `git bisect <term-new>` を使用します。
+
+Bisect visualize/view
+~~~~~~~~~~~~~~~~~~~~~
+
+`gitk` に現在残っている容疑者(suspects)を確認するには、bisectプロセス中に以下のコマンドを発行します(サブコマンド `view` は `visualize` の代わりに使用できます):
+
+------------
+$ git bisect visualize
+------------
+
+Git detects a graphical environment through various environment variables: `DISPLAY`, which is set in X Window System environments on Unix systems. `SESSIONNAME`, which is set under Cygwin in interactive desktop sessions. `MSYSTEM`, which is set under Msys2 and Git for Windows. `SECURITYSESSIONID`, which may be set on macOS in interactive desktop sessions.
+
+If none of these environment variables is set, 'git log' is used instead. You can also give command-line options such as `-p` and `--stat`.
+
+------------
+$ git bisect visualize --stat
+------------
+
+Bisect log and bisect replay
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+リビジョンをgoodまたはbadとマークした後、以下のコマンドを発行して、これまでに行われたことを表示します:
+
+------------
+$ git bisect log
+------------
+
+リビジョンのステータスの指定を間違えたのを見つけた場合は、このコマンドの出力をファイルに保存し、それを編集して誤ったエントリを削除してから、以下のコマンドを発行して修正された状態に戻すことができます:
+
+------------
+$ git bisect reset
+$ git bisect replay that-file
+------------
+
+Avoiding testing a commit
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+bisectセッションの途中で、提案されたリビジョンがテストに適していないことがわかっている場合(たとえば、ビルドに失敗し、その失敗が追跡しているバグとは何の関係もないことがわかっている場合)、その近くのコミットを手動で選択し、代わりにそれをテストできます。
+
+例えば:
+
+------------
+$ git bisect good/bad			# previous round was good or bad.
+Bisecting: 337 revisions left to test after this (roughly 9 steps)
+$ git bisect visualize			# oops, that is uninteresting.
+$ git reset --hard HEAD~3		# try 3 revisions before what
+					# was suggested
+------------
+
+次に、選択したリビジョンをコンパイルしてテストし、その後、通常の方法でリビジョンにgoodまたはbadのマークを付けます。
+
+Bisect skip
+~~~~~~~~~~~
+
+自分で近くのコミットを選択する代わりに、コマンドを発行してGitにそれを実行するように依頼できます:
+
+------------
+$ git bisect skip                 # Current version cannot be tested
+------------
+
+しかしながら、探しているコミットに隣接するコミットをスキップすると、Gitはそれらのコミットのどれが最初のbadコミットであったかを正確に知ることができなくなります。
+
+範囲表記を使用して、1つのコミットだけでなく、範囲のコミットをスキップすることもできます。 例えば以下のようにします:
+
+------------
+$ git bisect skip v2.5..v2.6
+------------
+
+これは、`v2.5` 以降の `v2.6` までのコミットをテストしてはならないことをbisectプロセスに伝えます。
+
+注意: 範囲の最初のコミットもスキップする場合は、以下のコマンドを発行することに注意してください:
+
+------------
+$ git bisect skip v2.5 v2.5..v2.6
+------------
+
+これは、`v2.5` と `v2.6` (の両端を含む) の間のコミットをスキップする必要があることをbisectプロセスに通知します。
+
+
+bisect startでより多くのパラメータを与えて探索量削減
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can further cut down the number of trials, if you know what part of the tree is involved in the problem you are tracking down, by specifying pathspec parameters when issuing the `bisect start` command:
+
+------------
+$ git bisect start -- arch/i386 include/asm-i386
+------------
+
+複数の適切なコミットが事前にわかっている場合は、 `bisect start` コマンドを発行するときに、badコミットの直後にすべてのgoodコミットを指定することで、bisect量を絞り込むことができます:
+
+------------
+$ git bisect start v2.6.20-rc6 v2.6.20-rc4 v2.6.20-rc1 --
+                   # v2.6.20-rc6 is bad
+                   # v2.6.20-rc4 and v2.6.20-rc1 are good
+------------
+
+Bisect run
+~~~~~~~~~~
+
+現在のソースコードがgoodかbadかを判断できるスクリプトがある場合は、以下のコマンドを発行してbisectすることができます:
+
+------------
+$ git bisect run my_script arguments
+------------
+
+注意: スクリプト(上記例では `my_script`)は、現在のソースコードが good/old ならばコード0で終了し、現在のソースコードが bad/new の場合はコードは125を除く1〜127で終了します。
+
+その他の終了コードは、bisectプロセスを中止します。 `exit(-1)` を介して終了するプログラムは $?= 255 を残すことに注意してください。 (exit(3)のマニュアルページ参照)。 値は `& 0377` でマスクされます。
+
+現在のソースコードをテストできない場合は、特別な終了コード125を使用する必要があります。 スクリプトがこのコードで終了する場合、現在のリビジョンはスキップされます(上記「git bisect skip」参照)。 126と127はPOSIXシェルによって特定のエラーステータスを通知するために使用されるため、125がこの目的で使用する最も適切な値として選択されました(127は、コマンドが見つかりません で、 126は コマンドが見つかりましたが実行可能ではありません です。 -- これらの詳細は、 `bisect run` に関する限り、スクリプトの通常のエラーであるため、重要ではありません)。
+
+bisectセッション中に、テスト対象のリビジョンに一時的な変更を加えたい場合がよくあります(例: ヘッダーファイルで `s/#define DEBUG 0/#define DEBUG 1/` 、または「このコミットがないリビジョンでは、このbisectが関心を持たない別の問題を解決するために、このパッチを適用する必要があります」)。
+
+このような状況に対処するために、「git bisect」内部でテストする次のリビジョンを見つけた後、スクリプトはコンパイル前にパッチを適用し、実際のテストを実行し、その後、リビジョン(おそらく必要なパッチを含む)が合格したかどうかを判断できます。 テストしてから、ツリーを元の状態に巻き戻します。 最後に、スクリプトは実際のテストのステータスで終了し、 `git bisect run` コマンドループがbisectセッションの最終的な結果を決定できるようにする必要があります。
+
+OPTIONS
+-------
+`--no-checkout`::
++
+Do not checkout the new working tree at each iteration of the bisection process. Instead just update the reference named `BISECT_HEAD` to make it point to the commit that should be tested.
++
+このオプションは、各ステップで実行するテストで、チェックアウトされたツリーが必要ない場合に役立つことがあります。
++
+ベアリポジトリの場合、 `--no-checkout` が想定されます。
+
+`--first-parent`::
++
+マージコミットを確認したら、最初の親コミットのみを実行します。
++
+ブランチのマージによって導入されたデグレを検出する際に、マージコミットはバグの導入として識別され、その祖先は無視されます。
++
+このオプションは、マージされたブランチに壊れたコミットまたはビルドできないコミットが含まれているが、マージ自体はOKな場合に誤検知を回避するのに特に役立ちます。
+
+EXAMPLES
+--------
+
+* v1.2とHEADの間で壊れたビルドを自動的にbisectします:
++
+------------
+$ git bisect start HEAD v1.2 --      # HEAD is bad, v1.2 is good
+$ git bisect run make                # "make" builds the app
+$ git bisect reset                   # quit the bisect session
+------------
+
+* originとHEADの間のテスト失敗を自動的にbisectします:
++
+------------
+$ git bisect start HEAD origin --    # HEAD is bad, origin is good
+$ git bisect run make test           # "make test" builds and tests
+$ git bisect reset                   # quit the bisect session
+------------
+
+* 壊れたテストケースを自動的にbisectします:
++
+------------
+$ cat ~/test.sh
+#!/bin/sh
+make || exit 125                     # this skips broken builds
+~/check_test_case.sh                 # does the test case pass?
+$ git bisect start HEAD HEAD~10 --   # culprit is among the last 10
+$ git bisect run ~/test.sh
+$ git bisect reset                   # quit the bisect session
+------------
++
+ここでは、 `test.sh` カスタムスクリプトを使用します。 このスクリプトでは、 `make` が失敗した場合、現在のコミットをスキップします。 `check_test_case.sh` は、テストケースが合格した場合は `exit 0` であり、そうでない場合は `exit 1` である必要があります。
++
+`test.sh` と `check_test_case.sh` の両方がリポジトリの外にある場合は、bisectプロセスとmakeプロセスとtestプロセスとスクリプトの間の相互作用を防ぐ方が安全です。
+
+* 一時的な変更(ホットフィックス)で自動的にbisectします:
++
+------------
+$ cat ~/test.sh
+#!/bin/sh
+
+# tweak the working tree by merging the hot-fix branch
+# and then attempt a build
+if	git merge --no-commit --no-ff hot-fix &&
+	make
+then
+	# run project specific test and report its status
+	~/check_test_case.sh
+	status=$?
+else
+	# tell the caller this is untestable
+	status=125
+fi
+
+# undo the tweak to allow clean flipping to the next commit
+git reset --hard
+
+# return control
+exit $status
+------------
++
+これにより、各テスト実行の前にホットフィックスブランチからの変更が適用されます。 例えば、ビルドやテスト環境が変わり、古いリビジョンではすでに修正されているものが、新しいリビジョンでは修正が必要になる可能性があるからです。（ホットフィックスブランチが、bisectしているすべてのリビジョンに含まれているコミットに基づいていることを確認して、マージがあまり引き込まれないようにするか、 `git merge` の代わりに `git cherry-pick` を使用します。)
+
+* 壊れたテストケースを自動的にbisectします:
++
+------------
+$ git bisect start HEAD HEAD~10 --   # culprit is among the last 10
+$ git bisect run sh -c "make || exit 125; ~/check_test_case.sh"
+$ git bisect reset                   # quit the bisect session
+------------
++
+これは、テストを1行で記述した場合、実行スクリプトなしで実行できることを示しています。
+
+* 破損したリポジトリでオブジェクトグラフの適切な領域を見つけます
++
+------------
+$ git bisect start HEAD <known-good-commit> [ <boundary-commit> ... ] --no-checkout
+$ git bisect run sh -c '
+	GOOD=$(git for-each-ref "--format=%(objectname)" refs/bisect/good-*) &&
+	git rev-list --objects BISECT_HEAD --not $GOOD >tmp.$$ &&
+	git pack-objects --stdout >/dev/null <tmp.$$
+	rc=$?
+	rm -f tmp.$$
+	test $rc = 0'
+
+$ git bisect reset                   # quit the bisect session
+------------
++
+この場合、「git bisect run」が終了すると、 bisect/bad は、到達可能なグラフが「git pack objects」で必要な意味で完全にトラバース可能な親が少なくとも1つあるコミットを参照します。
+
+* コードでデグレの代わりに修正を探します
++
+------------
+$ git bisect start
+$ git bisect new HEAD    # current commit is marked as new
+$ git bisect old HEAD~10 # the tenth commit from now is marked as old
+------------
++
+または:
+------------
+$ git bisect start --term-old broken --term-new fixed
+$ git bisect fixed
+$ git bisect broken HEAD~10
+------------
+
+Getting help
+~~~~~~~~~~~~
+
+`git bisect` を使用して短い使用法の説明を取得し、 `gitbisect help` または `git bisect -h` を使用して長い使用法の説明を取得します。
+
+SEE ALSO
+--------
+link:git-bisect-lk2009.html[Fighting regressions with git bisect], linkgit:git-blame[1].
+
+GIT
+---
+Part of the linkgit:git[1] suite

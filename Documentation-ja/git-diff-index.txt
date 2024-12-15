@@ -1,0 +1,85 @@
+git-diff-index(1)
+=================
+
+NAME
+----
+git-diff-index - ツリーを作業ツリーまたはインデックスと比較します
+
+
+SYNOPSIS
+--------
+[verse]
+'git diff-index' [-m] [--cached] [--merge-base] [<common-diff-options>] <tree-ish> [<path>...]
+
+DESCRIPTION
+-----------
+Compare the content and mode of the blobs found in a tree object with the corresponding tracked files in the working tree, or with the corresponding paths in the index. When <path> arguments are present, compare only paths matching those patterns. Otherwise all tracked files are compared.
+
+OPTIONS
+-------
+include::diff-options.txt[]
+
+<tree-ish>::
+	diffするツリーオブジェクトのID。
+
+`--cached`::
+	ディスク上のファイルはまったく考慮しないでください。
+
+`--merge-base`::
+	<tree-ish>を直接比較する代わりに、<tree-ish>とHEADの間のマージベースを使用してください。 <tree-ish>はコミットでなければなりません。
+
+`-m`::
+	デフォルトでは、インデックスに記録されているがチェックアウトされていないファイルは削除済みとして報告されます。このフラグにより、 `git diff-index` はチェックアウトされていないファイルは全て最新とします。
+
+include::diff-format.txt[]
+
+OPERATING MODES
+---------------
+あなたはインデックスファイルを完全に信頼するか(`--cached` フラグを使用)、diffロジックにてstat状態と一致しないファイルを「仮変更」(tentatively changed)として表示するようにするかを選択できます。これらの操作はどちらも非常に便利です。
+
+CACHED MODE
+-----------
+`--cached` が指定されている場合、あなたは以下のように問うことができます:
+
+	HEADと、現在のインデックスの内容(`git write-tree` を
+	使用して書き込むもの)との違いを見せてください
+
+たとえば、あなたがあなたの作業ディレクトリで作業して、インデックス内のいくつかのファイルを更新し、コミットする準備ができました。あなたは何をコミットしようとしているかを正確に確認したいのですが、比較のために新しいツリーオブジェクトを作成する必要はありません。そのためには、あなたは以下のようにします。
+
+	git diff-index --cached HEAD
+
+例: `commit.c` の名前を `git-commit.c` に変更し、それをインデックスファイルで有効にするために `update-index` を実行したとします。 インデックスファイルが私の作業ディレクトリと一致するため、 `git diff-files` は何も表示しません。 しかし、 `git diff-index` を実行すると以下のようになります:
+
+  torvalds@ppc970:~/git> git diff-index --cached HEAD
+  :100644 000000 4161aecc6700a2eb579e842af0b7f22b98443f74 0000000000000000000000000000000000000000 D	commit.c
+  :000000 100644 0000000000000000000000000000000000000000 4161aecc6700a2eb579e842af0b7f22b98443f74 A	git-commit.c
+
+あなたは上記が名前変更(rename)であることが簡単にわかります。
+
+実際、 `git diff-index --cached` は、実際に `git write-tree` を実行して比較することと常に完全に同等です。実際に実行するのではなくて、自分がどういう状態にあるかを確認したいだけの場合には、こちらの方がはるかに優れています。
+
+したがって、 `git diff-index --cached` を実行することは、「コミット済みとしてすでにマークしたものと、前のツリーとの違い」を自問するときに実に役に立つのです。
+
+NON-CACHED MODE
+---------------
+非キャッシュモードは別のアプローチを取り、 `git write-tree` + ` git diff-tree` でエミュレートできないという点で、2つのモードの中でより便利になる可能性があります。したがって、これがデフォルトのモードです。非キャッシュバージョンは以下のように問いかけます:
+
+  HEADと現在チェックアウトされているツリーの違いを
+  表示 - インデックスの内容や最新でないファイル
+
+これは明らかに非常に役立つ質問です。何をコミットできるかがわかるからです。 この場合も、出力は 'git diff-tree -r' の出力と完全に一致しますが、更にひとひねりあります。
+
+そのひとひねりとは、一部のファイルがインデックスと一致しない場合、そのファイルには裏付けがないことです。これを示すために、魔法の「オールゼロ」sha1を使用します。 `kernel/sched.c` を編集したが、実際にはまだ 'git update-index' を実行していないとしましょう。そうすると、新しい状態に関連付けられた「オブジェクト」はなく、以下のようになります:
+
+  torvalds@ppc970:~/v2.6/linux> git diff-index --abbrev HEAD
+  :100644 100644 7476bb5ba 000000000 M	kernel/sched.c
+
+つまり、ツリーが変更され、 `kernel/sched.c` が最新ではなく、新しいものが含まれている可能性があることを示しています。オールゼロのsha1は、実際の差分を取得するには、オブジェクト間のdiffを行うのではなく、作業ディレクトリ内のオブジェクトを直接確認する必要があることを意味します。
+
+NOTE: このタイプの他のコマンドと同様に、 `git diff-index` は実際にはファイルの内容をまったく調べません。 つまり、 `kernel/sched.c` は実際には変更されておらず、触れた(touch)だけです。いずれの場合も、インデックスを同期させるには、 `gitu pdate-index` する必要があることに注意してください。
+
+NOTE: 「has been updated」(更新されました)と「is still dirty in the working directory」(作業ディレクトリでまだダーティです)というファイルが混在している場合があります。「更新された」ファイルには有効なsha1が表示され、「インデックスと同期していない」ファイルには常に特別なすべてゼロのsha1が表示されるため、どのファイルがどの状態にあるかをいつでも確認できます。
+
+GIT
+---
+Part of the linkgit:git[1] suite

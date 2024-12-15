@@ -1,0 +1,226 @@
+git-clone(1)
+============
+
+NAME
+----
+git-clone - リポジトリを新しいディレクトリにクローン(複製)します
+
+
+SYNOPSIS
+--------
+[synopsis]
+git clone [--template=<template-directory>]
+	  [-l] [-s] [--no-hardlinks] [-q] [-n] [--bare] [--mirror]
+	  [-o <name>] [-b <name>] [-u <upload-pack>] [--reference <repository>]
+	  [--dissociate] [--separate-git-dir <git-dir>]
+	  [--depth <depth>] [--[no-]single-branch] [--no-tags]
+	  [--recurse-submodules[=<pathspec>]] [--[no-]shallow-submodules]
+	  [--[no-]remote-submodules] [--jobs <n>] [--sparse] [--[no-]reject-shallow]
+	  [--filter=<filter-spec>] [--also-filter-submodules]] [--] <repository>
+	  [<directory>]
+
+DESCRIPTION
+-----------
+
+リポジトリを新しく作成されたディレクトリにクローン(clone;複製)し、複製されたリポジトリ内の各ブランチのリモート追跡ブランチを作成し(`git branch --remotes` を使用して表示できます)、複製されたリポジトリの現在アクティブなブランチからフォークされた初期ブランチを作成してチェックアウトします。
+
+After the clone, a plain `git fetch` without arguments will update all the remote-tracking branches, and a `git pull` without arguments will in addition merge the remote master branch into the current master branch, if any (this is untrue when `--single-branch` is given; see below).
+
+このデフォルト設定は、 `refs/remotes/origin` の下にリモートブランチヘッドへの参照を作成し、`remote.origin.url` と `remote.origin.fetch` 設定変数を初期化することによって実現されます。
+
+
+OPTIONS
+-------
+`-l`::
+`--local`::
+	When the repository to clone from is on a local machine, this flag bypasses the normal "Git aware" transport mechanism and clones the repository by making a copy of `HEAD` and everything under objects and refs directories. The files under `.git/objects/` directory are hardlinked to save space when possible.
++
+If the repository is specified as a local path (e.g., `/path/to/repo`), this is the default, and `--local` is essentially a no-op. If the repository is specified as a URL, then this flag is ignored (and we never use the local optimizations). Specifying `--no-local` will override the default when `/path/to/repo` is given, using the regular Git transport instead.
++
+リポジトリの `$GIT_DIR/objects` にシンボリック・リンクがある場合、 または `$GIT_DIR/objects` がシンボリック・リンクである場合、 クローンは失敗します。 これは、 シンボリック・リンクの参照を解除(デリファレンス)することにより、 ファイルが意図せずコピーされるのを防ぐためのセキュリティ対策です。
++
+*NOTE*: this operation can race with concurrent modification to the
+source repository, similar to running `cp -r <src> <dst>` while modifying
+_<src>_.
+
+`--no-hardlinks`::
+	ハードリンクを使用する代わりに、ローカルファイルシステム上のリポジトリからのクローン作成プロセスで、ファイルを `.git/objects` ディレクトリの下にコピーするように強制します。 これは、リポジトリのバックアップを作成しようとしている場合に望ましい場合があります。
+
+`-s`::
+`--shared`::
+	クローンを作成するリポジトリがローカルマシン上にある場合、ハードリンクを使用する代わりに、オブジェクトをソースリポジトリと共有するように `.git/objects/info/alternates` を自動的に設定します。 結果のリポジトリは、独自のオブジェクトなしで開始されます。
++
+NOTE: これは危険な操作になり得ます。あなたが、それが何をするのか理解していない限り、使用してはいけません。 このオプションを使用してリポジトリのクローンを作成してから、ソースリポジトリ内のブランチを削除する(または既存のコミットを参照しないようにする他のGitコマンドを使用する)と、一部のオブジェクトが参照されなくなる(unreferenced)(または宙ぶらりん(dangling)になる)可能性があります。 そうしたオブジェクトは、 `git maintenance run --auto` を自動的に呼び出す通常のGit操作(`git commit` など)によって削除される場合があります(linkgit:git-maintenance[1] 参照)。 これらのオブジェクトが削除され、クローンされたリポジトリーによって参照された場合、クローンされたリポジトリーは破損します。
++
+注意: `--shared` でクローンされたリポジトリで `--local` オプションなしで `git repack` を実行すると、オブジェクトがソースリポジトリからクローンされたリポジトリのパックにコピーされ、 `clone --shared` によるディスクスペースの節約はなくなります。 ただし、デフォルトで `--local` オプションを使用する `git gc` を実行するのは安全です。
++
+`--shared` でクローンされたリポジトリのソースリポジトリへの依存関係を解消したい場合、 `git repack -a` を実行するだけで、すべてのオブジェクトをソースリポジトリから、クローンされたリポジトリのパックにコピーできます。
+
+`--reference[-if-able] <repository>`::
+	If the reference _<repository>_ is on the local machine, automatically setup `.git/objects/info/alternates` to obtain objects from the reference _<repository>_. Using an already existing repository as an alternate will require fewer objects to be copied from the repository being cloned, reducing network and local storage costs. When using the `--reference-if-able`, a non existing directory is skipped with a warning instead of aborting the clone.
++
+NOTE: `--shared` オプションと `--dissociate` オプションについては「NOTE」を参照してください。
+
+`--dissociate`::
+	ネットワーク転送を減らすために `--reference` オプションで指定された参照リポジトリからオブジェクトを借用しクローン作成後に、借用したオブジェクトの必要なローカルコピーを作成し、借用を停止(stop)します。 このオプションは、すでに他のリポジトリからオブジェクトを借りているリポジトリからローカルにクローンを作成するときにも使用できます--新しいリポジトリは同一のリポジトリからオブジェクトを借りますが、このオプションを使用して借用を停止できます。
+
+`-q`::
+`--quiet`::
+	静かにします。進行状況は標準エラーストリームに報告されません。
+
+`-v`::
+`--verbose`::
+	賑やかにします。標準エラーストリームへの進行状況のレポートには影響しません。
+
+`--progress`::
+	`--quiet` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送信されていない場合でも、進行状況を強制します。
+
+`--server-option=<option>`::
+	Transmit the given string to the server when communicating using protocol version 2. The given string must not contain a NUL or LF character. The server's handling of server options, including unknown ones, is server-specific. When multiple `--server-option=<option>` are given, they are all sent to the other side in the order listed on the command line. When no ++--server-option=++__<option>__ is given from the command line, the values of configuration variable `remote.<name>.serverOption` are used instead.
+
+`-n`::
+`--no-checkout`::
+	No checkout of `HEAD` is performed after the clone is complete.
+
+`--`[`no-`]`reject-shallow`::
+	Fail if the source repository is a shallow repository. The `clone.rejectShallow` configuration variable can be used to specify the default.
+
+`--bare`::
+	Make a 'bare' Git repository. That is, instead of creating _<directory>_ and placing the administrative files in `<directory>/.git`, make the _<directory>_ itself the `$GIT_DIR`. This obviously implies the `--no-checkout` because there is nowhere to check out the working tree. Also the branch heads at the remote are copied directly to corresponding local branch heads, without mapping them to `refs/remotes/origin/`. When this option is used, neither remote-tracking branches nor the related configuration variables are created.
+
+`--sparse`::
+	最上位ディレクトリ内のファイルのみが最初に存在するスパース・チェックアウトを採用します。 linkgit:git-sparse-checkout[1] コマンドを使用して、必要に応じて作業ディレクトリを拡張できます。
+
+`--filter=<filter-spec>`::
+	Use the partial clone feature and request that the server sends a subset of reachable objects according to a given object filter. When using `--filter`, the supplied _<filter-spec>_ is used for the partial clone filter. For example, `--filter=blob:none` will filter out all blobs (file contents) until needed by Git. Also, `--filter=blob:limit=<size>` will filter out all blobs of size at least _<size>_. For more details on filter specifications, see the `--filter` option in linkgit:git-rev-list[1].
+
+`--also-filter-submodules`::
+	また、リポジトリ内のすべてのサブモジュールに部分クローン・フィルタ(partial clone filter)を適用します。 `--filter` と `--recurse-submodules` が必要です。 これは、 `clone.filterSubmodules` 設定オプションを設定することで、デフォルトでオンにすることができます。
+
+`--mirror`::
+	ソースリポジトリのミラーを設定します。 これは `--bare` を意味します。 `--bare` と比較して、 `--mirror` は、ソースのローカルブランチをターゲットのローカルブランチにマップするだけでなく、すべての参照(リモート追跡ブランチ、noteなどを含む)をマップし、以下のようなrefspec構成をセットアップします。 これらのすべての参照は、ターゲットリポジトリ内の `git remote update` によって上書きされます。
+
+`-o` _<name>_::
+`--origin` _<name>_::
+	Instead of using the remote name `origin` to keep track of the upstream repository, use _<name>_. Overrides `clone.defaultRemoteName` from the config.
+
+`-b` _<name>_::
+`--branch` _<name>_::
+	Instead of pointing the newly created `HEAD` to the branch pointed to by the cloned repository's `HEAD`, point to _<name>_ branch instead. In a non-bare repository, this is the branch that will be checked out. `--branch` can also take tags and detaches the `HEAD` at that commit in the resulting repository.
+
+`-u` _<upload-pack>_::
+`--upload-pack` _<upload-pack>_::
+	これが指定され、クローンを作成するリポジトリにssh経由でアクセスする場合、これは、通信相手側(the other end)で実行されるコマンドのデフォルト以外のパスを指定します。
+
+`--template=<template-directory>`::
+	テンプレートを使用するディレクトリを指定します。 (linkgit:git-init[1] の「TEMPLATE DIRECTORY」セクションを参照してください。)
+
+`-c` `<key>=<value>`::
+`--config` `<key>=<value>`::
+	Set a configuration variable in the newly-created repository; this takes effect immediately after the repository is initialized, but before the remote history is fetched or any files checked out. The _<key>_ is in the same format as expected by linkgit:git-config[1] (e.g., `core.eol=true`). If multiple values are given for the same key, each value will be written to the config file. This makes it safe, for example, to add additional fetch refspecs to the origin remote.
++
+現在の実装の制限により、一部の構成変数は、最初のフェッチとチェックアウトが完了するまで有効になりません。 有効にならないことがわかっている構成変数は、 `remote.<name>.mirror` と `remote.<name>.tagOpt` です。 代わりに、対応する `--mirror` および `--no-tags` オプションを使用してください。
+
+`--depth <depth>`::
+	指定されたコミット数に切り捨てられた履歴を持つ「浅い」クローン(shallow clone)を作成します。 すべてのブランチの先端近くの履歴をフェッチするために `--no-single-branch` が指定されていない限り、 `--single-branch` を意味します。 サブモジュールを浅くクローンする場合は、 `--shallow-submodules` も渡します。
+
+`--shallow-since=<date>`::
+	指定した日時以降の履歴を持つ浅いクローン(shallow clone)を作成します。
+
+`--shallow-exclude=<ref>`::
+	指定のリモートブランチまたはタグから到達可能なコミットを除外して、履歴を持つ浅いクローン(shallow clone)を作成します。 このオプションは複数回指定できます。
+
+`--[no-]single-branch`::
+	Clone only the history leading to the tip of a single branch, either specified by the `--branch` option or the primary branch remote's `HEAD` points at. Further fetches into the resulting repository will only update the remote-tracking branch for the branch this option was used for the initial cloning. If the `HEAD` at the remote did not point at any branch when `--single-branch` clone was made, no remote-tracking branch is created.
+
+`--no-tags`::
+	タグのクローンを作成せず、構成に `remote.<remote>.tagOpt=--no-tags` を設定して、今後の `git pull` および `git fetch` 操作がタグに従わないようにします。 指定後も明示的なタグフェッチは引き続き機能します(linkgit:git-fetch[1] 参照)。
++
+`--single-branch` と組み合わせて使用すると、単一のクローンされたブランチ以外の参照なしでブランチをクローンおよび維持できます。 検索インデックス作成のために、一部のリポジトリのデフォルトブランチの最小限のクローンを維持するので便利です。
+
+`--recurse-submodules[=<pathspec>]`::
+	After the clone is created, initialize and clone submodules within based on the provided _<pathspec>_. If no `=<pathspec>` is provided, all submodules are initialized and cloned. This option can be given multiple times for pathspecs consisting of multiple entries. The resulting clone has `submodule.active` set to the provided pathspec, or "`.`" (meaning all submodules) if no pathspec is provided.
++
+サブモジュールは、デフォルト設定を使用して初期化およびクローン化されます。 これは、クローンが終了した直後に `git submodule update --init --recursive <pathspec>` を実行するのと同じです。 クローンされたリポジトリに ワークツリー/チェックアウト がない場合(つまり、 `--no-checkout`/`-n` または `--bare` または `--mirror` のいずれかが指定されている場合)、このオプションは無視されます。
+
+`--[no-]shallow-submodules`::
+	クローンされるすべてのサブモジュールは、深さが1の浅さののになります。
+
+`--[no-]remote-submodules`::
+	クローン化されるすべてのサブモジュールは、スーパープロジェクトの記録されたSHA-1ではなく、サブモジュールのリモート追跡ブランチのステータスを使用してサブモジュールを更新します。 `--remote` を `git submodule update` に渡すのと同じです。
+
+`--separate-git-dir=<git-dir>`::
+	クローンされたリポジトリを本来あるべき場所に配置する代わりに、クローンされたリポジトリを指定されたディレクトリに配置し、そこへのファイルシステムに依存しないGitシンボリックリンクを作成します。 その結果、Gitリポジトリを作業ツリーから分離できます。
+
+`--ref-format=<ref-format>`::
+
+Specify the given ref storage format for the repository. The valid values are:
++
+include::ref-storage-format.txt[]
+
+`-j` _<n>_::
+`--jobs` _<n>_::
+	同時にフェッチするサブモジュールの数。 デフォルトは `submodule.fetchJobs` オプションです。
+
+_<repository>_::
+	The (possibly remote) _<repository>_ to clone from. See the <<URLS,GIT URLS>> section below for more information on specifying repositories.
+
+_<directory>_::
+	The name of a new directory to clone into. The "humanish" part of the source repository is used if no _<directory>_ is explicitly given (`repo` for `/path/to/repo.git` and `foo` for `host.xz:foo/.git`). Cloning into an existing directory is only allowed if the directory is empty.
+
+`--bundle-uri=<uri>`::
+	Before fetching from the remote, fetch a bundle from the given _<uri>_ and unbundle the data into the local repository. The refs in the bundle will be stored under the hidden `refs/bundle/*` namespace. This option is incompatible with `--depth`, `--shallow-since`, and `--shallow-exclude`.
+
+:git-clone: 1
+include::urls.txt[]
+
+EXAMPLES
+--------
+
+* アップストリームからのクローン:
++
+------------
+$ git clone git://git.kernel.org/pub/scm/.../linux.git my-linux
+$ cd my-linux
+$ make
+------------
+
+
+* チェックアウトせずに、現在のディレクトリから借用するローカルクローンを作成します:
++
+------------
+$ git clone -l -s -n . ../copy
+$ cd ../copy
+$ git show-branch
+------------
+
+
+* 既存のローカルディレクトリから借用しつつ、アップストリームからクローンを作成します:
++
+------------
+$ git clone --reference /git/linux.git \
+	git://git.kernel.org/pub/scm/.../linux.git \
+	my-linux
+$ cd my-linux
+------------
+
+
+* 変更を公開するためのベア(bare)リポジトリを作成します:
++
+------------
+$ git clone --bare -l /home/proj/.git /pub/scm/proj.git
+------------
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/init.txt[]
+
+include::config/clone.txt[]
+
+
+GIT
+---
+Part of the linkgit:git[1] suite

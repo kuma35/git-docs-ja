@@ -1,0 +1,250 @@
+git-bundle(1)
+=============
+
+NAME
+----
+git-bundle - アーカイブごとにオブジェクトとrefを移動します
+
+
+SYNOPSIS
+--------
+[verse]
+'git bundle' create [-q | --quiet | --progress]
+		    [--version=<version>] <file> <git-rev-list-args>
+'git bundle' verify [-q | --quiet] <file>
+'git bundle' list-heads <file> [<refname>...]
+'git bundle' unbundle [--progress] <file> [<refname>...]
+
+DESCRIPTION
+-----------
+
+「バンドル」(bundle)ファイルを作成や解凍や操作します。 バンドルは、ネットワーク接続の反対側にアクティブな「サーバー」がない時に、Gitオブジェクトの「オフライン」転送に使用されます。
+
+They can be used to create both incremental and full backups of a repository (see the "full backup" example in "EXAMPLES"), and to relay the state of the references in one repository to another (see the second example).
+
+`ssh://` や `https://` などのプロトコルを介してフェッチまたは「読み取り」するGitコマンドも、バンドルファイルを操作できます。 バンドルから新しいリポジトリを作成するために linkgit:git-clone[1] を使うことができ、そして、バンドルからリポジトリを取得するために linkgit:git-fetch[1] を使うことができ、そして、バンドルの中に含まれる参照を linkgit:git-ls-remote[1] でリストすることが可能です。 対応する「書き込み」サポートはありません。 つまり、バンドルへの `git push` はサポートされていません。
+
+BUNDLE FORMAT
+-------------
+
+バンドルは `.pack` ファイル(linkgit：git-pack-objects[1] 参照)であり、バンドル内に含まれる参照を示すヘッダーが付いています。
+
+パックされたアーカイブ形式自体と同様に、バンドルは自己完結型にすることも、除外を使用して作成することもできます。 以下の「OBJECT PREREQUISITES」(オブジェクトの前提条件)セクションを参照してください。
+
+リビジョンの除外を使用して作成されたバンドルは、 linkgit:git-pack-objects[1] の `--thin` オプションを使用して作成された「薄いパック」(thin packs)であり、 linkgit:git-index-pack[1] の `--fix-thin` オプションを使用してバンドル解除します。
+
+リビジョンの除外を使用する場合、厚いパック(thick pack)を作成するオプションはありません。ユーザーは違いについて心配する必要はありません。 薄いパック(thin packs)を使用することにより、除外を使用して作成されたバンドルのサイズが小さくなります。 それらが内部で「薄い」(thin)ことは、ここでは単に好奇心として、そして他のドキュメントへの参照として示されています。
+
+詳しくは linkgit:gitformat-bundle[5] を、「thin pack」については linkgit:gitformat-pack[5] をご覧ください。
+
+OPTIONS
+-------
+
+create [options] <file> <git-rev-list-args>::
+	`file` という名前のバンドルを作成するために使用されます。 これには、バンドルの内容を定義するための `<git-rev-list-args>` 引数が必要です。 `options` には、 `git bundle create` サブコマンドに固有のオプションが含まれています。 `file` が `-` の場合、バンドルは標準出力に書き込まれます。
+
+verify <file>::
+	バンドルファイルが有効であり、現在のリポジトリにきれいに適用されることを確認するために使用されます。 これには、バンドル形式自体のチェックと、前提条件となるコミットが現在のリポジトリに存在し、完全にリンクされているかどうかのチェックが含まれます。 次に、「git bundle」は、欠落しているコミットがあれば、そのリストを出力します。 最後に、「オブジェクト・フィルタ」などの追加機能に関する情報が表示されます。 詳細については、linkgit:gitformat-bundle[5] の「Capabilities」を参照してください。 exitコードは成功の場合はゼロですが、バンドル・ファイルが無効な場合はゼロ以外になります。 `file` が `-` の場合、 バンドルは標準入力から読み取られます。
+
+list-heads <file>::
+	バンドルで定義されている参照を一覧表示します。 参照のリストが後に続く場合、与えられたものと一致する参照のみが出力されます。 `file` が `-` の場合、 バンドルは標準入力から読み取られます。
+
+unbundle <file>::
+	バンドル内のオブジェクトをリポジトリに保存するために `git index-pack` に渡し、定義されたすべての参照の名前を出力します。 参照のリストが指定されている場合、リスト内の参照と一致する参照のみが出力されます。 このコマンドは実際には配管コマンド(plumbing)であり、 `git fetch` によって呼び出されることのみを目的としています。 `file` が `-` の場合、 バンドルは標準入力から読み取られます。
+
+<git-rev-list-args>::
+	`git rev-parse` および `git rev-list` に受け入れられる引数のリスト(および名前付きrefを含む。下記「SPECIFYING REFERENCES」参照)。これは、転送する特定のオブジェクトと参照を指定します。 たとえば、 `master~10..master` を指定すると、現在のmaster参照が、10番目の祖先のコミット以降に追加されたすべてのオブジェクトとともにパッケージ化されます。 パッケージ化できる参照とオブジェクトの数に明示的な制限はありません。
+
+
+[<refname>...]::
+	利用可能として報告された参照を制限するために使用される参照のリスト。 これは主に `git fetch` に役立ちます。これは、要求された参照のみを受け取り、必ずしもパック内のすべてを受け取るとは限りません(この場合、 `git bundle` は `git fetch-pack` のように機能します)。
+
+`--progress`::
+	`-q` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送られていない場合でも、進行状況を強制します。
+
+`--version=<version>`::
+	バンドルのバージョンを指定します。 バージョン2 は古い形式であり、SHA-1リポジトリでのみ使用できます。 新しい バージョン3 には、拡張を許可する機能が含まれています。 デフォルトは、使用中のハッシュアルゴリズムに基づいて、サポートされている最も古い形式です。
+
+`-q`::
+`--quiet`::
+	このフラグにより、コマンドは標準エラーストリームで進行状況を報告しなくなります。
+
+SPECIFYING REFERENCES
+---------------------
+
+Revisions must be accompanied by reference names to be packaged in a bundle. Alternatively `--all` can be used to package all refs.
+
+複数の参照をパッケージ化でき、複数の前提条件オブジェクトのセットを指定できます。 パッケージ化されたオブジェクトは、前提条件の結合に含まれていないオブジェクトです。
+
+`git bundle create` コマンドは、 `git rev-parse --abbrev-ref=loose` と同じルールを使用して参照名を解決します。 各前提条件は、明示的に指定することも(例: `^master~10`)、暗黙的に指定することもできます(例: `master~10..master`, `--since=10.days.ago master`)。
+
+これらの単純なケースはすべてOKです(「master」ブランチと「next」ブランチがあると仮定します):
+
+----------------
+$ git bundle create master.bundle master
+$ echo master | git bundle create master.bundle --stdin
+$ git bundle create master-and-next.bundle master next
+$ (echo master; echo next) | git bundle create master-and-next.bundle --stdin
+----------------
+
+そして、以下も同様です(上記と同一ですが `--stdin` が省略された例です):
+
+----------------
+$ git bundle create recent-master.bundle master~10..master
+$ git bundle create recent-updates.bundle master~10..master next~5..next
+----------------
+
+リビジョン名や、右辺が参照に解決できない範囲は、受け付けられません:
+
+----------------
+$ git bundle create HEAD.bundle $(git rev-parse HEAD)
+fatal: Refusing to create empty bundle.
+$ git bundle create master-yesterday.bundle master~10..master~5
+fatal: Refusing to create empty bundle.
+----------------
+
+OBJECT PREREQUISITES
+--------------------
+
+PREREQUISITES(前提条件);バンドルを作成する場合、共通の履歴のないリポジトリでバンドル解凍できる自己完結型のバンドルを作成できます。また、履歴の初期の部分で必要なオブジェクトを除外するための負のリビジョン(negative revisions)を提供することもできます。
+
+`new` などのリビジョンを `git bundle create` にフィードすると、リビジョン `new` から到達可能なすべてのオブジェクトを含むバンドルファイルが作成されます。 そのバンドルを任意のリポジトリでバンドル解凍して、リビジョン `new` につながる完全な履歴を取得できます。
+
+----------------
+$ git bundle create full.bundle new
+----------------
+
+`old..new` のようなリビジョン範囲は、バンドルファイルを生成しますが、バンドルが「バンドル解除」可能(unbundle-able)であるためには、リビジョン `old` (とそこから到達できるすべてのオブジェクト) が存在する必要があります:
+
+----------------
+$ git bundle create full.bundle old..new
+----------------
+
+前提条件のない自己完結型のバンドルは、空のリポジトリにさえもどこにでも抽出できます。または、そのバンドルからcloneすることもできます(つまり、 `new` ですが、 `old..new` ではありません)。
+
+注意: バンドルファイルには、宛先に既に存在するオブジェクトが含まれていても、宛先で解凍する際には無視されますので、注意してください。
+
+If you want to provide the same set of refs that a clone directly from the source repository would get, use `--branches --tags` for the `<git-rev-list-args>`.
+
+`git bundle verify` コマンドを使用して、受信者リポジトリにバンドルに必要な前提条件のコミットがあるかどうかを確認できます。
+
+EXAMPLES
+--------
+
+We'll discuss two cases:
+
+1. Taking a full backup of a repository
+2. Transferring the history of a repository to another machine when the two machines have no direct connection
+
+First let's consider a full backup of the repository. The following command will take a full backup of the repository in the sense that all refs are included in the bundle:
+
+----------------
+$ git bundle create backup.bundle --all
+----------------
+
+But note again that this is only for the refs, i.e. you will only include refs and commits reachable from those refs. You will not include other local state, such as the contents of the index, working tree, the stash, per-repository configuration, hooks, etc.
+
+You can later recover that repository by using for example linkgit:git-clone[1]:
+
+----------------
+$ git clone backup.bundle <new directory>
+----------------
+
+For the next example, assume you want to transfer the history from a repository R1 on machine A to another repository R2 on machine B. For whatever reason, direct connection between A and B is not allowed, but we can move data from A to B via some mechanism (CD, email, etc.). We want to update R2 with development made on the branch master in R1.
+
+開発プロセスをブートストラップするために、あなたは、最初に前提条件のないバンドルを作成します。あなたはタグを使用して、最後に処理したコミットまでを記憶し、後で他のリポジトリを増分バンドル(incremental bundle)で簡単に更新できるようにすることができます:
+
+----------------
+machineA$ cd R1
+machineA$ git bundle create file.bundle master
+machineA$ git tag -f lastR2bundle master
+----------------
+
+次に、file.bundleをターゲットマシンBに転送します。このバンドルでは既存のオブジェクトを抽出する必要がないため、あなたはマシンBからクローンを作成して、新しいリポジトリを作成できます:
+
+----------------
+machineB$ git clone -b master /home/me/tmp/file.bundle R2
+----------------
+
+これにより、結果のリポジトリに「origin」と呼ばれるリモートが定義され、バンドルからフェッチおよびプルできるようになります。 R2 の $GIT_DIR/config ファイルには、以下のようなエントリがあります:
+
+------------------------
+[remote "origin"]
+    url = /home/me/tmp/file.bundle
+    fetch = refs/heads/*:refs/remotes/origin/*
+------------------------
+
+結果のmine.gitリポジトリを更新するには、 /home/me/tmp/file.bundle に保存されているバンドルを増分更新(incremental updates)に置き換えた後、フェッチまたはプルできます。
+
+元のリポジトリでさらに作業した後、増分バンドル(incremental bundle)を作成して、他のリポジトリを更新できます:
+
+----------------
+machineA$ cd R1
+machineA$ git bundle create file.bundle lastR2bundle..master
+machineA$ git tag -f lastR2bundle master
+----------------
+
+次に、あなたはバンドルを他のマシンに転送して /home/me/tmp/file.bundle を置き換え、そこからプルします。
+
+----------------
+machineB$ cd R2
+machineB$ git pull
+----------------
+
+目的の受信者リポジトリが必要なオブジェクトをどのコミットまで持つべきかがわかっている場合は、その知識を使用して前提条件を指定し、結果のバンドルに含まれるリビジョンとオブジェクトを制限するカットオフポイントを指定できます。 前の例では、この目的でlastR2bundleタグを使用しましたが、 linkgit:git-log[1] コマンドに指定する他のオプションを使用できます。 その他の例は以下のとおりです:
+
+あなたは両方に存在するタグを使用できます:
+
+----------------
+$ git bundle create mybundle v1.0.0..master
+----------------
+
+あなたは日時に基づく前提条件を使用できます:
+
+----------------
+$ git bundle create mybundle --since=10.days master
+----------------
+
+あなたはコミット数を利用できます:
+
+----------------
+$ git bundle create mybundle -10 master
+----------------
+
+`git-bundle verify` を実行して、前提条件に従って作成されたバンドルから抽出可能かどうかを確認できます:
+
+----------------
+$ git bundle verify mybundle
+----------------
+
+これにより、バンドルから抽出するために必要なコミットが一覧表示され、コミットがない場合はエラーになります。
+
+受信者リポジトリの観点からのバンドルは、フェッチまたはプルする通常のリポジトリと同じです。 たとえば、フェッチするときに参照をマップできます:
+
+----------------
+$ git fetch mybundle master:localRef
+----------------
+
+あなたはまた、それが提供する参照を確認することもできます:
+
+----------------
+$ git ls-remote mybundle
+----------------
+
+DISCUSSION
+----------
+
+A naive way to make a full backup of a repository is to use something to the effect of `cp -r <repo> <destination>`. This is discouraged since the repository could be written to during the copy operation. In turn some files at `<destination>` could be corrupted.
+
+This is why it is recommended to use Git tooling for making repository backups, either with this command or with e.g. linkgit:git-clone[1]. But keep in mind that these tools will not help you backup state other than refs and commits. In other words they will not help you backup contents of the index, working tree, the stash, per-repository configuration, hooks, etc.
+
+See also linkgit:gitfaq[7], section "TRANSFERS" for a discussion of the problems associated with file syncing across systems.
+
+FILE FORMAT
+-----------
+
+See linkgit:gitformat-bundle[5].
+
+GIT
+---
+Part of the linkgit:git[1] suite

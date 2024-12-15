@@ -1,0 +1,109 @@
+git-rev-list(1)
+===============
+
+NAME
+----
+git-rev-list - コミットオブジェクトを新しい順に一覧表示します
+
+
+SYNOPSIS
+--------
+[verse]
+'git rev-list' [<options>] <commit>... [--] [<path>...]
+
+DESCRIPTION
+-----------
+
+:git-rev-list: 1
+include::rev-list-description.txt[]
+
+'rev-list' is an essential Git command, since it provides the ability to build and traverse commit ancestry graphs. For this reason, it has a lot of different options that enable it to be used by commands as different as 'git bisect' and 'git repack'.
+
+OPTIONS
+-------
+
+:git-rev-list: 1
+include::rev-list-options.txt[]
+
+include::pretty-formats.txt[]
+
+EXAMPLES
+--------
+
+* 現在のブランチから到達可能なコミットのリストを出力します。
++
+----------
+git rev-list HEAD
+----------
+
+* このブランチのコミットのリストを出力しますが、アップストリームブランチのは表示しません。
++
+----------
+git rev-list @{upstream}..HEAD
+----------
+
+* 作者(author)とコミットメッセージを使用してコミットをフォーマットします(磁器コマンドのlinkgit:git-log[1]も参照)。
++
+----------
+git rev-list --format=medium HEAD
+----------
+
+* コミットとその差分をフォーマットします(これを単一のプロセスで実行できる磁器コマンドのlinkgit:git-log[1]も参照してください)。
++
+----------
+git rev-list HEAD |
+git diff-tree --stdin --format=medium -p
+----------
+
+* 現在のブランチで、`Documentation`ディレクトリ内のファイルに関連(touch)したコミットのリストを出力します。
++
+----------
+git rev-list HEAD -- Documentation/
+----------
+
+* 任意のブランチ・タグ・他のrefから過去1年間に作者you@example.comが作成したコミットのリストを出力します。
++
+----------
+git rev-list --author=you@example.com --since=1.year.ago --all
+----------
+
+* 現在のブランチから到達可能なオブジェクトのリストを出力します(つまり、すべてのコミットと、それらに含まれるブロブとツリー)。
++
+----------
+git rev-list --objects HEAD
+----------
+
+* 到達可能なすべてのオブジェクトのディスクサイズ、reflogから到達可能なオブジェクト、およびパックされた合計サイズを比較します。これにより、`git repack -ad`を実行すると(到達不能なオブジェクトを削除することで)リポジトリのサイズが減少するかどうか、およびreflogの有効期限が切れる(expire)ことによってリポジトリのサイズ減少に役立つかどうかがわかります。
++
+----------
+# reachable objects
+git rev-list --disk-usage --objects --all
+# plus reflogs
+git rev-list --disk-usage --objects --all --reflog
+# total disk size used
+du -c .git/objects/pack/*.pack .git/objects/??/*
+# alternative to du: add up "size" and "size-pack" fields
+git count-objects -v
+----------
+
+* 現在のブランチで使用されているオブジェクトを除いて、各ブランチのディスクサイズを報告します。 これにより、リポジトリサイズの肥大化の原因となっているイレギュラー値を見つけることができます(たとえば、誰かが誤って大きなビルドアーティファクトをコミットしたためとか)。
++
+----------
+git for-each-ref --format='%(refname)' |
+while read branch
+do
+	size=$(git rev-list --disk-usage --objects HEAD..$branch)
+	echo "$size $branch"
+done |
+sort -n
+----------
+
+* (別のグループを除いた)refsの単一のグループのブランチのディスク上のサイズを比較します。1つのリポジトリに複数のリモートからのオブジェクトを混在させる場合、これにより、リポジトリ内で、どのリモートがどれだけ占めているかを示すことができます(`origin`のサイズを基準値として使用)。
++
+----------
+git rev-list --disk-usage --objects --remotes=$suspect --not --remotes=origin
+----------
+
+GIT
+---
+Part of the linkgit:git[1] suite

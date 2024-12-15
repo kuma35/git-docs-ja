@@ -1,0 +1,447 @@
+githooks(5)
+===========
+
+NAME
+----
+githooks - Gitで使われるフック
+
+SYNOPSIS
+--------
+$GIT_DIR/hooks/* (or \`git config core.hooksPath`/*)
+
+
+DESCRIPTION
+-----------
+
+フック(hook)は、フック・ディレクトリ(hooks directory)に配置して、gitの実行の特定の時点でアクションをトリガーできるプログラムです。実行可能ビットが設定されていないフックは無視されます。
+
+デフォルトでは、フック・ディレクトリ(hooks directory)は `$GIT_DIR/hooks` ですが、これは `core.hooksPath` 構成変数を介して変更できます(linkgit:git-config[1] 参照)。
+
+Gitはフックを呼び出す前に、ベア・リポジトリでは作業ディレクトリを $GIT_DIRに変更し、非ベア・リポジトリでは作業ディレクトリを作業ツリーのルートに変更します。例外は、プッシュ中にトリガーされるフック(`pre-receive`, `update`, `post-receive`, `post-update`, `push-to-checkout`)で、常に $GIT_DIR で実行されます。
+
+`GIT_DIR` や `GIT_WORK_TREE` のような環境変数は、フックによって実行される Git コマンドがリポジトリを正しく見つけることができるようにエクスポートされます。フックが、よそのリポジトリまたは同じリポジトリの別の作業ツリーで Git コマンドを呼び出す必要がある場合は、よそでの Git 操作を妨げないように、これらの環境変数をクリアする必要があります。例えば以下のようにします:
+
+------------
+local_desc=$(git describe)
+foreign_desc=$(unset $(git rev-parse --local-env-vars); git -C ../foreign-repo describe)
+------------
+
+フックは、環境変数やコマンドライン引数やstdinを介して引数を取得できます。詳細については、以下の各フックのドキュメントを参照してください。
+
+`git init` は、その構成に応じて、フックを新しいリポジトリにコピーする場合があります。詳細については、 linkgit:git-init[1] の「TEMPLAT EDIRECTORY」セクションを参照してください。このドキュメントの残りの部分で「デフォルトのフック」について言及している場合は、Gitに付属しているデフォルトのテンプレートについて説明しています。
+
+現在サポートされているフックを以下に説明します。
+
+HOOKS
+-----
+
+applypatch-msg
+~~~~~~~~~~~~~~
+
+このフックは linkgit:git-am[1] によって呼び出されます。単一のパラメータとして、提案するコミットログメッセージを保持するファイルの名前を取ります。ゼロ以外のステータスで終了すると、パッチを適用する前に `git am` が中止されます。
+
+フックを使用すると、メッセージファイルを所定の場所で編集でき、メッセージをプロジェクトの標準形式に正規化するために使用できます。 また、メッセージファイルを検査した後にコミットを拒否するために使用することもできます。
+
+デフォルトの `applypatch-msg` フックが有効になっている場合に `commit-msg` フックが有効になっていれば、 `commit-msg` フックを実行します。
+
+pre-applypatch
+~~~~~~~~~~~~~~
+
+このフックは linkgit:git-am[1] によって呼び出されます。これはパラメーターを受け取らず、パッチが適用された後、コミットが行われる前に呼び出されます。
+
+これがゼロ以外のステータスで終了する場合、パッチの適用後に作業ツリーはコミットされません。
+
+It can be used to inspect the current working tree and refuse to make a commit if it does not pass certain tests.
+
+デフォルトの `pre-applypatch` フックが有効になっている場合に `pre-commit` フックが有効になっている場合は、 `pre-commit` フックが実行されます。
+
+post-applypatch
+~~~~~~~~~~~~~~~
+
+このフックは linkgit:git-am[1] によって呼び出されます。これはパラメーターを受け取らず、パッチが適用されてコミットが行われた後に呼び出されます。
+
+このフックは主に通知用であり、 `git am` の結果に影響を与えることはできません。
+
+pre-commit
+~~~~~~~~~~
+
+このフックは linkgit:git-commit[1] によって呼び出され、 `--no-verify` オプションでバイパスできます。パラメータを必要とせず、提案したコミットログメッセージを取得してコミットする前に呼び出されます。このスクリプトをゼロ以外のステータスで終了すると、コミットを作成する前に `git commit` コマンドが中止(abort)されます。
+
+デフォルトの `pre-commit` フックを有効にすると、末尾に空白がある行の導入をキャッチし、そのような行が見つかるとコミットを中止(abort)します。
+
+すべての `git commit` フックは環境変数 $GIT_EDITOR を `GIT_EDITOR=:` とすれば、 コミットメッセージを変更するためのエディターを起動しません。
+
+デフォルトの `pre-commit` フックが有効になっていて、かつ、 `hooks.allownonascii` 構成オプションが設定されていないかfalseに設定されている場合、非ASCIIファイル名の使用を防止します。
+
+pre-merge-commit
+~~~~~~~~~~~~~~~~
+
+このフックは linkgit:git-merge[1] によって呼び出され、 `--no-verify` オプションでバイパスできます。パラメータを必要とせず、マージが正常に実行された後、提案したコミットログメッセージを取得してコミットする前に呼び出されます。このスクリプトをゼロ以外のステータスで終了すると、コミットを作成する前に `git merge` コマンドが中止(abort)されます。
+
+デフォルトの `pre-merge-commit` フックが有効になっている場合に `pre-commit` フック後者が有効になっている場合は、 `pre-commit` フックが実行されます。
+
+このフックは環境変数 $GIT_EDITOR を `GIT_EDITOR=:` とすれば、 コミットメッセージを変更するためのエディターを起動しません。
+
+マージを自動的に実行できない場合は、競合を解決し、結果を個別にコミットする必要があります(linkgit:git-merge[1] 参照)。その時点では、このフックは実行されませんが、 `pre-commit` が有効になっている場合は `pre-commit` フックが実行されます。
+
+prepare-commit-msg
+~~~~~~~~~~~~~~~~~~
+
+このフックは、デフォルトのログメッセージを準備した直後、エディターを起動する前に、 linkgit:git-commit[1] によって呼び出されます。
+
+1つから3つのパラメーターを取ります。 1つ目は、内容がコミットログメッセージであるファイルの名前です。2番目はコミットメッセージのソースであり、`message`(`-m` または `-F` オプションが指定された場合)、 `template`( `-t` オプションが指定された場合、または構成オプション `commit.template` が設定されている場合)、 `merge`(コミットがマージであるか、 `.git/MERGE_MSG` ファイルが存在する場合)、 `squash`( `.git/SQUASH_MSG` ファイルが存在する場合)、または `commit`( `-c` または `-C` または `--amend` オプションが指定された場合)に続いて(3つ目のパラメータとして) commitオブジェクト名。
+
+終了ステータスがゼロ以外の場合、 `git commit` は中止(abort)されます。
+
+The purpose of the hook is to edit the message file in place, and it is not suppressed by the `--no-verify` option. A non-zero exit means a failure of the hook and aborts the commit. It should not be used as a replacement for the pre-commit hook.
+
+Gitに付属するサンプルの `prepare-commit-msg` フックは、コミットテンプレートのコメント部分にあるヘルプメッセージを削除します。
+
+commit-msg
+~~~~~~~~~~
+
+このフックは linkgit:git-commit[1] と linkgit:git-merge[1] によって呼び出され、 `--no-verify` オプションでバイパスできます。単一のパラメータとして提案されたコミットログメッセージを保持するファイルの名前を取ります。ゼロ以外のステータスで終了すると、コマンドは中止(abort)されます。
+
+フックを使用すると、メッセージファイルを所定の場所で編集でき、メッセージをプロジェクトの標準形式に正規化するために使用できます。 また、メッセージファイルを検査した後にコミットを拒否するために使用することもできます。
+
+デフォルトの `commit-msg` フックを有効にすると、重複する `Signed-off-by` トレーラーが検出され、見つかった場合はコミットが中止(abort)されます。
+
+post-commit
+~~~~~~~~~~~
+
+このフックは linkgit:git-commit[1] によって呼び出されます。パラメータを必要とせず、コミットが行われた後に呼び出されます。
+
+このフックは主に通知用であり、 `git commit` の結果に影響を与えることはできません。
+
+pre-rebase
+~~~~~~~~~~
+
+このフックは linkgit:git-rebase[1] によって呼び出され、ブランチがリベースされるのを防ぐために使用できます。フックは、1つまたは2つのパラメーターで呼び出すことができます。最初のパラメーターは、シリーズがフォークされたアップストリームです。2番目のパラメーターは、リベースされるブランチであり、現在のブランチをリベースするときは設定されません。
+
+post-checkout
+~~~~~~~~~~~~~
+
+このフックは、ワークツリーを更新した後に linkgit:git-checkout[1] または linkgit:git-switch[1] が実行されたときに呼び出されます。フックには、以前のHEADのref、新しいHEADのref(変更されている場合と変更されていない場合があります)、およびチェックアウトがブランチチェックアウト(ブランチの変更、flag=1)あるいはファイルのチェックアウト(インデックスからファイルを取得、flag=0)のいずれかであるかどうかを示すフラグ、の3つのパラメーターが与えられます。このフックは、フックの終了ステータスがこれら2つのコマンドの終了ステータスになることを除いて、 `git switch` または `git checkout` の結果に影響を与えることはできません。
+
+これは `--no-checkout` (`-n`)オプションが使用されていない限り、 linkgit:git-clone[1]の後でも実行されます。 フックに指定された最初のパラメーターは null-refで、2番目は新しいHEADのrefであり、フラグは常に1です。`--no-checkout` が使用されていない限り、 `git worktree add` についても同様です。
+
+このフックを使用して、リポジトリの有効性チェックを実行したり、以前のHEADとの違いを自動表示したり、作業ディレクトリのメタデータプロパティを設定したりできます。
+
+post-merge
+~~~~~~~~~~
+
+このフックは linkgit:git-merge[1] によって呼び出されます。これは、ローカルリポジトリで `git pull` が実行されたときに発生します。フックは単一のパラメーター、つまり、実行されているマージがスカッシュマージ(squash merge)であるかどうかを指定するステータスフラグを受け取ります。このフックは `git merge` の結果に影響を与えることはできず、競合が原因でマージが失敗した場合は実行されません。
+
+このフックを対応するpre-commitフックと組み合わせて使用すると、作業ツリーに関連付けられている任意の形式のメタデータ(たとえば、権限/所有権、ACLSなど)を保存および復元できます。これを行う方法の例については、 contrib/hooks/setgitperms.perl を参照してください。
+
+pre-push
+~~~~~~~~
+
+このフックは linkgit:git-push[1] によって呼び出され、プッシュが行われないようにするために使用できます。フックは、宛先リモートの名前と場所を提供する2つのパラメーターで呼び出されます。名前付きリモートが使用されていない場合、両方の値は同一になります。
+
+何をプッシュするかについての情報は、フックの標準入力に次の形式の行で提供されます:
+
+  <local-ref> SP <local-object-name> SP <remote-ref> SP <remote-object-name> LF
+
+たとえば、コマンド +git push origin master:foreign+ を実行すると、フックは以下のような行を受け取ります:
+
+  refs/heads/master 67890 refs/heads/foreign 12345
+
+although the full object name would be supplied. If the foreign ref does not yet exist the `<remote-object-name>` will be the all-zeroes object name. If a ref is to be deleted, the `<local-ref>` will be supplied as `(delete)` and the `<local-object-name>` will be the all-zeroes object name. If the local commit was specified by something other than a name which could be expanded (such as `HEAD~`, or an object name) it will be supplied as it was originally given.
+
+このフックがゼロ以外のステータスで終了した場合、 `git push` は何もプッシュせずに中止(abort)します。プッシュが拒否された理由に関する情報は、標準エラーに書き込むことでユーザーに送信される場合があります。
+
+[[pre-receive]]
+pre-receive
+~~~~~~~~~~~
+
+このフックは、 `git push` に反応し、リポジトリ内の参照を更新するときに、 linkgit:git-receive-pack[1] によって呼び出されます。リモートリポジトリのrefの更新を開始する直前に、pre-receiveフックが呼び出されます。その終了ステータスによって、更新の成功または失敗が決まります。
+
+このフックは、受信操作に対して1回実行されます。引数は必要ありませんが、更新される各refについて、標準入力で以下の形式の行を受け取ります:
+
+  <old-oid> SP <new-oid> SP <ref-name> LF
+
+where `<old-oid>` is the old object name stored in the ref, `<new-oid>` is the new object name to be stored in the ref and `<ref-name>` is the full name of the ref. When creating a new ref, `<old-oid>` is the all-zeroes object name.
+
+フックがゼロ以外のステータスで終了した場合、どのrefも更新されません。フックがゼロで終了する場合でも、個々のrefの更新は<<update,`update`>>フックによって防ぐことができます。
+
+標準出力と標準エラー出力の両方がもう一方の側の `git send-pack` に転送(forward)されるため、ユーザーにメッセージを `echo` するだけで済みます。
+
+`git push --push-option=...` のコマンドラインで指定された、プッシュオプションの数は環境変数 `GIT_PUSH_OPTION_COUNT` から読み取ることができ、オプション自体は `GIT_PUSH_OPTION_0` 、 `GIT_PUSH_OPTION_1` 、 … から読み取る事ができます。プッシュオプションフェーズを使用しないように取り決めた場合、環境変数は設定されません。クライアントがプッシュオプションの使用を選択したが、何も送信しない場合、カウント変数はゼロ、つまり `GIT_PUSH_OPTION_COUNT=0` に設定されます。
+
+いくつかの注意点については、 linkgit:git-receive-pack[1] の「Quarantine Environment」のセクションを参照してください。
+
+[[update]]
+update
+~~~~~~
+
+このフックは、 `git push` に反応し、リポジトリ内の参照を更新するときに、 linkgit:git-receive-pack[1] によって呼び出されます。リモートリポジトリのrefを更新する直前に、 update フックが呼び出されます。その終了ステータスによって、ref更新の成功または失敗が決まります。
+
+フックは、更新されるrefごとに1回実行され、以下の3つのパラメーターを取ります:
+
+ - 更新されるrefの名前
+ - refに保存されている古いオブジェクト名
+ - refに格納される新しいオブジェクト名
+
+更新フックがゼロステータスで終了すると、refを更新できます。ゼロ以外のステータスで終了すると、 `git receive-pack` はそのrefを更新できなくなります。
+
+このフックは、オブジェクト名が古いオブジェクト名で指定されたコミットオブジェクトの子孫であるコミットオブジェクトであることを確認することにより、特定のrefでの「強制」更新を防ぐために使用できます。つまり、「早送りのみ」(fast-forward only)のポリシーを適用します。
+
+また、 old..new ステータスをログに記録するために使用することもできます。ただし、ブランチのセット全体を認識しているわけではないため、単純に使用すると、refごとに1つの電子メールが送信されることになります。そのためには<<post-receive,`post-receive`>>フックの方が適しています。
+
+ユーザーのアクセスをネットワーク経由のgitコマンドのみに制限する環境では、このフックを使用して、ファイルシステムの所有権やグループメンバーシップに依存せずにアクセス制御を実装できます。ログインシェルを使用してユーザーのアクセスをgitコマンドのみに制限する方法については、 linkgit:git-shell[1] を参照してください。
+
+標準出力と標準エラー出力の両方がもう一方の側の `git send-pack` に転送(forward)されるため、ユーザーにメッセージを `echo` するだけで済みます。
+
+The default 'update' hook, when enabled--and with `hooks.allowunannotated` config option unset or set to false--prevents unannotated tags from being pushed.
+
+[[proc-receive]]
+proc-receive
+~~~~~~~~~~~~
+
+このフックは linkgit:git-receive-pack[1] によって呼び出されます。サーバーが複数値の構成変数 `receive.procReceiveRefs` を設定し、そして `receive-pack` に送信されるコマンドの参照名が一致する場合、これらのコマンドは、内部の `execute_commands()` 関数ではなく、このフックによって実行されます。このフックは、関連する参照を更新し、結果を `receive-pack` に報告する役割を果たします。
+
+このフックは、受信操作に対して1回実行されます。引数は取りませんが、pkt-line形式のプロトコルを使用して `receive-pack` と通信し、コマンド、プッシュオプションを読み取り、結果を送信します。行かのプロトコルの例では、文字 `S` は `receive-pack` を表し、文字 `H` はこのフックを表します。
+
+    # Version and features negotiation.
+    S: PKT-LINE(version=1\0push-options atomic...)
+    S: flush-pkt
+    H: PKT-LINE(version=1\0push-options...)
+    H: flush-pkt
+
+    # Send commands from server to the hook.
+    S: PKT-LINE(<old-oid> <new-oid> <ref>)
+    S: ... ...
+    S: flush-pkt
+    # Send push-options only if the 'push-options' feature is enabled.
+    S: PKT-LINE(push-option)
+    S: ... ...
+    S: flush-pkt
+
+    # Receive results from the hook.
+    # OK, run this command successfully.
+    H: PKT-LINE(ok <ref>)
+    # NO, I reject it.
+    H: PKT-LINE(ng <ref> <reason>)
+    # Fall through, let 'receive-pack' execute it.
+    H: PKT-LINE(ok <ref>)
+    H: PKT-LINE(option fall-through)
+    # OK, but has an alternate reference.  The alternate reference name
+    # and other status can be given in option directives.
+    H: PKT-LINE(ok <ref>)
+    H: PKT-LINE(option refname <refname>)
+    H: PKT-LINE(option old-oid <old-oid>)
+    H: PKT-LINE(option new-oid <new-oid>)
+    H: PKT-LINE(option forced-update)
+    H: ... ...
+    H: flush-pkt
+
+`proc-receive` フックの各コマンドは、疑似参照(pseudo-reference)を指す場合があり、そのold-oidとして常にゼロオールドを持ちます。一方、 `proc-receive` フックは代替参照(alternate reference)を更新する可能性があり、代替参照はゼロ以外のold-oidで既に存在する可能性があります。この場合、このフックは `option` ディレクティブを使用して、先頭の `ok` ディレクティブによって指定された参照の拡張属性を報告します。
+
+このフックのコマンドの報告は、入力と同じ順序である必要があります。 `proc-receive` フックの終了ステータスは、アトミックプッシュ(atomic push)が使用されていない限り、送信したコマンドグループの成功または失敗のみを決定します。
+
+[[post-receive]]
+post-receive
+~~~~~~~~~~~~
+
+This hook is invoked by linkgit:git-receive-pack[1] when it reacts to `git push` and updates reference(s) in its repository. The hook executes on the remote repository once after all the proposed ref updates are processed and if at least one ref is updated as the result.
+
+The hook takes no arguments. It receives one line on standard input for each ref that is successfully updated following the same format as the <<pre-receive,'pre-receive'>> hook.
+
+このフックは、実際の作業が完了した後に呼び出されるため、 `git receive-pack` の結果には影響しません。
+
+これは、名前に加えてすべてのrefの古い値と新しい値の両方を取得するという点で、 <<post-update,`post-update`>> フックに取って代わります。
+
+標準出力と標準エラー出力の両方がもう一方の側の `git send-pack` に転送(forward)されるため、ユーザーにメッセージを `echo` するだけで済みます。
+
+デフォルトの `post-receive` フックは空ですが、Gitディストリビューションの `contrib/hooks` ディレクトリにサンプルスクリプト `post-receive-email` があり、コミットメールの送信を実装しています。
+
+`git push --push-option=...` のコマンドラインで指定された、プッシュオプションの数は環境変数 `GIT_PUSH_OPTION_COUNT` から読み取ることができ、オプション自体は `GIT_PUSH_OPTION_0` 、 `GIT_PUSH_OPTION_1` 、 … から読み取る事ができます。プッシュオプションフェーズを使用しないように取り決めた場合、環境変数は設定されません。クライアントがプッシュオプションの使用を選択したが、何も送信しない場合、カウント変数はゼロ、つまり `GIT_PUSH_OPTION_COUNT=0` に設定されます。
+
+See the "post-receive" section in linkgit:git-receive-pack[1] for additional details.
+
+[[post-update]]
+post-update
+~~~~~~~~~~~
+
+このフックは、 `git push` に反応し、リポジトリ内の参照を更新するときに、 linkgit:git-receive-pack[1] によって呼び出されます。すべてのrefが更新された後、リモートリポジトリで実行されます。
+
+可変数のパラメーターを取ります。各パラメーターは、実際に更新されたrefの名前です。
+
+このフックは主に通知用であり、 `git receive-pack` の結果に影響を与えることはできません。
+
+`post-update` フックは、プッシュされたヘッドが何であるかを知ることができますが、元の値と更新された値が何であるかを知らないため、 logold..new を実行するのに適した場所ではありません。 <<post-receive,`post-receive`>>フックは、参照の元の値と更新された値の両方を取得するので、必要に応じて、このフックの代わりに検討することもできます。
+
+有効にすると、デフォルトの `post-update` フックが `git update-server-info` を実行して、バカ転送(dumb transports)(例:HTTP)で使用される情報を最新の状態に保ちます。 HTTP経由でアクセスできるGitリポジトリを公開している場合は、あなたはおそらくこのフックを有効にする必要があります。
+
+標準出力と標準エラー出力の両方がもう一方の側の `git send-pack` に転送(forward)されるため、ユーザーにメッセージを `echo` するだけで済みます。
+
+reference-transaction
+~~~~~~~~~~~~~~~~~~~~~
+
+This hook is invoked by any Git command that performs reference updates. It executes whenever a reference transaction is prepared, committed or aborted and may thus get called multiple times. The hook also supports symbolic reference updates.
+
+フックは引数を1つだけ取りますが、これは指定された参照トランザクションの現在の状態です:
+
+    - "prepared" : すべての参照更新がトランザクションのキューに入れられ、参照がディスク上でロックされました。
+
+    - "committed": 参照トランザクションがコミットされ、すべての参照にそれぞれの新しい値が追加されました。
+
+    - "aborted": 参照トランザクションが中止され、変更は実行されず、ロックが解放されました。
+
+トランザクションに追加された参照更新ごとに、フックは標準入力で以下の形式の行を受け取ります:
+
+  <old-value> SP <new-value> SP <ref-name> LF
+
+ここで、 `<old-value>` は、参照トランザクションに渡された古いオブジェクト名です。 `<new-value>` はrefに格納される新しいオブジェクト名であり、 `<ref-name>` はrefのフルネームです。現在の値に関係なく参照を強制的に更新する場合、または参照を新たに作成する場合は、 `<old-value>` はすべてゼロのオブジェクト名です。あなたは、これらのケースを区別するために、 `gitrev-parse` を介して `<ref-name>` の現在の値を調べることができます。
+
+For symbolic reference updates the `<old_value>` and `<new-value>` fields could denote references instead of objects. A reference will be denoted with a 'ref:' prefix, like `ref:<ref-target>`.
+
+フックの終了ステータスは、「prepared」(準備済み)状態を除くすべての状態で無視されます。「prepared」状態では、ゼロ以外の終了ステータスにより、トランザクションが中止(abort)されます。その場合、フックは「中止」状態で呼び出さることはありません。
+
+push-to-checkout
+~~~~~~~~~~~~~~~~
+
+プッシュが現在チェックアウトされているブランチを更新しようと試み、かつ、 `receive.denyCurrentBranch` 構成変数が `updateInstead` に設定されている場合、このフックは、 `git push` に反応し、リポジトリ内の参照を更新するときに、 linkgit:git-receive-pack[1] によって呼び出されます。作業ツリーとリモートリポジトリのインデックスが現在チェックアウトされているコミットと異なる場合、このようなプッシュはデフォルトで拒否されます。作業ツリーとインデックスの両方が現在のコミットと一致する場合、それらは、ブランチの新しくプッシュされた先端に一致するように更新されます。このフックは、デフォルトの動作をオーバーライドするために使用されます。
+
+フックは、現在のブランチの先端が更新されるコミットを受け取ります。ゼロ以外のステータスで終了してプッシュを拒否できます(そうする場合は、インデックスまたは作業ツリーを変更してはいけません)。または、作業ツリーとインデックスに必要な変更を加えて、現在のブランチの先端が新しいコミットに更新されたときにそれらを目的の状態にし、ゼロステータスで終了することもできます。
+
+例えば、フックは単純に `git read-tree -u -m HEAD "$1"` を実行して、`git push` と逆方向に実行する `git fetch` をエミュレートすることができます。 `git read-tree -u -m` の二木形式(two-tree form)は、ブランチの違いを妨げない範囲で作業ツリー(working tree)のローカル変更を維持しながらブランチを切り替える `git switch` や `git checkout` と本質的に同じものだからです。
+
+
+pre-auto-gc
+~~~~~~~~~~~
+
+このフックは `git gc --auto` によって呼び出されます(linkgit:git-gc[1] を参照)。パラメータを必要とせず、このスクリプトをゼロ以外のステータスで終了させると、 `git gc --auto` が中止(abort)されます。
+
+post-rewrite
+~~~~~~~~~~~~
+
+このフックは、commitを書き換えるコマンド(`--amend` や linkgit:git-rebase[1] から呼び出された場合の linkgit:git-commit[1] 。ただし、 linkgit:git-fast-import[1]や https://github.com/newren/git-filter-repo[git-filter-repo] などの完全な履歴(再)書き込みツールは通常、呼び出さないでください！)によって呼び出されます。その最初の引数は、それが呼び出されたコマンドを示します。それは現在、`amend` または `rebase` のいずれかです。将来、コマンドに依存する引数がさらに渡される可能性があります。
+
+フックは、stdinから、書き換えられたコミットのリストを以下の形式で受け取ります。
+
+  <old-object-name> SP <new-object-name> [ SP <extra-info> ] LF
+
+`extra-info` もコマンド依存です。空の場合、先行するSPも省略されます。現在、 `extra-info` を渡すコマンドはありません。
+
+フックは常に、自動noteコピー(linkgit:git-config[1]の `notes.rewrite.<command>` 参照)が発生した後に実行されるため、フックはこれらのnoteにアクセスできます。
+
+以下のコマンド固有のコメントが適用されます:
+
+rebase::
+	`squash` 操作と `fixup` 操作の場合、スカッシュされたすべてのコミットは、スカッシュされたコミットに書き換えられたものとしてリストされます。これは、同じ「new-object-name」を共有する複数の行があることを意味します。
++
+コミットは、リベースによって処理された順序でリストされることが保証されています。
+
+sendemail-validate
+~~~~~~~~~~~~~~~~~~
+
+このフックは linkgit:git-send-email[1] によって呼び出されます。
+
+以下のコマンドライン引数を受け取ります
+
+1. 送信する電子メールの内容を保持するファイル名。
+2. 電子メールの SMTP ヘッダーを保持するファイル名。
+
+SMTP ヘッダーは、ユーザーのメール・トランスポート・エージェント(MTA)に渡されるのと同一の方法で渡されます。実際、ユーザーの MTA に送信される電子メールは、 上記(2)の内容と、その後ろに上記(1)の内容が続くものになります。
+
+よくあるヘッダーの例を以下に示します。キャピタライズと複数行の場合のタブ構造に注意してください。
+
+  From: Example <from@example.com>
+  To: to@example.com
+  Cc: cc@example.com,
+	  A <author@example.com>,
+	  One <one@example.com>,
+	  two@example.com
+  Subject: PATCH-STRING
+
+ゼロ以外のステータスで終了(exit)すると、電子メールの送信前に `git send-email` が中止(abort)されます。
+
+フックの実行時に以下の環境変数が設定されます。
+
+`GIT_SENDEMAIL_FILE_COUNTER`::
+	送信する電子メールを保持するファイルごとに 1 ずつ増加する 1 から始まるカウンタ (FIFO を除く)。このカウンタは、パッチ・シリーズ・カウンタ・スキームに従っていません。常に 1 から始まり、 GIT_SENDEMAIL_FILE_TOTAL で終わります。
+
+`GIT_SENDEMAIL_FILE_TOTAL`::
+	送信されるファイルの総数 (FIFO を除く)。このカウンタは、パッチ・シリーズ・カウンタ・スキームに従っていません。カバー・レターの有無にかかわらず、送信されるファイルの数と常に等しくなります。
+
+これらの変数は、たとえばパッチ・シリーズを検証するために使用できます。
+
+Git に付属のサンプル `sendemail-validate` フックは、送信されたすべてのパッチ(カバー・レターを除く)が競合せずに上流リポジトリのデフォルト・ブランチに適用できるかどうかをチェックします。一部のプレース・ホルダーは、特定のシリーズのすべてのパッチが適用された後に実行される追加の検証手順のために残されています。
+
+fsmonitor-watchman
+~~~~~~~~~~~~~~~~~~
+
+このフックは、使用するフックのバージョンに応じて、構成オプション `core.fsmonitor` が `.git/hooks/fsmonitor-watchman` または `.git/hooks/fsmonitor-watchmanv2` に設定されている場合に呼び出されます。
+
+バージョン1は、バージョン(つまり、1)と、1970年1月1日の0:00から経過したナノ秒単位の時間の、2つの引数を取ります。
+
+バージョン2は、バージョン(つまり、2)と、トークン以降の変更を識別するために使用されるトークンの、2つの引数を取ります。ウォッチマン(watchman)の場合、これはクロックID(clock id)になります。このバージョンでは、新しいトークンの後のファイルのリストの前にNULを付けて標準出力しなければなりません。
+
+フックは、要求された時間以降に変更された可能性のある作業ディレクトリ内のすべてのファイルのリストをstdoutに出力する必要があります。潜在的な変更を見逃さないように、ロジックは包括的(inclusive)である必要があります。パスは、作業ディレクトリのルートを基準にして、単一のNULで区切る必要があります。
+
+実際に変更されていないファイルを含めてもかまいません。新しく作成および削除されたファイルを含むすべての変更を含める必要があります。ファイルの名前を変更するときは、古い名前と新しい名前の両方を含める必要があります。
+
+Gitは、指定のパス名に基づいて、変更をチェックするファイルと、追跡されていないファイルをチェックするディレクトリを制限します。
+
+gitに「すべてのファイルが変更されました」と伝えるための最適化された方法は、ファイル名 `/` を返すことです。
+
+終了ステータスは、gitがフックからのデータを使用して検索を制限するかどうかを決定します。エラーが発生すると、すべてのファイルとフォルダーの検証にフォールバックします。
+
+p4-changelist
+~~~~~~~~~~~~~
+
+このフックは `git-p4 submit` によって呼び出されます。
+
+`p4-changelist` フックは、ユーザーがチェンジリストメッセージ(changelist message)を編集した後に実行されます。 `--no-verify` オプションでバイパスできます。提案されたチェンジリストテキストを保持するファイルの名前という単一のパラメータを取ります。ゼロ以外のステータスで終了すると、コマンドは中止(abort)されます。
+
+フックはチェンジリストファイル(changelist file)の編集を許可されており、テキストをプロジェクトの標準形式に正規化するために使用できます。また、メッセージファイルを検査した後に送信を拒否するために使用することもできます。
+
+詳細については、 `git-p4 submit --help` を実行してください。
+
+p4-prepare-changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+このフックは `git-p4 submit` によって呼び出されます。
+
+`p4-prepare-changelist` フックは、デフォルトのチェンジリストメッセージ(changelist message)を準備した直後、エディタが起動する前に実行されます。これは、チェンジリストのテキストを含むファイルの名前という1つのパラメーターを取ります。スクリプトをゼロ以外のステータスで終了すると、プロセスが中止(abort)されます。
+
+フックの目的は、メッセージファイルを所定の位置で編集することであり、`--no-verify` オプションによって抑制されることはありません。 このフックは、 `--prepare-p4-only` が設定されている場合でも呼び出されます。
+
+詳細については、 `git-p4 submit --help` を実行してください。
+
+p4-post-changelist
+~~~~~~~~~~~~~~~~~~
+
+このフックは `git-p4 submit` によって呼び出されます。
+
+`p4-post-changelist` フックは、送信(submit)がP4で正常に発生した後に呼び出されます。これはパラメーターを必要とせず、主に通知を目的としており、git p4 submitアクションの結果に影響を与えることはできません。
+
+詳細については、 `git-p4 submit --help` を実行してください。
+
+p4-pre-submit
+~~~~~~~~~~~~~
+
+このフックは `git-p4 submit` によって呼び出されます。これはパラメータをとらず、標準入力から何も取りません。このスクリプトをゼロ以外のステータスで終了すると、 `git-p4 submit` の起動を妨げます。 `--no-verify` コマンドラインオプションでバイパスできます。詳細については、 `git-p4 submit --help` を実行してください。
+
+
+
+post-index-change
+~~~~~~~~~~~~~~~~~
+
+このフックは、インデックスが read-cache.c の do_write_locked_index に書き込まれるときに呼び出されます。
+
+フックに渡される最初のパラメーターは、更新される作業ディレクトリのインジケーターです。「1」は作業ディレクトリが更新されたことを意味し、「0」は作業ディレクトリが更新されなかったことを意味します。
+
+フックに渡される2番目のパラメーターは、インデックスが更新され、 skip-worktree ビットが変更された可能性があるかどうかを示すインジケーターです。「1」はskip-worktreeビットが更新された可能性があることを意味し、「0」は更新されなかったことを意味します。
+
+フックの実行時に "1" に設定するパラメーターは1つだけです。 両方のパラメータを "1" に設定してはいけません。
+
+SEE ALSO
+--------
+linkgit:git-hook[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

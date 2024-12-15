@@ -1,0 +1,328 @@
+git-send-email(1)
+=================
+
+NAME
+----
+git-send-email - パッチの集まりを電子メールとして送信します
+
+
+SYNOPSIS
+--------
+[verse]
+'git send-email' [<options>] (<file>|<directory>)...
+'git send-email' [<options>] <format-patch-options>
+'git send-email' --dump-aliases
+'git send-email' --translate-aliases
+
+
+DESCRIPTION
+-----------
+コマンドラインで指定されたパッチを取得し、電子メールで送信します。 パッチは、ファイルまたは、ディレクトリ(ディレクトリ内のすべてのファイルを送信します)または、リビジョンリストとして直接指定できます。 SYNOPSISの最後のケースでは、linkgit:git-format-patch[1] によって受け入れられる任意のフォーマットと、linkgit:git-format-patch[1] によって理解されるオプションを「git send-email」に渡すことができます。
+
+電子メールのヘッダーは、コマンドラインオプションを使用して構成できます。 コマンドラインで指定されていない場合、ReadLine対応のインターフェイスでユーザーが必要な情報を提供するためのプロンプトが表示されます。
+
+パッチファイルに使用できる形式は2つあります:
+
+1. mbox形式ファイル
++
+これは、 linkgit:git-format-patch[1] が生成するものです。 ほとんどのヘッダーとMIMEフォーマットは無視されます。
+
+2. Greg Kroah-Hartman の `send_lots_of_email.pl` スクリプトで使用されたオリジナル形式
++
+この形式では、ファイルの1行目に「Cc:」値が含まれ、2行目としてメッセージの「Subject:」が含まれている必要があります。
+
+
+OPTIONS
+-------
+
+電子メール作成
+~~~~~~~
+
+`--annotate`::
+	送信しようとしている各パッチを確認して編集します。 デフォルトは `sendemail.annotate` の値です。 `sendemail.multiEdit`の「CONFIGURATION」セクションを参照してください。
+
+`--bcc=<address>,...`::
+	メールごとに「Bcc:」の値を指定します。 デフォルトは `sendemail.bcc` の値です。
++
+このオプションは複数回指定できます。
+
+`--cc=<address>,...`::
+	各電子メールの開始「Cc:」値(starting "Cc:" value)を指定します。 デフォルトは `sendemail.cc` の値です。
++
+このオプションは複数回指定できます。
+
+`--compose`::
+	テキストエディタ(linkgit:git-var[1]の GIT_EDITOR 参照)を呼び出して、パッチシリーズの紹介メッセージ(introductory message)を編集します。
++
+When `--compose` is used, git send-email will use the From, To, Cc, Bcc, Subject, Reply-To, and In-Reply-To headers specified in the message. If the body of the message (what you type after the headers and a blank line) only contains blank (or Git: prefixed) lines, the summary won't be sent, but the headers mentioned above will be used unless they are removed.
++
+From ヘッダー または In-Reply-To ヘッダーが無い時はプロンプトが表示されます。
++
+`sendemail.multiEdit` の「CONFIGURATION」セクションを参照してください。
+
+`--from=<address>`::
+	電子メールの送信者(sender)を指定します。 コマンドラインで指定されていない場合は、`sendemail.from` 構成オプションの値が使用されます。 コマンドラインオプションも `sendemail.from` も設定されていない場合、ユーザーは値の入力を求められます。 そのプロンプトのデフォルトは、 `git var -l` によって返される、GIT_AUTHOR_IDENTの値、または、GIT_AUTHOR_IDENTが設定されていない場合はGIT_COMMITTER_IDENTの値になります。
+
+`--reply-to=<address>`::
+	受信者からの返信先(reply)のアドレスを指定します。 メッセージへの応答(reply)が `--from` パラメーターで指定されたものとは別のアドレスに送信される必要がある場合は、これを使用します。
+
+`--in-reply-to=<identifier>`::
+	最初のメール(または `--no-thread` 指定の全てのメール)を、指定の Message-ID への応答(reply)として表示します。これにより、スレッドが壊れて新しいパッチシリーズが提供されるのを防ぎます。 2回目以降のメールは、 `--[no-]chain-reply-to` 設定に従って返信(reply)として送信されます。
++
+そのため、例えば `--thread` と `--no-chain-reply-to` を指定すると、以下のように `[PATCH v2 0/3]` が `[PATCH 0/2]` に対する返信になるように、2番目以降のパッチは最初のパッチへの返信になります:
++
+  [PATCH 0/2] Here is what I did...
+    [PATCH 1/2] Clean up and tests
+    [PATCH 2/2] Implementation
+    [PATCH v2 0/3] Here is a reroll
+      [PATCH v2 1/3] Clean up
+      [PATCH v2 2/3] New tests
+      [PATCH v2 3/3] Implementation
++
+`--compose` も設定されている場合のみ必要です。 `--compose` が設定されていない場合は、プロンプトが表示されます。
+
+`--subject=<string>`::
+	メールスレッドの最初の件名を指定します。 `--compose` も設定されている場合にのみ必要です。 `--compose` が設定されていない場合、これはプロンプトが表示されます。
+
+`--to=<address>,...`::
+	生成された電子メールの主な受信者(primary recipient)を指定します。 通常、これは関連するプロジェクトの上流のメンテナになります。 デフォルトは、 `sendemail.to` 構成値の値です。 それが指定されておらず、 `--to-cmd` が指定されていない場合、プロンプトが表示されます。
++
+このオプションは複数回指定できます。
+
+`--8bit-encoding=<encoding>`::
+	エンコードを宣言していない非ASCIIメッセージまたは件名に遭遇した場合は、 ヘッダー/引用符 を追加して、<encoding>でエンコードされていることを示します。 デフォルトは `sendemail.assume8bitEncoding` の値です。 それが指定されていない場合に非ASCIIファイルが検出された場合はプロンプトが表示されます。
++
+注意:エンコーディングを検証する試みは一切行われないことに注意してください。
+
+`--compose-encoding=<encoding>`::
+	Specify encoding of compose message. Default is the value of the 'sendemail.composeEncoding'; if that is unspecified, UTF-8 is assumed.
+
+`--transfer-encoding=(7bit|8bit|quoted-printable|base64|auto)`::
+	SMTP経由でメッセージを送信するために使用する転送エンコーディングを指定します。 非ASCIIメッセージに遭遇すると、 `7bit` は失敗します。 `quoted-printable` は、リポジトリにキャリッジリターンを含むファイルが含まれている場合に役立ちますが、生のパッチ電子メールファイル(MUAで保存されたもの)を手動で検査するのがとても難しくなります。 `base64` はさらに確実ですが、さらに不透明です。 `auto` は、可能な場合は8ビットを使用し、それ以外の場合は `quoted-printable` を使用します。
++
+デフォルトは、`sendemail.transferEncoding` 構成値です。 それが指定されていない場合、デフォルトは `auto` です。
+
+`--xmailer`::
+`--no-xmailer`::
+	`X-Mailer:` ヘッダーを追加(または追加を防止)します。 デフォルトでは追加されますが、 `sendemail.xmailer` 構成変数を `false` に設定することでオフにできます。
+
+電子メール送信
+~~~~~~~
+
+`--envelope-sender=<address>`::
+	メールの送信に使用するエンベロープ(envelope)の送信者を指定します。 これは、デフォルトのメールアドレスがメーリングリストに申し込まれているメールアドレスではない場合に役立ちます。 `From` アドレスを使用するには、値を `auto` 」に設定します。 sendmailバイナリを使用する場合は、 `-f` パラメータに適切な権限が必要です。 デフォルトは、 `sendemail.envelopeSender` 構成変数の値です。 それが指定されていない場合、エンベロープ送信者の選択はMTAに任されています。
+
+`--sendmail-cmd=<command>`::
+	Specify a command to run to send the email. The command should be sendmail-like; specifically, it must support the `-i` option. The command will be executed in the shell if necessary. Default is the value of `sendemail.sendmailCmd`. If unspecified, and if --smtp-server is also unspecified, git-send-email will search for `sendmail` in `/usr/sbin`, `/usr/lib` and $PATH.
+
+`--smtp-encryption=<encryption>`::
+	SMTP 接続の暗号化を開始する方法を指定します。有効な値は `ssl` と `tls` です。その他の値はプレーン(暗号化されていない) SMTP に戻り、デフォルトはポート 25 になります。 `ssl` と `tls` という名前に関係なく、どちらの値も同じ新しいバージョンの TLS を使用しますが、歴史的な理由からこれらの名前が付けられています。 `ssl` とは「暗黙的」暗号化 (しばしば SMTPS とも呼ばれる)を指し、デフォルトでポート 465 を使用します。 `tls` とは、デフォルトでポート 25 を使用する「明示的」暗号化(しばしば STARTTLS と呼ばれる)を指します。 SMTP サーバーでは他のポートが使用される場合がありますが、これはデフォルトではありません。一般的に `TLS` および暗号化されていない代替ポートは 587 です。プロバイダーのドキュメントまたはサーバー構成を確認して、自分の場合にに当てはまるかどうかを確認する必要があります。 デフォルトは `sendemail.smtpEncryption` の値です。
+
+`--smtp-domain=<FQDN>`::
+	SMTPサーバーへの HELO/EHLO コマンドで使用される完全修飾ドメイン名(FQDN)を指定します。 一部のサーバーでは、FQDNがIPアドレスと一致する必要があります。 設定されていない場合、 `git send-email` はFQDNを自動的に判別しようとします。 デフォルトは `sendemail.smtpDomain` の値です。
+
+`--smtp-auth=<mechanisms>`::
+	許可されたSMTP-AUTHメカニズムの空白で区切られた(Whitespace-separated)リスト。 この設定は、リストされたメカニズムのみを使用するように強制します。 例:
++
+------
+$ git send-email --smtp-auth="PLAIN LOGIN GSSAPI" ...
+------
++
+指定されたメカニズムの少なくとも1つがSMTPサーバによって宣伝(advertise)されたメカニズムと一致し、利用されるSASLライブラリによってサポートされている場合、そのメカニズムが認証に使用されます。 `sendemail.smtpAuth` と `--smtp-auth` のどちらも指定されない場合、SASL ライブラリでサポートされているすべてのメカニズムが使用される可能性があります。 特別な値として `none` を指定すると、 `--smtp-user` と独立して認証を完全に無効にすることができます。
+
+`--smtp-pass[=<password>]`::
+	SMTP-AUTHのパスワード。 引数はオプションです。引数が指定されていない場合は、空の文字列がパスワードとして使用されます。 デフォルトは `sendemail.smtpPass` の値ですが、 `--smtp-pass` は常に `sendemail.smtpPass` の値を上書きします。
++
+さらに、パスワードを構成ファイルまたはコマンドラインで指定する必要はありません。 ユーザー名が指定されている(`--smtp-user` または `sendemail.smtpUser` を使用)が、パスワードが指定されていない(`--smtp-pass` または `sendemail.smtpPass` を使用)場合、パスワード `git-credential` を使用して取得されます。
+
+`--no-smtp-auth`::
+	SMTP認証を無効にします。 `--smtp-auth=none` の省略形
+
+`--smtp-server=<host>`::
+	設定されている場合、使用する送信SMTPサーバを指定します(例: `smtp.example.com` または生のIPアドレス)。 これが未指定の場合で、かつ、 `--sendmail-cmd` も未指定の場合、デフォルトでは `/usr/sbin` と `/usr/lib` と $PATH にある `sendmail` を探します。それが存在しなければ `localhost` にフォールバックされます。
++
+下位互換性のために、このオプションでは、代わりにsendmailのようなプログラムの絶対パス名を指定することもできます。 プログラムは `-i` オプションをサポートする必要があります。 このメソッドは、引数の受け渡しや平文コマンド名の使用をサポートしていません。 これらの場合には、代わりに `--sendmail-cmd` の使用を検討してください。
+
+`--smtp-server-port=<port>`::
+	デフォルトのポートとは異なるポートを指定します(SMTPサーバーは通常smtpポート25をリッスンしますが、送信ポート587または共通のSSL smtpポート465もリッスンする場合があります)。 シンボリックポート名(たとえば、587ではなく "submission")も受け入れられます。 ポートは、 `sendemail.smtpServerPort` 構成変数を使用して設定することもできます。
+
+`--smtp-server-option=<option>`::
+	設定されている場合、使用する送信SMTPサーバーオプションを指定します。 デフォルト値は、 `sendemail.smtpServerOption` 構成オプションで指定できます。
++
+`--smtp-server-option` オプションは、サーバーに渡すオプションごとに繰り返す必要があります。 同様に、構成ファイルではオプションごとに異なる行を使用する必要があります。
+
+`--smtp-ssl`::
+	`--smtp-encryptionssl` の、大昔からのエイリアス。
+
+`--smtp-ssl-cert-path`::
+	Path to a store of trusted CA certificates for SMTP SSL/TLS certificate validation (either a directory that has been processed by 'c_rehash', or a single file containing one or more PEM format certificates concatenated together: see verify(1) -CAfile and -CApath for more information on these). Set it to an empty string to disable certificate verification. Defaults to the value of the `sendemail.smtpSSLCertPath` configuration variable, if set, or the backing SSL library's compiled-in default otherwise (which should be the best choice on most platforms).
+
+`--smtp-user=<user>`::
+	SMTP-AUTHのユーザー名。 デフォルトは `sendemail.smtpUser` の値です。 (`--smtp-user` または `sendemail.smtpUser` で)ユーザー名が指定されていない場合、認証は試行されません。
+
+`--smtp-debug=(0|1)`::
+	デバッグ出力を有効(1)または無効(0)にします。 有効にすると、SMTPコマンドとその応答が出力されます。 TLS接続と認証の問題をデバッグするのに役立ちます。
+
+`--batch-size=<num>`::
+	一部の電子メールサーバー(たとえば smtp.163.com)では、セッション(または接続)ごとに送信される電子メールの数が制限されているため、多くのメッセージを送信すると失敗します。 このオプションを使用すると、`send-email` は <num> メッセージの送信後に切断され、数秒待って(`--relogin-delay` 参照)、再接続して、このような制限を回避します。 これが発生するたびにパスワードを再入力する必要がないように、何らかの形式のクレデンシャルヘルパーを使用することをお勧めします。 デフォルトは `sendemail.smtpBatchSize` 構成変数です。
+
+`--relogin-delay=<int>`::
+	SMTPサーバーに再接続する前に <int> 秒待機します。 `--batch-size` オプションと一緒に使用します。 デフォルトは `sendemail.smtpReloginDelay` 構成変数です。
+
+自動化
+~~~
+
+`--no-to`::
+`--no-cc`::
+`--no-bcc`::
+	configで以前に設定した "To:" と "Cc:" と "Bcc:" アドレスのリストをすべてクリアします。
+
+`--no-identity`::
+	configで設定された `sendemail.identity` から読み取られた値があるならば、その値をクリアします。
+
+`--to-cmd=<command>`::
+	Specify a command to execute once per patch file which should generate patch file specific "To:" entries. Output of this command must be single email address per line. Default is the value of 'sendemail.toCmd' configuration value.
+
+`--cc-cmd=<command>`::
+	パッチファイルごとに1回実行するコマンドを指定し、パッチファイル固有の `Cc:` エントリを生成するようにします。 このコマンドの出力は、1行に1つの電子メールアドレスでなければなりません。 デフォルトは `sendemail.ccCmd` 設定値の値です。
+
+`--header-cmd=<command>`::
+	送信メッセージごとに 1 回実行されるコマンドを指定し、 送信メッセージに挿入される RFC 2822 スタイルのヘッダー行を出力します。 `sendemail.headerCmd` 構成変数が設定されている場合、その値が常に使用されます。 `--header-cmd` がコマンド・ラインで指定された場合、その値は `sendemail.headerCmd` 構成変数よりも優先されます。
+
+`--no-header-cmd`::
+	使用中のヘッダー・コマンドを無効にします。
+
+`--[no-]chain-reply-to`::
+	これが設定されている場合、各メールは前に送信されたメールへの返信として送信されます。 `--no-chain-reply-to` で無効にすると、最初の電子メール以降のすべての電子メールが、最初に送信された電子メールへの返信として送信されます。 これを使用する場合、最初のファイルはパッチシリーズ全体の概要であることが推奨されます。 デフォルトでは無効になっていますが、 `sendemail.chainReplyTo` 構成変数を使用して有効にすることができます。
+
+`--identity=<identity>`::
+	構成ID。 指定すると、 `sendemail.<identity>` サブセクションの値が `sendemail` セクションの値よりも優先されます。 デフォルトのIDは、 `sendemail.identity`の値です。
+
+`--[no-]signed-off-by-cc`::
+	If this is set, add emails found in the `Signed-off-by` trailer or Cc: lines to the cc list. Default is the value of `sendemail.signedOffByCc` configuration value; if that is unspecified, default to --signed-off-by-cc.
+
+`--[no-]cc-cover`::
+	If this is set, emails found in Cc: headers in the first patch of the series (typically the cover letter) are added to the cc list for each email set. Default is the value of 'sendemail.ccCover' configuration value; if that is unspecified, default to --no-cc-cover.
+
+`--[no-]to-cover`::
+	If this is set, emails found in To: headers in the first patch of the series (typically the cover letter) are added to the to list for each email set. Default is the value of 'sendemail.toCover' configuration value; if that is unspecified, default to --no-to-cover.
+
+`--suppress-cc=<category>`::
+	自動CC(auto-cc)を抑制するために、以下の追加受信者カテゴリを指定します:
++
+--
+- `author` は、パッチの作者を含めないようにします。
+- `self` は送信者を含めないようにします。
+- `cc` は、 `self` を指定した場合を除き、Cc行で言及されている人をパッチヘッダーに含めないようにします(含めたいなら `self` を使用します)。
+- `bodycc` は、 `self` を指定した場合を除き、 パッチ本体(コミットメッセージ)にCc行で言及されている人を含めないようにします(含めたい場合は `self` を使います)。
+- `sob` は、 `self` を指定している場合を除き、 Signed-off-by に記載されている人を含めないようにします(含めたい場合は `self` を使用します)。
+- `misc-by` は、 `Signed-off-by` (`sob` を使用)を除いて、パッチ本体に Acked-byや、Reviewed-byや、Tested-byや、その他の `-by` 行で言及されているのを含めないようにします。
+- `cccmd` は、 `--cc-cmd` の実行を回避します。
+- `body` は `sob` + `bodycc` + `misc-by` と同じです。
+- `all` は、すべての自動cc値を抑制します。
+--
++
+Default is the value of `sendemail.suppressCc` configuration value; if that is unspecified, default to 'self' if --suppress-from is specified, as well as 'body' if --no-signed-off-cc is specified.
+
+`--[no-]suppress-from`::
+	これが設定されている場合は、 `From:` アドレス を `cc:` リストに追加しないでください。 デフォルトは `sendemail.suppressFrom` 構成の値です。 `sendemail.suppressFrom` 構成が指定されていない場合、デフォルトは `--no-suppress-from` です。
+
+`--[no-]thread`::
+	これが設定されている場合、In-Reply-To と References ヘッダー達は送信される各メールアドレスに追加されます。 各メールが前のメールを参照するのか(`git format-patch` の文言に従った「深い」(deep)スレッディング)、最初のメールを参照するのか(「浅い」(shallow)スレッディング)については `--[no-]chain-reply-to` で制御されます。
++
+`--no-thread` で無効にすると、それらのヘッダーは追加されません(`--in-reply-to` で指定されていない限り)。 デフォルトは、 `sendemail.thread` 構成の値です。 `sendemail.thread` 構成が指定されていない場合、デフォルトは `--thread` です。
++
+`git send-email` が In-Reply-To ヘッダを追加するように要求したときに、すでにそのヘッダが存在しないことを確認するのはユーザー側です((特に `git format-patch` がスレッド化するように設定されている場合は注意が必要です)。 これを怠ると、受信者の MUA で期待通りの結果が得られないことがあります。
+
+`--[no-]mailmap`::
+	Use the mailmap file (see linkgit:gitmailmap[5]) to map all addresses to their canonical real name and email address. Additional mailmap data specific to git-send-email may be provided using the `sendemail.mailmap.file` or `sendemail.mailmap.blob` configuration values. Defaults to `sendemail.mailmap`.
+
+管理
+~~
+
+`--confirm=<mode>`::
+	送信する直前に確認(confirm)します:
++
+--
+- `always` は送信前に常に確認します
+- `never` は送信する前に確認すること決してありません
+- `cc` は、send-emailがパッチからCcリストにアドレスを自動的に追加したときは、送信前に確認します
+- `compose` は、 `--compose` を使用した時に、最初のメッセージを送信する前に確認します。
+- `auto` は `cc`+ `compose` と同じです
+--
++
+デフォルトは `sendemail.confirm` 構成の値です。 `sendemail.confirm` 構成が指定されていない場合、抑制オプション(suppress options)のいずれかが指定されていない限り、デフォルトは `auto` になります。抑制オプションのいずれかが指定されている場合は、デフォルトで `compose`になります。
+
+`--dry-run`::
+	実際にメールを送信する以外はすべて行います。
+
+`--[no-]format-patch`::
+	引数が参照またはファイル名として理解される場合は、それをformat-patch引数(`--format-patch`)またはファイル名(`--no-format-patch`)として理解することを選択します。 デフォルトでは、このような競合が発生すると、 `git send-email` は失敗します。
+
+`--quiet`::
+	git-send-emailのおしゃべりを減らします。 電子メール１通につき1行出力するだけにします。
+
+`--[no-]validate`::
+	パッチの健全性チェックを実行します。 現状、検証(validation)とは以下のことを意味します:
++
+--
+* sendemail-validate フックが存在する場合はそれを呼び出します(linkgit:githooks[5] 参照)。
+* Warn of patches that contain lines longer than 998 characters unless a suitable transfer encoding ('auto', 'base64', or 'quoted-printable') is used; this is due to SMTP limits as described by https://www.ietf.org/rfc/rfc5322.txt.
+--
++
+デフォルトは `sendemail.validate` の値です。 これが設定されていない場合、デフォルトは `--validate` になります。
+
+`--force`::
+	安全チェックで防止できる場合でも、電子メールを送信してください。
+
+
+情報
+~~
+
+`--dump-aliases`::
+	Instead of the normal operation, dump the shorthand alias names from the configured alias file(s), one per line in alphabetical order. Note that this only includes the alias name and not its expanded email addresses. See 'sendemail.aliasesFile' for more information about aliases.
+
+`--translate-aliases`::
+	Instead of the normal operation, read from standard input and interpret each line as an email alias. Translate it according to the configured alias file(s). Output each translated name and email address to standard output, one per line. See 'sendemail.aliasFile' for more information about aliases.
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/sendemail.txt[]
+
+EXAMPLES
+--------
+Use gmail as the smtp server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`git send-email` を使用してGMail SMTPサーバーを介してパッチを送信するには、 `~/.gitconfig` を編集してあなたのアカウント設定を指定します:
+
+----
+[sendemail]
+	smtpEncryption = tls
+	smtpServer = smtp.gmail.com
+	smtpUser = yourname@gmail.com
+	smtpServerPort = 587
+----
+
+Gmailアカウントで多要素認証を設定している場合は、 `git send-email` で使用するアプリ固有のパスワード(アプリ パスワード)を生成する事ができます。 https://security.google.com/settings/security/apppasswords にアクセスして作成します。
+
+あなたのコミットをメーリングリストに送信する準備ができたら、以下のコマンドを実行します:
+
+	$ git format-patch --cover-letter -M origin/master -o outgoing/
+	$ edit outgoing/0000-*
+	$ git send-email outgoing/*
+
+初めて実行すると、資格情報の入力を求められます。 必要に応じて、アプリ固有のパスワードまたは通常のパスワードを入力します。 クレデンシャルヘルパーを構成している場合(linkgit:git-credential[1] 参照)、パスワードはクレデンシャルストアに保存されるため、次回入力する必要はありません。
+
+注意: Perlのディストリビューションとともにインストールできる次のコアPerlモジュールが必要です: `MIME::Base64` と `MIME::QuotedPrint` と `Net::Domain` と `Net::SMTP` 。 また、次の追加のPerlモジュールも必要です: `Authen::SASL` と `Mail::Address` 。
+
+
+SEE ALSO
+--------
+linkgit:git-format-patch[1], linkgit:git-imap-send[1], mbox(5)
+
+GIT
+---
+Part of the linkgit:git[1] suite

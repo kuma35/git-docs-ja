@@ -1,0 +1,65 @@
+git-pack-refs(1)
+================
+
+NAME
+----
+git-pack-refs - 効率的なリポジトリアクセスのためにヘッド(heads)とタグ(tags)をパックします
+
+SYNOPSIS
+--------
+[verse]
+'git pack-refs' [--all] [--no-prune] [--auto] [--include <pattern>] [--exclude <pattern>]
+
+DESCRIPTION
+-----------
+
+旧来、ブランチとタグのヒント(まとめて「refs」と呼ばれます)は、refごとに1つのファイルを `$GIT_DIR/refs` ディレクトリの下のディレクトリ(サブディレクトリ)に保存していました。多くのブランチヒントは頻繁に更新される傾向がありますが、ほとんどのタグと一部のブランチヒントは更新されません。リポジトリに数百または数千のタグがある場合、この 1ファイル毎に1ref形式 はストレージを浪費し、パフォーマンスを低下させます。
+
+このコマンドは、refを単一のファイル `$GIT_DIR/packed-refs` に保存することにより、ストレージとパフォーマンスの問題を解決するために使用されます。旧来の `$GIT_DIR/refs` ディレクトリ階層にrefがない場合、このファイルの中から探し、見つかればそれが使用されます。
+
+その後のブランチの更新では、常に `$GIT_DIR/refs` ディレクトリ階層の下に新しいファイルが作成されます。
+
+refが多すぎるリポジトリを処理するための推奨される方法は、refを `--all` で一度パックし、ときどき `git pack-refs` を実行することです。タグは定義上静止しており、変更されることは期待されていません。ブランチヘッドは最初の `pack-refs --all` でパックされますが、現在アクティブなブランチヘッドのみはアンパックされ、その後 `pack-refs` ( `--all` なし)ではアンパックされたままになります。
+
+
+OPTIONS
+-------
+
+`--all`::
+
+このコマンドはデフォルトでは、すでにパックされているすべてのタグとrefをパックし、他のrefはそのままにします。 これは、ブランチが積極的に開発されることが期待されており、その先端をパックしてもパフォーマンスが向上しないためです。このオプションを使用すると、非表示の refや壊れた ref やシンボリック ref を除く、すべての ref もパックされます。歴史的に関心のある多くのブランチがあるリポジトリに役立ちます。
+
+`--no-prune`::
+
+コマンドは通常、それらをパックした後、 `$GIT_DIR/refs` 階層の下の緩いrefを削除します。このオプションは、そうしないように指示します。
+
+`--auto`::
+
+Pack refs as needed depending on the current state of the ref database. The behavior depends on the ref format used by the repository and may change in the future.
++
+	- "files": No special handling for `--auto` has been implemented.
++
+	- "reftable": Tables are compacted such that they form a geometric sequence. For two tables N and N+1, where N+1 is newer, this maintains the property that N is at least twice as big as N+1. Only tables that violate this property are compacted.
+
+`--include <pattern>`::
+
+glob(7) パターンに基づいて ref をパックします。 このオプションを繰り返し指定すると、 包含パターンが蓄積されます。 ある ref が `--include` と `--exclude` の両方に含まれている場合、 `--exclude` が優先されます。 `--include` を使用すると、 デフォルトではすべてのタグが含まれなくなります。 シンボリック ref と壊れた ref は決してパックされる事はありません。 `--all` と一緒に使用すると、 なにもしません(noop)。 パターンのリストをクリアして再セットするには、 `--no-include` を使用します。
+
+`--exclude <pattern>`::
+
+指定された glob(7) パターンにマッチする ref をパックしません。 このオプションを繰り返し指定すると、 除外パターンが蓄積されます。 パターンのリストをクリアして再セットするには、 `--no-exclude` を使用します。 とある ref がすでにパックされている場合、 それを `--exclude` で包含してもアンパックされません。
+
+`--all` と一緒に使用すると、 提供された `--exclude` パターンのいずれにもマッチしない 緩い ref (loose refs)のみをパックします。
+
+`--include` と一緒に使用すると、 `--include` で得られた ref から、 `--exclude` で得られた ref を引いたものがパックされます。
+
+
+BUGS
+----
+
+pack-refs メカニズムが導入される前に作成された古い文書では、 "branch <branch> exists" という意味の場合でも ".git/refs/heads/<branch> file exists" などと紹介される場合があります。
+
+
+GIT
+---
+Part of the linkgit:git[1] suite

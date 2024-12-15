@@ -1,0 +1,54 @@
+Date: Sat, 5 Jan 2008 20:17:40 -0500
+From: Sean <seanlkml@sympatico.ca>
+To: Miklos Vajna <vmiklos@frugalware.org>
+Cc: git@vger.kernel.org
+Subject: how to use git merge -s subtree?
+Abstract: この記事では、サブツリーマージ戦略を使用する方法を
+  Sean がデモします。
+Content-type: text/asciidoc
+Message-ID: <BAYC1-PASMTP12374B54BA370A1E1C6E78AE4E0@CEZ.ICE>
+
+How to use the subtree merge strategy
+=====================================
+
+There are situations where you want to include content in your project from an independently developed project. You can just pull from the other project as long as there are no conflicting paths.
+
+問題のあるケースは、競合するファイルがある場合です。潜在的な候補は、Makefileおよびその他の標準ファイル名です。これらのファイルをマージすることはできますが、おそらくマージしたくないでしょう。この問題のより良い解決策は、プロジェクトを独自のサブディレクトリとしてマージすることです。 これは「再帰的」(recursive)マージ戦略ではサポートされていないため、プルするだけでは機能しません。
+
+あなたに必要なのは、このような状況で役立つ「サブツリー」(subtree)マージ戦略です。
+
+この例では、 `/path/to/B` にリポジトリがあるとします(ただし、必要に応じてURLにすることもできます)。そのリポジトリの「master」ブランチを現在のブランチの「dir-B」サブディレクトリにマージします。
+
+ここで必要なコマンドシーケンスは以下のとおりです:
+
+----------------
+$ git remote add -f Bproject /path/to/B <1>
+$ git merge -s ours --no-commit --allow-unrelated-histories Bproject/master <2>
+$ git read-tree --prefix=dir-B/ -u Bproject/master <3>
+$ git commit -m "Merge B project as our subdirectory" <4>
+
+$ git pull -s subtree Bproject master <5>
+----------------
+<1> 他のプロジェクトに「Bproject」という名前を付けて、フェッチします。
+<2> 結果をマージとして記録するために、後のステップの準備をします。
+<3> Bprojectの「master」ブランチをサブディレクトリ「dir-B」に読み取ります。
+<4> マージ結果を記録します。
+<5> 「サブツリー」を使用した後続のマージで結果を維持する
+
+最初の4つのコマンドは最初のマージに使用され、最後のコマンドは「B project」からの更新をマージするためのものです。
+
+Comparing 'subtree' merge with submodules
+-----------------------------------------
+
+- サブツリーマージを使用する利点は、リポジトリのユーザーによる管理上の負担が少なくて済むことです。 古臭い(Git v1.5.2より前の)クライアントで動作し、 cloneのコードの直後ぐらいに既にそのコードはあります。
+
+- ただし、サブモジュールを使用する場合は、サブモジュールオブジェクトを転送しないことを選択できます。これは、サブツリーのマージで問題になる可能性があります。
+
+- また、他のプロジェクトに変更を加えた場合、サブモジュールを使用して変更を送信する方が簡単です。
+
+Additional tips
+---------------
+
+- あなたのリポジトリ内の他のプロジェクトに変更を加えた場合、それらの変更をあなたのプロジェクトにマージしたいでしょう。これはサブツリーを使用して可能です。それはあなたのツリーのパスを変更(shift up)することができ、そしてあなたのツリーでそれらに関連する部分だけをマージすることができます。
+
+- 注意: あなたのプロジェクトで他のプロジェクトをマージした場合、他のプロジェクトの履歴をあなたプロジェクトの履歴に繋げてしまうことに注意してください。これは他のプロジェクトでは望んでいないことである可能性があります。

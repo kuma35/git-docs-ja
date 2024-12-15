@@ -1,0 +1,83 @@
+GIT URLS[[URLS]]
+----------------
+
+一般に、URLには、トランスポートプロトコル、リモートサーバーのアドレス、およびリポジトリへのパスに関する情報が含まれています。トランスポートプロトコルによっては、一部の情報が欠落している場合があります。
+
+Git supports ssh, git, http, and https protocols (in addition, ftp and ftps can be used for fetching, but this is inefficient and deprecated; do not use them).
+
+The native transport (i.e. `git://` URL) does no authentication and should be used with caution on unsecured networks.
+
+以下の構文を使用できます:
+
+- `ssh://[<user>@]<host>[:<port>]/<path-to-git-repo>`
+- `git://<host>[:<port>]/<path-to-git-repo>`
+- `http[s]://<host>[:<port>]/<path-to-git-repo>`
+- `ftp[s]://<host>[:<port>]/<path-to-git-repo>`
+
+代替のscpのような構文をsshプロトコルで使用することもできます:
+
+- `[<user>@]<host>:/<path-to-git-repo>`
+
+この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカルパスを区別するのに役立ちます。たとえば、ローカルパス `foo:bar` を、絶対パスまたは `./foo:bar` として指定して、 ssh url として誤って解釈されないようにすることができます。
+
+The ssh and git protocols additionally support `~<username>` expansion:
+
+- `ssh://[<user>@]<host>[:<port>]/~<user>/<path-to-git-repo>`
+- `git://<host>[:<port>]/~<user>/<path-to-git-repo>`
+- `[<user>@]<host>:~<user>/<path-to-git-repo>`
+
+Gitでもネイティブにサポートされているローカルリポジトリの場合、以下の構文を使用できます:
+
+- `/path/to/repo.git/`
+- `file:///path/to/repo.git/`
+
+ifndef::git-clone[]
+These two syntaxes are mostly equivalent, except when cloning, when the former implies `--local` option. See linkgit:git-clone[1] for details.
+endif::git-clone[]
+
+ifdef::git-clone[]
+These two syntaxes are mostly equivalent, except the former implies `--local` option.
+endif::git-clone[]
+
+`git clone`, `git fetch` and `git pull`, but not `git push`, will also accept a suitable bundle file. See linkgit:git-bundle[1].
+
+When Git doesn't know how to handle a certain transport protocol, it attempts to use the `remote-<transport>` remote helper, if one exists. To explicitly request a remote helper, the following syntax may be used:
+
+- `<transport>::<address>`
+
+where _<address>_ may be a path, a server and path, or an arbitrary URL-like string recognized by the specific remote helper being invoked. See linkgit:gitremote-helpers[7] for details.
+
+同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:
+
+[verse]
+--
+	[url "__<actual-url-base>__"]
+		insteadOf = _<other-url-base>_
+--
+
+例えば、以下のようになります:
+
+------------
+	[url "git://git.host.xz/"]
+		insteadOf = host.xz:/path/to/
+		insteadOf = work:
+------------
+
+"work:repo.git" や "host.xz:/path/to/repo.git" のようなURLは、任意のコンテキストで、"git://git.host.xz/repo.git" に書き換えられます。
+
+プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:
+
+[verse]
+--
+	[url "__<actual-url-base>__"]
+		pushInsteadOf = _<other-url-base>_
+--
+
+例えば、以下のようになります:
+
+------------
+	[url "ssh://example.org/"]
+		pushInsteadOf = git://example.org/
+------------
+
+"git://example.org/path/to/repo.git" のようなURLは、プッシュの場合は "ssh://example.org/path/to/repo.git" に書き換えられますが、プルは引き続き元のURLのままです。

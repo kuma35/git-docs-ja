@@ -1,0 +1,90 @@
+git-shortlog(1)
+===============
+
+NAME
+----
+git-shortlog - 「git log」の出力を要約します。
+
+SYNOPSIS
+--------
+[verse]
+'git shortlog' [<options>] [<revision-range>] [[--] <path>...]
+git log --pretty=short | 'git shortlog' [<options>]
+
+DESCRIPTION
+-----------
+「git log」の出力を、リリースアナウンスに含めるのに適した形式で要約します。各コミットは、作者とタイトルごとにグループ化されます。
+
+加えて、「[PATCH]」はコミットの説明から削除されます。
+
+コマンドラインでリビジョンが渡されず、かつ、標準入力が端末ではないかまたは現在のブランチがない場合、「git shortlog」は、現在のリポジトリを参照せずに、標準入力から読み取られたログの概要を出力します。
+
+OPTIONS
+-------
+
+`-n`::
+`--numbered`::
+	作者のアルファベット順ではなく、作者のコミット数に従って出力を並べ替えます。
+
+`-s`::
+`--summary`::
+	コミットの説明を抑制し、コミット数の要約のみを提供します。
+
+`-e`::
+`--email`::
+	各作者のメールアドレスを表示します。
+
+`--format[=<format>]`::
+	コミットの件名の代わりに、他の情報を使用して各コミットを説明します。 `<format>` は、 `* [%h] %s` など 、 `git log` の `--format` オプションで受け入れられる任意の文字列にすることができます。 (linkgit:git-log[1] の「PRETTY FORMATS」セクションを参照してください。)
+
+	pretty-printされた各コミットは、表示される前に再ラップ(rewrapp)されます。
+
+`--date=<format>`::
+	指定された日付文字列に従ってフォーマットされた日付を表示します。 (linkgit:git-log[1] の「Commit Formatting」セクションの `--date` オプションを参照)。 `--group=format:<format>` と併用すると便利です。
+
+`--group=<type>`::
+	グループは `<type>` に基づいてコミットします。 `--group` オプションが指定されていない場合、デフォルトは `author` です。 `<type>` は以下のいずれかです:
++
+--
+ - `author` : コミットは作成者ごとにグループ化されます
+ - `committer` : コミットはコミッターによってグループ化されます( `-c` と同じ)
+ - `trailer:<field>` : `<field>` は大文字と小文字を区別しないコミットメッセージトレーラーとして解釈されます(linkgit:git-interpret-trailers[1] 参照)。たとえば、プロジェクトで `Reviewed-by` のトレーラーを使用している場合、 `git shortlog -ns --group=trailer:reviewed-by` を使用して誰がレビューしているかを確認できます。
+ - `format:<format>` : <format> は `git log` の `--format` オプションで受け入れられる任意の文字列です。 (linkgit:git-log[1] の「PRETTY FORMATS」セクション参照。)
++
+注意: トレーラーを含まないコミットはカウントされないことに注意してください。同様に、複数のトレーラーを使用したコミット(複数のサインオフなど)は、複数回カウントされる場合があります(ただし、そのコミットの一意のトレーラー値ごとに1回のみです)。
++
+shortlog は、各トレーラー値を `name <email>` ID としてパースしようとします。成功すると、mailmapが適用され、 `--email` オプションが指定されていない限りemailは省略されます。値をIDとして解析できない場合は、その文言通りに取得されます。
+--
++
+`--group` が複数回指定されている場合、コミットは各値でカウントされます(ただし、そのコミットの一意の値ごとに1回だけカウントされます)。 たとえば、 `git shortlog --group=author --group=trailer:co-authored-by` は、authorとco-authorの両方をカウントします。
+
+`-c`::
+`--committer`::
+	`--group=committer` のエイリアスです。
+
+`-w[<width>[,<indent1>[,<indent2>]]]`::
+	各行を `width` で折り返すことにより、出力を行折り返します。各エントリの最初の行は `indent1` スペースでインデントされ、2行目以降は `indent2` スペースでインデントされます。 `width` と `indent1` と `indent2` のデフォルトは、それぞれ76と6と9です。
++
+widthが `0` (ゼロ)の場合、出力の行を折り返すことなくインデントします。
+
+<revision-range>::
+	指定のリビジョン範囲のコミットのみを表示します。 <revision-range> が指定されていない場合、デフォルトで `HEAD` (つまり、現在のコミットにつながる履歴全体)になります。 `origin..HEAD` は、現在のコミット(つまり、 `HEAD` )から到達可能なすべてのコミットを指定しますが、 `origin` からは指定しません。 <revision-range> のスペルの完全なリストについては、 linkgit:gitrevisions[7] の「Specifying Ranges」セクションを参照してください。
+
+[--] <path>...::
+	指定されたパスに一致するファイルがどのように作成されたかを説明するのに十分なコミットのみを検討してください。
++
+混乱が生じた場合、パスをオプションまたはリビジョン範囲から分離するために、パスの前に `--` を付ける必要がある場合があります。
+
+:git-shortlog: 1
+include::rev-list-options.txt[]
+
+MAPPING AUTHORS
+---------------
+
+See linkgit:gitmailmap[5].
+
+注意: (標準入力でログの内容を処理するため) `git shortlog` がリポジトリの外部で実行される場合、現在のディレクトリで `.mailmap` ファイルが検索されることに注意してください。
+
+GIT
+---
+Part of the linkgit:git[1] suite

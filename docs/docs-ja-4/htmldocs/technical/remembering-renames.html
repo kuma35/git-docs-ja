@@ -735,7 +735,7 @@ asciidoc.install(1);
 <body class="article">
 <div id="header">
 <h1>Remembering renames</h1>
-<span id="revdate">2024-12-12</span>
+<span id="revdate">2024-12-15</span>
 <div id="toc">
   <div id="toctitle">Outline:</div>
   <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
@@ -773,7 +773,7 @@ asciidoc.install(1);
 </li>
 </ul></div>
 <div class="paragraph"><p>それぞれの仮定とそれを含める理由について、詳しく説明します:</p></div>
-<div class="paragraph"><p>最初の仮定は、この文書の目的をより明確にするためのものです。 最適化の実装は実際、これには依存しません。 ただし、rebase と cherry-pick の両方が実装された方法を反映しているため、この仮定はすべての場合に当てはまります。 そしてまた、 cherry-pick と rebase の実装は、下位互換性の理由により簡単には変更できません(たとえば、 <code>git checkout</code> のドキュメントの <code>--ours</code> フラグと <code>--theirs</code> フラグに関する議論、特に rebase での動作に関するコメントを参照してください)。 ただし、最適化により、1番目の親のチェック(checking first-parent-ness)が回避されます。 最適化を有効にする代わりの条件をチェックするため、 cherry-pick と rebase が使用する親の順序が変更された場合でも引き続き機能します。 しかし、この仮定を行うことで、このドキュメントがより明確になり、すべての例を 2 回繰り返す必要がなくなります。</p></div>
+<div class="paragraph"><p>最初の仮定は、この文書の目的をより明確にするためのものです。 最適化の実装は実際、これには依存しません。 ただし、rebase と cherry-pick の両方が実装された方法を反映しているため、この仮定はすべての場合に当てはまります。 そしてまた、 cherry-pick と rebase の実装は、下位互換性の理由により簡単には変更できません(たとえば、 <code>git</code> <code>checkout</code> のドキュメントの <code>--ours</code> フラグと <code>--theirs</code> フラグに関する議論、特に rebase での動作に関するコメントを参照してください)。 ただし、最適化により、1番目の親のチェック(checking first-parent-ness)が回避されます。 最適化を有効にする代わりの条件をチェックするため、 cherry-pick と rebase が使用する親の順序が変更された場合でも引き続き機能します。 しかし、この仮定を行うことで、このドキュメントがより明確になり、すべての例を 2 回繰り返す必要がなくなります。</p></div>
 <div class="paragraph"><p>2番目の仮定に違反した場合、最適化は単純にオフになるため、その後を考慮する必要はありません。 2番目の仮定は、「ユーザーが競合を解決したり、ファイルをさらに編集または微調整したりするために中断(interrupt)されることはない」とも言えます。 実際のリベースとチェリーピックはしばしば中断(interrupt)されますが(ユーザーが停止と編集を要求した対話的なリベースであるか、ユーザーが解決する必要がある競合があったため)、名前変更のキャッシュはディスクに保存されないので、ユーザーが操作を解決するためにリベースまたはチェリーピックが停止(stop)すると直ちに破棄されます。</p></div>
 <div class="paragraph"><p>3番目の仮定により、セクション 2〜5 がより単純になり、この最適化が安全で効果的である理由の基礎を人々が理解できるようになります。その後、セクション 8 で詳細に取り組むことができます。 ディレクトリの名前変更が発生したときに、merge.directoryRenames のデフォルトが <code>conflict</code> に設定されていることは、ユーザーが競合を解決するために操作が停止(stop)し、キャッシュが破棄されることを意味することにも注意してください。つまり、最適化は適用されません。 したがって、ディレクトリの名前変更に具体的に対処する必要がある唯一の理由は、一部のユーザーが merge.directoryRenames を <code>true</code> に設定して、マージが自動的に続行できるようにするためです。 この構成設定でも最適化は安全ですが、その理由を示すためにさらにいくつかのケースについて説明する必要があります。 この議論についてはセクション 8 にて行います。</p></div>
 </div>
@@ -1193,7 +1193,7 @@ MERGE_SIDE1はファイルの名前を old dir に名前変更し、MERGE_SIDE2�
 </li>
 <li>
 <p>
-<code>{oldname =&gt; {newname =&gt; count}}</code> の入れ子になったマップである dir_rename_counts も、実行と実行の間に渡ってキャッシュされます。 これは基本的に、ディレクトリの名前変更検出もキャッシュされることを意味しますが、名前変更をキャッシュする履歴側のみです (このドキュメントに関する限り、MERGE_SIDE1。 「0.仮定」のセクションを参照してください)。 これらのカウントに関する 2 つの興味深いサブノートがあります:
+{oldname <code>=</code>&gt; {newname <code>=</code>&gt; <code>count</code>}} の入れ子になったマップである dir_rename_counts も、実行と実行の間に渡ってキャッシュされます。 これは基本的に、ディレクトリの名前変更検出もキャッシュされることを意味しますが、名前変更をキャッシュする履歴側のみです (このドキュメントに関する限り、MERGE_SIDE1。 「0.仮定」のセクションを参照してください)。 これらのカウントに関する 2 つの興味深いサブノートがあります:
 </p>
 <div class="ulist"><ul>
 <li>
@@ -1335,7 +1335,7 @@ MERGE_SIDE1 のみが記憶されているため、 MERGE_SIDE2 の名前変更�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-11 23:59:33 JST
+ 2024-12-15 12:50:13 JST
 </div>
 </div>
 </body>

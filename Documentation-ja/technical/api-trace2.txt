@@ -1,0 +1,1162 @@
+= Trace2 API
+
+Trace2 APIを使用して、デバッグ、パフォーマンス、およびテレメトリ情報をstderrまたはファイルに出力できます。 Trace2機能は、1つ以上のTrace2ターゲットを有効にして明示的に有効にしない限り、非アクティブです。
+
+Trace2 APIは、 既存の `GIT_TRACE` と `GIT_TRACE_PERFORMANCE` 機能によって提供される既存の (Trace1) `printf()` スタイルのトレースを置き換えることを目的としています。 初期実装時には、 Trace2とTrace1が並行して動作する場合があります。
+
+Trace2 APIは、 (`start`: `argv`) や (`exit`: {`exit-code`, `elapsed-time`}) などの既知のフィールドを持つ高レベルのメッセージのセットを定義します。
+
+Gitコードベース全体のTrace2計装(instrumentation)は、Trace2メッセージを有効なTrace2ターゲットに送信します。 ターゲットは、これらのメッセージコンテンツを目的固有の形式に変換し、データストリームにイベントを書き込みます。このように、Trace2 APIは、さまざまなタイプの分析を実行できます。
+
+ターゲットはVTableを使用して定義されるため、将来的に他の形式に簡単に拡張できます。 これは、たとえば、バイナリ形式を定義するために使用される場合があります。
+
+Trace2は、システムおよびグローバル構成ファイルの `trace2.*` 構成値と `GIT_TRACE2*` 環境変数を使用して制御されます。 Trace2 は、 リポジトリのローカルまたはワークツリー構成ファイルから読み取らず、 `-c` コマンド・ライン構成設定も尊重しません。
+
+== Trace2 Targets
+
+Trace2は、以下のTrace2ターゲットのセットを定義します。フォーマットの詳細については、後のセクションで説明します。
+
+=== The Normal Format Target
+
+normal format ターゲットは、従来の `printf()` 形式であり、 GIT_TRACE形式に似ています。 この形式は、`GIT_TRACE2` 環境変数または、 `trace2.normalTarget` システム構成設定またはグローバル構成設定で有効になります。
+
+例えば
+
+------------
+$ export GIT_TRACE2=~/log.normal
+$ git version
+git version 2.20.1.155.g426c96fcdb
+------------
+
+または
+
+------------
+$ git config --global trace2.normalTarget ~/log.normal
+$ git version
+git version 2.20.1.155.g426c96fcdb
+------------
+
+これは下記を生成します
+
+------------
+$ cat ~/log.normal
+12:28:42.620009 common-main.c:38                  version 2.20.1.155.g426c96fcdb
+12:28:42.620989 common-main.c:39                  start git version
+12:28:42.621101 git.c:432                         cmd_name version (version)
+12:28:42.621215 git.c:662                         exit elapsed:0.001227 code:0
+12:28:42.621250 trace2/tr2_tgt_normal.c:124       atexit elapsed:0.001265 code:0
+------------
+
+=== The Performance Format Target
+
+performance format target (PERF) は、 GIT_TRACE_PERFORMANCE に代わる列ベース(column-based)の形式であり、 開発とテストに適しており、 `gprof` などのツールを補完する可能性があります。 この形式は、 `GIT_TRACE2_PERF` 環境変数または、 `trace2.perfTarget` システム構成設定またはグローバル構成設定で有効になります。
+
+例えば
+
+------------
+$ export GIT_TRACE2_PERF=~/log.perf
+$ git version
+git version 2.20.1.155.g426c96fcdb
+------------
+
+または
+
+------------
+$ git config --global trace2.perfTarget ~/log.perf
+$ git version
+git version 2.20.1.155.g426c96fcdb
+------------
+
+これは下記を生成します
+
+------------
+$ cat ~/log.perf
+12:28:42.620675 common-main.c:38                  | d0 | main                     | version      |     |           |           |            | 2.20.1.155.g426c96fcdb
+12:28:42.621001 common-main.c:39                  | d0 | main                     | start        |     |  0.001173 |           |            | git version
+12:28:42.621111 git.c:432                         | d0 | main                     | cmd_name     |     |           |           |            | version (version)
+12:28:42.621225 git.c:662                         | d0 | main                     | exit         |     |  0.001227 |           |            | code:0
+12:28:42.621259 trace2/tr2_tgt_perf.c:211         | d0 | main                     | atexit       |     |  0.001265 |           |            | code:0
+------------
+
+=== The Event Format Target
+
+event format target は、テレメトリ分析に適したイベントデータのJSONベースの形式です。 この形式は、`GIT_TRACE2_EVENT` 環境変数または `trace2.eventTarget` システム構成設定またはグローバル構成設定で有効になります。
+
+例えば
+
+------------
+$ export GIT_TRACE2_EVENT=~/log.event
+$ git version
+git version 2.20.1.155.g426c96fcdb
+------------
+
+または
+
+------------
+$ git config --global trace2.eventTarget ~/log.event
+$ git version
+git version 2.20.1.155.g426c96fcdb
+------------
+
+これは下記を生成します
+
+------------
+$ cat ~/log.event
+{"event":"version","sid":"20190408T191610.507018Z-H9b68c35f-P000059a8","thread":"main","time":"2019-01-16T17:28:42.620713Z","file":"common-main.c","line":38,"evt":"4","exe":"2.20.1.155.g426c96fcdb"}
+{"event":"start","sid":"20190408T191610.507018Z-H9b68c35f-P000059a8","thread":"main","time":"2019-01-16T17:28:42.621027Z","file":"common-main.c","line":39,"t_abs":0.001173,"argv":["git","version"]}
+{"event":"cmd_name","sid":"20190408T191610.507018Z-H9b68c35f-P000059a8","thread":"main","time":"2019-01-16T17:28:42.621122Z","file":"git.c","line":432,"name":"version","hierarchy":"version"}
+{"event":"exit","sid":"20190408T191610.507018Z-H9b68c35f-P000059a8","thread":"main","time":"2019-01-16T17:28:42.621236Z","file":"git.c","line":662,"t_abs":0.001227,"code":0}
+{"event":"atexit","sid":"20190408T191610.507018Z-H9b68c35f-P000059a8","thread":"main","time":"2019-01-16T17:28:42.621268Z","file":"trace2/tr2_tgt_event.c","line":163,"t_abs":0.001265,"code":0}
+------------
+
+=== Enabling a Target
+
+ターゲットを有効にするには、対応する環境変数、システム、またはグローバル構成値を以下のいずれかに設定します:
+
+include::../trace2-target-values.txt[]
+
+トレースファイルがターゲットディレクトリに書き込まれるとき、それらはSIDの最後のコンポーネントに従って名前が付けられます(ファイル名の衝突を避けるために、オプションでカウンターが続きます)。
+
+== Trace2 API
+
+Trace2 パブリック API は、 `trace2.h` で定義および文書化されています。 詳細については `trace2.h` を参照してください。 すべてのパブリック関数とマクロには `trace2_` という接頭辞が付けられ、 `trace2.c` 内に記述されています。
+
+Trace2データ構造体は公開されていません。
+
+Trace2コードは、 `trace2/` ディレクトリに一連のプライベート関数とデータ型も定義します。 これらのシンボルには接頭辞 `tr2_` が付いており、 `trace2.c` (または `trace2/` 下の他のプライベート・ソース・ファイル)の関数でのみ使用する必要があります。
+
+=== Conventions for Public Functions and Macros(パブリック関数とマクロの規則)
+
+一部の関数には、 `file` と `line-number` 引数を取ることを示すために `_fl()` サフィックスが付いています。
+
+一部の関数には `_va_fl()` サフィックスが付いており、 `va_list` 引数も取ることが示されます。
+
+一部の関数には、 `_printf_fl()` 接尾辞が付いており、 可変数の引数を持つ `printf()` スタイルの形式も使用することを示しています。
+
+CPP ラッパー・マクロは、 これらの詳細のほとんどを隠すように定義されています。
+
+== Trace2 Target Formats
+
+=== NORMAL Format
+
+イベントは、以下の形式の行として記述されます:
+
+------------
+[<time> SP <filename>:<line> SP+] <event-name> [[SP] <event-message>] LF
+------------
+
+`<event-name>`::
+
+	イベント名です。
+
+`<event-message>`::
+	人間が読むことを目的とした自由形式の `printf()` メッセージです。
++
+注意: これには、エスケープされていない埋め込みLFまたはCRLF文字が含まれている可能性があるため、イベントが複数行に波及する可能性があることに注意してください。
+
+`GIT_TRACE2_BRIEF` または `trace2.normalBrief` がtrueの場合、 `time` と `filename` と `line` フィールドは省略されます。
+
+このターゲットは、他のターゲットよりも要約的(GIT_TRACEなど)であり、詳細度の低さを目的としています。 たとえば、スレッド、リージョン、データメッセージは無視されます。
+
+=== PERF Format
+
+イベントは、以下の形式の行として記述されます:
+
+------------
+[<time> SP <filename>:<line> SP+
+    BAR SP] d<depth> SP
+    BAR SP <thread-name> SP+
+    BAR SP <event-name> SP+
+    BAR SP [r<repo-id>] SP+
+    BAR SP [<t_abs>] SP+
+    BAR SP [<t_rel>] SP+
+    BAR SP [<category>] SP+
+    BAR SP DOTS* <perf-event-message>
+    LF
+------------
+
+`<depth>`::
+	gitプロセスの深さです。これは親gitプロセスの数です。トップレベルのgitコマンドの深さの値は「d0」です。その子プロセスの深さの値は「d1」です。2番目のレベルの子プロセスの深さの値は「d2」などです。
+
+`<thread-name>`::
+	スレッドの一意の名前です。 プライマリスレッドは「main」と呼ばれます。 他のスレッド名は「th%d:%s」の形式で、一意の番号とthread-procの名前が含まれています。
+
+`<event-name>`::
+	イベント名です。
+
+`<repo-id>`::
+	(存在する場合、)使用中のリポジトリを示す番号です。リポジトリが開かれると、 `def_repo` イベントが発行されます。これにより、リポジトリIDと関連するワークツリーが定義されます。後続のリポジトリ固有のイベントは、この repo-id を参照します。
++
+現在、これはメインリポジトリの場合は常に「r1」です。 このフィールドは、将来の in-proc サブモジュールを見越したものです。
+
+`<t_abs>`::
+	(存在する場合、)プログラムが開始されてからの絶対時間(秒単位)です。
+
+`<t_rel>`::
+	(存在する場合、)現在の領域(current region)の開始を基準にした秒単位の時間です。 thread-exitイベントの場合、これはスレッドの経過時間です。
+
+`<category>`::
+	リージョンおよびデータイベントに存在し、「index」や「status」などの幅広いカテゴリを表すために使用されます。
+
+`<perf-event-message>`::
+	人間が読むことを目的とした自由形式の `printf()` メッセージです。
+
+------------
+15:33:33.532712 wt-status.c:2310                  | d0 | main                     | region_enter | r1  |  0.126064 |           | status     | label:print
+15:33:33.532712 wt-status.c:2331                  | d0 | main                     | region_leave | r1  |  0.127568 |  0.001504 | status     | label:print
+------------
+
+`GIT_TRACE2_PERF_BRIEF` または `trace2.perfBrief` がtrueの場合、 `time` と `file` と`line` フィールドは省略されます。
+
+------------
+d0 | main                     | region_leave | r1  |  0.011717 |  0.009122 | index      | label:preload
+------------
+
+PERFターゲットは、開発中の対話的なパフォーマンス分析を目的としており、非常にノイズが多いです。
+
+=== EVENT Format
+
+各イベントは、複数のキーと値のペアを含むJSONオブジェクトで、1行で記述され、そして、その後にLFが続きます。
+
+------------
+'{' <key> ':' <value> [',' <key> ':' <value>]* '}' LF
+------------
+
+一部のキーと値のペアはすべてのイベントに共通であり、一部はイベント固有です。
+
+==== Common Key/Value Pairs
+
+以下の、キーと値のペアは、すべてのイベントに共通です:
+
+------------
+{
+	"event":"version",
+	"sid":"20190408T191827.272759Z-H9b68c35f-P00003510",
+	"thread":"main",
+	"time":"2019-04-08T19:18:27.282761Z",
+	"file":"common-main.c",
+	"line":42,
+	...
+}
+------------
+
+`"event":<event>`::
+	イベント名です。
+
+`"sid":<sid>`::
+	セッションIDです。これは、プロセスインスタンスを識別するための一意の文字列であり、プロセスによって発行されたすべてのイベントを識別できるようにします。 PIDはOSによってリサイクルされるため、PIDの代わりにセッションIDが使用されます。 子gitプロセスの場合、後処理中に親子関係を識別できるように、session-idの前に親gitプロセスのsession-idが追加されます。
+
+`"thread":<thread>`::
+	スレッド名です。
+
+`"time":<time>`::
+	イベントのUTC時刻です。
+
+`"file":<filename>`::
+	イベントを生成するソースファイルです。
+
+`"line":<line-number>`::
+	イベントを生成する整数のソース行番号です。
+
+`"repo":<repo-id>`::
+	存在する場合、前述の整数 repo-id です。
+
+`GIT_TRACE2_EVENT_BRIEF` または `trace2.eventBrief` がtrueの場合、 `file` と `line` フィールドはすべてのイベントから省略され、 `time` フィールドは "start" イベントと "atexit" イベントにのみ存在します。
+
+==== Event-Specific Key/Value Pairs
+
+`"version"`::
+	このイベントは、実行可能ファイルのバージョンとEVENT形式を提供します。 常にトレースセッションの最初のイベントである必要があります。 新しいイベントタイプが追加された場合、既存のフィールドが削除された場合、または既存のイベントまたはフィールドの解釈に大幅な変更があった場合、EVENT形式のバージョンがインクリメントされます。既存のイベントに新しいフィールドを追加するなどの小さな変更では、EVENT形式のバージョンを増やす必要はありません。
++
+------------
+{
+	"event":"version",
+	...
+	"evt":"4",		       # EVENT format version
+	"exe":"2.20.1.155.g426c96fcdb" # git version
+}
+------------
+
+`"too_many_files"`::
+	ターゲットトレースディレクトリにファイルが多すぎる場合、このイベントは git-trace2-discard センチネル(sentinel)ファイルに書き込まれます(trace2.maxFiles 構成オプションを参照)。
++
+------------
+{
+	"event":"too_many_files",
+	...
+}
+------------
+
+`"start"`::
+	このイベントには、 main() が受け取ったした完全なargvが含まれています。
++
+------------
+{
+	"event":"start",
+	...
+	"t_abs":0.001227, # elapsed time in seconds
+	"argv":["git","version"]
+}
+------------
+
+`"exit"`::
+	このイベントは、gitが `exit()` を呼び出すときに発生します。
++
+------------
+{
+	"event":"exit",
+	...
+	"t_abs":0.001227, # elapsed time in seconds
+	"code":0	  # exit code
+}
+------------
+
+`"atexit"`::
+	このイベントは、最終シャットダウン中にTrace2の `atexit` ルーチンによって発行されます。これは、プロセスによって発行される最後のイベントである必要があります。
++
+(ここで報告される経過時間(elapsed time)は、他のすべてのatexitタスクが完了した後に実行されるため、「exit」イベントで報告される時間よりも長くなります。)
++
+------------
+{
+	"event":"atexit",
+	...
+	"t_abs":0.001227, # elapsed time in seconds
+	"code":0          # exit code
+}
+------------
+
+`"signal"`::
+	このイベントは、プログラムがユーザーシグナルによって終了したときに発行されます。プラットフォームによっては、シグナルイベントによって「atexit」イベントの生成が妨げられる場合があります。
++
+------------
+{
+	"event":"signal",
+	...
+	"t_abs":0.001227,  # elapsed time in seconds
+	"signo":13         # SIGTERM, SIGINT, etc.
+}
+------------
+
+`"error"`::
+	このイベントは、 `BUG()`, `bug()`, `error()`, `die()`, `warning()`, `usage()` 関数のいずれかが呼び出されたときに発行されます。
++
+------------
+{
+	"event":"error",
+	...
+	"msg":"invalid option: --cahced", # formatted error message
+	"fmt":"invalid option: %s"	  # error format string
+}
+------------
++
+エラーイベントは複数回発生する可能性があります。フォーマット文字列を使用すると、ポストプロセッサは特定のエラー引数を気にすることなく、タイプごとにエラーをグループ化できます。
+
+`"cmd_path"`::
+	このイベントには、git実行可能ファイルの検出されたフルパスが含まれています(それを解決するように構成されているプラットフォーム上で)。
++
+------------
+{
+	"event":"cmd_path",
+	...
+	"path":"C:/work/gfw/git.exe"
+}
+------------
+
+`"cmd_ancestry"`::
+	このイベントには、現在のプロセスの親（および以前の世代の親）のテキストコマンド名が、最も近い親から最も遠い曽祖父母の順に配列で含まれています。 すべてのプラットフォームに実装されているとは限りません。
++
+------------
+{
+	"event":"cmd_ancestry",
+	...
+	"ancestry":["bash","tmux: server","systemd"]
+}
+------------
+
+`"cmd_name"`::
+	このイベントには、このgitプロセスのコマンド名と、親gitプロセスからのコマンドの階層が含まれます。
++
+------------
+{
+	"event":"cmd_name",
+	...
+	"name":"pack-objects",
+	"hierarchy":"push/pack-objects"
+}
+------------
++
+通常、「name」フィールドにはコマンドの正規名が含まれます。正規名が使用できない場合は、以下の特別な値のいずれかが使用されます:
++
+------------
+"_query_"            # "git --html-path"
+"_run_dashed_"       # when "git foo" tries to run "git-foo"
+"_run_shell_alias_"  # alias expansion to a shell command
+"_run_git_alias_"    # alias expansion to a git command
+"_usage_"            # usage error
+------------
+
+`"cmd_mode"`::
+	このイベントは、存在する場合、コマンド派生形(command variant)を記述します。このイベントは複数回発生する可能性があります。
++
+------------
+{
+	"event":"cmd_mode",
+	...
+	"name":"branch"
+}
+------------
++
+「name」フィールドは、コマンドモードを説明する任意の文字列です。たとえば、checkoutは、ブランチまたは個々のファイルをチェックアウトできます。 そして、これらのバリエーションは通常、比較できない異なるパフォーマンス特性を持っています。
+
+`"alias"`::
+	このイベントは、エイリアスが展開されたときに発生します。
++
+------------
+{
+	"event":"alias",
+	...
+	"alias":"l",		 # registered alias
+	"argv":["log","--graph"] # alias expansion
+}
+------------
+
+`"child_start"`::
+	このイベントは、spawn されようとしている子プロセスについて説明します。
++
+------------
+{
+	"event":"child_start",
+	...
+	"child_id":2,
+	"child_class":"?",
+	"use_shell":false,
+	"argv":["git","rev-list","--objects","--stdin","--not","--all","--quiet"]
+
+	"hook_name":"<hook_name>"  # present when child_class is "hook"
+	"cd":"<path>"		   # present when cd is required
+}
+------------
++
+「child_id」フィールドを使用して、このchild_startを対応するchild_exitイベントと照合できます。
++
+「child_class」フィールドは、「editor」、「pager」、「transport/*」、「hook」などの大まかな分類です。 未分類の子達は「?」と分類されます。
+
+`"child_exit"`::
+	このイベントは、 現在のプロセスが `waitpid()` からリターンし、 子プロセスから終了情報(exit information)を収集した後に生成されます。
++
+------------
+{
+	"event":"child_exit",
+	...
+	"child_id":2,
+	"pid":14708,	 # child PID
+	"code":0,	 # child exit-code
+	"t_rel":0.110605 # observed run-time of child process
+}
+------------
++
+注意: 子プロセスのセッションIDは、現在の/生成した プロセスでは使用できないため、子のPIDは、後処理のヒントとしてここに報告されることに注意してください。 （ただし、子プロセスはセッションIDを持たないシェルスクリプトである可能性があるため、これはヒントにすぎません。）
++
+注意: `t_rel` フィールドには、 観測された子プロセスの実行時間が秒単位で含まれていることに注意してください(開始前の fork/exec/spawn と `waitpid()` 後の停止(stop)と、 OSプロセス作成のオーバーヘッドを含みます)。 したがって、 この時間は、 子プロセス自体によって報告される atexit 時間よりもわずかに長くなります。
+
+`"child_ready"`::
+	このイベントは、 現在のプロセスがバックグラウンド・プロセスを開始し、 そのプロセスへのすべてのハンドルを解放した後に生成されます。
++
+------------
+{
+	"event":"child_ready",
+	...
+	"child_id":2,
+	"pid":14708,	 # child PID
+	"ready":"ready", # child ready state
+	"t_rel":0.110605 # observed run-time of child process
+}
+------------
++
+注意: 子プロセスのセッションIDは、現在の/生成した プロセスでは使用できないため、子のPIDは、後処理のヒントとしてここに報告されることに注意してください。 （ただし、子プロセスはセッションIDを持たないシェルスクリプトである可能性があるため、これはヒントにすぎません。）
++
+このイベントは、 子プロセスがバック・グラウンドで開始され、 起動して作業を開始するための少しの時間が与えられた後に生成されます。 親プロセスがまだ待機している間に子プロセスが正常に起動した場合、 `ready｀ フィールドの値は `ready` になります。 子プロセスの開始が遅すぎて親がタイムアウトした場合、フィールドの値は `timeout` になります。 子プロセスが起動しても親プロセスがプローブ(probe)できない場合、 フィールドの値は `error` になります。
++
+親プロセスがこのイベントを発行した後、 すべてのハンドルを子プロセスに解放し、 子プロセスをバック・グラウンド・デーモンとして扱います。 そのため、 子プロセスが最終的に起動を完了したとしても、 親プロセスは updated イベントを発行しません。
++
+注意: `t_rel` フィールドには、親プロセスが子プロセスをバック・グラウンドに解放したときに観測された実行時間が秒単位で含まれていることに注意してください。 子プロセスは実行時間の長いデーモン・プロセスであると見なされ、 親プロセスよりも長く存続する可能性があります。 したがって、 親プロセスの 子イベント時間(child event times)は、 子プロセスの atexit 時間と比較されるべきではありません。
+
+`"exec"`::
+	このイベントは、gitが子プロセスを開始するのではなく、別のコマンドを `exec()` しようとする前に生成されます。
++
+------------
+{
+	"event":"exec",
+	...
+	"exec_id":0,
+	"exe":"git",
+	"argv":["foo", "bar"]
+}
+------------
++
+「exec_id」フィールドはコマンド固有のIDであり、 `exec()` が失敗し、対応するexec_resultイベントが生成された場合にのみ役立ちます。
+
+`"exec_result"`::
+	このイベントは、 `exec()` が失敗し、制御が現在のgitコマンドに戻った場合に生成されます。
++
+------------
+{
+	"event":"exec_result",
+	...
+	"exec_id":0,
+	"code":1      # error code (errno) from exec()
+}
+------------
+
+`"thread_start"`::
+	このイベントは、スレッドが開始されたときに生成されます。 これは、新しいスレッドのthread-proc内で生成されます(スレッドのスレッド・ローカル・ストレージ内のデータにアクセスする必要があるため)。
++
+------------
+{
+	"event":"thread_start",
+	...
+	"thread":"th02:preload_thread" # thread name
+}
+------------
+
+`"thread_exit"`::
+	このイベントは、スレッドが終了したときに生成されます。 これは、スレッドのthread-proc内で生成されます。
++
+------------
+{
+	"event":"thread_exit",
+	...
+	"thread":"th02:preload_thread", # thread name
+	"t_rel":0.007328                # thread elapsed time
+}
+------------
+
+`"def_param"`::
+	このイベントは、構成設定、コマンドラインフラグ、環境変数などのグローバルパラメーターをログに記録するために生成されます。
++
+------------
+{
+	"event":"def_param",
+	...
+	"scope":"global",
+	"param":"core.abbrev",
+	"value":"7"
+}
+------------
+
+`"def_repo"`::
+	このイベントはリポジトリIDを定義し、それをワークツリーのルートに関連付けます。
++
+------------
+{
+	"event":"def_repo",
+	...
+	"repo":1,
+	"worktree":"/Users/jeffhost/work/gfw"
+}
+------------
++
+前述のように、リポジトリIDは現在常に1であるため、def_repoイベントは1つだけになります。その後、インプロセスサブモジュールがサポートされている場合、アクセスしたサブモジュールごとにdef_repoイベントを発行する必要があります。
+
+`"region_enter"`::
+	このイベントは、リージョンに入るときに生成されます。
++
+------------
+{
+	"event":"region_enter",
+	...
+	"repo":1,                # optional
+	"nesting":1,             # current region stack depth
+	"category":"index",      # optional
+	"label":"do_read_index", # optional
+	"msg":".git/index"       # optional
+}
+------------
++
+`category` フィールドは、カテゴリベースのフィルタリングを行うための、将来の拡張機能で使用される可能性があります。
++
+`GIT_TRACE2_EVENT_NESTING` または `trace2.eventNesting` を使用して、深くネストされた領域とデータイベントをフィルタリングできます。 デフォルトは「2」です。
+
+`"region_leave"`::
+	このイベントは、リージョンを離れるときに生成されます。
++
+------------
+{
+	"event":"region_leave",
+	...
+	"repo":1,                # optional
+	"t_rel":0.002876,        # time spent in region in seconds
+	"nesting":1,             # region stack depth
+	"category":"index",      # optional
+	"label":"do_read_index", # optional
+	"msg":".git/index"       # optional
+}
+------------
+
+`"data"`::
+	このイベントは、 thread-local と region-local の キー/値 のペアをログに記録するために生成されます。
++
+------------
+{
+	"event":"data",
+	...
+	"repo":1,              # optional
+	"t_abs":0.024107,      # absolute elapsed time
+	"t_rel":0.001031,      # elapsed time in region/thread
+	"nesting":2,           # region stack depth
+	"category":"index",
+	"key":"read/cache_nr",
+	"value":"3552"
+}
+------------
++
+「value」フィールドは整数または文字列です。
+
+`"data-json"`::
+	このイベントは、構造化データを含む事前にフォーマットされたJSON文字列をログに記録するために生成されます。
++
+------------
+{
+	"event":"data_json",
+	...
+	"repo":1,              # optional
+	"t_abs":0.015905,
+	"t_rel":0.015905,
+	"nesting":1,
+	"category":"process",
+	"key":"windows/ancestry",
+	"value":["bash.exe","bash.exe"]
+}
+------------
+
+`"th_timer"`::
+	このイベントは、スレッド内でストップウォッチ・タイマーが実行されていた時間を記録します。 このイベントは、スレッドごとのイベントを要求したタイマーのスレッドが終了(exit)したときに生成されます。
++
+------------
+{
+	"event":"th_timer",
+	...
+	"category":"my_category",
+	"name":"my_timer",
+	"intervals":5,         # number of time it was started/stopped
+	"t_total":0.052741,    # total time in seconds it was running
+	"t_min":0.010061,      # shortest interval
+	"t_max":0.011648       # longest interval
+}
+------------
+
+`"timer"`::
+	このイベントは、 すべてのスレッドにわたって集計されたストップウォッチ・タイマーの実行時間を記録します。 このイベントは、プロセスの終了(exit)時に生成されます。
++
+------------
+{
+	"event":"timer",
+	...
+	"category":"my_category",
+	"name":"my_timer",
+	"intervals":5,         # number of time it was started/stopped
+	"t_total":0.052741,    # total time in seconds it was running
+	"t_min":0.010061,      # shortest interval
+	"t_max":0.011648       # longest interval
+}
+------------
+
+`"th_counter"`::
+	このイベントは、 スレッド内のカウンター変数の値を記録します。 このイベントは、 スレッドごとのイベントを要求したカウンターのスレッドが終了(exit)するときに生成されます。
++
+------------
+{
+	"event":"th_counter",
+	...
+	"category":"my_category",
+	"name":"my_counter",
+	"count":23
+}
+------------
+
+`"counter"`::
+	このイベントは、 すべてのスレッドにわたるカウンター変数の値を記録します。 このイベントは、プロセスの終了(exit)時に生成されます。 ここで報告される合計値は、 すべてのスレッドの合計です。
++
+------------
+{
+	"event":"counter",
+	...
+	"category":"my_category",
+	"name":"my_counter",
+	"count":23
+}
+------------
+
+`"printf"`::
+	This event logs a human-readable message with no particular formatting guidelines.
++
+------------
+{
+	"event":"printf",
+	...
+	"t_abs":0.015905,      # elapsed time in seconds
+	"msg":"Hello world"    # optional
+}
+------------
+
+
+== Example Trace2 API Usage
+
+これは、意図された使用法を示すTrace2 APIの仮想的な使用法です(実際のGitの詳細を気にする必要はありません)。
+
+Initialization::
+
+	初期化は `main()` で行われます。 舞台裏では、 `atexit` と `signal` ハンドラーが登録されています。
++
+----------------
+int main(int argc, const char **argv)
+{
+	int exit_code;
+
+	trace2_initialize();
+	trace2_cmd_start(argv);
+
+	exit_code = cmd_main(argc, argv);
+
+	trace2_cmd_exit(exit_code);
+
+	return exit_code;
+}
+----------------
+
+Command Details::
+
+	基本が確立された後、追加のコマンド情報が検出されたときにTrace2に送信できます。
++
+----------------
+int cmd_checkout(int argc, const char **argv)
+{
+	trace2_cmd_name("checkout");
+	trace2_cmd_mode("branch");
+	trace2_def_repo(the_repository);
+
+	// emit "def_param" messages for "interesting" config settings.
+	trace2_cmd_list_config();
+
+	if (do_something())
+	    trace2_cmd_error("Path '%s': cannot do something", path);
+
+	return 0;
+}
+----------------
+
+Child Processes::
+
+	子プロセスを生成するコードをラップします。
++
+----------------
+void run_child(...)
+{
+	int child_exit_code;
+	struct child_process cmd = CHILD_PROCESS_INIT;
+	...
+	cmd.trace2_child_class = "editor";
+
+	trace2_child_start(&cmd);
+	child_exit_code = spawn_child_and_wait_for_it();
+	trace2_child_exit(&cmd, child_exit_code);
+}
+----------------
++
+たとえば、以下のfetchコマンドは、sshとindex-packとrev-listとgcをspawnしました。この例は、fetchに5.199秒かかり、そのうち4.932がsshであったことも示しています。
++
+----------------
+$ export GIT_TRACE2_BRIEF=1
+$ export GIT_TRACE2=~/log.normal
+$ git fetch origin
+...
+----------------
++
+----------------
+$ cat ~/log.normal
+version 2.20.1.vfs.1.1.47.g534dbe1ad1
+start git fetch origin
+worktree /Users/jeffhost/work/gfw
+cmd_name fetch (fetch)
+child_start[0] ssh git@github.com ...
+child_start[1] git index-pack ...
+... (Trace2 events from child processes omitted)
+child_exit[1] pid:14707 code:0 elapsed:0.076353
+child_exit[0] pid:14706 code:0 elapsed:4.931869
+child_start[2] git rev-list ...
+... (Trace2 events from child process omitted)
+child_exit[2] pid:14708 code:0 elapsed:0.110605
+child_start[3] git gc --auto
+... (Trace2 events from child process omitted)
+child_exit[3] pid:14709 code:0 elapsed:0.006240
+exit elapsed:5.198503 code:0
+atexit elapsed:5.198541 code:0
+----------------
++
+gitプロセスが別のgitプロセスの(直接または間接の)子である場合、Trace2コンテキスト情報を継承します。これにより、子はコマンド階層を印刷できます。この例は、gcをfetchのchild[3]として示しています。 gcプロセスがその名前を「gc」として報告する場合、階層も「fetch/gc」として報告します。 （この例では、子プロセスからのtrace2メッセージはわかりやすくするためにインデントされています。）
++
+----------------
+$ export GIT_TRACE2_BRIEF=1
+$ export GIT_TRACE2=~/log.normal
+$ git fetch origin
+...
+----------------
++
+----------------
+$ cat ~/log.normal
+version 2.20.1.160.g5676107ecd.dirty
+start git fetch official
+worktree /Users/jeffhost/work/gfw
+cmd_name fetch (fetch)
+...
+child_start[3] git gc --auto
+    version 2.20.1.160.g5676107ecd.dirty
+    start /Users/jeffhost/work/gfw/git gc --auto
+    worktree /Users/jeffhost/work/gfw
+    cmd_name gc (fetch/gc)
+    exit elapsed:0.001959 code:0
+    atexit elapsed:0.001997 code:0
+child_exit[3] pid:20303 code:0 elapsed:0.007564
+exit elapsed:3.868938 code:0
+atexit elapsed:3.868970 code:0
+----------------
+
+Regions::
+
+	リージョンは、コードの興味深いセクションの時間を計るために使用できます。
++
+----------------
+void wt_status_collect(struct wt_status *s)
+{
+	trace2_region_enter("status", "worktrees", s->repo);
+	wt_status_collect_changes_worktree(s);
+	trace2_region_leave("status", "worktrees", s->repo);
+
+	trace2_region_enter("status", "index", s->repo);
+	wt_status_collect_changes_index(s);
+	trace2_region_leave("status", "index", s->repo);
+
+	trace2_region_enter("status", "untracked", s->repo);
+	wt_status_collect_untracked(s);
+	trace2_region_leave("status", "untracked", s->repo);
+}
+
+void wt_status_print(struct wt_status *s)
+{
+	trace2_region_enter("status", "print", s->repo);
+	switch (s->status_format) {
+	    ...
+	}
+	trace2_region_leave("status", "print", s->repo);
+}
+----------------
++
+この例では、追跡していないファイルのスキャンは +0.012568 から +0.027149 まで実行され、(プロセスが開始されてから) 0.014581秒かかりました。
++
+----------------
+$ export GIT_TRACE2_PERF_BRIEF=1
+$ export GIT_TRACE2_PERF=~/log.perf
+$ git status
+...
+
+$ cat ~/log.perf
+d0 | main                     | version      |     |           |           |            | 2.20.1.160.g5676107ecd.dirty
+d0 | main                     | start        |     |  0.001173 |           |            | git status
+d0 | main                     | def_repo     | r1  |           |           |            | worktree:/Users/jeffhost/work/gfw
+d0 | main                     | cmd_name     |     |           |           |            | status (status)
+...
+d0 | main                     | region_enter | r1  |  0.010988 |           | status     | label:worktrees
+d0 | main                     | region_leave | r1  |  0.011236 |  0.000248 | status     | label:worktrees
+d0 | main                     | region_enter | r1  |  0.011260 |           | status     | label:index
+d0 | main                     | region_leave | r1  |  0.012542 |  0.001282 | status     | label:index
+d0 | main                     | region_enter | r1  |  0.012568 |           | status     | label:untracked
+d0 | main                     | region_leave | r1  |  0.027149 |  0.014581 | status     | label:untracked
+d0 | main                     | region_enter | r1  |  0.027411 |           | status     | label:print
+d0 | main                     | region_leave | r1  |  0.028741 |  0.001330 | status     | label:print
+d0 | main                     | exit         |     |  0.028778 |           |            | code:0
+d0 | main                     | atexit       |     |  0.028809 |           |            | code:0
+----------------
++
+リージョンはネストできます。 これにより、たとえば、メッセージがPERFターゲットでインデントされます。 経過時間は、期待どおり、対応するネストレベルの開始を基準にしています。 たとえば、リージョンメッセージを以下の場所に追加するとします:
++
+----------------
+static enum path_treatment read_directory_recursive(struct dir_struct *dir,
+	struct index_state *istate, const char *base, int baselen,
+	struct untracked_cache_dir *untracked, int check_only,
+	int stop_at_first_file, const struct pathspec *pathspec)
+{
+	enum path_treatment state, subdir_state, dir_state = path_none;
+
+	trace2_region_enter_printf("dir", "read_recursive", NULL, "%.*s", baselen, base);
+	...
+	trace2_region_leave_printf("dir", "read_recursive", NULL, "%.*s", baselen, base);
+	return dir_state;
+}
+----------------
++
+追跡していないファイルのスキャンに費やされた時間をさらに調査できます。
++
+----------------
+$ export GIT_TRACE2_PERF_BRIEF=1
+$ export GIT_TRACE2_PERF=~/log.perf
+$ git status
+...
+$ cat ~/log.perf
+d0 | main                     | version      |     |           |           |            | 2.20.1.162.gb4ccea44db.dirty
+d0 | main                     | start        |     |  0.001173 |           |            | git status
+d0 | main                     | def_repo     | r1  |           |           |            | worktree:/Users/jeffhost/work/gfw
+d0 | main                     | cmd_name     |     |           |           |            | status (status)
+...
+d0 | main                     | region_enter | r1  |  0.015047 |           | status     | label:untracked
+d0 | main                     | region_enter |     |  0.015132 |           | dir        | ..label:read_recursive
+d0 | main                     | region_enter |     |  0.016341 |           | dir        | ....label:read_recursive vcs-svn/
+d0 | main                     | region_leave |     |  0.016422 |  0.000081 | dir        | ....label:read_recursive vcs-svn/
+d0 | main                     | region_enter |     |  0.016446 |           | dir        | ....label:read_recursive xdiff/
+d0 | main                     | region_leave |     |  0.016522 |  0.000076 | dir        | ....label:read_recursive xdiff/
+d0 | main                     | region_enter |     |  0.016612 |           | dir        | ....label:read_recursive git-gui/
+d0 | main                     | region_enter |     |  0.016698 |           | dir        | ......label:read_recursive git-gui/po/
+d0 | main                     | region_enter |     |  0.016810 |           | dir        | ........label:read_recursive git-gui/po/glossary/
+d0 | main                     | region_leave |     |  0.016863 |  0.000053 | dir        | ........label:read_recursive git-gui/po/glossary/
+...
+d0 | main                     | region_enter |     |  0.031876 |           | dir        | ....label:read_recursive builtin/
+d0 | main                     | region_leave |     |  0.032270 |  0.000394 | dir        | ....label:read_recursive builtin/
+d0 | main                     | region_leave |     |  0.032414 |  0.017282 | dir        | ..label:read_recursive
+d0 | main                     | region_leave | r1  |  0.032454 |  0.017407 | status     | label:untracked
+...
+d0 | main                     | exit         |     |  0.034279 |           |            | code:0
+d0 | main                     | atexit       |     |  0.034322 |           |            | code:0
+----------------
++
+Trace2リージョンは、既存の trace_performance_enter() と trace_performance_leave()ルーチンに似ていますが、スレッドセーフであり、タイマーのスレッドごとのスタックを維持します。
+
+Data Messages::
+
+	リージョンに追加されたデータメッセージ。
++
+----------------
+int read_index_from(struct index_state *istate, const char *path,
+	const char *gitdir)
+{
+	trace2_region_enter_printf("index", "do_read_index", the_repository, "%s", path);
+
+	...
+
+	trace2_data_intmax("index", the_repository, "read/version", istate->version);
+	trace2_data_intmax("index", the_repository, "read/cache_nr", istate->cache_nr);
+
+	trace2_region_leave_printf("index", "do_read_index", the_repository, "%s", path);
+}
+----------------
++
+この例は、インデックスに3552エントリが含まれていることを示しています。
++
+----------------
+$ export GIT_TRACE2_PERF_BRIEF=1
+$ export GIT_TRACE2_PERF=~/log.perf
+$ git status
+...
+$ cat ~/log.perf
+d0 | main                     | version      |     |           |           |            | 2.20.1.156.gf9916ae094.dirty
+d0 | main                     | start        |     |  0.001173 |           |            | git status
+d0 | main                     | def_repo     | r1  |           |           |            | worktree:/Users/jeffhost/work/gfw
+d0 | main                     | cmd_name     |     |           |           |            | status (status)
+d0 | main                     | region_enter | r1  |  0.001791 |           | index      | label:do_read_index .git/index
+d0 | main                     | data         | r1  |  0.002494 |  0.000703 | index      | ..read/version:2
+d0 | main                     | data         | r1  |  0.002520 |  0.000729 | index      | ..read/cache_nr:3552
+d0 | main                     | region_leave | r1  |  0.002539 |  0.000748 | index      | label:do_read_index .git/index
+...
+----------------
+
+Thread Events::
+
+	thread-procに追加されたスレッドメッセージ。
++
+例えば、 マルチスレッドの preload-index コードは、 スレッドプール周辺の領域を計装し(instrumented)、 スレッド・プロセス(thread-proc)内でスレッドごとの開始と終了イベントを行うことができます。
++
+----------------
+static void *preload_thread(void *_data)
+{
+	// start the per-thread clock and emit a message.
+	trace2_thread_start("preload_thread");
+
+	// report which chunk of the array this thread was assigned.
+	trace2_data_intmax("index", the_repository, "offset", p->offset);
+	trace2_data_intmax("index", the_repository, "count", nr);
+
+	do {
+	    ...
+	} while (--nr > 0);
+	...
+
+	// report elapsed time taken by this thread.
+	trace2_thread_exit();
+	return NULL;
+}
+
+void preload_index(struct index_state *index,
+	const struct pathspec *pathspec,
+	unsigned int refresh_flags)
+{
+	trace2_region_enter("index", "preload", the_repository);
+
+	for (i = 0; i < threads; i++) {
+	    ... /* create thread */
+	}
+
+	for (i = 0; i < threads; i++) {
+	    ... /* join thread */
+	}
+
+	trace2_region_leave("index", "preload", the_repository);
+}
+----------------
++
+この例では、 preload_index()が `main` スレッドによって実行され、 `preload` リージョンを開始しました。 `th01:preload_thread` から `th07:preload_thread` という名前の7つのスレッドが開始されました。各スレッドからのイベントは、発生時に共有ターゲットストリームにアトミックに追加されるため、他のスレッドに対してランダムな順序で表示される場合があります。 最後に、メインスレッドは各スレッドが終了するのを待って、リージョンを離れます。
++
+データイベントは、アクティブなスレッド名でタグ付けされます。 これらは、スレッドごとのパラメーターを報告するために使用されます。
++
+----------------
+$ export GIT_TRACE2_PERF_BRIEF=1
+$ export GIT_TRACE2_PERF=~/log.perf
+$ git status
+...
+$ cat ~/log.perf
+...
+d0 | main                     | region_enter | r1  |  0.002595 |           | index      | label:preload
+d0 | th01:preload_thread      | thread_start |     |  0.002699 |           |            |
+d0 | th02:preload_thread      | thread_start |     |  0.002721 |           |            |
+d0 | th01:preload_thread      | data         | r1  |  0.002736 |  0.000037 | index      | offset:0
+d0 | th02:preload_thread      | data         | r1  |  0.002751 |  0.000030 | index      | offset:2032
+d0 | th03:preload_thread      | thread_start |     |  0.002711 |           |            |
+d0 | th06:preload_thread      | thread_start |     |  0.002739 |           |            |
+d0 | th01:preload_thread      | data         | r1  |  0.002766 |  0.000067 | index      | count:508
+d0 | th06:preload_thread      | data         | r1  |  0.002856 |  0.000117 | index      | offset:2540
+d0 | th03:preload_thread      | data         | r1  |  0.002824 |  0.000113 | index      | offset:1016
+d0 | th04:preload_thread      | thread_start |     |  0.002710 |           |            |
+d0 | th02:preload_thread      | data         | r1  |  0.002779 |  0.000058 | index      | count:508
+d0 | th06:preload_thread      | data         | r1  |  0.002966 |  0.000227 | index      | count:508
+d0 | th07:preload_thread      | thread_start |     |  0.002741 |           |            |
+d0 | th07:preload_thread      | data         | r1  |  0.003017 |  0.000276 | index      | offset:3048
+d0 | th05:preload_thread      | thread_start |     |  0.002712 |           |            |
+d0 | th05:preload_thread      | data         | r1  |  0.003067 |  0.000355 | index      | offset:1524
+d0 | th05:preload_thread      | data         | r1  |  0.003090 |  0.000378 | index      | count:508
+d0 | th07:preload_thread      | data         | r1  |  0.003037 |  0.000296 | index      | count:504
+d0 | th03:preload_thread      | data         | r1  |  0.002971 |  0.000260 | index      | count:508
+d0 | th04:preload_thread      | data         | r1  |  0.002983 |  0.000273 | index      | offset:508
+d0 | th04:preload_thread      | data         | r1  |  0.007311 |  0.004601 | index      | count:508
+d0 | th05:preload_thread      | thread_exit  |     |  0.008781 |  0.006069 |            |
+d0 | th01:preload_thread      | thread_exit  |     |  0.009561 |  0.006862 |            |
+d0 | th03:preload_thread      | thread_exit  |     |  0.009742 |  0.007031 |            |
+d0 | th06:preload_thread      | thread_exit  |     |  0.009820 |  0.007081 |            |
+d0 | th02:preload_thread      | thread_exit  |     |  0.010274 |  0.007553 |            |
+d0 | th07:preload_thread      | thread_exit  |     |  0.010477 |  0.007736 |            |
+d0 | th04:preload_thread      | thread_exit  |     |  0.011657 |  0.008947 |            |
+d0 | main                     | region_leave | r1  |  0.011717 |  0.009122 | index      | label:preload
+...
+d0 | main                     | exit         |     |  0.029996 |           |            | code:0
+d0 | main                     | atexit       |     |  0.030027 |           |            | code:0
+----------------
++
+この例では、 preload リージョンに0.009122秒かかりました。 7つのスレッドは、インデックスのそれらの部分で動作するのに0.006069〜0.008947秒かかりました。 スレッド「th01」は、オフセット0で508個のアイテムを処理しました。 スレッド「th02」は、オフセット2032で508個のアイテムを処理しました。 スレッド「th04」は、オフセット508で508アイテムを処理しました。
++
+この例では、 各スレッドの開始時にスレッド名が際どい方法((racy manner))で割り当てられることも示しています。
+
+Config (def param) Events::
+
+	  「興味のある」構成値を trace2 ログにダンプします。
++
+オプションで構成イベントを発行できます。 有効にする方法については、 linkgit:git-config[1] の「trace2.configparams」を参照してください。
++
+----------------
+$ git config --system color.ui never
+$ git config --global color.ui always
+$ git config --local color.ui auto
+$ git config --list --show-scope | grep 'color.ui'
+system  color.ui=never
+global  color.ui=always
+local   color.ui=auto
+----------------
++
+次に、 `GIT_TRACE2_CONFIG_PARAMS` を使用して、 設定 `color.ui` を「興味深い」設定としてマークします:
++
+----------------
+$ export GIT_TRACE2_PERF_BRIEF=1
+$ export GIT_TRACE2_PERF=~/log.perf
+$ export GIT_TRACE2_CONFIG_PARAMS=color.ui
+$ git version
+...
+$ cat ~/log.perf
+d0 | main                     | version      |     |           |           |              | ...
+d0 | main                     | start        |     |  0.001642 |           |              | /usr/local/bin/git version
+d0 | main                     | cmd_name     |     |           |           |              | version (version)
+d0 | main                     | def_param    |     |           |           | scope:system | color.ui:never
+d0 | main                     | def_param    |     |           |           | scope:global | color.ui:always
+d0 | main                     | def_param    |     |           |           | scope:local  | color.ui:auto
+d0 | main                     | data         | r0  |  0.002100 |  0.002100 | fsync        | fsync/writeout-only:0
+d0 | main                     | data         | r0  |  0.002126 |  0.002126 | fsync        | fsync/hardware-flush:0
+d0 | main                     | exit         |     |  0.000470 |           |              | code:0
+d0 | main                     | atexit       |     |  0.000477 |           |              | code:0
+----------------
+
+Stopwatch Timer Events::
+
+	プロセスの存続期間全体を通じて、 コード内のさまざまな場所から呼び出される可能性のある、関数呼び出しまたはコード範囲に費やされた時間を測定します。
++
+----------------
+static void expensive_function(void)
+{
+	trace2_timer_start(TRACE2_TIMER_ID_TEST1);
+	...
+	sleep_millisec(1000); // Do something expensive
+	...
+	trace2_timer_stop(TRACE2_TIMER_ID_TEST1);
+}
+
+static int ut_100timer(int argc, const char **argv)
+{
+	...
+
+	expensive_function();
+
+	// Do something else 1...
+
+	expensive_function();
+
+	// Do something else 2...
+
+	expensive_function();
+
+	return 0;
+}
+----------------
++
+この例では、 プログラム全体のフローの中でいつ呼び出されるかに関係なく、 `expensive_function()` に費やされる合計時間を測定します。
++
+----------------
+$ export GIT_TRACE2_PERF_BRIEF=1
+$ export GIT_TRACE2_PERF=~/log.perf
+$ t/helper/test-tool trace2 100timer 3 1000
+...
+$ cat ~/log.perf
+d0 | main                     | version      |     |           |           |              | ...
+d0 | main                     | start        |     |  0.001453 |           |              | t/helper/test-tool trace2 100timer 3 1000
+d0 | main                     | cmd_name     |     |           |           |              | trace2 (trace2)
+d0 | main                     | exit         |     |  3.003667 |           |              | code:0
+d0 | main                     | timer        |     |           |           | test         | name:test1 intervals:3 total:3.001686 min:1.000254 max:1.000929
+d0 | main                     | atexit       |     |  3.003796 |           |              | code:0
+----------------
+
+
+== Future Work
+
+=== Relationship to the Existing Trace Api (api-trace.txt)
+
+Trace2に完全に切り替える前に、解決すべき問題がいくつかあります。
+
+* `GIT_TRACE` 形式のメッセージを想定した既存のテストを更新します。
+
+* カスタム `GIT_TRACE_<key>` メッセージを最適に処理する方法は？
+
+** `GIT_TRACE_<key>` メカニズムにより、各 <key> は(stderrだけでなく)異なるファイルに書き込むことができます。
+
+** その能力を維持したいのか、それとも単に既存のTrace2ターゲットに書き込みたいのか(そして <key> を「カテゴリ」に変換したいのか)。

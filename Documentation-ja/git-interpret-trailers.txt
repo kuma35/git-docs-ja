@@ -1,0 +1,365 @@
+git-interpret-trailers(1)
+=========================
+
+NAME
+----
+git-interpret-trailers - コミットメッセージの構造化情報を追加またはパースします
+
+SYNOPSIS
+--------
+[verse]
+'git interpret-trailers' [--in-place] [--trim-empty]
+			[(--trailer (<key>|<key-alias>)[(=|:)<value>])...]
+			[--parse] [<file>...]
+
+DESCRIPTION
+-----------
+コミット メッセージの自由形式部分の最後の、 RFC 822 電子メール・ヘッダーに似た「トレーラー」(trailer)行の追加またはパースを行います。 たとえば、 以下コミットメッセージ:
+
+------------------------------------------------
+subject
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+Signed-off-by: Alice <alice@example.com>
+Signed-off-by: Bob <bob@example.com>
+------------------------------------------------
+
+ここで、「Signed-off-by」で始まる最後の 2 行はトレーラーです。
+
+This command reads commit messages from either the <file> arguments or the standard input if no <file> is specified. If `--parse` is specified, the output consists of the parsed trailers coming from the input, without influencing them with any command line options or configuration variables.
+
+Otherwise, this command applies `trailer.*` configuration variables (which could potentially add new trailers, as well as reposition them), as well as any command line arguments that can override configuration variables (such as `--trailer=...` which could also add new trailers), to each input file. The result is emitted on the standard output.
+
+このコマンドでは linkgit:git-format-patch[1] の出力を操作することもできます。 これは、 素のコミット・メッセージよりも複雑です。 つまり、 このような出力には、 (上記のとおりの)コミット・メッセージと `---` 区切り線とパッチ部分が含まれます。 これらの入力の場合 `--no-divider` が指定されない限り、 区切り線以下とパッチ部分はこのコマンドによって変更されず、 そのまま出力されます。
+
+いくつかの設定変数は `--trailer` 引数が各入力に適用される方法と、 入力内の既存のトレーラーが変更される方法を制御します。 また、 いくつかのトレーラを自動的に追加することもできます。
+
+By default, a '<key>=<value>' or '<key>:<value>' argument given using `--trailer` will be appended after the existing trailers only if the last trailer has a different (<key>, <value>) pair (or if there is no existing trailer). The <key> and <value> parts will be trimmed to remove starting and trailing whitespace, and the resulting trimmed <key> and <value> will appear in the output like this:
+
+------------------------------------------------
+key: value
+------------------------------------------------
+
+This means that the trimmed <key> and <value> will be separated by `': '` (one colon followed by one space).
+
+For convenience, a <key-alias> can be configured to make using `--trailer` shorter to type on the command line. This can be configured using the 'trailer.<key-alias>.key' configuration variable. The <keyAlias> must be a prefix of the full <key> string, although case sensitivity does not matter. For example, if you have
+
+------------------------------------------------
+trailer.sign.key "Signed-off-by: "
+------------------------------------------------
+
+in your configuration, you only need to specify `--trailer="sign: foo"` on the command line instead of `--trailer="Signed-off-by: foo"`.
+
+デフォルトでは、 すべての既存のトレーラーの末尾の後ろに新しいトレーラーが出力されます。 既存のトレーラーがない場合は、 新しいトレーラーが入力の末尾の後ろに出力表示されます。 その新しいトレーラーの前にまだ空行がない場合は、 空行が追加されます。
+
+入力から、 (i) すべてのトレーラーを含むか、 または (ii) 1つ以上の Git 生成またはユーザー構成のトレーラーを含む25％以上のトレーラーで構成される、 1行以上のグループから、 既存のトレーラーを探し出して抽出します。 そのグループの前には、 1行以上の空行(または空白のみの行)が必要です。 そのグループは、 入力の末尾にあるか、 あるいは `---` で始まる行より前の最後の非空白行達である必要があります(その後にスペースまたは行の終わりが続きます)。
+
+When reading trailers, there can be no whitespace before or inside the <key>, but any number of regular space and tab characters are allowed between the <key> and the separator. There can be whitespaces before, inside or after the <value>. The <value> may be split over multiple lines with each subsequent line starting with at least one whitespace, like the "folding" in RFC 822. Example:
+
+------------------------------------------------
+key: This is a very long value, with spaces and
+  newlines in it.
+------------------------------------------------
+
+注意: トレーラーはRFC822ヘッダー規則の多くに従うことを意図してませんし、 従わないことに注意してください。 たとえば、 それらはエンコーディング規則に従いません。
+
+OPTIONS
+-------
+`--in-place`::
+	その場でファイルを編集します。
+
+`--trim-empty`::
+	トレーラーの <value> 部分に空白(whitespace)のみが含まれている場合、 出力からトレーラー全体が削除されます。 これは、 新しいトレーラーだけでなく、 既存のトレーラーにも適用されます。
+
+`--trailer <key>[(=|:)<value>]`::
+	Specify a (<key>, <value>) pair that should be applied as a trailer to the inputs. See the description of this command.
+
+`--where <placement>`::
+`--no-where`::
+	Specify where all new trailers will be added. A setting provided with '--where' overrides the `trailer.where` and any applicable `trailer.<keyAlias>.where` configuration variables and applies to all '--trailer' options until the next occurrence of '--where' or '--no-where'. Upon encountering '--no-where', clear the effect of any previous use of '--where', such that the relevant configuration variables are no longer overridden. Possible placements are `after`, `before`, `end` or `start`.
+
+`--if-exists <action>`::
+`--no-if-exists`::
+	Specify what action will be performed when there is already at least one trailer with the same <key> in the input. A setting provided with '--if-exists' overrides the `trailer.ifExists` and any applicable `trailer.<keyAlias>.ifExists` configuration variables and applies to all '--trailer' options until the next occurrence of '--if-exists' or '--no-if-exists'. Upon encountering '--no-if-exists, clear the effect of any previous use of '--if-exists, such that the relevant configuration variables are no longer overridden. Possible actions are `addIfDifferent`, `addIfDifferentNeighbor`, `add`, `replace` and `doNothing`.
+
+`--if-missing <action>`::
+`--no-if-missing`::
+	Specify what action will be performed when there is no other trailer with the same <key> in the input. A setting provided with '--if-missing' overrides the `trailer.ifMissing` and any applicable `trailer.<keyAlias>.ifMissing` configuration variables and applies to all '--trailer' options until the next occurrence of '--if-missing' or '--no-if-missing'. Upon encountering '--no-if-missing, clear the effect of any previous use of '--if-missing, such that the relevant configuration variables are no longer overridden. Possible actions are `doNothing` or `add`.
+
+`--only-trailers`::
+	トレーラーのみを出力し、入力の他の部分は出力しません。
+
+`--only-input`::
+	Output only trailers that exist in the input; do not add any from the command-line or by applying `trailer.*` configuration variables.
+
+`--unfold`::
+	If a trailer has a value that runs over multiple lines (aka "folded"), reformat the value into a single line.
+
+`--parse`::
+	A convenience alias for `--only-trailers --only-input --unfold`. This makes it easier to only see the trailers coming from the input without influencing them with any command line options or configuration variables, while also making the output machine-friendly with --unfold.
+
+`--no-divider`::
+	`---` をコミットメッセージの終わりとして扱わないでください。(電子メールや `git format-patch`の出力が含まれておらず、)入力にコミットメッセージ自体だけが含まれていることがわかっている場合にこれを使用します。
+
+CONFIGURATION VARIABLES
+-----------------------
+
+trailer.separators::
+	このオプションは、どの文字がトレーラー区切り文字として認識されるかを示します。 デフォルトでは、 `:` のみがトレーラー区切り文字として認識されます。ただし、他のgitコマンドとの互換性のために、コマンドラインでは `=` が常に受け入れられます。
++
+このオプションで指定された最初の1文字は、このトレーラーの構成で別の区切り文字が指定されていない場合に使用されるデフォルトの文字になります。
++
+For example, if the value for this option is "%=$", then only lines using the format '<key><sep><value>' with <sep> containing '%', '=' or '$' and then spaces will be considered trailers. And '%' will be the default separator used, so by default trailers will appear like: '<key>% <value>' (one percent sign and one space will appear between the key and the value).
+
+trailer.where::
+	このオプションは、新しいトレーラーが追加される場所を示します。
++
+これは、デフォルトの `end` の他に `start` または `after` または `before` にすることができます。
++
+`end` の場合、新しいトレーラーはそれぞれ、既存のトレーラーの最後に出力されます。
++
+`start` の場合、新しい各トレーラーは、既存のトレーラーの最後ではなく、最初に出力されます。
++
+If it is `after`, then each new trailer will appear just after the last trailer with the same <key>.
++
+If it is `before`, then each new trailer will appear just before the first trailer with the same <key>.
+
+trailer.ifexists::
+	This option makes it possible to choose what action will be performed when there is already at least one trailer with the same <key> in the input.
++
+このオプションの有効な値は、 `addIfDifferentNeighbor` (デフォルト)、 または `addIfDifferent` または `add` または `replace` または `doNothing` です。
++
+With `addIfDifferentNeighbor`, a new trailer will be added only if no trailer with the same (<key>, <value>) pair is above or below the line where the new trailer will be added.
++
+With `addIfDifferent`, a new trailer will be added only if no trailer with the same (<key>, <value>) pair is already in the input.
++
+With `add`, a new trailer will be added, even if some trailers with the same (<key>, <value>) pair are already in the input.
++
+With `replace`, an existing trailer with the same <key> will be deleted and the new trailer will be added. The deleted trailer will be the closest one (with the same <key>) to the place where the new one will be added.
++
+With `doNothing`, nothing will be done; that is no new trailer will be added if there is already one with the same <key> in the input.
+
+trailer.ifmissing::
+	This option makes it possible to choose what action will be performed when there is not yet any trailer with the same <key> in the input.
++
+このオプションの有効な値は、 `add` (デフォルト)と `doNothing` です。
++
+`add`を使用すると、新しいトレーラーが追加されます。
++
+`doNothing` を使用すると、何も実行されません。
+
+trailer.<keyAlias>.key::
+	Defines a <keyAlias> for the <key>. The <keyAlias> must be a prefix (case does not matter) of the <key>. For example, in `git config trailer.ack.key "Acked-by"` the "Acked-by" is the <key> and the "ack" is the <keyAlias>. This configuration allows the shorter `--trailer "ack:..."` invocation on the command line using the "ack" <keyAlias> instead of the longer `--trailer "Acked-by:..."`.
++
+At the end of the <key>, a separator can appear and then some space characters. By default the only valid separator is ':', but this can be changed using the `trailer.separators` config variable.
++
+If there is a separator in the key, then it overrides the default separator when adding the trailer.
+
+trailer.<keyAlias>.where::
+	This option takes the same values as the 'trailer.where' configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+
+trailer.<keyAlias>.ifexists::
+	This option takes the same values as the 'trailer.ifexists' configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+
+trailer.<keyAlias>.ifmissing::
+	This option takes the same values as the 'trailer.ifmissing' configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+
+trailer.<keyAlias>.command::
+	Deprecated in favor of 'trailer.<keyAlias>.cmd'. This option behaves in the same way as 'trailer.<keyAlias>.cmd', except that it doesn't pass anything as argument to the specified command. Instead the first occurrence of substring $ARG is replaced by the <value> that would be passed as argument.
++
+注意: ユーザーのコマンド内の $ARG は一度しか置き換えられず、 $ARG を置き換えるこのオリジナルの方法は安全ではないことに注意してください。
++
+When both 'trailer.<keyAlias>.cmd' and 'trailer.<keyAlias>.command' are given for the same <keyAlias>, 'trailer.<keyAlias>.cmd' is used and 'trailer.<keyAlias>.command' is ignored.
+
+trailer.<keyAlias>.cmd::
+	This option can be used to specify a shell command that will be called once to automatically add a trailer with the specified <keyAlias>, and then called each time a '--trailer <keyAlias>=<value>' argument is specified to modify the <value> of the trailer that this option would produce.
++
+When the specified command is first called to add a trailer with the specified <keyAlias>, the behavior is as if a special '--trailer <keyAlias>=<value>' argument was added at the beginning of the "git interpret-trailers" command, where <value> is taken to be the standard output of the command with any leading and trailing whitespace trimmed off.
++
+If some '--trailer <keyAlias>=<value>' arguments are also passed on the command line, the command is called again once for each of these arguments with the same <keyAlias>. And the <value> part of these arguments, if any, will be passed to the command as its first argument. This way the command can produce a <value> computed from the <value> passed in the '--trailer <keyAlias>=<value>' argument.
+
+EXAMPLES
+--------
+
+* 「Signed-off-by」キーを使用して「sign」トレーラーを構成してから、 これら2つのトレーラーをコミット・メッセージ・ファイルへ追加します:
++
+------------
+$ git config trailer.sign.key "Signed-off-by"
+$ cat msg.txt
+subject
+
+body text
+$ git interpret-trailers --trailer 'sign: Alice <alice@example.com>' --trailer 'sign: Bob <bob@example.com>' <msg.txt
+subject
+
+body text
+
+Signed-off-by: Alice <alice@example.com>
+Signed-off-by: Bob <bob@example.com>
+------------
+
+* `--in-place` オプションを使用して、 コミット・メッセージ・ファイルをその場で編集します:
++
+------------
+$ cat msg.txt
+subject
+
+body text
+
+Signed-off-by: Bob <bob@example.com>
+$ git interpret-trailers --trailer 'Acked-by: Alice <alice@example.com>' --in-place msg.txt
+$ cat msg.txt
+subject
+
+body text
+
+Signed-off-by: Bob <bob@example.com>
+Acked-by: Alice <alice@example.com>
+------------
+
+* 最後のコミットをパッチとして抽出し、それに「Cc」トレーラーと「Reviewed-by」トレーラーを追加します:
++
+------------
+$ git format-patch -1
+0001-foo.patch
+$ git interpret-trailers --trailer 'Cc: Alice <alice@example.com>' --trailer 'Reviewed-by: Bob <bob@example.com>' 0001-foo.patch >0001-bar.patch
+------------
+
+* 「Signed-off-by: 」がまだない場合にのみ、作者情報を含む「Signed-off-by: 」を自動的に追加するコマンドを伴って「sign」トレーラーを構成し、それがどのように機能するかを示します:
++
+------------
+$ cat msg1.txt
+subject
+
+body text
+$ git config trailer.sign.key "Signed-off-by: "
+$ git config trailer.sign.ifmissing add
+$ git config trailer.sign.ifexists doNothing
+$ git config trailer.sign.cmd 'echo "$(git config user.name) <$(git config user.email)>"'
+$ git interpret-trailers --trailer sign <msg1.txt
+subject
+
+body text
+
+Signed-off-by: Bob <bob@example.com>
+$ cat msg2.txt
+subject
+
+body text
+
+Signed-off-by: Alice <alice@example.com>
+$ git interpret-trailers --trailer sign <msg2.txt
+subject
+
+body text
+
+Signed-off-by: Alice <alice@example.com>
+------------
+
+* trailer.fix.key に 区切り文字 `#` を含み、その後ろにスペースを含まないキーを使用して「fix」トレーラーを構成し、それがどのように機能するかを示します:
++
+------------
+$ git config trailer.separators ":#"
+$ git config trailer.fix.key "Fix #"
+$ echo "subject" | git interpret-trailers --trailer fix=42
+subject
+
+Fix #42
+------------
+
+* cmdを使用して「ヘルプ」トレーラーを構成します。スクリプト `glog-find-author` を使用して、gitリポジトリのgitログから指定された作成者IDを検索し、その動作を示します。
++
+------------
+$ cat ~/bin/glog-find-author
+#!/bin/sh
+test -n "$1" && git log --author="$1" --pretty="%an <%ae>" -1 || true
+$ cat msg.txt
+subject
+
+body text
+$ git config trailer.help.key "Helped-by: "
+$ git config trailer.help.ifExists "addIfDifferentNeighbor"
+$ git config trailer.help.cmd "~/bin/glog-find-author"
+$ git interpret-trailers --trailer="help:Junio" --trailer="help:Couder" <msg.txt
+subject
+
+body text
+
+Helped-by: Junio C Hamano <gitster@pobox.com>
+Helped-by: Christian Couder <christian.couder@gmail.com>
+------------
+
+* cmdを使用して `ref` トレーラーを構成し、スクリプト `glog-grep` を使用して、gitリポジトリのgitログから最後の関連するコミットをgrepし、それがどのように機能するかを示します。
++
+------------
+$ cat ~/bin/glog-grep
+#!/bin/sh
+test -n "$1" && git log --grep "$1" --pretty=reference -1 || true
+$ cat msg.txt
+subject
+
+body text
+$ git config trailer.ref.key "Reference-to: "
+$ git config trailer.ref.ifExists "replace"
+$ git config trailer.ref.cmd "~/bin/glog-grep"
+$ git interpret-trailers --trailer="ref:Add copyright notices." <msg.txt
+subject
+
+body text
+
+Reference-to: 8bc9a0c769 (Add copyright notices., 2005-04-07)
+------------
+
+* 関連するコミットの件名を出力し、それがどのように機能するかを示すコマンドを使用して、「see」トレーラーを構成します:
++
+------------
+$ cat msg.txt
+subject
+
+body text
+
+see: HEAD~2
+$ cat ~/bin/glog-ref
+#!/bin/sh
+git log -1 --oneline --format="%h (%s)" --abbrev-commit --abbrev=14
+$ git config trailer.see.key "See-also: "
+$ git config trailer.see.ifExists "replace"
+$ git config trailer.see.ifMissing "doNothing"
+$ git config trailer.see.cmd "glog-ref"
+$ git interpret-trailers --trailer=see <msg.txt
+subject
+
+body text
+
+See-also: fe3187489d69c4 (subject of related commit)
+------------
+
+* 空の値を持ついくつかのトレーラーを使用してコミットテンプレートを構成し(sedを使用してトレーラーの後に末尾のスペースを出力および保持します)、次に、「git interpret-trailers」を使用するcommit-msgフックを構成して、値が空のトレーラーを削除し、「git-version」トレーラーを追加します:
++
+------------
+$ cat temp.txt
+***subject***
+
+***message***
+
+Fixes: Z
+Cc: Z
+Reviewed-by: Z
+Signed-off-by: Z
+$ sed -e 's/ Z$/ /' temp.txt > commit_template.txt
+$ git config commit.template commit_template.txt
+$ cat .git/hooks/commit-msg
+#!/bin/sh
+git interpret-trailers --trim-empty --trailer "git-version: \$(git describe)" "\$1" > "\$1.new"
+mv "\$1.new" "\$1"
+$ chmod +x .git/hooks/commit-msg
+------------
+
+SEE ALSO
+--------
+linkgit:git-commit[1], linkgit:git-format-patch[1], linkgit:git-config[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -1,0 +1,144 @@
+git-init(1)
+===========
+
+NAME
+----
+git-init - 空のGitリポジトリを作成するか、既存のリポジトリを再初期化します
+
+
+SYNOPSIS
+--------
+[synopsis]
+git init [-q | --quiet] [--bare] [--template=<template-directory>]
+	 [--separate-git-dir <git-dir>] [--object-format=<format>]
+	 [--ref-format=<format>]
+	 [-b <branch-name> | --initial-branch=<branch-name>]
+	 [--shared[=<permissions>]] [<directory>]
+
+
+DESCRIPTION
+-----------
+
+このコマンドは、空のGitリポジトリを作成します。基本的には、 `objects` と `refs/heads` と `refs/tags` と テンプレートファイルのためのサブディレクトリを持つ `.git` ディレクトリです。コミットのない初期ブランチが作成されます(初期ブランチの名前については、以下の `--initial-branch` オプションを参照してください)。
+
+If the `GIT_DIR` environment variable is set then it specifies a path to use instead of `./.git` for the base of the repository.
+
+If the object storage directory is specified via the `GIT_OBJECT_DIRECTORY` environment variable then the sha1 directories are created underneath; otherwise, the default `$GIT_DIR/objects` directory is used.
+
+Running `git init` in an existing repository is safe. It will not overwrite things that are already there. The primary reason for rerunning `git init` is to pick up newly added templates (or to move the repository to another place if `--separate-git-dir` is given).
+
+OPTIONS
+-------
+
+`-q`::
+`--quiet`::
+
+エラーメッセージと警告メッセージのみを出力します。 他のすべての出力は抑制されます。
+
+`--bare`::
+
+ベア(bare)リポジトリを作成します。 `GIT_DIR` 環境変数が設定されていない場合は、現在の作業ディレクトリに設定されます。
+
+`--object-format=<format>`::
+Specify the given object _<format>_ (hash algorithm) for the repository. The valid values are `sha1` and (if enabled) `sha256`. `sha1` is the default.
++
+include::object-format-disclaimer.txt[]
+
+`--ref-format=<format>`::
+Specify the given ref storage _<format>_ for the repository. The valid values are:
++
+include::ref-storage-format.txt[]
+
+`--template=<template-directory>`::
+テンプレートが使用するディレクトリを指定します。 (以下の「TEMPLATE DIRECTORY」セクションを参照してください。)
+
+`--separate-git-dir=<git-dir>`::
+Instead of initializing the repository as a directory to either `$GIT_DIR` or `./.git/`, create a text file there containing the path to the actual repository. This file acts as a filesystem-agnostic Git symbolic link to the repository.
++
+If this is a reinitialization, the repository will be moved to the specified path.
+
+`-b <branch-name>`::
+`--initial-branch=<branch-name>`::
+Use _<branch-name>_ for the initial branch in the newly created repository. If not specified, fall back to the default name (currently `master`, but this is subject to change in the future; the name can be customized via the `init.defaultBranch` configuration variable).
+
+`--shared[=(false|true|umask|group|all|world|everybody|<perm>)]`::
+
+Specify that the Git repository is to be shared amongst several users. This allows users belonging to the same group to push into that repository. When specified, the config variable `core.sharedRepository` is set so that files and directories under `$GIT_DIR` are created with the requested permissions. When not specified, Git will use permissions reported by `umask`(2).
++
+The option can have the following values, defaulting to `group` if no value is given:
++
+--
+`umask`::
+`false`::
+
+Use permissions reported by `umask`(2). The default, when `--shared` is not specified.
+
+`group`::
+`true`::
+
+Make the repository group-writable, (and `g+sx`, since the git group may not be the primary group of all users). This is used to loosen the permissions of an otherwise safe `umask`(2) value. Note that the umask still applies to the other permission bits (e.g. if umask is `0022`, using `group` will not remove read privileges from other (non-group) users). See `0xxx` for how to exactly specify the repository permissions.
+
+`all`::
+`world`::
+`everybody`::
+
+Same as `group`, but make the repository readable by all users.
+
+_<perm>_::
+
+_<perm>_ is a 3-digit octal number prefixed with `0` and each file will have mode _<perm>_. _<perm>_ will override users' `umask`(2) value (and not only loosen permissions as `group` and `all` do). `0640` will create a repository which is group-readable, but not group-writable or accessible to others. `0660` will create a repo that is readable and writable to the current user and group, but inaccessible to others (directories and executable files get their `x` bit from the `r` bit for corresponding classes of users).
+--
+
+デフォルトでは、共有リポジトリ内で、構成フラグ `receive.denyNonFastForwards` が有効(ture)になっているため、早送り(fast-forward)以外のプッシュを強制することはできません。
+
+If you provide a _<directory>_, the command is run inside it. If this directory does not exist, it will be created.
+
+TEMPLATE DIRECTORY
+------------------
+
+名前がドット(`.`)で始まらないテンプレートディレクトリ内のファイルとディレクトリは、作成後に `$GIT_DIR` にコピーされます。
+
+テンプレートディレクトリは、以下のいずれかになります(この優先順位です):
+
+ - `--template` オプションで指定された引数
+
+ - `$GIT_TEMPLATE_DIR` 環境変数の内容
+
+ - `init.templateDir` 構成変数
+
+ - デフォルトのテンプレートディレクトリ: `/usr/share/git-core/templates`
+
+デフォルトのテンプレートディレクトリには、いくつかのディレクトリ構造、推奨される「除外パターン」(exclude patterns)(linkgit:gitignore[5] 参照)、およびサンプルフックファイルが含まれています。
+
+サンプルフックはデフォルトですべて無効になっています。 サンプルフックを有効にするには、 `.sample` サフィックスを削除して名前を変更します。
+
+フックの実行に関するより一般的な情報については、 linkgit:githooks[5] を参照してください。
+
+EXAMPLES
+--------
+
+既存のコードベースの新しいGitリポジトリを開始します::
++
+----------------
+$ cd /path/to/my/codebase
+$ git init      <1>
+$ git add .     <2>
+$ git commit    <3>
+----------------
++
+<1> Create a `/path/to/my/codebase/.git` directory.
+<2> 既存のすべてのファイルをインデックスに追加します。
+<3> 履歴の最初のコミットとして、初期の状態を記録します。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+:git-init:
+
+include::config/init.txt[]
+
+GIT
+---
+Part of the linkgit:git[1] suite

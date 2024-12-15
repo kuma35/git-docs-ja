@@ -1,0 +1,171 @@
+http.proxy::
+	Override the HTTP proxy, normally configured using the 'http_proxy', 'https_proxy', and 'all_proxy' environment variables (see `curl(1)`). In addition to the syntax understood by curl, it is possible to specify a proxy string with a user name but no password, in which case git will attempt to acquire one in the same way it does for other credentials. See linkgit:gitcredentials[7] for more information. The syntax thus is '[protocol://][user[:password]@]proxyhost[:port][/path]'. This can be overridden on a per-remote basis; see remote.<name>.proxy
++
+Any proxy, however configured, must be completely transparent and must not modify, transform, or buffer the request or response in any way. Proxies which are not completely transparent are known to cause various forms of breakage with Git.
+
+http.proxyAuthMethod::
+	HTTPプロキシに対して認証する方法を設定します。 これは、構成されたプロキシ文字列にユーザー名の部分が含まれている場合にのみ有効になります(つまり、 `user@host` または `user@host:port` 形式)。 これは、リモートごとにオーバーライドできます。 `remote.<name>.proxyAuthMethod` を参照してください。 どちらも `GIT_HTTP_PROXY_AUTHMETHOD` 環境変数でオーバーライドできます。 可能な値は以下のとおりです:
++
+--
+* `anyauth` - 適切な認証方法を自動的に選択します。 プロキシは、407ステータスコードとサポートされている認証方法を使用した1つ以上のProxy-authenticateヘッダーを使用して、認証されていない要求に応答すると想定されます。 これがデフォルトです。
+* `basic` - HTTPベーシック認証
+* `digest` - HTTPダイジェスト認証。これにより、パスワードがクリアテキストでプロキシに送信されるのを防ぎます
+* `negotiate` - GSSネゴシエーション認証(`curl(1)` の `--negotiate` オプションと比較してください)
+* `ntlm` - NTLM認証(`curl(1)` の `--ntlm` オプションと比較してください)
+--
+
+http.proxySSLCert::
+	HTTPSプロキシでの認証に使用するクライアント証明書を格納するファイルのパス名。 `GIT_PROXY_SSL_CERT` 環境変数でオーバーライドできます。
+
+http.proxySSLKey::
+	HTTPSプロキシでの認証に使用する秘密鍵を格納するファイルのパス名。 `GIT_PROXY_SSL_KEY` 環境変数でオーバーライドできます。
+
+http.proxySSLCertPasswordProtected::
+	プロキシSSL証明書に対するGitのパスワードプロンプトを有効にします。 それ以外の場合、証明書または秘密鍵が暗号化されていると、OpenSSLはユーザーにプロンプトを表示します。 `GIT_PROXY_SSL_CERT_PASSWORD_PROTECTED` 環境変数で上書きできます。
+
+http.proxySSLCAInfo::
+	HTTPSプロキシを使用するときにプロキシを検証するために使用する必要がある証明書バンドルを含むファイルへのパス名。 `GIT_PROXY_SSL_CAINFO` 環境変数でオーバーライドできます。
+
+http.emptyAuth::
+	ユーザー名またはパスワードを求めずに認証を試みます。 libcurlは通常、認証にユーザー名を必要とするため、これを使用して、URLにユーザー名を指定せずにGSS-Negotiate認証を試みることができます。
+
+http.proactiveAuth::
+	Attempt authentication without first making an unauthenticated attempt and receiving a 401 response. This can be used to ensure that all requests are authenticated. If `http.emptyAuth` is set to true, this value has no effect.
++
+If the credential helper used specifies an authentication scheme (i.e., via the `authtype` field), that value will be used; if a username and password is provided without a scheme, then Basic authentication is used. The value of the option determines the scheme requested from the helper. Possible values are:
++
+--
+* `basic` - Request Basic authentication from the helper.
+* `auto` - Allow the helper to pick an appropriate scheme.
+* `none` - Disable proactive authentication.
+--
++
+Note that TLS should always be used with this configuration, since otherwise it is easy to accidentally expose plaintext credentials if Basic authentication is selected.
+
+http.delegation::
+	GSSAPI資格情報の委任を制御します。 バージョン7.21.7以降、libcurlでは委任がデフォルトで無効になっています。 ユーザー資格情報に関して、何を委任できるかをサーバーに通知するパラメーターを設定します。 GSS/kerberosで使用されます。 可能な値は以下のとおりです:
++
+--
+* `none` - 委任を許可しないでください。
+* `policy` - OK-AS-DELEGATE フラグが Kerberos サービスチケットに設定されている場合にのみ委任します。これはレルムポリシー(realm policy)の問題です。
+* `always` - サーバーが無条件に委任できるようにします。
+--
+
+
+http.extraHeader::
+	サーバーと通信するときに追加のHTTPヘッダーを渡します。 そのようなエントリが複数存在する場合は、それらすべてが追加のヘッダーとして追加されます。 システム構成から継承された設定をオーバーライドできるようにするには、値を空にすると、余分なヘッダーが空のリストにリセットされます。
+
+http.cookieFile::
+	The pathname of a file containing previously stored cookie lines, which should be used in the Git http session, if they match the server. The file format of the file to read cookies from should be plain HTTP headers or the Netscape/Mozilla cookie file format (see `curl(1)`). Set it to an empty string, to accept only new cookies from the server and send them back in successive requests within same connection. NOTE that the file specified with http.cookieFile is used only as input unless http.saveCookies is set.
+
+http.saveCookies::
+	If set, store cookies received during requests to the file specified by http.cookieFile. Has no effect if http.cookieFile is unset, or set to an empty string.
+
+http.version::
+	サーバーと通信するときは、指定されたHTTPプロトコルバージョンを使用してください。 デフォルトを強制する場合、使用可能なデフォルトバージョンはlibcurlによって異なります。 現在、このオプションの可能な値は以下のとおりです:
+
+	- HTTP/2
+	- HTTP/1.1
+
+http.curloptResolve::
+	HTTP リクエストの送信時に libcurl が最初に使用するホスト名解決情報。 この情報は、以下のいずれかの形式である必要があります:
+
+	- [+]HOST:PORT:ADDRESS[,ADDRESS]
+	- -HOST:PORT
+
++
+最初の形式は、指定された `HOST:PORT` へのすべてのリクエストを、指定された `ADDRESS` にリダイレクトします。 2 番目の形式は、その `HOST:PORT` の組み合わせの以前の設定値をすべてクリアします。 システム構成から継承されたすべての設定を簡単に上書きできるようにするために、空の値はすべての解決情報を空のリストにリセットします。
+
+http.sslVersion::
+	デフォルトを強制する場合に、SSL接続をネゴシエートするときに使用するSSLバージョン。 使用可能なデフォルトバージョンは、libcurlがNSSまたはOpenSSLのどちらに対して構築されたか、および使用中の暗号ライブラリの特定の構成によって異なります。 内部的には、これにより `CURLOPT_SSL_VERSION` オプションが設定されます。 このオプションの形式とサポートされているSSLバージョンの詳細については、libcurlのドキュメントを参照してください。 現在、このオプションの可能な値は以下のとおりです:
+
+	- sslv2
+	- sslv3
+	- tlsv1
+	- tlsv1.0
+	- tlsv1.1
+	- tlsv1.2
+	- tlsv1.3
+
++
+`GIT_SSL_VERSION` 環境変数で上書きできます。 gitにlibcurlのデフォルトのsslバージョンを使用させ、明示的なhttp.sslversionオプションを無視するには、 `GIT_SSL_VERSION` を空の文字列に設定します。
+
+http.sslCipherList::
+  SSL接続をネゴシエートするときに使用するSSL暗号のリスト。 使用可能な暗号は、libcurlがNSSまたはOpenSSLのどちらに対して構築されたか、および使用中の暗号ライブラリの特定の構成によって異なります。 内部的には、これにより `CURLOPT_SSL_CIPHER_LIST` オプションが設定されます。 このリストの形式の詳細については、libcurlのドキュメントを参照してください。
++
+`GIT_SSL_CIPHER_LIST` 環境変数で上書きできます。 gitにlibcurlのデフォルトの暗号リストを使用させ、明示的なhttp.sslCipherListオプションを無視するには、 `GIT_SSL_CIPHER_LIST` を空の文字列に設定します。
+
+http.sslVerify::
+	HTTPSをフェッチまたはプッシュするときにSSL証明書を検証するかどうか。 デフォルトはtrueです。 `GIT_SSL_NO_VERIFY` 環境変数で上書きできます。
+
+http.sslCert::
+	HTTPSをフェッチまたはプッシュするときのSSL証明書を含むファイル。 `GIT_SSL_CERT` 環境変数で上書きできます。
+
+http.sslKey::
+	HTTPSをフェッチまたはプッシュするときのSSL秘密鍵を含むファイル。 `GIT_SSL_KEY` 環境変数で上書きできます。
+
+http.sslCertPasswordProtected::
+	SSL証明書に対するGitのパスワードプロンプトを有効にします。 それ以外の場合、証明書または秘密鍵が暗号化されていると、OpenSSLはユーザーにプロンプトを表示します。 `GIT_SSL_CERT_PASSWORD_PROTECTED` 環境変数で上書きできます。
+
+http.sslCAInfo::
+	HTTPSをフェッチまたはプッシュするときにピア(peer)を検証(verify)するための証明書を含むファイル。 `GIT_SSL_CAINFO` 環境変数でオーバーライドできます。
+
+http.sslCAPath::
+	HTTPSをフェッチまたはプッシュするときにピア(peer)を検証(verify)するためのCA証明書を含むファイルを含むパス。 `GIT_SSL_CAPATH` 環境変数で上書きできます。
+
+http.sslBackend::
+	使用するSSLバックエンドの名前(例: `openssl` または `schannel`)。 cURLが実行時にSSLバックエンドを選択するためのサポートを欠いている場合、このオプションは無視されます。
+
+http.schannelCheckRevoke::
+	`http.sslBackend` が `schannel` に設定されている場合にcURLで証明書失効チェックを実施または無効にするために使用されます。 設定されていない場合、デフォルトは `true` です。 Gitが一貫してエラーを出し、メッセージが証明書の失効ステータスの確認に関するものである場合にのみ、これを無効にする必要があります。 cURLが実行時に関連するSSLオプションを設定するためのサポートを欠いている場合、このオプションは無視されます。
+
+http.schannelUseSSLCAInfo::
+	cURL v7.60.0以降、セキュリティで保護されたチャネルのバックエンドは `http.sslCAInfo` を介して提供される証明書バンドルを使用できますが、これによりWindows証明書ストアが上書きされます。 これはデフォルトでは望ましくないため、 `http.schannelUseSSLCAInfo` がこの動作をオーバーライドしない限り、 `schannel` バックエンドが `http.sslBackend` を介して構成されている場合、Gitはデフォルトでそのバンドルを使用しないようにcURLに指示します。
+
+http.pinnedPubkey::
+	httpsサービスの公開鍵。 これは、PEMまたはDERでエンコードされた公開鍵ファイルのファイル名か、 `sha256//` で始まり、その後にbase64でエンコードされた公開鍵のsha256ハッシュが続く文字列のいずれかです。 libcurlの `CURLOPT_PINNEDPUBLICKEY` も参照してください。 このオプションが設定されているがcURLでサポートされていない場合、gitはエラーで終了します。
+
+http.sslTry::
+	通常のFTPプロトコルを介して接続する場合は、AUTH SSL/TLS と暗号化されたデータ転送を使用してみてください。 これは、FTPサーバーがセキュリティ上の理由でそれを必要とする場合、またはリモートFTPサーバーがそれをサポートする場合はいつでも安全に接続したい場合に必要になることがあります。 誤って構成されたサーバーで証明書検証エラーが発生する可能性があるため、デフォルトはfalseです。
+
+http.maxRequests::
+	並行して起動するHTTPリクエストの数。 `GIT_HTTP_MAX_REQUESTS` 環境変数でオーバーライドできます。 デフォルトは 5 です。
+
+http.minSessions::
+	リクエスト間で保持されるcurlセッションの数(スロット全体でカウント)。 http_cleanup() が呼び出されるまで、curl_easy_cleanup()で終了することはありません。 USE_CURL_MULTIが定義されていない場合、この値の上限は1になります。 デフォルトは1です。
+
+http.postBuffer::
+	リモートシステムにデータをPOSTするときにスマートHTTPトランスポートによって使用されるバッファーの最大サイズ(バイト単位)。 このバッファサイズより大きいリクエストの場合、 HTTP/1.1 と Transfer-Encoding: チャンクが使用され、ローカルで大規模なパックファイルが作成されるのを防ぎます。 デフォルトは1MiBで、ほとんどのリクエストでは十分です。
++
+この制限を引き上げることは、チャンク転送エンコーディングを無効にする場合にのみ有効であるため、リモートサーバーまたはプロキシが HTTP/1.0 のみをサポートするか、HTTP標準に準拠していない場合にのみ使用する必要があることに注意してください。 この制限を引き上げることは、一般に、ほとんどのプッシュの問題に対して効果的な解決策ではありませんが、小さなプッシュに対してもバッファー全体が割り当てられるため、メモリー消費を大幅に増やす可能性があります。
+
+http.lowSpeedLimit, http.lowSpeedTime::
+	HTTP転送速度(バイト/秒)が `http.lowSpeedLimit` 未満の状態が `http.lowSpeedTime` 秒を超えると、 転送は中断(abort)されます。 `GIT_HTTP_LOW_SPEED_LIMIT` および `GIT_HTTP_LOW_SPEED_TIME` 環境変数でオーバーライドできます。
+
+http.noEPSV::
+	A boolean which disables using of EPSV ftp command by curl. This can be helpful with some "poor" ftp servers which don't support EPSV mode. Can be overridden by the `GIT_CURL_FTP_NO_EPSV` environment variable. Default is false (curl will use EPSV).
+
+http.userAgent::
+	The HTTP USER_AGENT string presented to an HTTP server. The default value represents the version of the Git client such as git/1.7.1. This option allows you to override this value to a more common value such as Mozilla/4.0. This may be necessary, for instance, if connecting through a firewall that restricts HTTP connections to a set of common USER_AGENT strings (but not including those like git/1.7.1). Can be overridden by the `GIT_HTTP_USER_AGENT` environment variable.
+
+http.followRedirects::
+	gitがHTTPリダイレクトに従うべきかどうか。 `true` に設定されている場合、gitは、検出したサーバーによって発行されたリダイレクトを透過的に追跡します。 `false` に設定すると、gitはすべてのリダイレクトをエラーとして扱います。 `initial` に設定されている場合、gitはリモートへの最初のリクエストに対してのみリダイレクトに従いますが、後続のフォローアップHTTPリクエストに対しては追跡しません。 gitはリダイレクトされたURLをフォローアップリクエストのベースとして使用するため、通常はこれで十分です。 デフォルトは `initial` です。
+
+http.<url>.*::
+	上記の `http.*` オプションはいずれも、一部のURLに選択的に適用できます。 構成キーがURLと一致するように、構成キーの各要素がURLの要素と以下の順序で比較されます:
++
+--
+. スキーム(例: `https://example.com/` の `https` の部分)。 このフィールドは、構成キーとURLの間で正確に一致する必要があります。
+
+. ホスト/ドメイン名(例: `https://example.com/` の `example.com` の部分)。 このフィールドは、構成キーとURLの間で一致する必要があります。 このレベルのすべてのサブドメインに一致するように、ホスト名の一部として `*` を指定することができます。 たとえば、 `https://*.example.com/` は `https://foo.example.com/` と一致しますが、 `https://foo.bar.example.com/` とは一致しません。
+
+. ポート番号(例: `http://example.com:8080/` の `8080` の部分)。 このフィールドは、構成キーとURLの間で正確に一致する必要があります。 省略されたポート番号は、照合する前に、スキームの正しいデフォルトに自動的に変換されます。
+
+. パス(例: `https://example.com/repo.git` の `repo.git` の部分)。 構成キーのパスフィールドは、URLのパスフィールドと正確に一致するか、スラッシュ(`/`)で区切られたパス要素のプレフィックスとして一致する必要があります。 これは、パス `foo/` の設定キーがURLパス `foo/bar` と一致することを意味します。 プレフィックスは、スラッシュ(`/`)境界でのみ一致できます。 長い一致が優先されます(したがって、パス `foo/bar` の構成キーは、パス `foo/` の構成キーよりもURLパス `foo/bar` によく一致します)。
+
+. ユーザー名(例: `https://user@example.com/repo.git` の `user` の部分)。 構成キーにユーザー名がある場合は、URLのユーザー名と正確に一致する必要があります。 構成キーにユーザー名がない場合、その構成キーは任意のユーザー名(ユーザー名無しを含む)のURLと一致しますが、ユーザー名の構成キーよりも優先順位は低くなります。
+--
++
+上記のリストは、優先順位の高い順に並べられています。 構成キーのパスに一致するURLは、そのユーザー名に一致するURLよりも優先されます。 例えば、URLが `https://user@example.com/foo/bar` の場合、 `https://user@example.com` の設定キーの一致よりも `https://example.com/foo` の設定キーの一致が優先されます。
++
+すべてのURLは、照合を試みる前に正規化されます(パスワード部分がURLに埋め込まれている場合、照合目的では常に無視されます)。これにより、スペルが異なる同等のURLが正しく照合されます。 環境変数の設定は、常に一致を上書きします。 照合されるURLは、Gitコマンドに直接指定されたURLです。 これは、リダイレクトの結果としてアクセスされたURLがマッチングに参加しないことを意味します。

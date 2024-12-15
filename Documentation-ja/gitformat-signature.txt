@@ -1,0 +1,204 @@
+gitformat-signature(5)
+======================
+
+NAME
+----
+gitformat-signature - Git 暗号署名形式
+
+SYNOPSIS
+--------
+[verse]
+<[tag|commit] object header(s)>
+<over-the-wire protocol>
+
+DESCRIPTION
+-----------
+
+Gitはさまざまな場所で暗号署名を使用します。現在、オブジェクト(タグ、コミット、マージタグ)と取引(transactions)(プッシュ時)です。 いずれの場合も、オブジェクトまたは取引を作成しようとしているコマンドは、そこからペイロードを決定し、外部プログラムを呼び出してペイロードの分離署名(detached signature)を取得し(PGP 署名の場合 `gpg -bsa`)、その署名をオブジェクトまたは取引(transactions)に埋め込みます。
+
+署名は「ASCII Armor」ヘッダー行で始まり、(`gpg.format` によって選択された)署名の種類によって異なる末尾行で終わります(`gpg.format` については linkgit:git-config[1] 参照)。
+
+`gpg` (PGP)::
+	`-----BEGIN PGP SIGNATURE-----` と `-----END PGP SIGNATURE-----` または、 gpg に RFC1991 署名を生成するように指示した場合、 `-----BEGIN PGP MESSAGE-----` と `-----END PGP MESSAGE-----`
+
+`ssh` (SSH)::
+	`-----BEGIN SSH SIGNATURE-----` と `-----END SSH SIGNATURE-----`
+
+`x509` (X.509)::
+	`-----BEGIN SIGNED MESSAGE-----` と `-----END SIGNED MESSAGE-----`
+
+署名は、 通常のペイロードの一部として表示される場合もあれば(たとえば、署名されたタグには、 署名が適用されるペイロードの後に署名ブロックが追加されています)、 オブジェクト・ヘッダーの値として表示される場合もあります(たとえば、 署名されたタグをマージしたマージ・コミットは、その `mergetag` ヘッダーにタグの内容全体を持ちます)。 後者の場合、オブジェクト・ヘッダーの通常の複数行書式設定規則が適用され、つまり、 2 行目以降の行には、 その行が前の行から継続していることを示すために、 SP が前に付けられます。
+
+これは、もともとの空行にも当てはまります。 以下の例では、空白(whitespace)文字で終わる行末が `$` 記号で強調表示されています。 これらの例を手作業で再現しようとしている場合は、 それらをカット・アンド・ペーストしないでください。 -- これらは主に、行末の余分な空白を強調するために存在します。
+
+署名されたペイロードと署名の埋め込み方法は、オブジェクト応答タイプや取引に依存します。
+
+== Tag signatures
+
+- 作成方法: `git tag -s`
+- ペイロード: annotated tag object
+- 埋め込み: 署名されていないタグオブジェクトに署名を追加します
+- example: 件名が `signedtag` のタグ `signedtag`
+
+----
+object 04b871796dc0420f8e7561a895b52484b701d51a
+type commit
+tag signedtag
+tagger C O Mitter <committer@example.com> 1465981006 +0000
+
+signed tag
+
+signed tag message body
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQEcBAABAgAGBQJXYRhOAAoJEGEJLoW3InGJklkIAIcnhL7RwEb/+QeX9enkXhxn
+rxfdqrvWd1K80sl2TOt8Bg/NYwrUBw/RWJ+sg/hhHp4WtvE1HDGHlkEz3y11Lkuh
+8tSxS3qKTxXUGozyPGuE90sJfExhZlW4knIQ1wt/yWqM+33E9pN4hzPqLwyrdods
+q8FWEqPPUbSJXoMbRPw04S5jrLtZSsUWbRYjmJCHzlhSfFWW4eFd37uquIaLUBS0
+rkC3Jrx7420jkIpgFcTI2s60uhSQLzgcCwdA2ukSYIRnjg/zDkj8+3h/GaROJ72x
+lZyI6HWixKJkWw8lE9aAOD9TmTW9sFJwcVAzmAuFX2kUreDUKMZduGcoRYGpD7E=
+=jpXa
+-----END PGP SIGNATURE-----
+----
+
+- 検証方法: `git verify-tag [-v]` または `git tag -v`
+
+----
+gpg: Signature made Wed Jun 15 10:56:46 2016 CEST using RSA key ID B7227189
+gpg: Good signature from "Eris Discordia <discord@example.net>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+object 04b871796dc0420f8e7561a895b52484b701d51a
+type commit
+tag signedtag
+tagger C O Mitter <committer@example.com> 1465981006 +0000
+
+signed tag
+
+signed tag message body
+----
+
+== Commit signatures
+
+- 作成方法: `git commit -S`
+- ペイロード: commit object
+- 埋め込み: ヘッダーエントリ `gpgsig` (コンテンツの前にスペースがあります)
+- example: 件名`signed commit` を伴ってコミット
+
+----
+tree eebfed94e75e7760540d1485c740902590a00332
+parent 04b871796dc0420f8e7561a895b52484b701d51a
+author A U Thor <author@example.com> 1465981137 +0000
+committer C O Mitter <committer@example.com> 1465981137 +0000
+gpgsig -----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v1
+ $
+ iQEcBAABAgAGBQJXYRjRAAoJEGEJLoW3InGJ3IwIAIY4SA6GxY3BjL60YyvsJPh/
+ HRCJwH+w7wt3Yc/9/bW2F+gF72kdHOOs2jfv+OZhq0q4OAN6fvVSczISY/82LpS7
+ DVdMQj2/YcHDT4xrDNBnXnviDO9G7am/9OE77kEbXrp7QPxvhjkicHNwy2rEflAA
+ zn075rtEERDHr8nRYiDh8eVrefSO7D+bdQ7gv+7GsYMsd2auJWi1dHOSfTr9HIF4
+ HJhWXT9d2f8W+diRYXGh4X0wYiGg6na/soXc+vdtDYBzIxanRqjg8jCAeo1eOTk1
+ EdTwhcTZlI0x5pvJ3H0+4hA2jtldVtmPM4OTB0cTrEWBad7XV6YgiyuII73Ve3I=
+ =jKHM
+ -----END PGP SIGNATURE-----
+
+signed commit
+
+signed commit message body
+----
+
+- 検証方法: `git verify-commit [-v]` (または `git show --show-signature`)
+
+----
+gpg: Signature made Wed Jun 15 10:58:57 2016 CEST using RSA key ID B7227189
+gpg: Good signature from "Eris Discordia <discord@example.net>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+tree eebfed94e75e7760540d1485c740902590a00332
+parent 04b871796dc0420f8e7561a895b52484b701d51a
+author A U Thor <author@example.com> 1465981137 +0000
+committer C O Mitter <committer@example.com> 1465981137 +0000
+
+signed commit
+
+signed commit message body
+----
+
+== Mergetag signatures
+
+- 作成方法: 署名されたタグ上で `git merge`
+- ペイロード/埋め込み: 署名されたタグオブジェクト全体が、ヘッダーエントリ `mergetag` として(マージ)コミットオブジェクトに埋め込まれます
+- example: 上記のように署名されたタグ `signedtag` のマージ
+
+----
+tree c7b1cff039a93f3600a1d18b82d26688668c7dea
+parent c33429be94b5f2d3ee9b0adad223f877f174b05d
+parent 04b871796dc0420f8e7561a895b52484b701d51a
+author A U Thor <author@example.com> 1465982009 +0000
+committer C O Mitter <committer@example.com> 1465982009 +0000
+mergetag object 04b871796dc0420f8e7561a895b52484b701d51a
+ type commit
+ tag signedtag
+ tagger C O Mitter <committer@example.com> 1465981006 +0000
+ $
+ signed tag
+ $
+ signed tag message body
+ -----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v1
+ $
+ iQEcBAABAgAGBQJXYRhOAAoJEGEJLoW3InGJklkIAIcnhL7RwEb/+QeX9enkXhxn
+ rxfdqrvWd1K80sl2TOt8Bg/NYwrUBw/RWJ+sg/hhHp4WtvE1HDGHlkEz3y11Lkuh
+ 8tSxS3qKTxXUGozyPGuE90sJfExhZlW4knIQ1wt/yWqM+33E9pN4hzPqLwyrdods
+ q8FWEqPPUbSJXoMbRPw04S5jrLtZSsUWbRYjmJCHzlhSfFWW4eFd37uquIaLUBS0
+ rkC3Jrx7420jkIpgFcTI2s60uhSQLzgcCwdA2ukSYIRnjg/zDkj8+3h/GaROJ72x
+ lZyI6HWixKJkWw8lE9aAOD9TmTW9sFJwcVAzmAuFX2kUreDUKMZduGcoRYGpD7E=
+ =jpXa
+ -----END PGP SIGNATURE-----
+
+Merge tag 'signedtag' into downstream
+
+signed tag
+
+signed tag message body
+
+# gpg: Signature made Wed Jun 15 08:56:46 2016 UTC using RSA key ID B7227189
+# gpg: Good signature from "Eris Discordia <discord@example.net>"
+# gpg: WARNING: This key is not certified with a trusted signature!
+# gpg:          There is no indication that the signature belongs to the owner.
+# Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+----
+
+- 検証方法: 検証は、デフォルトでマージコミットメッセージに埋め込まれています。 代替手段として `git show --show-signature` を使用します:
+
+----
+commit 9863f0c76ff78712b6800e199a46aa56afbcbd49
+merged tag 'signedtag'
+gpg: Signature made Wed Jun 15 10:56:46 2016 CEST using RSA key ID B7227189
+gpg: Good signature from "Eris Discordia <discord@example.net>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+Merge: c33429b 04b8717
+Author: A U Thor <author@example.com>
+Date:   Wed Jun 15 09:13:29 2016 +0000
+
+    Merge tag 'signedtag' into downstream
+
+    signed tag
+
+    signed tag message body
+
+    # gpg: Signature made Wed Jun 15 08:56:46 2016 UTC using RSA key ID B7227189
+    # gpg: Good signature from "Eris Discordia <discord@example.net>"
+    # gpg: WARNING: This key is not certified with a trusted signature!
+    # gpg:          There is no indication that the signature belongs to the owner.
+    # Primary key fingerprint: D4BE 2231 1AD3 131E 5EDA  29A4 6109 2E85 B722 7189
+----
+
+GIT
+---
+Part of the linkgit:git[1] suite

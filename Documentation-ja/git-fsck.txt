@@ -1,0 +1,123 @@
+git-fsck(1)
+===========
+
+NAME
+----
+git-fsck - データベース内のオブジェクトの接続性(connectivity)と有効性(validity)を検証します
+
+
+SYNOPSIS
+--------
+[verse]
+'git fsck' [--tags] [--root] [--unreachable] [--cache] [--no-reflogs]
+	 [--[no-]full] [--strict] [--verbose] [--lost-found]
+	 [--[no-]dangling] [--[no-]progress] [--connectivity-only]
+	 [--[no-]name-objects] [<object>...]
+
+DESCRIPTION
+-----------
+データベース内のオブジェクトの接続性(connectivity)と有効性(validity)を検証します
+
+OPTIONS
+-------
+<object>::
+	到達不能追跡のheadとして扱うオブジェクト。
++
+If no objects are given, 'git fsck' defaults to using the index file, all SHA-1 references in the `refs` namespace, and all reflogs (unless --no-reflogs is given) as heads.
+
+`--unreachable`::
+	存在するが、どの参照ノードからも到達できないオブジェクトを印刷します。
+
+`--[no-]dangling`::
+	存在するが「直接」使用されることのないオブジェクトを印刷します(デフォルト)。 `--no-dangling` を使用して、この情報を出力から省略することができます。
+
+`--root`::
+	ルートノードを報告します。
+
+`--tags`::
+	タグを報告します。
+
+`--cache`::
+	インデックスに記録されているオブジェクトを、到達不能追跡のheadノードとしても考慮します。
+
+`--no-reflogs`::
+	reflogのエントリによってのみ参照されるコミットが到達可能であるとは見なさないようにします。このオプションは、以前はrefに含まれていたが、現在は含まれていないが、対応するreflogに残っているコミットを検索することのみを目的としています。
+
+`--full`::
+	GIT_OBJECT_DIRECTORY（$GIT_DIR/objects) 内のオブジェクトだけでなく、GIT_ALTERNATE_OBJECT_DIRECTORIES または $GIT_DIR/objects/info/alternates にリストされている代替オブジェクトプール、および $GIT_DIR/objects/pack にあるパックされたGitアーカイブにあるオブジェクトもチェックします。サブディレクトリを代替オブジェクトプールにパックします。いまやこれがデフォルトになりました。 `--no-full` でオフにできます。
+
+`--connectivity-only`::
+	Check only the connectivity of reachable objects, making sure that any objects referenced by a reachable tag, commit, or tree are present. This speeds up the operation by avoiding reading blobs entirely (though it does still check that referenced blobs exist). This will detect corruption in commits and trees, but not do any semantic checks (e.g., for format errors). Corruption in blob objects will not be detected at all.
++
+到達不能なタグ、コミット、およびツリーにもアクセスして、履歴のぶら下がっているセグメントのヒントを見つけることができます。この出力を気にせず、さらに高速化したい場合は、 `--no-dangling` を使用してください。
+
+`--strict`::
+	Enable more strict checking, namely to catch a file mode recorded with g+w bit set, which was created by older versions of Git. Existing repositories, including the Linux kernel, Git itself, and sparse repository have old objects that trigger this check, but it is recommended to check new projects with this flag.
+
+`--verbose`::
+	おしゃべりになります。
+
+`--lost-found`::
+	タイプに応じて、ぶら下がっているオブジェクトを .git/lost-found/commit/ または .git/lost-found/other/ に書き込みます。オブジェクトがブロブの場合、コンテンツはそのオブジェクト名ではなくファイルに書き込まれます。
+
+`--name-objects`::
+	到達可能なオブジェクトの名前を表示する場合、SHA-1に加えて、それらがどのように到達可能であるかを説明する名前も表示します。 linkgit:git-rev-parse[1] と互換性があります。 例えば `HEAD@{1234567890}~25^2:src/`
+
+`--[no-]progress`::
+	`--no-progress` または `--verbose` が指定されていない限り、進行状況ステータスは、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 `--progress` は、標準エラーストリームが端末に送信されていない場合でも、進行状況出力を強制します。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/fsck.txt[]
+
+DISCUSSION
+----------
+
+git-fsckは、SHA-1と一般的なオブジェクトの健全性をテストし、結果として得られる到達可能性とその他すべてを完全に追跡します。検出した破損(オブジェクトの欠落または不良)を出力し、 `--unreachable` フラグを使用すると、存在するが指定されたheadノード(または上記デフォルト達)のいずれからも到達できないオブジェクトも出力します。
+
+つまり、それは、あなたのバックアップや、他のアーカイブで見つけなければならない破損したオブジェクトです(つまり、あなたは、それらを削除して、他の誰かが破損したオブジェクトを持っていることを期待して、他のサイトと「rsync」を実行できます)。
+
+core.commitGraph が true の場合、 commit-graph ファイルも「git commit-graph verify」を使用して検査されます。 linkgit:git-commit-graph[1] を参照してください。
+
+Extracted Diagnostics
+---------------------
+
+unreachable <type> <object>::
+	<type> というタイプである <object> というオブジェクトは、表示されるツリーまたはコミットのいずれにおいても、実際には直接または間接的に参照されていません。これは、指定していない別のルートノードがあるか、ツリーが破損していることを意味している可能性があります。ルートノードを見逃していない場合は、到達不能なノードは使用できないため、削除することをお勧めします。
+
+missing <type> <object>::
+	この <type> というタイプの <object> というオブジェクトは参照されていますが、データベースに存在しません。
+
+dangling <type> <object>::
+	この <type> タイプの <object> というオブジェクトはデータベースに存在しますが、「直接」使用されることはありません。 ぶら下がっているコミットはルートノードである可能性があります。
+
+hash mismatch <object>::
+	データベースに、ハッシュがオブジェクトデータベースの値と一致しないオブジェクトがあります。これは、深刻なデータ整合性の問題を示しています。
+
+
+FSCK MESSAGES
+-------------
+
+以下に `git fsck` が検出するエラーの種類と各エラーの意味をデフォルトの重大度とともに示します。 「(FATAL)」とマークされているもの以外の重大度は、 対応する `fsck.<msg-id>` 構成変数を設定することで調整できます。
+
+include::fsck-msgids.txt[]
+
+
+Environment Variables
+---------------------
+
+GIT_OBJECT_DIRECTORY::
+	オブジェクトデータベースのルート(通常は $GIT_DIR/objects )を指定するために使用されます
+
+GIT_INDEX_FILE::
+	インデックスのインデックスファイルを指定するために使用されます
+
+GIT_ALTERNATE_OBJECT_DIRECTORIES::
+	追加のオブジェクトデータベースルートを指定するために使用されます(通常は未設定)
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -1,0 +1,410 @@
+gitprotocol-http(5)
+===================
+
+NAME
+----
+gitprotocol-http - Git HTTPベース・プロトコル
+
+
+SYNOPSIS
+--------
+[verse]
+<over-the-wire-protocol>
+
+
+DESCRIPTION
+-----------
+
+Git は、2 つの HTTP ベースの転送プロトコルをサポートしています。 接続するサーバー側で標準の HTTP サーバーのみを必要とする「バカ」(dumb)プロトコルと、Git 対応の CGI (またはサーバーモジュール) を必要とする「スマート」プロトコルです。 このドキュメントでは、両方のプロトコルについて説明します。
+
+設計機能として、スマートクライアントは「バカ」(dumb)プロトコル URL をスマート URL に自動的にアップグレードできます。 これにより、すべてのユーザーが同じ URL を公開できるようになり、接続先(the peers)では利用可能な最も効率的な転送方法(transport)を自動的に選択します。
+
+
+== URL Format
+
+
+HTTP によってアクセスされる Git リポジトリの URL は、RFC 1738 で文書化されている標準の HTTP URL 構文を使用するため、以下の形式になります:
+
+  http://<host>:<port>/<path>?<searchpart>
+
+このドキュメントでは、プレースホルダー `$GIT_URL` は、エンドユーザーが入力した http:// リポジトリ URL を表すことにします。
+
+サーバーは、`$GIT_URL` に一致する場所へのすべてのリクエストを処理するべきです。 これは、Git で使用される「スマート」および「バカ」(dumb) HTTP プロトコルの両方が、ユーザーが指定した `$GIT_URL` 文字列の末尾に追加のパスコンポーネントを追加することによって動作するためです。
+
+An example of a dumb client requesting a loose object:
+
+  $GIT_URL:     http://example.com:8080/git/repo.git
+  URL request:  http://example.com:8080/git/repo.git/objects/d0/49f6c27a2244e12041955e262a404c7faba355
+
+キャッチオール(catch-all)ゲートウェイへのスマートリクエストの例:
+
+  $GIT_URL:     http://example.com/daemon.cgi?svc=git&q=
+  URL request:  http://example.com/daemon.cgi?svc=git&q=/info/refs&service=git-receive-pack
+
+サブモジュール(submodule)へのリクエスト例:
+
+  $GIT_URL:     http://example.com/git/repo.git/path/submodule.git
+  URL request:  http://example.com/git/repo.git/path/submodule.git/info/refs
+
+クライアントは、サーバーに送信されるURLに空のパストークン(`//`)が表示されるのを防ぐために、ユーザーから与えられた $GIT_URL 文字列から、末尾に `/` がある場合はそれを削除しなければなりません。 互換性のあるクライアントは、`$GIT_URL/info/refs` を `foo//info/refs` ではなく、`foo/info/refs` として展開しなｋればなりません。
+
+
+== Authentication
+
+
+リポジトリへのアクセスに認証が必要な場合は、標準の HTTP 認証が使用され、HTTPサーバーソフトウェアによって構成および強制される場合があります。
+
+Gitリポジトリは標準パスコンポーネントによってアクセスされるため、サーバー管理者はHTTPサーバー内でディレクトリベースのアクセス許可を使用して、リポジトリ アクセスを制御できます。
+
+クライアントは、RFC 2617 で説明されているベーシック認証をサポートする必要があります。 サーバーは、Gitサーバーソフトウェアの前に置かれたHTTPサーバーに頼ってベーシック認証をサポートすべきです(SHOULD)。
+
+サーバーは、認証またはアクセス制御の目的で HTTP クッキーを要求すべきではありません。
+
+クライアントとサーバーは、ダイジェスト認証など、他の一般的なHTTPベースの認証形式をサポートする場合があります。
+
+
+== SSL
+
+
+クライアントとサーバーはSSLをサポートするべきです(SHOULD)。特に、ベーシック HTTP 認証に頼る場合にパスワードを保護するためです。
+
+
+== Session State
+
+
+Git over HTTP プロトコル (HTTP 自体とよく似ています) は、HTTP サーバー側から見るとステートレスです。 すべての状態は、クライアントプロセスによって保持および管理されなければなりません。 これにより、サーバー側で単純なラウンドロビン負荷分散が可能になり、状態管理について心配する必要がなくなります。
+
+クライアントは、正しく機能するためにサーバー側に状態管理を要求してはなりません。
+
+サーバーは、正しく機能するために HTTP Cookie を要求してはなりません。 クライアントは、RFC 2616 (HTTP/1.1) で説明されているように、リクエスト処理中に HTTP Cookie を保存および転送できます。 サーバーは、クライアントから送信されたすべての Cookie を無視する必要があります。
+
+
+== General Request Processing
+
+
+特に明記されている場合を除き、すべての標準 HTTP 動作は、クライアントとサーバーの両方で想定される必要があります。 これには以下が含まれます(必ずしもこれらに限定されません):
+
+$GIT_URL にリポジトリがない場合、または $GIT_URL に一致する場所が指すリソースが存在しない場合、サーバーは `200 OK` 応答で応答してはいけません。 サーバーは、 `404 Not Found` または `410 Gone` または要求どおりにリソースが存在することを意味しないその他の適切な HTTP ステータス コードで応答する必要があります。
+
+$GIT_URL にリポジトリがあるが、アクセスが現在許可されていない場合、サーバーは `403 Forbidden` HTTP ステータス コードで応答しなければなりません。
+
+サーバーは、HTTP 1.0 と HTTP 1.1 の両方をサポートする必要があります。 サーバーは、リクエスト本文とレスポンス本文の両方でチャンクエンコーディングをサポートする必要があります。
+
+クライアントは、HTTP 1.0 と HTTP 1.1 の両方をサポートする必要があります。 クライアントは、リクエスト本文とレスポンス本文の両方でチャンクエンコーディングをサポートする必要があります。
+
+サーバは ETag かつ/または Last-Modified ヘッダー を返すことがあります。
+
+クライアントは、If-Modified-Since および/または If-None-Match リクエストヘッダーを含めることにより、キャッシュされたエンティティを再検証することができます。
+
+関連するヘッダーがリクエストに表れ、エンティティが変更されていない場合、サーバーは `304 Not Modified` を返す場合があります。 クライアントは、キャッシュされたエンティティを再利用することにより、 `304 Not Modified` を `200 OK` と同じように扱わなければいけません。
+
+Cache-Control および/または Expires ヘッダーがキャッシュを許可する場合、クライアントは再検証なしでキャッシュされたエンティティを再利用できます。 クライアントとサーバーは、キャッシュ制御について RFC 2616 に従わなければなりません。
+
+
+== Discovering References
+
+
+すべての HTTP クライアントは、リモートリポジトリで利用可能な参照を検出して、フェッチまたはプッシュ交換を開始する必要があります。
+
+=== Dumb Clients
+
+
+「バカ」(dumb)プロトコルのみをサポートする HTTP クライアントは、リポジトリの特別な info/refs ファイルをリクエストして、参照を検出する必要があります。
+
+バカ(dumb) HTTP クライアントは、検索/クエリ パラメータなしで、 `$GIT_URL/info/refs` に対して `GET` リクエストを作成する必要があります。
+
+   C: GET $GIT_URL/info/refs HTTP/1.0
+
+   S: 200 OK
+   S:
+   S: 95dcfa3633004da0049d3d0fa03f80589cbcaf31	refs/heads/maint
+   S: d049f6c27a2244e12041955e262a404c7faba355	refs/heads/master
+   S: 2cb58b79488a98d2721cea644875a8dd0026b115	refs/tags/v1.0
+   S: a3c2e2402b99163d1d59756e5f207ae21cccba4c	refs/tags/v1.0^{}
+
+返された info/refs エンティティの Content-Type は、 `text/plain charset=utf-8` であるべきですが、任意の Content-Type である場合があります。 クライアントは、返された Content-Type の検証を試みてはいけません。 バカ(dumb)サーバーは、 `application/x-git-` で始まる戻り値のタイプを返してはいけません。
+
+返されたエンティティのキャッシングを無効にするために、 Cache-Control ヘッダーが返される場合があります。
+
+応答クライアントを調べる場合、HTTP ステータス コードのみを調べる必要があります。 有効な応答は、 `200 OK` または `304 Not Modified` です。
+
+返されるコンテンツは、各refとその既知の値を記述した UNIX 形式のテキストファイルです。 ファイルは、C ロケールの順序に従って名前でソートする必要があります。 ファイルには、 `HEAD` という名前のデフォルトrefを含めるべきではありません。
+
+  info_refs   =  *( ref_record )
+  ref_record  =  any_ref / peeled_ref
+
+  any_ref     =  obj-id HTAB refname LF
+  peeled_ref  =  obj-id HTAB refname LF
+		 obj-id HTAB refname "^{}" LF
+
+=== Smart Clients
+
+
+「スマート」(smart)プロトコル (または「スマート」プロトコルと「バカ」(dumb)プロトコルの両方) をサポートする HTTP クライアントは、リポジトリの info/refs ファイルに対してパラメーター化された要求を行うことにより、参照を検出する必要があります。
+
+リクエストには、`service=$servicename` というクエリパラメータが 1 つだけ含まれている必要があります。ここで、 `$servicename` は、クライアントが操作を完了するために接続したいサービス名でなければなりません。 リクエストに追加のクエリパラメータを含めてはいけません。
+
+   C: GET $GIT_URL/info/refs?service=git-upload-pack HTTP/1.0
+
+バカ(dumb)サーバー返答:
+
+   S: 200 OK
+   S:
+   S: 95dcfa3633004da0049d3d0fa03f80589cbcaf31	refs/heads/maint
+   S: d049f6c27a2244e12041955e262a404c7faba355	refs/heads/master
+   S: 2cb58b79488a98d2721cea644875a8dd0026b115	refs/tags/v1.0
+   S: a3c2e2402b99163d1d59756e5f207ae21cccba4c	refs/tags/v1.0^{}
+
+スマートサーバー返答:
+
+   S: 200 OK
+   S: Content-Type: application/x-git-upload-pack-advertisement
+   S: Cache-Control: no-cache
+   S:
+   S: 001e# service=git-upload-pack\n
+   S: 0000
+   S: 004895dcfa3633004da0049d3d0fa03f80589cbcaf31 refs/heads/maint\0multi_ack\n
+   S: 003fd049f6c27a2244e12041955e262a404c7faba355 refs/heads/master\n
+   S: 003c2cb58b79488a98d2721cea644875a8dd0026b115 refs/tags/v1.0\n
+   S: 003fa3c2e2402b99163d1d59756e5f207ae21cccba4c refs/tags/v1.0^{}\n
+   S: 0000
+
+クライアントは、 追加パラメーター(Extra Parameters; linkgit:gitprotocol-pack[5] 参照) を、 Git-Protocol HTTP ヘッダーでコロンで区切られた文字列として送信できます。
+
+`--http-backend-info-refs@ オプションを linkgit:git-upload-pack[1] に使用します。
+
+==== Dumb Server Response
+
+バカ(dumb)サーバーは、バカサーバー応答形式(the dumb server reply format)で応答しなければなりません。
+
+バカ(dumb)サーバー応答の詳細な説明については、前述の「dumb clients」セクションを参照してください。
+
+==== Smart Server Response
+
+サーバーがリクエストされたサービス名を認識しない場合、またはリクエストされたサービス名がサーバー管理者によって無効にされている場合、サーバーは `403 Forbidden` HTTP ステータス コードで応答する必要があります。
+
+それ以外の場合、スマートサーバーは、リクエストされたサービス名のスマートサーバー返答形式(the smart server reply format)で応答する必要があります。
+
+Cache-Control ヘッダーは、返されたエンティティのキャッシュを無効にするために使用する必要があります。
+
+Content-Type は `application/x-$servicename-advertisement` でなければなりません。 別のコンテンツタイプが返された場合、クライアントはバカ(dumb)プロトコルにフォールバックする必要があります。 バカ(dumb)プロトコルクライアントにフォールバックするとき、クライアントは `$GIT_URL/info/refs` に追加のリクエストを行うべきではなく、代わりに既に手元にある応答を使用すべきです。 バカ(dumb)プロトコルをサポートしていない場合、クライアントは続行(continue)してはいけません。
+
+クライアントは、ステータスコードが `200 OK` または `304 Not Modified` であることを検証(validate)する必要があります。
+
+クライアントは、応答エンティティの最初の 5 バイトが正規表現 `^[0-9a-f]{4}#` とマッチすることを検証(validate)する必要があります。 このテストが失敗した場合、クライアントは続行(continue)してはいけません。
+
+クライアントは、応答全体を一連の pkt-line レコードとしてパースしなければなりません。
+
+クライアントは、最初の pkt-line が `# service=$servicename` であることを確認(verify)する必要があります。 サーバーは $servicename をリクエストパラメータ値に設定する必要があります。 サーバーは、この行の最後に LF を含める必要があります。 クライアントは、行末の LF を無視する必要があります。
+
+サーバーは、魔法の `0000` pkt-line 終了マーカー(the magic `0000` end pkt-line marker)で応答を終了する必要があります。
+
+返される応答は、各refとその既知の値を説明する pkt-line ストリームです。 ストリームは、C ロケールの順序に従って名前でソートする必要があります。 ストリームには、最初のrefとして `HEAD` という名前のデフォルトref照を含める必要があります。 ストリームは、最初のrefの NUL の後ろに機能宣言(capability declarations)を含める必要があります。
+
+"version=1" が 追加パラメータ(Extra Parameter) として送信された場合、返される応答には "version 1" が含まれます。
+
+  smart_reply     =  PKT-LINE("# service=$servicename" LF)
+		     "0000"
+		     *1("version 1")
+		     ref_list
+		     "0000"
+  ref_list        =  empty_list / non_empty_list
+
+  empty_list      =  PKT-LINE(zero-id SP "capabilities^{}" NUL cap-list LF)
+
+  non_empty_list  =  PKT-LINE(obj-id SP name NUL cap_list LF)
+		     *ref_record
+
+  cap-list        =  capability *(SP capability)
+  capability      =  1*(LC_ALPHA / DIGIT / "-" / "_")
+  LC_ALPHA        =  %x61-7A
+
+  ref_record      =  any_ref / peeled_ref
+  any_ref         =  PKT-LINE(obj-id SP name LF)
+  peeled_ref      =  PKT-LINE(obj-id SP name LF)
+		     PKT-LINE(obj-id SP name "^{}" LF
+
+
+== Smart Service git-upload-pack
+
+このサービスは、 `$GIT_URL` が指すリポジトリから読み込みます。
+
+クライアントは、最初に `$GIT_URL/info/refs?service=git-upload-pack` を使用して ref 検出を実行しなければなりません。
+
+   C: POST $GIT_URL/git-upload-pack HTTP/1.0
+   C: Content-Type: application/x-git-upload-pack-request
+   C:
+   C: 0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n
+   C: 0032have 441b40d833fdfa93eb2908e52742248faf0ee993\n
+   C: 0000
+
+   S: 200 OK
+   S: Content-Type: application/x-git-upload-pack-result
+   S: Cache-Control: no-cache
+   S:
+   S: ....ACK %s, continue
+   S: ....NAK
+
+クライアントは、キャッシュされた応答を再利用(reuse)または再検証(revalidate)してはなりません。 サーバーは、応答のキャッシュを防ぐために十分な Cache-Control ヘッダーを含める必要があります。
+
+サーバーは、ここで定義されたすべての機能をサポートすべきです。
+
+クライアントは、リクエスト本文で少なくとも 1 つの `want` コマンドを送信する必要があります。 サーバーが機能 `allow-tip-sha1-in-want` または `allow-reachable-sha1-in-want` を宣伝(advertise)しない限り、クライアントは `want` コマンドで ref 検出によって取得された応答に表示されなかった ID を参照してはいけません。
+
+  compute_request   =  want_list
+		       have_list
+		       request_end
+  request_end       =  "0000" / "done"
+
+  want_list         =  PKT-LINE(want SP cap_list LF)
+		       *(want_pkt)
+  want_pkt          =  PKT-LINE(want LF)
+  want              =  "want" SP id
+  cap_list          =  capability *(SP capability)
+
+  have_list         =  *PKT-LINE("have" SP id LF)
+
+TODO: 更に文書化する
+
+=== The Negotiation Algorithm
+
+最小パックを選択するための計算は以下のように行われます(C = クライアント、S = サーバー):
+
+`初期化ステップ:`
+
+C: 広告されたref(advertised refs)を取得するためにref検出を使用します。
+
+C: 検出したオブジェクトを `advertised` セットに配置します。
+
+C: 後で両端にあると判断されるかもしれないオブジェクトを保持するために、
+   空のセット `common` を作成します。
+
+C: Build a set, `want`, of the objects from `advertised` that the client
+   wants to fetch, based on what it saw during ref discovery.
+
+C: コミット時間順に並べられたキュー `c_pending` を開始(最新のものを最初に取り出す(pop))。
+   すべてのクライアントrefを追加します。
+   コミットがキューから取り出される(pop)と、その親が自動的に挿入し直されます(SHOULD)。
+   コミットがキューに入るのはは一度だけでなければなりません。
+
+`1回分の計算ステップ:`
+
+C: `$GIT_URL/git-upload-pack` リクエストを1つ送信します:
+
+   C: 0032want <want-#1>...............................
+   C: 0032want <want-#2>...............................
+   ....
+   C: 0032have <common-#1>.............................
+   C: 0032have <common-#2>.............................
+   ....
+   C: 0032have <have-#1>...............................
+   C: 0032have <have-#2>...............................
+   ....
+   C: 0000
+
+ストリームは「コマンド群」に編成され、各コマンドは単独で pkt-line に表れれます。 コマンド行内では、最初の空白までのテキストがコマンド名であり、行の残りの最初の LF までが値です。 コマンド行は、 pkt-line 値の最後のバイトとしての LF で終了します。
+
+コマンド群がリクエストストリームに表れる場合、以下の順序でなければなりません:
+
+* "want"
+* "have"
+
+ストリームは pkt-line フラッシュ(`0000`)によって終了します。
+
+単一の `want` または `have` コマンドは、その値として 1 つの 16 進形式のオブジェクト名を持たなければなりません。 複数のオブジェクト名は複数のコマンドを送信する必要があります。 オブジェクト名は、 `object-format` 機能 (デフォルト SHA-1) によってネゴシエートされたオブジェクトフォーマットを使用して与える必要があります。
+
+The `have` list is created by popping the first 32 commits from `c_pending`. Fewer can be supplied if `c_pending` empties.
+
+クライアントが 256 の `have` コミットを送信し、 `s_common` からそれらの 1 つをまだ受信していない場合、またはクライアントが `c_pending` を空にした場合、サーバーに続行しないことを知らせる `done` コマンドを含める必要があります:
+
+   C: 0009done
+
+S: git-upload-pack リクエストをパースする:
+
+`want` 内のすべてのオブジェクトがrefから直に到達可能であることを確認(verify)します。
+
+サーバーは、履歴または reflog をさかのぼって、気持ち古いリクエストを許可する場合があります。
+
+`want` オブジェクトが受信されない場合は、エラーを送信します: TODO: `欲しい` 行がリクエストされていない場合はエラーを定義します。
+
+`want` オブジェクトに到達できない場合は、エラーを送信します: TODO: 無効な `want` がリクエストされた場合はエラーを定義します。
+
+空のリスト `s_common` を作成します。
+
+もし `have` が送信されたら:
+
+クライアントから提供された順序でオブジェクトをループします。
+
+各オブジェクトについて、サーバーに ref から到達可能なオブジェクトがある場合は、それを `s_common` に追加します。 コミットが s_common に追加された場合、祖先が have に含まれていても追加しないでください。
+
+S: git-upload-pack 応答を送信:
+
+サーバーがパックするオブジェクトの閉じたセットを見つけた場合、またはリクエストが `done` で終了した場合、サーバーはパックで応答します。 TODO: パックベースの応答を文書化する
+
+   S: PACK...
+
+返されるストリームは、 git-upload-pack サービスでサポートされている side-band-64k プロトコルであり、パックはストリーム 1 に埋め込まれます。サーバー側からの進行状況メッセージは、ストリーム 2 に表示される場合があります。
+
+ここで、「オブジェクトの閉じたセット」(closed set of objects)とは、すべての `want` から少なくとも 1 つの `common` オブジェクトへの少なくとも 1 つのパスを持つように定義されます。
+
+サーバーがさらに情報を必要とする場合、サーバーは status continue 応答で応答します: TODO: パック以外の応答を文書化する
+
+C: Parse the upload-pack response:
+   TODO: Document parsing response
+
+`次の回の計算ステップを実行します。`
+
+
+== Smart Service git-receive-pack
+
+このサービスは、 `$GIT_URL` が指すリポジトリから読み込みます。
+
+クライアントは、最初に `$GIT_URL/info/refs?service=git-receive-pack` を使用して ref 検出を実行する必要があります。
+
+   C: POST $GIT_URL/git-receive-pack HTTP/1.0
+   C: Content-Type: application/x-git-receive-pack-request
+   C:
+   C: ....0a53e9ddeaddad63ad106860237bbf53411d11a7 441b40d833fdfa93eb2908e52742248faf0ee993 refs/heads/maint\0 report-status
+   C: 0000
+   C: PACK....
+
+   S: 200 OK
+   S: Content-Type: application/x-git-receive-pack-result
+   S: Cache-Control: no-cache
+   S:
+   S: ....
+
+クライアントは、キャッシュされた応答を再利用(reuse)または再検証(revalidate)してはなりません。 サーバーは、応答のキャッシュを防ぐために十分な Cache-Control ヘッダーを含める必要があります。
+
+サーバーは、ここで定義されたすべての機能をサポートすべきです。
+
+クライアントは、リクエスト本文で少なくとも 1 つのコマンドを送信する必要があります。 リクエストボディのコマンド部分内で、クライアントは、ref 検出を通じて取得した ID を old_id として送信する必要があります。
+
+  update_request  =  command_list
+		     "PACK" <binary-data>
+
+  command_list    =  PKT-LINE(command NUL cap_list LF)
+		     *(command_pkt)
+  command_pkt     =  PKT-LINE(command LF)
+  cap_list        =  *(SP capability) SP
+
+  command         =  create / delete / update
+  create          =  zero-id SP new_id SP name
+  delete          =  old_id SP zero-id SP name
+  update          =  old_id SP new_id SP name
+
+TODO: 更に文書化する
+
+== REFERENCES
+
+* https://www.ietf.org/rfc/rfc1738.txt[RFC 1738: Uniform Resource Locators (URL)]
+* https://www.ietf.org/rfc/rfc2616.txt[RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1]
+
+== SEE ALSO
+
+linkgit:gitprotocol-pack[5] linkgit:gitprotocol-capabilities[5]
+
+== GIT
+
+Part of the linkgit:git[1] suite
+

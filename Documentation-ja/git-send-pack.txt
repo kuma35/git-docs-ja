@@ -1,0 +1,104 @@
+git-send-pack(1)
+================
+
+NAME
+----
+git-send-pack - Gitプロトコルを介してオブジェクトを別のリポジトリにプッシュする
+
+
+SYNOPSIS
+--------
+[verse]
+'git send-pack' [--mirror] [--dry-run] [--force]
+		[--receive-pack=<git-receive-pack>]
+		[--verbose] [--thin] [--atomic]
+		[--[no-]signed | --signed=(true|false|if-asked)]
+		[<host>:]<directory> (--all | <ref>...)
+
+DESCRIPTION
+-----------
+通常は、代わりに、このコマンドの上位レベルのラッパーである「git push」を使用することをお勧めします。 linkgit:git-push[1] を参照してください。
+
+おそらくリモートリポジトリで `git-receive-pack` を呼び出し、現在のリポジトリから更新して、名前付きrefsを送信します。
+
+
+OPTIONS
+-------
+`--receive-pack=<git-receive-pack>`::
+	リモート側の 「git-receive-pack」プログラムへのパス。 sshを介してリモートリポジトリにプッシュするとき、デフォルトの $PATH のディレクトリにプログラムが無い場合に便利です。
+
+`--exec=<git-receive-pack>`::
+	`--receive-pack=<git-receive-pack>` と同じ。
+
+`--all`::
+	更新するrefを明示的に指定する代わりに、ローカルに存在するすべてのヘッドを更新します。
+
+`--stdin`::
+	stdinからrefのリストを1行に1つずつ取得します。 このオプションに加えてコマンドラインでrefが指定されている場合、stdinからのrefはコマンドラインでのrefの後に処理されます。
++
+`--stateless-rpc` がこのオプションと一緒に指定されている場合、refのリストはパケット形式(pkt-line)である必要があります。各refは個別のパケットに含まれている必要があり、リストはフラッシュパケットで終了している必要があります。
+
+`--dry-run`::
+	実際に更新を送信する以外はすべて行います。
+
+`--force`::
+	Usually, the command refuses to update a remote ref that is not an ancestor of the local ref used to overwrite it. This flag disables the check. This means that the remote repository can lose commits; use it with care.
+
+`--verbose`::
+	おしゃべりに実行します。
+
+`--thin`::
+	ネットワークトラフィックを削減するために、パックに含まれていないオブジェクトに基づいてオブジェクトを削除された形式で記録する薄いパック(thin pack)を送信します。
+
+`--atomic`::
+	参照を更新するためにアトミック取引(atomic transaction)を使用します。いずれかのrefが更新に失敗した場合、refを変更せずにプッシュ全体が失敗します。
+
+`--[no-]signed`::
+`--signed=(true|false|if-asked)`::
+	プッシュリクエストをGPG署名して、受信側のrefを更新し、フックでチェックしたり、ログに記録したりできるようにします。 `false` または `--no-signed` の場合、署名は試行されません。 `true` または `--signed` の場合、サーバーが署名付きプッシュをサポートしていないと、プッシュは失敗します。 `if-asked` に設定されている場合、サーバーが署名されたプッシュをサポートしている場合にのみ署名します。 `gpg --sign` の実際の呼び出しが失敗した場合も、プッシュは失敗します。 受信側の詳細については、 linkgit:git-receive-pack[1] を参照してください。
+
+`--push-option=<string>`::
+	サーバー側のフックで使用するためのプッシュオプションとして、指定された文字列を渡します。 サーバーがプッシュオプションをサポートしていない場合は、エラーになります。 詳細については、 linkgit:git-push[1] と linkgit:githooks[5] を参照してください。
+
+<host>::
+	リポジトリを収容するリモートホスト。 この部分を指定すると、sshを介して「git-receive-pack」が呼び出されます。
+
+<directory>::
+	更新するリポジトリ。
+
+<ref>...::
+	更新するリモートref。
+
+
+SPECIFYING THE REFS
+-------------------
+
+リモート側で更新するrefを指定するには、3つの方法があります。
+
+With the `--all` flag, all refs that exist locally are transferred to the remote side. You cannot specify any '<ref>' if you use this flag.
+
+`--all` がなく、 `<ref>` がない場合、ローカル側とリモート側の両方に存在するヘッドが更新されます。
+
+When one or more '<ref>' are specified explicitly (whether on the command line or via `--stdin`), it can be either a single pattern, or a pair of such patterns separated by a colon ":" (this means that a ref name cannot have a colon in it). A single pattern '<name>' is just shorthand for '<name>:<name>'.
+
+各パターンペアは、ソース側(コロンの前)と、宛先側(コロンの後)で構成されます。プッシュされるrefは、ソース側にマッチするモノを見つけることによって決定され、プッシュされる場所は、宛先側を使用して決定されます。refの照合に使用されるルールは、シンボリックref名を解決するために「git rev-parse」で使用されるルールと同じです。 linkgit:git-rev-parse[1] を参照してください。
+
+ - <src> がローカル参照の1つと正確に一致しない場合はエラーとなります。
+
+ - It is an error if <dst> matches more than one remote ref.
+
+ - <dst> がどのリモート参照とも一致しない場合は以下のいずれかです。
+
+   * 「refs/」で始まる必要があります。 この場合、文字通り <dst> が宛先として使用されます。
+
+   * <src> == <dst> および、 <src> に一致するrefは、リモートrefのセットに存在してはなりません。 ローカルで一致する参照 <src> が、宛先の名前として使用されます。
+
+Without `--force`, the <src> ref is stored at the remote only if <dst> does not exist, or <dst> is a proper subset (i.e. an ancestor) of <src>. This check, known as the "fast-forward check", is performed to avoid accidentally overwriting the remote ref and losing other people's commits from there.
+
+`--force` を使用すると、すべてのrefに対して早送りチェック(fast-forward check)が無効になります。
+
+オプションで、<ref>パラメーターの前にプラスの「+」記号を付けて、そのrefでのみ早送りチェック(fast-forward check)を無効にすることができます。
+
+GIT
+---
+Part of the linkgit:git[1] suite

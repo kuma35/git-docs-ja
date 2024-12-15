@@ -1,0 +1,52 @@
+transfer.credentialsInUrl::
+	構成された URL には、 `<protocol>://<user>:<password>@<domain>/<path>` の形式で平文(plaintext)の資格情報(credentials)を含めることができます。 (linkgit:git-credential[1] の使用を優先して、)そのような構成の使用を警告または禁止することができます。 これは、 linkgit:git-clone[1] や linkgit:git-fetch[1] やlinkgit:git-push[1] や その他の構成された URL の直接使用で使用されます。
++
+Note that this is currently limited to detecting credentials in `remote.<name>.url` configuration; it won't detect credentials in `remote.<name>.pushurl` configuration.
++
+これを有効にして、不注意による資格情報(credentials)の公開を防ぐことができます。 それがなぜかを以下の例で説明します:
++
+* git を実行している OS またはシステムでは、ユーザー名やパスワードが保存されている構成ファイルのアクセス許可を構成する方法が提供されていないか、許可されていない場合があります。
+* たとえ許可があったとしても、そのようなデータを「保存」すると、他の方法で危険にさらされる可能性があります。たとえばバックアップ処理によって、データが別のシステムにコピーされる場合があります。
+* The git programs will pass the full URL to one another as arguments on the command-line, meaning the credentials will be exposed to other unprivileged users on systems that allow them to see the full process list of other users. On linux the "hidepid" setting documented in procfs(5) allows for configuring this behavior.
++
+If such concerns don't apply to you then you probably don't need to be concerned about credentials exposure due to storing sensitive data in git's configuration files. If you do want to use this, set `transfer.credentialsInUrl` to one of these values:
++
+* `allow` (デフォルト): Git は警告なしでアクティビティを続行します。
+* `warn`: Git は、平文(plaintext)の資格情報(credential)で URL をパースするときに `stderr` に警告メッセージを書き込みます。
+* `die`: Git は、 平文(plaintext)の資格情報(credential)で URL をパースするときに、失敗メッセージを `stderr` に書き込みます。
+
+transfer.fsckObjects::
+	`fetch.fsckObjects` または `receive.fsckObjects` が設定されていない場合、代わりにこの変数の値が使用されます。デフォルトはfalseです。
++
+設定すると、不正な形式のオブジェクトまたは存在しないオブジェクトへのリンクの場合、フェッチまたは受信は中止されます。 さらに、レガシー問題(`fsck.<msg-id>` を参照)を含む、 `.GIT` ディレクトリや悪意のある `.gitmodules` ファイルの存在などの潜在的なセキュリティの問題(詳細については、v2.2.1およびv2.17.1のリリースノートを参照してください)など、他のさまざまな問題がチェックされます。 その他の健全性とセキュリティのチェックが、将来のリリースで追加される可能性があります。
++
+受信側では、fsckObjects に障害が発生すると、これらのオブジェクトに到達できなくなります。 linkgit:git-receive-pack[1] の「QUARANTINE ENVIRONMENT」を参照してください。 一方、フェッチ側では、不正な形式のオブジェクトはリポジトリで参照されない(unreferenced)ままになります。
++
+`fetch.fsckObjects` 実装は隔離されていない(non-quarantine nature)ため、 `receive.fsckObjects` のようにオブジェクトストアをクリーンな状態に保つことはできません。
++
+オブジェクトが解凍されると、オブジェクトストアに書き込まれるため、「フェッチ」が失敗したにもかかわらず、悪意のあるオブジェクトが導入される場合があります。オブジェクトストアにすでに書き込まれているオブジェクトではなく、新しい着信オブジェクトのみがチェックされるため、後続の「フェッチ」が成功するだけです。 この振る舞いの違いは信頼されるべきではありません。将来的には、そのようなオブジェクトは「フェッチ」のために隔離される可能性があります。
++
+今のところ、「プッシュ」と同じ保護が必要な場合、疑り深い人(paranoid)は検疫環境をエミュレートする方法を見つける必要があります。 例えば、内部ミラーの場合、2つのステップでミラーリングを実行します。信頼できないオブジェクトをフェッチするために1ステップ、そして次に、別の内部リポジトリに「プッシュ」(隔離を使用します)を実行する2ステップ目です。内部クライアントにこのプッシュ先リポジトリを消費させ、または、内部フェッチを禁止し、完全な `fsck` が実行された場合にのみ許可します(その間に新しいフェッチは発生しません)。
+
+transfer.hideRefs::
+	文字列 `receive-pack` と `upload-pack` は、最初の広告から除外するrefを決定するために使用します。 複数のプレフィックス文字列を指定するには、複数の定義を使用します。 この変数の値にリストされている階層の下にあるrefは除外され、 `git push` または `git fetch` に応答するときに非表示になります。 この構成のプログラム固有のバージョンについては、 `receive.hideRefs` および `uploadpack.hideRefs` を参照してください。
++
+あなたは ref名の前に `!` を含めてエントリを無効にし、以前のエントリで非表示としてマークされていた場合でも、明示的に公開することもできます。 複数の非表示ref値がある場合、後のエントリが前のエントリを上書きします(そして、より具体的な構成ファイルのエントリは、より具体的でないものを上書きします)。
++
+名前空間が使用されている場合、名前空間プレフィックスは、 `transfer.hiderefs` パターンと照合される前に、各参照から削除されます。 削除する前に参照を一致させるには、参照名の前に `^` を追加します。 `!` と `^` を組み合わせる場合は、最初に `!` を指定する必要があります。
++
+たとえば、 `refs/heads/master` が `transfer.hideRefs` で指定され、現在の名前空間が `foo` の場合、 `refs/namespaces/foo/refs/heads/master` は広告から省略されます。 `uploadpack.allowRefInWant` が設定されている場合、 `upload-pack` は、プロトコルバージョン2の `fetch` コマンドの `want-ref refs/heads/master` で、 `refs/namespaces/foo/refs/heads/master` が存在しないかのように扱います。 一方、 `receive-pack`は、その名前(いわゆる `.have` 行)を指定せずに、refが指しているオブジェクトIDを広告します。
++
+refを非表示にしても、 linkgit:gitnamespaces[7]のマニュアルページの「SECURITY」セクションで説明されている手法を使用して、クライアントがターゲットオブジェクトを盗むことができる場合があります。よって、プライベートデータは別のリポジトリに保持するのが最良です。
+
+transfer.unpackLimit::
+	`fetch.unpackLimit` または `receive.unpackLimit` が設定されていない場合、代わりにこの変数の値が使用されます。 デフォルト値は100です。
+
+transfer.advertiseSID::
+	ブール値。 trueの場合、クライアントプロセスとサーバープロセスは、一意のセッションIDをリモートの対応するプロセスに広告します。 デフォルトはfalseです。
+
+transfer.bundleURI::
+	`true` の場合、ローカルの `git clone` コマンドは、 Git プロトコルを介してクローン作業を続行する前に、 (広告(advertise)されている場合)リモート・サーバーにバンドル情報を要求し、 バンドルをダウンロードします。 デフォルトは `false` です。
+
+transfer.advertiseObjectInfo::
+	When `true`, the `object-info` capability is advertised by servers. Defaults to false.

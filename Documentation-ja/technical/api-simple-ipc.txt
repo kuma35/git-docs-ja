@@ -1,0 +1,44 @@
+Simple-IPC API
+==============
+
+The Simple-IPC API is a collection of `ipc_` prefixed library routines and a basic communication protocol that allows an IPC-client process to send an application-specific IPC-request message to an IPC-server process and receive an application-specific IPC-response message.
+
+通信は、Windowsでは名前付きパイプを介して、他のプラットフォームではUnixドメインソケットを介して行われます。 IPCクライアントとIPCサーバーは、コンピューターシステムに対してローカルである、以前に合意されたアプリケーション固有のパス名(この設計の範囲外)で会合(rendezvous)します。
+
+サーバーアプリケーションプロセス内のIPCサーバールーチンは、接続をリッスンし、複数の同時IPCクライアントから要求メッセージを受信するためのスレッドプールを作成します。 受信すると、これらのメッセージは処理のためにサーバーアプリケーションのコールバックまでディスパッチされます。 次に、IPCサーバールーチンは、応答をIPCクライアントに段階的にリレー(incrementally relay)します。
+
+The IPC-client routines within a client application process connect to the IPC-server and send a request message and wait for a response. When received, the response is returned back to the caller.
+
+For example, the `fsmonitor--daemon` feature will be built as a server application on top of the IPC-server library routines. It will have threads watching for file system events and a thread pool waiting for client connections. Clients, such as `git status`, will request a list of file system events since a point in time and the server will respond with a list of changed files and directories. The formats of the request and response are application-specific; the IPC-client and IPC-server routines treat them as opaque byte streams.
+
+
+サブプロセスモデルとの比較
+-------------
+
+The Simple-IPC mechanism differs from the existing `sub-process.c` model (Documentation/technical/long-running-process-protocol.txt) and used by applications like Git-LFS. In the LFS-style sub-process model, the helper is started by the foreground process, communication happens via a pair of file descriptors bound to the stdin/stdout of the sub-process, the sub-process only serves the current foreground process, and the sub-process exits when the foreground process terminates.
+
+Simple-IPCモデルでは、サーバーは非常に長時間実行されるサービスです。 同時に多くのクライアントにサービスを提供でき、アクティブな各クライアントへのプライベートソケットまたは名前付きパイプ接続があります。 現在のクライアントプロセスによって(オンデマンドで)開始されたか、以前のクライアントまたは起動時にOSによって開始された可能性があります。 サーバープロセスは端末に関連付けられておらず、クライアントが終了した後も存続します。 クライアントはサーバープロセスの stdin/stdout にアクセスできないため、ソケットまたは名前付きパイプを介して通信する必要があります。
+
+
+Server startup and shutdown
+---------------------------
+
+IPCサーバーに基づくアプリケーションサーバーの起動方法も Simple-IPC 設計の範囲外であり、それを使用するアプリケーションの範疇です。 たとえば、サーバーは定期的なメンテナンス操作中に起動または再起動されたり、システムの起動シーケンス中にシステムサービスとして起動されたり、必要に応じてフォアグラウンドGitコマンドによってオンデマンドで起動されたりする場合があります。
+
+同様に、サーバーのシャットダウンは、simple-ipc ルーチンを使用するアプリケーションの範疇です。 たとえば、サーバーは、アイドル状態のとき、または明示的な要求があった場合にのみシャットダウンすることを決定する場合があります。
+
+
+Simple-IPC protocol
+-------------------
+
+Simple-IPCプロトコルは、クライアントからの単一の要求メッセージとサーバーからのオプションの応答メッセージで構成されます。 クライアントメッセージとサーバーメッセージはどちらも長さが無制限で、フラッシュパケットで終了します。
+
+pkt-lineルーチン達(linkgit:gitprotocol-common[5])は、メッセージの、生成中や送信中や受信中の、バッファー管理を簡素化するために使用されます。 フラッシュパケットは、メッセージの終わりを示すために使用されます。 これにより、送信側はメッセージを段階的に生成して送信できます。 これにより、受信者はメッセージをチャンクで段階的に受信し、メッセージ全体をいつ受信したかを知ることができます。
+
+クライアント要求およびサーバー応答メッセージの実際のバイト形式は、アプリケーション固有です。 IPC層は、内部のコンテンツを気にすることなく、不透明なバイトバッファとしてそれらを送受信します。 要求メッセージと応答メッセージの内容を理解するのは、呼び出し元のアプリケーション層の仕事です。
+
+
+Summary
+-------
+
+Conceptually, the Simple-IPC protocol is similar to an HTTP REST request. Clients connect, make an application-specific and stateless request, receive an application-specific response, and disconnect. It is a one round trip facility for querying the server. The Simple-IPC routines hide the socket, named pipe, and thread pool details and allow the application layer to focus on the task at hand.

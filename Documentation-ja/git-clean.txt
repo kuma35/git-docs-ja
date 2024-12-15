@@ -1,0 +1,107 @@
+git-clean(1)
+============
+
+NAME
+----
+git-clean - 作業ツリーから追跡されていないファイルを削除する
+
+SYNOPSIS
+--------
+[verse]
+'git clean' [-d] [-f] [-i] [-n] [-q] [-e <pattern>] [-x | -X] [--] [<pathspec>...]
+
+DESCRIPTION
+-----------
+
+現在のディレクトリから開始して、バージョン管理下にないファイルを再帰的に削除することにより、作業ツリーをクリーンにします。
+
+通常、Gitが追跡していないファイルのみが削除されますが、 `-x` オプションが指定されている場合、無視されたファイル(ignored files)も削除されます。これは、たとえば、ビルドでの生成物全てを削除するのに役立ちます。
+
+オプションで、 任意の数の `<pathspec> ...` 引数を指定すると、 それらの pathspec のみが影響を受けます。
+
+OPTIONS
+-------
+`-d`::
+	通常、 <pathspec> が指定されていない場合、 削除が多すぎるのを避けるために、 git clean は追跡されていないディレクトリ内には再帰処理しません。 `-d` を指定すると、そのようなディレクトリ内でも再帰的に処理します。 <pathspec> が指定されている場合、 `-d` は無意味です。 (`--force` で言及されているネストされたgitディレクトリを除く、)指定されたパスに一致するすべての追跡されていないファイルは削除されます。
+
+`-f`::
+`--force`::
+	If the Git configuration variable clean.requireForce is not set to false, 'git clean' will refuse to delete files or directories unless given -f. Git will refuse to modify untracked nested git repositories (directories with a .git subdirectory) unless a second -f is given.
+
+`-i`::
+`--interactive`::
+	Show what would be done and clean files interactively. See ``Interactive mode'' for details. Configuration variable `clean.requireForce` is ignored, as this mode gives its own safety protection by going interactive.
+
+`-n`::
+`--dry-run`::
+	Don't actually remove anything, just show what would be done. Configuration variable `clean.requireForce` is ignored, as nothing will be deleted anyway.
+
+`-q`::
+`--quiet`::
+	静かにして、エラーのみを報告し、正常に削除されたファイルは報告しないでください。
+
+`-e <pattern>`::
+`--exclude=<pattern>`::
+	標準の無視ルールに加えて、指定の除外パターンを使用します(linkgit:gitignore[5] 参照)。
+
+`-x`::
+	標準の無視ルール(linkgit:gitignore[5] 参照)を使用しないでください。ただし、コマンドラインから `-e` オプションを指定して指定された無視ルールは使用してください。これにより、ビルド生成物を含む、追跡されていないすべてのファイルを削除できます。これを使用して（おそらく「git restore」または「git reset」と組み合わせて）、ビルドをテストするためのクリーンな、元の作業ディレクトリを作成できます。
+
+`-X`::
+	Gitによって無視されたファイルのみを削除します。これは、すべてを最初から再構築するのに役立つ場合がありますが、手動で作成したファイルは保持します。
+
+Interactive mode
+----------------
+コマンドがinteractive modeに入ると、クリーンアップするファイルとディレクトリが表示され、インタラクティブコマンドループに入ります。
+
+コマンドループは、使用可能なサブコマンドのリストを表示し、「Whatnow> 」というプロンプトを表示します。一般に、プロンプトが単一の「>」で終わる場合、以下のように、選択肢の1つだけを選択し、ENTERキーを押します:
+
+------------
+    *** Commands ***
+	1: clean                2: filter by pattern    3: select by numbers
+	4: ask each             5: quit                 6: help
+    What now> 1
+------------
+
+選択が一意である限り、上記は「c」または「clean」と打ち込む事もできます。
+
+メインコマンドループには6つのサブコマンドがあります。
+
+clean::
+
+   ファイルとディレクトリのクリーニングを開始して、終了(quit)します。
+
+filter by pattern::
+
+   This shows the files and directories to be deleted and issues an "Input ignore patterns>>" prompt. You can input space-separated patterns to exclude files and directories from deletion. E.g. "*.c *.h" will exclude files ending with ".c" and ".h" from deletion. When you are satisfied with the filtered result, press ENTER (empty) back to the main menu.
+
+select by numbers::
+
+   これにより、削除するファイルとディレクトリが表示され、「Select items to delete>>」(削除するアイテムを選択)というプロンプトが表示されます。プロンプトがこのように二重の「>>」で終わる場合、空白またはコンマで連結して複数の選択を行うことができます。また、あなたは範囲を伝えることができます。 例えば「2-57,9」でリストから2,3,4,5,7,9を選択します。範囲の2番目の数値を省略すると、残りのすべての項目が選択されます。 例えば「7-」はリストから7,8,9を選択します。「*」dで全てを選択できます。そして、結果に満足したら、ENTER を押してメインメニューに戻ります。
+
+ask each::
+
+  これはクリーニングが始まると、アイテムを削除するために一つずつ確認する必要があります。この操作は、上記の2つのアクションほど効率的ではないことに注意してください。
+
+quit::
+
+  This lets you quit without doing any cleaning.
+
+help::
+
+  git-cleanの対話的な簡単な使用法を示します。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/clean.txt[]
+
+SEE ALSO
+--------
+linkgit:gitignore[5]
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Git Commit-Graph Design Notes</h1>
-<span id="revdate">2024-12-12</span>
+<span id="revdate">2024-12-15</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -907,7 +907,7 @@ Commit grafts and replace objects can change the shape of the commit history. Th
 <div class="paragraph"><p>通常、リポジトリはほぼ一定の速度(velocity)(1日あたりnコミット)で成長します。 時間の経過とともに、フェッチ操作によって追加されるコミットの数は、完全な履歴のコミットの数よりもはるかに少なくなります。 コミットグラフの「チェーン」を作成することで、コミット履歴全体を書き換えることなく、新しいコミットデータを高速に書き込むことができます&#8201;&#8212;&#8201;少なくともほとんどの場合はそうです。</p></div>
 <div class="sect2">
 <h3 id="_file_layout">File Layout</h3>
-<div class="paragraph"><p>コミットグラフチェーンは複数のファイルを使用し、固定の命名規則を使用してこれらのファイルを整理します。 各コミットグラフファイルには、 <code>$OBJDIR/info/commit-graphs/graph-{hash}.graph</code> という名前があります。ここで、<code>{hash}</code> は、そのファイルのフッターに格納されている16進数値のハッシュです(これは、そのハッシュの前のファイルの内容のハッシュです)。 コミットグラフファイルのチェーンの場合、<code>$OBJDIR/info/commit-graphs/commit-graph-chain</code> にあるプレーンテキスト ファイルには、ファイルのハッシュが「最低」(lowest)から「最高」(highest)の順に含まれています。</p></div>
+<div class="paragraph"><p>コミットグラフチェーンは複数のファイルを使用し、固定の命名規則を使用してこれらのファイルを整理します。 各コミットグラフファイルには、 <code>$OBJDIR/info/commit-graphs/graph-</code>{hash}.graph という名前があります。ここで、{hash} は、そのファイルのフッターに格納されている16進数値のハッシュです(これは、そのハッシュの前のファイルの内容のハッシュです)。 コミットグラフファイルのチェーンの場合、<code>$OBJDIR/info/commit-graphs/commit-graph-chain</code> にあるプレーンテキスト ファイルには、ファイルのハッシュが「最低」(lowest)から「最高」(highest)の順に含まれています。</p></div>
 <div class="paragraph"><p>例えば、 <code>commit-graph-chain</code> ファイルが以下の行達を含んでいるのならば</p></div>
 <div class="paragraph"><p>```
 ```</p></div>
@@ -934,14 +934,14 @@ Commit grafts and replace objects can change the shape of the commit history. Th
  |                       |
  +-----------------------+</code></pre>
 </div></div>
-<div class="paragraph"><p>Let X0 be the number of commits in <code>graph-{hash0}.graph</code>, X1 be the number of commits in <code>graph-{hash1}.graph</code>, and X2 be the number of commits in <code>graph-{hash2}.graph</code>. If a commit appears in position i in <code>graph-{hash2}.graph</code>, then we interpret this as being the commit in position (X0 + X1 + i), and that will be used as its "graph position". The commits in <code>graph-{hash2}.graph</code> use these positions to refer to their parents, which may be in <code>graph-{hash1}.graph</code> or <code>graph-{hash0}.graph</code>. We can navigate to an arbitrary commit in position j by checking its containment in the intervals [0, X0), [X0, X0 + X1), [X0 + X1, X0 + X1<br />
+<div class="paragraph"><p>Let X0 be the number of commits in <code>graph-</code>{hash0}.graph, X1 be the number of commits in <code>graph-</code>{hash1}.graph, and X2 be the number of commits in <code>graph-</code>{hash2}.graph. If a commit appears in position i in <code>graph-</code>{hash2}.graph, then we interpret this as being the commit in position (X0 + X1 + i), and that will be used as its "graph position". The commits in <code>graph-</code>{hash2}.graph use these positions to refer to their parents, which may be in <code>graph-</code>{hash1}.graph or <code>graph-</code>{hash0}.graph. We can navigate to an arbitrary commit in position j by checking its containment in the intervals [0, X0), [X0, X0 + X1), [X0 + X1, X0 + X1<br />
 X2).</p></div>
-<div class="paragraph"><p>各コミットグラフファイル(ベースの <code>graph-{hash0}.graph</code> を除く)には、下位層のすべてのファイルのハッシュを指定するデータが含まれています。 上記の例では、<code>graph-{hash1}.graph</code> には <code>{hash0}</code> が含まれ、 <code>graph-{hash2}.graph</code> には <code>{hash0}</code> と <code>{hash1}</code> が含まれます。</p></div>
+<div class="paragraph"><p>各コミットグラフファイル(ベースの <code>graph-</code>{hash0}.graph を除く)には、下位層のすべてのファイルのハッシュを指定するデータが含まれています。 上記の例では、<code>graph-</code>{hash1}.graph には {hash0} が含まれ、 <code>graph-</code>{hash2}.graph には {hash0} と {hash1} が含まれます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_merging_commit_graph_files">Merging commit-graph files</h3>
 <div class="paragraph"><p>書き込みのたびに新しいコミットグラフファイルを追加しただけでは、多数のコミットグラフファイルを介して線形検索を実行するという問題が発生します。 代わりに、私達はマージ戦略を使用して、スタック(the stack)が何時に幾つのレベルを折りたたむ必要があるかを決定します。</p></div>
-<div class="paragraph"><p>下の図は、そのような折りたたみを示しています。 新しいコミットのセットが追加されると、ファイルが <code>graph-{hash1}</code> に折りたたまれるべきかどうかがマージ戦略によって決定されます。 したがって、新しいコミット、<code>graph-{hash2}</code> のコミット、および <code>graph-{hash1}</code> のコミットは、新しい <code>graph-{hash3}</code> ファイルに結合する必要があります。</p></div>
+<div class="paragraph"><p>下の図は、そのような折りたたみを示しています。 新しいコミットのセットが追加されると、ファイルが <code>graph-</code>{hash1} に折りたたまれるべきかどうかがマージ戦略によって決定されます。 したがって、新しいコミット、<code>graph-</code>{hash2} のコミット、および <code>graph-</code>{hash1} のコミットは、新しい <code>graph-</code>{hash3} ファイルに結合する必要があります。</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>                            +---------------------+
@@ -970,7 +970,7 @@ X2).</p></div>
  |                       |
  +-----------------------+</code></pre>
 </div></div>
-<div class="paragraph"><p>この処理中に、書き込みコミットが結合、ソートされ、内容が一時ファイルに書き込まれますが、すべて <code>commit-graph-chain.lock</code> ロックファイルが保持されます。 ファイルがフラッシュされると、計算された <code>{hash3}</code> に従って名前を <code>graph-{hash3}</code> に変更します。 最後に、新しいチェーンデータを <code>commit-graph-chain.lock</code> に書き込みます:</p></div>
+<div class="paragraph"><p>この処理中に、書き込みコミットが結合、ソートされ、内容が一時ファイルに書き込まれますが、すべて <code>commit-graph-chain.lock</code> ロックファイルが保持されます。 ファイルがフラッシュされると、計算された {hash3} に従って名前を <code>graph-</code>{hash3} に変更します。 最後に、新しいチェーンデータを <code>commit-graph-chain.lock</code> に書き込みます:</p></div>
 <div class="paragraph"><p>```
 ```</p></div>
 <div class="paragraph"><p>そして、ロックファイルをクローズします。</p></div>
@@ -981,17 +981,17 @@ X2).</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-<code>--size-multiple=&lt;X&gt;</code> が指定されているかまたは X = 2 であり、かつ、レベル N のコミット数がレベル N + 1 のコミット数の X 倍未満です。
+<code>--size-multiple=</code><em>&lt;X&gt;</em> が指定されているかまたは X = 2 であり、かつ、レベル N のコミット数がレベル N + 1 のコミット数の X 倍未満です。
 </p>
 </li>
 <li>
 <p>
-<code>--max-commits=&lt;C&gt;</code> の C がゼロ以外で指定されており、かつ、レベル N+1 のコミット数が C コミットより多い。
+<code>--max-commits=</code><em>&lt;C&gt;</em> の C がゼロ以外で指定されており、かつ、レベル N+1 のコミット数が C コミットより多い。
 </p>
 </li>
 </ol></div>
 <div class="paragraph"><p>この決定はレベルをカスケードします。レベルをマージすると、次のレベルと比較する新しいコミットのセットが作成されます。</p></div>
-<div class="paragraph"><p>最初の条件として、レベルの数がコミットの総数に対して対数になるように制限します。 2番目の条件は、 <code>commit-graph</code> ファイルではなく <code>graph-{hashN}</code> ファイル内のコミットの総数を制限し、スタックがマージされ、別のプロセスが前のスタックを部分的にしか読み取らない場合の重大なパフォーマンスの問題を防ぎます。</p></div>
+<div class="paragraph"><p>最初の条件として、レベルの数がコミットの総数に対して対数になるように制限します。 2番目の条件は、 <code>commit-graph</code> ファイルではなく <code>graph-</code>{hashN} ファイル内のコミットの総数を制限し、スタックがマージされ、別のプロセスが前のスタックを部分的にしか読み取らない場合の重大なパフォーマンスの問題を防ぎます。</p></div>
 <div class="paragraph"><p>マージ戦略の値 (サイズ倍数の場合は 2、コミットの最大数の場合は 64,000) を構成設定に抽出して、完全な柔軟性を得ることができます。</p></div>
 </div>
 <div class="sect2">
@@ -1016,15 +1016,15 @@ X2).</p></div>
 </div>
 <div class="sect2">
 <h3 id="_"></h3>
-<div class="paragraph"><p>新しい先端ファイル(tip file)が書き込まれた後、いくつかの <code>graph-{hash}</code> ファイルがチェーンの一部でなくなる可能性があります。 最終的には、これらのファイルをディスクから削除することが重要です。 削除が遅れる主な理由は、別のプロセスが <code>commit-graph-chain</code> ファイルを書き換える前に読み取り、削除後に <code>graph-{hash}</code> ファイルを探す可能性があるためです。</p></div>
-<div class="paragraph"><p>古い分割コミットグラフが参照されなくなった後もしばらく保持できるようにするために、参照されなくなったときにファイルの変更時刻を更新します。 次に、<code>$OBJDIR/info/commit-graphs/</code> ディレクトリをスキャンして、変更時刻が所定の有効期限よりも古い <code>graph-{hash}</code> ファイルを探します。 この期限のデフォルトはゼロですが、コマンドライン引数または構成設定を使用して変更できます。</p></div>
+<div class="paragraph"><p>新しい先端ファイル(tip file)が書き込まれた後、いくつかの <code>graph-</code>{hash} ファイルがチェーンの一部でなくなる可能性があります。 最終的には、これらのファイルをディスクから削除することが重要です。 削除が遅れる主な理由は、別のプロセスが <code>commit-graph-chain</code> ファイルを書き換える前に読み取り、削除後に <code>graph-</code>{hash} ファイルを探す可能性があるためです。</p></div>
+<div class="paragraph"><p>古い分割コミットグラフが参照されなくなった後もしばらく保持できるようにするために、参照されなくなったときにファイルの変更時刻を更新します。 次に、<code>$OBJDIR/info/commit-graphs/</code> ディレクトリをスキャンして、変更時刻が所定の有効期限よりも古い <code>graph-</code>{hash} ファイルを探します。 この期限のデフォルトはゼロですが、コマンドライン引数または構成設定を使用して変更できます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_chains_across_multiple_object_directories">Chains across multiple object directories</h3>
-<div class="paragraph"><p>代替(alternates)を伴うリポジトリでは、 ローカルオブジェクトディレクトリから始めて各代替(alternate)で <code>commit-graph-chain</code> ファイルを探します。 存在する最初のファイルは、チェーンを定義します。 チェーンファイル内の各 <code>{hash}</code> に対して <code>graph-{hash}</code> ファイルを探すとき、ホストディレクトリに対して同一パターンに従います。</p></div>
+<div class="paragraph"><p>代替(alternates)を伴うリポジトリでは、 ローカルオブジェクトディレクトリから始めて各代替(alternate)で <code>commit-graph-chain</code> ファイルを探します。 存在する最初のファイルは、チェーンを定義します。 チェーンファイル内の各 {hash} に対して <code>graph-</code>{hash} ファイルを探すとき、ホストディレクトリに対して同一パターンに従います。</p></div>
 <div class="paragraph"><p>これにより、コミットグラフをフォークネットワーク(a fork network)内の複数のフォークに分割できます。 典型的なケースは、多くの小さなフォークを持つ大きな「ベース」レポジトリです。</p></div>
-<div class="paragraph"><p>ベースリポジトリが利用されていくつれて、 コミットグラフチェーンはフォークよりも頻繁に更新およびマージされる可能性があります。 フォークがベースリポジトリの後にコミットグラフを更新する場合は、コミットグラフチェーンをベースリポジトリの新しいチェーンに「育て直し」(reparent)する必要があります。 各 <code>graph-{hash}</code> ファイルを読み取るとき、それを含むオブジェクトディレクトリを追跡します。 新しいコミットフラフファイルの書き込み中に、ソースオブジェクトディレクトリの変更を確認し、そのソースの <code>commit-graph-chain</code> ファイルを読み取り、それらのファイルに基づいて新しいファイルを作成します。 この「育て直し」操作では、新しいベースファイルに対してすべてのファイルが無効であるため、必然的にフォークのすべてのレベルを折りたたむ必要があります。</p></div>
-<div class="paragraph"><p>このシナリオで「参照されていない」(unreferenced) <code>graph-{hash}.graph</code> ファイルをクリーンアップするときは注意が必要です。 カスタム環境に適切な設定を定義するのは、ユーザーの責任です:</p></div>
+<div class="paragraph"><p>ベースリポジトリが利用されていくつれて、 コミットグラフチェーンはフォークよりも頻繁に更新およびマージされる可能性があります。 フォークがベースリポジトリの後にコミットグラフを更新する場合は、コミットグラフチェーンをベースリポジトリの新しいチェーンに「育て直し」(reparent)する必要があります。 各 <code>graph-</code>{hash} ファイルを読み取るとき、それを含むオブジェクトディレクトリを追跡します。 新しいコミットフラフファイルの書き込み中に、ソースオブジェクトディレクトリの変更を確認し、そのソースの <code>commit-graph-chain</code> ファイルを読み取り、それらのファイルに基づいて新しいファイルを作成します。 この「育て直し」操作では、新しいベースファイルに対してすべてのファイルが無効であるため、必然的にフォークのすべてのレベルを折りたたむ必要があります。</p></div>
+<div class="paragraph"><p>このシナリオで「参照されていない」(unreferenced) <code>graph-</code>{hash}.graph ファイルをクリーンアップするときは注意が必要です。 カスタム環境に適切な設定を定義するのは、ユーザーの責任です:</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -1094,7 +1094,7 @@ X2).</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-11 23:59:31 JST
+ 2024-12-15 12:50:11 JST
 </div>
 </div>
 </body>

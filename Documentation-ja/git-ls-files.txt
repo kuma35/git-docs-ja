@@ -1,0 +1,225 @@
+git-ls-files(1)
+===============
+
+NAME
+----
+git-ls-files - インデックスと作業ツリーのファイルに関する情報を表示する
+
+
+SYNOPSIS
+--------
+[verse]
+'git ls-files' [-z] [-t] [-v] [-f]
+		[-c|--cached] [-d|--deleted] [-o|--others] [-i|--ignored]
+		[-s|--stage] [-u|--unmerged] [-k|--killed] [-m|--modified]
+		[--resolve-undo]
+		[--directory [--no-empty-directory]] [--eol]
+		[--deduplicate]
+		[-x <pattern>|--exclude=<pattern>]
+		[-X <file>|--exclude-from=<file>]
+		[--exclude-per-directory=<file>]
+		[--exclude-standard]
+		[--error-unmatch] [--with-tree=<tree-ish>]
+		[--full-name] [--recurse-submodules]
+		[--abbrev[=<n>]] [--format=<format>] [--] [<file>...]
+
+DESCRIPTION
+-----------
+This command merges the file listing in the index with the actual working directory list, and shows different combinations of the two.
+
+Several flags can be used to determine which files are shown, and each file may be printed multiple times if there are multiple entries in the index or if multiple statuses are applicable for the relevant file selection options.
+
+OPTIONS
+-------
+`-c`::
+`--cached`::
+	Git のインデックスにキャッシュされているすべてのファイル、 つまり追跡中のすべてのファイルを表示します。 (これは、 -c/-s/-d/-o/-u/-k/-m/--resolve-undo オプションが指定されていない場合のデフォルトです。)
+
+`-d`::
+`--deleted`::
+	未ステージングで削除(unstaged deletion)されたファイルを表示
+
+`-m`::
+`--modified`::
+	未ステージングで変更されたファイルを表示します(注意:未ステージングで削除されたのも変更としてカウントされることに注意してください)
+
+`-o`::
+`--others`::
+	その他(たとえば 追跡されていない)ファイルを出力に表示します
+
+`-i`::
+`--ignored`::
+	Show only ignored files in the output. Must be used with either an explicit '-c' or '-o'. When showing files in the index (i.e. when used with '-c'), print only those files matching an exclude pattern. When showing "other" files (i.e. when used with '-o'), show only those matched by an exclude pattern. Standard ignore rules are not automatically activated; therefore, at least one of the `--exclude*` options is required.
+
+`-s`::
+`--stage`::
+	ステージングされたコンテンツのモードビット、オブジェクト名、ステージ番号を出力に表示します。
+
+`--directory`::
+	ディレクトリ全体が「その他」に分類される場合は、(末尾にスラッシュを付けて)そのディレクトリ名だけを表示し、ディレクトリの内容を表示しないでください。 `-o`/`--other` がなければ効果はありません。
+
+`--no-empty-directory`::
+	空のディレクトリをリストしないでください。 `--directory` を指定していないと効果がありません。
+
+`-u`::
+`--unmerged`::
+	unmerged ファイルに関する情報を出力に表示しますが、 他の追跡中のファイルは表示しません(`--stage` を強制し、 `--cached` をオーバーライドします)。
+
+`-k`::
+`--killed`::
+	追跡中のファイルをファイルシステムに書き込むことができるようにするために、 ファイル/ディレクトリ の競合により削除する必要がある、 ファイルシステム上の非追跡ファイルを表示します。
+
+`--resolve-undo`::
+	インデックスに resolve-undo(解決-取り消し)情報を持つファイルを、その resolve-undo 情報とともに表示します。 (resolve-undo 情報は、 `git checkout -m $PATH` を実装するために使用されるものです。 つまりそれは、 誤って解決されたマージ競合を再作成するために使用されます)
+
+`-z`::
+	\ 0出力での行の終了であり、ファイルをクォートしません。 詳細については、以下の「OUTPUT」を参照してください。
+
+`--deduplicate`::
+	ファイル名のみが表示されている場合は、マージ中に複数のステージがあること、または `--deleted` と `--modified` オプションを同時に指定することで発生する可能性のある重複を抑制します。 `-t` または `--unmerged` または `--stage` オプションのいずれかが使用されている場合、このオプションは効果がありません。
+
+`-x <pattern>`::
+`--exclude=<pattern>`::
+	パターンに一致する追跡されていないファイルをスキップします。パターンはシェルワイルドカードパターンであることに注意してください。 詳細については、以下の「EXCLUDE PATTERNS」を参照してください。
+
+`-X <file>`::
+`--exclude-from=<file>`::
+	<file> から除外パターンを読み取ります。1行に1つづつです。
+
+`--exclude-per-directory=<file>`::
+	Read additional exclude patterns that apply only to the directory and its subdirectories in <file>. If you are trying to emulate the way Porcelain commands work, using the `--exclude-standard` option instead is easier and more thorough.
+
+`--exclude-standard`::
+	標準のGit除外を追加します: .git/info/exclude と 各ディレクトリの .gitignore と ユーザーのグローバル除外ファイル。
+
+`--error-unmatch`::
+	<file> がインデックスに現れない場合は、これをエラーとして扱います(1を返します)。
+
+`--with-tree=<tree-ish>`::
+	`--error-unmatch` を使用して、ユーザーが指定した <file>（つまり、パスパターン）引数をパスに展開する場合、名前付きの <tree-ish> がまだ存在するためにインデックスから削除されたパスを装います。 このオプションを `-s` または `-u` オプションと一緒に使用しても意味がありません。
+
+`-t`::
+	Show status tags together with filenames. Note that for scripting purposes, linkgit:git-status[1] `--porcelain` and linkgit:git-diff-files[1] `--name-status` are almost always superior alternatives; users should look at linkgit:git-status[1] `--short` or linkgit:git-diff[1] `--name-status` for more user-friendly alternatives.
++
+--
+このオプションは、 各ファイル名を表示する理由をステータス・タグ(これにスペース、ファイル名が続く)形式で提供します。 ステータス・タグは、 以下にリストされている単一文字です:
+
+	H::		unmerged でも skip-worktree でも無い追跡中のファイル
+	S::		追跡中のファイルで skip-worktree である
+	M::		追跡中のファイルで unmerged である
+	R::		削除/消去 された追跡中のファイルで非ステージングである
+	C::		追跡中で 編集(modification)/変更(change) された非ステージのファイル
+	K::	追跡中のファイルのチェックアウトを妨げる、 ファイル/ディレクトリの競合の一部である追跡されていないパス。
+	?::		非追跡ファイル
+	U::     	resolve-undo 情報を含むファイル
+--
+
+`-v`::
+	`-t` に似ていますが、「assume unchanged」(変更されていないと仮定する)とマークされたファイルには小文字を使用します(linkgit:git-update-index[1] を参照)。
+
+`-f`::
+	`-t` に似ていますが、「fsmonitor valid」とマークされているファイルには小文字を使用します(linkgit:git-update-index[1] を参照)。
+
+`--full-name`::
+	サブディレクトリから実行する場合、コマンドは通常、現在のディレクトリからの相対パスを出力します。 このオプションは、プロジェクトの最上位ディレクトリを基準にしたパスを強制的に出力します。
+
+`--recurse-submodules`::
+	リポジトリ内のアクティブなサブモジュールごとに ls-files を再帰的に呼び出します。 現在、 `--cached` モードと `--stage` モードのみがサポートされています。
+
+`--abbrev[=<n>]`::
+	40バイトの16進数のオブジェクト行全体を表示する代わりに、オブジェクトを一意に参照する、少なくとも <n> の長さ16進数の長さの最短のプレフィックスを表示します。デフォルト以外の桁数は、 `--abbrev=<n>` で指定できます。
+
+`--debug`::
+	ファイルを説明する各行の後に、そのキャッシュエントリに関するデータを追加します。これは、手動検査のために可能な限り多くの情報を表示することを目的としています。正確な形式は予告なく変更される可能性があります。
+
+`--eol`::
+	ファイルの <eolinfo> と <eolattr> を表示します。 <eolinfo> は、「text」属性が「auto」の場合(または設定されておらず、 core.autocrlf が false でない場合)にGitが使用するファイルコンテンツIDです。 <eolinfo> は、「-text」、「none」、「lf」、「crlf」、「mixed」、「」のいずれかです。
++
+「」は、ファイルが通常のファイルではない、インデックスにない、または作業ツリーでアクセスできないことを意味します。
++
+<eolattr> は、チェックアウトまたはコミット時に使用される属性であり、「」・「-text」・「text」・「text=auto」・「text eol=lf」・「text eol=crlf」 のいずれかです。 Git 2.10以降では「text=auto eol=lf」と「text=auto eol=crlf」がサポートされています。
++
+通常のファイルの場合、インデックス("i/<eolinfo>")と作業ツリー("w/<eolinfo>")の両方の<eolinfo>が表示され、そのうしろに "attr/<eolattr>" が続きます。
+
+`--sparse`::
+	インデックスがスパース(sparse)の場合、含まれているファイルに展開せずにスパース・ディレクトリを表示します。 スパース・ディレクトリは、 スパース・ディレクトリ `x` の場合は `x/` のように、末尾にスラッシュを付けて表示されます。
+
+`--format=<format>`::
+	A string that interpolates `%(fieldname)` from the result being shown. It also interpolates `%%` to `%`, and `%xXX` where `XX` are hex digits interpolates to character with hex code `XX`; for example `%x00` interpolates to `\0` (NUL), `%x09` to `\t` (TAB) and %x0a to `\n` (LF). --format cannot be combined with `-s`, `-o`, `-k`, `-t`, `--resolve-undo` and `--eol`.
+`--`::
+	これ以降の引数をオプションとして解釈しないでください。
+
+<file>::
+	表示するファイル。ファイルが指定されていない場合、他の指定された基準に一致するすべてのファイルが表示されます。
+
+OUTPUT
+------
+`git ls-files` は、 `--stage` が指定されていない限り、ファイル名を出力するだけです。指定されている場合は、以下のように出力されます:
+
+        [<tag> ]<mode> <object> <stage> <file>
+
+`git ls-files --eol` の場合:
+	i/<eolinfo><SPACES>w/<eolinfo><SPACES>attr/<eolattr><SPACE*><TAB><file>
+
+`git ls-files --unmerged` と `git ls-files --stage` を使用して、マージされていないパスの詳細情報を調べることができます。
+
+マージされていないパスの場合、単一の モード/SHA-1 ペアを記録する代わりに、インデックスは最大3つのそのようなペアを記録します。 ステージ1のツリーOから一つと、ステージ2のAから一つと、ステージ3のBからの一つです。この情報は、ユーザー(または磁器コマンド)がパスに最終的に記録する内容を確認するために使用できます。(状態の詳細については、 linkgit:git-read-tree[1] を参照してください)
+
+`-z` オプションを指定しない場合、構成変数 `core.quotePath` で説明されているように、「異常な」文字を含むパス名がクォートされます(linkgit:git-config[1] を参照)。 `-z` を使用すると、ファイル名がそのまま出力され、行はNULバイトで終了します。
+
+`%(fieldname)` 表記を使用してさまざまなフィールドを展開可能な `--format` オプションを使用して、 カスタム形式で表示することができます。 たとえば、 `objectname` フィールドと `path` フィールドのみを気にする場合は、以下のような特定の `--format` で実行できます
+
+	git ls-files --format='%(objectname) %(path)'
+
+FIELD NAMES
+-----------
+各パスの表示方法は、 `--format=<format>` オプションを使用してカスタマイズできます。このオプションでは、インデックス・エントリのさまざまな側面の <format> 文字列の %(fieldname) が展開されます。以下の「フィールド名」に対応しています:
+
+objectmode::
+	インデックスに記録されるファイルのモード。
+objecttype::
+	インデックスに記録されるファイルのオブジェクト・タイプ。
+objectname::
+	インデックスに記録されるファイルの名前。
+objectsize[:padded]::
+	インデックスに記録されるファイルのオブジェクト・サイズ (オブジェクトが `commit` または `tree` の場合は `-`)。 また `%(objectsize:padded)` 形式のサイズのパディング書式もサポートしています。
+stage::
+	インデックスに記録されるファイルのステージ。
+eolinfo:index::
+eolinfo:worktree::
+	パスのインデックスまたはワークツリー内のコンテンツの <eolinfo> (`--eol` オプションの説明を参照)。
+eolattr::
+	パスに適用される <eolattr> (`--eol` オプションの説明を参照)。
+path::
+	インデックスに記録されるファイルのパス名。
+
+EXCLUDE PATTERNS
+----------------
+
+`git ls-files` は、ディレクトリツリーをトラバースし、フラグ `--others` または `--ignored` が指定されている場合に表示するファイルを検索するときに、「除外パターン」(exclude patterns)のリストを使用できます。 linkgit:gitignore[5] は、除外パターンの形式を指定します。
+
+These exclude patterns can be specified from the following places, in order:
+
+  1. コマンドラインフラグ `--exclude=<pattern>` は、単一のパターンを指定します。 パターンは、コマンドラインに現れるのと同じ順序で並べられます。
+
+  2. コマンドラインフラグ `--exclude-from=<file>` は、パターンのリストを含むファイルを指定します。 パターンは、ファイルに現れるのと同じ順序で並べられます。
+
+  3. コマンドラインフラグ `--exclude-per-directory=<name> ` は、 `git ls-files` が調べる各ディレクトリ内のファイルの名前(通常は `.gitignore` )を指定します。 より深いディレクトリ内のファイルが優先されます。パターンは、ファイルに現れるのと同じ順序で並べられます。
+
+コマンドラインで `--exclude` で指定されたパターン、または `--exclude-from` で指定されたファイルから読み取られたパターンは、ディレクトリツリーの最上位を基準にしています。 `--exclude-per-directory` で指定されたファイルから読み取られたパターンは、パターンファイルが置かれているディレクトリを基準にしています。
+
+Generally, you should be able to use `--exclude-standard` when you want the exclude rules applied the same way as what Porcelain commands do. To emulate what `--exclude-standard` specifies, you can give `--exclude-per-directory=.gitignore`, and then specify:
+
+  1. The file specified by the `core.excludesfile` configuration variable, if exists, or the `$XDG_CONFIG_HOME/git/ignore` file.
+
+  2. The `$GIT_DIR/info/exclude` file.
+
+via the `--exclude-from=` option.
+
+SEE ALSO
+--------
+linkgit:git-read-tree[1], linkgit:gitignore[5]
+
+GIT
+---
+Part of the linkgit:git[1] suite

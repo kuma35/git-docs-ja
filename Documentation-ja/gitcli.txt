@@ -1,0 +1,144 @@
+gitcli(7)
+=========
+
+NAME
+----
+gitcli - Gitコマンドラインのインターフェイスと規則
+
+SYNOPSIS
+--------
+gitcli
+
+
+DESCRIPTION
+-----------
+
+このマニュアルでは Git CLI 全体で使用される規則について説明します。
+
+多くのコマンドは、引数としてリビジョン(revisions)(それはほとんどの場合「コミット」(commits)ですが、文脈とコマンドによっては「ツリーっぽい」(tree-ish)場合もあります)と、パス(paths)を取ります。ルールは以下のとおりです:
+
+ * Options come first and then args. A subcommand may take dashed options (which may take their own arguments, e.g. "--max-parents 2") and arguments. You SHOULD give dashed options first and then arguments. Some commands may accept dashed options after you have already given non-option arguments (which may make the command ambiguous), but you should not rely on it (because eventually we may find a way to fix these ambiguities by enforcing the "options then args" rule).
+
+ * リビジョン達が最初に来て、その次にパス達が来ます。 例えば、 `git diff v1.0 v2.0 arch/x86 include/asm-x86` では `v1.0` と `v2.0` はリビジョン達であり、 `arch/x86` と `include/asm-x86` はパス達です。
+
+ * When an argument can be misunderstood as either a revision or a path, they can be disambiguated by placing `--` between them. E.g. `git diff -- HEAD` is, "I have a file called HEAD in my work tree. Please show changes between the version I staged in the index and what I have in the work tree for that file", not "show the difference between the HEAD commit and the work tree as a whole". You can say `git diff HEAD --` to ask for the latter.
+
+ * Without disambiguating `--`, Git makes a reasonable guess, but errors out and asks you to disambiguate when ambiguous. E.g. if you have a file called HEAD in your work tree, `git diff HEAD` is ambiguous, and you have to say either `git diff HEAD --` or `git diff -- HEAD` to disambiguate.
+
+ * 一部のコマンドでは、 `--` はリビジョンとパスを明確に区別するために使われるため、これら一部のコマンドでオプションとリビジョンを分離するために使用することはできません。これら一部のコマンドではオプションとリビジョンを分離するために `--end-of-options` を使用できます(これら以外のパスのリビジョンを区別しないコマンドでも機能します。その場合、 `--end-of-options` は単に `--` のエイリアスです)。
++
+ランダムなユーザー入力を処理することが期待されるスクリプトを作成するときは、適切な場所に曖昧さ回避の `--` を配置することにより、どの引数がどれであるかを明示することをお勧めします。
+
+ * 多くのコマンドではパスにワイルドカードを使用できますが、シェルによってワイルドカードが取得されないように保護する必要があります。以下の2つの意味は異なります:
++
+--------------------------------
+$ git restore *.c
+$ git restore \*.c
+--------------------------------
++
+前者を使用すると、シェルでfileglobを展開でき、作業ツリー内の C言語ソースファイル(dot-C)をインデックス内のバージョンで上書きするように要求されます。後者は `*.c` をGitに渡し、作業ツリーにチェックアウトするパターンに一致するインデックス内のパスを要求しています。`git add hello.c; rm hello.c` を実行後、前者では作業ツリーに `hello.c` は表示されませんが、後者では表示されます。
+
+ * ファイルシステムの `.` (ピリオド)が現在のディレクトリを参照するのと同じように、Gitでリポジトリ名として `.` を使用すること(a dot-repository)は相対パスであり、あなたの現在のリポジトリを意味します。
+
+Gitのスクリプトを作成するときに従う必要のある「フラグ」(flag)に関するルールは以下のとおりです:
+
+ * 短いオプションは分割して単語に区切ります( `git foo -ab` よりも `git foo -a -b` を優先します。前者は機能しない事があります)。
+
+ * コマンドラインオプションが引数を取る場合は、串刺し形式(stuck form) を使用します。つまり、短いオプションの場合は `git foo -o Arg` の代わりに `git foo -oArg` を記述し、長いオプションの場合は `git foo --long-opt Arg` の代わりに `git foo --long-opt=Arg` を記述します。オプションのオプション引数をとるオプションは、串刺し形式で記述する必要があります。
+
+ * コマンドにリビジョンパラメータを指定するときは、そのパラメータが作業ツリー内のファイルの名前と混同されないことを確認してください。例えば、 `git log -1 HEAD` とは記述せず、`git log -1 HEAD --` と記述します。作業ツリーに `HEAD` というファイルがある場合、前者は機能しません。
+
+ * 多くのコマンドでは、長いオプション `--option` を一意であるかぎり短いプレフィックスのみに省略できます(たとえば、名前が `opt` で始まるオプションが他にない場合は、 `--opt` と入力して `--option` フラグを呼び出すことができます)。ただし、スクリプトを作成するときは、省略してはいけません。なぜならGitのより新しいバージョンで、名前が同じプレフィックスを共有する新しいオプションが導入される可能性があるからです。例えば `--optimize` が導入されると、以前は一意であった短いプレフィックス(`--option` , `--opt`)を一意では無くしてしまいます。
+
+
+ENHANCED OPTION PARSER
+----------------------
+Git 1.5.4シリーズ以降、多くのGitコマンド(この文書の執筆時点ではすべてではありませんが)は、拡張オプションパーサーを備えています。
+
+以下は、この拡張オプションパーサーによって提供される機能のリストです。
+
+
+Magic Options
+~~~~~~~~~~~~~
+拡張オプションパーサーがアクティブになっているコマンドはすべて、いくつかの魔法のコマンドラインオプション(magic command-line options)を理解します:
+
+`-h`::
+	コマンドの、かなり整った使用法を提供します。
++
+---------------------------------------------
+$ git describe -h
+usage: git describe [<options>] <commit-ish>*
+   or: git describe [<options>] --dirty
+
+    --contains            find the tag that comes after the commit
+    --debug               debug search strategy on stderr
+    --all                 use any ref
+    --tags                use any tag, even unannotated
+    --long                always use long format
+    --abbrev[=<n>]        use <n> digits to display SHA-1s
+---------------------------------------------
++
+注意: 一部のサブコマンド(例: `git grep` )は、コマンドラインに `-h` 以外のものがある場合、動作が異なる場合がありますが、コマンドラインに何も含まれていない `git subcmd -h` は、一貫して使用法を提供することを目的としています。
+
+`--help-all`::
+	一部のGitコマンドは、配管コマンドにのみ使用されるオプションまたは非推奨のオプションを取り、そのようなオプションはデフォルトの使用法から隠されています。 このオプションはオプションの完全なリストを提供します。
+
+
+否定オプション
+~~~~~~~
+長いオプションは、接頭辞 `--no-` を付けることで無効にできます。 たとえば、 `git branch` にはオプション `--track` があります。これはデフォルトで `on` です。 `--no-track` を使用して、その動作をオーバーライドできます。 `--color` と `--no-color` についても同じことが言えます。
+
+
+短いオプションのおまとめ
+~~~~~~~~~~~~
+拡張オプションパーサーをサポートするコマンドを使用すると、短いオプションをおまとめできます。これは、たとえば、 `git rm -rf` や `git clean -fdx` を使用できることを意味します。
+
+
+長いオプションの省略
+~~~~~~~~~~
+拡張オプションパーサーをサポートするコマンドは、クソ詳しく長いオプションの一意なプレフィックスを受け入れますが、これは注意して使用してください。 たとえば、 `git commit --amen` は `git commit --amend` と入力したかのように動作しますが、これは、後のバージョンのGitが同じプレフィックスを共有する別のオプションを導入するまでのみ当てはまります。例えば `git commit --amenity` オプションが導入されたら一意で無くなります。
+
+
+Separating argument from the option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+コマンドラインで、オプションの必須パラメータを単に区切られた単語として記述することができます。これは、以下のすべての使い方が機能することを意味します:
+
+----------------------------
+$ git foo --long-opt=Arg
+$ git foo --long-opt Arg
+$ git foo -oArg
+$ git foo -o Arg
+----------------------------
+
+ただし、これは必須ではないオプションの値を持つスイッチでは許可されていません。その場合は串刺し形式を使用する必要があります:
+----------------------------
+$ git describe --abbrev HEAD     # correct
+$ git describe --abbrev=10 HEAD  # correct
+$ git describe --abbrev 10 HEAD  # NOT WHAT YOU MEANT
+----------------------------
+
+
+注意：よく混同されるオプションに関する注記
+---------------------
+
+作業ツリーおよび/またはインデックス内のファイルを処理できる多くのコマンドは、 `--cached` および/または `--index` オプションを使用できます。インデックスは元々キャッシュと呼ばれていたため、これら2つは同義語であると誤解されることがあります。ちゃいます。これらの2つのオプションは非常に異なることを意味します。
+
+ * `--cached` オプションは、通常は作業ツリー内のファイルで機能するコマンドに、「インデックスのみで」機能するように要求するために使用されます。 たとえば、 `git grep` をコミットせずに使用して、どのコミットから文字列を検索するかを指定すると、通常は作業ツリー内のファイルで機能しますが、 `--cached` オプションを使用するとインデックス内の文字列を検索します。
+
+ * `--index` オプションは、通常は作業ツリー内のファイルで機能するコマンドに、「インデックスにも」影響を与えるように要求するために使用されます。たとえば、 `git stash apply` は通常、stashエントリに記録された変更を作業ツリーにマージしますが、 `--index` オプションを使用すると、インデックスへの変更もマージします。
+
+`git apply`コマンドは、 `--cached` または `--index` のいずれかを伴って使用できます(同時に使用することはできません。通常、このコマンドは作業ツリー内のファイルにのみ影響しますが、 `--index` を使用すると、ファイルとそのインデックスエントリの両方にパッチが適用され、 `--cached` を使用すると、インデックスエントリのみが変更されます。
+
+詳細については https://lore.kernel.org/git/7v64clg5u9.fsf@assigned-by-dhcp.cox.net/ と https://lore.kernel.org/git/7vy7ej9g38.fsf@gitster.siamese.dyndns.org/ も参照してください。
+
+作業ツリー および/または インデックス内のファイルに対しても機能する他のいくつかのコマンドは、 `--staged` および/または `--worktree` を取ることができます。
+
+* `--staged` は `--cached` とまったく同じです。これは、作業ツリーではなく、インデックスでのみ機能するようにコマンドに要求するために使用されます。
+
+* `--worktree` は反対に、インデックスではなく、作業ツリーのみで作業するようにコマンドに要求します。
+
+* 2つのオプションを一緒に指定して、インデックスと作業ツリーの両方で作業するようにコマンドに要求することができます。
+
+GIT
+---
+Part of the linkgit:git[1] suite

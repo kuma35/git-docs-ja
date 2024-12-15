@@ -1,0 +1,71 @@
+git-http-push(1)
+================
+
+NAME
+----
+git-http-push - HTTP/DAV を介してオブジェクトを別のリポジトリにプッシュする
+
+
+SYNOPSIS
+--------
+[verse]
+'git http-push' [--all] [--dry-run] [--force] [--verbose] <URL> <ref> [<ref>...]
+
+DESCRIPTION
+-----------
+Sends missing objects to the remote repository, and updates the remote branch.
+
+*NOTE*: This command is temporarily disabled if your libcurl
+is older than 7.16, as the combination has been reported
+not to work and sometimes corrupts the repository.
+
+OPTIONS
+-------
+`--all`::
+	リモートリポジトリが現在の状態で完全であると想定しません。また、ローカルrefの履歴全体のすべてのオブジェクトがリモートリポジトリに存在することを確認します。
+
+`--force`::
+	通常、コマンドは、上書きに使用されたローカルrefの祖先ではないリモートrefの更新を拒否します。このフラグはこのチェックを無効にします。これが意味するのは、リモートリポジトリがコミットを失う可能性があるということです。注意して使用してください。
+
+`--dry-run`::
+	実際に更新を送信する以外はすべて行います。
+
+`--verbose`::
+	ローカルでウォークされているオブジェクトのリストと、リモートリポジトリに正常に送信されたオブジェクトのリストを報告します。
+
+`-d`::
+`-D`::
+	Remove <ref> from remote repository. The specified branch cannot be the remote HEAD. If -d is specified, the following other conditions must also be met:
+
+	- リモートHEADは、ローカルに存在するオブジェクトに名前解決(resolve)できなければなりません。
+	- 指定のブランチは、ローカルに存在するオブジェクトに名前解決(resolve)します。
+	- 指定のブランチは、リモートHEADの祖先です。
+
+<ref>...::
+	更新したいリモートrefs
+
+
+SPECIFYING THE REFS
+-------------------
+
+`<ref>` 指定は、単一のパターン、またはコロン `:` で区切られた、そのようなパターンのペアのいずれかです(これは、ref名にコロンを含めることができないことを意味します)。 単一のパターン `<name>` は、 `<name>:<name>` の短縮形です。
+
+各パターン ペア `<src>:<dst>` は、ソース側 (コロンの前) と宛先側 (コロンの後) で構成されます。 プッシュされるrefは、ソース側に一致する一致を見つけることによって決定され、プッシュされる場所は、宛先側を使用して決定されます。
+
+ - `<src>` がローカルrefの1つと正確に一致しない場合は、エラーになります。
+
+ - `<dst>` がどのリモートrefとも一致しない場合、以下のどちらかです
+
+   * "refs/" で始まる必要があります。この場合、文字通り <dst> が宛先として使用されます。
+
+   * <src> == <dst> かつ <src> に一致するrefは、リモートrefのセットに存在してはなりません。ローカルで一致するref <src> は、宛先の名前として使用されます。
+
+Without `--force`, the <src> ref is stored at the remote only if <dst> does not exist, or <dst> is a proper subset (i.e. an ancestor) of <src>. This check, known as "fast-forward check", is performed to avoid accidentally overwriting the remote ref and losing other peoples' commits from there.
+
+`--force` を使用すると、すべてのrefに対して fast-forward check が無効になります。
+
+オプションで、<ref> パラメーターの前に「+」記号を付けて、そのrefでのみ fast-forward check を無効にすることができます。
+
+GIT
+---
+Part of the linkgit:git[1] suite

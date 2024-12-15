@@ -1,0 +1,45 @@
+<repository>::
+	フェッチまたはプル操作のソースである「リモート」リポジトリ。このパラメーターは、URL(以下の <<URLS,GIT URLS>> セクションを参照)またはリモートの名前(以下の <<REMOTES,REMOTES>> セクションを参照)のいずれかです。
+
+ifndef::git-pull[]
+<group>::
+	構成ファイル内のリモート。 <group> の値としてリポジトリーのリストを参照する名前。(linkgit:git-config[1] を参照)。
+endif::git-pull[]
+
+<refspec>::
+	フェッチするrefと更新するローカルrefを指定します。コマンドラインに <refspec> がない場合、フェッチするrefは代わりに `remote.<repository>.fetch` 変数から読み取られます。
+ifndef::git-pull[]
+	(下記 <<CRTB,CONFIGURED REMOTE-TRACKING BRANCHES>> 参照)
+endif::git-pull[]
+ifdef::git-pull[]
+	(linkgit:git-fetch[1] の
+	「CONFIGURED REMOTE-TRACKING BRANCHES」セクション参照)
+endif::git-pull[]
++
+The format of a <refspec> parameter is an optional plus `+`, followed by the source <src>, followed by a colon `:`, followed by the destination <dst>. The colon can be omitted when <dst> is empty. <src> is typically a ref, or a glob pattern with a single `*` that is used to match a set of refs, but it can also be a fully spelled hex object name.
++
+A <refspec> may contain a `*` in its <src> to indicate a simple pattern match. Such a refspec functions like a glob that matches any ref with the pattern. A pattern <refspec> must have one and only one `*` in both the <src> and <dst>. It will map refs to the destination by replacing the `*` with the contents matched from the source.
++
+refspecの前に `^` が付いている場合、それはネガティブのrefspecとして解釈されます。このようなrefspecは、フェッチするrefや更新するローカルrefを指定するのではなく、除外するrefを指定します。 refは、少なくとも1つのポジティブ(通常)のrefspecと一致し、ネガティブのrefspecと一致しない場合、一致すると見なされます。ネガティブのrefspecは、特定のrefが含まれないように、パターンrefspecのスコープを制限するのに役立ちます。ネガティブのrefspecは、それ自体がパターンrefspecである可能性があります。 ただし、 <src> のみを含めることができ、 <dst> を指定することはできません。 フルスペルの16進オブジェクト名もサポートされていません。
++
+`tag <tag>` は、 `refs/tags/<tag>:refs/tags/<tag>` と同じ意味です。指定されたタグまでのすべてをフェッチするように要求します。
++
+<src> に一致するリモートrefがフェッチされ、 <dst> が空の文字列でない場合は、それに一致するローカルrefを更新しようとします。
++
+その更新が `--force` なしで許可されるかどうかは、フェッチ先のref名前空間、フェッチされるオブジェクトのタイプ、および更新がfast-forwardであると見なされるかどうかによって異なります。一般に、プッシュする場合と同じルールがフェッチに適用されます。それらが何であるかについては、 linkgit:git-push[1]の `<refspec>...` セクションを参照してください。 `git fetch` に固有の例外ルールを以下に示します。
++
+Gitバージョン2.20までは、 linkgit:git-push[1] でプッシュする場合とは異なり、 `refs/tags/*` の更新は、 refspec に `+` がなくても(または `--force` 指定が無くても)受け入れられます。フェッチするとき、リモートからのすべてのタグ更新を強制フェッチとしていました。Gitバージョン2.20以降では、 `refs/tags/*` を更新するためのフェッチは、プッシュする場合と同じように機能します。 つまり refspecに `+` が無い場合(または `--force` が無い場合)、更新は拒否されます。
++
+Unlike when pushing with linkgit:git-push[1], any updates outside of `refs/{tags,heads}/*` will be accepted without `+` in the refspec (or `--force`), whether that's swapping e.g. a tree object for a blob, or a commit for another commit that doesn't have the previous commit as an ancestor etc.
++
+linkgit:git-push[1] でプッシュする場合とは異なり、これらのルールを修正する構成はなく、 `pre-receive` フックに類似した `pre-fetch` フックのようなものはありません。
++
+As with pushing with linkgit:git-push[1], all of the rules described above about what's not allowed as an update can be overridden by adding an optional leading `+` to a refspec (or using the `--force` command line option). The only exception to this is that no amount of forcing will make the `refs/heads/*` namespace accept a non-commit object.
++
+[NOTE]
+When the remote branch you want to fetch is known to be rewound and rebased regularly, it is expected that its new tip will not be a descendant of its previous tip (as stored in your remote-tracking branch the last time you fetched). You would want to use the `+` sign to indicate non-fast-forward updates will be needed for such branches. There is no way to determine or declare that a branch will be made available in a repository with this behavior; the pulling user simply must know this is the expected usage pattern for a branch.
+ifdef::git-pull[]
++
+[NOTE]
+`git pull` コマンドラインに直接複数の <refspec> をリストすることと、 <repository> の構成に複数の `remote.<repository>.fetch` エントリを含めることと、明示的な <refspec> パラメーターなしで `git pull` コマンドを実行することには違いがあります。コマンドラインに明示的にリストされている <refspec> は、フェッチ後に常に現在のブランチにマージされます。いいかえると、複数のリモートrefをリストする場合 `git pull` はOctopusマージを作成します。一方、コマンドラインに明示的な <refspec> パラメータをリストしない場合 `git pull` は `remote.<repository>.fetch` 構成で見つかったすべての <refspec> をフェッチし、最初に見つかった <refspec> のみを現在のブランチにマージします。これはリモートrefからOctopusを作成することはめったに行われない為ですが、複数のリモートヘッドを追跡するために複数のリモートヘッドを一度にフェッチすると便利なことがよくあります。
+endif::git-pull[]

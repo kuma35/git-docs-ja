@@ -1,0 +1,71 @@
+git-fsmonitor{litdd}daemon(1)
+=============================
+
+NAME
+----
+git-fsmonitor--daemon - ビルトイン・ファイルシステム・モニター
+
+SYNOPSIS
+--------
+[verse]
+'git fsmonitor{litdd}daemon' start
+'git fsmonitor{litdd}daemon' run
+'git fsmonitor{litdd}daemon' stop
+'git fsmonitor{litdd}daemon' status
+
+DESCRIPTION
+-----------
+
+プラットフォーム固有のファイルシステムの通知機能を使用して、 作業ディレクトリのファイルとディレクトリの変更を監視するデーモン。
+
+このデーモンは、 低速の linkgit:githooks[5] インターフェイスではなく、 link:technical/api-simple-ipc.html[simple IPC] インターフェイスを使用して、 `git status` などのコマンドと直接通信(communicate)します。
+
+このデーモンは Git に組み込まれているため、 サードパーティのツールは必要ありません。
+
+OPTIONS
+-------
+
+start::
+	バックグラウンドでデーモンを開始(start)します。
+
+run::
+	フォアグラウンドでデーモンを実行します。
+
+stop::
+	存在する場合、 現在の作業ディレクトリで実行されているデーモンを停止(stop)します。
+
+status::
+	デーモンが現在の作業ディレクトリを監視している場合、 ゼロ・ステータスで終了(exit)します。
+
+REMARKS
+-------
+
+このデーモンは、 単一の作業ディレクトリを監視し、 最近変更されたファイルとディレクトリのリストを維持するために使用される長時間実行プロセスです。 作業ディレクトリへの変更の概要を要求するだけで、 ディスクのスキャンを回避できる場合、 `git status` などのコマンドのパフォーマンスを向上させることができます。
+
+`core.fsmonitor` が `true` に設定されている場合 (linkgit:git-config[1] 参照)、 `git status` などのコマンドはデーモンに変更を要求し、 必要に応じてデーモンを自動的に起動します。
+
+詳細については、 linkgit:git-update-index[1] の「File System Monitor」セクションを参照してください。
+
+CAVEATS
+-------
+
+fsmonitor デーモンは現在、 サブモジュールについて認識しておらず、 サブモジュール内で発生するファイルシステムのイベントを除外する方法も認識していません。 fsmonitor デーモンがスーパー・リポジトリを監視していて、 サブモジュールの作業ディレクトリ内でファイルが変更された場合、 (スーパー・ リポジトリに対して発生したものとして)変更が報告されます。 ただし、 クライアントはこれらの余分なイベントを適切に無視するため、 パフォーマンスが影響を受ける可能性がありますが、 誤った結果が生じることはありません。
+
+By default, the fsmonitor daemon refuses to work with network-mounted repositories; this may be overridden by setting `fsmonitor.allowRemote` to `true`. Note, however, that the fsmonitor daemon is not guaranteed to work correctly with all network-mounted repositories, so such use is considered experimental.
+
+Mac OS では、さまざまな Git コマンドと fsmonitor デーモンの間のプロセス間通信 (IPC) は、 Unix ドメイン・ソケット (UDS) -- という特別な種類のファイル -- を介して行われます。 UDS はネイティブの Mac OS ファイルシステムではサポートされていますが、 ネットワーク・マウントされたファイルシステムやNTFSやFAT32 上ではサポートされていません。 他のファイルシステムでは必要なサポートがある場合とない場合があります。 fsmonitor デーモンはこれらのファイルシステムで動作することが保証されておらず、 そのような使用は実験的であるとみなされます。
+
+By default, the socket is created in the `.git` directory. However, if the `.git` directory is on a network-mounted filesystem, it will instead be created at `$HOME/.git-fsmonitor-*` unless `$HOME` itself is on a network-mounted filesystem, in which case you must set the configuration variable `fsmonitor.socketDir` to the path of a directory on a Mac OS native filesystem in which to create the socket file.
+
+上記のディレクトリ(`.git` または `$HOME` または `fsmonitor.socketDir`) がネイティブ Mac OS ファイルシステム上にない場合、 fsmonitor デーモンはエラーを報告し、 デーモンと現在実行中のコマンドが終了(exit)します。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/fsmonitor--daemon.txt[]
+
+GIT
+---
+Part of the linkgit:git[1] suite

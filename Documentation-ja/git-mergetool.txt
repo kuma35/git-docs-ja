@@ -1,0 +1,79 @@
+git-mergetool(1)
+================
+
+NAME
+----
+git-mergetool - マージ競合解決ツールを実行して、マージ競合を解決します
+
+SYNOPSIS
+--------
+[verse]
+'git mergetool' [--tool=<tool>] [-y | --[no-]prompt] [<file>...]
+
+DESCRIPTION
+-----------
+
+`git mergetool` を使用して、いくつかのマージユーティリティの1つを実行し、マージの競合を解決します。通常、 `git merge` の後に実行されます。
+
+If one or more <file> parameters are given, the merge tool program will be run to resolve differences in each file (skipping those without conflicts). Specifying a directory will include all unresolved files in that path. If no <file> names are specified, 'git mergetool' will run the merge tool program on every file with merge conflicts.
+
+OPTIONS
+-------
+`-t <tool>`::
+`--tool=<tool>`::
+	<tool> で指定したマージ解決プログラムを使用します。 有効な値には emerge、gvimdiff、kdiff3、meld、vimdiff、tortoisemerge が含まれます。有効な <tool> 設定のリストについては、 `git mergetool --tool-help` を実行してください。
++
+マージ解決プログラムが指定されていない場合、 `git mergetool` は構成変数 `merge.tool` を使用します。 構成変数 `merge.tool` が設定されていない場合、 `git mergetool` は適切なデフォルトを選択します。
++
+あなたは構成変数 `mergetool.<tool>.path` を設定することにより、ツールへのフルパスを明示的に指定できます。たとえば、 `mergetool.kdiff3.path` を設定することにより、kdiff3への絶対パスを構成できます。それ以外の場合、 `git mergetool` はツールがPATHで使用可能であると想定します。
++
+既知のマージツールプログラムの1つを実行する代わりに、構成変数 `mergetool.<tool>.cmd` で呼び出すコマンドラインを指定することにより、 `git mergetool` をカスタマイズして代替プログラムを実行できます。
++
+When 'git mergetool' is invoked with this tool (either through the `-t` or `--tool` option or the `merge.tool` configuration variable), the configured command line will be invoked with `$BASE` set to the name of a temporary file containing the common base for the merge, if available; `$LOCAL` set to the name of a temporary file containing the contents of the file on the current branch; `$REMOTE` set to the name of a temporary file containing the contents of the file to be merged, and `$MERGED` set to the name of the file to which the merge tool should write the result of the merge resolution.
++
+カスタムマージツールがその終了コードでマージ解決の成功を正確に示している場合、構成変数 `mergetool.<tool>.trustExitCode` を `true` に設定できます。それ以外の場合、 `git mergetool` は、カスタムツールが終了した後、解決の成功を示すようにユーザーに促します。
+
+`--tool-help`::
+	`--tool` で使用できるマージツールのリストを出力します。
+
+`-y`::
+`--no-prompt`::
+	マージ解決プログラムを呼び出す前にプロンプトを表示しないでください。これは、マージ解決プログラムが `--tool` オプションまたは `merge.tool` 構成変数で明示的に指定されている場合のデフォルトです。
+
+`--prompt`::
+	マージ解決プログラムを呼び出す前にプロンプトを表示して、ユーザーにパス(path)をスキップする機会を与えます。
+
+`-g`::
+`--gui`::
+	When 'git-mergetool' is invoked with the `-g` or `--gui` option, the default merge tool will be read from the configured `merge.guitool` variable instead of `merge.tool`. If `merge.guitool` is not set, we will fallback to the tool configured under `merge.tool`. This may be autoselected using the configuration variable `mergetool.guiDefault`.
+
+`--no-gui`::
+	これは、 それ以前の `-g` または `--gui` 設定または `mergetool.guiDefault` 設定をオーバーライドし、 設定された `merge.tool` 変数からデフォルトのマージ・ツールを読み取ります。
+
+`-O<orderfile>`::
+	<orderfile> で指定された順序でファイルを処理します。これには、1行に1つのシェルグロブパターンがあります。 これは `diff.orderFile` 構成変数をオーバーライドします(linkgit:git-config[1] を参照)。 `diff.orderFile` をキャンセルするには、 `-O/dev/null` を使用します。
+
+CONFIGURATION
+-------------
+:git-mergetool: 1
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/mergetool.txt[]
+
+TEMPORARY FILES
+---------------
+`git mergetool` は、マージの解決中に `*.orig` バックアップファイルを作成します。これらは、ファイルがマージされ、その `git mergetool` セッションが完了したら安全に削除できます。
+
+Setting the `mergetool.keepBackup` configuration variable to `false` causes `git mergetool` to automatically remove the backup files as files are successfully merged.
+
+BACKEND SPECIFIC HINTS
+----------------------
+
+vimdiff
+~~~~~~~
+include::mergetools/vimdiff.txt[]
+
+GIT
+---
+Part of the linkgit:git[1] suite

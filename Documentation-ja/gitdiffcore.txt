@@ -1,0 +1,176 @@
+gitdiffcore(7)
+==============
+
+NAME
+----
+gitdiffcore - diff出力の微調整
+
+SYNOPSIS
+--------
+[verse]
+'git diff' *
+
+DESCRIPTION
+-----------
+
+diffコマンド `gitdiff-index` と `git diff-files` と `git diff-tree` は、 `diff` 出力を表示する前に、従来とは異なる方法で検出した差異を操作するように指示できます。この操作を総称して「diffcore変換」(diffcore transformation)と呼びます。この短いノートでは、それらが何であるか、およびそれらを使用して、従来の種類よりも理解しやすい `diff` 出力を生成する方法について説明します。
+
+
+The chain of operation
+----------------------
+
+`git diff-{asterisk}` ファミリの仕事は、まずは2つのファイルセットを比較することです:
+
+ - `git diff-index` は、 (`--cached` フラグが使用されていない場合)ツリーオブジェクトと作業ディレクトリの内容を比較するか、または(` --cached` フラグが使用されている場合)ツリーオブジェクトとインデックスファイルの内容を比較します。
+
+ - `git diff-files` は、インデックスファイルと作業ディレクトリの内容を比較します。
+
+ - `git diff-tree` は、2つのツリーオブジェクトの内容を比較します。
+
+これらすべての場合において、コマンド自体は、最初にオプションで、コマンドラインで指定されたパススペックによって2つのファイルの組を限定し、結果として得られる2つのファイルの組の対応するパスを比較します。
+
+パススペックは、diffが動作するワールドを制限するために使用されます。これらは、指定されたパス名の組の外側にあるファイルペア(filepairs)を削除します。例えば。ファイルペアの入力組が含まれている場合:
+
+------------------------------------------------
+:100644 100644 bcd1234... 0123456... M junkfile
+------------------------------------------------
+
+しかし、コマンドの呼び出しが `git diff-files myfile` の場合、 `myfile` のみが考慮されているため、junkfileエントリがリストから削除されます。
+
+比較の結果は、これらのコマンドから、 `-p｀ オプションが使用されていない場合に出力されるものと同様の形式で、内部的に「diffcore」と呼ばれるものに渡されます。例えば
+
+------------------------------------------------
+in-place edit  :100644 100644 bcd1234... 0123456... M file0
+create         :000000 100644 0000000... 1234567... A file4
+delete         :100644 000000 1234567... 0000000... D file5
+unmerged       :000000 000000 0000000... 0000000... U file6
+------------------------------------------------
+
+diffcoreメカニズムには、そのような比較結果のリストが提供され(それぞれが「ファイルペア」(filepair)と呼ばれますが、この時点ではそれぞれ1つのファイルについて話します)、そのようなリストを別のリストに変換します。現在、そのような変換(transformations)は5つあります:
+
+- diffcore-break
+- diffcore-rename
+- diffcore-merge-broken
+- diffcore-pickaxe
+- diffcore-order
+- diffcore-rotate
+
+これらは順番に適用されます。 `git diff-{asterisk}` コマンド群の探索のファイルペアのセットは、diffcore-breakへの入力として使用されます。diffcore-breakからの出力は、次の変換への入力として使用されます。そして、最終結果が出力ルーチンに渡され、diff-raw形式(マニュアルの `git diff-{asterisk}` コマンド の「Output format」セクションを参照)またはdiff-patch形式のいずれかが生成されます。
+
+
+diffcore-break: 完全な書き換えを分割するため
+------------------------------
+
+操作チェーンの2番目の変換(transformation)はdiffcore-breakで、 `git diff-{asterisk}` コマンド群の `-B` オプションによって制御されます。これは、「完全な書き換え」を表すファイルペアを検出し、そして、そのようなファイルペアを削除と作成を表す2つのファイルペアに分割するために使用されます。例えば、入力に以下のファイルペアが含まれている場合:
+
+------------------------------------------------
+:100644 100644 bcd1234... 0123456... M file0
+------------------------------------------------
+
+そして、ファイル "file0" が完全に書き換えられたことを検出すると、以下のように変更されます:
+
+------------------------------------------------
+:100644 000000 bcd1234... 0000000... D file0
+:000000 100644 0000000... 0123456... A file0
+------------------------------------------------
+
+ファイルペアを切断する(break)目的で、diffcore-breakは、変更前後のファイルの内容(つまり、上記の例では、SHA-1コンテンツIDとして `bcd1234...` と `0123456...` を持つコンテンツ)の間の変更の程度を調べます。元のコンテンツの削除と新しい素材の挿入の量が合計され、「ブレークスコア」(break score)を超えると、ファイルペアが2つに分割されます。ブレークスコアのデフォルトは、元のサイズと結果の小さい方のサイズの50%であり(つまり、編集によってファイルが縮小される場合は、結果のサイズが使用されます。編集によってファイルが長くなる場合は、元のサイズが使用されます)、 `-B` オプションの後に数字を付けることでカスタマイズできます(たとえば、 `-B75` で75%にするように指示します)。
+
+
+diffcore-rename: 名前変更とコピーを検出するため
+--------------------------------
+
+この変換(transformation)は、名前変更とコピーを検出するために使用され、 `git diff-{asterisk}` コマンド群の `-M` オプション(名前変更検出用）と `-C` オプション(コピーも検出するため)によって制御されます。入力にこれらのファイルペアが含まれている場合:
+
+------------------------------------------------
+:100644 000000 0123456... 0000000... D fileX
+:000000 100644 0000000... 0123456... A file0
+------------------------------------------------
+
+ここで、削除されたファイルfileXの内容は、作成されたファイルfile0の内容と十分に類似しているため、名前変更検出はこれらのファイルペアをマージして以下を作成します:
+
+------------------------------------------------
+:100644 100644 0123456... 0123456... R100 fileX file0
+------------------------------------------------
+
+`-C` オプションを使用すると、変更されたファイルと削除されたファイル( `--find-copies-harder` オプションが使用されている場合は、変更されていないファイルも)の元の内容が、名前変更/コピー 操作のソースファイルの候補と見なされます。入力がこれらのファイルペアのようなものである場合、変更されたファイルfileYと新しく作成されたファイルfile0について以下のようになります:
+
+------------------------------------------------
+:100644 100644 0123456... 1234567... M fileY
+:000000 100644 0000000... bcd3456... A file0
+------------------------------------------------
+
+fileYの元の内容とfile0の結果の内容が比較され、それらが十分に類似している場合は、以下のように変更されます:
+
+------------------------------------------------
+:100644 100644 0123456... 1234567... M fileY
+:100644 100644 0123456... bcd3456... C100 fileY file0
+------------------------------------------------
+
+名前の変更とコピーの検出の両方で、diffcore-breakで使用されるのと同じ「変更の範囲」(extent of changes)アルゴリズムを使用して、2つのファイルが「十分に類似」しているかどうかを判断し、デフォルトの50%とは異なる類似スコアを使用するようにカスタマイズできます。 `-M` または `-C` オプションの後に番号を付けます(たとえば、 `-M8` で 8/10 = 80% にするように指示します)。
+
+Note that when rename detection is on but both copy and break detection are off, rename detection adds a preliminary step that first checks if files are moved across directories while keeping their filename the same. If there is a file added to a directory whose contents are sufficiently similar to a file with the same name that got deleted from a different directory, it will mark them as renames and exclude them from the later quadratic step (the one that pairwise compares all unmatched files to find the "best" matches, determined by the highest content similarity). So, for example, if a deleted docs/ext.txt and an added docs/config/ext.txt are similar enough, they will be marked as a rename and prevent an added docs/ext.md that may be even more similar to the deleted docs/ext.txt from being considered as the rename destination in the later step. For this reason, the preliminary "match same filename" step uses a bit higher threshold to mark a file pair as a rename and stop considering other candidates for better matches. At most, one comparison is done per file in this preliminary pass; so if there are several remaining ext.txt files throughout the directory hierarchy after exact rename detection, this preliminary step may be skipped for those files.
+
+注意: `-C` オプションを `--find-copies-harder` オプションとともに使用すると、 `git diff-{asterisk}` コマンド群は、変更されていないファイルペアと変更されたファイルペアをdiffcoreメカニズムに送ります。これにより、コピー検出器は、ファイルの速度を低下させる代わりに、変更されていないファイルをコピーソース候補と見なすことができます。 `--find-copies-harder` がないと、 `git diff-{asterisk}` コマンド群は、コピーされたファイルがたまたま同じチェンジセットで変更された場合にのみコピーを検出できます。
+
+
+diffcore-merge-broken: 完全な書き換えを元に戻すため
+-------------------------------------
+
+この変換は、diffcore-breakによって分割したファイルペアをマージするために使用され、 diffcore-rename によって rename/copy に変換されず、単一の変更に戻されます。これは、diffcore-breakが使用されている場合は常に実行されます。
+
+For the purpose of merging broken filepairs back, it uses a different "extent of changes" computation from the ones used by diffcore-break and diffcore-rename. It counts only the deletion from the original, and does not count insertion. If you removed only 10 lines from a 100-line document, even if you added 910 new lines to make a new 1000-line document, you did not do a complete rewrite. diffcore-break breaks such a case in order to help diffcore-rename to consider such filepairs as a candidate of rename/copy detection, but if filepairs broken that way were not matched with other filepairs to create rename/copy, then this transformation merges them back into the original "modification".
+
+「変更の範囲」パラメータは、 `-B` に2番目の数値を指定することで、デフォルトの80%から微調整できます(つまり、元のマテリアルの80%以上が削除されない限り、分割されたペアは1つの変更にマージされます)。以下のように指定できます:
+
+* `-B50/60` (diffcore-breakに50%の「ブレークスコア」を与え、diffcore-merge-brokenに60%を与えます)。
+
+* `-B/60` (上記と同じです。diffcore-breakのデフォルトは50%であるため)。
+
+Note that earlier implementation left a broken pair as separate creation and deletion patches. This was an unnecessary hack, and the latest implementation always merges all the broken pairs back into modifications, but the resulting patch output is formatted differently for easier review in case of such a complete rewrite by showing the entire contents of the old version prefixed with '-', followed by the entire contents of the new version prefixed with '+'.
+
+
+diffcore-pickaxe: 指定の文字列(string)の追加/削除の検知のため
+--------------------------------------------
+
+This transformation limits the set of filepairs to those that change specified strings between the preimage and the postimage in a certain way. -S<block-of-text> and -G<regular-expression> options are used to specify different ways these strings are sought.
+
+"-S<block-of-text>" detects filepairs whose preimage and postimage have different number of occurrences of the specified block of text. By definition, it will not detect in-file moves. Also, when a changeset moves a file wholesale without affecting the interesting string, diffcore-rename kicks in as usual, and `-S` omits the filepair (since the number of occurrences of that string didn't change in that rename-detected filepair). When used with `--pickaxe-regex`, treat the <block-of-text> as an extended POSIX regular expression to match, instead of a literal string.
+
+"-G<regular-expression>" (mnemonic: grep) detects filepairs whose textual diff has an added or a deleted line that matches the given regular expression. This means that it will detect in-file (or what rename-detection considers the same file) moves, which is noise. The implementation runs diff twice and greps, and this can be quite expensive. To speed things up, binary files without textconv filters will be ignored.
+
+`-S` または `-G` を `--pickaxe-all` なしで使用すると、それぞれの基準に一致するファイルペアのみが出力に保持されます。 `--pickaxe-all` が使用されている場合、1つのファイルペアでもチェンジセット内のそれぞれの基準に一致すると、チェンジセット全体が保持されます。この振る舞いは、チェンジセット全体のコンテキストでの変更のレビューを容易にするために設計されています。
+
+diffcore-order: ファイル名に基づいて出力をソートするため
+------------------------------------
+
+これは、ユーザー(またはプロジェクト)の好みに応じてファイルペアを並べ替えるために使用され、 `git diff-{asterisk}` コマンド群の `-O` オプションによって制御されます。
+
+これは、各行がシェルグロブパターンであるテキストファイルを取ります。ファイルの前の行のグロブパターンに一致するファイルペアは、後の行に一致するファイルペアの前に出力され、どのグロブパターンにも一致しないファイルペアは最後に出力されます。
+
+例として、コアGitの一般的な orderfile おそらく以下のようになります:
+
+------------------------------------------------
+README
+Makefile
+Documentation
+*.h
+*.c
+t
+------------------------------------------------
+
+diffcore-rotate: 出力開始パス(path)を変更するため
+------------------------------------
+
+この変換は1つのパス名を取り、ファイルペアのセットをローテーションして、指定されたパス名のファイルペアが最初に来るようにします。オプションで、その前にあるパスを破棄します。これは、 `--skip-to` および `--rotate-to` オプションを実装するために使用されます。指定されたパス名がファイルペアのセットにない場合はエラーになりますが、 `git log ` ファミリーのコマンドで使用するとエラーになることはありません。 `git log` コマンドで表示されるすべてのコミットによって特定のパスが変更されることを期待するのは不合理だからです。このため、 `git log` と一緒に使用すると、指定されたパス名と同じように並べ替えられるファイルペア、または最初に並べ替えられるファイルペアが出力の開始場所になります。
+
+この変換をdiffcore-orderと組み合わせて使用すると、diffcore-orderが有効な場合、この変換への入力がソートされない可能性があるため、予期しない結果が生成されます。
+
+
+SEE ALSO
+--------
+linkgit:git-diff[1], linkgit:git-diff-files[1], linkgit:git-diff-index[1], linkgit:git-diff-tree[1], linkgit:git-format-patch[1], linkgit:git-log[1], linkgit:gitglossary[7], link:user-manual.html[The Git User's Manual]
+
+GIT
+---
+Part of the linkgit:git[1] suite

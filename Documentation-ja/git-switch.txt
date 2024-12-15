@@ -1,0 +1,200 @@
+git-switch(1)
+=============
+
+NAME
+----
+git-switch - ブランチを切り替える
+
+SYNOPSIS
+--------
+[verse]
+'git switch' [<options>] [--no-guess] <branch>
+'git switch' [<options>] --detach [<start-point>]
+'git switch' [<options>] (-c|-C) <new-branch> [<start-point>]
+'git switch' [<options>] --orphan <new-branch>
+
+DESCRIPTION
+-----------
+指定のブランチに切り替えます。作業ツリーとインデックスは、ブランチに一致するように更新されます。新規コミットは、全てこのブランチの先端に追加されることになります。
+
+オプションで、同じ名前のリモートブランチから自動的に `-c` や `-C` を使用して新しいブランチを作成するか(`--guess` 参照)、あるいは切り替え時に `--detach` を使用して任意のブランチから作業ツリーをデタッチできます。
+
+ブランチを切り替えるには、クリーンなインデックスと作業ツリーは必要ありません(つまり、「HEAD」との違いはありません)。ただし、操作によってローカル変更が失われる場合、 `--discard-changes` または `--merge` で特に指示されない限り、操作は中止されます。
+
+!!このコマンドは実験的なものです。 動作が変わる可能性があります!!
+
+OPTIONS
+-------
+<branch>::
+	切り替え先のブランチ
+
+<new-branch>::
+	新ブランチの名前
+
+<start-point>::
+	新ブランチの開始点。 `<start-point>` を指定すると、HEADが現在指し示している場所以外の履歴内の場所に基づいてブランチを作成できます。(または、 `--detach` の場合、他の場所から検査してデタッチすることができます。)
++
+`@{-N}` 構文を使用して、「git switch」または「git checkout」操作を使用して切り替えられた最後からN番目のブランチ/コミットを参照できます。 `@{-1}` と同義の `-` を指定することもできます。これは、2つのブランチをすばやく切り替えたり、誤って切り替えたブランチを元に戻したりするためによく使用されます。
++
+特別な場合として、マージベースが1つしかない場合は、 `A` と `B` のマージベースのショートカットとして `A...B` を使用できます。 `A` と `B` のうち片方を省略できます。その場合、省略した方はデフォルトで `HEAD` になります。
+
+`-c <new-branch>`::
+`--create <new-branch>`::
+	Create a new branch named `<new-branch>` starting at `<start-point>` before switching to the branch. This is the transactional equivalent of
++
+------------
+$ git branch <new-branch>
+$ git switch <new-branch>
+------------
++
+that is to say, the branch is not reset/created unless "git switch" is successful (e.g., when the branch is in use in another worktree, not just the current branch stays the same, but the branch is not reset to the start-point, either).
+
+`-C <new-branch>`::
+`--force-create <new-branch>`::
+	`--create`と似ていますが、 `<new-branch>` がすでに存在する場合、 `<start-point>` にリセットされる点が異なります。これは以下に代わる便利なショートカットです:
++
+------------
+$ git branch -f <new-branch>
+$ git switch <new-branch>
+------------
+
+`-d`::
+`--detach`::
+	検査と破棄可能な実験のためのコミットに切り替えます。詳細については、 linkgit:git-checkout[1] の「DETACHED HEAD」セクションを参照してください。
+
+`--guess`::
+`--no-guess`::
+	`<branch>` が見つからないが、名前が一致するリモートが正確に1つだけあり(`<remote>` と呼びます)、それに追跡ブランチが存在する場合は、以下と同等のものとして扱います。
++
+------------
+$ git switch -c <branch> --track <remote>/<branch>
+------------
++
+ブランチが複数のリモートに存在し、そのうちの1つが `checkout.defaultRemote` 構成変数によって名前が付けられている場合、 `<branch>` がすべてのリモートで一意でなくても、曖昧さ回避の目的でそのブランチを使用します。例えば、 `<branch>` があいまいであるが、 `origin` リモートに存在する場合、そこからリモートブランチを常にチェックアウトするには、これを `checkout.defaultRemote=origin` と設定します。 linkgit:git-config[1] の `checkout.defaultRemote` も参照してください。
++
+`--guess` がデフォルトの動作です。無効にするには、 `--no-guess` を使用します。
++
+デフォルトの動作は、 `checkout.guess` 構成変数で設定できます。
+
+`-f`::
+`--force`::
+	`--discard-changes` のエイリアス。
+
+`--discard-changes`::
+	インデックスまたは作業ツリーが `HEAD` と異なっていても続行します。インデックスと作業ツリーの両方が、切り替え先(switching target)に一致するように復元されます。 `--recurse-submodules` が指定されている場合、サブモジュールの内容も切り替え先に一致するように復元されます。これは、ローカルの変更を破棄するために使用されます。
+
+`-m`::
+`--merge`::
+	現在のブランチと切り替え先のブランチの間で異なる1つ以上のファイルにローカルの変更がある場合、コマンドは、変更をコンテキストに保持するためにブランチの切り替えを拒否します。 ただし、このオプションを使用すると、現在のブランチ、作業ツリーの内容、および新しいブランチの間の3方向のマージが実行され、新しいブランチに移動します。
++
+マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになり、競合を解決し、解決されたパスを `git add` (またはマージによってパスが削除される場合は `git rm`)でマークする必要があります。
+
+`--conflict=<style>`::
+	上記の `--merge` オプションと同じですが、競合するハンクの表示方法を変更し、 `merge.conflictStyle` 構成変数をオーバーライドします。 可能な値は、`merge`(デフォルト)と `diff3` と `zdiff3` です。
+
+`-q`::
+`--quiet`::
+	静かにします。フィードバックメッセージを抑制します。
+
+`--progress`::
+`--no-progress`::
+	`--quiet` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。このフラグは、 `--quiet` に関係なく、端末に接続されていない場合でも進行状況のレポートを有効にします。
+
+`-t`::
+`--track [direct|inherit]`::
+	新しいブランチを作成するときは、 "upstream" 構成をセットアップします。 `-c` が暗黙に指定されたものと見なします。詳細については、 linkgit:git-branch[1] の `--track` を参照してください。
++
+`-c` オプションが指定されていない場合、新しいブランチの名前は、対応するリモート用に構成されたrefspecのローカル部分を調べ、次に、最初の部分を「*」まで削除することにより、リモート追跡ブランチから取得されます。これは、 `origin/hack` (または `remotes/origin/hack` あるいは `refs/remotes/origin/hack`)から分岐するときに、ローカルブランチとして `hack` を使用するように指示します。指定された名前にスラッシュ(/)がない場合、または上記の推測の結果が空の名前になる場合、推測は中止されます。このような場合は、 `-c` を使用して明示的に名前を付けることができます。
+
+`--no-track`::
+	`branch.autoSetupMerge` 構成変数がtrueであっても、 "upstream" 構成をセットアップしない。
+
+`--orphan <new-branch>`::
+	Create a new unborn branch, named `<new-branch>`. All tracked files are removed.
+
+`--ignore-other-worktrees`::
+	`git switch` は、必要なrefが別のワークツリーによってすでにチェックアウトされている場合に拒否します。このオプションを使用すると、とにかくrefをチェックアウトできます。つまり、refは複数のワークツリーで保持できます。
+
+`--recurse-submodules`::
+`--no-recurse-submodules`::
+	`--recurse-submodules` を使用すると、スーパープロジェクト(親プロジェクト)に記録されたコミットに従って、すべてのアクティブなサブモジュールのコンテンツが更新されます。何も使用されていない(または `--no-recurse-submodules`)場合、サブモジュールの作業ツリーは更新されません。 linkgit:git-submodule[1] と同様に、これはサブモジュールの `HEAD` を切り離します(detach)。
+
+EXAMPLES
+--------
+
+以下のコマンドは "master" ブランチに切り替えます:
+
+------------
+$ git switch master
+------------
+
+間違ったブランチで作業した後、正しいブランチへの切り替えは以下を使用して行われます:
+
+------------
+$ git switch mytopic
+------------
+
+ただし、「間違った」ブランチと正しい「mytopic」ブランチは、ローカルで変更したファイルが異なる場合があります。その場合、上記のswitchは以下のように失敗します:
+
+------------
+$ git switch mytopic
+error: You have local changes to 'frotz'; not switching branches.
+------------
+
+コマンドに `-m` フラグを指定すると、3方向のマージを試行します:
+
+------------
+$ git switch -m mytopic
+Auto-merging frotz
+------------
+
+この3者間マージの後、ローカルの変更はインデックスファイルに登録されないため、 `git diff` は、新しいブランチの先端以降に行った変更を示します。
+
+mytopicに切り替える前に前のブランチ(つまり、 "master" ブランチ)に戻すには:
+
+------------
+$ git switch -
+------------
+
+どのコミットからでも新しいブランチを成長させることができます。たとえば、 "HEAD~3" に切り替えて、ブランチ "fixup" を作成します:
+
+------------
+$ git switch -c fixup HEAD~3
+Switched to a new branch 'fixup'
+------------
+
+同じ名前のリモートブランチから新しいブランチを開始する場合:
+
+------------
+$ git switch new-topic
+Branch 'new-topic' set up to track remote branch 'new-topic' from 'origin'
+Switched to a new branch 'new-topic'
+------------
+
+新しいブランチを作成せずに、一時的な検査または実験のためにコミット `HEAD~3` をチェックアウトするには:
+
+------------
+$ git switch --detach HEAD~3
+HEAD is now at 9fc9555312 Merge branch 'cc/shared-index-permbits'
+------------
+
+一時的な検査または実験のために行ったことに維持する価値があることが判明した場合は、(切り替えることなく)、いつでも新しい名前を作成できます:
+
+------------
+$ git switch -c good-surprises
+------------
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/checkout.txt[]
+
+SEE ALSO
+--------
+linkgit:git-checkout[1], linkgit:git-branch[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

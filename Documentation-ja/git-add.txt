@@ -1,0 +1,283 @@
+git-add(1)
+==========
+
+NAME
+----
+git-add - ファイルの内容をインデックスに追加します
+
+SYNOPSIS
+--------
+[synopsis]
+git add [--verbose | -v] [--dry-run | -n] [--force | -f] [--interactive | -i] [--patch | -p]
+	[--edit | -e] [--[no-]all | -A | --[no-]ignore-removal | [--update | -u]] [--sparse]
+	[--intent-to-add | -N] [--refresh] [--ignore-errors] [--ignore-missing] [--renormalize]
+	[--chmod=(+|-)x] [--pathspec-from-file=<file> [--pathspec-file-nul]]
+	[--] [<pathspec>...]
+
+DESCRIPTION
+-----------
+このコマンドは、作業ツリーで見つかった現在のコンテンツを使用してインデックスを更新し、次のコミットのためにステージングされたコンテンツを準備します。 通常、既存のパスの現在のコンテンツを全体として追加しますが、一部のオプションを使用して、作業ツリーファイルに加えられた変更の一部のみを適用したコンテンツを追加したり、作業ツリーにもう存在しないパスを削除したりすることもできます。
+
+「インデックス」は作業ツリーのコンテンツのスナップショットを保持し、次のコミットのコンテンツとして取得されるのはこのスナップショットです。 したがって、作業ツリーに変更を加えた後、commitコマンドを実行する前に、 `add` コマンドを使用して新しいファイルまたは変更されたファイルをインデックスに追加する必要があります。
+
+このコマンドは、コミット前に複数回実行できます。 addコマンドの実行時に指定されたファイルのコンテンツのみが追加されます。 その次のコミットに後続の変更を含める場合は、 `git add` を再度実行して、新しいコンテンツをインデックスに追加する必要があります。
+
+`git status` コマンドを使用して、次のコミットのためにステージングされる変更が含まれているファイルの概要を取得できます。
+
+The `git add` command will not add ignored files by default. If any ignored files were explicitly specified on the command line, `git add` will fail with a list of ignored files. Ignored files reached by directory recursion or filename globbing performed by Git (quote your globs before the shell) will be silently ignored. The `git add` command can be used to add ignored files with the `-f` (force) option.
+
+コミットにコンテンツを追加する別の方法については、 linkgit:git-commit[1] を参照してください。
+
+
+OPTIONS
+-------
+`<pathspec>...`::
+	コンテンツを追加するファイル。 ファイルグロブ(例: `*.c`)を指定して、マッチするすべてのファイルを追加できます。 また、先頭のディレクトリ名(たとえば `dir` で `dir/file1` と `dir/file2` を追加)を指定して、ディレクトリ全体の現在の状態に一致するようにインデックスを更新することもできます(たとえば、 `dir` を指定すると、作業ツリーで変更されたファイル `dir/file1` の変更記録や、作業ツリーに追加されたファイル `dir/file2` の追加記録だけでなく、作業ツリーから削除されたファイル `dir/file3` の削除記録も行われます)。 古いバージョンのGitでは、削除されたファイルを無視していたことに注意してください。 変更されたファイルまたは新しいファイルを追加し、削除されたファイルを無視する場合は、 `--no-all` オプションを使用します。
++
+For more details about the _<pathspec>_ syntax, see the 'pathspec' entry in linkgit:gitglossary[7].
+
+`-n`::
+`--dry-run`::
+	実際にファイルを追加するのではなく、ファイルが存在するかどうか、および/または 無視されるかどうかを表示します。
+
+`-v`::
+`--verbose`::
+        おしゃべりにします。
+
+`-f`::
+`--force`::
+	これ以外の場合は無視されるファイルの追加を許可します。
+
+`--sparse`::
+	スパース・チェックアウト・コーン(sparse-checkout cone)の外側のインデックス・エントリを更新できるようにします。 通常、 `git add` はパスがスパース・チェックアウト・コーン内に収まらないインデックス・エントリの更新を拒否します。これらのファイルは警告なしに作業ツリーから削除される可能性があるためです。 詳細については、 linkgit:git-sparse-checkout[1] を参照してください。
+
+`-i`::
+`--interactive`::
+	作業ツリーの変更されたコンテンツを対話的にインデックスに追加します。 オプションのパス引数を指定して、操作を作業ツリーのサブセットに制限することができます。 詳細については、「Interactive mode」を参照してください。
+
+`-p`::
+`--patch`::
+	インデックスと作業ツリーの間でパッチの塊(hunk)を対話的に選択し、それらをインデックスに追加します。 これにより、ユーザーは、変更されたコンテンツをインデックスに追加する前に、違いを確認することができます。
++
+これは効果的に `add --interactive` を実行しますが、初期コマンドメニューをバイパスし、 `patch` サブコマンドに直接ジャンプします。 詳細については、「Interactive mode」を参照してください。
+
+`-e`::
+`--edit`::
+	差分とインデックスをエディタで開き、ユーザに編集させる。 エディタを閉じた後、ハンクヘッダ(hunk headers)を調整し、インデックスにパッチを適用する。
++
+このオプションの目的は、適用するパッチの行を選択すること、またはステージングする行の内容を変更することです。 これは、対話的なハンク選択器(interactive hunk selector)を使用するよりも迅速かつ柔軟になります。 しかしながら、混乱してインデックスに適用されないパッチを作成するのも簡単にできてしまいます。以下の「EDITING PATCHES」を参照してください。
+
+`-u`::
+`--update`::
+	Update the index just where it already has an entry matching _<pathspec>_. This removes as well as modifies index entries to match the working tree, but adds no new files.
++
+If no _<pathspec>_ is given when `-u` option is used, all tracked files in the entire working tree are updated (old versions of Git used to limit the update to the current directory and its subdirectories).
+
+`-A`::
+`--all`::
+`--no-ignore-removal`::
+	Update the index not only where the working tree has a file matching _<pathspec>_ but also where the index already has an entry. This adds, modifies, and removes index entries to match the working tree.
++
+If no _<pathspec>_ is given when `-A` option is used, all files in the entire working tree are updated (old versions of Git used to limit the update to the current directory and its subdirectories).
+
+`--no-all`::
+`--ignore-removal`::
+	Update the index by adding new files that are unknown to the index and files modified in the working tree, but ignore files that have been removed from the working tree. This option is a no-op when no _<pathspec>_ is used.
++
+This option is primarily to help users who are used to older versions of Git, whose `git add <pathspec>...` was a synonym for `git add --no-all <pathspec>...`, i.e. ignored removed files.
+
+`-N`::
+`--intent-to-add`::
+	パスが後で追加されるという事実のみを記録します。 パスのエントリは、コンテンツなしでインデックスに配置されます。 これは、特に、そのようなファイルのステージングされていないコンテンツを `git diff` で表示し、それらを `git commit -a` でコミットする場合に役立ちます。
+
+`--refresh`::
+	ファイルを追加しません。 ただし、インデックス内の stat() 情報のみ更新します。
+
+`--ignore-errors`::
+	一部のファイルのインデックス作成エラーが原因で追加できなかった場合は、操作を中止せずに、他のファイルの追加を続行します。 コマンドは、ゼロ以外のステータスで終了します。 構成変数 `add.ignoreErrors` をtrueに設定して、これをデフォルトの動作にすることができます。
+
+`--ignore-missing`::
+	This option can only be used together with `--dry-run`. By using this option the user can check if any of the given files would be ignored, no matter if they are already present in the work tree or not.
+
+`--no-warn-embedded-repo`::
+	デフォルトでは、 `git submodule add` を使用して `.gitmodules` にエントリを作成せずに、埋め込みリポジトリ(embedded repository)をインデックスに追加すると、 `git add` が警告を表示します。 このオプションは、警告を抑制します(たとえば、サブモジュールで手動で操作を実行している場合)。
+
+`--renormalize`::
+	Apply the "clean" process freshly to all tracked files to forcibly add them again to the index. This is useful after changing `core.autocrlf` configuration or the `text` attribute in order to correct files added with wrong _CRLF/LF_ line endings. This option implies `-u`. Lone CR characters are untouched, thus while a _CRLF_ cleans to _LF_, a _CRCRLF_ sequence is only partially cleaned to _CRLF_.
+
+`--chmod=(+|-)x`::
+	追加されたファイルの実行可能ビットを上書きします。 実行可能ビットはインデックス内でのみ変更され、ディスク上のファイルは変更されません。
+
+`--pathspec-from-file=<file>`::
+	Pathspec is passed in _<file>_ instead of commandline args. If _<file>_ is exactly `-` then standard input is used. Pathspec elements are separated by _LF_ or _CR/LF_. Pathspec elements can be quoted as explained for the configuration variable `core.quotePath` (see linkgit:git-config[1]). See also `--pathspec-file-nul` and global `--literal-pathspecs`.
+
+`--pathspec-file-nul`::
+	Only meaningful with `--pathspec-from-file`. Pathspec elements are separated with _NUL_ character and all other characters are taken literally (including newlines and quotes).
+
+`--`::
+	このオプションは、コマンドラインオプションをファイルのリストから分離するために使用できます(ファイル名がコマンドラインオプションと間違えられる可能性がある場合に便利です)。
+
+
+EXAMPLES
+--------
+
+* Adds content from all ++*.txt++ files under `Documentation` directory and its subdirectories:
++
+------------
+$ git add Documentation/\*.txt
+------------
++
+Note that the asterisk ++*++ is quoted from the shell in this example; this lets the command include the files from subdirectories of `Documentation/` directory.
+
+* Considers adding content from all ++git-*.sh++ scripts:
++
+------------
+$ git add git-*.sh
+------------
++
+この例では、シェルがアスタリスクを展開できてしまうため(つまり、ファイルを明示的にリストしているため)、 `subdir/git-foo.sh` は考慮されません。
+
+INTERACTIVE MODE
+----------------
+コマンドが対話モード(interactive mode)に入ると、「status」サブコマンドの出力が表示され、対話コマンドループに入ります。
+
+コマンドループは、使用可能なサブコマンドのリストを表示し、 「What now> 」というプロンプトを表示します。 一般に、プロンプトが単一の `>` で終了する場合、以下のように、指定された選択肢の1つだけを選択し、returnキーをタイプできます:
+
+------------
+    *** Commands ***
+      1: status       2: update       3: revert       4: add untracked
+      5: patch        6: diff         7: quit         8: help
+    What now> 1
+------------
+
+選択が一意である限り、上記のは「s」または「sta」または「status」と言うことができます。
+
+メインコマンドループには6つのサブコマンドがあります(加えてhelpとquitがあります)。
+
+status::
+
+   This shows the change between `HEAD` and index (i.e. what will be committed if you say `git commit`), and between index and working tree files (i.e. what you could stage further before `git commit` using `git add`) for each path. A sample output looks like this:
++
+------------
+              staged     unstaged path
+     1:       binary      nothing foo.png
+     2:     +403/-35        +1/-1 add-interactive.c
+------------
++
+It shows that `foo.png` has differences from `HEAD` (but that is binary so line count cannot be shown) and there is no difference between indexed copy and the working tree version (if the working tree version were also different, 'binary' would have been shown in place of 'nothing'). The other file, `add-interactive.c`, has 403 lines added and 35 lines deleted if you commit what is in the index, but working tree file has further modifications (one addition and one deletion).
+
+update::
+
+   これにより、ステータス情報が表示され、 `Update>>` プロンプトが表示されます。 プロンプトが二重の `>>` で終わる場合は、空白またはコンマで連結して複数の選択を行うことができます。 また、範囲指定もできます。 例えば、 `2-5 7,9` でリストから 2,3,4,5,7,9 を選択します。 範囲内の2番目の数字を省略すると、残りのすべてのパッチが適用されます。 例えば、 `7-` はリストから 7,8,9 を選択します。 `*` で全選択できます。
++
+あなたが選択したものは、以下のように `*` で強調表示されます:
++
+------------
+           staged     unstaged path
+  1:       binary      nothing foo.png
+* 2:     +403/-35        +1/-1 add-interactive.c
+------------
++
+選択を削除するには、以下のように入力の前に `-` を付けます:
++
+------------
+Update>> -2
+------------
++
+選択後、空行で答えて、インデックス内の選択されたパスの作業ツリーファイルの内容をステージングします。
+
+revert::
+
+  これは「update」と非常によく似たUIを持ち、選択されたパスのステージングされた情報はHEADバージョンの情報に戻されます(revert)。 新しいパスを元に戻すと、追跡されなくなります。
+
+add untracked::
+
+  これは、「update」および「revert」と非常によく似たUIを備えており、追跡されていないパスをインデックスに追加できます。
+
+patch::
+
+  これにより、選択に似た `status` から1つのパスを選択できます。 パスを選択すると、インデックスと作業ツリーファイルの差分が表示され、各ハンクの変更をステージングするかどうかを尋ねられます。 以下のオプションのいずれかを選択してからreturnキーをタイプできます。
+
+       y - stage this hunk
+       n - do not stage this hunk
+       q - quit; do not stage this hunk or any of the remaining ones
+       a - stage this hunk and all later hunks in the file
+       d - do not stage this hunk or any of the later hunks in the file
+       g - select a hunk to go to
+       / - search for a hunk matching the given regex
+       j - leave this hunk undecided, see next undecided hunk
+       J - leave this hunk undecided, see next hunk
+       k - leave this hunk undecided, see previous undecided hunk
+       K - leave this hunk undecided, see previous hunk
+       s - split the current hunk into smaller hunks
+       e - manually edit the current hunk
+       p - print the current hunk
+       ? - print help
++
+すべてのハンクの運命を決定した後、選択されたハンク達がある場合、インデックスは選択されたハンク達によって更新されます。
++
+構成変数 `interactive.singleKey` を `true` に設定することにより、あなたはここでreturnキーをタイプする必要をなくすことができます。
+
+diff::
+
+  This lets you review what will be committed (i.e. between `HEAD` and index).
+
+
+EDITING PATCHES
+---------------
+
+`git add -e` を呼び出すか、対話的ハンク選択器(interactive hunk selector)で `e` を選択すると、エディタでパッチを開きます。 エディタが終了すると、結果がインデックスに適用されます。 パッチに任意の変更を加えることは自由ですが、一部の変更は混乱を招く結果をもたらす可能性があること、または適用できないパッチをもたらす可能性があることに注意してください。 操作を完全に中止する場合(つまり、インデックスに新しいものをステージングしない場合)は、パッチのすべての行を削除するだけです。 以下のリストは、パッチに見られる一般的なものと、それらに対して意味のある編集操作を示しています。
+
+--
+added content::
+
+追加されたコンテンツは、 {plus} で始まる行で表されます。 追加行を削除することで、追加行のステージングを防ぐことができます。
+
+removed content::
+
+削除されたコンテンツは、 `-` で始まる行で表されます。 `-` を ` ` (スペース)に変換することで、ステージングによる削除を防ぐことができます。
+
+modified content::
+
+変更されたコンテンツは、 `-` 行(古いコンテンツを削除)とそれに続く {plus} 行(置換コンテンツを追加)で表されます。 `-` 行を ` ` に変換し、 {plus} 行を削除することで、変更のステージングを防ぐことができます。 ペアの半分だけを変更すると、インデックスに紛らわしい変更が加えられる可能性があることに注意してください。
+--
+
+There are also more complex operations that can be performed. But beware that because the patch is applied only to the index and not the working tree, the working tree will appear to "undo" the change in the index. For example, introducing a new line into the index that is in neither the `HEAD` nor the working tree will stage the new line for commit, but the line will appear to be reverted in the working tree.
+
+これらの構成を使用しないようにするか、または、細心の注意を払って使用してください。
+
+--
+removing untouched content::
+
+インデックスと作業ツリーの間で異なって無いコンテンツが、 ` ` (スペース)で始まるコンテキスト行に表示される場合があります。 スペースを `-` に変換することで、削除するコンテキスト行としてステージングできます。 その結果、再度追加してくださいと、その作業ツリーファイルが表示されます。
+
+modifying existing content::
+
+(` ` を `-` に変換することにより、)削除のためにステージングして、新しいコンテンツに {plus} 行を追加することにより、コンテキスト行を変更することもできます。 同様に、既存の追加または変更のために {plus} 行を変更できます。 いずれの場合も、新しい変更は作業ツリーに戻されて表示されます。
+
+new content::
+
+パッチに存在しない新しいコンテンツを追加することもできます。 それぞれが {plus} で始まる新しい行を追加するだけです。 追加は、作業ツリーに戻されて表示されます。
+--
+
+パッチが適用できなくなるため、完全に回避する必要のある操作もいくつかあります:
+
+* コンテキスト行達(" ")または削除行達("-")の追加
+* コンテキスト行達または削除行達の削除
+* コンテキスト行達または削除行達の内容を変更する
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+:git-add: 1
+include::config/add.txt[]
+
+SEE ALSO
+--------
+linkgit:git-status[1] linkgit:git-rm[1] linkgit:git-reset[1] linkgit:git-mv[1] linkgit:git-commit[1] linkgit:git-update-index[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

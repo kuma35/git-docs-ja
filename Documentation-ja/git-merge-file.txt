@@ -1,0 +1,86 @@
+git-merge-file(1)
+=================
+
+NAME
+----
+git-merge-file - 3方向ファイルマージを実行する
+
+
+SYNOPSIS
+--------
+[verse]
+'git merge-file' [-L <current-name> [-L <base-name> [-L <other-name>]]]
+	[--ours|--theirs|--union] [-p|--stdout] [-q|--quiet] [--marker-size=<n>]
+	[--[no-]diff3] [--object-id] <current> <base> <other>
+
+
+DESCRIPTION
+-----------
+Given three files `<current>`, `<base>` and `<other>`, 'git merge-file' incorporates all changes that lead from `<base>` to `<other>` into `<current>`. The result ordinarily goes into `<current>`. 'git merge-file' is useful for combining separate changes to an original. Suppose `<base>` is the original, and both `<current>` and `<other>` are modifications of `<base>`, then 'git merge-file' combines both changes.
+
+A conflict occurs if both `<current>` and `<other>` have changes in a common segment of lines. If a conflict is found, 'git merge-file' normally outputs a warning and brackets the conflict with lines containing <<<<<<< and >>>>>>> markers. A typical conflict will look like this:
+
+	<<<<<<< A
+	lines in file A
+	=======
+	lines in file B
+	>>>>>>> B
+
+If there are conflicts, the user should edit the result and delete one of the alternatives. When `--ours`, `--theirs`, or `--union` option is in effect, however, these conflicts are resolved favouring lines from `<current>`, lines from `<other>`, or lines from both respectively. The length of the conflict markers can be given with the `--marker-size` option.
+
+If `--object-id` is specified, exactly the same behavior occurs, except that instead of specifying what to merge as files, it is specified as a list of object IDs referring to blobs.
+
+このプログラムの終了値は、エラーの場合は負数であり、それ以外の場合は競合した数です(競合たくさんの場合は127に切り捨てられます)。マージがクリーンだった場合、終了値は0です。
+
+`git merge-file` は、RCS用マージの最小限のクローンになるように設計されています。つまり linkgit:git[1] に必要なRCSのマージ機能をすべて実装します。
+
+
+OPTIONS
+-------
+
+`--object-id`::
+	Specify the contents to merge as blobs in the current repository instead of files. In this case, the operation must take place within a valid repository.
++
+If the `-p` option is specified, the merged file (including conflicts, if any) goes to standard output as normal; otherwise, the merged file is written to the object store and the object ID of its blob is written to standard output.
+
+`-L <label>`::
+	このオプションは最大3回指定でき、競合レポートで対応するファイル名の代わりに使用するラベルを指定します。 つまり `git merge-file -L x -L y -L z a b c` は、ファイルa、b、cからではなく、ファイルx、y、zから来たように見える出力を生成します。
+
+`-p`::
+	Send results to standard output instead of overwriting `<current>`.
+
+`-q`::
+	静かにします(quiet)。競合について警告しないでください。
+
+`--diff3`::
+	`diff3` スタイルで競合を表示します。
+
+`--zdiff3`::
+	`zdiff3` スタイルで競合を表示します。
+
+`--ours`::
+`--theirs`::
+`--union`::
+	ファイルに競合を残す代わりに、競合部分の、our (または their または 両方)側に有利な競合解決します。
+
+`--diff-algorithm={patience|minimal|histogram|myers}`::
+	Use a different diff algorithm while merging. The current default is "myers", but selecting more recent algorithm such as "histogram" can help avoid mismerges that occur due to unimportant matching lines (such as braces from distinct functions). See also linkgit:git-diff[1] `--diff-algorithm`.
+
+EXAMPLES
+--------
+
+`git merge-file README.my README README.upstream`::
+
+	README以降のREADME.myとREADME.upstreamの変更を組み合わせて、それらをマージしようとし、結果をREADME.myに書き込みます。
+
+`git merge-file -L a -L b -L c tmp/a123 tmp/b234 tmp/c345`::
+
+	tmp/a123 と tmp/c345 をベースの tmp/b234 とマージしますが、 `tmp/a123` と `tmp/c345` の代わりにラベル `a` と `c` を使用します。
+
+`git merge-file -p --object-id abc1234 def567 890abcd`::
+
+	combines the changes of the blob abc1234 and 890abcd since def567, tries to merge them and writes the result to standard output
+
+GIT
+---
+Part of the linkgit:git[1] suite

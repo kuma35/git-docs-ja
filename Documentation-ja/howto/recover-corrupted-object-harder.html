@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>How to recover an object from scratch</h1>
-<span id="revdate">2024-12-12</span>
+<span id="revdate">2024-12-15</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -782,12 +782,12 @@ asciidoc.install();
     /path/to/git.git/t/helper/test-tool sha1 -b &lt;tmp.pack &gt;trailer
     cat trailer &gt;&gt;tmp.pack</code></pre>
 </div></div>
-<div class="paragraph"><p>次に、デバッガーで <code>git index-pack tmp.pack</code> を実行します(unpack_raw_entryで停止します)。 これを行うと、3バイトのヘッダーがあることがわかりました(ヘッダー自体は適切なタイプとサイズでした)。 なので私はそれらを以下のように取り除きました:</p></div>
+<div class="paragraph"><p>次に、デバッガーで <code>git</code> <code>index-pack</code> <code>tmp.pack</code> を実行します(unpack_raw_entryで停止します)。 これを行うと、3バイトのヘッダーがあることがわかりました(ヘッダー自体は適切なタイプとサイズでした)。 なので私はそれらを以下のように取り除きました:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    dd if=object of=zlib bs=1 skip=3</code></pre>
 </div></div>
-<div class="paragraph"><p>カスタムCプログラムを使用して、zlibでの解凍を介して結果を実行しました。 そして、それはエラーを報告はしましたが、正しい数の出力バイトを取得しました(つまり、上記でデコードしたgitのサイズヘッダーと一致しました)。 しかし、結果を <code>git hash-object</code> にフィードバックしても、同じsha1は生成されませんでした。 つまり、間違ったバイトがいくつかありましたが、どれかわからないということです。 このファイルはたまたまCのソースコードだったので、明らかに何か問題があることに気付くといいのですが、私は気づきませんでした。 それはコンパイルもできました！</p></div>
+<div class="paragraph"><p>カスタムCプログラムを使用して、zlibでの解凍を介して結果を実行しました。 そして、それはエラーを報告はしましたが、正しい数の出力バイトを取得しました(つまり、上記でデコードしたgitのサイズヘッダーと一致しました)。 しかし、結果を <code>git</code> <code>hash-object</code> にフィードバックしても、同じsha1は生成されませんでした。 つまり、間違ったバイトがいくつかありましたが、どれかわからないということです。 このファイルはたまたまCのソースコードだったので、明らかに何か問題があることに気付くといいのですが、私は気づきませんでした。 それはコンパイルもできました！</p></div>
 <div class="paragraph"><p>また、リポジトリ内の同じパスの他のバージョンと比較してみました。意味のないdiffの一部があることを期待していました。 しかし残念ながら、これはたまたまリポジトリ内のこの特定のファイルの唯一のリビジョンであったため、比較するものは何もありませんでした。</p></div>
 <div class="paragraph"><p>なので私は別のアプローチを取りました。 破損は1バイトに限定されているという推測の下で、各バイトを個別に処理するプログラムを作成し、結果を解凍させてみました。 オブジェクトはわずか10Kに圧縮されていたため、約250万回の試行に成功し、それは数分かかりました。</p></div>
 <div class="paragraph"><p>私が使用したプログラムはコレです:</p></div>
@@ -875,7 +875,7 @@ int main(void)
   printf '\xc7' | dd of=$pack bs=1 seek=51659518 conv=notrunc
   chmod -w $pack</code></pre>
 </div></div>
-<div class="paragraph"><p><code>\xc7</code> は、「munge」プログラムが見つけた置換バイトに由来します。 オフセット 51659518 は、元のオブジェクトオフセット(51653873)を取得し、「munge」(5642)によって検出された置換オフセットを追加してから、削除した3バイトのgitヘッダーを追加して取得します。</p></div>
+<div class="paragraph"><p>\xc7 は、「munge」プログラムが見つけた置換バイトに由来します。 オフセット 51659518 は、元のオブジェクトオフセット(51653873)を取得し、「munge」(5642)によって検出された置換オフセットを追加してから、削除した3バイトのgitヘッダーを追加して取得します。</p></div>
 <div class="paragraph"><p>その後、 「git fsck」はクリーンに実行されました。</p></div>
 <div class="paragraph"><p>破損自体に関しては、それが確かに1バイトであったことは幸運でした。 実際、それは1ビットであることが判明しました。 バイト0xc7 が 0xc5 に破損しました。 したがって、おそらくそれは欠陥のあるハードウェア、または宇宙線によって引き起こされたのでしょう。</p></div>
 <div class="paragraph"><p>そして、何が悪かったのかを見るために解凍した出力を見るという中止された試みは？ 私は永遠に見て、それを見つけることができなかったかもしれません。 破損したデータを解凍したものと実際のデータの違いは以下のとおりです:</p></div>
@@ -1127,7 +1127,7 @@ int main(int argc, char **argv)
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-12 07:13:32 JST
+ 2024-12-15 13:37:35 JST
 </div>
 </div>
 </body>

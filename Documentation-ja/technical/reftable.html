@@ -767,7 +767,7 @@ asciidoc.install();
 </li>
 <li>
 <p>
-<code>O(size_of_update)</code> 操作量によるアトミック(atomic)プッシュをサポートします。
+<code>O</code>(<code>size_of_update</code>) 操作量によるアトミック(atomic)プッシュをサポートします。
 </p>
 </li>
 <li>
@@ -1012,7 +1012,7 @@ footer</code></pre>
 <div class="sect3">
 <h4 id="_block_alignment">Block alignment</h4>
 <div class="paragraph"><p>ライター(writers)は、ブロックの末尾に NUL バイトで満たされた「詰物」(padding)を含めることにより、ブロック・サイズの倍数でブロックを揃えて、選択した揃え幅(alignment)に丸めることができます。 揃えを使用する場合、ライターはファイル・ヘッダーの「block_size」フィールドで揃え幅(alignment)を指定する必要があります。</p></div>
-<div class="paragraph"><p>このファイル形式では、ブロック揃え幅(alignment)は必須ではありません。 揃えない(unaligned)ファイルは、ファイル・ヘッダーで <code>block_size = 0</code> を設定し、「詰物」(padding)を省略しなければなりません。 複数の ref ブロックを含む揃えないファイルには、 <a href="#Ref-index">ref index</a> を含めて高速検索をサポートする必要があります。 リーダー(readers)は、揃えるファイルと揃えないファイルの両方を読み取ることができなければなりません。</p></div>
+<div class="paragraph"><p>このファイル形式では、ブロック揃え幅(alignment)は必須ではありません。 揃えない(unaligned)ファイルは、ファイル・ヘッダーで <code>block_size</code> <code>=</code> <code>0</code> を設定し、「詰物」(padding)を省略しなければなりません。 複数の ref ブロックを含む揃えないファイルには、 <a href="#Ref-index">ref index</a> を含めて高速検索をサポートする必要があります。 リーダー(readers)は、揃えるファイルと揃えないファイルの両方を読み取ることができなければなりません。</p></div>
 <div class="paragraph"><p>非常に小さなファイル (単一の ref ブロックなど) では、合計ファイル サイズを減らすために「詰物」(padding)とrefインデックスを省略できます。</p></div>
 </div>
 <div class="sect3">
@@ -1026,8 +1026,8 @@ uint24( block_size )
 uint64( min_update_index )
 uint64( max_update_index )</code></pre>
 </div></div>
-<div class="paragraph"><p>揃えるファイルは、予想されるブロック揃え幅(alignment)でリーダーを構成するために、 <code>block_size</code> を指定する必要があります。 揃えないファイルは、<code>block_size = 0</code> を設定する必要があります。</p></div>
-<div class="paragraph"><p><code>min_update_index</code> と <code>max_update_index</code> は、このファイル内のすべてのログ・レコードの <code>update_index</code> フィールドの境界を記述します。 <a href="#Update-transactions">transactions</a> のスタックで reftable が使用される場合、これらのフィールドは、前のファイルの <code>max_update_index + 1</code> が次のファイルの <code>min_update_index</code> になるようにファイルを並べ替えることができます。</p></div>
+<div class="paragraph"><p>揃えるファイルは、予想されるブロック揃え幅(alignment)でリーダーを構成するために、 <code>block_size</code> を指定する必要があります。 揃えないファイルは、<code>block_size</code> <code>=</code> <code>0</code> を設定する必要があります。</p></div>
+<div class="paragraph"><p><code>min_update_index</code> と <code>max_update_index</code> は、このファイル内のすべてのログ・レコードの <code>update_index</code> フィールドの境界を記述します。 <a href="#Update-transactions">transactions</a> のスタックで reftable が使用される場合、これらのフィールドは、前のファイルの <code>max_update_index</code> <code>+</code> <code>1</code> が次のファイルの <code>min_update_index</code> になるようにファイルを並べ替えることができます。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_header_version_2">Header (version 2)</h4>
@@ -1062,7 +1062,7 @@ uint16( restart_count )
 
 padding?</code></pre>
 </div></div>
-<div class="paragraph"><p>ブロックは <code>block_type = 'r'</code> で始まり、そして 3 バイトの <code>block_len</code> はブロック内のバイト数をエンコードしますが、オプションの「詰物」は含みません。 これは、常にファイルのブロック・イズ以下です。 最初の ref ブロックでは、 <code>block_len</code> にファイル・ヘッダー用の 24 バイトが含まれます。</p></div>
+<div class="paragraph"><p>ブロックは <code>block_type</code> <code>=</code> 'r' で始まり、そして 3 バイトの <code>block_len</code> はブロック内のバイト数をエンコードしますが、オプションの「詰物」は含みません。 これは、常にファイルのブロック・イズ以下です。 最初の ref ブロックでは、 <code>block_len</code> にファイル・ヘッダー用の 24 バイトが含まれます。</p></div>
 <div class="paragraph"><p>2 バイトの「restart_count」には、「restart_offset」リストのエントリ数が格納されます。このリストは空であってはなりません。 リーダーは、線形スキャンを開始する前に、「restart_count」を使用して再開区間(between restarts)で二分木検索を行うことができます。</p></div>
 <div class="paragraph"><p>Exactly <code>restart_count</code> 3-byte <code>restart_offset</code> values precede the <code>restart_count</code>. Offsets are relative to the start of the block and refer to the first byte of any <code>ref_record</code> whose name has not been prefix compressed. Entries in the <code>restart_offset</code> list must be sorted, ascending. Readers can start linear scans from any of these records.</p></div>
 <div class="paragraph"><p>可変数の「ref_record」がブロックの中央部を埋め、参照名と値を記述します。 形式は下記のとおりです。</p></div>
@@ -1085,7 +1085,7 @@ value?</code></pre>
 <pre><code>this_name = prior_name[0..prefix_length] + suffix</code></pre>
 </div></div>
 <div class="paragraph"><p><code>suffix_length</code> 値は、参照名を完成させるために <code>suffix</code> からコピーするために <code>suffix</code> で利用可能なバイト数を提供します。</p></div>
-<div class="paragraph"><p>参照を最後に変更した <code>update_index</code> は、ファイル・ヘッダーの <code>min_update_index</code> に <code>update_index_delta</code> を追加することで取得できます: <code>min_update_index + update_index_delta</code></p></div>
+<div class="paragraph"><p>参照を最後に変更した <code>update_index</code> は、ファイル・ヘッダーの <code>min_update_index</code> に <code>update_index_delta</code> を追加することで取得できます: <code>min_update_index</code> <code>+</code> <code>update_index_delta</code></p></div>
 <div class="paragraph"><p>「値」が続きます。 その形式は、以下のいずれかの「value_type」によって決まります:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1105,7 +1105,7 @@ value?</code></pre>
 </li>
 <li>
 <p>
-<code>0x3</code>: シンボリック参照。 <code>varint( target_len ) target</code>
+<code>0x3</code>: シンボリック参照。 <code>varint</code>( <code>target_len</code> ) <code>target</code>
 </p>
 </li>
 </ul></div>
@@ -1131,7 +1131,7 @@ uint16( restart_count )
 
 padding?</code></pre>
 </div></div>
-<div class="paragraph"><p>インデックス・ブロックは、<code>block_type = 'i'</code> で始まり、そして、ブロック内のバイト数をエンコードする 3 バイトの <code>block_len</code> は、オプションの「詰物」を含みません。</p></div>
+<div class="paragraph"><p>インデックス・ブロックは、<code>block_type</code> <code>=</code> 'i' で始まり、そして、ブロック内のバイト数をエンコードする 3 バイトの <code>block_len</code> は、オプションの「詰物」を含みません。</p></div>
 <div class="paragraph"><p><code>restart_offset</code> および <code>restart_count</code> フィールドの形式と意味と使用法は、 ref ブロックの場合と全く同じです。</p></div>
 <div class="paragraph"><p>非常に大きなファイルのランダム・アクセスに必要な読み取り回数を減らすために、インデックス・ブロックは他のブロックよりも大きくなる場合があります。 ただし、これを利用するには、リーダーはインデックス全体をメモリに保持する必要があるため、ファイル・サイズとリーダー・メモリの両方で時間と空間のトレードオフになります。</p></div>
 <div class="paragraph"><p>ファイルのブロック・サイズを大きくすると、インデックス・サイズが小さくなります。 別の方法として、複数レベルのインデックスを使用して、インデックス・ブロックをファイルのブロック・サイズ内に保ちながら、アクセスする必要があるブロックの数を増やすこともできます。</p></div>
@@ -1184,9 +1184,9 @@ varint( cnt_large )?
 varint( position_delta )*</code></pre>
 </div></div>
 <div class="paragraph"><p>参照ブロックと同様に、省略形はオブジェクト・ブロック内でプレフィックス圧縮されます。 多くの一意のオブジェクトや、より大きなブロック・サイズ (64k)や、より長い再開間隔 (128) を持つ大きな reftable では、オブジェクト・レコード内では <code>prefix_length</code> の値は2または3で <code>suffix_length</code> の値は3が一般的です(5～6バイトである10～12桁の16進数の一意の省略形)。</p></div>
-<div class="paragraph"><p>各レコードには、一致する参照ブロックの位置の「position_count」数が含まれます。 1 ～ 7 の位置の場合、カウントは「cnt_3」に格納されます。 <code>cnt_3 = 0</code> の場合、実際のカウントは派生(varint) の <code>cnt_large</code> に続きます。</p></div>
+<div class="paragraph"><p>各レコードには、一致する参照ブロックの位置の「position_count」数が含まれます。 1 ～ 7 の位置の場合、カウントは「cnt_3」に格納されます。 <code>cnt_3</code> <code>=</code> <code>0</code> の場合、実際のカウントは派生(varint) の <code>cnt_large</code> に続きます。</p></div>
 <div class="paragraph"><p><code>cnt_3</code> の使用は、ほとんどのオブジェクトが 1 つの参照のみによって指されていること、いくつかのオブジェクトは 2 つの参照によって指されていること、および 7 つ以上の参照によって指されているオブジェクトは (存在するとしても) 非常に少ないことに賭けます。</p></div>
-<div class="paragraph"><p><code>cnt_3 = 0</code> かつ <code>cnt_large = 0</code> である特殊なケースがあります: 「position_delta」はありませんが、少なくとも 1 つの参照がこの省略形で始まります。 正確な参照名が必要なリーダーは、すべての参照をスキャンして、目的のオブジェクトを持つ特定の参照を見つける必要があります。 ライターは、同じオブジェクトを指している多数の参照が原因で「position_delta」リストがファイルのブロック・サイズをオーバーフローした場合に、この形式を使用する必要があります。</p></div>
+<div class="paragraph"><p><code>cnt_3</code> <code>=</code> <code>0</code> かつ <code>cnt_large</code> <code>=</code> <code>0</code> である特殊なケースがあります: 「position_delta」はありませんが、少なくとも 1 つの参照がこの省略形で始まります。 正確な参照名が必要なリーダーは、すべての参照をスキャンして、目的のオブジェクトを持つ特定の参照を見つける必要があります。 ライターは、同じオブジェクトを指している多数の参照が原因で「position_delta」リストがファイルのブロック・サイズをオーバーフローした場合に、この形式を使用する必要があります。</p></div>
 <div class="paragraph"><p>最初の <code>position_delta</code> は、ファイルの先頭からの位置です。 追加の「position_delta」エントリは昇順で、前のエントリに対して相対的にソートされます。 リーダーは以下のことを実行します:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -1221,7 +1221,7 @@ zlib_deflate {
   uint16( restart_count )
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>ログ・ブロックは、<code>block_type = 'g'</code> を除いて、refブロックと似ています。</p></div>
+<div class="paragraph"><p>ログ・ブロックは、<code>block_type</code> <code>=</code> 'g' を除いて、refブロックと似ています。</p></div>
 <div class="paragraph"><p>4バイトのブロック・ヘッダーの後に、zlib圧縮を使用して圧縮されたブロックの内容が続きます。 ヘッダーの「block_len」は膨張したサイズ (4 バイトのブロック・ヘッダーを含む) であり、解凍出力バッファーを事前に割り当てるためにリーダーで使用する必要があります。 ログ・ブロックの「block_len」がファイルのブロック・サイズを超える場合があります。</p></div>
 <div class="paragraph"><p>ログ・ブロック内のオフセット (「restart_offset」など) には、4 バイトのヘッダーがまだ含まれています。 リーダーは、解凍出力バッファーの前に 4 バイトのヘッダーをプレフィックスすることを好むかもしれません。</p></div>
 <div class="paragraph"><p>圧縮コンテナー内では、可変数の「log_record」が参照の変更を記述します。 ログの記録形式は以下のとおりです。 <code>restart_offset</code> と <code>restart_count</code> の説明については、「ref block format」(ref ブロック形式)(上述) を参照してください。</p></div>
@@ -1270,7 +1270,7 @@ zlib_deflate {
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p><code>log_type = 0x0</code> は、より大きなファイルを書き換える必要なく、取引ファイル(transaction file)(下記) の <code>refs/stash</code> の reflog からエントリを削除して、 <code>git stash drop</code> に最も役立ちます。 reflog のスタックを読み取るリーダーは、これを削除として扱う必要があります。</p></div>
+<div class="paragraph"><p><code>log_type</code> <code>=</code> <code>0x0</code> は、より大きなファイルを書き換える必要なく、取引ファイル(transaction file)(下記) の <code>refs/stash</code> の reflog からエントリを削除して、 <code>git</code> <code>stash</code> <code>drop</code> に最も役立ちます。 reflog のスタックを読み取るリーダーは、これを削除として扱う必要があります。</p></div>
 <div class="paragraph"><p>「log_type = 0x1」の場合、「log_data」セクションは <a href="../git-update-ref.html">git-update-ref(1)</a> ロギングに従い、以下が含まれます:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1304,8 +1304,8 @@ zlib_deflate {
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p><code>tz_offset</code> は、更新時にコミッターがいたタイムゾーンです(GMT からのオフセットで表される)。 たとえば、<code>GMT-0800</code> は reftable で <code>sint16(-480)</code> としてエンコードされ、<code>GMT+0230</code> は <code>sint16(150)</code> としてエンコードされます。</p></div>
-<div class="paragraph"><p>コミッターの電子メールアドレスには <code>&lt;</code> または <code>&gt;</code> は含まれません。これは通常、git commit オブジェクト ヘッダーの <code>&lt;&gt;</code> の間にある値です。</p></div>
+<div class="paragraph"><p><code>tz_offset</code> は、更新時にコミッターがいたタイムゾーンです(GMT からのオフセットで表される)。 たとえば、<code>GMT-0800</code> は reftable で <code>sint16</code>(<code>-480</code>) としてエンコードされ、<code>GMT+0230</code> は <code>sint16</code>(<code>150</code>) としてエンコードされます。</p></div>
+<div class="paragraph"><p>コミッターの電子メールアドレスには &lt; または &gt; は含まれません。これは通常、git commit オブジェクト ヘッダーの &lt;&gt; の間にある値です。</p></div>
 <div class="paragraph"><p><code>message_length</code> は 0 の場合があります。この場合、更新用のメッセージは提供されていません。</p></div>
 <div class="paragraph"><p>従来の reflog (ファイル) とは対照的に、名前の変更は ref 削除と ref 作成の組み合わせとしてエンコードされます。 削除は new_id がゼロのログ・レコードであり、作成は old_id がゼロのログ・レコードです。</p></div>
 </div>
@@ -1321,9 +1321,9 @@ zlib_deflate {
 </div>
 <div class="sect3">
 <h4 id="_log_index">Log index</h4>
-<div class="paragraph"><p>ログ・インデックスは、ファイル内のすべてのログ・ブロックの最後のログ・レコードのログ・キー (<code>refname \0 reverse_int64(update_index)</code>) を格納し、制限時間検索(bounded-time lookup)をサポートします。</p></div>
+<div class="paragraph"><p>ログ・インデックスは、ファイル内のすべてのログ・ブロックの最後のログ・レコードのログ・キー (<code>refname</code> \0 <code>reverse_int64</code>(<code>update_index</code>)) を格納し、制限時間検索(bounded-time lookup)をサポートします。</p></div>
 <div class="paragraph"><p>2 つ以上のログ・ブロックがファイルに書き込まれる場合は、ログ・インデックス・ブロックを書き込む必要があります。 存在する場合、ログ・インデックスは最後のログ・ブロックの後に表れます。 ログ・インデックスをブロック揃え幅(alignment)に揃える(align)ために使用される詰物(padding)はありません。</p></div>
-<div class="paragraph"><p>ログ・インデックスの形式は ref インデックスと同じですが、<code>'\0'</code> と 8 バイトの <code>reverse_int64(update_index)</code> を含めるためにキーが 9 バイト長くなります。 レコードは「block_position」を使用してログ・ブロック開始を参照します。</p></div>
+<div class="paragraph"><p>ログ・インデックスの形式は ref インデックスと同じですが、'\0' と 8 バイトの <code>reverse_int64</code>(<code>update_index</code>) を含めるためにキーが 9 バイト長くなります。 レコードは「block_position」を使用してログ・ブロック開始を参照します。</p></div>
 <div class="sect4">
 <h5 id="_reading_the_index_2">Reading the index</h5>
 <div class="paragraph"><p>ログ・インデックスをロードするリーダーは、最初にフッター (下記) を読んで <code>log_index_position</code> を取得する必要があります。 存在しない場合、位置は 0 になります。</p></div>
@@ -1451,7 +1451,7 @@ zlib_deflate {
 </div>
 <div class="sect3">
 <h4 id="_logs_are_read_backwards">Logs are read backwards</h4>
-<div class="paragraph"><p>ログは頻繁に逆方向にアクセスされるため (master が <code>master@{4}</code> に応答する最新の N レコード)、ログ・レコードは参照によってグループ化され、更新インデックスによって降順に並べ替えられます。</p></div>
+<div class="paragraph"><p>ログは頻繁に逆方向にアクセスされるため (master が <code>master@</code>{4} に応答する最新の N レコード)、ログ・レコードは参照によってグループ化され、更新インデックスによって降順に並べ替えられます。</p></div>
 </div>
 </div>
 <div class="sect2">
@@ -1469,7 +1469,7 @@ zlib_deflate {
 </div>
 <div class="sect3">
 <h4 id="_layout">Layout</h4>
-<div class="paragraph"><p>reftable ファイルのコレクションは <code>$GIT_DIR/reftable/</code> ディレクトリに保存されます。 それらの名前には、各ファイル名がグローバルに一意になるように、ランダムな要素を含める必要があります。 これにより、開いているファイルを削除または上書きできない Windows での誤ったエラーを回避できます。 その命名規則として <code>${min_update_index}-${max_update_index}-${random}.ref</code> を使用することが提案されました。</p></div>
+<div class="paragraph"><p>reftable ファイルのコレクションは <code>$GIT_DIR/reftable/</code> ディレクトリに保存されます。 それらの名前には、各ファイル名がグローバルに一意になるように、ランダムな要素を含める必要があります。 これにより、開いているファイルを削除または上書きできない Windows での誤ったエラーを回避できます。 その命名規則として <code>$</code>{min_update_index}-${max_update_index}-${random}.ref を使用することが提案されました。</p></div>
 <div class="paragraph"><p>ログのみのファイルは <code>.log</code> 拡張子を使用しますが、 ref のみのファイルや ref とログの混合ファイルは <code>.ref</code> 拡張子を使用します。</p></div>
 <div class="paragraph"><p>スタック順序付けファイルは <code>$GIT_DIR/reftable/tables.list</code> で、現在のファイルを 1 行に 1 つずつ、もっとも古いの (ベース) から最新 (最新) の順にリストします。</p></div>
 <div class="literalblock">
@@ -1488,7 +1488,7 @@ zlib_deflate {
 <div class="ulist"><ul>
 <li>
 <p>
-<code>.git/HEAD</code> は、 <code>ref: refs/heads/.invalid</code> を含む通常のファイルです。
+<code>.git/HEAD</code> は、 <code>ref:</code> <code>refs/heads/.invalid</code> を含む通常のファイルです。
 </p>
 </li>
 <li>
@@ -1555,7 +1555,7 @@ zlib_deflate {
 </li>
 <li>
 <p>
-<code>tmp_XXXXXX</code> を <code>${update_index}-${update_index}-${random}.ref</code> に名前変更します。
+<code>tmp_XXXXXX</code> を <code>$</code>{update_index}-${update_index}-${random}.ref に名前変更します。
 </p>
 </li>
 <li>
@@ -1599,7 +1599,7 @@ zlib_deflate {
 </li>
 <li>
 <p>
-<code>B</code> と <code>C</code> を一時ファイル <code>${min_update_index}-${max_update_index}_XXXXXX</code> に圧縮します。
+<code>B</code> と <code>C</code> を一時ファイル <code>$</code>{min_update_index}-${max_update_index}_XXXXXX に圧縮します。
 </p>
 </li>
 <li>
@@ -1614,7 +1614,7 @@ zlib_deflate {
 </li>
 <li>
 <p>
-<code>${min_update_index}-${max_update_index}_XXXXXX</code> を <code>${min_update_index}-${max_update_index}-${random}.ref</code> に名前変更します。
+<code>$</code>{min_update_index}-${max_update_index}_XXXXXX を <code>$</code>{min_update_index}-${max_update_index}-${random}.ref に名前変更します。
 </p>
 </li>
 <li>
@@ -1654,7 +1654,7 @@ zlib_deflate {
 </li>
 <li>
 <p>
-各 <code>*.ref</code> ファイルごとに、以下の場合は削除します
+各 *.ref ファイルごとに、以下の場合は削除します
 </p>
 <div class="ulist"><ul>
 <li>
@@ -1738,7 +1738,7 @@ cellspacing="0" cellpadding="4">
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-11 23:59:33 JST
+ 2024-12-15 12:50:13 JST
 </div>
 </div>
 </body>

@@ -1,0 +1,1193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<refentry lang="en">
+<refentryinfo>
+    <title>git-fast-import(1)</title>
+    <date>2024-12-15</date>
+<revhistory><revision><date>2024-12-15</date></revision></revhistory>
+</refentryinfo>
+<refmeta>
+<refentrytitle>git-fast-import</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class="source">Git 2.38.0.rc1.7731.g98a2c55d44.dirty</refmiscinfo>
+<refmiscinfo class="manual">Git Manual</refmiscinfo>
+</refmeta>
+<refnamediv>
+    <refname>git-fast-import</refname>
+    <refpurpose>高速Gitデータインポーターのバックエンド</refpurpose>
+</refnamediv>
+<refsynopsisdiv id="_synopsis">
+<literallayout>frontend | <emphasis>git fast-import</emphasis> [&lt;options&gt;]</literallayout>
+<simpara></simpara>
+</refsynopsisdiv>
+<refsect1 id="_description">
+<title>DESCRIPTION</title>
+<simpara>このプログラムは通常、エンドユーザーが直接実行したいものではありません。 ほとんどのエンドユーザーは、既存のフロントエンドプログラムの1つを使用したいと考えています。このプログラムは、特定の種類の外部ソースをパースし、そこに保存されているコンテンツを <literal>git</literal> <literal>fast-import</literal> に送ります。</simpara>
+<simpara>fast-importは、標準入力から 混合 コマンド/データストリーム を読み取り、1つ以上のパックファイルを現在のリポジトリに直接書き込みます。 EOFが標準入力で受信されると、高速インポートは更新されたブランチとタグの参照を書き出し、新しくインポートされたデータで現在のリポジトリを完全に更新します。</simpara>
+<simpara>高速インポートバックエンド自体は、空のリポジトリ(<literal>git</literal> <literal>init</literal> によってすでに初期化されているリポジトリ)にインポートすることも、既存の入力済みリポジトリを増分更新(incrementally update)することもできます。 特定の外部ソースからの増分インポートがサポートされているかどうかは、使用しているフロントエンドプログラムによって異なります。</simpara>
+</refsect1>
+<refsect1 id="_options">
+<title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term>
+--force
+</term>
+<listitem>
+<simpara>
+        コミットが失われる場合でも(新しいコミットには古いコミットが含まれていないため)、変更された既存のブランチを強制的に更新します。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--quiet
+</term>
+<listitem>
+<simpara>
+        <literal>--stats</literal> で示される出力を無効にし、正常に実行されると、通常、fast-importをサイレントにします。 ただし、インポートストリームに、ユーザー出力を表示することを目的としたディレクティブ(`progress`ディレクティブなど)がある場合も対応するメッセージが表示されます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--stats
+</term>
+<listitem>
+<simpara>
+        fast-importが作成したオブジェクト、それらが保存されたパックファイル、およびこの実行中にfast-importによって使用されたメモリに関するいくつかの基本的な統計を表示します。 この出力の表示は現在デフォルトですが、 <literal>--quiet</literal> を使用して無効にすることができます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--allow-unsafe-features
+</term>
+<listitem>
+<simpara>
+        <literal>feature</literal> または <literal>option</literal> コマンドを使用して、高速インポートストリーム自体の一部として多くのコマンドラインオプションを提供できます。 ただし、これらのオプションの一部は安全ではありません(たとえば、高速インポートでリポジトリの外部のファイルシステムにアクセスできるようにするなど)。 これらのオプションはデフォルトで無効になっていますが、コマンドラインでこのオプションを指定することで許可できます。 これは現在、 <literal>export-marks</literal> と <literal>import-marks</literal> と <literal>import-marks-if-exists</literal> 機能コマンドにのみ影響します。
+</simpara>
+<literallayout class="monospaced">高速インポートストリームを生成するプログラムを信頼する場合にのみ、 このオプションを有効にしてください。 このオプションは、 独自のコードを実行することがすでに信頼されているため、 `import` 機能を使用するリモートヘルパーに対して自動的に有効になります。</literallayout>
+</listitem>
+</varlistentry>
+</variablelist>
+<refsect2 id="_options_for_frontends">
+<title>Options for Frontends</title>
+<variablelist>
+<varlistentry>
+<term>
+--cat-blob-fd=&lt;fd&gt;
+</term>
+<listitem>
+<simpara>
+        <literal>get-mark</literal> と <literal>cat-blob</literal> と <literal>ls</literal> クエリへの応答を、 <literal>stdout</literal> ではなくファイルデスクリプタ&lt;fd&gt;に書き込みます。 エンドユーザー向けの <literal>progress</literal> 出力を他の出力から分離できるようにします。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--date-format=&lt;fmt&gt;
+</term>
+<listitem>
+<simpara>
+        フロントエンドが高速インポートに提供する日付のタイプを、 <literal>author</literal> と <literal>committer</literal> と`tagger` コマンド内で指定します。 サポートされているフォーマットとその構文の詳細については、以下の「Date Formats」を参照してください。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--done
+</term>
+<listitem>
+<simpara>
+        ストリームの最後に <literal>done</literal> コマンドがない場合は、エラーで終了(terminate)します。 このオプションは、フロントエンドがストリームの書き込みを開始する前に終了する原因となるエラーを検出するのに役立つ場合があります。
+</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_locations_of_marks_files">
+<title>Locations of Marks Files</title>
+<variablelist>
+<varlistentry>
+<term>
+--export-marks=&lt;file&gt;
+</term>
+<listitem>
+<simpara>
+        完了すると、内部マークテーブルを&lt;file&gt;にダンプします。 マークは1行に1つずつ <literal>:markid</literal> <literal>SHA-1</literal> として書き込まれます。 フロントエンドは、このファイルを使用して、インポートが完了した後にインポートを検証したり、増分実行(incremental runs)全体でマークテーブルを保存したりできます。 &lt;file&gt;はチェックポイント(または完了)でのみ開かれ(open)、切り捨て(truncate)られるため、同じパスを <literal>--import-marks</literal> に安全に指定することもできます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--import-marks=&lt;file&gt;
+</term>
+<listitem>
+<simpara>
+        入力を処理する前に、&lt;file&gt;で指定されたマークをロードします。 入力ファイルは存在し、読み取り可能であり、 <literal>--export-marks</literal> によって生成されたものと同じ形式を使用する必要があります。 複数のマークのセットをインポートするために、オプションを複数回指定できます。 マークが異なる値に定義されている場合、最後のファイルが優先されます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--import-marks-if-exists=&lt;file&gt;
+</term>
+<listitem>
+<simpara>
+        <literal>--import-marks</literal> と同様ですが、エラーが発生する代わりに、ファイルが存在しない場合は黙ってスキップします。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--[no-]relative-marks
+</term>
+<listitem>
+<simpara>
+        <literal>--relative-marks</literal> を指定した後、 <literal>--import-marks=</literal> と <literal>--export-marks=</literal> で指定されたパスは、現在のリポジトリの内部ディレクトリからの相対パスになります。 git-fast-importでは、これはパスが <literal>.git/info/fast-import</literal> ディレクトリから相対的であることを意味します。 ただし、他のインポーターは別の場所を使用する場合があります。
+</simpara>
+<simpara><literal>--</literal>(<literal>no-</literal>)<literal>-relative-marks</literal> を <literal>--</literal>(<literal>import</literal>|<literal>export</literal>)<literal>-marks=</literal> と織り交ぜることで、相対マークと非相対マークを組み合わせることができます。</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_submodule_rewriting">
+<title>Submodule Rewriting</title>
+<variablelist>
+<varlistentry>
+<term>
+--rewrite-submodules-from=&lt;name&gt;:&lt;file&gt;
+</term>
+<term>
+--rewrite-submodules-to=&lt;name&gt;:&lt;file&gt;
+</term>
+<listitem>
+<simpara>
+&lt;name&gt; で指定されたサブモジュールのオブジェクト ID を、from &lt;file&gt; で使用されている値から to &lt;file&gt; で使用されている値に書き換えます。 同一サブモジュールをインポートするときに、 from マークは <literal>git</literal> <literal>fast-export</literal> によって作成され、 to マークは <literal>git</literal> <literal>fast-import</literal> によって作成されている必要があります。
+</simpara>
+<simpara>&lt;name&gt;は、コロン文字を含まない任意の文字列にすることができますが、対応するマークを指定するときは、両方のオプションで同じ値を使用する必要があります。 &lt;name&gt;の値が異なる複数のサブモジュールを指定できます。 対応するペアでこれらのオプションを使用しないのはエラーです。</simpara>
+<simpara>これらのオプションは、リポジトリをあるハッシュアルゴリズムから別のハッシュアルゴリズムに変換するときに主に役立ちます。 それらがないと、オブジェクトIDを新しいハッシュアルゴリズムに書き込む方法がないため、サブモジュールが検出された場合、fast-importは失敗します。</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_performance_and_compression_tuning">
+<title>Performance and Compression Tuning</title>
+<variablelist>
+<varlistentry>
+<term>
+--active-branches=&lt;n&gt;
+</term>
+<listitem>
+<simpara>
+        一度にアクティブを維持するブランチの最大数。 詳細については、下記「Memory Utilization」(メモリ使用率)を参照してください。 デフォルトは5です。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--big-file-threshold=&lt;n&gt;
+</term>
+<listitem>
+<simpara>
+        fast-importがデルタを作成しようとするブロブの最大サイズ(バイト単位)。 デフォルトは512m(512 MiB)です。 一部のインポーターは、メモリが制限されているシステムでこの値を下げることを希望する事があります。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--depth=&lt;n&gt;
+</term>
+<listitem>
+<simpara>
+        ブロブとツリーの差分化(deltification)の最大デルタ深度。 デフォルトは50です。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--export-pack-edges=&lt;file&gt;
+</term>
+<listitem>
+<simpara>
+        パックファイルを作成した後、データの行を&lt;file&gt;に出力して、パックファイルのファイル名と、そのパックファイルに書き込まれた各ブランチの最後のコミットをリストします。 この情報は、オブジェクトセットの合計が4 GiBパックファイルの制限を超えるプロジェクトをインポートした後に役立つ場合があります。 これらのコミットは、 <literal>git</literal> <literal>pack-objects</literal> の呼び出し中にエッジポイントとして使用できるためです。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+--max-pack-size=&lt;n&gt;
+</term>
+<listitem>
+<simpara>
+        各出力パックファイルの最大サイズ。 デフォルトは無制限です。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+fastimport.unpackLimit
+</term>
+<listitem>
+<simpara>
+        <citerefentry>
+<refentrytitle>git-config</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> 参照
+</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+</refsect1>
+<refsect1 id="_performance">
+<title>PERFORMANCE</title>
+<simpara>高速インポートの設計により、最小限のメモリ使用量と処理時間で大規模なプロジェクトをインポートできます。 フロントエンドが高速インポートに対応し、一定のデータストリームをフィードできると仮定すると、10年以上の履歴を保持し、100,000以上の個別のコミットを含むプロジェクトのインポート時間は、通常、非常に控えめな(〜$2,000 USD)ハードウェアで、わずか1〜2時間で完了します。</simpara>
+<simpara>ほとんどのボトルネックは、外部ソースデータアクセス(ソースがリビジョンを十分に速く抽出できない)、またはディスクI/O(ディスクがデータを取得するのと同じ速さで高速インポート書き込み)にあるように見えます。 ソースデータが宛先Gitリポジトリとは異なるドライブに保存されている場合、(I/Oの競合が少ないため)、インポートはより高速に実行されます。</simpara>
+</refsect1>
+<refsect1 id="_development_cost">
+<title>DEVELOPMENT COST</title>
+<simpara>fast-importの一般的なフロントエンドは、200行程度の Perl/Python/Ruby コードを使用する傾向があります。 ほとんどの開発者は、fast-import、場合によってはGitに初めて触れたとしても、わずか数時間で実用的なインポーターを作成することができました。 ほとんどの変換ツールが使い捨て(一度使用すると、決して振り返ることがない)であることを考えると、これは理想的な状況です。</simpara>
+</refsect1>
+<refsect1 id="_parallel_operation">
+<title>PARALLEL OPERATION</title>
+<simpara><literal>git</literal> <literal>push</literal> や <literal>git</literal> <literal>fetch</literal> と同様に、fast-importによって処理されるインポートは、並列の <literal>git</literal> <literal>repack</literal> <literal>-a</literal> <literal>-d</literal> や <literal>git</literal> <literal>gc</literal> の呼び出し、またはその他のGit操作(<literal>git</literal> <literal>prune</literal> を含む、そしてfast-importでは緩いオブジェクト(loose objects)は使用されないため。)と一緒に実行しても安全です。</simpara>
+<simpara>fast-importは、アクティブにインポートしているブランチまたはタグ参照をロックしません。 インポート後、refの更新フェーズで、fast-importは、既存の各ブランチrefをテストして、更新が早送り更新(fast-forward update)になることを確認(verifty)します(refに格納されているコミットは、書き込まれるコミットの新しい履歴に含まれます)。 更新が早送り更新でない場合、fast-importはその参照の更新をスキップし、代わりに警告メッセージを出力します。 fast-importは常にすべてのブランチ参照を更新しようとし、最初の失敗で停止(stop)しません。</simpara>
+<simpara>ブランチの更新は <literal>--force</literal> を使用して強制できますが、それ以外の場合は静かなリポジトリ(quiet repository)でのみ使用することをお勧めします。 空のリポジトリへの最初のインポートには、 <literal>--force</literal> を使用する必要はありません。</simpara>
+</refsect1>
+<refsect1 id="_technical_discussion">
+<title>TECHNICAL DISCUSSION</title>
+<simpara>fast-importは、メモリ内の一連のブランチを追跡します。 入力ストリームで <literal>commit</literal> コマンドを送信することにより、インポートプロセス中の任意の時点で任意のブランチを作成または変更できます。 この設計により、フロントエンドプログラムは無制限の数のブランチを同時に処理し、ソースデータから利用可能な順序でコミットを生成できます。 また、フロントエンドプログラムを大幅に簡素化します。</simpara>
+<simpara>fast-importは、現在の作業ディレクトリまたはその中のファイルを使用または変更しません。 (ただし、 <literal>GIT_DIR</literal> で参照されるように、現在のGitリポジトリを更新します。) したがって、インポートフロントエンドは、外部ソースからファイルリビジョンを抽出するなど、独自の目的で作業ディレクトリを使用する場合があります。 この、作業ディレクトリの無感知により、ブランチを切り替えるときにコストのかかるファイル更新操作を実行する必要がないため、fast-importを非常に迅速に実行することもできます。</simpara>
+</refsect1>
+<refsect1 id="_input_format">
+<title>INPUT FORMAT</title>
+<simpara>(Gitが解釈しない)生のファイルデータを除いて、fast-import入力形式はテキスト(ASCII)ベースです。 このテキストベースの形式は、特にPerl、Python、Rubyなどの高級言語が使用されている場合に、フロントエンドプログラムの開発とデバッグを簡素化します。</simpara>
+<simpara>fast-importは、入力に関して非常に厳密です。 以下でSPと言う場合、「正確に」1つのスペースを意味します。 同様に、LFは1つ(そして1つだけ)の改行を意味し、HTは1つ(そして1つだけ)の水平タブを意味します。追加の空白文字を指定すると、名前の先頭または末尾にスペースが含まれるブランチ名やファイル名などの予期しない結果が発生したり、予期しない入力が発生した場合に高速インポートが早期に終了したりします。</simpara>
+<refsect2 id="_stream_comments">
+<title>Stream Comments</title>
+<simpara>フロントエンドのデバッグを支援するために、fast-importは、 # (ASCII シャープ/ハッシュ) で始まり、<literal>LF</literal> で終わる行を無視します。 コメント行には、LFを含まないバイトのシーケンスを含めることができるため、フロントエンドに固有でfast-importのデータストリームを検査するときに役立つ詳細なデバッグ情報を含めるために使用できます。</simpara>
+</refsect2>
+<refsect2 id="_date_formats">
+<title>Date Formats</title>
+<simpara>以下の日付形式がサポートされています。 フロントエンドは、<literal>--date-format=</literal><emphasis>&lt;fmt&gt;</emphasis> コマンドラインオプションで形式名を渡すことにより、このインポートに使用する形式を選択する必要があります。</simpara>
+<variablelist>
+<varlistentry>
+<term>
+<literal>raw</literal>
+</term>
+<listitem>
+<simpara>
+        これはGitのネイティブ形式であり、 <emphasis>&lt;time&gt;</emphasis><literal>SP</literal><emphasis>&lt;offutc&gt;</emphasis> です。 <literal>--date-format</literal> が指定されていない場合は、fast-importのデフォルト形式でもあります。
+</simpara>
+<simpara>イベントの時刻は、UNIXエポック(1970年1月1日午前0時、UTC)からの秒数として <emphasis>&lt;time&gt;</emphasis> で指定され、ASCIIの10進整数として書き込まれます。</simpara>
+<simpara>ローカルオフセットは、UTCからの正または負のオフセットとして <emphasis>&lt;offutc&gt;</emphasis> によって指定されます。 たとえば、EST(UTCから5時間遅れている)は、UTCが「+0000」であるのに対し、「&lt;tz&gt;」は「-0500」で表されます。 ローカルオフセットは <emphasis>&lt;time&gt;</emphasis> には影響しません。 これは、フォーマットルーチンがタイムスタンプを表示するのに役立つアドバイスとしてのみ使用されます。</simpara>
+<simpara>ローカルオフセットがソース素材で使用できない場合は、「+0000」、または最も一般的なローカルオフセットを使用します。 たとえば、多くの組織には、同じ場所とタイムゾーンにいるユーザーだけがアクセスしたことのあるCVSリポジトリがあります。 この場合、UTCからの妥当なオフセットを想定できます。</simpara>
+<simpara><literal>rfc2822</literal> 形式とは異なり、この形式は非常に厳密です。 フォーマッティングに変化があると、fast-importが値を拒否し、数値の健全性チェックも実行される場合があります。</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>raw-permissive</literal>
+</term>
+<listitem>
+<simpara>
+        これは、数値エポックとローカルオフセットの健全性チェックが実行されないことを除いて、<literal>raw</literal> と同じです。 これは、例えば、偽のタイムゾーン値を使用して既存の履歴をフィルタリングまたはインポートしようとする場合に役立ちます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>rfc2822</literal>
+</term>
+<listitem>
+<simpara>
+        This is the standard date format as described by RFC 2822.
+</simpara>
+<simpara>この値は例えば <literal>Tue</literal> <literal>Feb</literal> <literal>6</literal> <literal>11:22:18</literal> <literal>2007</literal> <literal>-0500</literal> です。 Gitパーサーは正確ですが、ちょっぴり寛大です。 これは、電子メールから受信したパッチを適用するときに <literal>git</literal> <literal>am</literal> によって使用されるのと同じパーサーです。</simpara>
+<simpara>一部の不正な形式の文字列が、有効な日付として受け入れられる場合があります。 これらの場合のいくつかでは、Gitは不正な形式の文字列から正しい日付を取得できます。 また、Gitが誤ってパースし、それでも有効と見なす不正な形式の文字列の種類もあります。 ひどくおかしい文字列は拒否されます。</simpara>
+<simpara>上記の`raw`形式とは異なり、RFC2822日付文字列に含まれる タイムゾーン/UTC オフセット情報は、保存前に日付値をUTCに調整するために使用されます。 したがって、この情報が可能な限り正確であることが重要です。</simpara>
+<simpara>もしソース素材がRFC2822スタイルの日付を使っているなら、フロントエンドは(自分でやろうとするよりも、)fast-importにパースと変換を任せるべきです。なぜなら、Gitパーサーは実際によくテストされているからです。</simpara>
+<simpara>フロントエンドは、ソース素材がすでに UNIX-epoch フォーマットを使っていて、そのフォーマットで日付を与えるように言いくるめられる場合、あるいはパースに曖昧さがないため、そのフォーマットが簡単に <literal>raw</literal> フォーマットに変換できる場合は、 <literal>raw</literal> フォーマットを優先するべきです。</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>now</literal>
+</term>
+<listitem>
+<simpara>
+        常に現在の時間とタイムゾーンを使用します。 <emphasis>&lt;when&gt;</emphasis> には常に <literal>now</literal> というリテラルを指定しなければなりません。
+</simpara>
+<simpara>これはおもちゃのフォーマット(toy format)です。 このシステムの現在の時刻とタイムゾーンは、fast-importによって作成されるときに常にID文字列にコピーされます。 別の時間またはタイムゾーンを指定する方法はありません。</simpara>
+<simpara>この特定の形式は、実装が簡単なために提供されており、作業ディレクトリや <literal>git</literal> <literal>update-index</literal> を使用せずに、今すぐ新しいコミットを作成したいプロセスに役立つ場合があります。</simpara>
+<simpara><literal>commit</literal> で別々の <literal>author</literal> コマンドと <literal>committer</literal> コマンドが使用されている場合、システムクロックが2回(コマンドごとに1回)ポーリングされるため、タイムスタンプが一致しない可能性があります。 作者とコミッターの両方のID情報のタイムスタンプが同じであることを確認する唯一の方法は、 <literal>author</literal> を省略するか(したがって <literal>committer</literal> からコピーする)、または <literal>now</literal> 以外の日付形式を使用することです。</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_commands">
+<title>Commands</title>
+<simpara>fast-importは、現在のリポジトリを更新し、現在のインポートプロセスを制御するためのいくつかのコマンドを受け入れます。 各コマンドの詳細(例を含む)については後述します。</simpara>
+<variablelist>
+<varlistentry>
+<term>
+<literal>commit</literal>
+</term>
+<listitem>
+<simpara>
+        新しいコミットを作成し、新しく作成されたコミットを指すようにブランチを更新することにより、新しいブランチを作成するか、既存のブランチを更新します。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>tag</literal>
+</term>
+<listitem>
+<simpara>
+        既存のコミットまたはブランチから注釈付きタグオブジェクト(annotated tag object)を作成します。 軽量タグ(Lightweight tags)は、意味のある時点を記録するためには推奨されていないため、このコマンドではサポートされていません。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>reset</literal>
+</term>
+<listitem>
+<simpara>
+        既存のブランチ(または新しいブランチ)を特定のリビジョンにリセットします。 このコマンドは、ブランチをコミットせずに特定のリビジョンに変更する目的で使用する必要があります。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>blob</literal>
+</term>
+<listitem>
+<simpara>
+        将来 <literal>commit</literal> コマンドで使用するために、生のファイルデータをブロブに変換します。 このコマンドはオプションであり、インポートを実行するために必要ではありません。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>alias</literal>
+</term>
+<listitem>
+<simpara>
+        最初に新しいオブジェクトを作成せずに、マークが特定のオブジェクトを参照していることを記録します。 <literal>--import-marks</literal> を使用し、欠落しているマークを参照すると fast-import が失敗するため、エイリアスは、刈り込まれたコミットを有効な値(刈り込まれていない最も近い祖先など)に設定する方法を提供できます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>checkpoint</literal>
+</term>
+<listitem>
+<simpara>
+        fast-importを強制して、現在のパックファイルを閉じ、一意のSHA-1チェックサムとインデックスを生成して、新しいパックファイルを開始します。 このコマンドはオプションであり、インポートを実行するために必須ではありません。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>progress</literal>
+</term>
+<listitem>
+<simpara>
+        fast-importにより、行全体が自身の標準出力にエコーされます。このコマンドはオプションであり、インポートを実行するために必要ではありません。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>done</literal>
+</term>
+<listitem>
+<simpara>
+        ストリームの終わりを示します。 <literal>--done</literal> コマンドラインオプションまたは <literal>feature</literal> <literal>done</literal> コマンドを使用して <literal>done</literal> 機能が要求された場合を除き、このコマンドはオプションです。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>get-mark</literal>
+</term>
+<listitem>
+<simpara>
+        fast-import により、マークに対応するSHA-1が、 <literal>--cat-blob-fd</literal> にて設定されたファイルデスクリプタへ出力されるか、または、指定されていない場合は stdout のファイルデスクリプタへ出力されます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>cat-blob</literal>
+</term>
+<listitem>
+<simpara>
+        fast-importにより、 <literal>cat-file</literal> <literal>--batch</literal> 形式のブロブが、 <literal>--cat-blob-fd</literal> にて設定されたファイルデスクリプタへ出力されるか、または、指定されていない場合は stdout のファイルデスクリプタへ出力されます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>ls</literal>
+</term>
+<listitem>
+<simpara>
+        fast-importにより、ディレクトリエントリを <literal>ls-tree</literal> 形式で記述した行が、 <literal>--cat-blob-fd</literal> にて設定されたファイルデスクリプタへ出力されるか、または、指定されていない場合は stdout のファイルデスクリプタへ出力されます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>feature</literal>
+</term>
+<listitem>
+<simpara>
+        指定された機能を有効にします。 これには、fast-importが指定された機能をサポートしている必要があり、サポートしていない場合は中止(abort)されます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+<literal>option</literal>
+</term>
+<listitem>
+<simpara>
+        フロントエンドのニーズに合わせてストリームセマンティックを変更しないオプションの下にリストされているオプションのいずれかを指定します。 このコマンドはオプションであり、インポートを実行するために必須ではありません。
+</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_literal_commit_literal">
+<title><literal>commit</literal></title>
+<simpara>新しいコミットでブランチを作成または更新し、プロジェクトへの1つの論理的な変更を記録します。</simpara>
+<literallayout class="monospaced">        'commit' SP &lt;ref&gt; LF
+        mark?
+        original-oid?
+        ('author' (SP &lt;name&gt;)? SP LT &lt;email&gt; GT SP &lt;when&gt; LF)?
+        'committer' (SP &lt;name&gt;)? SP LT &lt;email&gt; GT SP &lt;when&gt; LF
+        ('encoding' SP &lt;encoding&gt;)?
+        data
+        ('from' SP &lt;commit-ish&gt; LF)?
+        ('merge' SP &lt;commit-ish&gt; LF)*
+        (filemodify | filedelete | filecopy | filerename | filedeleteall | notemodify)*
+        LF?</literallayout>
+<simpara>ここで、 <emphasis>&lt;ref&gt;</emphasis> はコミットを行うブランチの名前です。 通常、Gitではブランチ名の前に <literal>refs/heads/</literal> が付いているため、CVSブランチシンボル <literal>RELENG-1_0</literal> をインポートすると、 <emphasis>&lt;ref&gt;</emphasis> の値に <literal>refs/heads/RELENG-1_0</literal> が使用されます。 <emphasis>&lt;ref&gt;</emphasis> の値は、Gitで有効なrefnameである必要があります。 <literal>LF</literal> はGit refnameでは無効であるため、ここではクォートやエスケープ構文はサポートされていません。</simpara>
+<simpara><literal>mark</literal> コマンドがオプションで表示され、フロントエンドで将来使用するために新しく作成されたコミットへの参照を保存するようにfast-importを要求する場合があります(形式については以下を参照)。 フロントエンドが作成するすべてのコミットにマークを付けることは非常に一般的であり、これにより、インポートされたコミットから将来のブランチを作成できます。</simpara>
+<simpara><literal>committer</literal> に続く <literal>data</literal> コマンドは、コミットメッセージを提供する必要があります(<literal>data</literal> コマンドの構文については以下を参照してください)。 空のコミットメッセージをインポートするには、長さ0のデータを使用します。 コミットメッセージは自由形式であり、Gitによって解釈されません。 fast-importでは他のエンコードを指定できないため、現在はUTF-8でエンコードする必要があります。</simpara>
+<simpara>コミットを作成する前にブランチの内容を更新するために、0個以上の <literal>filemodify</literal> 、 <literal>filedelete</literal> 、 <literal>filecopy</literal> 、 <literal>filerename</literal> 、 <literal>filedeleteall</literal> 、 <literal>notemodify</literal> コマンドを含めることができます。 これらのコマンドは、任意の順序で指定できます。 ただし、 <literal>filedeleteall</literal> はブランチをクリーンにワイプするため、 <literal>filedeleteall</literal> コマンドを同じコミット内のすべての <literal>filemodify</literal> 、 <literal>filecopy</literal> 、 <literal>filerename</literal> 、 ` notemodify` コマンドの前に置くことをお勧めします(下記参照)。</simpara>
+<simpara>コマンドの後の <literal>LF</literal> はオプションです(以前は必須でした)。 下位互換性の理由から、コミットが <literal>data</literal> コマンドで終了する場合(つまり、 <literal>from</literal> 、 <literal>merge</literal> 、 <literal>filemodify</literal> 、 <literal>filedelete</literal> 、 <literal>filecopy</literal> 、 <literal>filerename</literal> 、 <literal>filedeleteall</literal> 、 <literal>notemodify</literal> コマンドがないことに注意してください)の場合、コマンドの最後に1つではなく2つの <literal>LF</literal> コマンドが表示される場合があります。</simpara>
+<refsect3 id="_literal_author_literal">
+<title><literal>author</literal></title>
+<simpara>作者情報がコミッター情報と異なる場合は、オプションで <literal>author</literal> コマンドが表示されることがあります。 <literal>author</literal> を省略すると、fast-importはコミットの作者部分にコミッターの情報を自動的に使用します。 <literal>author</literal> のフィールドの説明については、 <literal>committer</literal> と同じであるため、以下を参照してください。</simpara>
+</refsect3>
+<refsect3 id="_literal_committer_literal">
+<title><literal>committer</literal></title>
+<simpara><literal>committer</literal> コマンドは、誰がこのコミットを行ったのか、いつ行ったのかを示します。</simpara>
+<simpara>ここで、 <emphasis>&lt;name&gt;</emphasis> は個人の表示名(たとえば、 "Com M Itter")であり、 <emphasis>&lt;email&gt;</emphasis> は個人の電子メールアドレス("cm@example.com")です。 <literal>LT</literal> と <literal>GT</literal> は、文字通りの小なり記号(\x3c)と大なり記号(\x3e)です。 これらは、行の他のフィールドから電子メールアドレスを区切るために必要です。 <emphasis>&lt;name&gt;</emphasis> と <emphasis>&lt;email&gt;</emphasis> は自由形式であり、 <literal>LT</literal> 、<literal>GT</literal> 、 <literal>LF</literal> を除く任意のバイトシーケンスを含むことができることに注意してください。 <emphasis>&lt;name&gt;</emphasis> は通常UTF-8でエンコードされています。</simpara>
+<simpara>変更時刻は、 <literal>--date-format=</literal><emphasis>&lt;fmt&gt;</emphasis> コマンドラインオプションで選択された日付形式を使用して <emphasis>&lt;when&gt;</emphasis> で指定されます。サポートされている形式のセットとその構文については、上記「Date Formats」を参照してください。</simpara>
+</refsect3>
+<refsect3 id="_literal_encoding_literal">
+<title><literal>encoding</literal></title>
+<simpara>オプションの <literal>encoding</literal> コマンドは、コミットメッセージのエンコーディングを示します。 ほとんどのコミットはUTF-8であり、エンコードは省略されていますが、これにより、最初に再エンコードせずにコミットメッセージをgitにインポートできます。</simpara>
+</refsect3>
+<refsect3 id="_literal_from_literal">
+<title><literal>from</literal></title>
+<simpara><literal>from</literal> コマンドは、このブランチを初期化するコミットを指定するために使用されます。 このリビジョンは、新しいコミットの最初の祖先になります。 このコミットで構築されたツリーの状態は、 <literal>from</literal> コミットでの状態で始まり、このコミットでのコンテンツの変更によって交換(alter)されます。</simpara>
+<simpara>新しいブランチの最初のコミットで <literal>from</literal> コマンドを省略すると、fast-importが祖先なしでそのコミットを作成します。 これは、プロジェクトの最初のコミットでのみ必要になる傾向があります。 新しいブランチを作成するときにフロントエンドがすべてのファイルを最初から作成する場合は、 <literal>from</literal> の代わりに <literal>merge</literal> コマンドを使用して、空のツリーでコミットを開始できます。 そのブランチの現在のコミットは自動的に新しいコミットの最初の祖先であると見なされるため、既存のブランチでは通常は <literal>from</literal> コマンドを省略することが望まれます。</simpara>
+<simpara><literal>LF</literal> は Git refname または SHA-1式では無効であるため、<emphasis>&lt;commit-ish&gt;</emphasis> 内でのクォートまたはエスケープ構文はサポートされていません。</simpara>
+<simpara>ここで、<emphasis>&lt;commit-ish&gt;</emphasis> は以下のいずれかです:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>
+fast-importの内部ブランチテーブルにすでに存在する既存のブランチの名前。 fast-importが名前を知らない場合は、SHA-1式として扱われます。
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+マーク参照: &lt;idnum&gt; 。ここで、 <emphasis>&lt;idnum&gt;</emphasis> はマーク番号です。
+</simpara>
+<simpara>fast-importがマーク参照を示すために <literal>:</literal> を使用する理由は、この文字がGitブランチ名では無効であるためです。 先頭 <literal>:</literal> を使用すると、マーク42(<literal>:42</literal>)とブランチ42(<literal>42</literal> または <literal>refs/heads/42</literal>)、または、たまたま10進数で構成されていた省略形のSHA-1を、簡単に区別できます。</simpara>
+<simpara>マークは、使用する前に( <literal>mark</literal> を介して)宣言する必要があります。</simpara>
+</listitem>
+<listitem>
+<simpara>
+完全な40バイトまたは省略された16進数のコミットSHA-1。
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+コミットに解決される有効な Git SHA-1式。 詳細については、 <citerefentry>
+<refentrytitle>gitrevisions</refentrytitle><manvolnum>7</manvolnum>
+</citerefentry> の「SPECIFYING REVISIONS」を参照してください。
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+特別な null SHA-1(40個のゼロ)は、ブランチが削除されることを指定します。
+</simpara>
+</listitem>
+</itemizedlist>
+<simpara>現在のブランチ値から増分インポート(incremental import)を再スタートする特殊なケースは、以下のように記述する必要があります:</simpara>
+<literallayout class="monospaced">        from refs/heads/branch^0</literallayout><simpara></simpara>
+<simpara>fast-importはブランチをそれ自体から開始することを許可しないため、 <literal>^0</literal> サフィックスが必要です。ブランチは、 <literal>from</literal> コマンドが入力から読み取られる前にメモリに作成されます。 <literal>^0</literal> を追加すると、fast-importは、内部ブランチテーブルではなく、Gitのリビジョンパースライブラリを介してコミットを解決し、ブランチの既存の値をロードします。</simpara>
+</refsect3>
+<refsect3 id="_literal_merge_literal">
+<title><literal>merge</literal></title>
+<simpara>1つの追加の祖先コミットが含まれます。 追加の祖先リンクは、このコミットでツリー状態が構築される方法を変更しません。 新しいブランチを作成するときに <literal>from</literal> コマンドを省略すると、最初の <literal>merge</literal> コミットが現在のコミットの最初の祖先になり、ブランチはファイルなしで開始されます。 fast-importでは、コミットごとに無制限の数の <literal>merge</literal> コマンドが許可されるため、n方向(n-way)マージが確立されます。</simpara>
+<simpara>ここで、 <emphasis>&lt;commit-ish&gt;</emphasis> は、 <literal>from</literal> でも受け入れられるコミット仕様式のいずれかです(上記参照)。</simpara>
+</refsect3>
+<refsect3 id="_literal_filemodify_literal">
+<title><literal>filemodify</literal></title>
+<simpara>新しいファイルを追加したり、既存のファイルの内容を変更したりするために <literal>commit</literal> コマンドに含まれています。 このコマンドには、ファイルの内容を指定する2つの異なる方法があります。</simpara>
+<variablelist>
+<varlistentry>
+<term>
+External data format
+</term>
+<listitem>
+<simpara>
+        ファイルのデータコンテンツは、以前の <literal>blob</literal> コマンドによってすでに提供されています。フロントエンドはそれに接続する必要があります。
+</simpara>
+<literallayout class="monospaced">        'M' SP &lt;mode&gt; SP &lt;dataref&gt; SP &lt;path&gt; LF</literallayout>
+<simpara>ここで通常、 <emphasis>&lt;dataref&gt;</emphasis> は、前の <literal>blob</literal> コマンドによって設定されたマーク参照(<literal>:</literal><emphasis>&lt;idnum&gt;</emphasis>)か、既存のGitブロブオブジェクトの完全な40バイトのSHA-1である必要があります。 <emphasis>&lt;mode&gt;</emphasis> が <literal>040000</literal> の場合、 <emphasis>&lt;dataref&gt;</emphasis> は既存のGitツリーオブジェクトの完全な40バイトのSHA-1または <literal>--import-marks</literal> で設定されたマーク参照である必要があります。</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+Inline data format
+</term>
+<listitem>
+<simpara>
+        ファイルのデータコンテンツはまだ提供されていません。 フロントエンドは、この変更コマンドの一部としてそれを提供したいと考えています。
+</simpara>
+<literallayout class="monospaced">        'M' SP &lt;mode&gt; SP 'inline' SP &lt;path&gt; LF
+        data</literallayout>
+<simpara><literal>data</literal> コマンドの詳細については下記参照。</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+<simpara>どちらの形式でも、 <emphasis>&lt;mode&gt;</emphasis> はファイルエントリのタイプであり、8進数で指定されます。 Gitは以下のモードのみをサポートします:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>
+<literal>100644</literal> または <literal>644</literal> : 通常の(実行可能でない)ファイル。 ほとんどのプロジェクトのファイルの大部分はこのモードを使用しています。迷ったらコレ。
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+<literal>100755</literal> または <literal>755</literal> : 通常の、しかし実行可能なファイル。
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+<literal>120000</literal>: シンボリックリンク。ファイルの内容がリンクターゲットになります。
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+<literal>160000</literal>: A gitlink, SHA-1 of the object refers to a commit in another repository. Git links can only be specified either by SHA or through a commit mark. They are used to implement submodules.
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+<literal>040000</literal>: サブディレクトリ。 サブディレクトリは、SHAによって、または <literal>--import-marks</literal> で設定されたツリーマークを介してのみ指定できます。
+</simpara>
+</listitem>
+</itemizedlist>
+<simpara>どちらの形式でも、 <emphasis>&lt;path&gt;</emphasis> は、追加(まだ存在しない場合)または変更(すでに存在する場合)するファイルの完全なパスです。</simpara>
+<simpara>A <emphasis>&lt;path&gt;</emphasis> can be written as unquoted bytes or a C-style quoted string.</simpara>
+<simpara>When a <emphasis>&lt;path&gt;</emphasis> does not start with a double quote ("), it is an unquoted string and is parsed as literal bytes without any escape sequences. However, if the filename contains <literal>LF</literal> or starts with double quote, it cannot be represented as an unquoted string and must be quoted. Additionally, the source <emphasis>&lt;path&gt;</emphasis> in <literal>filecopy</literal> or <literal>filerename</literal> must be quoted if it contains SP.</simpara>
+<simpara>When a <emphasis>&lt;path&gt;</emphasis> starts with a double quote ("), it is a C-style quoted string, where the complete filename is enclosed in a pair of double quotes and escape sequences are used. Certain characters must be escaped by preceding them with a backslash: <literal>LF</literal> is written as \n, backslash as \\, and double quote as \". Some characters may optionally be written with escape sequences: \a for bell, \b for backspace, \f for form feed, \n for line feed, \r for carriage return, \t for horizontal tab, and \v for vertical tab. Any byte can be written with 3-digit octal codes (e.g., \033). All filenames can be represented as quoted strings.</simpara>
+<simpara>A <emphasis>&lt;path&gt;</emphasis> must use UNIX-style directory separators (forward slash <literal>/</literal>) and its value must be in canonical form. That is it must not:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>
+空のディレクトリコンポーネントが含まれている(例: <literal>foo//bar</literal> は無効)、
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+ディレクトリ区切り文字で終了する(例: <literal>foo/</literal> は無効)、
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+ディレクトリ区切り文字で始まる(例: <literal>/foo</literal> は無効)、
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+特別なコンポーネント . または .. を含む(例: <literal>foo/./bar</literal> や <literal>foo/</literal><literal>..</literal><literal>/bar</literal> は無効)。
+</simpara>
+</listitem>
+</itemizedlist>
+<simpara>ツリーのルートは、 <emphasis>&lt;path&gt;</emphasis> に空の文字列を指定します。</simpara>
+<simpara><emphasis>&lt;path&gt;</emphasis> cannot contain NUL, either literally or escaped as \000. It is recommended that <emphasis>&lt;path&gt;</emphasis> always be encoded using UTF-8.</simpara>
+</refsect3>
+<refsect3 id="_literal_filedelete_literal">
+<title><literal>filedelete</literal></title>
+<simpara>ファイルを削除したり、ブランチからディレクトリ全体を再帰的に削除したりするために <literal>commit</literal> コマンドに含まれています。 ファイルまたはディレクトリを削除して、その親ディレクトリが空になると、親ディレクトリも自動的に削除されます。 これは、最初の空でないディレクトリまたはルートに到達するまで、ツリーを上流へ連鎖的にたどります(cascade up)。</simpara>
+<literallayout class="monospaced">        'D' SP &lt;path&gt; LF</literallayout>
+<simpara>ここで、 <emphasis>&lt;path&gt;</emphasis> は、ブランチから削除されるファイルまたはサブディレクトリの完全なパスです。 <emphasis>&lt;path&gt;</emphasis> の詳細な説明については、上記の <literal>filemodify</literal> を参照してください。</simpara>
+</refsect3>
+<refsect3 id="_literal_filecopy_literal">
+<title><literal>filecopy</literal></title>
+<simpara>既存のファイルまたはサブディレクトリをブランチ内の別の場所に再帰的にコピーします。 既存のファイルまたはディレクトリが存在する必要があります。 宛先が存在する場合は、ソースからコピーされたコンテンツに完全に置き換えられます。</simpara>
+<literallayout class="monospaced">        'C' SP &lt;path&gt; SP &lt;path&gt; LF</literallayout>
+<simpara>ここで、最初の <emphasis>&lt;path&gt;</emphasis> はソースの場所であり、2番目の <emphasis>&lt;path&gt;</emphasis> は宛先です。 <emphasis>&lt;path&gt;</emphasis> がどのように見えるかの詳細な説明については、上記の <literal>filemodify</literal> を参照してください。 SPを含むソースパスを使用するには、パスを引用符で囲む必要があります。</simpara>
+<simpara><literal>filecopy</literal> コマンドの効果は即時です。ソースの場所が宛先にコピーされると、ソースの場所に適用される以降のコマンドは、コピーの宛先に影響を与えません。</simpara>
+</refsect3>
+<refsect3 id="_literal_filerename_literal">
+<title><literal>filerename</literal></title>
+<simpara>既存のファイルまたはサブディレクトリの名前をブランチ内の別の場所に変更します。 既存のファイルまたはディレクトリが存在する必要があります。 宛先が存在する場合は、ソースディレクトリに置き換えられます。</simpara>
+<literallayout class="monospaced">        'R' SP &lt;path&gt; SP &lt;path&gt; LF</literallayout>
+<simpara>ここで、最初の <emphasis>&lt;path&gt;</emphasis> はソースの場所であり、2番目の <emphasis>&lt;path&gt;</emphasis> は宛先です。 <emphasis>&lt;path&gt;</emphasis> がどのように見えるかの詳細な説明については、上記の <literal>filemodify</literal> を参照してください。 SPを含むソースパスを使用するには、パスを引用符で囲む必要があります。</simpara>
+<simpara><literal>filerename</literal> コマンドの効果は即時です。 ソースの場所の名前が宛先に変更されると、ソースの場所に適用される将来のコマンドは、そこに新しいファイルを作成し、名前変更の宛先に影響を与えません。</simpara>
+<simpara>注意: <literal>filerename</literal> は、 <literal>filecopy</literal> の後にソースの場所の <literal>filedelete</literal> が続くのと同じであることに注意してください。 <literal>filerename</literal> を使用することにはわずかなパフォーマンス上の利点がありますが、その利点は非常に小さいため、ソース素材の 削除/追加ペア を高速インポート用の名前変更に変換する価値はありません。 この <literal>filerename</literal> コマンドは、名前変更情報がすでにあるフロントエンドを単純化するために提供されており、それを <literal>filecopy</literal> とそれに続く <literal>filedelete</literal> に分解する必要はありません。</simpara>
+</refsect3>
+<refsect3 id="_literal_filedeleteall_literal">
+<title><literal>filedeleteall</literal></title>
+<simpara>ブランチからすべてのファイル(およびすべてのディレクトリ)を削除するために <literal>commit</literal> コマンドに含まれています。 このコマンドは、内部ブランチ構造をリセットしてファイルを含まないようにし、フロントエンドの関心あるすべてのファイルを最初から追加できるようにします。</simpara>
+<literallayout class="monospaced">        'deleteall' LF</literallayout>
+<simpara>このコマンドは、フロントエンドが現在ブランチ上にあるファイルを知らない(あるいは知ろうとしない)ため、コンテンツを更新するための適切な <literal>filedelete</literal> コマンドを生成できない場合に非常に役立ちます。</simpara>
+<simpara>正しいコンテンツを設定するために <literal>filedeleteall</literal> の後に必要な <literal>filemodify</literal> コマンドを発行すると、必要な <literal>filemodify</literal> および <literal>filedelete</literal> コマンドのみを送信するのと同じ結果が得られます。 しかし、<literal>filedeleteall</literal> のアプローチでは、fast-import がアクティブブランチごとに若干多くのメモリの使用を必要する場合があります(ほとんどの大規模プロジェクトでも1 MiB未満ではありますが)。 したがって、コミットの影響を受けるパスのみを簡単に取得できるフロントエンドは、コミットの影響を受けるパスのみを取得することをお勧めします。</simpara>
+</refsect3>
+<refsect3 id="_literal_notemodify_literal">
+<title><literal>notemodify</literal></title>
+<simpara>Included in a <literal>commit</literal> <emphasis>&lt;notes-ref&gt;</emphasis> command to add a new note annotating a <emphasis>&lt;commit-ish&gt;</emphasis> or change this annotation contents. Internally it is similar to filemodify 100644 on <emphasis>&lt;commit-ish&gt;</emphasis> path (maybe split into subdirectories). It&#8217;s not advised to use any other commands to write to the <emphasis>&lt;notes-ref&gt;</emphasis> tree except <literal>filedeleteall</literal> to delete all existing notes in this tree. This command has two different means of specifying the content of the note.</simpara>
+<variablelist>
+<varlistentry>
+<term>
+External data format
+</term>
+<listitem>
+<simpara>
+        ノートのデータコンテンツは、以前の <literal>blob</literal> コマンドによってすでに提供されています。 フロントエンドは、注釈を付けるコミットに接続する必要があります。
+</simpara>
+<literallayout class="monospaced">        'N' SP &lt;dataref&gt; SP &lt;commit-ish&gt; LF</literallayout>
+<simpara>ここで、 <emphasis>&lt;dataref&gt;</emphasis> は、前の <literal>blob</literal> コマンドによって設定されたマーク参照(<literal>:</literal><emphasis>&lt;idnum&gt;</emphasis>)、または既存のGitブロブオブジェクトの完全な40バイトのSHA-1のいずれかです。</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+Inline data format
+</term>
+<listitem>
+<simpara>
+        ノートのデータ内容はまだ提供されていません。 フロントエンドは、この変更コマンドの一部としてそれを提供したいと考えています。
+</simpara>
+<literallayout class="monospaced">        'N' SP 'inline' SP &lt;commit-ish&gt; LF
+        data</literallayout>
+<simpara><literal>data</literal> コマンドの詳細については下記参照。</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+<simpara>どちらの形式でも、 <emphasis>&lt;commit-ish&gt;</emphasis> は、 <literal>from</literal> でも受け入れられるコミット仕様式のいずれかです(上記参照)。</simpara>
+</refsect3>
+</refsect2>
+<refsect2 id="_literal_mark_literal">
+<title><literal>mark</literal></title>
+<simpara>fast-import を手配して現在のオブジェクトへの参照を保存し、フロントエンドがSHA-1を知らなくても、将来の時点でこのオブジェクトを呼び出すことができるようにします。 ここで、現在のオブジェクトは、 <literal>mark</literal> コマンドが含まれるオブジェクト作成コマンドです。 これは <literal>commit</literal> や <literal>tag</literal> や <literal>blob</literal> にすることができますが、 <literal>commit</literal> が最も一般的な使用法です。</simpara>
+<literallayout class="monospaced">        'mark' SP ':' &lt;idnum&gt; LF</literallayout>
+<simpara>ここで、 <emphasis>&lt;idnum&gt;</emphasis> は、フロントエンドによってこのマークに割り当てられた番号です。 <emphasis>&lt;idnum&gt;</emphasis> の値は、ASCIIの10進整数として表されます。 値0は予約されており、マークとして使用することはできません。 1以上の値のみをマークとして使用できます。</simpara>
+<simpara>新しいマークは自動的に作成されます。 同じ <emphasis>&lt;idnum&gt;</emphasis> を別の <literal>mark</literal> コマンドで再利用するだけで、既存のマークを別のオブジェクトに移動できます。</simpara>
+</refsect2>
+<refsect2 id="_literal_original_oid_literal">
+<title><literal>original-oid</literal></title>
+<simpara>元のソース管理システムのオブジェクトの名前を提供します。 fast-import はこのディレクティブを単に無視しますが、fast-importにフィードする前にストリームを操作および変更するフィルタープロセスは、この情報を使用する場合があります。</simpara>
+<literallayout class="monospaced">        'original-oid' SP &lt;object-identifier&gt; LF</literallayout>
+<simpara>ここで、 <emphasis>&lt;object-identifier&gt;</emphasis> は LF を含まない任意の文字列です。</simpara>
+</refsect2>
+<refsect2 id="_literal_tag_literal">
+<title><literal>tag</literal></title>
+<simpara>特定のコミットを参照する注釈付きタグ(annotated tag)を作成します。 軽量(注釈なし)タグ(lightweight tag)を作成するには、下記 <literal>reset</literal> コマンドを参照してください。</simpara>
+<literallayout class="monospaced">        'tag' SP &lt;name&gt; LF
+        mark?
+        'from' SP &lt;commit-ish&gt; LF
+        original-oid?
+        'tagger' (SP &lt;name&gt;)? SP LT &lt;email&gt; GT SP &lt;when&gt; LF
+        data</literallayout>
+<simpara>ここで、 <emphasis>&lt;name&gt;</emphasis> は作成するタグの名前です。</simpara>
+<simpara>タグ名はGitに保存されるときに自動的に <literal>refs/tags/</literal> のプレフィックスが付けられるため、CVSブランチシンボル <literal>RELENG-1_0-FINAL</literal> をインポートすると、 <emphasis>&lt;name&gt;</emphasis> に <literal>RELENG-1_0-FINAL</literal> だけが使用され、 fast-importは対応するrefを <literal>refs/tags/RELENG-1_0-FINAL</literal> として書き込みます。</simpara>
+<simpara><emphasis>&lt;name&gt;</emphasis> の値は、Gitで有効なrefnameである必要があるため、スラッシュを含めることができます。 <literal>LF</literal> はGit refnameでは無効であるため、ここではクォートやエスケープ構文はサポートされていません。</simpara>
+<simpara><literal>from</literal> コマンドは <literal>commit</literal> コマンドと同じです。 詳細については、上記を参照してください。</simpara>
+<simpara><literal>tagger</literal> コマンドは、 <literal>commit</literal> 内の <literal>committer</literal> と同じ形式を使用します。 詳細については、再度上記を参照してください。</simpara>
+<simpara><literal>tagger</literal> に続く <literal>data</literal> コマンドは、注釈付きのタグメッセージを提供する必要があります(<literal>data</literal> コマンドの構文については以下を参照してください)。 空のタグメッセージをインポートするには、長さ0のデータを使用します。 タグメッセージは自由形式であり、Gitによって解釈されません。 fast-importでは他のエンコードを指定できないため、現在はUTF-8でエンコードする必要があります。</simpara>
+<simpara>fast-import内からのインポート中に注釈付きタグに署名することはサポートされていません。 フロントエンドは通常そのような署名に入るバイトの完全なセットに(簡単に)アクセスできないため、独自の PGP/GPG 署名を含めることはお勧めしません。 署名が必要な場合は、 <literal>reset</literal> を使用してfast-import内から軽量タグを作成し、標準の <literal>git</literal> <literal>tag</literal> プロセスを使用してそれらのタグの注釈付きバージョンをオフラインで作成します。</simpara>
+</refsect2>
+<refsect2 id="_literal_reset_literal">
+<title><literal>reset</literal></title>
+<simpara>名前付きブランチを作成(または再作成)します。オプションで、特定のリビジョンから開始します。 resetコマンドを使用すると、フロントエンドは既存のブランチに対して新しい <literal>from</literal> コマンドを発行したり、新しいコミットを作成せずに既存のコミットから新しいブランチを作成したりできます。</simpara>
+<literallayout class="monospaced">        'reset' SP &lt;ref&gt; LF
+        ('from' SP &lt;commit-ish&gt; LF)?
+        LF?</literallayout>
+<simpara><emphasis>&lt;ref&gt;</emphasis> と <emphasis>&lt;commit-ish&gt;</emphasis> の詳細については、上記 <literal>commit</literal> と <literal>from</literal> を参照してください。</simpara>
+<simpara>コマンドの後の <literal>LF</literal> はオプションです(以前は必須でした)。</simpara>
+<simpara><literal>reset</literal> コマンドを使用して、軽量(注釈なし)タグ(lightweight tag)を作成することもできます。 例えば:</simpara>
+<informalexample>
+<literallayout class="monospaced">reset refs/tags/938
+from :938</literallayout>
+</informalexample>
+<simpara>これはコミットマーク <literal>:938</literal> が参照するものを参照して、軽量タグ <literal>refs/tags/938</literal> を作成します。</simpara>
+</refsect2>
+<refsect2 id="_literal_blob_literal">
+<title><literal>blob</literal></title>
+<simpara>パックファイルに1つのファイルリビジョンを書き込むように要求します。 リビジョンはコミットに接続されていません。 この接続は、割り当てられたマークを介してブロブを参照することにより、後続の <literal>commit</literal> コマンドで形成する必要があります。</simpara>
+<literallayout class="monospaced">        'blob' LF
+        mark?
+        original-oid?
+        data</literallayout>
+<simpara>一部のフロントエンドが独自にブロブのGitSHA-1を生成し、それを直接 <literal>commit</literal> にフィードすることを選択したため、ここではmarkコマンドはオプションです。 ただし、マークは安価で保管しやすく、使い勝手も良いため、これは一般的にはマークより手間がかかると思われます。</simpara>
+</refsect2>
+<refsect2 id="_literal_data_literal">
+<title><literal>data</literal></title>
+<simpara>生データ(ブロブ/ファイル コンテンツ または コミットメッセージ または 注釈付きタグメッセージ として使用するため)をfast-importに提供します。 データは、正確なバイトカウントを使用して提供することも、終了行で区切ることもできます。 本番品質の変換を目的とした実際のフロントエンドは、より堅牢でパフォーマンスが高いため、常に正確なバイトカウント形式を使用する必要があります。 区切られた形式は、主にfast-importのテストを目的としています。</simpara>
+<simpara><literal>data</literal> コマンドの <emphasis>&lt;raw&gt;</emphasis> 部分に表示されるコメント行は、常にデータの本文の一部と見なされるため、fast-importによって無視されることはありません。 これにより、行が # で始まる可能性のある ファイル/メッセージ コンテンツを安全にインポートできます。</simpara>
+<variablelist>
+<varlistentry>
+<term>
+Exact byte count format
+</term>
+<listitem>
+<simpara>
+        フロントエンドは、データのバイト数を指定する必要があります。
+</simpara>
+<literallayout class="monospaced">        'data' SP &lt;count&gt; LF
+        &lt;raw&gt; LF?</literallayout>
+<simpara>ここで、<emphasis>&lt;count&gt;</emphasis> は <emphasis>&lt;raw&gt;</emphasis> 内に表示される正確なバイト数です。 <emphasis>&lt;count&gt;</emphasis> の値はASCII10進整数として表されます。 <emphasis>&lt;raw&gt;</emphasis> の両側の <literal>LF</literal> は <emphasis>&lt;count&gt;</emphasis> に含まれず、インポートされたデータに含まれません。</simpara>
+<simpara><emphasis>&lt;raw&gt;</emphasis> の後の <literal>LF</literal> はオプションです(以前は必須でした)が、推奨されます。 <emphasis>&lt;raw&gt;</emphasis> が <literal>LF</literal> で終わっていなくても、次のコマンドは常に次の行の列0で開始するため、常にこれを含めると、fast-importストリームのデバッグが容易になります。</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+Delimited format
+</term>
+<listitem>
+<simpara>
+        区切り文字列は、データの終わりを示すために使用されます。 fast-importは、区切り文字を検索して長さを計算します。 この形式は主にテストに役立ち、実際のデータにはお勧めしません。
+</simpara>
+<literallayout class="monospaced">        'data' SP '&lt;&lt;' &lt;delim&gt; LF
+        &lt;raw&gt; LF
+        &lt;delim&gt; LF
+        LF?</literallayout>
+<simpara>ここで、<emphasis>&lt;delim&gt;</emphasis> は選択された区切り文字列です。 文字列 <emphasis>&lt;delim&gt;</emphasis> は、 <emphasis>&lt;raw&gt;</emphasis> 内の行に単独で表示されてはなりません。そうしないと、fast-importはデータが実際よりも早く終了すると見なします。 <emphasis>&lt;raw&gt;</emphasis> の直後に続く <literal>LF</literal> は <emphasis>&lt;raw&gt;</emphasis> の一部です。 これは区切り形式の制限の1つであり、最後のバイトとしてLFを持たないデータチャンクを提供することはできません。</simpara>
+<simpara><emphasis>&lt;delim&gt;</emphasis> <literal>LF</literal> の後の <literal>LF</literal> はオプションです(以前は必須でした)。</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_literal_alias_literal">
+<title><literal>alias</literal></title>
+<simpara>最初に新しいオブジェクトを作成せずに、マークが特定のオブジェクトを参照していることを記録します。</simpara>
+<literallayout class="monospaced">        'alias' LF
+        mark
+        'to' SP &lt;commit-ish&gt; LF
+        LF?</literallayout>
+<simpara><emphasis>&lt;commit-ish&gt;</emphasis> の詳細については、上記の <literal>from</literal> を参照してください。</simpara>
+</refsect2>
+<refsect2 id="_literal_checkpoint_literal">
+<title><literal>checkpoint</literal></title>
+<simpara>fast-importを強制して、現在のパックファイルを閉じ、新しいパックファイルを開始し、現在のすべてのブランチ参照とタグとマークを保存します。</simpara>
+<literallayout class="monospaced">        'checkpoint' LF
+        LF?</literallayout>
+<simpara>注意: fast-importは、現在のパックファイルが <literal>--max-pack-size</literal> または 4 GiB のいずれか小さい方の制限に達すると、パックファイルを自動的に切り替えることに注意してください。 自動パックファイル切り替え中、fast-importは、ブランチの参照またはタグまたはマーク を更新しません。</simpara>
+<simpara><literal>checkpoint</literal> はかなりのCPU時間とディスクI/Oを必要とする可能性があるため(パック全体のSHA-1チェックサムを計算し、対応するインデックスファイルを生成し、refを更新するため)、単一の <literal>checkpoint</literal> コマンド完了に数分かかる場合があります。</simpara>
+<simpara>フロントエンドは、非常に大規模で長時間実行されるインポート中、または別のGitプロセスにブランチへのアクセスを許可する必要があるときにチェックポイントを発行することを選択できます。 ただし、30 GiB Subversion リポジトリを fast-import によって約3時間でGitにロードできることを考えると、明示的なチェックポイントは必要ない場合があります。</simpara>
+<simpara>コマンドの後の <literal>LF</literal> はオプションです(以前は必須でした)。</simpara>
+</refsect2>
+<refsect2 id="_literal_progress_literal">
+<title><literal>progress</literal></title>
+<simpara>コマンドが入力ストリームから処理されるときに、fast-importが <literal>progress</literal> 行全体を変更せずに標準の出力チャネル(ファイルデスクリプタ 1)に出力します。 それ以外の場合、このコマンドは現在のインポートやfast-importの内部状態には影響しません。</simpara>
+<literallayout class="monospaced">        'progress' SP &lt;any&gt; LF
+        LF?</literallayout>
+<simpara>コマンドの <emphasis>&lt;any&gt;</emphasis> 部分には、 <literal>LF</literal>`を含まないバイトシーケンスを含めることができます。 コマンドの後の `LF はオプションです。 呼び出し元は、sedなどのツールを使用して出力を処理し、行の先頭部分を削除したい場合があります。以下に例を示します:</simpara>
+<informalexample>
+<literallayout class="monospaced">frontend | git fast-import | sed 's/^progress //'</literallayout>
+</informalexample>
+<simpara><literal>checkpoint</literal> の直後に <literal>progress</literal>`コマンドを配置すると、 `checkpoint が完了したときにリーダーに通知され、fast-importで更新されたrefに安全にアクセスできます。</simpara>
+</refsect2>
+<refsect2 id="_literal_get_mark_literal">
+<title><literal>get-mark</literal></title>
+<simpara>fast-importが、標準出力または <literal>--cat-blob-fd</literal> 引数であらかじめ指定されたファイルディスクリプタに、マークに対応するSHA-1を表示するようにします。 それ以外の場合、コマンドは現在のインポートに影響を与えません。 その目的は、後でコミットがコミットメッセージで参照する可能性のあるSHA-1を取得することです。</simpara>
+<literallayout class="monospaced">        'get-mark' SP ':' &lt;idnum&gt; LF</literallayout>
+<simpara>この出力を安全に読み取る方法の詳細については、以下の「Responses To Commands」(コマンドへの応答)を参照してください。</simpara>
+</refsect2>
+<refsect2 id="_literal_cat_blob_literal">
+<title><literal>cat-blob</literal></title>
+<simpara>fast-importにより、以前に <literal>--cat-blob-fd</literal> 引数で設定されたファイルデスクリプタにブロブが出力されます。 それ以外の場合、コマンドは現在のインポートに影響を与えません。 その主な目的は、fast-importのメモリにある可能性があるが、ターゲットリポジトリからはアクセスできないブロブを取得することです。</simpara>
+<literallayout class="monospaced">        'cat-blob' SP &lt;dataref&gt; LF</literallayout>
+<simpara><emphasis>&lt;dataref&gt;</emphasis> は、以前に設定されたマーク参照(<literal>:</literal><emphasis>&lt;idnum&gt;</emphasis>)か、既存または書き込みの準備ができているGitブロブの完全な40バイトのSHA-1のいずれかです。</simpara>
+<simpara>出力は <literal>git</literal> <literal>cat-file</literal> <literal>--batch</literal> と同一形式を使用します:</simpara>
+<informalexample>
+<literallayout class="monospaced">&lt;sha1&gt; SP 'blob' SP &lt;size&gt; LF
+&lt;contents&gt; LF</literallayout>
+</informalexample>
+<simpara>このコマンドは、 <literal>filemodify</literal> ディレクティブを表示できる場所で使用でき、コミットの途中で使用できます。 インラインディレクティブを使用する <literal>filemodify</literal> の場合、 <literal>data</literal> ディレクティブの直前に表示することもできます。</simpara>
+<simpara>この出力を安全に読み取る方法の詳細については、以下の「Responses To Commands」(コマンドへの応答)を参照してください。</simpara>
+</refsect2>
+<refsect2 id="_literal_ls_literal">
+<title><literal>ls</literal></title>
+<simpara>パスにあるオブジェクトに関する情報を、事前に <literal>--cat-blob-fd</literal> 引数で指定したファイルディスクリプタへ出力します。 これにより、アクティブなコミットからブロブを表示したり(<literal>cat-blob</literal> を使用)、以前のコミットからブロブやツリーをコピーして現在のコミットで使用したり(<literal>filemodify</literal> を使用))することができます。</simpara>
+<simpara><literal>ls</literal> コマンドは、 <literal>filemodify</literal> ディレクティブを表示できる場所でも使用でき、コミットの途中で使用できます。</simpara>
+<variablelist>
+<varlistentry>
+<term>
+Reading from the active commit
+</term>
+<listitem>
+<simpara>
+        この形式は、<literal>commit</literal> の途中でのみ使用できます。 パスは、fast-importのアクティブなコミット内のディレクトリエントリに名前を付けます。 この場合、パスはクォートする必要があります。
+</simpara>
+<literallayout class="monospaced">        'ls' SP &lt;path&gt; LF</literallayout>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+Reading from a named tree
+</term>
+<listitem>
+<simpara>
+        <emphasis>&lt;dataref&gt;</emphasis> は、マーク参照(<literal>:</literal><emphasis>&lt;idnum&gt;</emphasis>)、またはGitタグ、コミット、ツリーオブジェクトの完全な40バイトのSHA-1であり、既存または書き込みを待機しています。 パスは、 <emphasis>&lt;dataref&gt;</emphasis> で指定されたツリーの最上位を基準にしています。
+</simpara>
+<literallayout class="monospaced">        'ls' SP &lt;dataref&gt; SP &lt;path&gt; LF</literallayout>
+</listitem>
+</varlistentry>
+</variablelist>
+<simpara><emphasis>&lt;path&gt;</emphasis> の詳細な説明については、上記の <literal>filemodify</literal> を参照してください。</simpara>
+<simpara>出力は <literal>git</literal> <literal>ls-tree</literal> <emphasis>&lt;tree&gt;</emphasis> <literal>--</literal> <emphasis>&lt;path&gt;</emphasis> と同一形式を使用します:</simpara>
+<informalexample>
+<literallayout class="monospaced">&lt;mode&gt; SP ('blob' | 'tree' | 'commit') SP &lt;dataref&gt; HT &lt;path&gt; LF</literallayout>
+</informalexample>
+<simpara>&lt;dataref&gt;は、&lt;path&gt;にあるblob、tree、またはcommitオブジェクトを表し、後の <literal>get-mark</literal> 、 <literal>cat-blob</literal> 、 <literal>filemodify</literal> 、 <literal>ls</literal> コマンドで使用できます。</simpara>
+<simpara>そのパスにファイルまたはサブツリーがない場合、 <literal>git</literal> <literal>fast-import</literal> が代わりに報告します</simpara>
+<informalexample>
+<literallayout class="monospaced">missing SP &lt;path&gt; LF</literallayout>
+</informalexample>
+<simpara>この出力を安全に読み取る方法の詳細については、以下の「Responses To Commands」(コマンドへの応答)を参照してください。</simpara>
+</refsect2>
+<refsect2 id="_literal_feature_literal">
+<title><literal>feature</literal></title>
+<simpara>fast-importが指定の機能をサポートすることを要求するか、サポートしない場合は中止(abort)します。</simpara>
+<literallayout class="monospaced">        'feature' SP &lt;feature&gt; ('=' &lt;argument&gt;)? LF</literallayout>
+<simpara>コマンドの &lt;feature&gt; 部分は、以下のいずれかになります:</simpara>
+<variablelist>
+<varlistentry>
+<term>
+date-format
+</term>
+<term>
+export-marks
+</term>
+<term>
+relative-marks
+</term>
+<term>
+no-relative-marks
+</term>
+<term>
+force
+</term>
+<listitem>
+<simpara>
+        先頭に <literal>--</literal> が付いた対応するコマンドラインオプションが、コマンドラインで渡されたかのように動作します(上記 OPTIONS 参照)。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+import-marks
+</term>
+<term>
+import-marks-if-exists
+</term>
+<listitem>
+<simpara>
+        <literal>--import-marks</literal> と同様ですが、2つの点が異なります。まず、ストリームごとに1つの <literal>feature</literal> <literal>import-marks</literal> または <literal>feature</literal> <literal>import-marks-if-exists</literal> コマンドのみが許可されます。 次に、 <literal>--import-marks=</literal> または <literal>--import-marks-if-exists</literal> コマンドラインオプションは、ストリーム内のこれらの「feature」コマンドのいずれかをオーバーライドします。 第3に、対応するコマンドラインオプションのような <literal>feature</literal> <literal>import-marks-if-exists</literal> は、存在しないファイルを黙ってスキップします。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+get-mark
+</term>
+<term>
+cat-blob
+</term>
+<term>
+ls
+</term>
+<listitem>
+<simpara>
+        バックエンドがそれぞれ <literal>get-mark</literal> または <literal>cat-blob</literal> または <literal>ls</literal> コマンドをサポートしていることを要求します。 指定されたコマンドをサポートしていないバージョンのfast-importは、そのことを示すメッセージとともに終了します。 これにより、サポートされていないコマンドが検出される前にインポートの初期部分で時間を無駄にするのではなく、明確なメッセージでインポートエラーを早期に発生させることができます。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+notes
+</term>
+<listitem>
+<simpara>
+        バックエンドが <literal>commit</literal> コマンドの <literal>notemodify</literal> (N) サブコマンドをサポートしていることを要求します。 ノートをサポートしていないfast-importのバージョンは、そのことを示すメッセージとともに終了します。
+</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>
+done
+</term>
+<listitem>
+<simpara>
+        <literal>done</literal> コマンドなしでストリームが終了した場合はエラーになります。 この機能がないと、ストリーム内の便利なポイントでフロントエンドが突然終了する原因となるエラーが検出されなくなる可能性があります。 これは、たとえば、インポートフロントエンドがその下位のgit fast-importインスタンスでSIGTERMまたはSIGKILLを発行せずに、操作の途中で停止した場合に発生する可能性があります。
+</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect2>
+<refsect2 id="_literal_option_literal">
+<title><literal>option</literal></title>
+<simpara>指定されたオプションを処理して、git fast-importがフロントエンドのニーズに合った方法で動作するようにします。 フロントエンドで指定されたオプションは、ユーザーがgit fast-import自体に指定したオプションによって上書きされることに注意してください。</simpara>
+<literallayout class="monospaced">    'option' SP &lt;option&gt; LF</literallayout>
+<simpara>コマンドの <emphasis>&lt;option&gt;</emphasis> 部分には、OPTIONSセクションにリストされているオプションのいずれかを含めることができます。これらのオプションは、先頭の <literal>--</literal> がなくても、インポートのセマンティクスを変更せず、同じように扱われます。</simpara>
+<simpara>optionコマンドは、非オプションコマンドがエラーになった後にオプションコマンドを与えるために、入力の最初のコマンドである必要があります(featureコマンドはカウントされません)。</simpara>
+<simpara>以下のコマンドラインオプションはインポートセマンティクスを変更するため、オプションとして渡されない場合があります:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>
+date-format
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+import-marks
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+export-marks
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+cat-blob-fd
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+force
+</simpara>
+</listitem>
+</itemizedlist>
+</refsect2>
+<refsect2 id="_literal_done_literal">
+<title><literal>done</literal></title>
+<simpara><literal>done</literal> 機能が使用されていない場合は、EOFが読み取られたかのように扱われます。 これを使用して、fast-importに早期に終了するように指示できます。</simpara>
+<simpara><literal>--done</literal> コマンドラインオプションまたは <literal>feature</literal> <literal>done</literal> コマンドが使用されている場合、 <literal>done</literal> コマンドは必須であり、ストリームの終わりを示します。</simpara>
+</refsect2>
+</refsect1>
+<refsect1 id="_responses_to_commands">
+<title>RESPONSES TO COMMANDS</title>
+<simpara>fast-importによって作成された新しいオブジェクトはすぐには利用できません。 ほとんどのfast-importコマンドは、次のチェックポイント(または完了)まで目に見える効果はありません。 フロントエンドは、コマンドが有効になる速度を気にせずに、fast-importの入力パイプを埋めるためのコマンドを送信できます。これにより、スケジューリングが簡素化され、パフォーマンスが向上します。</simpara>
+<simpara>ただし、一部のフロントエンドでは、更新中に現在のリポジトリからデータを読み戻すことができると便利です(たとえば、ソース素材が、以前にインポートされたオブジェクトに適用されるパッチの観点からオブジェクトを記述している場合)。 これは、フロントエンドとfast-importを双方向パイプを介して接続することで実現できます:</simpara>
+<informalexample>
+<literallayout class="monospaced">mkfifo fast-import-output
+frontend &lt;fast-import-output |
+git fast-import &gt;fast-import-output</literallayout>
+</informalexample>
+<simpara>このように設定されたフロントエンドは、 <literal>progress</literal> 、 <literal>get-mark</literal> 、 <literal>ls</literal> 、 <literal>cat-blob</literal> コマンドを使用して、進行中のインポートから情報を読み取ることができます。</simpara>
+<simpara>デッドロックを回避するために、このようなフロントエンドは、ブロックする可能性のあるfast-importへの書き込みを実行する前に、 <literal>progress</literal> 、 <literal>ls</literal> 、 <literal>get-mark</literal> 、 <literal>cat-blob</literal> からの保留中の出力を完全に消費する必要があります。</simpara>
+</refsect1>
+<refsect1 id="_crash_reports">
+<title>CRASH REPORTS</title>
+<simpara>fast-importに無効な入力が指定された場合、ゼロ以外の終了ステータスで終了し、インポート先のGitリポジトリのトップレベルにクラッシュレポートが作成されます。 クラッシュレポートには、内部のfast-import状態のスナップショットと、クラッシュにつながる最も最近のコマンドが含まれています。</simpara>
+<simpara>最近のすべてのコマンド(ストリームコメント、ファイル変更、進行状況コマンドを含む)は、クラッシュレポート内のコマンド履歴に表示されますが、生のファイルデータとコミットメッセージはクラッシュレポートから除外されます。 この除外により、レポートファイル内のスペースが節約され、fast-importが実行中に実行する必要のあるバッファリングの量が削減されます。</simpara>
+<simpara>クラッシュレポートを作成した後、fast-importは現在のパックファイルを閉じ、マークテーブルをエクスポートします。 これにより、フロントエンド開発者はリポジトリの状態を検査し、クラッシュしたポイントからインポートを再開できます。 インポートが正常に完了しなかったため、変更されたブランチとタグはクラッシュ時に更新されません。 ブランチとタグの情報はクラッシュレポートに記載されており、更新が必要な場合は手動で適用する必要があります。</simpara>
+<simpara>クラッシュ例:</simpara>
+<literallayout class="monospaced">        $ cat &gt;in &lt;&lt;END_OF_INPUT
+        # my very first test commit
+        commit refs/heads/master
+        committer Shawn O. Pearce &lt;spearce&gt; 19283 -0400
+        # who is that guy anyway?
+        data &lt;&lt;EOF
+        this is my commit
+        EOF
+        M 644 inline .gitignore
+        data &lt;&lt;EOF
+        .gitignore
+        EOF
+        M 777 inline bob
+        END_OF_INPUT
+
+        $ git fast-import &lt;in
+        fatal: Corrupt mode: M 777 inline bob
+        fast-import: dumping crash report to .git/fast_import_crash_8434
+
+        $ cat .git/fast_import_crash_8434
+        fast-import crash report:
+            fast-import process: 8434
+            parent process     : 1391
+            at Sat Sep 1 00:58:12 2007
+
+        fatal: Corrupt mode: M 777 inline bob
+
+        Most Recent Commands Before Crash
+        ---------------------------------
+          # my very first test commit
+          commit refs/heads/master
+          committer Shawn O. Pearce &lt;spearce&gt; 19283 -0400
+          # who is that guy anyway?
+          data &lt;&lt;EOF
+          M 644 inline .gitignore
+          data &lt;&lt;EOF
+        * M 777 inline bob
+
+        Active Branch LRU
+        -----------------
+            active_branches = 1 cur, 5 max
+
+          pos  clock name
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+           1)      0 refs/heads/master
+
+        Inactive Branches
+        -----------------
+        refs/heads/master:
+          status      : active loaded dirty
+          tip commit  : 0000000000000000000000000000000000000000
+          old tree    : 0000000000000000000000000000000000000000
+          cur tree    : 0000000000000000000000000000000000000000
+          commit clock: 0
+          last pack   :
+
+
+        -------------------
+        END OF CRASH REPORT</literallayout>
+</refsect1>
+<refsect1 id="_tips_and_tricks">
+<title>TIPS AND TRICKS</title>
+<simpara>以下のヒントとコツは、fast-importのさまざまなユーザーから収集されたものであり、提案として提供されています。</simpara>
+<refsect2 id="_use_one_mark_per_commit">
+<title>Use One Mark Per Commit</title>
+<simpara>リポジトリ変換を行うときは、コミットごとに一意のマーク(<literal>mark</literal> <literal>:</literal><emphasis>&lt;n&gt;</emphasis>)を使用し、コマンドラインで <literal>--export-marks</literal> オプションを指定します。 fast-importは、すべてのマークとそれに対応するGitオブジェクトSHA-1をリストするファイルをダンプします。 フロントエンドがマークをソースリポジトリに結び付けることができる場合、各Gitコミットを対応するソースリビジョンと比較することで、インポートの正確性と完全性を簡単に確認できます。</simpara>
+<simpara>Coming from a system such as Perforce or Subversion, this should be quite simple, as the fast-import mark can also be the Perforce changeset number or the Subversion revision number.</simpara>
+</refsect2>
+<refsect2 id="_freely_skip_around_branches">
+<title>Freely Skip Around Branches</title>
+<simpara>インポート中に一度に1つのブランチに固執するようにフロントエンドをわざわざ最適化しようとしないでください。 これを行うと、fast-importの場合は少し速くなる可能性がありますが、フロントエンドコードの複雑さが大幅に増す傾向があります。</simpara>
+<simpara>高速インポートに組み込まれているブランチLRUは非常に適切に動作する傾向があり、非アクティブなブランチをアクティブ化するコストは非常に低いため、ブランチ間でのバウンスはインポートのパフォーマンスに実質的に影響しません。</simpara>
+</refsect2>
+<refsect2 id="_handling_renames">
+<title>Handling Renames</title>
+<simpara>名前を変更したファイルまたはディレクトリをインポートするときは、対応するコミット中に古い名前を削除し、新しい名前を変更するだけです。 Gitは、コミット中に明示的にではなく、事後に名前変更の検出を実行します。</simpara>
+</refsect2>
+<refsect2 id="_use_tag_fixup_branches">
+<title>Use Tag Fixup Branches</title>
+<simpara>他のいくつかのSCMシステムでは、ユーザーは同じ コミット/チェンジセット からではない複数のファイルからタグを作成できます。 または、リポジトリで使用可能なファイルのサブセットであるタグを作成します。</simpara>
+<simpara>これらのタグをそのままGitにインポートするには、タグのコンテンツと一致するようにファイルを「修正」するコミットを少なくとも1つ実行する必要があります。 fast-importの <literal>reset</literal> コマンドを使用して、通常のブランチスペースの外側にあるダミーブランチをタグのベースコミットにリセットし、1つ以上のファイル修正コミットをコミットして、最後にダミーブランチにタグを付けます。</simpara>
+<simpara>たとえば、すべての通常のブランチは <literal>refs/heads/</literal> の下に保存されるため、タグ修正ブランチには <literal>TAG_FIXUP</literal> という名前を付けます。 このように、インポーターによって使用される修正ブランチが、ソースからインポートされた実際のブランチと名前空間の競合を持つことは不可能です((名前 <literal>TAG_FIXUP</literal> は <literal>refs/heads/TAG_FIXUP</literal> ではありません)。</simpara>
+<simpara>フィックスアップ(fixup)をコミットするときは、 <literal>merge</literal> を使用してファイルリビジョンを提供しているコミットをフィックスアップブランチに接続することを検討してください。 そうすることで、 <literal>git</literal> <literal>blame</literal> などのツールが実際のコミット履歴を追跡し、ソースファイルに適切に注釈を付けることができます。</simpara>
+<simpara>fast-importが終了した後、フロントエンドはダミーブランチを削除するために <literal>rm</literal> <literal>.git/TAG_FIXUP</literal> を実行する必要があります。</simpara>
+</refsect2>
+<refsect2 id="_import_now_repack_later">
+<title>Import Now, Repack Later</title>
+<simpara>fast-importが完了するとすぐに、Gitリポジトリは完全に有効になり、使用できるようになります。 通常、これは非常に大規模なプロジェクト(100,000以上のコミット)の場合でも、非常に短い時間しかかかりません。</simpara>
+<simpara>ただし、データの局所性とアクセスパフォーマンスを向上させるには、リポジトリを再パックする必要があります。 また、非常に大規模なプロジェクトでは数時間かかる場合があります(特に、 <literal>-f</literal> および 大きな <literal>--window</literal> パラメーターが使用されている場合)。 再パックはリーダーやライターと一緒に実行しても安全なので、バックグラウンドで再パックを実行し、再パックが終了したらリーダーやライターを終了させます。 あなたが新しいGitプロジェクトに挑戦するのを待たされる事はありません！</simpara>
+<simpara>あなたが再パックを待つことを選択した場合は、再パックが完了するまでベンチマークやパフォーマンステストを実行しないでください。 その場合、 fast-importは、実際の使用状況では決して見られないような、最適でないパックファイルを出力します。</simpara>
+</refsect2>
+<refsect2 id="_repacking_historical_data">
+<title>Repacking Historical Data</title>
+<simpara>非常に古くにインポートされたデータ(たとえば、昨年より古い)を再パックする場合は、 <literal>git</literal> <literal>repack</literal> を実行するときに、 <literal>--window=50</literal> (またはそれ以上)を指定して余分なCPU時間を費やすことを検討してください。 これには時間がかかりますが、作成されるパックファイルも小さくなります。 あなたが労力を費やす必要があるのは1回だけで、あなたのプロジェクトを使用するすべての人が小さくなったリポジトリの恩恵を受けることができます。</simpara>
+</refsect2>
+<refsect2 id="_include_some_progress_messages">
+<title>Include Some Progress Messages</title>
+<simpara>時々、フロントエンドに <literal>progress</literal> メッセージを送信してfast-importします。 メッセージの内容は完全に自由形式であるため、現在のコミット日が翌月に移動するたびに、現在の月と年を出力することをお勧めします。あなたのユーザーは、処理されたデータストリームの量をよりよく知ることができます。</simpara>
+</refsect2>
+</refsect1>
+<refsect1 id="_packfile_optimization">
+<title>PACKFILE OPTIMIZATION</title>
+<simpara>ブロブを高速にパックする場合、インポートは常に最後に書き込まれたブロブに対して削除を試みます。 フロントエンドによって特別に調整されていない限り、これはおそらく同じファイルの以前のバージョンではないため、生成されるデルタは可能な限り最小にはなりません。 結果のパックファイルは圧縮されますが、最適ではありません。</simpara>
+<simpara>単一のファイルのすべてのリビジョンに効率的にアクセスできるフロントエンド(たとえば、 RCS/CVS ,v file の読み取り)は、連続する <literal>blob</literal> コマンドのシーケンスとして、そのファイルのすべてのリビジョンを提供することを選択できます。 これにより、fast-importでさまざまなファイルリビジョンを相互に区別し、最終的なパックファイルのスペースを節約できます。 マークは、後で一連の <literal>commit</literal> コマンド中に個々のファイルリビジョンを識別するために使用できます。</simpara>
+<simpara>fast-importによって作成されたパックファイルは、適切なディスクアクセスパターンを促進しません。 これは、標準入力で受信した順序でデータをfast-importで書き込むことが原因ですが、Gitは通常、パックファイル内のデータを整理して、最新の(現在の先端)データを履歴データの前に表示します。 Gitはまた、コミットをクラスター化し、キャッシュの局所性を向上させることでリビジョンのトラバーサルを高速化します。</simpara>
+<simpara>このため、fast-importが完了した後、ユーザーがリポジトリを <literal>git</literal> <literal>repack</literal> <literal>-a</literal> <literal>-d</literal> で再パックし、Gitがパックファイルを再編成してデータアクセスを高速化できるようにすることを強くお勧めします。 ブロブデルタが最適ではない場合(上記参照)、すべてのデルタの再計算を強制するために <literal>-f</literal> オプションを追加すると、最終的なパックファイルサイズを大幅に減らすことができます(ほとんどの場合30〜50%小さくなります)。</simpara>
+<simpara><literal>git</literal> <literal>repack</literal> を実行する代わりに、 <literal>git</literal> <literal>gc</literal> <literal>--aggressive</literal> を実行することもできます。これにより、インポート後に他のものも最適化されます(たとえば、loose refs をパックします)。 <citerefentry>
+<refentrytitle>git-gc</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> の「AGGRESSIVE」セクションに記載されているように、 <literal>--aggressive</literal>`オプションは、 <literal><citerefentry>
+<refentrytitle>git-repack</literal></refentrytitle><manvolnum><literal>1</literal></manvolnum>
+</citerefentry> への `-f オプションを使用して新しいデルタを検索します。 上記で詳しく説明した理由により、fast-importの後に <literal>--aggressive</literal> を使用することは、価値があることがわかっている数少ないケースの1つです。</simpara>
+</refsect1>
+<refsect1 id="_memory_utilization">
+<title>MEMORY UTILIZATION</title>
+<simpara>fast-importがインポートを実行するために必要なメモリの量に影響を与えるいくつかの要因があります。 コアGitのクリティカルセクションと同様に、fast-importは独自のメモリアロケータを使用して、mallocに関連するオーバーヘッドを減らします。 実際には、fast-importは、大きなブロック割り当てを使用するため、mallocオーバーヘッドを0に減らす傾向があります。</simpara>
+<refsect2 id="_per_object">
+<title>per object</title>
+<simpara>fast-importは、この実行で書き込まれるすべてのオブジェクトのメモリ内構造を維持します。 32ビットシステムでは、構造は32バイトですが、64ビットシステムでは、構造は40バイトです(ポインタサイズが大きいため)。 テーブル内のオブジェクトは、fast-importが終了するまで割り当てが解除されません。 32ビットシステムに200万個のオブジェクトをインポートするには、約64MiBのメモリが必要です。</simpara>
+<simpara>オブジェクトテーブルは、実際にはオブジェクト名(一意のSHA-1)をキーとするハッシュテーブルです。 このストレージ構成により、fast-importで既存または既に書き込まれたオブジェクトを再利用し、出力パックファイルへの重複の書き込みを回避できます。 インポートでは、ブロブの重複が驚くほど一般的です。これは通常、ソースでのブランチのマージが原因です。</simpara>
+</refsect2>
+<refsect2 id="_per_mark">
+<title>per mark</title>
+<simpara>マークは、マークごとに1つのポインター(ポインターのサイズに応じて4バイトまたは8バイト)を使用して、まばらな配列に格納されます。 配列はまばらですが、フロントエンドでは 1〜n のマークを使用することを強くお勧めします。ここで、n はこのインポートに必要なマークの総数です。</simpara>
+</refsect2>
+<refsect2 id="_per_branch">
+<title>per branch</title>
+<simpara>ブランチはアクティブと非アクティブにクラス分けされます。 2つのクラスのメモリ使用量は大幅に異なります。</simpara>
+<simpara>非アクティブなブランチは、ブランチごとに96バイトまたは120バイト(それぞれ32ビットまたは64ビットシステム)とブランチ名の長さ(通常は200バイト未満)を使用する構造に格納されます。 fast-importは、2MiB未満のメモリで10,000もの非アクティブなブランチを簡単に処理します。</simpara>
+<simpara>アクティブなブランチには非アクティブなブランチと同じオーバーヘッドがありますが、そのブランチで最近変更されたすべてのツリーのコピーも含まれています。 ブランチがアクティブになってからサブツリー <literal>include</literal> が変更されていない場合、その内容はメモリに読み込まれませんが、ブランチがアクティブになってからコミットによってサブツリー <literal>src</literal> が変更されている場合、その内容はメモリに読み込まれます。</simpara>
+<simpara>アクティブなブランチは、そのブランチに含まれるファイルに関するメタデータを格納するため、メモリ内のストレージサイズがかなり大きくなる可能性があります(以下参照)。</simpara>
+<simpara>fast-importは、単純な「最も最近使用されていない」アルゴリズム(least-recently-used algorithm)に基づいて、アクティブなブランチを自動的に非アクティブなステータスに移動します。 LRUチェーンは、<literal>commit</literal> コマンドごとに更新されます。 アクティブなブランチの最大数は、コマンドラインで <literal>--active-branches=</literal> を使用して増減できます。</simpara>
+</refsect2>
+<refsect2 id="_per_active_tree">
+<title>per active tree</title>
+<simpara>ツリー(別名ディレクトリ)は、エントリに必要なメモリに加えて、わずか12バイトのメモリを使用します(以下「per active file」参照)。 ツリーのオーバーヘッドは個々のファイルエントリで償却されるため、ツリーのコストは実質的に0です。</simpara>
+</refsect2>
+<refsect2 id="_per_active_file_entry">
+<title>per active file entry</title>
+<simpara>アクティブツリー内のファイル(およびサブツリーへのポインター)には、エントリごとに52バイトまたは64バイト(32/64 ビットプラットフォーム)が必要です。 スペースを節約するために、ファイル名とツリー名は共通の文字列テーブルにプールされ、ファイル名 <literal>Makefile</literal> が(文字列ヘッダーのオーバーヘッドを含めた後)、プロジェクト内で何度発生しても、わずか16バイトしか使用しないようにします。</simpara>
+<simpara>アクティブブランチLRUは、ファイル名文字列プールおよびサブツリーの遅延読み込みと組み合わせると、fast-importにより、非常に限られたメモリフットプリント(アクティブブランチあたり2.7 MiB未満)で2,000以上のブランチと45,114以上のファイルを持つプロジェクトを効率的にインポートできます。</simpara>
+</refsect2>
+</refsect1>
+<refsect1 id="_signals">
+<title>SIGNALS</title>
+<simpara><emphasis role="strong">SIGUSR1</emphasis> を <literal>git</literal> <literal>fast-import</literal> プロセスに送信すると、現在のパックファイルが早期に終了し、 <literal>checkpoint</literal> コマンドがシミュレートされます。 せっかちなオペレーターは、この機能を使用して、実行時間の追加と圧縮率の低下を犠牲にして、進行中のインポートからオブジェクトとrefを確認できます。</simpara>
+</refsect1>
+<refsect1 id="_configuration">
+<title>CONFIGURATION</title>
+<simpara>このセクションの以下のすべては、 <citerefentry>
+<refentrytitle>git-config</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> ドキュメントの抜粋です。 内容は <citerefentry>
+<refentrytitle>git-config</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> ドキュメント にあるものと同一です:</simpara>
+<variablelist>
+<varlistentry>
+<term>
+fastimport.unpackLimit
+</term>
+<listitem>
+<simpara>
+        If the number of objects imported by <citerefentry>
+<refentrytitle>git-fast-import</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> is below this limit, then the objects will be unpacked into loose object files. However, if the number of imported objects equals or exceeds this limit, then the pack will be stored as a pack. Storing the pack from a fast-import can make the import operation complete faster, especially on slow filesystems. If not set, the value of <literal>transfer.unpackLimit</literal> is used instead.
+</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+<refsect1 id="_see_also">
+<title>SEE ALSO</title>
+<simpara><citerefentry>
+<refentrytitle>git-fast-export</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry></simpara>
+</refsect1>
+<refsect1 id="_git">
+<title>GIT</title>
+<simpara>Part of the <citerefentry>
+<refentrytitle>git</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> suite</simpara>
+</refsect1>
+</refentry>
