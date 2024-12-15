@@ -122,7 +122,7 @@ help:
 
 .DEFAULT_GOAL := help
 
-$(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
+$(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SEDOUT_DIR)/%$(ASCIIDOC_EXT)
 	./mk-po4a-cfg.sh $< > $@
 
 $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
@@ -134,9 +134,7 @@ $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
-#$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
-#	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
-$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
+$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) %$(PO4A_CFG_EXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
 
 $(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT) $(PO4A_CFG_INSTALL_TEXT)
