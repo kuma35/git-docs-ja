@@ -21,13 +21,21 @@
   "Ediff previous msgid (marked #| ) and msgid."
   (po-find-span-of-entry)
   (let (
+	(oldbuf (current-buffer))
 	(msgid (po-get-msgid))
+	(untranslated-regions (po-previous-untranslated-regions))
 	)
     (save-current-buffer
       (set-buffer (get-buffer-create
+		   po-ediff-previous-msgid-buffer-a-name))
+      (erase-buffer)
+      (dolist (region untranslated-regions)
+	(insert-buffer-substring oldbuf (car region) (cdr region))
+	)
+      (restore-buffer-modified-p nil))
+    (save-current-buffer
+      (set-buffer (get-buffer-create
 		   po-ediff-previous-msgid-buffer-b-name))
-      (setq buffer-read-only nil)
       (erase-buffer)
       (insert msgid)
-      (restore-buffer-modified-p nil)
       (setq buffer-read-only t))))
