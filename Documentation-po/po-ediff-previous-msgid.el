@@ -39,7 +39,12 @@ return is String with property."
 	(oldbuf (current-buffer))
 	(msgid (po-get-msgid))
 	(untranslated-regions (po-previous-untranslated-regions))
+        (beg-A)
+	(end-A)
+	(beg-B)
+	(end-B)
 	)
+    ;; source buffer for buffer-A
     (save-current-buffer
       (set-buffer (get-buffer-create
 		   po-ediff-previous-msgid-buffer-a-name))
@@ -48,25 +53,34 @@ return is String with property."
       (dolist (region untranslated-regions)
 	(insert (po-extract-previous-msgid oldbuf (car region) (cdr region)))
 	)
+      (setq beg-A (point-min))
+      (setq end-A (point-max))
       (goto-char (point-min))
       (push-mark (point-max) t t)
       (setq buffer-read-only t)
       (restore-buffer-modified-p nil))
+    ;; source buffer for buffer-B
     (save-current-buffer
       (set-buffer (get-buffer-create
 		   po-ediff-previous-msgid-buffer-b-name))
       (setq buffer-read-only nil)
       (erase-buffer)
       (insert msgid)
+      (setq beg-B (point-min))
+      (setq end-B (point-max))
       (goto-char (point-min))
       (push-mark (point-max) t t)
       (setq buffer-read-only t)
-      (restore-buffer-modified-p nil)))
-  (ediff-regions-wordwise
-   po-ediff-previous-msgid-buffer-a-name
-   po-ediff-previous-msgid-buffer-b-name)
+      (restore-buffer-modified-p nil))
+    ;; run ediff
+    (ediff-regions-internal
+     (get-buffer po-ediff-previous-msgid-buffer-a-name)
+     beg-A end-A
+     (get-buffer po-ediff-previous-msgid-buffer-b-name)
+     beg-B end-B
+     nil 'ediff-regions-wordwise 'word-mode nil)
+    )  ; end of let
   )
-
 
 (provide 'po-ediff-previous-msgid)
 ;;; po-ediff-previous-msgid.el ends here
