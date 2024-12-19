@@ -34,6 +34,7 @@ return is String with property."
 (defun po-ediff-previous-msgid ()
   "Ediff previous msgid (marked #| ) and msgid."
   (interactive)
+  (require 'po-mode)
   (po-find-span-of-entry)
   (let (
 	(oldbuf (current-buffer))
