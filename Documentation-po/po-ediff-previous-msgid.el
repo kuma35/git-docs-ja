@@ -5,14 +5,22 @@
 ;; previous msgid is  '#|' marked in comment.
 ;;; Code:
 
+(declare-function po-extract-unquoted "po-mode" (buffer start end))
+(declare-function po-find-span-of-entry "po-mode" ())
+(declare-function po-get-msgid "po-mode" ())
+(declare-function po-previous-untranslated-regions "po-mode" ())
+(declare-function ediff-regions-internal "ediff"
+		  (buffer-A beg-A end-A buffer-B beg-B end-B
+			    startup-hooks job-name word-mode setup-parameters))
+
 (defcustom po-ediff-previous-msgid-buffer-a-name "*pepm-previous-msgid*"
-  "'po-ediff-previous-msgid' BUFFER A name.  pepm is PoEdiffPreviousMsgid."
+  "BUFFER A name for `po-ediff-previous-msgid`.  pepm is PoEdiffPreviousMsgid."
   :type 'string
   :require 'po-mode
   :group 'po)
 
 (defcustom po-ediff-previous-msgid-buffer-b-name "*pepm-now-msgid*"
-  "'po-ediff-previous-msgid' BUFFER A name.  pepm is PoEdiffPreviousMsgid."
+  "BUFFER B name for `po-ediff-previous-msgid` .  pepm is PoEdiffPreviousMsgid."
   :type 'string
   :require 'po-mode
   :group 'po)
@@ -22,6 +30,7 @@
   "Delete '#|' marker and unquote text from BUFFER START END.
 delete '^#| ' each line.  then unquote.
 return is String with property."
+  (require 'po-mode)
   (with-temp-buffer
     (insert-buffer-substring buffer start end)
     (goto-char (point-min))
@@ -35,6 +44,7 @@ return is String with property."
   "Ediff previous msgid (marked #| ) and msgid."
   (interactive)
   (require 'po-mode)
+  (require 'ediff)
   (po-find-span-of-entry)
   (let (
 	(oldbuf (current-buffer))
