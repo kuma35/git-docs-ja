@@ -64,6 +64,9 @@ return is String with property."
         (beg-A) (end-A)  ; BUF-A for ediff-regions-internal
 	(beg-B) (end-B)  ; BUF-B for ediff-regions-internal
 	)
+    ;; nothing previous msgid then exit
+    (if (not untranslated-regions)
+	(error "Nothing previous msgid."))
     ;; source buffer for buffer-A
     (save-current-buffer
       (set-buffer (get-buffer-create
