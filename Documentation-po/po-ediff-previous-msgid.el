@@ -63,7 +63,12 @@ Else is not exist then create frame by NAME."
 	)
     (if frames
         frames
-      (list (make-frame `((name . ,name)))
+      (list (make-frame
+	     `(
+	       (name . ,name)
+	       (fullscreen . maximized)
+	       )
+	     )
 	    )
       )
     )
@@ -97,10 +102,16 @@ return is String with property."
 	 (po-previous-untranslated-regions))
         (beg-A) (end-A)  ; BUF-A for ediff-regions-internal
 	(beg-B) (end-B)  ; BUF-B for ediff-regions-internal
+	(frames          ; ediff target frames
+	 (po-pepm-get-frame-create po-pepm-frame-name))
+	(frame)
 	)
     ;; nothing previous msgid then exit
     (if (not untranslated-regions)
 	(error "Nothing previous msgid"))
+    (if (not (null ediff-session-registry))
+	; already exist ediff session
+	(error "Please quit other Ediff session"))
     ;; source buffer for buffer-A
     (save-current-buffer
       (set-buffer (get-buffer-create
@@ -126,12 +137,22 @@ return is String with property."
       (push-mark (setq end-B (point-max)) t t)
       (setq buffer-read-only t)
       (restore-buffer-modified-p nil))
-    ;; run ediff
-    (ediff-regions-internal
-     (get-buffer po-pepm-buf-a-name) beg-A end-A
-     (get-buffer po-pepm-buf-b-name) beg-B end-B
-     nil 'ediff-regions-wordwise 'word-mode nil)
-    )  ; end of let
+    ;; chek frames and get a frame
+    (if (> (length frame) 1)
+      (progn
+	(ding)
+	(message "Multiple %s frames exist!"
+		 po-pepm-frame-name)
+	)
+      )
+    (with-selected-frame (car frames)
+      ;; run ediff
+      (ediff-regions-internal
+       (get-buffer po-pepm-buf-a-name) beg-A end-A
+       (get-buffer po-pepm-buf-b-name) beg-B end-B
+       nil 'ediff-regions-wordwise 'word-mode nil)
+      )  ; end of let
+    )
   )
 
 (provide 'po-ediff-previous-msgid)
