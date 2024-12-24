@@ -34,6 +34,40 @@ PEPM is PoEdiffPreviousMsgid."
   :require 'po-mode
   :group 'po)
 
+(defcustom po-pepm-frame-name "*pepm-frame*"
+  "Frame name for `po-ediff-previous-msgid` .
+PEPM is PoEdiffPreviousMsgid."
+  :type 'string
+  :require 'po-mode
+  :group 'po)
+
+
+(defun po-popm-frame-named-list (name)
+  "List if a frame with the given NAME exists."
+  (let ((frames (frame-list))
+        (result '())
+	)
+    (dolist (frame frames)
+      (when (string= (frame-parameter frame 'name) name)
+        (push frame result)
+	)
+      )
+    result
+    )
+  )
+
+(defun po-pepm-get-frame-create (name)
+  "If NAME's frame is exist then return exists list.
+Else is not exist then create frame by NAME."
+  (let ((frames (po-popm-frame-named-list name))
+	)
+    (if frames
+        frames
+      (list (make-frame `((name . ,name)))
+	    )
+      )
+    )
+  )
 
 (defun po-extract-previous-msgid (buffer start end)
   "Delete '#|' marker and unquote text from BUFFER START END.
@@ -66,7 +100,7 @@ return is String with property."
 	)
     ;; nothing previous msgid then exit
     (if (not untranslated-regions)
-	(error "Nothing previous msgid."))
+	(error "Nothing previous msgid"))
     ;; source buffer for buffer-A
     (save-current-buffer
       (set-buffer (get-buffer-create
