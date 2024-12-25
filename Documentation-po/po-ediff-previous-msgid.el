@@ -146,6 +146,8 @@ return is String with property."
 	)
       )
     (with-selected-frame (car frames)
+      ;; pepm-frame try to most front
+      (select-frame-set-input-focus (selected-frame))
       ;; run ediff
       (ediff-regions-internal
        (get-buffer po-pepm-buf-a-name) beg-A end-A
