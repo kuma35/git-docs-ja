@@ -1,13 +1,28 @@
 ;;; po-ediff-previous-msgid.el --- ediff previous-msgid & msgid.
-;;; Author: kuma35
-;;; Created: 2024/12/18
+;; Copyright (C) 2024 Kuma35
+;; Author: kuma35
+;; Maintainer: kuma35
+;; Keywords: i18n gettext
+;; Created: 2024/12/18 (year/month/day)
+;; URL: https://github.com/kuma35/git-docs-ja
+;; Package-Requires: (po-mode ediff)
 ;;; Commentary:
 ;; In po-mode,
-;; previous msgid is  '#|' marked in comment.
-;; msgid is soruce sentence.
-;; (msgstr is translated sentence.)
-;; PEPM is my generate word.  PoEdiffPreviousMsgid.
 ;; Ediff-ing previous-msgid and msgid.
+;; Previous msgid is  '#|' marked in comment.
+;; Msgid is soruce sentence.
+;; (Msgstr is translated sentence.)
+;;
+;; PEPM is my generate word.  PoEdiffPreviousMsgid.
+;;
+;; Development by po-mode 2.29, ediff 2.81.6, Emacs 29.3
+;;
+;; TODO: not support plural yet.
+;;       (msgid_plural and msgstr[1] msgstr[2]
+;;
+;;; Change Log:
+;; 2024/12/18 start development.
+;; 2024/12/25 first release.
 ;;; Code:
 
 (declare-function
@@ -19,6 +34,9 @@
  ediff-regions-internal "ediff"
  (buffer-A beg-A end-A buffer-B beg-B end-B
 	   startup-hooks job-name word-mode setup-parameters))
+
+;; The registry of Ediff sessions.  A list of control buffers.")
+(defvar ediff-session-registry)
 
 (defcustom po-pepm-buf-a-name "*pepm-previous-msgid*"
   "BUFFER A name for `po-ediff-previous-msgid`.
