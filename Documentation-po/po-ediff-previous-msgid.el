@@ -171,8 +171,8 @@ return is String with property."
        (get-buffer po-pepm-buf-a-name) beg-A end-A
        (get-buffer po-pepm-buf-b-name) beg-B end-B
        nil 'ediff-regions-wordwise 'word-mode nil)
-      )  ; end of let
-    )
+      )
+    )  ; end of let
   )
 
 (provide 'po-ediff-previous-msgid)
