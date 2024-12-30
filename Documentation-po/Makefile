@@ -122,11 +122,15 @@ help:
 
 .DEFAULT_GOAL := help
 
+# [ ! -e $@ ] && ... ターゲットが存在しない時だけ実行。
+# ファイルが追加された時に対応するため。
+# 構造が変わる時は mk-po4a-cfg.sh を作り変えなければならない
+# ので、その時は全 po4cfg ファイルを削除してから make 
 $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SEDOUT_DIR)/%$(ASCIIDOC_EXT)
-	./mk-po4a-cfg.sh $< > $@
+	[ ! -e $@ ] && ./mk-po4a-cfg.sh $< > $@
 
 $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
-	./mk-po4a-cfg-install-text.sh $< $(DST_INSTALL_TEXT) > $@
+	[ ! -e $@ ] && ./mk-po4a-cfg-install-text.sh $< $(DST_INSTALL_TEXT) > $@
 
 # $(error "debug stop")
 
