@@ -1,0 +1,1300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.0" />
+<title>Concerning Git&#8217;s Packing Heuristics</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Concerning Git&#8217;s Packing Heuristics</h1>
+<span id="revdate">2024-12-30</span>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre><code>こいつぁ、まったく馬鹿げた質問だけどな:</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>      Gitの
+   パッキングヒューリスティックの
+詳細はどこいきゃ確認できるんだい？</code></pre>
+</div></div>
+<div class="paragraph"><p>実に興味深い質問だね！</p></div>
+<div class="paragraph"><p>Gitのフォロワーは、Git IRCログを開いて、2006年2月10日を参照してください。</p></div>
+<div class="paragraph"><p>珍しいことに、King Git自身、Linus Torvalds（linus）が参加しています。 ナサニエル・スミス（njs`）は床を持っており、悟りを求めています。 他の人々は存在しますが、沈黙しています。</p></div>
+<div class="paragraph"><p>諸君聞き給え！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>    &lt;njs`&gt; ええっと、本当にアホな質問するけど、
+\tGitのパッキングヒューリスティックの詳細はどこで確認すりゃいいんだい？
+        ググっても分からんし、
+        ソースを読んでも役に立たんかったし、
+        そしてメーリングリスト全体を探し歩くなんてやりたくもない。</code></pre>
+</div></div>
+<div class="paragraph"><p>大胆な語り口です！ 助けを乞う振りして探求者を三段構えで攻撃しています。グーグルが役に立たないという大げさな非難！ソースの自信たっぷりな悪用！ありがたーいメーリングリストのアーカイブを軽蔑する異端者！ 災いあれ</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;pasky&gt; ええ、パッキング関連のデルタとかは
+    私にとってさえちょっぴり神秘的です ;)</code></pre>
+</div></div>
+<div class="paragraph"><p>ひたすら謙虚だぬ。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; njs、ドキュメントは存在しないと思うわ。
+     それは私以外の誰も実際に関与した事が無いと思う。
+     Gitの他のほとんど（特にJunio）は活発で忙しいですが、
+     私がそれを行った後、誰も触れませんでした。</code></pre>
+</div></div>
+<div class="paragraph"><p>不可解であいまいですが、これは確かにLinusスタイルです。賢人はこれを謝罪と解釈します。ごくわずかの人々は、それは単なる事実の陳述であると主張します。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; 次のステップは「ソースをもう一度読む」ことだと思うけどな。
+    しかし、私は最初に、ある程度の強迫観念を惹起しなければなるまいて :-)</code></pre>
+</div></div>
+<div class="paragraph"><p>それはそう！ 両方の点で。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; パッキングヒューリスティックは実際には本当に本当に単純なんだぜぃ。</code></pre>
+</div></div>
+<div class="paragraph"><p>誘います誘います！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; でもオカシイ。</code></pre>
+</div></div>
+<div class="paragraph"><p>そして手のひら返し。それでこそLinus！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 思い出しな。Gitは実際にはファイルを追跡しねぇのよ。だからGitがすることは、
+    - 全部のオブジェクトのリストを生成するじゃろ
+    - そのリストを魔法のヒューリスティックに従ってソートするんじゃ
+    - スライディングウィンドウを使用してリストを散歩し、
+      ウィンドウ内の別のオブジェクトに対してオブジェクトを比較できるかどうかを確認するんじゃ
+    - そんでもって最近の順序でリストを書き出す</code></pre>
+</div></div>
+<div class="paragraph"><p>伝統的でおとなしい表現:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; 私が見逃しているのは「魔法」という言葉の
+    正確な定義だと思います</code></pre>
+</div></div>
+<div class="paragraph"><p>伝統的な洞察:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;pasky&gt; そうだな</code></pre>
+</div></div>
+<div class="paragraph"><p>そして、バベルの塔のような混乱が起こりました。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; ああ、うーん、このスライディングウィンドウの意味も分からんわ</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;pasky&gt; iirc、コードを何気なく読んでいると、
+    オブジェクトのsha1にすぎないように見えたけどね…</code></pre>
+</div></div>
+<div class="olist lowerroman"><ol class="lowerroman">
+<li>
+<p>
+which simply doesn&#8217;t sound as a very good heuristics, though ;)
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>&lt;njs`&gt; &#8230;..and recency order.  okay, I think it&#8217;s clear I didn&#8217;t
+even realize how much I wasn&#8217;t realizing :-)</p></div>
+<div class="paragraph"><p>新しい跳躍の時です！そしてこうして悟りはまた新たに始まります。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 「魔法」は理論的には完全に恣意的です。
+    どの順番でも作業パックが提供されますが、
+    SHA-1順ではありません。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>スライディングデルタウィンドウの順序について説明する前に、
+最新の順序について説明しましょう。
+それはある意味でより重要です。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; しかり。物をパックする作業方法だけが必要な場合は、
+    catを使用するだけで、
+    問題を回避できます…</code></pre>
+</div></div>
+<div class="paragraph"><p>しばーしお待ち下さい…</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 最新の順序付け(recency ordering)
+    (基本的には、オブジェクトを、ヘッドから「到達可能」な順序で、「物理的に」パックに入れる)
+    が重要です。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; そりゃ分かるよ</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; それがパックに良い局所性を与えるものなので、それは重要です。
+    パックの先頭でオブジェクトをヘッドの近く
+    (古いものでも新しいものでも、ヘッドから「到達可能」です）に保ちます。
+    そうすることで、パックには実際に絶対に
+    「素晴らしい」IOパターンがあります。</code></pre>
+</div></div>
+<div class="paragraph"><p>ここ重要。もう一度じっくり読め</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; ただし、最新の順序付けは、
+    実際にデルタを生成する方法を決定するのにまったく役に立たないため、
+    デルタの順序付けは別のものです。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>解説しよう！デルタ順位付け(delta ordering)とは！:
+- オブジェクトリストを生成するときに、
+  「最初に」到達した名前で定義される、
+  オブジェクトの「ベース名」で最初に並べ替えます
+- 同じベース名内で、オブジェクトのサイズで並べ替えます
+- ただし、常に異なるタイプを個別に並べ替えます(コミットが最初です)。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>正確には違いますが、ほぼこんな感じです。</code></pre>
+</div></div>
+<div class="paragraph"><p>&lt;njs`&gt; The "<em>first</em> reached" thing is not too important, just you need some way to break ties since the same objects may be reachable many ways, yes?</p></div>
+<div class="paragraph"><p>そこをkwsk:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 重要なのは、
+    それはすべて実際にはランダムなヒューリスティックであり、
+    順序付けは正確さにとってまったく重要ではないということですが、
+    ヒューリスティックが互いにうまく差分化する可能性のあるものに
+    「凝集」(clumping)を与える場合、それは大いに役立ちます。</code></pre>
+</div></div>
+<div class="paragraph"><p>重要なポイントなので、こっそり自分で調べて、その結果を以下にまとめました。 公平を期すために言うと、それは時間とともにいくらか変化しました。そして、リビジョン履歴魔法を使って、私の父の誕生日である3月1日のGit IRCLogsからの以下のエントリを呼び寄せました:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;gitster&gt; 上記のlinusからの引用は、
+    少し書き直す必要があります:
+    - 最初にタイプでソートします。
+      異なるオブジェクトが互いに差分化(delta)することはありません。&lt;
+    - 次に、ファイル名/ディレクトリ名で並べ替えます。
+      ベース名のハッシュは先頭からBITS_PER_INT〜DIR_BITSビットを占め、
+      末尾のDIR_BITSは先頭のパス要素のハッシュ用です。
+    - 次に、「薄い」パッキングを実行している場合、
+      パックしないオブジェクトは、
+      他のオブジェクトよりも早くソートされます。
+    - そして最後に、サイズで大きいものから小さいものへと並べ替えます。</code></pre>
+</div></div>
+<div class="paragraph"><p>1つのうねりで、明確化と不明瞭化！ それにもかかわらず、権威があります。 不可解でありながら簡潔。 ソースコードからの引用の概念さえも求めます。 明らかに、さらなる研究が必要です。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;gitster&gt; これがソート順です。これが意味することは:
+    - 異なるオブジェクトタイプを差分化(delta)することはありません。
+    - 同じフルパスのオブジェクトを差分化(delta)することを好みますが、
+      異なるディレクトリからの同じ名前のファイルを許可します。
+    - 送信しないオブジェクトがある場合は、
+      それに対して差分化(delta)することを常に好みます。
+    - 大きなオブジェクトに対して差分化(delta)することを好むので、
+      多くの削除があります。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>最後から2番目のルールは「薄い」パッキング用です。他の側にそのようなオブジェクトがあることがわかっている場合に使用されます。</code></pre>
+</div></div>
+<div class="paragraph"><p>再び登場しました「薄い」パック(Thin packs)。 「薄いパックとは？」と思いました。 だから私は尋ねます:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;jdl&gt; 薄いパックって何？</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;gitster&gt; pack-objectsの上流として、 `--objects-edge` を伴って rev-listを実行します。
+    パック転送プロトコルはそれをネゴシエートします。</code></pre>
+</div></div>
+<div class="paragraph"><p>わぉ！一瞬でクリアしちゃいましたよ！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;gitster&gt; 2つの方向があります。プッシュとフェッチです。</code></pre>
+</div></div>
+<div class="paragraph"><p>まぁ奥様みました？ プッシュとプルじゃございませんことよ！ ここで混乱が始まることがいかに多いことか。 さりげに、こんなことにも言及しています！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;gitster&gt; プッシュのために、git-send-packは相手側でgit-receive-packを呼び出します。
+    receive-packには、「I have up to these commits」(これらのコミットまであります)と書かれています。
+    send-packはそれらを調べ、相手側から欠落しているものを計算します。
+    したがって、「薄い」がデフォルトになる可能性があります。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>他の向きでは、fetchとgit-fetch-packとgit-clone-packが、
+相手側でgit-upload-packを呼び出します
+(sshを介して、またはデーモンと通信します)。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>2つのケースがあります: `-k` を伴ったfetch-pack と clone-pack がひとつ、 `-k` なしの fetch-pack でもうひとつです。
+`-k` を伴ったfetch-pack と clone-pack は、
+ダウンロードされたパックファイルを展開せずに保持するため、
+薄いパック転送(thin pack transfer)は使用しません。
+それ以外の場合、生成されたパックには、
+同じパック内にベースオブジェクトのないデルタ(差分)が含まれます。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>ただし、 `-k` を伴わないfetch-packは、受信したパックを個々のオブジェクトに分解するため、
+upload-packがサポートしている場合は、
+upload-packに薄いパック(thin pack)を提供するように自動的に問合せます。</code></pre>
+</div></div>
+<div class="paragraph"><p>然り。</p></div>
+<div class="paragraph"><p>それからどうした</p></div>
+<div class="paragraph"><p>閑話休題。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; そして「basename」は、「basename(3)に従って、
+    ファイルオブジェクトとdirオブジェクトのパスの終わりの末尾であり、
+    すべてのcommitオブジェクトとtagオブジェクトが同じbasenameを持つように宣言する」
+    などの意味です。</code></pre>
+</div></div>
+<div class="paragraph"><p>幸いなことに、それもgitsterが私たちに明らかにしたポイントです！</p></div>
+<div class="paragraph"><p>付け加えると、そのトリックは、ファイル名に基づいて、類似している可能性のあるファイルをハッシュバケット内で互いに近くに配置することです。以前は、「foo/Makefile」と「bar/baz/quux/Makefile」と「Makefile」は、共通のベース名「Makefile」のすべて同じバケットに配置されていました。しかし、今では「近い」バケツに着地します。</p></div>
+<div class="paragraph"><p>このアルゴリズムでは、「同じバケット」だけでなく、「近いバケット」も差分化候補と見なすことができます。理論的根拠として、Makefilesのようなファイルは、どのディレクトリにあるかに関係なく、非常によく似たコンテンツを持っていることが多いということです。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; さまざまなデルタ化アルゴリズムを試し、
+    「デルタウィンドウ」を大きくしましたが、スライディングウィンドウが大きすぎると、
+    パックの生成に非常にコストがかかります。
+    すべてのオブジェクトを他の大量のオブジェクトと比較する必要があります。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>他にも多くの些細なヒューリスティックがありますが、
+デルタに価値がないことを事前に知ることができれば
+(サイズの違いにより、以前のデルタ結果を考慮に入れて、
+「わかりました。それを試してみても意味がありません。
+悪化する」と判断できます)、
+基本的に「このペアをデルタにするのは割に合わない」に要約されます。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>最終結果: パッキングは実際には非常にサイズ効率が良いです。
+CPUパワーをいくらか浪費する一方で、
+実際には月に1回しか実行しないことになっているため(夜間に実行できます)、
+誰も気にしません。</code></pre>
+</div></div>
+<div class="paragraph"><p>素敵な技術者的手際です。それが問題ではない時間を見つけて、それを問題ではないと宣言します。まったく良いやり方です！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; それじゃあ、繰り返しになるけど、私がついていけてるか確認するために、
+    パックするオブジェクトのリストを取得することから始め、
+    このヒューリスティックでソートします
+    (基本的にタプル(タイプ, ベース名, サイズ)で辞書式順序)。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>次に、このリストを調べて、
+(調整可能なパラメーターである)最後のn個のオブジェクトに対する各オブジェクトのデルタを計算し、
+これらのデルタの最小のものを選択します。</code></pre>
+</div></div>
+<div class="paragraph"><p>大幅に簡素化されていますが、本質はコレです！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; その通りだ。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; 次に、各オブジェクトを表すデルタまたはフルテキスト(fulltext)を選択したら、
+    最新性で再並替え(re-sort by recency)して、
+    その順序で書き出します。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; &lt;linus&gt;うん。それで、その他の細々を言うと:</code></pre>
+</div></div>
+<div class="paragraph"><p>そしてもちろん、linusならダメ押し言うよね。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; - デルタ深度を別のマジック値に制限します
+    (現在、ウィンドウとデルタ深度のマジック値はどちらも「10」です)</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; うーん、私の直感では、必要なものが近くにあるため、
+    マヂで悪いIOパターンになってしまう気がします。
+    実際にそれらを再構築するには、
+    ランダムな方法でジャンプする必要があるかもしれません。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; - デルタを書き出すにあたって、
+    デルタであるオブジェクトをまだ書き出していない場合、最初にベースオブジェクトを書き出します。
+    しかし、それらを再構築すると、実際には優れたIOパターンが得られます。
+    理由は以下のとおりです:
+    - 大きなオブジェクトは「より最近」になる傾向があります(リーナスの法則:ファイル達は成長します)
+    - 大きなオブジェクトから小さなオブジェクトへのデルタの生成を
+      積極的に試みます
+    - これは、ツリーの最上位にデルタがほとんどないことを意味します
+      (つまり、実際のデルタは「後方デルタ」(backwards deltas)です）</code></pre>
+</div></div>
+<div class="paragraph"><p>繰り返しますが、我々はこの段落全体を読み直す必要があります。Linusの法則を私たちにぬるりと滑り込ませたからだけでなく、それは重要だからです。ここでいくつかのポイントを明確にしましょう:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; つまり、実際には、
+    デルタの順序と最近の順序は非常によく一致しているということです。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; ええそうです。これには別の良い面があります
+    (そして、それは以下のように設計されました):
+    - 大きなオブジェクトに対してデルタを生成する理由は、
+      実際には大きなスペース節約にもなります。</code></pre>
+</div></div>
+<div class="paragraph"><p>&lt;njs`&gt; Hmm, but your last comment (if "we haven&#8217;t yet written out
+the object it is a delta against, we write out the base object
+first"), seems like it would make these facts mostly
+irrelevant because even if in practice you would not have to
+wander around much, in fact you just brute-force say that in
+the cases where you might have to wander, don&#8217;t do that :-)</p></div>
+<div class="paragraph"><p>&lt;linus&gt; Yes and no. Notice the rule: we only write out the base object first if the delta against it was more recent. That means that you can actually have deltas that refer to a base object that is <em>not</em> close to the delta object, but that only happens when the delta is needed to generate an <em>old</em> object.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; お分かり？</code></pre>
+</div></div>
+<div class="paragraph"><p>ごめん。私は最初の2、3回読み込んだ時は見逃してました。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; これにより、パックの前側が密になります。
+    パックの前側には、「最近の」オブジェクトに関連しないデータが含まれることはありません。
+    サイズの最適化は、xdeltaの使用に由来します
+    (ただし、他の多くのデルタアルゴリズムにも当てはまります)。
+    データの削除は、データの追加よりも(サイズ的に)安価です。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>データを削除するときは、「バイトn--mをコピー」と言うだけで済みます。
+対照的に、データを追加するデルタでは、
+「これらのバイトを追加します： '実際のデータはここにあります'」と言わなければなりません。</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+njs` が退出しました: Read error: 104 (Connection reset by peer)
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; うーん。 njsが逝ったのは私のせいじゃないよね？</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+njs` が channel #git に入室しました。
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;pasky&gt; :)</code></pre>
+</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>もちろん皆そう思ってるよ。</p></div>
+<div class="paragraph"><p>そして、まるで njs が全知であると期待されたかのように:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; njs、何か見逃しましたか？</code></pre>
+</div></div>
+<div class="paragraph"><p>OK、詳しく説明します。それはオタクのユーモアです。 njs が実際に少しの間接続されていなかった場合、切断中に何かを逃したかどうかをどうやって知ることができますか？彼はユーモアのセンスのある慈悲深い独裁者です！よくいうよｗｗｗ</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; クソルーターめ、グレムリンめ</code></pre>
+</div></div>
+<div class="paragraph"><p>これはCiscoの安っぽいショットです。 そんなもん捨てちまえ</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; イエスもありノーでもある。ルールに注意してください。
+最初にベースオブジェクトを書き出すのは、それに対するデルタがより最近のものである場合のみです。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>私はこれらすべての順番で迷子になっています、再読させてください:-)
+それで、書き込みの順番は新しいものから順にということですよね？
+(おそらく逆の方法かもしれませんが、私たちが言ったかどうかはわかりません）
+自宅に戻ったら私の接続はログに記録されているので、
+そこであなたが言ったことを読むことができるでしょう :-)</code></pre>
+</div></div>
+<div class="paragraph"><p>そして、気にしている人のために、全知全能トリックが詳細に説明されました！</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; そうだよ。常に最新のものを最初に書きます</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; そして、ええっと、歴史の深いものはIOの特性が悪くなる、
+という部分は理解できましたが、ある種、気にならないものです。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 「最新の」オブジェクトがデルタ化するために
+    古いオブジェクトを必要とする場合(しばしば縮小が起こる)、
+    我々はデルタを伴って古いオブジェクトを書き出します。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; (それがもっともっと起こったら…)</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; とにかく、パックファイルはさらに簡単に高密度になる可能性がありますが、
+    ストリーミング(Gitプロトコル)とディスク上の操作での両方に使用されるため、
+    ちょいとばかり冗長でパフォーマンスが良くありません(it has a few pessimizations)。</code></pre>
+</div></div>
+<div class="paragraph"><p>実は、これは造語なんです。しかしこれは後の最適化のための設定として使われる造語で、現実の言葉なのです:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 特に、pack-fileは圧縮されますが、
+    一度に1つのオブジェクトだけが圧縮されるため、実際の圧縮率は理論上の圧縮率よりも低くなります。
+    しかし、それは、「オブジェクト名→パックファイル内の場所」の変換を行うための、
+    単純なインデックスを使用した、
+    すべてにおいて優れたランダムアクセスであることを意味します。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; 大→小 をデルタ化することの本当の勝利は、
+    gzipが実行されるより均一な統計であると思いませんか？</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>(あなたはバイトをどこかに配置する必要がありますが、
+より大きなブロブに配置すると、圧縮が優先されます)</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>実際、圧縮戦略とは何でしょうか -- 各デルタは個別にgzipで圧縮され、
+ファイル全体がgzipで圧縮され、
+その間のどこかでは圧縮はまったく行われませんが…？</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>正しい。</code></pre>
+</div></div>
+<div class="paragraph"><p>現実のIRCが始まります。例:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;pasky&gt; 残りは朝に読みます、私は本当に眠らなければなりません、
+    さもなければ今日の試験で私には何の希望もありません…
+    皆さんお休みなさい。</code></pre>
+</div></div>
+<div class="paragraph"><p>ありゃりゃ。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; pasky: おやすみ</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; pasky: グッドラック</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; 正しい: 圧縮動作のために、大きい→小さい ことが問題になります。
+    圧縮されていない場合は、
+    おそらく違いはありません。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; うんうん。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; とにかく：パックファイルが完璧だと主張するつもりはありませんが、
+    それは密度と使いやすさのバランスが
+    うまく取れている傾向があります。</code></pre>
+</div></div>
+<div class="paragraph"><p>うほっ！保存しますた。これは、エンジニアリングの公正なトレードオフです。 危機一髪！ 実際、Linusは、いくつかの基本的なエンジニアリングの基礎、設計オプションなどを反映しています。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; さらに重要なことは、Gitが概念的にデルタをまったく処理せず、
+    「オブジェクト全体」のストアになることを可能にすることです。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>これにはいくつかの問題があります
+(先日、Gitメーリングリストで
+巨大ファイルの良くない振る舞いについて説明しました)が、
+基本的なGitの概念が本当に単純で素直であることを意味します。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>それはすべて非常に安定しています。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>これは非常に単純な基本的な考え方の結果であると私は思います。
+そのため、
+何が起こっているのかについて混乱することはありません。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>バグは発生しますが、それらは「単純な」バグです。
+また、オブジェクトストアの詳細を実際に間違えるバグは、
+ほとんどの場合非常に明白であるため、見間違えようがありません。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; ああ。</code></pre>
+</div></div>
+<div class="paragraph"><p>それはもうおなかいっぱいだよ</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;linus&gt; とにかく。 私は寝る。まだ午前6時ではありませんが、
+      私には3人の子供がいて、子供らを送り出すために早朝に起きなければなりません。
+      私には素晴らしい睡眠が必要です。</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; :-)</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;njs`&gt; &lt;njs`&gt; infodumpに感謝します、
+    私は本当にGitパックの詳細を見つけることができませんでした :-)</code></pre>
+</div></div>
+<div class="paragraph"><p>そして今や、あなたは物語の顛末を知ったのです。</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2024-12-30 17:33:05 JST
+</div>
+</div>
+</body>
+</html>

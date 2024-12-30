@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.0" />
+<title>Parallel Checkout Design Notes</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Parallel Checkout Design Notes</h1>
+<span id="revdate">2024-12-30</span>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>「並列チェックアウト」(Parallel Checkout)機能は、複数のプロセスを使用して、ブロブの圧縮解除、コア内フィルターの適用、およびチェックアウト操作中に結果のコンテンツを作業ツリーに書き込む作業を並列化しようとします。 これは、 <code>clone</code> や <code>checkout</code> や <code>reset</code> や` sparse-checkout` などのすべてのチェックアウト関連コマンドで使用できます。</p></div>
+<div class="paragraph"><p>これらのコマンドは、以下の共通の基本構造を持っています:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+ステップ1: 現在のインデックスファイルをメモリに読み込みます。
+</p>
+</li>
+<li>
+<p>
+ステップ2: コマンドに基づいてメモリ内インデックスを変更し、更新が必要なすべてのキャッシュエントリに一時的なマークを付けます。
+</p>
+</li>
+<li>
+<p>
+ステップ3: 新しい候補インデックスに一致するように作業ツリーにデータを配置します。これには、更新されるすべてのキャッシュエントリの反復と、作業ツリー内の関連ファイルの削除、作成、または上書き作業が含まれます。
+</p>
+</li>
+<li>
+<p>
+ステップ4: 新しいインデックスをディスクに書き込みます。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>ステップ3が、ここで説明する「並列チェックアウト」作業の焦点です。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sequential_implementation">Sequential Implementation</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>ここで説明する、ステップ3の現在の実装は、3つの部分に分かれており、それぞれが独自の機能で実装されています。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+ステップ3a: <code>unpack-trees.c:check_updates()</code> には、 <code>cache_entry</code> の配列を反復処理する一連の処理ループが含まれています。この関数のメインループは、更新されるエントリごとに ステップ3b 関数を呼び出します。
+</p>
+</li>
+<li>
+<p>
+ステップ3b: <code>entry.c:checkout_entry()</code> は、ファイルの競合、衝突、および保存されていない変更について、既存の作業ツリーを調べます。必要に応じてファイルを削除し、先頭のディレクトリを作成します。書き込まれるエントリごとに ステップ3c 関数を呼び出します。
+</p>
+</li>
+<li>
+<p>
+ステップ3c: ： <code>entry.c:write_entry()</code> はブロブをメモリにロードし、必要に応じてsmudgeし、作業ツリーにファイルを作成し、smudgeされたコンテンツを書き込み、 <code>fstat()</code> または <code>lstat()</code> を呼び出します。収集された統計情報で、関連する <code>cache_entry</code> 構造体を更新します。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>ファイルの作成と削除の間に競合状態が発生する可能性があるため、ステップ3bを並行して実行することは安全ではありません。代わりに、並列チェックアウトフレームワークにより、シーケンシャルコードでステップ3bを処理し、並列ワーカーを使用して、ステップ3cからのシーケンシャル <code>entry.c:write_entry()</code> 関数呼び出しを置き換えます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rejected_multi_threaded_solution">Rejected Multi-Threaded Solution</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>最も「簡単な」(straightforward)実装は、 更新されるキャッシュエントリのセットを複数のスレッドに分散させることです。ただし、 オブジェクト指向データベース内のスレッドセーフでない関数のため、 並列操作を調整するためにロックを使用する必要があります。 このソリューションの初期のプロトタイプは、 マルチスレッド・チェックアウトによってシーケンシャルコードよりもパフォーマンスが向上することを示していましたが、 それでもロックの競合が多すぎました。 <code>perf</code> プロファイリングは、(SSD上の)ローカルLinuxクローン中のランタイムの約20％が機能のロックに費やされたことを示しました。 このため、 このアプローチは却下され、複数の子プロセス利用を行うことでパフォーマンスが向上しました。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_multi_process_solution">Multi-Process Solution</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>並列チェックアウトは、前述のステップ3を変更して、複数の <code>checkout--worker</code> バックグラウンドプロセスを使用して作業を分散します。長時間実行されるワーカープロセスは、既存のrun-command APIを使用するフォアグラウンドGitコマンドによって制御されます。</p></div>
+<div class="sect2">
+<h3 id="_overview">Overview</h3>
+<div class="paragraph"><p>ステップ3bはわずかに変更されています。チェックアウトするエントリごとに、メインプロセスは以下の手順を実行します:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+M1: 作業ツリーに、このエントリによって上書きされる、追跡されていないファイルまたはクリーンでないファイルがあるかどうかを確認し、続行する(ファイルを削除する)かどうかを決定します。
+</p>
+</li>
+<li>
+<p>
+M2: 先頭のディレクトリを作成します。
+</p>
+</li>
+<li>
+<p>
+M3: エントリのパスの変換属性をロードします。
+</p>
+</li>
+<li>
+<p>
+M4: エントリのタイプと変換属性に基づいて、エントリが並列チェックアウトの対象であるかどうかを確認します(詳しくは後述します)。適格である場合は、エントリとロードされた属性をキューに入れて、後でエントリを並行して書き込みます。そうでない場合は、デフォルトのシーケンシャルコードを使用して、すぐにエントリを記述します。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>注: ワーカーはメインプロセスのインデックス状態にアクセスできないため、各エントリに関連付けられた変換属性を保存します。そのため、ワーカーは属性を自分でロードできません(また、属性はエントリを適切にsmudgeするために必要です)。 さらに、これは、 (1)属性を2回ロードする必要がなく、 (2)属性機構がパスを順番に処理するように最適化されているため、パフォーマンスにプラスの影響を与えます。</p></div>
+<div class="paragraph"><p>すべてのエントリが上記の手順を通過した後、メインプロセスは、キューに入れられたエントリの数がワーカー間で分散するのに十分であるかどうかを確認します。 そうでない場合は、それらを順番に書き込みます。それ以外の場合は、ワーカーを生成し、キューに入れられたエントリを連続したチャンクに均一に分散します。これは、2人のワーカーが同じディレクトリに同時に書き込む可能性を最小限に抑えることを目的としています。これにより、カーネルでのロックの競合が増える可能性があります。</p></div>
+<div class="paragraph"><p>次に、割り当てられたアイテムごとに、各ワーカーは以下のようになります:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+W1: エントリのパスの先頭部分にディレクトリ以外のファイルがあるかどうか、またはエントリのパスにファイルがすでに存在するかどうかを確認します。その場合は、エントリに <code>PC_ITEM_COLLIDED</code> のマークを付けてスキップします(これについては後で詳しく説明します)。
+</p>
+</li>
+<li>
+<p>
+W2: ファイルを作成します(O_CREAT と O_EXCLを使用)。
+</p>
+</li>
+<li>
+<p>
+W3: ブロブをメモリにロードします(インフレーションとデルタ再構築)。
+</p>
+</li>
+<li>
+<p>
+W4: 行末変換や再エンコードなど、必要なインプロセスフィルターを適用します。
+</p>
+</li>
+<li>
+<p>
+W5: 結果を、W2で開かれたファイルデスクリプターに書き込みます。
+</p>
+</li>
+<li>
+<p>
+W6: 書き込んだパスで <code>fstat()`または `lstat()</code> を呼び出し、操作の終了ステータスとアイテムの識別番号とともに、結果をメインプロセスに送り返します。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>注意: 可能な場合、ステップW3からW5はストリーミング機構に委任され、ブロブ全体をメモリに保持する必要がなくなることに注意してください。</p></div>
+<div class="paragraph"><p>ワーカーがブロブの読み取りまたは作業ツリーへの書き込みに失敗した場合、空のファイルが残らないように、作成されたファイルを削除します。これは、ワーカーがファイルを削除できる「唯一の」時間です。</p></div>
+<div class="paragraph"><p>前述のように、チェックアウト操作をブロックするファイルを削除するのはメインプロセスの責任です(または、削除によってデータが失われ、ユーザーが <code>--force</code> を要求しなかった場合は中止します)。これは、競合状態を回避し、ステップW1でパスの衝突を適切に検出するために重要です。</p></div>
+<div class="paragraph"><p>ワーカーがアイテムの書き込みと必要な情報の返送を完了した後、メインプロセスは以下の2ステップで結果を処理します:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+最初に、ワーカーから送信された <code>lsat()</code> 情報でメモリ内のインデックスを更新します。(この情報は次のステップで必要になる可能性があるため、これを最初に実行する必要があります。)
+</p>
+</li>
+<li>
+<p>
+次に、ディスクに、衝突したアイテム(つまり、 <code>PC_ITEM_COLLIDED</code> でマークされたアイテム)を書き込みます。これについては、以下で詳しく説明します。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_collisions">Path Collisions</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>パスの衝突は、2つの異なるパスがファイルシステムの同じエントリに対応している場合に発生します。 例えば、パス <em>a</em> と <em>A</em> は、大文字と小文字を区別しないファイルシステムで衝突します。</p></div>
+<div class="paragraph"><p>シーケンシャルチェックアウトは、チェックアウト前に作業ツリーにすでに存在していたファイルを処理するのと同じ方法で衝突を処理します。基本的には、書き込みたいパスがディスク上に既に存在するかどうかをチェックし、既存のファイルに未保存のデータがないことを確認してから、上書きします。 （よりわかりやすくするために、既存のファイルを削除して新しいファイルを作成します。）したがって、チェックアウトする衝突ファイルが複数ある場合、シーケンシャルなコードではそれぞれを書き込みますが、実際には最後のファイルのみがディスク上に残ります。</p></div>
+<div class="paragraph"><p>並列チェックアウトは、同じ動作を再現することを目的としています。 ただし、ワーカーにディスク上の同じファイルにあわてて書き込むことはできません。代わりに、ワーカーは、チェックアウトするエントリが既存のファイルと衝突するタイミングを検出し、 <code>PC_ITEM_COLLIDED</code> でマークします。 後で、メインプロセスは、競合状態のリスクなしに、これらのエントリを順番に <code>checkout_entry()</code> にフィードバックできます。クローンでは、これには、従来のシーケンシャルチェックアウトと同様に、衝突するエントリにマークを付けて、後でユーザーに警告を発する効果もあります。</p></div>
+<div class="paragraph"><p>ワーカーは、同時に書き込まれるエントリ間の衝突と、並列適格エントリと不適格エントリ間の衝突の両方を検出できます。衝突検出の一般的な考え方は非常に単純です。並列に適格なエントリごとに、メインプロセスは、このエントリの書き込みを妨げるすべてのファイルを(キューに入れる前に)削除する必要があります。これには、エントリの先頭のパスにあるディレクトリ以外のファイルが含まれます。 後で、ワーカーにエントリが割り当てられると、非ディレクトリファイルと、エントリのパスにある既存のファイルが再度検索されます。 これらのチェックのいずれかで何かが見つかった場合、ワーカーはパスの衝突があったことを認識します。</p></div>
+<div class="paragraph"><p>並列チェックアウトでは、パスの衝突を、チェックアウト前にファイルが作業ツリーにすでに存在していた場合と区別できるため、代わりに、衝突するエントリのチェックアウトをスキップすることもできます。ただし、書き込まれない各エントリには、インデックスにNULLの <code>lstat()</code> フィールドがあります。 これにより、エントリがダーティであるかどうかを確認するためにファイルシステムに移動する必要があるため、インデックスを更新する必要がある後続のコマンドのパフォーマンスが低下する可能性があります。 したがって、衝突するグループにN個のエントリがあり、そのうちの1つだけを書き込み、 <code>lstat()</code> を実行することにした場合、後続のすべての <code>git-status</code> は、書き込まれたファイルをN-1回読み取り、変換、およびハッシュする必要があります。衝突するすべてのエントリをチェックアウトすることにより（シーケンシャルコードのように）、チェックアウト中にオーバーヘッドを1回だけ支払います。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_eligible_entries_for_parallel_checkout">Eligible Entries for Parallel Checkout</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>前述のように、 <code>checkout_entry()</code> に渡されたすべてのエントリが並列チェックアウトの対象と見なされるわけではありません。 具体的には、以下を除外します:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+シンボリックリンク。パスの衝突と組み合わせて、ワーカーが間違った場所にファイルを書き込む可能性がある競合状態を回避するため。たとえば、大文字と小文字を区別しないファイルシステムでシンボリックリンク <em>a</em> &#8594; <em>b</em> と通常のファイル <em>A/f</em> を同時にチェックアウトすると、競合状態のため <code>a/f</code> でファイル <em>A/f</em> を書き込む可能性があります。
+</p>
+</li>
+<li>
+<p>
+外部フィルター（「ワンショット」フィルターまたは長時間実行プロセスフィルター）を必要とする通常のファイル。 これらのフィルターはGitのブラックボックスであり、独自の内部ロックまたは非同時の仮定を持っている場合があります。 したがって、複数のインスタンスを並行して実行することは安全ではない可能性があります。
+</p>
+<div class="paragraph"><p>さらに、長時間実行されるフィルターは、遅延チェックアウト機能を使用して、フィルター処理されたブロブの返送を延期する場合があります。 遅延チェックアウトキューと並列チェックアウトキューは互換性がないため、分離したままにする必要があります。</p></div>
+<div class="paragraph"><p>注：行末変換や再エンコードなど、内部フィルターのみを必要とする通常のファイルは、並列チェックアウトの対象となります。</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>不適格なエントリは、ワーカーを生成する「前に」従来のシーケンシャルコードパスによってチェックアウトされます。</p></div>
+<div class="paragraph"><p>注：サブモジュールのファイルは、並列チェックアウトの対象にもなります（上記の除外カテゴリのいずれにも該当しない場合）。 ただし、各サブモジュールは独自の子プロセスでチェックアウトされるため、スーパープロジェクトとサブモジュールのファイルを同じ並列チェックアウトプロセスまたはキューに混在させることはありません。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_api">The API</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>並列チェックアウトAPIは、チェックアウト機構の現在のユーザーへの変更を最小限に抑えることを目的として設計されました。 これは、シーケンシャルまたはパラレルチェックアウトのために別の関数を呼び出す必要がないことを意味します。 すでに述べたように、この機能が有効でエントリが適格である場合、 <code>checkout_entry()</code> は指定されたエントリを並列チェックアウトキューに自動的に挿入します。 それ以外の場合は、シーケンシャルコードを使用して、エントリをすぐに書き込みます。 一般に、並列チェックアウトAPIの呼び出し元は以下のようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>int pc_workers, pc_threshold, err = 0;
+struct checkout state;
+
+get_parallel_checkout_configs(&amp;pc_workers, &amp;pc_threshold);
+
+/*
+ * This check is not strictly required, but it
+ * should save some time in sequential mode.
+ */
+if (pc_workers &gt; 1)
+        init_parallel_checkout();
+
+for (each cache_entry ce to-be-updated)
+        err |= checkout_entry(ce, &amp;state, NULL, NULL);
+
+err |= run_parallel_checkout(&amp;state, pc_workers, pc_threshold, NULL, NULL);</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2024-12-30 17:33:06 JST
+</div>
+</div>
+</body>
+</html>

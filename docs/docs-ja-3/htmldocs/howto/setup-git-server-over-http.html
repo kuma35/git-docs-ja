@@ -1,0 +1,1009 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.0" />
+<title>How to setup Git server over http</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>How to setup Git server over http</h1>
+<span id="revdate">2024-12-30</span>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">このドキュメントは2006年のものです。これ以来、多くのことが行われています。このドキュメントは、主にあなたのWebホストがCGIに対応していない場合に関連します。 他のほとんどの人は、代わりに <a href="../git-http-backend.html">git-http-backend(1)</a> を見る必要があります。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Apacheは、人々が自分でコンパイルするのが好きなパッケージの1つであり、それ以外の人は官僚主義者を夢見るDebianを好むため、すべての人に役立つガイドラインを提供することは不可能です。 このドキュメントをお気に入りのディストリビューションに合わせて作成するには、 <a href="mailto:git@vger.kernel.org">git@vger.kernel.org</a> のメーリングリストにフィードバックを送信してください。</p></div>
+<div class="paragraph"><p>必要なもの:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Apache Webサーバーを使用する
+</p>
+<div class="paragraph"><p>Debianの場合:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ apt-get install apache2</code></pre>
+</div></div>
+<div class="paragraph"><p>Apache2 をデフォルトで起動するようにするには、 /etc/default/apache2 を編集して NO_START=0 を設定します。</p></div>
+</li>
+<li>
+<p>
+以下の構成ファイルを編集できます。
+</p>
+<div class="paragraph"><p>これは /etc/httpd の下にあります。 そうでなければ、お手元のApacheのドキュメントを参照してください。</p></div>
+<div class="paragraph"><p>Debianの場合:</p></div>
+<div class="paragraph"><p>これは /etc/apache2 の下のファイルを編集できることを意味します</p></div>
+</li>
+<li>
+<p>
+以下のようにして restart 可能です。
+</p>
+<div class="paragraph"><p><code>apachectl --graceful</code> しようとします。 もし、できない場合は、 apacheを停止して再起動してください。 注意: これにより、あなたサーバーへのアクティブな接続が中止される可能性があることに注意してください。</p></div>
+<div class="paragraph"><p>Debianの場合:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ /etc/init.d/apache2 restart</code></pre>
+</div></div>
+<div class="paragraph"><p>または</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ /etc/init.d/apache2 force-reload</code></pre>
+</div></div>
+<div class="paragraph"><p>(これは、同一の事をしていると思います)</p></div>
+<div class="paragraph"><p>これにより、 /etc/apache2/mods-enabled から /etc/apache2/mods-available へのシンボリックリンクを追加します。</p></div>
+</li>
+<li>
+<p>
+ディレクトリをchownする権限がある
+</p>
+</li>
+<li>
+<p>
+クライアントにGitをインストール
+</p>
+</li>
+<li>
+<p>
+サーバーにGitがインストールされているか、クライアントにwebdavクライアントがあります。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>実際には、これは、あなたがrootになれるか、事前構成されたWebDAVサーバーを使用していることを意味します。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_1_setup_a_bare_git_repository">Step 1: setup a bare Git repository</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>執筆時点では、git-http-pushはGitリポジトリをリモートで作成できません。 したがって、Gitを使用してサーバー側でそれを行う必要があります。 もう1つのオプションは、クライアントで空のベアリポジトリを生成し、それをWebDAVクライアントを使用してサーバーにコピーすることです(これは、Gitがサーバーにインストールされていない場合の唯一のオプションです)。</p></div>
+<div class="paragraph"><p>Apacheが提供するディレクトリのDocumentRootの下にディレクトリを作成します。 例として /usr/local/apache2 を使用しますが、 <code>grep DocumentRoot /where/ever/httpd.conf</code> を試してあなたのrootを探してください:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ cd /usr/local/apache/htdocs
+$ mkdir my-new-repo.git</code></pre>
+</div></div>
+<div class="paragraph"><p>Debianの場合:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ cd /var/www
+$ mkdir my-new-repo.git</code></pre>
+</div></div>
+<div class="paragraph"><p>ベアリポジトリを初期化する</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ cd my-new-repo.git
+$ git --bare init</code></pre>
+</div></div>
+<div class="paragraph"><p>オーナー権限をWebサーバーの資格情報に変更します。 <code>grep ^User httpd.conf</code> と <code>grep ^Group httpd.conf</code> を使って調べて下さい:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ chown -R www.www .</code></pre>
+</div></div>
+<div class="paragraph"><p>Debianの場合:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ chown -R www-data.www-data .</code></pre>
+</div></div>
+<div class="paragraph"><p>Apacheがどのユーザーとして実行されているかわからない場合は、代わりに <code>chmod -R a+w .</code> を実行し、後で作成されるファイルを調べて、権限を適切に設定することができます。</p></div>
+<div class="paragraph"><p>apache2をrestartし、 <a href="http://server/my-new-repo.git">http://server/my-new-repo.git</a> がディレクトリリストを提供するかどうかを確認します。 そうでない場合は、apacheが正常に起動したかどうかを確認してください。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_2_enable_dav_on_this_repository">Step 2: enable DAV on this repository</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>まず、dav_moduleがロードされていることを確認します。 このためには、 httpd.conf に以下を挿入します:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>LoadModule dav_module libexec/httpd/libdav.so
+AddModule mod_dav.c</code></pre>
+</div></div>
+<div class="paragraph"><p>また、DAV操作のロックに使用されるファイルである、以下行が存在することを確認してください:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>DAVLockDB "/usr/local/apache2/temp/DAV.lock"</code></pre>
+</div></div>
+<div class="paragraph"><p>Debianでは、これらの手順は以下の手順で実行できます:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>apacheのdavおよびdav_fsモジュールを有効にします:
+$ a2enmod dav_fs
+(dav_fsは不要かもしれませんが、私には分からないので、念の為)
+$ a2enmod dav
+DAV lock が /etc/apache2/mods-available/dav_fs.conf に記述されています:
+  DAVLockDB /var/lock/apache2/DAVLock</code></pre>
+</div></div>
+<div class="paragraph"><p>もちろん、別の場所を指すこともできますが、文字列は実際には一部のApache構成では単なるプレフィックスであるため、Apacheの実行ユーザーでディレクトリを書き込み可能にする必要があります。</p></div>
+<div class="paragraph"><p>次に、以下のようなものをhttpd.confに追加します</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;Location /my-new-repo.git&gt;
+   DAV on
+   AuthType Basic
+   AuthName "Git"
+   AuthUserFile /usr/local/apache2/conf/passwd.git
+   Require valid-user
+&lt;/Location&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Debianの場合:
+  以下の内容の /etc/apache2/conf.d/git.conf を作成(または追加):</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;Location /my-new-repo.git&gt;
+   DAV on
+   AuthType Basic
+   AuthName "Git"
+   AuthUserFile /etc/apache2/passwd.git
+   Require valid-user
+&lt;/Location&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Debian は /etc/apache2/conf.d の下にあるすべてのファイルを自動的に読み取ります。</code></pre>
+</div></div>
+<div class="paragraph"><p>パスワードファイルは別の場所に置くこともできますが、Apacheで読み取り可能である必要があり、かつ、世界中からは読み取り不可にする必要があります。</p></div>
+<div class="paragraph"><p>このファイルは以下のコマンドラインで作成します
+    $ htpasswd -c /usr/local/apache2/conf/passwd.git &lt;user&gt;</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Debianの場合:
+  $ htpasswd -c /etc/apache2/passwd.git &lt;user&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>あなたはパスワードの入力を求められ、ファイルが作成されます。 その後のhtpasswdの呼び出しでは、既存のファイルに追加するため、 <code>-c</code> オプションを省略する必要があります。</p></div>
+<div class="paragraph"><p>あなたはApacheをrestartする必要があります。</p></div>
+<div class="paragraph"><p>次に、あなたのブラウザで <a href="http://&lt;username&gt;@&lt;servername&gt;/my-new-repo.git">http://&lt;username&gt;@&lt;servername&gt;/my-new-repo.git</a> にアクセスして、パスワードが要求され、正しいパスワードを受け入れるかどうかを確認します。</p></div>
+<div class="paragraph"><p>Debianの場合:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>WebDAV部分をテストするには、以下のようにします:</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ apt-get install litmus
+$ litmus http://&lt;servername&gt;/my-new-repo.git &lt;username&gt; &lt;password&gt;</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>ほとんどのテストに合格する必要があります。</code></pre>
+</div></div>
+<div class="paragraph"><p>WebDAVをテストするためのコマンドラインツールは cadaver です。 あなたがGUIが必要な場合は、たとえば、konqueror はWebDAV URLを「webdav://&#8230;」または「webdavs://&#8230;」として開くことができます。</p></div>
+<div class="paragraph"><p>Windowsを使用している場合、XP以降のInternet ExplorerはWebDAVをサポートしています。 これを行うには、Internet Explorer → Open Location → <a href="http://&lt;servername&gt;/my-new-repo.git">http://&lt;servername&gt;/my-new-repo.git</a> [x] Open aswebfolder → login を実行します。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_3_setup_the_client">Step 3: setup the client</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>HTTPをサポートしていることを確認してください。つまり、Gitがlibcurl(7.10より新しいバージョン)を伴ってビルドされていることを確認してください。 引数のないコマンド <code>githttp-push</code> は、使用法メッセージを表示するはずです。</p></div>
+<div class="paragraph"><p>次に、以下をあなたの $HOME/.netrc に追加します(なしでも実行できますが、パスワードの入力を毎回求められます)。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>machine &lt;servername&gt;
+login &lt;username&gt;
+password &lt;password&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>&#8230;そしてパーミッションを設定:
+     chmod 600 ~/.netrc</p></div>
+<div class="paragraph"><p>IPアドレス指定でWebサーバーにアクセスする場合は、サーバー名の代わりにIPアドレスを入力する必要があります。</p></div>
+<div class="paragraph"><p>すべてがOKかどうかを確認するには、以下を実行します:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>curl --netrc --location -v http://&lt;username&gt;@&lt;servername&gt;/my-new-repo.git/HEAD</code></pre>
+</div></div>
+<div class="paragraph"><p>&#8230;これにより、サーバー上のHEADファイルのコンテンツである <code>ref: refs/heads/master</code> のようなものが得られるはずです。</p></div>
+<div class="paragraph"><p>次に、エクスポートするプロジェクトを含むあなたの既存のリポジトリにリモートを追加します:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git-config remote.upload.url \
+    http://&lt;username&gt;@&lt;servername&gt;/my-new-repo.git/</code></pre>
+</div></div>
+<div class="paragraph"><p>最後に <code>/</code> を付けることが重要です。 これがないと、サーバーはgit-http-pushが(まだ)理解できないリダイレクトを送信し、git-http-pushはリクエストを無限に繰り返します。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_4_make_the_initial_push">Step 4: make the initial push</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>あなたのクライアントリポジトリから以下を実行します</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git push upload master</code></pre>
+</div></div>
+<div class="paragraph"><p>これにより、ブランチ <code>master</code>(エクスポートするブランチと見なされます)が、以前にgit-configで定義した <code>upload</code> というリポジトリにプッシュされます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_プロキシの使用">プロキシの使用:</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>HTTP(S)プロキシの背後からWebDAVサーバーにアクセスする必要がある場合は、変数 <code>all_proxy</code> を <code>http://proxy-host.com:port</code> または <code>http://login-on-proxy:passwd-on-proxy@proxy-host.com:port</code> に設定します。 詳細については、 <code>man curl</code> を参照してください。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_トラブルシューティング">トラブルシューティング:</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>もしgit-http-pushが以下のように言ったら</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Error: no DAV locking support on remote repo http://...</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、Webサーバーが認証を受け入れなかったことを意味します。 httpd.conf や .netrc や アップロード先のURLで、ユーザー名とパスワードが一致していることを確認してください。</p></div>
+<div class="paragraph"><p>git-http-pushがブロブを移動しようとしたときにエラー(22/502)を表示する場合は、Webサーバーがリクエストでその名前を認識していないことを意味します。 これは、Apacheを起動した後、ネットワークインターフェイスを無効にしたときに発生する可能性があります。 単純にApacheを再起動するだけOKです。</p></div>
+<div class="paragraph"><p>(22/502)のようなエラーは、(curlエラーコード/httpエラーコード)形式です。 したがって、(22/404)は、サーバーで「見つかりません」のようなものを意味します。</p></div>
+<div class="paragraph"><p>/usr/local/apache2/logs/error_log を読むと役立つ事がよくあります。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Debianの場合: 代わりに /var/log/apache2/error.log を読みます。</code></pre>
+</div></div>
+<div class="paragraph"><p>あなたがHTTPSの場所にアクセスすると、GitはSSL証明書の検証に失敗する可能性があります(これはリターンコード60です)。 http.sslVerify=false を設定すると、問題の診断に役立ちますが、セキュリティチェックは削除されます。</p></div>
+<div class="paragraph"><p>Debianリファレンス: <a href="http://www.debian-administration.org/articles/285">http://www.debian-administration.org/articles/285</a></p></div>
+<div class="paragraph"><p>著者
+  Johannes Schindelin &lt;<a href="mailto:Johannes.Schindelin@gmx.de">Johannes.Schindelin@gmx.de</a>&gt;
+  Rutger Nijlunsing &lt;<a href="mailto:git@wingding.demon.nl">git@wingding.demon.nl</a>&gt;
+  Matthieu Moy &lt;<a href="mailto:Matthieu.Moy@imag.fr">Matthieu.Moy@imag.fr</a>&gt;</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2024-12-30 17:36:29 JST
+</div>
+</div>
+</body>
+</html>
