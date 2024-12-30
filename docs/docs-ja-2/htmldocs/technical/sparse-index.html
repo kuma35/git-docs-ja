@@ -1,0 +1,968 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 9.1.1" />
+<title>Git Sparse-Index Design Document</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Git Sparse-Index Design Document</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>スパースチェックアウト(疎なチェックアウト)(sparse-checkout)機能により、ユーザーはその作業ディレクトリを HEAD
+のファイルのサブセットに専念させることができます。 <code>core.sparseCheckoutCone</code> によって有効化されるコーン モード
+パターンにより、HEAD のどのファイルがスパース チェックアウト コーンに属するかを検出する、非常に高速なパターン マッチングが可能になります。</p></div>
+<div class="paragraph"><p>Git 作業ディレクトリの 3 つの重要な規模的側面は以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>HEAD</code>: <code>HEAD</code> にはいくつのファイルが存在しますか?
+</p>
+</li>
+<li>
+<p>
+存在している: スパース チェックアウト コーン(sparse-checkout cone)内にあるファイルの数。
+</p>
+</li>
+<li>
+<p>
+変更されている: ユーザーが作業ディレクトリで変更したファイルの数は?
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>ランダウの漸近記法(big-O notation) O(X) を使用して、特定の操作がこれらの側面に関してどれだけコストがかかるかを示します。</p></div>
+<div class="paragraph"><p>これらの側面は、その大きさの順に並べられています。ユーザーは (通常)、入力されたファイルよりも少ないファイルを変更します。また、私達は <code>HEAD</code>
+でのみファイルを入力できます。</p></div>
+<div class="paragraph"><p>これらの側面に極度の不均衡がある場合、問題が発生します。 たとえば、<code>HEAD</code> に数百万のパスが含まれているが、入力されたセットには数万しかない場合、
+<code>git status</code> や <code>git add</code> などのコマンドは、 O(入力) ではなく O(<code>HEAD</code>)
+操作を必要とする操作によって支配される可能性があります。 主に、コストはインデックスの解析と再書き込みにあります。インデックスは主に、
+<code>SKIP_WORKTREE</code> ビットでマークされた <code>HEAD</code> のファイルで満たされます。</p></div>
+<div class="paragraph"><p>スパースインデックス(sparse-index)は、インデックスを読み取り、O(<code>HEAD</code>) から O(Populated)
+に変更するこれらのコマンドを使用することを意図しています。 これを行うには、インデックス形式を大幅に変更する必要があります。つまり「sparse
+directory」エントリを追加します。</p></div>
+<div class="paragraph"><p>コーンモードパターンを使用すると、ディレクトリ全体の内容がスパースチェックアウト定義の範囲外になる時期を検出できます。
+含まれるすべてのファイルを個別のエントリとしてリストする代わりに、スパースインデックス(sparse-index)にはディレクトリ名を持つエントリが含まれ、
+<code>HEAD</code> でツリーのオブジェクト ID を参照し、 <code>SKIP_WORKTREE</code> ビットでマークされます。
+そのディレクトリ内のパスの詳細を見つける必要がある場合は、ツリーを解析してそのリストを見つけることができます。</p></div>
+<div class="paragraph"><p>執筆時点では、スパースディレクトリエントリ(sparse-directory
+entries)は、インデックス形式とそのメモリ内データ構造に関する期待に反しています。
+コードベースには、すべてのインデックスエントリを反復処理してファイルのみを表示することを期待する利用者がが多数います。
+実際、これらのループは、ステージングされたすべてのファイルへの参照を想定しています。 これを処理する 1
+つの方法は、ツリーを解析して、インデックスが読み込まれるときに、スパース ディレクトリ エントリをそのツリー内のすべてのファイルに置き換えることです。
+ただし、ツリーの解析はインデックス形式の解析よりも遅いため、インデックスをそのままにしておいた場合よりも処理が遅くなります。
+計画では、これらの統合をすべて「疎認識」(sparse
+aware)にすることで、ツリー解析によるこの拡張が不要になり、完全なインデックスを使用する場合よりも使用するリソースが少なくなります。</p></div>
+<div class="paragraph"><p>以下の実装計画は、スパースインデックス(sparse-index)とゆっくりと統合するための 4 つのフェーズに従います。 その意図は、Git
+コマンドを段階的に更新して、大幅な速度低下なしにスパースインデックスと安全にやり取りすることです。
+これは常に可能であるとは限りませんが、ユーザーが日常業務で必要とする主要なコマンドが劇的に改善されることを願っています。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_phase_i_format_and_initial_speedups">Phase I: Format and initial speedups</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このフェイズで、Git はスパース インデックスを有効にして安全に解析する方法を学習します。
+メモリ内データ構造を利用する全ての機構が、すべてのファイルが「HEAD」にあるという現在の想定で動作できるように、保護が配置されます。</p></div>
+<div class="paragraph"><p>最初に、すべてのインデックス解析でヘルパーメソッド <code>ensure_full_index()</code>
+が呼び出されます。このメソッドは、インデックスをスキャンして (ツリーを指している) スパースディレクトリ エントリを探し、ツリー
+オブジェクトを解析することによって (ブロブの内容を含む) パスの完全なリストに置き換えます。 これは、すべてのケースで遅くなります。
+動作の唯一の顕著な変更点は、シリアル化されたインデックス ファイルにスパース ディレクトリ エントリが含まれていることです。</p></div>
+<div class="paragraph"><p>まず、私達は新しい必須インデックス拡張子 <code>sdir</code> を使用して、ファイル形式バージョン 2と3と4 のインデックスにスパース ディレクトリ
+エントリを挿入できるようにします。
+これは、sparse-indexを理解しないGitのバージョンが操作することを防ぐ一方で、sparse-indexを理解しないツールは、インデックスと対話しない限り、リポジトリ上で操作することを可能にします。
+新しいフォーマットであるインデックスv5が導入されると、デフォルトでスパースディレクトリのエントリーが含まれるようになる予定です。また、インデックスを改善するために検討されている他の機能も導入される可能性があります。</p></div>
+<div class="paragraph"><p>次に、 <code>ensure_full_index()</code> または <code>expand_index_to_path()</code>
+への呼び出しを挿入することにより、インデックスの利用側がスパースインデックスでの操作から保護されます。 特定のパスが要求された場合、それらは
+<code>index_file_exists()</code> や <code>index_name_pos()</code> API 呼び出し内から保護され、必要に応じて
+<code>ensure_full_index()</code> を呼び出します。 ここでの意図は、sparse-checkout
+と対話するときに既存の動作を維持することです。 私達はテストなしで偶然に変更が発生することは臨んでいません。
+これらの場所の多くは、保護ガードを削除する前に変更する必要はありませんが、期待される動作が発生することを確認するためのテストなしで変更するべきではありません。</p></div>
+<div class="paragraph"><p>まばらなインデックスが存在する場合、またはより一般的には、スパースチェックアウトのシナリオで、一部のコマンドの動作を「変更」することが望ましい場合があります。
+そのような場合、これらは慎重に伝達され、テストされるべきです。 このフェーズにおいては、このような動作の変更は意図されていません。</p></div>
+<div class="paragraph"><p>コードベースのスキャン中、キャッシュ エントリのすべての反復で「ensure_full_index()」チェックが必要なわけではありません。
+基本的な理由は以下のとおりです:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+ループはゼロ以外のステージのエントリをスキャンしています。 これらのエントリは、スパース ディレクトリ エントリに折りたたまれません。
+</p>
+</li>
+<li>
+<p>
+ループはサブモジュールをスキャンしています。 これらのエントリは、スパース ディレクトリ エントリに折りたたまれません。
+</p>
+</li>
+<li>
+<p>
+ループはインデックス API の一部であり、特にフォーマットの読み取りまたは書き込みに関するものです。
+</p>
+</li>
+<li>
+<p>
+ループは、キャッシュ エントリの正しい順序をチェックしており、スパース ディレクトリ エントリが正しい場所にある場合にのみ正しいです。
+</p>
+</li>
+<li>
+<p>
+ループは、「SKIP_WORKTREE」ビットが設定されたエントリを無視するか、またはスパースディレクトリ エントリをすでに認識しています。
+</p>
+</li>
+<li>
+<p>
+分割インデックス機能を使用する場合、この時点でスパースインデックスは無効になるため、分割インデックス API を保護するための努力は行われません。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>これらのガードを挿入した後でも、<code>command_requires_full_index</code> リポジトリ設定を使用して、ほとんどの Git
+コマンドのスパース
+インデックスを拡張し続けます。この設定はデフォルトでオンになり、すべてのインデックス操作が適切にガードされているという十分な確信が得られるまで、1つずつビルトインを無効にしていきます。</p></div>
+<div class="paragraph"><p>このフェーズを完了するために、コマンド <code>git status</code> と <code>git add</code> は sparse-index
+と統合され、O(Populated) パフォーマンスで動作するようになります。 これらは、sparse-checkout
+定義の内外での操作について慎重にテストされます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_phase_ii_careful_integrations">Phase II: Careful integrations</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このフェーズでは、すべてのインデックス拡張機能と API がスパースインデックスで適切に機能することを確認することに重点を置きます。 これには、特に
+sparse-checkout 定義の外で作業ディレクトリと対話する操作について、テスト範囲を大幅に拡大する必要があります。
+これらの動作の一部は、<code>t1092-sparse-checkout-compatibility.sh</code>
+で既に失敗としてマークされている一部のテストなど、望ましいものではない場合があります。</p></div>
+<div class="paragraph"><p>特別な統合が必要なインデックス拡張は以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+FS Monitor
+</p>
+</li>
+<li>
+<p>
+Untracked cache
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>これらの機能を統合しながら、インデックスと対話するためのより優れた API につながる可能性のあるパターンを探す必要があります。 一般的な使用パターンを
+API 呼び出しにまとめると、スパースディレクトリを慎重に処理する必要がある場所の数を減らすことができます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_phase_iii_important_command_speedups">Phase III: Important command speedups</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>この時点で、スパース ディレクトリ ロジックをテストおよび実装するためのパターンは比較的安定しているはずです。 このフェーズでは、インデックスを使用して
+O(Populated) として動作する最も一般的なビルトインのいくつかを更新することに焦点を当てます。
+以下は、この時点で統合する価値のあるコマンドの潜在的なリストです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>git commit</code>
+</p>
+</li>
+<li>
+<p>
+<code>git checkout</code>
+</p>
+</li>
+<li>
+<p>
+<code>git merge</code>
+</p>
+</li>
+<li>
+<p>
+<code>git rebase</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>うまくいけば、「git merge」や「git rebase」などのコマンドは、代わりに、マージ ORT
+戦略などのインデックスをデータ構造として使用しないマージ アルゴリズムの恩恵を受けることができます。
+これらのトピックが成熟するにつれて、sparse-index 機能を使用して、デフォルトでリポジトリの ORT 戦略を有効にする可能性があります。</p></div>
+<div class="paragraph"><p><code>git status</code> および <code>git add</code> とともに、これらのコマンドは、作業ディレクトリとのユーザーの対話の大部分をカバーします。
+さらに、以下のコマンドと統合できます:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>git grep</code>
+</p>
+</li>
+<li>
+<p>
+<code>git rm</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>これらは、sparse-checkout 定義を持つリポジトリで動作が変わる可能性があるものとして提案されています。 スパース
+インデックスを使用する場合は、この動作を自動的に含めるとよいでしょう。 動作の切り替えをユーザーに明確にするには、ある程度明確にする必要があります。</p></div>
+<div class="paragraph"><p>このフェーズは、トピック間の競合があまりなく並行作業が可能な最初のフェーズです。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_phase_iv_the_long_tail">Phase IV: The long tail</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>この最後のフェーズは、「フェーズ」ではなく、これまでのすべての作業の後の「新常態」(the new normal)です。</p></div>
+<div class="paragraph"><p>まず、<code>command_requires_full_index</code> オプションを削除して、API ガードにヒットした場合にのみ展開することができます。</p></div>
+<div class="paragraph"><p>O(Populated) として動作するために特別な注意を払うことができる多くの Git
+コマンドがありますが、いくつかは非常にまれなため、sparse-index が存在する場合に追加のオーバーヘッドを残しても問題ありません。</p></div>
+<div class="paragraph"><p>更新に役立つコマンドを以下に示します:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>git sparse-checkout set</code>
+</p>
+</li>
+<li>
+<p>
+<code>git am</code>
+</p>
+</li>
+<li>
+<p>
+<code>git clean</code>
+</p>
+</li>
+<li>
+<p>
+<code>git stash</code>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2022-08-08 17:37:38 JST
+</div>
+</div>
+</body>
+</html>
