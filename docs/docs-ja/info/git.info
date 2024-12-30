@@ -1,0 +1,5675 @@
+This is git.info, produced by makeinfo version 6.7 from
+user-manual.texi.
+
+INFO-DIR-SECTION Development
+START-INFO-DIR-ENTRY
+* Git: (git).           A fast distributed revision control system
+END-INFO-DIR-ENTRY
+
+
+File: git.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+Git User Manual
+***************
+
+* Menu:
+
+* Introduction::
+* Repositories and Branches::
+* Exploring Git history::
+* Gitでの開発作業::
+* Sharing development with others::
+* Rewriting history and maintaining patch series::
+* Advanced branch management::
+* Gitの概念::
+* Submodules::
+* Low-level Git operations::
+* Hacking Git::
+* Git用語集::
+* Git Quick Reference::
+* Notes and todo list for this manual::
+
+— The Detailed Node Listing —
+
+Repositories and Branches
+
+* How to get a Git repository::
+* プロジェクトの別のバージョンをチェックアウトする方法::
+* Understanding History; Commits::
+* Manipulating branches::
+* 新しいブランチを作成せずに古いバージョンを調べる::
+* Examining branches from a remote repository::
+* Naming branches, tags, and other references: Naming branches; tags; and other references.
+* Updating a repository with git fetch::
+* Fetching branches from other repositories::
+
+Exploring Git history
+
+* How to use bisect to find a regression::
+* Naming commits::
+* Creating tags::
+* Browsing revisions::
+* Generating diffs::
+* Viewing old file versions::
+* Examples::
+
+Gitでの開発作業
+
+* あなたの名前をGitに教える::
+* Creating a new repository::
+* How to make a commit::
+* 適切なコミットメッセージの作成::
+* Ignoring files::
+* How to merge::
+* Resolving a merge::
+* マージを元に戻す::
+* Fast-forward merges::
+* 作業ミスを修正する::
+* 良好なパフォーマンスの確保::
+* 信頼性の確保::
+
+Sharing development with others
+
+* Getting updates with git pull::
+* Submitting patches to a project::
+* Importing patches to a project::
+* Public Git repositories::
+* 最小限の履歴でGitリポジトリを取得する方法::
+* Examples: Examples <1>.
+
+Rewriting history and maintaining patch series
+
+* Creating the perfect patch series::
+* Keeping a patch series up to date using git rebase::
+* Rewriting a single commit::
+* Reordering or selecting from a patch series::
+* Using interactive rebases::
+* Other tools::
+* 履歴の書き換えに関する問題::
+* なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか::
+
+Advanced branch management
+
+* Fetching individual branches::
+* git fetch and fast-forwards::
+* Forcing git fetch to do non-fast-forward updates::
+* Configuring remote-tracking branches::
+
+Gitの概念
+
+* The Object Database::
+* The index::
+
+Submodules
+
+* サブモジュールの落とし穴::
+
+Low-level Git operations
+
+* Object access and manipulation::
+* The Workflow::
+* Examining the data::
+* Merging multiple trees::
+* Merging multiple trees, continued: Merging multiple trees; continued.
+
+Hacking Git
+
+* Object storage format::
+* Gitのソースコードを俯瞰する::
+
+Git用語集
+
+* Git解説::
+
+Git Quick Reference
+
+* Creating a new repository: Creating a new repository <1>.
+* Managing branches::
+* Exploring history::
+* Making changes::
+* Merging::
+* Sharing your changes::
+* Repository maintenance::
+
+Notes and todo list for this manual
+
+* Todo list::
+
+
+
+File: git.info,  Node: Introduction,  Next: Repositories and Branches,  Prev: Top,  Up: Top
+
+Introduction
+************
+
+Gitは高速分散型リビジョン管理システムです。
+
+   この説明書は、基本的なUNIXコマンドラインスキルを持っているが、Gitの予
+備知識がない人でも読めるように設計されています。
+
+   *note Repositories and Branches:: と *note Exploring Git history:: は
+、gitを使用してプロジェクトをフェッチして調査する方法を説明しています。
+これらの章を読んで、ソフトウェアプロジェクトの特定のバージョンをビルド、
+テスト、デグレを探す方法を学んで下さい。
+
+   実際の開発を行う必要がある人は、 *note Gitでの開発作業:: と *note
+Sharing development with others:: も読みたいと思うでしょう。
+
+   それ以降の章では、より専門的なトピックについて説明します。
+
+   包括的なリファレンスドキュメントは、マニュアルページまたは
+git-help(1) (git-help.html) コマンドから入手できます。 たとえば、コマン
+ド ‘git clone <repo>’ の場合、次のいずれかを使用できます:
+
+     $ man git-clone
+
+   または:
+
+     $ git help clone
+
+   後者では、選択したマニュアルビューアを使用できます。 詳細については
+git-help(1) (git-help.html) を参照してください。
+
+   詳しい説明なしでのGitコマンドの概要については、 *note Git Quick
+Reference:: も参照してください。
+
+   最後に、このマニュアルをより完全にするためにあなたが貢献する方法につ
+いては、 *note Notes and todo list for this manual:: を参照してください
+。
+
+
+File: git.info,  Node: Repositories and Branches,  Next: Exploring Git history,  Prev: Introduction,  Up: Top
+
+1 Repositories and Branches
+***************************
+
+* Menu:
+
+* How to get a Git repository::
+* プロジェクトの別のバージョンをチェックアウトする方法::
+* Understanding History; Commits::
+* Manipulating branches::
+* 新しいブランチを作成せずに古いバージョンを調べる::
+* Examining branches from a remote repository::
+* Naming branches, tags, and other references: Naming branches; tags; and other references.
+* Updating a repository with git fetch::
+* Fetching branches from other repositories::
+
+
+File: git.info,  Node: How to get a Git repository,  Next: プロジェクトの別のバージョンをチェックアウトする方法,  Up: Repositories and Branches
+
+1.1 How to get a Git repository
+===============================
+
+このマニュアルを読むときに、Gitリポジトリを試してみると便利です。
+
+   これを取得する最良の方法は、 git-clone(1) (git-clone.html) コマンドを
+使用して既存のリポジトリのコピーをダウンロードすることです。あなたがプロ
+ジェクトをまだ考えていない場合は、いくつかの興味深い例を以下に示します:
+
+             # Git itself (approx. 40MB download):
+     $ git clone git://git.kernel.org/pub/scm/git/git.git
+             # the Linux kernel (approx. 640MB download):
+     $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+
+   大規模なプロジェクトでは、最初のクローン作成に時間がかかる場合があり
+ますが、クローン作成が必要になるのは1回だけです。
+
+   cloneコマンドは、プロジェクトにちなんで名付けられた新しいディレクトリ
+を作成します(上記の例では ‘git’ または ‘linux’)。このディレクトリにcdす
+ると、 working tree (*note [def_working_tree]::) と呼ばれるプロジェクト
+ファイルのコピーと、プロジェクトの歴史について全ての情報を含む ‘.git’ と
+いう名前の特別なトップレベルディレクトリが含まれていることがわかります。
+
+
+File: git.info,  Node: プロジェクトの別のバージョンをチェックアウトする方法,  Next: Understanding History; Commits,  Prev: How to get a Git repository,  Up: Repositories and Branches
+
+1.2 プロジェクトの別のバージョンをチェックアウトする方法
+========================================================
+
+Gitは、ファイルのコレクションの履歴を保存するためのツールとして最もよく
+考えられています。プロジェクトのコンテンツの相互に関連するスナップショッ
+トの圧縮されたコレクションとして履歴を保存します。 Gitでは、このような各
+バージョンは commit (*note [def_commit]::) と呼ばれます。
+
+   これらのスナップショットは、必ずしもすべてが古いものから新しいものへ
+と一列に配置されているわけではなく、作業は、 branches (*note
+[def_branch]::) と呼ばれる並行する開発ラインに沿って同時に進行する場合が
+あります。これは、マージおよび分岐する場合があります。
+
+   単一のGitリポジトリで、複数のブランチの開発を追跡できます。これは、各
+ブランチの最新のコミットを参照する heads (*note [def_head]::) のリストを
+保持することによって行われます。 git-branch(1) (git-branch.html) コマン
+ドは、ブランチヘッド(branch heads)を一覧表示します。
+
+     $ git branch
+     * master
+
+   新しくクローンされたリポジトリには、デフォルトで「master」という名前
+の単一のブランチヘッドが含まれ、作業ディレクトリはそのブランチヘッドによ
+って参照されるプロジェクトの状態に初期化されます。
+
+   ほとんどのプロジェクトは tags (*note [def_tag]::) も使用します。タグ
+はヘッドのようであり、プロジェクトの履歴への参照であり、 git-tag(1)
+(git-tag.html) コマンドを使用して一覧表示できます。
+
+     $ git tag -l
+     v2.6.11
+     v2.6.11-tree
+     v2.6.12
+     v2.6.12-rc2
+     v2.6.12-rc3
+     v2.6.12-rc4
+     v2.6.12-rc5
+     v2.6.12-rc6
+     v2.6.13
+     ...
+
+   タグは常にプロジェクトの同じバージョンを指すことが期待されますが、開
+発が進むにつれてヘッドは前進することが期待されます。
+
+   これらのバージョンのいずれかを指す新しいブランチヘッドを作成し、
+git-switch(1) (git-switch.html) を使用してチェックアウトします:
+
+     $ git switch -c new v2.6.13
+
+   作業ディレクトリは、v2.6.13 のタグが付けられたときにプロジェクトが持
+っていた内容を反映し、 git-branch(1) (git-branch.html) は2つのブランチを
+表示し、アスタリスクは現在チェックアウトされているブランチを示します。
+
+     $ git branch
+       master
+     * new
+
+   あなたがバージョン 2.6.17 を使用することにした場合は、以下のようにし
+て、代わりに v2.6.17 を指すように現在のブランチを変更できます。
+
+     $ git reset --hard v2.6.17
+
+   注意: 現在のブランチヘッドが履歴内の特定のポイントへの唯一の参照であ
+る場合、そのブランチをリセットすると、それが指していた履歴を見つける方法
+がなくなる可能性があることに注意してください。したがって、このコマンドは
+慎重に使用してください。
+
+
+File: git.info,  Node: Understanding History; Commits,  Next: Manipulating branches,  Prev: プロジェクトの別のバージョンをチェックアウトする方法,  Up: Repositories and Branches
+
+1.3 Understanding History: Commits
+==================================
+
+プロジェクトの履歴のすべての変更は、コミットによって表されます。
+git-show(1) (git-show.html) コマンドは、現在のブランチでの最新のコミット
+を表示します:
+
+     $ git show
+     commit 17cf781661e6d38f737f15f53ab552f1e95960d7
+     Author: Linus Torvalds <torvalds@ppc970.osdl.org.(none)>
+     Date:   Tue Apr 19 14:11:06 2005 -0700
+
+         Remove duplicate getenv(DB_ENVIRONMENT) call
+
+         Noted by Tony Luck.
+
+     diff --git a/init-db.c b/init-db.c
+     index 65898fa..b002dc6 100644
+     --- a/init-db.c
+     +++ b/init-db.c
+     @@ -7,7 +7,7 @@
+
+      int main(int argc, char **argv)
+      {
+     -       char *sha1_dir = getenv(DB_ENVIRONMENT), *path;
+     +       char *sha1_dir, *path;
+             int len, i;
+
+             if (mkdir(".git", 0755) < 0) {
+
+   ご覧のとおり、コミットは、誰が最新の変更を行ったか、何をしたか、そし
+てその理由を示しています。
+
+   すべてのコミットには16進40桁のIDがあります。それは「オブジェクト名」
+または「SHA-1 ID」と呼ばれることもあり、「git show」出力の最初の行に表示
+されます。通常、タグやブランチ名などの短い名前でコミットを参照できますが
+、この長い名前も役立ちます。最も重要なことは、これはこのコミットにとって
+グローバルに一意の名前です。したがって、他の誰かにオブジェクト名を(たと
+えば電子メールで)伝えると、その名前が自分のリポジトリで行うのと同じコミ
+ットを参照することが保証されます(彼らのリポジトリにそのコミットがあると
+仮定します)。オブジェクト名はコミットの内容に対するハッシュとして計算さ
+れるため、名前が変更されてなければコミットも変更されてない事が保証されま
+す。
+
+   実際、 *note Gitの概念:: では、ファイルデータやディレクトリの内容など
+、Gitの履歴に保存されているすべてのものが、その内容のハッシュである名前
+が付いたオブジェクトに保存されていることがわかります。
+
+* Menu:
+
+* Understanding history; commits, parents, and reachability: Understanding history; commits; parents; and reachability.
+* Understanding history; History diagrams::
+* Understanding history; What is a branch?::
+
+
+File: git.info,  Node: Understanding history; commits; parents; and reachability,  Next: Understanding history; History diagrams,  Up: Understanding History; Commits
+
+1.3.1 Understanding history: commits, parents, and reachability
+---------------------------------------------------------------
+
+(プロジェクトの最初のコミットを除く)すべてのコミットには、このコミットの
+前に何が起こったかを示す親コミットもあります。親の連鎖をたどると、最終的
+にはプロジェクトの最初に戻ります。
+
+   ただし、コミットは単純なリストを形成しません。 Gitを使用すると、開発
+ラインが分岐してから再収束します。2つの開発ラインが再収束するポイントは
+「マージ」と呼ばれます。したがって、マージを表すコミットは1つ以上の親を
+持つことができ、各親はそれぞれがそのポイントにつながる開発ラインの1つで
+最も最近のコミットを表します。
+
+   これがどのように働くを確認する最良の方法は、 gitk(1) (gitk.html) コマ
+ンドを使用することです。現在Gitリポジトリでgitkを実行し、マージコミット
+を探すと、Gitが履歴を整理する方法を理解するのに役立ちます。
+
+   以下、コミットXがコミットYの祖先である場合、コミットXはコミットYから
+「到達可能」(reachable)であると言います。同様に、YはXの子孫である、コミ
+ットYからコミットXにつながる親のチェーンがあると言えます。
+
+
+File: git.info,  Node: Understanding history; History diagrams,  Next: Understanding history; What is a branch?,  Prev: Understanding history; commits; parents; and reachability,  Up: Understanding History; Commits
+
+1.3.2 Understanding history: History diagrams
+---------------------------------------------
+
+以下のような図を使用して、Gitの履歴を表す場合があります。コミットは「o」
+として表示され、コミット間の繋がりは、 ‘-’ および ‘/’ および ‘\’ で描か
+れた線で示されます。時間は左から右に進みます:
+
+              o--o--o <-- Branch A
+             /
+      o--o--o <-- master
+             \
+              o--o--o <-- Branch B
+
+   特定のコミットについて話す必要がある場合は、文字「o」を別の文字または
+数字に置き換えることができます。
+
+
+File: git.info,  Node: Understanding history; What is a branch?,  Prev: Understanding history; History diagrams,  Up: Understanding History; Commits
+
+1.3.3 Understanding history: What is a branch?
+----------------------------------------------
+
+正確にする必要がある場合は、「ブランチ」という言葉を使用して開発ラインを
+意味し、「ブランチヘッド」(branch head)(または単に「ヘッド」(head))とい
+う言葉を使用して、ブランチでの最新のコミットへの参照を意味します。上記の
+例では、「A」という名前のブランチヘッドは、1つの特定のコミットへのポイン
+ターですが、その時点までの3つのコミットの連なった線をすべて「ブランチA」
+の一部として参照します。
+
+   ただし、混乱が生じない場合は、ブランチとブランチヘッドの両方に「ブラ
+ンチ」という用語を使用することがよくあります。
+
+
+File: git.info,  Node: Manipulating branches,  Next: 新しいブランチを作成せずに古いバージョンを調べる,  Prev: Understanding History; Commits,  Up: Repositories and Branches
+
+1.4 Manipulating branches
+=========================
+
+ブランチの作成、削除、および変更は、素早く・簡単です。コマンドの概要は以
+下のとおりです:
+
+‘git branch’
+     全てのブランチを一覧表示します。
+
+‘git branch <branch>’
+     現在のブランチと同じ履歴ポイントを参照して、 ‘<branch>’ という名前
+     の新しいブランチを作成します。
+
+‘git branch <branch> <start-point>’
+     ‘<start-point>’ を参照して、 ‘<branch>’ という名前の新しいブランチ
+     を作成します。これは、ブランチ名やタグ名を使用するなど、任意の方法
+     で指定できます。
+
+‘git branch -d <branch>’
+     ブランチ ‘<branch>‘を削除します。ブランチがそのアップストリームブラ
+     ンチに完全にマージされていないか、現在のブランチに含まれていない場
+     合、このコマンドは警告とともに失敗します。
+
+‘git branch -D <branch>’
+     マージされたステータスに関係なく、ブランチ ‘<branch>’ を削除します
+     。
+
+‘git switch <branch>’
+     現在のブランチを ‘<branch>’ にし、 ‘<branch>’ によって参照されるバ
+     ージョンを反映するように作業ディレクトリを更新します。
+
+‘git switch -c <new> <start-point>’
+     ‘<start-point>’ を参照する新しいブランチ ‘<new>’ を作成し、それをチ
+     ェックアウトします。
+
+   特殊シンボル記号「HEAD」は、常に現在のブランチを参照するために使用で
+きます。実際、Gitは ‘.git’ ディレクトリにある ‘HEAD’ という名前のファイ
+ルを使用して、現在のブランチを記憶しています。
+
+     $ cat .git/HEAD
+     ref: refs/heads/master
+
+
+File: git.info,  Node: 新しいブランチを作成せずに古いバージョンを調べる,  Next: Examining branches from a remote repository,  Prev: Manipulating branches,  Up: Repositories and Branches
+
+1.5 新しいブランチを作成せずに古いバージョンを調べる
+====================================================
+
+‘git switch’ コマンドは通常、ブランチヘッドを想定していますが、
+‘--detach’ を伴って呼び出されると任意のコミットも受け入れます。たとえば
+、タグによって参照されるコミットをチェックアウトできます:
+
+     $ git switch --detach v2.6.17
+     Note: checking out 'v2.6.17'.
+
+     You are in 'detached HEAD' state. You can look around, make experimental
+     changes and commit them, and you can discard any commits you make in this
+     state without impacting any branches by performing another switch.
+     (あなたは「切り離されたHEAD」状態にあります。あなたは周りを見回し、
+     実験的な変更を加えてコミットすることができます。また、別のswitchを実行することで、
+     他のブランチに影響を与えることなく、この状態で行ったコミットを破棄できます。)
+
+     If you want to create a new branch to retain commits you create, you may
+     do so (now or later) by using -c with the switch command again. Example:
+     (作成したコミットを保持するために新しいブランチを作成する場合は、
+     switchコマンドで `-c` を再度使用して、(現在または後で)作成できます。例:)
+
+       git switch -c new_branch_name
+
+     HEAD is now at 427abfa Linux v2.6.17
+
+   次に、HEADはブランチではなくコミットのSHA-1を参照し、 ‘git branch’ は
+、あなたがもはやブランチ上にいないことを示します:
+
+     $ cat .git/HEAD
+     427abfa28afedffadfca9dd8b067eb6d36bac53f
+     $ git branch
+     * (detached from v2.6.17)
+       master
+
+   この場合、HEADは「切り離されている」(detached)と言います。
+
+   これは、新しいブランチの名前を作成しなくても、 特定のバージョンをチェ
+ックアウトする簡単な方法です。 必要に応じて、後でこのバージョンの新しい
+ブランチ(またはタグ)を作成することもできます。
+
+
+File: git.info,  Node: Examining branches from a remote repository,  Next: Naming branches; tags; and other references,  Prev: 新しいブランチを作成せずに古いバージョンを調べる,  Up: Repositories and Branches
+
+1.6 Examining branches from a remote repository
+===============================================
+
+クローン作成時に作成された「master」ブランチは、クローン作成元のリポジト
+リにあるHEADのコピーです。ただし、そのリポジトリには他のブランチも含まれ
+ている可能性があり、ローカルリポジトリには、リモート追跡ブランチ
+(remote-tracking branch)と呼ばれる、これらのリモートブランチのそれぞれを
+追跡するブランチが保持されます。これは、 git-branch(1) (git-branch.html)
+の ‘-r’ オプションを使用して表示できます:
+
+     $ git branch -r
+       origin/HEAD
+       origin/html
+       origin/maint
+       origin/man
+       origin/master
+       origin/next
+       origin/seen
+       origin/todo
+
+   この例では、「origin」はリモートリポジトリ、または略して「リモート」
+(remote)と呼ばれます。このリポジトリのブランチは、私たちの観点からは「リ
+モートブランチ」と呼ばれます。上記のリモート追跡ブランチは、クローン時に
+リモートブランチに基づいて作成され、 ‘git fetch’ (つまり ‘git pull’ でも
+)と ‘git push’ によって更新されます。 詳細については、 *note Updating a
+repository with git fetch:: を参照してください。
+
+   タグの場合と同じように、これらのリモート追跡ブランチの1つをあなた独自
+のブランチに構築することをお勧めします:
+
+     $ git switch -c my-todo-copy origin/todo
+
+   ‘origin/todo’ を直接チェックアウトして調べたり、1回限りのパッチを作成
+したりすることもできます。 detached head (*note
+新しいブランチを作成せずに古いバージョンを調べる::) を参照してください。
+
+   注意: 「origin」という名前は、clone元のリポジトリを参照するために
+Gitがデフォルトで使用する名前にすぎないことに注意してください。
+
+
+File: git.info,  Node: Naming branches; tags; and other references,  Next: Updating a repository with git fetch,  Prev: Examining branches from a remote repository,  Up: Repositories and Branches
+
+1.7 Naming branches, tags, and other references
+===============================================
+
+ブランチやリモート追跡ブランチやタグはすべてコミットへの参照です。すべて
+の参照は、 ‘refs’ で始まるスラッシュ(‘/’)で区切られたパス名で名前が付け
+られます。これまで使用してきた名前は、実際には省略形です:
+
+   • ブランチ ‘test’ は ‘refs/heads/test’ の略です。
+
+   • タグ ‘v2.6.18’ は ‘refs/tags/v2.6.18’ の略です。
+
+   • ‘origin/master’ は ‘refs/remotes/origin/master’ の略です。
+
+   フルネームでの指定は、たとえば、同じ名前のタグとブランチが存在する場
+合に役立つことがあります。
+
+   (新しく作成されたrefは、実際にはその名前で指定されたパスで
+‘.git/refs’ ディレクトリに保存されます。ただし、効率上の理由から、単一の
+ファイルにまとめてパックすることもできます。 git-pack-refs(1)
+(git-pack-refs.html) を参照してください。)
+
+   もう1つの便利な短縮形として、リポジトリの「HEAD」は、そのリポジトリの
+名前を使用するだけで参照できます。したがって、たとえば、「origin」は通常
+、「リポジトリ origin のHEADブランチ」の短縮形です。
+
+   Gitが参照を調べるするパスの完全なリスト、および同じ省略名を持つ複数の
+参照がある場合に選択するために使用する順序については、 gitrevisions(7)
+(gitrevisions.html) の「SPECIFYING REVISIONS」セクションを参照してくださ
+い。
+
+
+File: git.info,  Node: Updating a repository with git fetch,  Next: Fetching branches from other repositories,  Prev: Naming branches; tags; and other references,  Up: Repositories and Branches
+
+1.8 Updating a repository with git fetch
+========================================
+
+リポジトリのクローンを作成し、独自の変更をいくつかコミットした後、あなた
+は元のリポジトリで更新を確認することをお勧めします。
+
+   引数を指定しない ‘git-fetch’ コマンドは、あなたのリポジトリにある全て
+のリモート追跡ブランチを元のリポジトリにある最新バージョンに更新します。
+それはあなた自身のどのブランチにも影響しません。それはあなたクローンで作
+成した「master」ブランチでさえ影響しません。
+
+
+File: git.info,  Node: Fetching branches from other repositories,  Prev: Updating a repository with git fetch,  Up: Repositories and Branches
+
+1.9 Fetching branches from other repositories
+=============================================
+
+あなたは git-remote(1) (git-remote.html) を使用して、クローン元以外のリ
+ポジトリからブランチを追跡することもできます。
+
+     $ git remote add staging git://git.kernel.org/.../gregkh/staging.git
+     $ git fetch staging
+     ...
+     From git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging
+      * [new branch]      master     -> staging/master
+      * [new branch]      staging-linus -> staging/staging-linus
+      * [new branch]      staging-next -> staging/staging-next
+
+   新しいリモート追跡ブランチは、 ‘git remote add’ にて、今回は
+‘staging’ と名付けた省略名で保存されます:
+
+     $ git branch -r
+       origin/HEAD -> origin/master
+       origin/master
+       staging/master
+       staging/staging-linus
+       staging/staging-next
+
+   後で ‘git fetch <remote>’ を実行すると、 ‘<remote>’ という名前のリモ
+ート追跡ブランチが更新されます。
+
+   ファイル ‘.git/config’ を調べると、Gitが新しい一節を追加したことがわ
+かります:
+
+     $ cat .git/config
+     ...
+     [remote "staging"]
+             url = git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git
+             fetch = +refs/heads/*:refs/remotes/staging/*
+     ...
+
+   これが、Gitがリモートのブランチを追跡できる理由です。 テキストエディ
+タで ‘.git/config’ を編集することにより、これらの設定オプションを変更ま
+たは削除できます。 (詳細については、 git-config(1) (git-config.html) の
+「CONFIGURATION FILE」セクションを参照してください。)
+
+
+File: git.info,  Node: Exploring Git history,  Next: Gitでの開発作業,  Prev: Repositories and Branches,  Up: Top
+
+2 Exploring Git history
+***********************
+
+Gitは、ファイルのコレクションの履歴を保存するためのツールとして最もよく
+考えられています。これは、ファイル階層のコンテンツの圧縮されたスナップシ
+ョットを、これらのスナップショット間の関係を示す「コミット」とともに保存
+することによって行われます。
+
+   Gitは、プロジェクトの履歴を探索するための非常に柔軟で高速なツールを提
+供します。
+
+   私達は、プロジェクトにバグを導入したコミットを見つけるのに役立つ、あ
+る専用ツールから始めることにします。
+
+* Menu:
+
+* How to use bisect to find a regression::
+* Naming commits::
+* Creating tags::
+* Browsing revisions::
+* Generating diffs::
+* Viewing old file versions::
+* Examples::
+
+
+File: git.info,  Node: How to use bisect to find a regression,  Next: Naming commits,  Up: Exploring Git history
+
+2.1 How to use bisect to find a regression
+==========================================
+
+あなたのプロジェクトのバージョン2.6.18は機能していしたが、「master」のバ
+ージョンがクラッシュしたとします。このようなデグレの原因を見つける最良の
+方法は、プロジェクトの履歴を総当たりで検索して、問題の原因となった特定の
+コミットを見つけることです。 git-bisect(1) (git-bisect.html) コマンドは
+、あなたがこれを行う助けとなります:
+
+     $ git bisect start
+     $ git bisect good v2.6.18
+     $ git bisect bad master
+     Bisecting: 3537 revisions left to test after this
+     [65934a9a028b88e83e2b0f8b36618fe503349f8e] BLOCK: Make USB storage depend on SCSI rather than selecting it [try #6]
+
+   この時点で ‘git branch’ を実行すると、Gitが一時的に あなたを "(no
+branch)" に移動させたことがわかります。HEADはブランチから切り離され、「
+master」からは到達可能であるが v2.6.18 からは到達できないコミット(コミッ
+トID 65934)を直接指します。コンパイルしてテストし、クラッシュするかどう
+かを確認します。クラッシュするとします。ならばあなたは以下のようにします
+:
+
+     $ git bisect bad
+     Bisecting: 1769 revisions left to test after this
+     [7eff82c8b1511017ae605f0c99ac275a7e21b867] i2c-core: Drop useless bitmaskings
+
+   より古いバージョンをチェックアウトします。このように作業を続けて、各
+ステップで提供されるバージョンが良いか悪いかをGitに伝え、テストするため
+に残されたリビジョンの数が毎回約半分に削減されることに注目してください。
+
+   (今回は)約13回のテストの後、有罪コミット(guilty commit)のコミットIDが
+出力されました。あなたは、次に、 git-show(1) (git-show.html) を使用して
+コミットを調べ、誰がコミットを作成したかを調べ、コミットIDを使用してバグ
+レポートをメールで送信できます。そして最後に、あなたは以下を実行します:
+
+     $ git bisect reset
+
+   そうすると、あなたが以前にいたブランチに戻ります。
+
+   注意: ‘git bisect’ が各時点でチェックアウトするバージョンは単なる提案
+であり、そっちの方が良い考えであると思った場合は、別のバージョンを自由に
+試すことができることに注意してください。 たとえば、関係のない何かを壊し
+たコミットにたどり着くことがあったりします。このようにしたいときは、以下
+のようにします。
+
+     $ git bisect visualize
+
+   これはgitkを実行し、選択したコミットに「bisect」というマーカーでラベ
+ルを付けます。近くで安全に見えるコミットを選択し、そのコミットIDをメモし
+て、以下のコマンドでチェックアウトします:
+
+     $ git reset --hard fb47ddb2db
+
+   そしてテストし、必要に応じて「bisect good」または「bisect bad」を実行
+して続行します。
+
+   ‘git bisect visualize’ と ‘git reset --hard fb47ddb2db’ を行う代わり
+に、現在のコミットをスキップすることをGitに伝えたい場合があります:
+
+     $ git bisect skip
+
+   ただし、この場合、Gitは、最初にスキップされたコミットとその後の不正な
+コミットの間で、最初の不正なコミットを最終的に判断できない可能性がありま
+す。
+
+   良いコミットと悪いコミットを区別できるテストスクリプトがある場合は、
+bisecするプロセスを自動化する方法もあります。この機能およびその他の ‘git
+bisect’ 機能の詳細については、 git-bisect(1) (git-bisect.html) を参照し
+てください。
+
+
+File: git.info,  Node: Naming commits,  Next: Creating tags,  Prev: How to use bisect to find a regression,  Up: Exploring Git history
+
+2.2 Naming commits
+==================
+
+コミットに名前を付けるいくつかの方法をすでに見てきました:
+
+   • 16進40桁のオブジェクト名
+
+   • ブランチ名: 指定のブランチの先頭のコミットを参照します
+
+   • タグ名: 指定のタグが指すコミットを参照します(ブランチとタグは 参照
+     (*note Naming branches; tags; and other references::) の特殊なケー
+     スです)。
+
+   • HEAD: 現在のブランチのheadを参照します
+
+   その他いろいろ: リビジョンに名前を付ける方法の完全なリストについては
+、 gitrevisions(7) (gitrevisions.html) のマニュアルページの「SPECIFYING
+REVISIONS」セクションを参照してください。 例をいくつか:
+
+     $ git show fb47ddb2 # オブジェクト名の最初の数文字は、
+                         # 通常、一意に指定するのに十分です。
+     $ git show HEAD^    # HEADコミットの親
+     $ git show HEAD^^   # 祖父母(grandparent;親の親)
+     $ git show HEAD~4   # 曽祖父母(great-great-grandparent)
+
+   マージコミットには複数の親が存在する可能性があることを思い出してくだ
+さい。 デフォルトでは、 ‘^’ と ‘~’ はそのコミットにリストされている最初
+の親を辿りますが、以下のように選択することもできます:
+
+     $ git show HEAD^1   # HEADの(複数ある)親のうち1番目の親
+     $ git show HEAD^2   # HEADの複数ある親のうち2番目の親
+
+   HEADに加えて、コミットには他にもいくつかの特別な名前があります:
+
+   マージ(後で説明します)、および現在チェックアウトされているコミットを
+変更する ‘git reset’ などの操作では、通常、 ORIG_HEAD を、「現在の操作の
+前にHEADが持っていた値」に設定します。
+
+   ‘git fetch’ 操作は、常に、最後にフェッチされたブランチのヘッドを
+FETCH_HEADに格納します。 たとえば、以下のように、操作のターゲットとして
+ローカルブランチを指定せずに ‘git fetch’ を実行した場合
+
+     $ git fetch git://example.com/proj.git theirbranch
+
+   フェッチされたコミットは、引き続きFETCH_HEADから利用できます。
+
+   マージについて説明すると、現在のブランチにマージしている他のブランチ
+を指す特別な名前MERGE_HEADもあります。
+
+   git-rev-parse(1) (git-rev-parse.html) コマンドは、コミットの名前をそ
+のコミットのオブジェクト名に変換するのに役立つことがある低レベルのコマン
+ドです。
+
+     $ git rev-parse origin
+     e05db0fd4f31dde7005f075a84f96b360d05984b
+
+
+File: git.info,  Node: Creating tags,  Next: Browsing revisions,  Prev: Naming commits,  Up: Exploring Git history
+
+2.3 Creating tags
+=================
+
+特定のコミットを参照するタグを作成することもできます。以下を実行すると
+
+     $ git tag stable-1 1b2e1d63ff
+
+   あなたは ‘stable-1’ を使用して、コミット ‘1b2e1d63ff’ を参照できます
+。
+
+   これにより、「軽量」タグ(lightweight tag)が作成されます。タグにコメン
+トを含め、場合によっては暗号で署名する場合は、代わりにタグオブジェクトを
+作成する必要があります。詳細については、 git-tag(1) (git-tag.html) のマ
+ニュアルページを参照してください。
+
+
+File: git.info,  Node: Browsing revisions,  Next: Generating diffs,  Prev: Creating tags,  Up: Exploring Git history
+
+2.4 Browsing revisions
+======================
+
+git-log(1) (git-log.html) コマンドは、コミットのリストを表示できます。そ
+れ自体で、親コミットから到達可能なすべてのコミットが表示されますが、より
+具体的なリクエストを行うこともできます。
+
+     $ git log v2.5..        # commits since (not reachable from) v2.5
+     $ git log test..master  # commits reachable from master but not test
+     $ git log master..test  # ...reachable from test but not master
+     $ git log master...test # ...reachable from either test or master,
+                             #    but not both
+     $ git log --since="2 weeks ago" # commits from the last 2 weeks
+     $ git log Makefile      # commits which modify Makefile
+     $ git log fs/           # ... which modify any file under fs/
+     $ git log -S'foo()'     # commits which add or remove any file data
+                             # matching the string 'foo()'
+
+   そしてもちろん、これらすべてを組み合わせることができます。 以下は、
+‘Makefile’ または ‘fs’ ディレクトリより下の任意のファイル、を触った v2.5
+以降のコミットを検索します:
+
+     $ git log v2.5.. Makefile fs/
+
+   パッチを表示するようにgit logに依頼することもできます:
+
+     $ git log -p
+
+   その他の表示オプションについては、 git-log(1) (git-log.html) のマニュ
+アルページの ‘--pretty’ オプションを参照してください。
+
+   git log は最新のコミットから始まり、親を介して逆方向に機能することに
+注意してください。 ただし、Gitの履歴には複数の独立した開発ラインが含まれ
+る可能性があるため、コミットがリストされる順序は多少前後する可能性があり
+ます。
+
+
+File: git.info,  Node: Generating diffs,  Next: Viewing old file versions,  Prev: Browsing revisions,  Up: Exploring Git history
+
+2.5 Generating diffs
+====================
+
+git-diff(1) (git-diff.html) を使用して、任意の2つのバージョン間の差分
+(diff)を生成できます。
+
+     $ git diff master..test
+
+   これにより、2つのブランチの先端の間にdiffが生じます。共通の祖先からの
+diffを見つけてテストしたい場合は、2つではなく3つのドットを使用できます:
+
+     $ git diff master...test
+
+   しばしば、あなたが必要なのは差分の代わりにパッチのセットである場合が
+あります。これには、 git-format-patch(1) (git-format-patch.html) を使用
+できます。
+
+     $ git format-patch master..test
+
+   これは、masterからではなく、testから到達可能な各コミットのパッチを含
+むファイルを生成します。
+
+
+File: git.info,  Node: Viewing old file versions,  Next: Examples,  Prev: Generating diffs,  Up: Exploring Git history
+
+2.6 Viewing old file versions
+=============================
+
+あなたは、最初に正しいリビジョンをチェックアウトするだけで、いつでも古い
+バージョンのファイルを表示できます。ただし、何もチェックアウトせずに古い
+バージョンの単一ファイルを表示できる方が便利な場合もあります。以下のコマ
+ンドはそれを行います:
+
+     $ git show v2.5:fs/locks.c
+
+   コロン(‘:’)の前にはコミットを指定するものがあり、その後にはGitによっ
+て追跡されているファイルへのパスがあります。
+
+
+File: git.info,  Node: Examples,  Prev: Viewing old file versions,  Up: Exploring Git history
+
+2.7 Examples
+============
+
+* Menu:
+
+* Counting the number of commits on a branch::
+* 2つのブランチが同じ履歴を指しているかどうかを確認します::
+* 指定の修正を含む最初のタグ付きバージョンを検索する::
+* 指定のブランチに固有のコミットを表示する::
+* Creating a changelog and tarball for a software release::
+* 指定の内容を含むファイルを参照するコミットを検索する::
+
+
+File: git.info,  Node: Counting the number of commits on a branch,  Next: 2つのブランチが同じ履歴を指しているかどうかを確認します,  Up: Examples
+
+2.7.1 Counting the number of commits on a branch
+------------------------------------------------
+
+あなたが ‘origin’ から分岐して以来、 ‘mybranch’ に対して行ったコミットの
+数を知りたいとします:
+
+     $ git log --pretty=oneline origin..mybranch | wc -l
+
+   あるいは、この種のことは、指定されたすべてのコミットのSHA-1を一覧表示
+するだけの低レベルのコマンド git-rev-list(1) (git-rev-list.html) で行わ
+れることがよくあります:
+
+     $ git rev-list origin..mybranch | wc -l
+
+
+File: git.info,  Node: 2つのブランチが同じ履歴を指しているかどうかを確認します,  Next: 指定の修正を含む最初のタグ付きバージョンを検索する,  Prev: Counting the number of commits on a branch,  Up: Examples
+
+2.7.2 2つのブランチが同じ履歴を指しているかどうかを確認します
+-------------------------------------------------------------
+
+あなたが、2つのブランチが履歴の同じポイントを指しているかどうかを確認し
+たいとします。
+
+     $ git diff origin..master
+
+   プロジェクトの内容が2つのブランチで同じであるかどうかがわかります。た
+だし、理論的には、同じプロジェクトの内容が2つの異なる履歴ルートによって
+到達された可能性があります。あなたはオブジェクト名を比較できます:
+
+     $ git rev-list origin
+     e05db0fd4f31dde7005f075a84f96b360d05984b
+     $ git rev-list master
+     e05db0fd4f31dde7005f075a84f96b360d05984b
+
+   または、 ‘...’ 演算子は、一方の参照または他方の参照から到達可能なすべ
+てのコミットを選択しますが、両方は選択しないことを思い出してください。と
+いうことで以下を実行すると
+
+     $ git log origin...master
+
+   この2つのブランチが等しい場合、コミットは返されません。
+
+
+File: git.info,  Node: 指定の修正を含む最初のタグ付きバージョンを検索する,  Next: 指定のブランチに固有のコミットを表示する,  Prev: 2つのブランチが同じ履歴を指しているかどうかを確認します,  Up: Examples
+
+2.7.3 指定の修正を含む最初のタグ付きバージョンを検索する
+--------------------------------------------------------
+
+コミット e05db0fd が特定の問題を修正したことを知っているとします。その修
+正を含む最も古いタグ付きリリースを見つけたいと思います。
+
+   ええ、もちろん、複数の答えがあるかもしれません。コミット e05db0fd の
+後に履歴が分岐した場合、複数の「最も早い」タグ付きリリースが存在する可能
+性があります。
+
+   あなたは e05db0fd 以降のコミットを視覚的に検査できます:
+
+     $ gitk e05db0fd..
+
+   または、あなたは git-name-rev(1) (git-name-rev.html) を使用できます。
+これにより、コミットの子孫の1つを指すタグが見つかった場合は、そのコミッ
+トに名前が与えられます(訳注:コミットの子孫の1つを指すタグが
+tags/v1.5.0-rc1 であったのでそこから辿って e05db0fd は
+tags/v1.5.0-rc1^0~23 という「名前」になった):
+
+     $ git name-rev --tags e05db0fd
+     e05db0fd tags/v1.5.0-rc1^0~23
+
+   git-describe(1) (git-describe.html) コマンドは逆のことを行い、指定さ
+れたコミットの基になっているタグを使用してリビジョンに名前を付けます:
+
+     $ git describe e05db0fd
+     v1.5.0-rc0-260-ge05db0f
+
+   これは、特定のコミット後にどのタグが来るかを推測するのに役立つ場合が
+あります。
+
+   あなたが特定のタグ付きバージョンに特定のコミットが含まれているかどう
+かを確認したいだけの場合は、 git-merge-base(1) (git-merge-base.html) を
+使用できます:
+
+     $ git merge-base e05db0fd v1.5.0-rc1
+     e05db0fd4f31dde7005f075a84f96b360d05984b
+
+   merge-baseコマンドは、指定されたコミットの共通の祖先を検索し、一方が
+他方の子孫である場合は常にどちらか一方を返します。したがって、上記の出力
+は、e05db0fdが実際にはv1.5.0-rc1の祖先であることを示しています。
+
+   あるいは、以下のように
+
+     $ git log v1.5.0-rc1..e05db0fd
+
+   とすると、v1.5.0-rc1にe05db0fdが含まれている場合のみ、空の出力が生成
+されます。これは、v1.5.0-rc1から到達できないコミットのみを出力するためで
+す。
+
+   さらに別の方法として、 git-show-branch(1) (git-show-branch.html) コマ
+ンドは、指定の引数から到達可能なコミットを一覧表示し、その各行の左側にそ
+のコミットが指定のどの引数から到達可能かを示す表示を行います。よって、あ
+なたが以下のようなものを実行する場合
+
+     $ git show-branch e05db0fd v1.5.0-rc0 v1.5.0-rc1 v1.5.0-rc2
+     ! [e05db0fd] Fix warnings in sha1_file.c - use C99 printf format if
+     available
+      ! [v1.5.0-rc0] GIT v1.5.0 preview
+       ! [v1.5.0-rc1] GIT v1.5.0-rc1
+        ! [v1.5.0-rc2] GIT v1.5.0-rc2
+     ...
+
+   そしてこれに続く行は以下のようになります
+
+     + ++ [e05db0fd] Fix warnings in sha1_file.c - use C99 printf format if
+     available
+
+   これは、e05db0fdが、v1.5.0-rc0からではなく、v1.5.0-rc1とv1.5.0-rc2か
+ら到達可能であることを示しています。
+
+
+File: git.info,  Node: 指定のブランチに固有のコミットを表示する,  Next: Creating a changelog and tarball for a software release,  Prev: 指定の修正を含む最初のタグ付きバージョンを検索する,  Up: Examples
+
+2.7.4 指定のブランチに固有のコミットを表示する
+----------------------------------------------
+
+‘master’ という名前のブランチヘッドから到達可能なすべてのコミットを確認
+したいが、リポジトリ内の他のヘッドからは到達できないと仮定します。
+
+   git-show-ref(1) (git-show-ref.html) を使用して、このリポジトリ内のす
+べてのヘッドを一覧表示できます。
+
+     $ git show-ref --heads
+     bf62196b5e363d73353a9dcf094c59595f3153b7 refs/heads/core-tutorial
+     db768d5504c1bb46f63ee9d6e1772bd047e05bf9 refs/heads/maint
+     a07157ac624b2524a059a3414e99f6f44bebc1e7 refs/heads/master
+     24dbc180ea14dc1aebe09f14c8ecf32010690627 refs/heads/tutorial-2
+     1e87486ae06626c2f31eaa63d26fc0fd646c8af2 refs/heads/tutorial-fixes
+
+   標準のユーティリティcutとgrepを使用して、ブランチヘッド名だけを取得し
+、 ‘master’ を削除できます:
+
+     $ git show-ref --heads | cut -d' ' -f2 | grep -v '^refs/heads/master'
+     refs/heads/core-tutorial
+     refs/heads/maint
+     refs/heads/tutorial-2
+     refs/heads/tutorial-fixes
+
+   そして、masterから到達可能だけども他のヘッドからは到達できない全ての
+コミットを確認するように依頼できます:
+
+     $ gitk master --not $( git show-ref --heads | cut -d' ' -f2 |
+                                     grep -v '^refs/heads/master' )
+
+   このようにすれば、明らかに、無限のバリエーションが可能です。 たとえば
+、リポジトリ内のタグからではなく、あるヘッドから到達可能なすべてのコミッ
+トを表示するには、以下のようにします:
+
+     $ gitk $( git show-ref --heads ) --not  $( git show-ref --tags )
+
+   ( ‘--not’ などのコミット選択構文の説明については、 gitrevisions(7)
+(gitrevisions.html) を参照してください。)
+
+
+File: git.info,  Node: Creating a changelog and tarball for a software release,  Next: 指定の内容を含むファイルを参照するコミットを検索する,  Prev: 指定のブランチに固有のコミットを表示する,  Up: Examples
+
+2.7.5 Creating a changelog and tarball for a software release
+-------------------------------------------------------------
+
+git-archive(1) (git-archive.html) コマンドは、プロジェクトの任意のバージ
+ョンからtarまたはzipアーカイブを作成できます。例えば:
+
+     $ git archive -o latest.tar.gz --prefix=project/ HEAD
+
+   HEADを使用して、各ファイル名の前に ‘project/’ が付いたgzip圧縮された
+tarアーカイブを作成します。出力ファイル形式は、可能であれば出力ファイル
+拡張子から推測されます。詳細については git-archive(1) (git-archive.html)
+を参照してください。
+
+   1.7.7より古いバージョンのGitは、 ‘tar.gz‘形式を認識していません。明示
+的にgzipを使用する必要があります:
+
+     $ git archive --format=tar --prefix=project/ HEAD | gzip >latest.tar.gz
+
+   ソフトウェアプロジェクトの新しいバージョンをリリースする場合は、リリ
+ースアナウンスに含める変更ログを同時に作成することをお勧めします。
+
+   Linus Torvaldsは、たとえば、タグを付けて実行することにより、新しいカ
+ーネルリリースを作成します:
+
+     $ release-script 2.6.12 2.6.13-rc6 2.6.13-rc7
+
+   ここで、release-script は以下のようなシェルスクリプトです:
+
+     #!/bin/sh
+     stable="$1"
+     last="$2"
+     new="$3"
+     echo "# git tag v$new"
+     echo "git archive --prefix=linux-$new/ v$new | gzip -9 > ../linux-$new.tar.gz"
+     echo "git diff v$stable v$new | gzip -9 > ../patch-$new.gz"
+     echo "git log --no-merges v$new ^v$last > ../ChangeLog-$new"
+     echo "git shortlog --no-merges v$new ^v$last > ../ShortLog"
+     echo "git diff --stat --summary -M v$last v$new > ../diffstat-$new"
+
+   そしてそれから、シェルスクリプトが出力したコマンドが正常に見えること
+を確認した後、出力されたコマンドをカットアンドペーストします。
+
+
+File: git.info,  Node: 指定の内容を含むファイルを参照するコミットを検索する,  Prev: Creating a changelog and tarball for a software release,  Up: Examples
+
+2.7.6 指定の内容を含むファイルを参照するコミットを検索する
+----------------------------------------------------------
+
+誰かがあなたにファイルのコピーを渡し、与えられた内容を含むようにファイル
+を変更したコミットを、そのコミットの前と後のどちらで行ったかを尋ねます。
+それを知るには、以下のようにします:
+
+     $  git log --raw --abbrev=40 --pretty=oneline |
+             grep -B 1 `git hash-object filename`
+
+   なぜこれが機能するのかを理解することは、(上級)学生への演習として残さ
+れています。 git-log(1) (git-log.html) や git-diff-tree(1)
+(git-diff-tree.html) や git-hash-object(1) (git-hash-object.html) のマニ
+ュアルページが役に立つ事でしょう。
+
+
+File: git.info,  Node: Gitでの開発作業,  Next: Sharing development with others,  Prev: Exploring Git history,  Up: Top
+
+3 Gitでの開発作業
+*****************
+
+* Menu:
+
+* あなたの名前をGitに教える::
+* Creating a new repository::
+* How to make a commit::
+* 適切なコミットメッセージの作成::
+* Ignoring files::
+* How to merge::
+* Resolving a merge::
+* マージを元に戻す::
+* Fast-forward merges::
+* 作業ミスを修正する::
+* 良好なパフォーマンスの確保::
+* 信頼性の確保::
+
+
+File: git.info,  Node: あなたの名前をGitに教える,  Next: Creating a new repository,  Up: Gitでの開発作業
+
+3.1 あなたの名前をGitに教える
+=============================
+
+コミットを作成する前に、あなた自身をGitに紹介すべきです。これを行う最も
+簡単な方法は、 git-config(1) (git-config.html) を使用することです:
+
+     $ git config --global user.name 'Your Name Comes Here'
+     $ git config --global user.email 'you@yourdomain.example.com'
+
+   これにより、あなたのホームディレクトリの ‘.gitconfig’ という名前のフ
+ァイルに以下のものが追加されます:
+
+     [user]
+             name = Your Name Comes Here
+             email = you@yourdomain.example.com
+
+   構成ファイルの詳細については、 git-config(1) (git-config.html)の「
+CONFIGURATION FILE」セクションを参照してください。ファイルはプレーンテキ
+ストなので、お気に入りのエディタで編集することもできます。
+
+
+File: git.info,  Node: Creating a new repository,  Next: How to make a commit,  Prev: あなたの名前をGitに教える,  Up: Gitでの開発作業
+
+3.2 Creating a new repository
+=============================
+
+新しいリポジトリをイチから作成するのは非常に簡単です:
+
+     $ mkdir project
+     $ cd project
+     $ git init
+
+   初期コンテンツ(たとえば tarball)がある場合:
+
+     $ tar xzvf project.tar.gz
+     $ cd project
+     $ git init
+     $ git add . # include everything below ./ in the first commit:
+     $ git commit
+
+
+File: git.info,  Node: How to make a commit,  Next: 適切なコミットメッセージの作成,  Prev: Creating a new repository,  Up: Gitでの開発作業
+
+3.3 How to make a commit
+========================
+
+新しいコミットの以下の3つのステップがあります:
+
+  1. あなたのお気に入りのエディタを使用して、作業ディレクトリでいくつか
+     の変更を加えます。
+
+  2. あなたの変更をGitに知らせます。
+
+  3. 手順2でGitに知らせた内容でコミットを作成します。
+
+   実際には、あなたが望むかぎりステップ1と2を何度でも行き来したり繰り返
+したりすることができます。ステップ3でコミットしたい内容を追跡するために
+、Gitは「インデックス」(index)と呼ばれる特別なステージング領域にツリーの
+コンテンツのスナップショットを保持します。
+
+   最初は、インデックスの内容はHEADの内容と同じになります。したがって、
+HEADとインデックスの違いを示すコマンド ‘git diff --cached’ は、その時点
+では何も出力を生成しないはずです。
+
+   インデックスの変更は簡単です:
+
+   新規または変更されたファイルの内容でインデックスを更新するには、以下
+を使用します
+
+     $ git add path/to/file
+
+   インデックスと作業ツリーからファイルを削除するには、以下を使用します
+
+     $ git rm path/to/file
+
+   各ステップの後、あなたは以下のようにして確認できます
+
+     $ git diff --cached
+
+   常にHEADとインデックスファイルの違い示します(つまり、今、この時点でコ
+ミットを作成した場合、何がコミットされる事になるのかを知る事ができます)
+
+     $ git diff
+
+   これは、作業ツリーとインデックスファイルの違いを示しています。
+
+   注意: ‘git add’ は常に、ファイルのその時点での内容をインデックスに追
+加するだけであることに注意してください。同じファイルに対して ‘git add’ を
+再度実行しない限り、そのファイルへのその後の編集変更は無視されます。
+
+   準備ができたら、あとは実行するだけです
+
+     $ git commit
+
+   Gitはコミットメッセージの入力を求め、新しいコミットを作成します。以下
+のようにして、それがあなたが期待したもののように見えることをチェックして
+ください
+
+     $ git show
+
+   特別な省略形として、以下があります
+
+     $ git commit -a
+
+   これは、変更または削除したファイルでインデックスを更新し、コミットを
+作成します。それらを1ステップで実行します。
+
+   あなたの行ったコミットを追跡するために、いくつかのコマンドが役立ちま
+す
+
+     $ git diff --cached # HEADとインデックス間の差異。
+                         # 今、コミットを実行したら何がコミットされるかを知る。
+     $ git diff          # インデックスファイルと作業ディレクトリの違い。
+                         # 今、コミットを実行したら、
+                         # 何がそのコミットに「含まれない」かを知る。
+     $ git diff HEAD     # HEADと作業ツリーの違い。
+                         # 今、 `commit -a` を実行したら何がコミットされるかを知る。
+     $ git status        # 上記のファイルごとの簡単な要約。
+
+   git-gui(1) (git-gui.html) を使用して、コミットを作成し、インデックス
+と作業ツリーファイルの変更を表示し、インデックスに含めるdiffハンクを個別
+に選択することもできます(diffハンクを右クリックして「Stage Hunk For
+Commit」を選択します)。
+
+
+File: git.info,  Node: 適切なコミットメッセージの作成,  Next: Ignoring files,  Prev: How to make a commit,  Up: Gitでの開発作業
+
+3.4 適切なコミットメッセージの作成
+==================================
+
+必須ではありませんが、変更を要約した1行の短い行(50文字未満)でコミットメ
+ッセージを開始し、その後に空行を続け、さらに詳細な説明を続けることをお勧
+めします。 コミットメッセージの最初の空行までのテキストはコミットタイト
+ルとして扱われ、そのタイトルはGit全体で使用されます。たとえば、
+git-format-patch(1) (git-format-patch.html) はコミットを電子メールに変換
+し、コミットタイトルを件名に使用し、コミットタイトル以降を本文として使用
+します。
+
+
+File: git.info,  Node: Ignoring files,  Next: How to merge,  Prev: 適切なコミットメッセージの作成,  Up: Gitでの開発作業
+
+3.5 Ignoring files
+==================
+
+プロジェクトは、Gitで追跡したくないファイルを生成することがよくあります
+。これには通常、ビルドプロセスによって生成されたファイル、またはエディタ
+ーによって作成された一時バックアップファイルが含まれます。もちろん、
+Gitでファイルを追跡しないのは、ファイルに対して「git add」を呼び出さない
+だけの問題です。しかし、これらの追跡されていないファイルがたくさん横たわ
+っているのはすぐにうっとおしくなります。例えば それらは ‘git add .’ を実
+質的に役に立たなくし、 ‘git status’ の出力に表示され続けます。
+
+   あなたは、作業ディレクトリの最上位に ‘.gitignore’ というファイルを作
+成し、以下のような内容で特定のファイルを無視するようにGitに指示できます:
+
+     # '＃'で始まる行はコメントと見なされます。
+     # foo.txtという名前のファイルはすべて無視してください。
+     foo.txt
+     # (生成された) htmlファイルを無視します。
+     *.html
+     # 但し、手作業で管理されているfoo.htmlを除きます(無視しません)。
+     !foo.html
+     # オブジェクト(*.o)とアーカイブ(*.a)を無視します。
+     *.[oa]
+
+   構文の詳細な説明については、 gitignore(5) (gitignore.html) を参照して
+ください。作業ツリーの他のディレクトリに .gitignore ファイルを配置するこ
+ともでき、それらはそれらのディレクトリとその下のサブディレクトリに適用さ
+れます。 ‘.gitignore’ ファイルは、他のファイルと同じようにリポジトリに追
+加できます .(通常どおり ‘git add .gitignore’ と ‘git commit’ を実行する
+だけです)。 これは、除外パターン(ビルド出力ファイルに一致するパターンな
+ど)の場合に便利です。リポジトリのクローンを作成する他のユーザーにとって
+も意味があります。<
+
+   除外パターンが(特定のプロジェクトのすべてのリポジトリではなく、)特定
+のリポジトリにのみ影響するようにする場合は、代わりに、リポジトリ内の
+‘.git/info/exclude’ という名前のファイル、または ‘core.excludesFile’ 構
+成変数で指定されたファイルに除外パターンを配置できます。一部のGitコマン
+ドは、コマンドラインで直接除外パターンを指定することもできます。詳細につ
+いては、 gitignore(5) (gitignore.html) を参照してください。
+
+
+File: git.info,  Node: How to merge,  Next: Resolving a merge,  Prev: Ignoring files,  Up: Gitでの開発作業
+
+3.6 How to merge
+================
+
+git-merge(1) (git-merge.html)を使用して、2つに分岐したブランチを再結合で
+きます:
+
+     $ git merge branchname
+
+   ブランチ ‘branchname’ を現在のブランチにマージします。
+
+   マージは、 ‘branchname’ で行われた変更と、履歴が分岐してから現在のブ
+ランチで最新のコミットまでに行われた変更とを組み合わせることによって行わ
+れます。作業ツリーは、この結合がクリーンに実行された場合はマージの結果に
+よって上書きされ、この結合が競合を引き起こした場合は半マージ
+(half-merged)された結果によって上書きされます。したがって、マージの影響
+を受けたファイルと同じファイルに変更を加えたコミットされていない変更があ
+る場合、Gitは続行を拒否します。ほとんどの場合、マージする前に変更をコミ
+ットする必要があります。コミットしない場合は、 git-stash(1)
+(git-stash.html) を使用すると、マージ中にこれらの変更を一旦取り除いて、
+後で再適用できます。
+
+   変更が十分に独立している場合、Gitは自動的にマージを完了し、結果をコミ
+ットします(または、fast-forward (*note Fast-forward merges::)の場合は、
+既存のコミットを再利用します。これについては以下を参照してください)。 一
+方、競合がある場合—たとえば、リモートブランチとローカルブランチで同じフ
+ァイルが異なる方法で変更された場合—は警告が表示されます。出力は以下のよ
+うになります:
+
+     $ git merge next
+      100% (4/4) done
+     Auto-merged file.txt
+     CONFLICT (content): Merge conflict in file.txt
+     Automatic merge failed; fix conflicts and then commit the result.
+
+   問題のあるファイルには競合マーカーが残ります(訳注:つまり そのファイル
+は git merge が編集したものです)。あなたは競合を手動で解決した後(訳注:当
+該ファイルを手動で編集してセーブして)、新しいファイルを作成するときと同
+じように、インデックスを更新してGit commitを実行できます。
+
+   あなたがgitkを使用して結果のコミットを調べると、2つの親があり、1つは
+現在のブランチの先頭を指し、もう1つはもう一方のブランチの先頭を指してい
+ることがわかるはずです。
+
+
+File: git.info,  Node: Resolving a merge,  Next: マージを元に戻す,  Prev: How to merge,  Up: Gitでの開発作業
+
+3.7 Resolving a merge
+=====================
+
+マージが自動的に解決されない場合、Gitはインデックスと作業ツリーを特別な
+状態のままにして、マージの解決に必要なすべての情報を提供します。
+
+   特に、競合のあるファイルはインデックスでマークされるため、問題を解決
+してインデックスを更新するまで、 git-commit(1) (git-commit.html) は失敗
+します:
+
+     $ git commit
+     file.txt: needs merge
+
+   また、 git-status(1) (git-status.html) は、これらのファイルを
+"unmerged" としてリストし、競合のあるファイルの内容には、以下のように競
+合マーカー(conflict marker)が追加されます(訳注:ファイルの内容が以下のよ
+うに変更されます):
+
+     <<<<<<< HEAD:file.txt
+     Hello world
+     =======
+     Goodbye
+     >>>>>>> 77976da35a11db4580b80ae27e8d65caf5208086:file.txt
+
+   あなたしなければならないことは、競合を解決するためにファイルを編集す
+ることです。そしてその後、以下のようにします。
+
+     $ git add file.txt
+     $ git commit
+
+   注意: コミットメッセージには、マージに関するいくつかの情報がすでに入
+力されていることに注意してください。 通常、このデフォルトのメッセージは
+変更せずに使用できますが、必要に応じて独自のコメントを追加することもでき
+ます。
+
+   単純なマージを解決するために知っておく必要があるのは、上記ですべてで
+す。 ただし、Gitは、競合の解決に役立つ詳細情報も提供します:
+
+* Menu:
+
+* マージ作業中に競合解決の助けを得る::
+
+
+File: git.info,  Node: マージ作業中に競合解決の助けを得る,  Up: Resolving a merge
+
+3.7.1 マージ作業中に競合解決の助けを得る
+----------------------------------------
+
+Gitが自動的にマージできたすべての変更は、すでにインデックスファイルに追
+加されているため、 git-diff(1) (git-diff.html) は競合のみを表示します。
+それは普通でない構文を使用します:
+
+     $ git diff
+     diff --cc file.txt
+     index 802992c,2b60207..0000000
+     --- a/file.txt
+     +++ b/file.txt
+     @@@ -1,1 -1,1 +1,5 @@@
+     ++<<<<<<< HEAD:file.txt
+      +Hello world
+     ++=======
+     + Goodbye
+     ++>>>>>>> 77976da35a11db4580b80ae27e8d65caf5208086:file.txt
+
+   この競合を解決した後にコミットされるコミットには、通常の親ではなく2つ
+の親があることを思い出してください。1つの親は現在のブランチの先端である
+HEADになります。もう一方は、MERGE_HEADに一時的に保存されるもう一方のブラ
+ンチの先端になります。
+
+   マージ中、インデックスは各ファイルについて3つのバージョンを保持します
+。これらの3つの「ファイルステージ」(file stages)はそれぞれ、ファイルの異
+なるバージョンを表します。
+
+     $ git show :1:file.txt  # 両方のブランチの共通の祖先にあるファイル
+     $ git show :2:file.txt  # the version from HEAD.
+     $ git show :3:file.txt  # the version from MERGE_HEAD.
+
+   git-diff(1) (git-diff.html) に競合を表示するように要求すると、競合す
+るマージ結果間で3方向のdiffが実行され、ステージ2と3の作業ツリーで、内容
+がステージ2と3の両方があるハンクのみが混合されて表示されます(つまり、ハ
+ンクのマージ結果がステージ2からのみ取得される場合、その部分は競合せず、
+表示されません。ステージ3についても同じで、ハンクのマージ結果がステージ
+3からのみ取得される場合、その部分は競合せず、表示されません)。
+
+   上記の差分は、file.txt の作業ツリーバージョンと、ステージ2バージョン
+と、ステージ3バージョンとの間の違いを示しています。したがって、各行の前
+に単一の ‘+’ または ‘-’ を付ける代わりに、2つの桁を使用するようになりま
+した。最初の桁は最初の親と作業ディレクトリのコピーの違いに使用され、2番
+目の列は2番目の親と 作業ディレクトリのコピーの違いに使用されます。（形式
+の詳細については、 linkgit: git-diff-files[1] の「COMBINED DIFF FORMAT」
+セクションを参照してください。)
+
+   あなたが編集するなどして、ちゃんと競合を解決した後(ただし、インデック
+スを更新する前)でdiffを実行してみると以下のようになります:
+
+     $ git diff
+     diff --cc file.txt
+     index 802992c,2b60207..0000000
+     --- a/file.txt
+     +++ b/file.txt
+     @@@ -1,1 -1,1 +1,1 @@@
+     - Hello world
+      -Goodbye
+     ++Goodbye world
+
+   これは、解決されたバージョンが最初の親から「Hello world」を削除し、
+2番目の親から「Goodbye」を削除し、以前は両方に存在しなかった「Goodbye
+world」を追加したことを示しています。
+
+   いくつかの特別なdiffオプションを使用すると、これらのステージのいずれ
+かに対して作業ディレクトリとdiffを取ることができます:
+
+     $ git diff -1 file.txt          # diff against stage 1
+     $ git diff --base file.txt      # same as the above
+     $ git diff -2 file.txt          # diff against stage 2
+     $ git diff --ours file.txt      # same as the above
+     $ git diff -3 file.txt          # diff against stage 3
+     $ git diff --theirs file.txt    # same as the above.
+
+   git-log(1) (git-log.html) や gitk(1) (gitk.html) コマンドも、マージの
+ためにに特別な援助を提供します:
+
+     $ git log --merge
+     $ gitk --merge
+
+   これらは、HEADまたはMERGE_HEADにのみ存在し、マージされていないファイ
+ルにアクセスするすべてのコミットを表示します。
+
+   あなたは git-mergetool(1) (git-mergetool.html) を使用することもできま
+す。これにより、Emacsやkdiff3などの外部ツールを使用してマージされていな
+いファイルをマージできます。
+
+   ファイル内の競合を解決するたびに、以下のようにしてインデックスを更新
+します:
+
+     $ git add file.txt
+
+   そうすると、そのファイルのさまざまなステージが「折りたたまれ」
+(collapsed)、その後、 ‘git diff’ は(デフォルトでは)そのファイルのdiffを
+表示しなくなります。
+
+
+File: git.info,  Node: マージを元に戻す,  Next: Fast-forward merges,  Prev: Resolving a merge,  Up: Gitでの開発作業
+
+3.8 マージを元に戻す
+====================
+
+行き詰まり、あきらめて、混乱全体を捨てることにした場合は、いつでもマージ
+前の状態に戻ることができます
+
+     $ git merge --abort
+
+   または、あなたが破棄したいマージをすでにコミットしちゃってる場合は以
+下です
+
+     $ git reset --hard ORIG_HEAD
+
+   ただし、この最後のコマンドは危険な場合があります。コミット自体が別の
+ブランチにマージされている可能性がある場合は、既にコミット済のコミットを
+破棄しないでください。これを行うと、さらにマージが混乱する可能性がありま
+す。
+
+
+File: git.info,  Node: Fast-forward merges,  Next: 作業ミスを修正する,  Prev: マージを元に戻す,  Up: Gitでの開発作業
+
+3.9 Fast-forward merges
+=======================
+
+上記に記載されていない特殊なケースが1つあり、それは異なる方法で処理され
+ます。通常、マージは、マージされた2つの開発ラインのそれぞれを指す2つの親
+を持つマージコミットをもたらします。
+
+   けれども、現在のブランチが他のブランチの祖先である場合(したがって、現
+在のブランチに存在するすべてのコミットは、すでに他のブランチに含まれてい
+ます)、Gitは「fast-forward」(早送り)を実行するだけです。現在のブランチの
+ヘッドは、新しいコミットが作成されることなく、マージされたブランチのヘッ
+ドを指すように前方に移動されます。
+
+
+File: git.info,  Node: 作業ミスを修正する,  Next: 良好なパフォーマンスの確保,  Prev: Fast-forward merges,  Up: Gitでの開発作業
+
+3.10 作業ミスを修正する
+=======================
+
+作業ツリーを台無しにしたが、まだ間違いをコミットしていない場合は、作業ツ
+リー全体を最後にコミットした状態に戻すことができます
+
+     $ git restore --staged --worktree :/
+
+   コミットしたのを後悔した時、問題を解決するためには、根本的に異なる2つ
+の方法があります:
+
+  1. あなたは、古いコミットによって行われたことをすべて元に戻す新しいコ
+     ミットを作成できます。 あなたの間違いがすでに公表されているなら、こ
+     れは正しいことです。
+
+  2. あなたは、履歴を遡って古いコミットを変更できます。 すでに履歴を公開
+     している場合は、これは絶対にやってはいけません。Gitは通常、プロジェ
+     クトの「履歴」が変更されることを期待しておらず、履歴が変更されたブ
+     ランチから繰り返しマージを正しく実行することはできません。
+
+* Menu:
+
+* 新しいコミットによって作業ミスを修正する::
+* 履歴を巻き戻す事によって作業ミスを修正する::
+* Checking out an old version of a file::
+* 作業中の作業を一時的に保存しておく::
+
+
+File: git.info,  Node: 新しいコミットによって作業ミスを修正する,  Next: 履歴を巻き戻す事によって作業ミスを修正する,  Up: 作業ミスを修正する
+
+3.10.1 新しいコミットによって作業ミスを修正する
+-----------------------------------------------
+
+以前の変更を元に戻す新しいコミットを作成するのは非常に簡単です。
+git-revert(1) (git-revert.html) コマンドに不正なコミットへの参照を渡すだ
+けです。たとえば、最新のコミットを元に戻すには、以下のようにします:
+
+     $ git revert HEAD
+
+   これにより、HEADの変更を元に戻す新しいコミットが作成されます。そして
+あなたには新しいコミットのコミットメッセージを編集する機会が与えられます
+。
+
+   以前の変更を元に戻すこともできます。たとえば、最後から2番目を指定しま
+す:
+
+     $ git revert HEAD^
+
+   この場合、Gitは古い変更を元に戻そうとしますが、それ以降に行われた変更
+はそのまま残します。最近の変更が元に戻す変更と重複する場合は、resolving
+a merge (*note Resolving a merge::)の場合と同様に、競合を手動で修正する
+ように求められます。
+
+
+File: git.info,  Node: 履歴を巻き戻す事によって作業ミスを修正する,  Next: Checking out an old version of a file,  Prev: 新しいコミットによって作業ミスを修正する,  Up: 作業ミスを修正する
+
+3.10.2 履歴を巻き戻す事によって作業ミスを修正する
+-------------------------------------------------
+
+問題のあるコミットが最新のコミットであり、そのコミットをまだ公開していな
+い場合は、‘git reset’ を使用して破棄 (*note マージを元に戻す::)すること
+ができます。
+
+   あるいは、create a new commit (*note How to make a commit::)を実行す
+る場合と同じように、作業ディレクトリを編集してインデックスを更新し、間違
+いを修正することもできます。
+
+     $ git commit --amend
+
+   これにより、古いコミットが変更を組み込んだ新しいコミットに置き換えら
+れ、最初に古いコミットメッセージの方を編集する機会が与えられます。
+
+   繰り返しになりますが、すでに別のブランチにマージされている可能性のあ
+るコミットに対してこれを実行しないでください。 その場合は、代わりに
+git-revert(1) (git-revert.html) を使用してください。
+
+   履歴のさらに古いコミットを置き換えることも可能ですが、これは別の章
+(*note Rewriting history and maintaining patch series::)で扱う高度なトピ
+ックです。
+
+
+File: git.info,  Node: Checking out an old version of a file,  Next: 作業中の作業を一時的に保存しておく,  Prev: 履歴を巻き戻す事によって作業ミスを修正する,  Up: 作業ミスを修正する
+
+3.10.3 Checking out an old version of a file
+--------------------------------------------
+
+以前の悪い変更を元に戻すプロセスでは、 git-restore(1) (git-restore.html)
+を使用して特定のファイルの古いバージョンをチェックアウトすると便利な場合
+があります。
+
+     $ git restore --source=HEAD^ path/to/file
+
+   これは path/to/fileを、コミットHEAD^にある内容に置き換え、それに一致
+するようにインデックスを更新します。ブランチは変更されません。
+
+   作業ディレクトリを変更せずに古いバージョンのファイルを確認したい場合
+は、 git-show(1) (git-show.html) を使用して確認できます:
+
+     $ git show HEAD^:path/to/file
+
+   これにより、指定のバージョンのファイルが表示されます。
+
+
+File: git.info,  Node: 作業中の作業を一時的に保存しておく,  Prev: Checking out an old version of a file,  Up: 作業ミスを修正する
+
+3.10.4 作業中の作業を一時的に保存しておく
+-----------------------------------------
+
+何か複雑なことに取り組んでいる最中に、無関係であるが明白で些細なバグを見
+つけたとします。取り組みを続行する前にちょいと修正したいと思います。
+git-stash(1) (git-stash.html) を使用して作業の現在の状態を保存(stash;隠
+す)し、バグを修正した後(または、オプションで別のブランチで修正してから戻
+ってきた後)、保存(stash)しておいた進行中の変更を取り戻し(unstash)ます。
+
+     $ git stash push -m "work in progress for foo feature"
+
+   このコマンドは、変更を ‘stash’ に保存し、現在のブランチの先端に一致す
+るように作業ツリーとインデックスをリセットします。その後、通常どおりに
+(ちょいと)修正を行うことができます。
+
+     ... edit and test ...
+     $ git commit -a -m "blorpl: typofix"
+
+   その後、 ‘git stash pop’ で作業していたのに戻ることができます:
+
+     $ git stash pop
+
+
+File: git.info,  Node: 良好なパフォーマンスの確保,  Next: 信頼性の確保,  Prev: 作業ミスを修正する,  Up: Gitでの開発作業
+
+3.11 良好なパフォーマンスの確保
+===============================
+
+大規模なリポジトリでは、Gitは圧縮に頼って、履歴情報がディスクまたはメモ
+リ内のスペースを占有しすぎないようにします。 一部のGitコマンドは
+git-gc(1) (git-gc.html) を自動的に実行する可能性があるため、手動で実行す
+ることを心配する必要はありません。 ただし、大規模なリポジトリの圧縮には
+時間がかかる場合があるため、都合の悪いときに自動圧縮が開始されないように
+、明示的に ‘gc’ を呼び出すことをお勧めします。
+
+
+File: git.info,  Node: 信頼性の確保,  Prev: 良好なパフォーマンスの確保,  Up: Gitでの開発作業
+
+3.12 信頼性の確保
+=================
+
+* Menu:
+
+* リポジトリの破損をチェックする::
+* 失われた変更の回復::
+
+
+File: git.info,  Node: リポジトリの破損をチェックする,  Next: 失われた変更の回復,  Up: 信頼性の確保
+
+3.12.1 リポジトリの破損をチェックする
+-------------------------------------
+
+git-fsck(1) (git-fsck.html) コマンドは、リポジトリに対していくつかの自己
+整合性チェックを実行し、問題があれば報告します。これには時間がかかる場合
+があります。
+
+     $ git fsck
+     dangling commit 7281251ddd2a61e38657c827739c57015671a6b3
+     dangling commit 2706a059f258c6b245f298dc4ff2ccd30ec21a63
+     dangling commit 13472b7c4b80851a1bc551779171dcb03655e9b5
+     dangling blob 218761f9d90712d37a9c5e36f406f92202db07eb
+     dangling commit bf093535a34a4d35731aa2bd90fe6b176302f14f
+     dangling commit 8e4bec7f2ddaa268bef999853c25755452100f8e
+     dangling tree d50bb86186bf27b681d25af89d3b5b68382e4085
+     dangling tree b24c2473f1fd3d91352a624795be026d64c8841f
+     ...
+
+   宙ぶらりんオブジェクト(dangling objects)に関するinfoメッセージが表示
+されます。これらはリポジトリにまだ存在しているが、どのブランチからも参照
+されていないオブジェクトであり、しばらくすると ‘gc’ を使用して削除できま
+す(削除される予定です)。 ‘git fsck --no-dangling’ を実行してこれらの
+infoメッセージを抑制し、errorメッセージだけを表示することができます。
+
+
+File: git.info,  Node: 失われた変更の回復,  Prev: リポジトリの破損をチェックする,  Up: 信頼性の確保
+
+3.12.2 失われた変更の回復
+-------------------------
+
+* Menu:
+
+* Reflogs::
+* Examining dangling objects(宙ぶらりんオブジェクトを調べる): Examining dangling objects[宙ぶらりんオブジェクトを調べる].
+
+
+File: git.info,  Node: Reflogs,  Next: Examining dangling objects[宙ぶらりんオブジェクトを調べる],  Up: 失われた変更の回復
+
+3.12.2.1 Reflogs
+................
+
+‘git reset --hard’ (*note 作業ミスを修正する::)を使用してブランチを変更
+し、そのブランチが履歴内のその時点への唯一の参照であることに気付いたとし
+ます。
+
+   幸い、Gitには、各ブランチの以前の値のすべてを保持する「reflog」と呼ば
+れるログがあります。したがって、この場合でも、たとえば、以下を使用して古
+い履歴を見つけることができます。
+
+     $ git log master@{1}
+
+   これは、以前のバージョンの ‘master’ ブランチヘッドから到達可能なコミ
+ットを一覧表示します。 この構文は、 ‘git log’ だけでなく、コミットを受け
+入れる任意のGitコマンドで使用できます。 他のいくつかの例:
+
+     $ git show master@{2}           # See where the branch pointed 2,
+     $ git show master@{3}           # 3, ... changes ago.
+     $ gitk master@{yesterday}       # See where it pointed yesterday,
+     $ gitk master@{"1 week ago"}    # ... or last week
+     $ git log --walk-reflogs master # show reflog entries for master
+
+   HEAD用には個別のreflogが保持されるため、以下のようにできます
+
+     $ git show HEAD@{"1 week ago"}
+
+   現在のブランチが1週間前に指し示したものではなく、HEADが1週間前に指し
+示したものを表示します。これにより、チェックアウトした内容の履歴を確認で
+きます。
+
+   reflogはデフォルトで30日間保持され、その後、たぶん刈り取られます
+(prune)。この刈り取りを制御する方法については、 git-reflog(1)
+(git-reflog.html) や linkgit:git-gc [1] を参照してください。詳細について
+は、 gitrevisions(7) (gitrevisions.html)の「SPECIFYING REVISIONS」セクシ
+ョンを参照してください。
+
+   注意: reflogの履歴は、通常のGitの履歴とは大きく異なることに注意してく
+ださい。通常の履歴は同じプロジェクトで動作するすべてのリポジトリで共有さ
+れますが、reflogの履歴は共有されません。reflogは、ローカルリポジトリのブ
+ランチが時間の経過とともにどのように変化したかについてのみ通知します。
+
+
+File: git.info,  Node: Examining dangling objects[宙ぶらりんオブジェクトを調べる],  Prev: Reflogs,  Up: 失われた変更の回復
+
+3.12.2.2 Examining dangling objects(宙ぶらりんオブジェクトを調べる)
+...................................................................
+
+状況によっては、reflogで保存できない場合があります。たとえば、ブランチを
+削除して、そこに含まれる履歴が必要であることに気付いたとします。reflogも
+削除されます。ただし、リポジトリをまだ刈り取りしていない場合でも、 ‘git
+fsck’ が報告する宙ぶらりんオブジェクトで失われたコミットを見つけることが
+できる場合があります。 詳細については、 *note Dangling
+objects(宙ぶらりんオブジェクト): Dangling
+objects[宙ぶらりんオブジェクト].を参照してください。
+
+     $ git fsck
+     dangling commit 7281251ddd2a61e38657c827739c57015671a6b3
+     dangling commit 2706a059f258c6b245f298dc4ff2ccd30ec21a63
+     dangling commit 13472b7c4b80851a1bc551779171dcb03655e9b5
+     ...
+
+   あなたは、たとえば、以下のようにして、これらの宙ぶらりんコミットの1つ
+を調べることができます。
+
+     $ gitk 7281251ddd --not --all
+
+   これを言葉で説明すると、つまり、宙ぶらりんコミットによって記述された
+コミット履歴を表示したいが、既存のすべてのブランチとタグによって記述され
+た履歴は表示したくないということです。したがって、失われたコミットから到
+達可能な履歴を正確に取得できます。(そして、それが1つのコミットだけではな
+い可能性があることに注意してください。これは「開発ラインの先端」(tip of
+the line)が宙ぶらりんだと報告するだけです。がしかし、全体に渡る深く複雑
+なコミット履歴が削除された可能性があります。)
+
+   履歴を元に戻したい場合は、いつでもそれを指す新しい参照を作成できます
+。たとえば、新しいブランチを作成できます:
+
+     $ git branch recovered-branch 7281251ddd
+
+   他のタイプの宙ぶらりんオブジェクト(ブロブとツリー)でもこれは可能であ
+り、宙ぶらりんオブジェクトは他の状況でも発生する可能性があります。
+
+
+File: git.info,  Node: Sharing development with others,  Next: Rewriting history and maintaining patch series,  Prev: Gitでの開発作業,  Up: Top
+
+4 Sharing development with others
+*********************************
+
+* Menu:
+
+* Getting updates with git pull::
+* Submitting patches to a project::
+* Importing patches to a project::
+* Public Git repositories::
+* 最小限の履歴でGitリポジトリを取得する方法::
+* Examples: Examples <1>.
+
+
+File: git.info,  Node: Getting updates with git pull,  Next: Submitting patches to a project,  Up: Sharing development with others
+
+4.1 Getting updates with git pull
+=================================
+
+リポジトリのクローンを作成し、あなた独自の変更をいくつかコミットした後、
+元のリポジトリで更新を確認し、それらをあなた独自の作業にマージすることを
+お勧めします。
+
+   git-fetch(1) (git-fetch.html) を使用したリモート追跡ブランチを最新の
+状態に保つ方法 (*note Updating a repository with git fetch::)や、2つのブ
+ランチをマージする方法についてはすでに説明しました。したがって、元のリポ
+ジトリのmasterブランチからの変更を以下のようにマージできます:
+
+     $ git fetch
+     $ git merge origin/master
+
+   しかしながら、 git-pull(1) (git-pull.html) コマンドは、これを1ステッ
+プで実行する方法を提供します:
+
+     $ git pull origin master
+
+   実際、 あなたが ‘master’ をチェックアウトしている場合、このブランチは
+、元のリポジトリのHEADブランチから変更を取得するように ‘git clone’ 実行
+時に構成済です。多くの場合、以下のように単純なもので上記を達成できます
+
+     $ git pull
+
+   このコマンドは、リモートブランチからリモート追跡ブランチ ‘origin/*’ に
+変更をフェッチし、そのデフォルトブランチを現在のブランチにマージします。
+
+   より一般的には、リモート追跡ブランチから作成されたブランチは、デフォ
+ルトでそのリモート追跡ブランチからプルされます。これらのデフォルトを制御
+する方法を学ぶためには、 git-config(1) (git-config.html) の
+‘branch.<name>.remote’ や ‘branch.<name>.merge’ オプションの説明と、
+git-checkout(1) (git-checkout.html) の ‘--track’ オプションの説明を参照
+してください。
+
+   ‘git pull’ はキーストロークを節約するだけでなく、プル元のブランチとリ
+ポジトリを文書化したデフォルトのコミットメッセージを生成するのにも役立ち
+ます。
+
+   (注意: ただし、fast-forward (*note Fast-forward merges::)の場合、その
+ようなコミットは作成されないことに注意してください。代わりに、アップスト
+リームブランチからの最新のコミットを指すようにブランチが更新されます。)
+
+   ‘git pull’ コマンドに「リモートリポジトリ」として ‘.’ を指定すること
+もできます。この場合、現在のリポジトリからのブランチにマージされます。
+
+     $ git pull . branch
+     $ git merge branch
+
+   よってこれらは、ほぼ同等です。
+
+
+File: git.info,  Node: Submitting patches to a project,  Next: Importing patches to a project,  Prev: Getting updates with git pull,  Up: Sharing development with others
+
+4.2 Submitting patches to a project
+===================================
+
+変更がいくつかある場合、それらを送信する最も簡単な方法は、パッチとして電
+子メールで送信することです:
+
+   まずは git-format-patch(1) (git-format-patch.html) の使用例です:
+
+     $ git format-patch origin
+
+   そうすると、現在のディレクトリに番号付きの一連のファイルを生成します
+。現在のブランチのパッチごとに1つですが、 ‘origin/HEAD’ についてのモノは
+ありません。
+
+   ‘git format-patch’ は、最初に送付状(cover letter)を付けることができま
+す。 ‘format-patch’ がコミットメッセージの後、パッチ自体の前に配置する
+3つの破線(‘---’)の後に、個々のパッチに関するコメントを挿入できます。送付
+状の素材を追跡するために ‘git notes’ を使用する場合、‘git format-patch
+--notes’ は同様の方法でコミットのnoteを含みます。
+
+   次に、これらをメールクライアントにインポートして、手動で送信できます
+。 ただし、一度に送信するものが多い場合は、 git-send-email(1)
+(git-send-email.html) スクリプトを使用してプロセスを自動化することをお勧
+めします。まずはプロジェクトのメーリングリストを参照して、パッチを送信す
+るための要件を決定してください。
+
+
+File: git.info,  Node: Importing patches to a project,  Next: Public Git repositories,  Prev: Submitting patches to a project,  Up: Sharing development with others
+
+4.3 Importing patches to a project
+==================================
+
+Gitは、このような電子メールで送信された一連のパッチをインポートするため
+の git-am(1) (git-am.html) (amは「apply mailbox」の略)と呼ばれるツールも
+提供します。パッチを含むすべてのメッセージを順番に1つのメールボックスフ
+ァイル(‘patches.mbox’ など)に保存してから、以下を実行します
+
+     $ git am -3 patches.mbox
+
+   Gitは各パッチを順番に適用します。競合が見つかった場合は停止し、
+Resolving a merge (*note Resolving a merge::)の説明に従って競合を修正で
+きます。( ‘-3’ オプションは、Gitにマージを実行するように指示します。ツリ
+ーとインデックスを中止してそのままにしておく場合は、そのオプションを省略
+できます。)
+
+   競合解決の結果でインデックスが更新されたら、新しいコミットを作成する
+代わりに、以下を実行するだけです。
+
+     $ git am --continue
+
+   こうすると、Gitはコミットを作成し、メールボックスから残りのパッチを適
+用し続けます。
+
+   最終的な結果は、元のメールボックスのパッチごとに1つずつ、一連のコミッ
+トになります。各パッチを含むメッセージから作者とコミットログメッセージが
+取得されます。
+
+
+File: git.info,  Node: Public Git repositories,  Next: 最小限の履歴でGitリポジトリを取得する方法,  Prev: Importing patches to a project,  Up: Sharing development with others
+
+4.4 Public Git repositories
+===========================
+
+プロジェクトに変更を送信する別の方法は、 git-pull(1) (git-pull.html) を
+使用して、リポジトリから変更をプルするようにそのプロジェクトのメンテナに
+指示することです。 「Getting updates with ‘git pull’ (*note Getting
+updates with git pull::)」のセクションでは、これを「メイン」リポジトリか
+ら更新を取得する方法として説明しましたが、 他の向きでも同様に機能します
+。
+
+   あなたとメンテナの両方が同じマシン上にアカウントを持っている場合は、
+お互いのリポジトリから直接変更をプルすることができます。リポジトリURLを
+引数として受け入れるコマンドは、ローカルディレクトリ名も受け入れます:
+
+     $ git clone /path/to/repository
+     $ git pull /path/to/other/repository
+
+   または ssh URL を指定できます:
+
+     $ git clone ssh://yourhost/~you/repository
+
+   開発者が少ないプロジェクトの場合、または少数のプライベートリポジトリ
+を同期する場合は、これで十分な場合があります。
+
+   けれども、これを行うためのより一般的な方法は、他のユーザーが変更をプ
+ルできるように、別のパブリックリポジトリ(通常は別のホスト上)を維持するこ
+とです。これは通常、より便利であり、進行中の私的な作業を公に見える作業か
+らきれいに分離することができます。
+
+   あなたは個人リポジトリで日常業務を継続しますが、定期的に個人リポジト
+リから公開リポジトリに変更を「プッシュ」して、他の開発者がそのリポジトリ
+からプルできるようにします。したがって、パブリックリポジトリを持つ他の開
+発者が1人いる状況での変更のフローは、以下のようになります:
+
+                           you push
+     your personal repo ------------------> your public repo
+           ^                                     |
+           |                                     |
+           | you pull                            | they pull
+           |                                     |
+           |                                     |
+           |               they push             V
+     their public repo <------------------- their repo
+
+   これを行う方法については、次のセクションで説明します。
+
+* Menu:
+
+* Setting up a public repository::
+* Gitプロトコルを介したGitリポジトリのエクスポート::
+* Exporting a git repository via HTTP::
+* Pushing changes to a public repository::
+* プッシュが失敗した場合の対処方法::
+* Setting up a shared repository::
+* Allowing web browsing of a repository::
+
+
+File: git.info,  Node: Setting up a public repository,  Next: Gitプロトコルを介したGitリポジトリのエクスポート,  Up: Public Git repositories
+
+4.4.1 Setting up a public repository
+------------------------------------
+
+あなたの個人リポジトリがディレクトリ ‘~/proj’ にあると仮定します。 まず
+、リポジトリの新しいクローンを作成し、それがパブリックであることを意図し
+ていることを ‘git daemon’ に伝えます:
+
+     $ git clone --bare ~/proj proj.git
+     $ touch proj.git/git-daemon-export-ok
+
+   結果のディレクトリ proj.git には、ベアgitリポジトリ(bare;生の、むき出
+しの)が含まれています。これは、 ‘.git’ ディレクトリの内容であり、周囲に
+ファイルがチェックアウトされていません。
+
+   次に、パブリックリポジトリをホストする予定のサーバーに ‘proj.git’ を
+コピーします。 scpやrsyncなど、あなたが最も便利と思うツールを使う事がで
+きます。
+
+
+File: git.info,  Node: Gitプロトコルを介したGitリポジトリのエクスポート,  Next: Exporting a git repository via HTTP,  Prev: Setting up a public repository,  Up: Public Git repositories
+
+4.4.2 Gitプロトコルを介したGitリポジトリのエクスポート
+------------------------------------------------------
+
+これが推奨の方法です。
+
+   もし、他の誰かがサーバーを管理している場合は、リポジトリを配置するデ
+ィレクトリと、リポジトリが表示される ‘git://’ URLを教えてもらってくださ
+い。そして、以下の「Pushing changes to a public repository (*note
+Pushing changes to a public repository::)」のセクションまでスキップでき
+ます。
+
+   それ以外の場合は、あなたは git-daemon(1) (git-daemon.html)を開始する
+必要があります。 ポート9418でリッスンします。デフォルトでは、Gitディレク
+トリのように見え、マジックファイルgit-daemon-export-okを含む任意のディレ
+クトリへのアクセスが許可されます。一部のディレクトリパスを ‘git daemon’
+の引数として渡すと、さらにそれらのパスへのエクスポートが制限されます。
+
+   ‘gitdaemon‘をinetdサービスとして実行することもできます。 詳細について
+は、 git-daemon(1) (git-daemon.html) のマニュアルページを参照してくださ
+い。(特に「examples」セクションを参照してください。)
+
+
+File: git.info,  Node: Exporting a git repository via HTTP,  Next: Pushing changes to a public repository,  Prev: Gitプロトコルを介したGitリポジトリのエクスポート,  Up: Public Git repositories
+
+4.4.3 Exporting a git repository via HTTP
+-----------------------------------------
+
+Gitプロトコルを使用した方がパフォーマンスと信頼性が向上しますが、Webサー
+バーが設定済のホストでは、HTTPエクスポートの設定が簡単な場合があります。
+
+   あなたは、新しく作成したベアGitリポジトリをWebサーバーによってエクス
+ポートされるディレクトリに配置し、Webクライアントに必要な追加情報を提供
+するためにいくつかの調整を行うだけです:
+
+     $ mv proj.git /home/you/public_html/proj.git
+     $ cd proj.git
+     $ git --bare update-server-info
+     $ mv hooks/post-update.sample hooks/post-update
+
+   (最後の2行の説明については、 git-update-server-info(1)
+(git-update-server-info.html) と githooks(5) (githooks.html) を参照して
+ください。)
+
+   ‘proj.git’ のURLを公表します。 そうすれば、他の誰もが、たとえば以下の
+ようなコマンドラインを使用して、そのURLからクローンを作成したりプルした
+りできるようになります:
+
+     $ git clone http://yourserver.com/~you/proj.git
+
+   (HTTPでプッシュすることもできるWebDAVを使用した少し洗練されたセットア
+ップについては、 setup-git-server-over-http
+(howto/setup-git-server-over-http.html) も参照してください。)
+
+
+File: git.info,  Node: Pushing changes to a public repository,  Next: プッシュが失敗した場合の対処方法,  Prev: Exporting a git repository via HTTP,  Up: Public Git repositories
+
+4.4.4 Pushing changes to a public repository
+--------------------------------------------
+
+上記の2つの手法(http (*note Exporting a git repository via HTTP::)または
+git (*note Gitプロトコルを介したGitリポジトリのエクスポート::)を介したエ
+クスポート)では、他のメンテナが最新の変更をフェッチできますが、書き込み
+アクセスは許可されないことに注意してください。これらはあなたのプライベー
+トリポジトリで作成された最新の変更であなたがパブリックリポジトリを更新す
+る必要があります。
+
+   これを行う最も簡単な方法は、 git-push(1) (git-push.html) とsshを使用
+することです。 ‘master’ という名前のリモートブランチを ‘master’ という名
+前のブランチの最新の状態で更新するには、以下のコマンドを実行します
+
+     $ git push ssh://yourserver.com/~you/proj.git master:master
+
+   または単に
+
+     $ git push ssh://yourserver.com/~you/proj.git master
+
+   ‘git fetch’ と同様に、これがfast-forward (*note Fast-forward
+merges::)にならない場合、 ‘git push’ は文句を言います。 この場合の処理の
+詳細については、次のセクションを参照してください。
+
+   注意: ‘push’ のターゲットは通常、ベア (*note
+[def_bare_repository]::)リポジトリであることに注意してください。チェック
+アウトされた作業ツリーがあるリポジトリにプッシュすることもできますが、混
+乱を防ぐために、現在チェックアウトされているブランチを更新するためのプッ
+シュはデフォルトで拒否されます。詳細については、 git-config(1)
+(git-config.html)の receive.denyCurrentBranch オプションの説明を参照して
+ください。
+
+   ‘git fetch’ と同様に、入力を節約するための構成オプションを設定するこ
+ともできます。たとえば:
+
+     $ git remote add public-repo ssh://yourserver.com/~you/proj.git
+
+   とすると、 ‘.git/config’ は以下のようになります:
+
+     [remote "public-repo"]
+             url = yourserver.com:proj.git
+             fetch = +refs/heads/*:refs/remotes/example/*
+
+   そうすると、以下のようにするだけで上記と同じプッシュをする事ができま
+す
+
+     $ git push public-repo master
+
+   詳細については、 git-config(1) (git-config.html)の
+‘remote.<name>.url’ や ‘branch.<name>.remote’ や ‘remote.<name>.push’ オ
+プションの説明を参照してください。
+
+
+File: git.info,  Node: プッシュが失敗した場合の対処方法,  Next: Setting up a shared repository,  Prev: Pushing changes to a public repository,  Up: Public Git repositories
+
+4.4.5 プッシュが失敗した場合の対処方法
+--------------------------------------
+
+プッシュによってリモートブランチでfast-forward (*note Fast-forward
+merges::)が発生しない場合は、以下のようなエラーで失敗します:
+
+      ! [rejected]        master -> master (non-fast-forward)
+     error: failed to push some refs to '...'
+     hint: Updates were rejected because the tip of your current branch is behind
+     hint: its remote counterpart. Integrate the remote changes (e.g.
+     hint: 'git pull ...') before pushing again.
+     hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+   これは、たとえば、以下の場合に発生する可能性があります:
+
+   • ‘git reset --hard’ を使用して、すでに公開されているコミットを削除し
+     ようとした
+
+   • ‘git commit --amend’ を使用して、すでに公開されているコミットを置き
+     換えようとした(*note 履歴を巻き戻す事によって作業ミスを修正する::の
+     ように)
+
+   • ‘git rebase’ を使用して、すでに公開されているコミットをリベースしよ
+     うとした(*note Keeping a patch series up to date using git
+     rebase::のように)
+
+   あなたはブランチ名の前にプラス記号(‘+’)を付けることで、 ‘git push’ に
+強制的に更新を実行させることができます:
+
+     $ git push ssh://yourserver.com/~you/proj.git +master
+
+   注意: 上記では ‘+’ 記号が追加されていることに注意してください。または
+、以下のように、 ‘-f’ フラグを使用してリモート更新を強制することもできま
+す:
+
+     $ git push -f ssh://yourserver.com/~you/proj.git master
+
+   通常、パブリックリポジトリのブランチヘッドが変更されると、以前にポイ
+ントしたコミットの子孫を指すように変更されます。この状況でプッシュを強制
+することにより、あなたはその慣習を破ることになります。(*note
+履歴の書き換えに関する問題::を参照してください。)
+
+   それでも、これは進行中のパッチシリーズを公開する簡単な方法を必要とす
+る人々にとって一般的な方法であり、これがブランチの管理方法であることを他
+の開発者に警告する限り、許容できる妥協案です。
+
+   他の人が同じリポジトリにプッシュする権利を持っている場合、この方法で
+プッシュが失敗する可能性もあります。その場合、正しい解決策は、最初にプル
+、またはフェッチとそれに続くリベースのいずれかの作業を更新した後にプッシ
+ュを再試行することです。詳細については、次のセクション (*note Setting up
+a shared repository::) および gitcvs-migration(7)
+(gitcvs-migration.html) を参照してください。
+
+
+File: git.info,  Node: Setting up a shared repository,  Next: Allowing web browsing of a repository,  Prev: プッシュが失敗した場合の対処方法,  Up: Public Git repositories
+
+4.4.6 Setting up a shared repository
+------------------------------------
+
+共同作業するもう1つの方法は、CVSで一般的に使用されているモデルと同様のモ
+デルを使用することです。このモデルでは、特別な権限を持つ複数の開発者がす
+べて、単一の共有リポジトリにプッシュおよびプルします。これを設定する方法
+については、 gitcvs-migration(7) (gitcvs-migration.html) を参照してくだ
+さい。
+
+   けれども、共有リポジトリに対するGitのサポートに問題はありませんが、
+Gitがサポートする、パッチをやり取りし公開リポジトリからプルすることによ
+る共同作業モードは中央共有リポジトリに比べて非常に多くの利点があるため、
+この操作モードは通常は推奨されません:
+
+   • パッチをすばやくインポートしてマージするGitの機能により、1人のメン
+     テナが非常に高いレートでも受信した変更を処理できます。 そして、それ
+     が多すぎる場合、 ‘git pull’ は、そのメンテナがこのジョブを他のメン
+     テナに委任するための簡単な方法を提供しますが、それでも着信変更のオ
+     プションのレビューを許可します。
+
+   • すべての開発者のリポジトリにはプロジェクト履歴の同じ完全なコピーが
+     あるため、特別なリポジトリはありません。また、相互の合意によって、
+     またはメンテナが応答しなくなったり、作業が困難になったりしたために
+     、別の開発者がプロジェクトのメンテナンスを引き継ぐのは簡単です。
+
+   • 「コミッター」の中央グループがないということは、誰が「グループ内側
+     」なのか、誰が「グループ外側」なのかについての正式な決定の必要性が
+     少ないことを意味します。
+
+
+File: git.info,  Node: Allowing web browsing of a repository,  Prev: Setting up a shared repository,  Up: Public Git repositories
+
+4.4.7 Allowing web browsing of a repository
+-------------------------------------------
+
+gitweb cgiスクリプトを使用すると、Gitをインストールしなくても、プロジェ
+クトのリビジョン、ファイルの内容、ログを簡単に参照できます。 RSS/Atomフ
+ィードやblame/annotationの詳細などの機能をオプションで有効にすることがで
+きます。
+
+   git-instaweb(1) (git-instaweb.html) コマンドは、gitwebを使用してリポ
+ジトリの閲覧を開始する簡単な方法を提供します。 instawebを使用する場合の
+デフォルトのサーバーはlighttpdです。
+
+   CGIまたはPerl対応サーバーを使用した永続的なインストールのセットアップ
+の詳細については、Gitソースツリーのファイル gitweb/INSTALL および
+gitweb(1) (gitweb.html) を参照してください。
+
+
+File: git.info,  Node: 最小限の履歴でGitリポジトリを取得する方法,  Next: Examples <1>,  Prev: Public Git repositories,  Up: Sharing development with others
+
+4.5 最小限の履歴でGitリポジトリを取得する方法
+=============================================
+
+履歴が切り捨てられたshallow clone (*note [def_shallow_clone]::)は、プロ
+ジェクトの最近の履歴のみに関心があり、アップストリームから完全な履歴を取
+得するのにコストがかかる場合に役立ちます。
+
+   shallow clone (*note [def_shallow_clone]::)は、 git-clone(1)
+(git-clone.html) に ‘--depth’ スイッチを指定することで作成されます。深さ
+は後で git-fetch(1) (git-fetch.html) の ‘--depth’ スイッチで変更するか、
+または、完全な履歴を ‘--unshallow’ で復元することができます。
+
+   shallow clone (*note [def_shallow_clone]::)内でのマージは、マージベー
+スが取得してきた最近の履歴にある限り機能します。そうでなければ、無関係な
+履歴をマージするようなものになり、大きな競合が発生する可能性があります。
+この制限により、このようなリポジトリはマージベースのワークフローでの使用
+に適さなくなる可能性があります。
+
+
+File: git.info,  Node: Examples <1>,  Prev: 最小限の履歴でGitリポジトリを取得する方法,  Up: Sharing development with others
+
+4.6 Examples
+============
+
+* Menu:
+
+* Maintaining topic branches for a Linux subsystem maintainer::
+
+
+File: git.info,  Node: Maintaining topic branches for a Linux subsystem maintainer,  Up: Examples <1>
+
+4.6.1 Maintaining topic branches for a Linux subsystem maintainer
+-----------------------------------------------------------------
+
+ここでは、Tony LuckがLinuxカーネルのIA64アーキテクチャーのメンテナーとし
+てGitをどのように使用しているかを説明します。
+
+   彼は2つのパブリックブランチを使用しています:
+
+   • 他の進行中の開発と統合されたときにパッチがある程度の露出を得ること
+     ができるように、パッチが最初に配置される「test」ツリー。このツリー
+     は、Andrewが必要なときにいつでも -mm にプルするために使用できます。
+
+   • テスト済のパッチが最終的な健全性チェックのために移動され、それらを
+     上流のLinusに送信(彼に「プルしてください」というリクエストを送信)す
+     るための手段としての「release」ツリー
+
+   彼はまた、パッチの論理グループをそれぞれ含む一時的なブランチ(トピック
+ブランチ)の組を使用します。
+
+   これを設定するには、最初にLinusのパブリックツリーのクローンを作成して
+作業ツリーを作成します。
+
+     $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git work
+     $ cd work
+
+   Linusのツリーは、 origin/master という名前のリモート追跡ブランチに保
+存され、 git-fetch(1) (git-fetch.html) を使用して更新できます。
+git-remote(1) (git-remote.html) を使用して "remote" を設定し、
+git-fetch(1) (git-fetch.html) を使用して他のパブリックツリーを追跡し、そ
+れらを最新の状態に保つことができます。*note Repositories and Branches::
+を参照してください。
+
+   そして今、作業するブランチを作成します。 これらは現在の origin/master
+ブランチの先端から始まり、デフォルトでLinusからの変更をマージするように
+設定する必要があります(git-branch(1) (git-branch.html)の ‘--track’ オプ
+ションを使用)。
+
+     $ git branch --track test origin/master
+     $ git branch --track release origin/master
+
+   これらは、 git-pull(1) (git-pull.html) を使用して簡単に最新の状態に保
+つことができます。
+
+     $ git switch test && git pull
+     $ git switch release && git pull
+
+   重要な注意点！ これらのブランチにローカルの変更がある場合、このマージ
+は履歴にコミットオブジェクトを作成します(ローカルの変更なしで、Gitは単に
+「fast-forward」マージを実行します)。 多くの人がこれがLinuxの歴史に生み
+出す「ノイズ」を嫌います。つまり、Linusにリリースブランチからプルするよ
+うに依頼すると、これらのノイズの多いコミットが永続的な履歴の一部になるた
+め、 ‘release’ ブランチでこれを気まぐれに行うことは避けてください。
+
+   いくつかの構成変数(git-config(1) (git-config.html) を参照)を使用する
+と、両方のブランチをパブリックツリーに簡単にプッシュできます。(*note
+Setting up a public repository:: を参照してください。)
+
+     $ cat >> .git/config <<EOF
+     [remote "mytree"]
+             url =  master.kernel.org:/pub/scm/linux/kernel/git/aegl/linux.git
+             push = release
+             push = test
+     EOF
+
+   次に、 git-push(1) (git-push.html) を使用して、testツリーとreleaseツ
+リーの両方をプッシュできます:
+
+     $ git push mytree
+
+   または、以下を使用してtestブランチとreleaseブランチの1つだけをプッシ
+ュします:
+
+     $ git push mytree test
+
+   または
+
+     $ git push mytree release
+
+   次に、コミュニティからいくつかのパッチを適用します。 このパッチ(また
+は関連するパッチのグループ)を保持するブランチの短い名前を考えて、Linusの
+ブランチの最近の安定したタグから新しいブランチを作成します。あなたのブラ
+ンチの為に安定したベースを選択すると、以下のようになります: 1) 無関係で
+おそらく軽くテストされた変更を含めることを避けるのは、あなた自身への助け
+になります。 2) ‘git bisect’ を使用して問題を見つける将来のバグハンター
+を支援する
+
+     $ git switch -c speed-up-spinlocks v2.6.35
+
+   次に、パッチを適用し、いくつかのテストを実行して、変更をコミットしま
+す。 パッチがマルチパートシリーズの場合は、それぞれを個別のコミットとし
+てこのブランチに適用する必要があります。
+
+     $ ... patch ... test  ... commit [ ... patch ... test ... commit ]*
+
+   この変更の状態に満足したら、公開する準備として「test」ブランチにマー
+ジできます:
+
+     $ git switch test && git merge speed-up-spinlocks
+
+   ここで競合が発生する可能性はほとんどありません…ただし、この手順にしば
+らく時間を費やし、アップストリームから新しいバージョンをプルした場合は、
+競合が発生する可能性があります。
+
+   しばらくして、十分な時間が経過してテストが完了したら、同じブランチを
+「release」ツリーにプルして、アップストリームに進む準備をすることができ
+ます。ここで、各パッチ（またはパッチシリーズ）を独自のブランチに保持する
+ことの価値を確認できます。 これは、パッチを任意の順序で「release」ツリー
+に移動できることを意味します。
+
+     $ git switch release && git merge speed-up-spinlocks
+
+   しばらくすると、いくつかのブランチが作成され、それぞれに適切に選択さ
+れた名前があるにもかかわらず、ブランチの目的や状態を忘れてしまう可能性が
+あります。特定のブランチにどのような変更があるか思い出すには以下を使用し
+ます:
+
+     $ git log linux..branchname | git shortlog
+
+   testブランチまたはreleaseブランチにすでにマージされているかどうかを確
+認するには、以下を使用します:
+
+     $ git log test..branchname
+
+   または
+
+     $ git log release..branchname
+
+   (このブランチがまだマージされていない場合は、いくつかのログエントリが
+表示されます。マージされている場合、出力はありません。)
+
+   パッチがその大きなサイクルを完了すると(testからreleaseに移動し、
+Linusによってプルされ、最後にローカルの ‘origin/master’ ブランチに戻ると
+いうサイクル)、この、変更のためのブランチは不要になります。あなたは以下
+の出力時にそれを悟ります:
+
+     $ git log origin..branchname
+
+   これの出力が空です。この時点で、このブランチを削除できます:
+
+     $ git branch -d branchname
+
+   一部の変更は非常に簡単なので、個別のブランチを作成してから、testブラ
+ンチとreleaseブランチのそれぞれにマージする必要はありません。これらの変
+更については、 ‘release’ ブランチに直接適用してから、それを ‘test’ ブラ
+ンチにマージしてください。
+
+   作業を ‘mytree’ にプッシュした後、 git-request-pull(1)
+(git-request-pull.html) を使用して、Linusに送信するための、「please
+pull」リクエストメッセージを準備できます:
+
+     $ git push mytree
+     $ git request-pull origin mytree release
+
+   これをさらに単純化するスクリプトのいくつかを以下に示します。
+
+     ==== update script ====
+     #
+     Gitツリーのブランチを更新します。更新するブランチがoriginの場合は、kernel.orgからプルします。それ以外の場合は、origin/masterブランチを
+     test ブランチ または releaseブランチにマージします
+
+     case "$1" in
+     test|release)
+             git checkout $1 && git pull . origin
+             ;;
+     origin)
+             before=$(git rev-parse refs/remotes/origin/master)
+             git fetch origin
+             after=$(git rev-parse refs/remotes/origin/master)
+             if [ $before != $after ]
+             then
+                     git log $before..$after | git shortlog
+             fi
+             ;;
+     *)
+             echo "usage: $0 origin|test|release" 1>&2
+             exit 1
+             ;;
+     esac
+
+     ==== merge script ====
+     # ブランチをtestブランチまたはreleaseブランチにマージします
+
+     pname=$0
+
+     usage()
+     {
+             echo "usage: $pname branch test|release" 1>&2
+             exit 1
+     }
+
+     git show-ref -q --verify -- refs/heads/"$1" || {
+             echo "Can't see branch <$1>" 1>&2
+             usage
+     }
+
+     case "$2" in
+     test|release)
+             if [ $(git log $2..$1 | wc -c) -eq 0 ]
+             then
+                     echo $1 already merged into $2 1>&2
+                     exit 1
+             fi
+             git checkout $2 && git pull . $1
+             ;;
+     *)
+             usage
+             ;;
+     esac
+
+     ==== status script ====
+     # report on status of my ia64 Git tree
+
+     gb=$(tput setab 2)  rb=$(tput setab 1)  restore=$(tput setab 9)
+
+     if [ `git rev-list test..release | wc -c` -gt 0 ]
+     then
+             echo $rb Warning: commits in release that are not in test $restore
+             git log test..release
+     fi
+
+     for branch in `git show-ref --heads | sed 's|^.*/||'`
+     do
+             if [ $branch = test -o $branch = release ]
+             then
+                     continue
+             fi
+
+             echo -n $gb ======= $branch ====== $restore " "
+             status=
+             for ref in test release origin/master
+             do
+                     if [ `git rev-list $ref..$branch | wc -c` -gt 0 ]
+                     then
+                             status=$status${ref:0:1}
+                     fi
+             done
+             case $status in
+             trl)
+                     echo $rb Need to pull into test $restore
+                     ;;
+             rl)
+                     echo "In test"
+                     ;;
+             l)
+                     echo "Waiting for linus"
+                     ;;
+             "")
+                     echo $rb All done $restore
+                     ;;
+             *)
+                     echo $rb "<$status>" $restore
+                     ;;
+             esac
+             git log origin/master..$branch | git shortlog
+     done
+
+
+File: git.info,  Node: Rewriting history and maintaining patch series,  Next: Advanced branch management,  Prev: Sharing development with others,  Up: Top
+
+5 Rewriting history and maintaining patch series
+************************************************
+
+通常、コミットはプロジェクトにのみ追加され、削除または置換されることはあ
+りません。 Gitはこの仮定に基づいて設計されており、これに違反すると、(た
+とえば、)Gitのマージ機構が間違ったことを実行することになります。
+
+   しかしながら、この仮定に違反することが役立つ場合があります。
+
+* Menu:
+
+* Creating the perfect patch series::
+* Keeping a patch series up to date using git rebase::
+* Rewriting a single commit::
+* Reordering or selecting from a patch series::
+* Using interactive rebases::
+* Other tools::
+* 履歴の書き換えに関する問題::
+* なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか::
+
+
+File: git.info,  Node: Creating the perfect patch series,  Next: Keeping a patch series up to date using git rebase,  Up: Rewriting history and maintaining patch series
+
+5.1 Creating the perfect patch series
+=====================================
+
+例えば、あなたが大規模なプロジェクトの貢献者で、複雑な機能を追加したとき
+、他の開発者があなたの変更を読んでそれらが正しいかどうかを確認するために
+、あなたがそれぞれの変更を行った理由を理解しやすい方法で、提示したいとし
+ます。
+
+   すべての変更をそれぞれ単一のパッチ(またはコミット)として提示すると、
+一度にすべてを消化するには多すぎると思える事があります。
+
+   あなたの仕事の全履歴を提示し、その間違い・訂正・行き詰まりでいっぱい
+いっぱいにしたら、それを見る人達は閉口するかもしれません。
+
+   したがって、理想なのは、通常、以下のような一連のパッチを作成すること
+です:
+
+  1. 各パッチは順番に適用できます。
+
+  2. 各パッチには、変更を説明するメッセージとともに、単一の論理的な変更
+     が含まれています。
+
+  3. デグレを引き起こすパッチはありません。シリーズの最初の部分を適用し
+     た後でも、結果のプロジェクトはコンパイルおよび動作し、以前にはなか
+     ったバグはありません。
+
+  4. このシリーズ全体は、あなた自身の(これらのパッチシリーズよりおそらく
+     もっともっと厄介であった)開発作業で行ったのと同じ最終結果を生み出し
+     ます。
+
+   これを行うのに役立ついくつかのツールを紹介し、それらの使用方法を説明
+してから、履歴を書き換えているために発生する可能性のあるいくつかの問題に
+ついて説明します。
+
+
+File: git.info,  Node: Keeping a patch series up to date using git rebase,  Next: Rewriting a single commit,  Prev: Creating the perfect patch series,  Up: Rewriting history and maintaining patch series
+
+5.2 Keeping a patch series up to date using git rebase
+======================================================
+
+リモート追跡ブランチ ‘origin’ にブランチ ‘mywork’ を作成し、その先頭にい
+くつかのコミットを作成するとします:
+
+     $ git switch -c mywork origin
+     $ vi file.txt
+     $ git commit
+     $ vi otherfile.txt
+     $ git commit
+     ...
+
+   myworkへのマージは実行されていないため、 ‘origin’ の先頭にあるパッチ
+の単純な線形シーケンスです:
+
+      o--o--O <-- origin
+             \
+              a--b--c <-- mywork
+
+   上流のプロジェクトでさらに興味深い作業が行われ、 ‘origin’ が前進歩し
+ました:
+
+      o--o--O--o--o--o <-- origin
+             \
+              a--b--c <-- mywork
+
+   この時点で、 ‘pull’ を使用してあなたの変更をマージして戻すことができ
+ます。 その結果、次のような新しいマージコミットが作成されます:
+
+      o--o--O--o--o--o <-- origin
+             \        \
+              a--b--c--m <-- mywork
+
+   しかしながら、myworkの履歴をマージせずに単純な一連のコミットを保持し
+たい場合は、代わりに git-rebase(1) (git-rebase.html) を使用することを選
+択できます:
+
+     $ git switch mywork
+     $ git rebase origin
+
+   これにより、各コミットがmyworkから削除され、一時的にパッチとして(
+‘.git/rebase-apply’ という名前のディレクトリに)保存され、最新バージョン
+のoriginを指すようにmyworkが更新され、保存された各パッチが新しいmyworkに
+適用されます。結果は以下のようになります:
+
+      o--o--O--o--o--o <-- origin
+                      \
+                       a'--b'--c' <-- mywork
+
+   その過程で、競合が見つかる可能性があります。その場合、rebaseは停止し
+、競合を修正できるようになります。 競合を修正した後は、それらのコンテン
+ツに対して ‘git add’ を使用してインデックスを更新します。そして ‘ git
+commit‘ を実行する代わりに以下を実行します:
+
+     $ git rebase --continue
+
+   そうすると、Gitは残りのパッチを適用し続けます。
+
+   あなたは、いつでも ‘--abort’ オプションを使用してこの作業を中止し、リ
+ベースを開始する前の状態にmyworkを戻すことができます:
+
+     $ git rebase --abort
+
+   ブランチ内の多数のコミットを並べ替えたり編集したりする必要がある場合
+は、 ‘git rebase -i’ を使用する方が簡単な場合があります。これにより、コ
+ミットを並べ替えたり押しつぶしたり(squash)、リベース中に個別に編集できる
+ようにマークを付けたりできます。詳細については *note Using interactive
+rebases:: を、代替案については *note Reordering or selecting from a
+patch series:: を参照してください。
+
+
+File: git.info,  Node: Rewriting a single commit,  Next: Reordering or selecting from a patch series,  Prev: Keeping a patch series up to date using git rebase,  Up: Rewriting history and maintaining patch series
+
+5.3 Rewriting a single commit
+=============================
+
+*note 履歴を巻き戻す事によって作業ミスを修正する::で、以下のようにして最
+新のコミットを置き換えることができることを確認しました
+
+     $ git commit --amend
+
+   これにより、古いコミットが変更を組み込んだ新しいコミットに置き換えら
+れ、最初に古いコミットメッセージを編集する機会が与えられます。これは、最
+後のコミットでのタイプミスを修正したり、ステージングが不十分なコミットの
+パッチの内容を調整したりする場合に役立ちます。
+
+   履歴のより深いところのコミットを修正する必要がある場合は、対話的
+rebaseの「edit」命令 (*note Using interactive rebases::)を使用できます。
+
+
+File: git.info,  Node: Reordering or selecting from a patch series,  Next: Using interactive rebases,  Prev: Rewriting a single commit,  Up: Rewriting history and maintaining patch series
+
+5.4 Reordering or selecting from a patch series
+===============================================
+
+時々、あなたはあなたの歴史のより深いところにコミットを編集したいです。
+1つのアプローチとしては、 ‘git format-patch’ を使用して一連のパッチを作
+成し、パッチ適用前の状態にリセットすることです:
+
+     $ git format-patch origin
+     $ git reset --hard origin
+
+   そして git-am(1) (git-am.html) を使用してパッチを再度適用する前に、必
+要に応じてパッチを変更、並べ替え、または削除します:
+
+     $ git am *.patch
+
+
+File: git.info,  Node: Using interactive rebases,  Next: Other tools,  Prev: Reordering or selecting from a patch series,  Up: Rewriting history and maintaining patch series
+
+5.5 Using interactive rebases
+=============================
+
+対話的なリベースで一連のパッチを編集することもできます。 これは
+‘format-patch’ を使用してパッチシリーズを並べ替える (*note Reordering or
+selecting from a patch series::)のと同じなので、あなたの最も好きなインタ
+ーフェースを使用してください。
+
+   現在のHEADを、そのまま保持する最後のコミットに基づいてリベースします
+。たとえば、最後の5つのコミットを並べ替える場合は、以下を使用します:
+
+     $ git rebase -i HEAD~5
+
+   これにより、リベースを実行するために実行する手順のリストが表示された
+エディタが開きます。
+
+     pick deadbee The oneline of this commit
+     pick fa1afe1 The oneline of the next commit
+     ...
+
+     # Rebase c0ffeee..deadbee onto c0ffeee
+     #
+     # Commands:
+     #  p, pick = use commit
+     #  r, reword = use commit, but edit the commit message
+     #  e, edit = use commit, but stop for amending
+     #  s, squash = use commit, but meld into previous commit
+     #  f, fixup = like "squash", but discard this commit's log message
+     #  x, exec = run command (the rest of the line) using shell
+     #
+     # These lines can be re-ordered; they are executed from top to bottom.
+     #
+     # If you remove a line here THAT COMMIT WILL BE LOST.
+     #
+     # However, if you remove everything, the rebase will be aborted.
+     #
+     # Note that empty commits are commented out
+
+   コメントで説明されているように、リストを編集することで、コミットの並
+べ替え、まとめ、コミットメッセージの編集などを行うことができます。満足し
+たら、リストを保存してエディタを閉じると、リベースが開始されます。
+
+   リベースは、 ‘pick’ が ‘edit’ に置き換えられた場合、またはリスト内の
+ステップが競合を機械的に解決できず、あなたの助けが必要な場合に停止します
+。競合の編集や解決が完了したら、 ‘git rebase --continue’ で続行できます
+。途中で物事があまりにもスパゲッティ(hairy)になっていると判断した場合は
+、いつでも ‘git rebase --abort’ で救済することができます。リベースが完了
+した後でも、reflog (*note Reflogs::)を使用して、元のブランチを回復できま
+す。
+
+   手順と追加のヒントの詳細については、 git-rebase(1) (git-rebase.html)
+の「INTERACTIVE MODE」セクションを参照してください。
+
+
+File: git.info,  Node: Other tools,  Next: 履歴の書き換えに関する問題,  Prev: Using interactive rebases,  Up: Rewriting history and maintaining patch series
+
+5.6 Other tools
+===============
+
+パッチシリーズを維持する目的で存在するStGitなど、他のツールは多数ありま
+すが、それらはこのマニュアルの範囲外です。
+
+
+File: git.info,  Node: 履歴の書き換えに関する問題,  Next: なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか,  Prev: Other tools,  Up: Rewriting history and maintaining patch series
+
+5.7 履歴の書き換えに関する問題
+==============================
+
+ブランチの履歴を書き換える際の主な問題は、マージに関係しています。誰かが
+あなたのブランチをフェッチしてブランチにマージすると、以下のような結果に
+なります:
+
+      o--o--O--o--o--o <-- origin
+             \        \
+              t--t--t--m <-- their branch:
+
+   次に、あなたが最後の3つのコミットを変更するとします:
+
+              o--o--o <-- new head of origin
+             /
+      o--o--O--o--o--o <-- old head of origin
+
+   このすべての履歴を1つのリポジトリにまとめて見ると、以下のようになりま
+す:
+
+              o--o--o <-- new head of origin
+             /
+      o--o--O--o--o--o <-- old head of origin
+             \        \
+              t--t--t--m <-- their branch:
+
+   Gitには、新しいヘッドが古いヘッドの更新バージョンであることを知る方法
+がありません。この状況は、2人の開発者が独立して新旧のヘッドで並行して作
+業を行った場合とまったく同じように扱われます。この時点で、誰かが新しいヘ
+ッドをブランチにマージしようとすると、Gitは古いものを新しいものに置き換
+えようとするのではなく、2つの(古いものと新しい)開発ラインをマージしよう
+とします。結果は予想外の可能性があります。
+
+   あなたは、履歴が書き換えられたブランチを公開することを選択することも
+できます。他の人がそれらのブランチを調べたりテストしたりするためにそれら
+のブランチをフェッチできると便利な場合がありますが、そのようなブランチを
+自分の作業に引き込もうとしないでください。
+
+   適切なマージをサポートする、本当に分散開発を行っている場合、公開され
+たブランチを書き直してはいけません。
+
+
+File: git.info,  Node: なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか,  Prev: 履歴の書き換えに関する問題,  Up: Rewriting history and maintaining patch series
+
+5.8 なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか
+======================================================================================
+
+git-bisect(1) (git-bisect.html) コマンドは、マージコミットを含む履歴を正
+しく処理します。ただし、検出されたコミットがマージコミットである場合、ユ
+ーザーは、そのコミットが問題を引き起こした理由を理解するために、通常より
+も慎重に作業する事を心がけて下さい。
+
+   以下の履歴があるとします:
+
+           ---Z---o---X---...---o---A---C---D
+               \                       /
+                o---o---Y---...---o---B
+
+   開発の(図の)上側のラインで、コミットXでZに存在する関数の1つの意味が変
+更されたとします。AにつながるZからのコミットは、関数の実装とZに存在する
+すべての呼び出し側の両方を変更し、一貫性を保つために、追加するする新しい
+呼び出し側も同様にします。Aにはバグはありません。
+
+   その間に、開発の(図の)下側のラインで、誰かがコミットYでその関数の新し
+い呼び出し側を追加するとします。BにつながるZからのコミットはすべて、その
+関数の古いセマンティクスを想定しており、呼び出し元と呼び出し先は互いに一
+貫しています。Bにもバグはありません。
+
+   さらに、この上下2つの開発ラインがCできれいにマージされるため、競合の
+解決は必要ないとします。
+
+   それにもかかわらず、開発の下側のラインで追加された呼び出し側は、開発
+の上側ラインに導入された新しいセマンティクスに変換されていないため、Cの
+コードは壊れています。したがって、Dがbad、Zがgoodで、git-bisect(1)
+(git-bisect.html) がCを原因として特定していることだけを知っている場合、
+あなたは問題がこのセマンティクスの変更によるものであることをどのようにし
+て解き明かしますか？
+
+   ‘git bisect’ の結果が非マージコミットである場合、通常はそのコミットだ
+けを調べることで問題を発見できるはずです。開発者は、変更を小さな自己完結
+型のコミットに分割することで、これを簡単に行うことができます。 ただし、
+上記の場合は、単一のコミットを調べても問題が明らかではないため、これは役
+に立ちません。代わりに、開発の全体的な俯瞰が必要です。さらに悪いことに、
+問題のある関数のセマンティクスの変更は、開発の上側ラインの変更のほんの一
+部にすぎない可能性があります。
+
+   一方、Cでマージする代わりに、Aの上にZからBまでの履歴をリベースした場
+合、以下の線形履歴が得られます:
+
+         ---Z---o---X--...---o---A---o---o---Y*--...---o---B*--D*
+
+   ZとD*の間のbisectは、単一の犯人コミットY*にヒットし、Y*が壊れた理由を
+理解するのはおそらく簡単でしょう。
+
+   多くの経験豊富なGitユーザーが、他の方法でマージが多いプロジェクトで作
+業している場合でも、公開する前に最新のアップストリームバージョンにリベー
+スすることで履歴を線形に保つのは、これが理由の一つです。
+
+
+File: git.info,  Node: Advanced branch management,  Next: Gitの概念,  Prev: Rewriting history and maintaining patch series,  Up: Top
+
+6 Advanced branch management
+****************************
+
+* Menu:
+
+* Fetching individual branches::
+* git fetch and fast-forwards::
+* Forcing git fetch to do non-fast-forward updates::
+* Configuring remote-tracking branches::
+
+
+File: git.info,  Node: Fetching individual branches,  Next: git fetch and fast-forwards,  Up: Advanced branch management
+
+6.1 Fetching individual branches
+================================
+
+git-remote(1) (git-remote.html) を使用する代わりに、一度に1つのブランチ
+を更新し、それを任意の名前でローカルに保存することもできます:
+
+     $ git fetch origin todo:my-todo-work
+
+   最初の引数 ‘origin’ は、最初にクローンを作成したリポジトリからフェッ
+チするようにGitに指示するだけのものです。2番目の引数は、Gitに ‘todo’ と
+いう名前のブランチをリモートリポジトリからフェッチし、それを
+‘refs/heads/my-todo-work’ という名前でローカルに保存するように指示します
+。
+
+   以下のように、他のリポジトリからブランチをフェッチすることもできます
+。
+
+     $ git fetch git://example.com/proj.git master:example-master
+
+   これは ‘example-master’ という名前の新しいブランチを作成し、指定され
+たURLのリポジトリの ‘master’ という名前のブランチをその中に保存します。
+‘example-master’ という名前のブランチがすでにある場合は、 ‘example.com’
+の masterブランチによって指定されたコミットにfast-forward (*note
+Fast-forward merges::)しようとします。これについて詳細は次のセクションを
+参照下さい:
+
+
+File: git.info,  Node: git fetch and fast-forwards,  Next: Forcing git fetch to do non-fast-forward updates,  Prev: Fetching individual branches,  Up: Advanced branch management
+
+6.2 git fetch and fast-forwards
+===============================
+
+前の例では、既存のブランチを更新するときに、 ‘git fetch’ は、新しいコミ
+ットを指すようにブランチのコピーを更新する前に、リモートブランチの最新の
+コミットがブランチのコピーの最新のコミットの子孫であることを確認します。
+Gitはこのプロセスをfast-forward (*note Fast-forward merges::)と呼んでい
+ます。
+
+   fast-forwardになるのは以下のような感じの場合です:
+
+      o--o--o--o <-- old head of the branch
+                \
+                 o--o--o <-- new head of the branch
+
+   場合によっては、新しいヘッドが実際には古いヘッドの子孫ではない可能性
+があります。たとえば、開発者は重大なミスがあったことに気づき、バックトラ
+ックすることを決定した可能性があり、その結果、以下のような状況になります
+:
+
+      o--o--o--o--a--b <-- old head of the branch
+                \
+                 o--o--o <-- new head of the branch
+
+   この場合、 ‘git fetch’ は失敗し、警告を出力します。
+
+   その場合でも、次のセクションで説明するように、Gitを強制的に新しいヘッ
+ドに更新することができます。 ただし、上記の状況では、それらを指す独自の
+参照をすでに作成している場合を除き、「a」や「b」というラベルの付いたコミ
+ットが失われる可能性があることに注意してください。
+
+
+File: git.info,  Node: Forcing git fetch to do non-fast-forward updates,  Next: Configuring remote-tracking branches,  Prev: git fetch and fast-forwards,  Up: Advanced branch management
+
+6.3 Forcing git fetch to do non-fast-forward updates
+====================================================
+
+ブランチの新しいヘッドが古いヘッドの子孫ではないためにgit fetchが失敗し
+た場合は、以下のように更新を強制できます:
+
+     $ git fetch git://example.com/proj.git +master:refs/remotes/example/master
+
+   注意: ‘+’ 記号が追加されていることに注意してください。または、以下の
+ように、 ‘-f’ フラグを使用して、フェッチされたすべてのブランチを強制的に
+更新することもできます:
+
+     $ git fetch -f origin
+
+   これは、前のセクションで述べたとおり、ポイントされた古いバージョンの
+example/masterが失われる可能性があることに注意してください。
+
+
+File: git.info,  Node: Configuring remote-tracking branches,  Prev: Forcing git fetch to do non-fast-forward updates,  Up: Advanced branch management
+
+6.4 Configuring remote-tracking branches
+========================================
+
+前述したように、 ‘origin’ は、最初にクローンを作成したリポジトリを参照す
+るためのショートカットにすぎません。この情報はGit構成変数に保存され、
+git-config(1) (git-config.html) を使用して確認できます。
+
+     $ git config -l
+     core.repositoryformatversion=0
+     core.filemode=true
+     core.logallrefupdates=true
+     remote.origin.url=git://git.kernel.org/pub/scm/git/git.git
+     remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+     branch.master.remote=origin
+     branch.master.merge=refs/heads/master
+
+   頻繁に使用する他のリポジトリがある場合、あなたは同様の構成オプション
+を作成して入力を省略できます。例えば、
+
+     $ git remote add example git://example.com/proj.git
+
+   とすると、 ‘.git/config’ は以下のようになります:
+
+     [remote "example"]
+             url = git://example.com/proj.git
+             fetch = +refs/heads/*:refs/remotes/example/*
+
+   注意: 上記の設定は、 git-remote(1) (git-remote.html) を使用する代わり
+に、ファイル ‘.git/config’ を直接編集することでも機能することに注意して
+ください。
+
+   リモートを構成した後、以下の3つのコマンドは同じことを行います:
+
+     $ git fetch git://example.com/proj.git +refs/heads/*:refs/remotes/example/*
+     $ git fetch example +refs/heads/*:refs/remotes/example/*
+     $ git fetch example
+
+   上記の構成オプションの詳細については git-config(1) (git-config.html)
+を、refspec構文の詳細については git-fetch(1) (git-fetch.html) を参照して
+ください。
+
+
+File: git.info,  Node: Gitの概念,  Next: Submodules,  Prev: Advanced branch management,  Up: Top
+
+7 Gitの概念
+***********
+
+Gitは、少数のシンプルで強力なアイデアに基づいて構築されています。これら
+のアイデアを理解しなくても物事を成し遂げることは可能ですが、理解した上で
+の方がGitをはるかに直感的に理解できるようになります。
+
+   私達は、最も重要なオブジェクト データベース (*note
+[def_object_database]::)とインデックス (*note [def_index]::)から始めるこ
+とにします。
+
+* Menu:
+
+* The Object Database::
+* The index::
+
+
+File: git.info,  Node: The Object Database,  Next: The index,  Up: Gitの概念
+
+7.1 The Object Database
+=======================
+
+私達はすでに*note Understanding History: Commits: Understanding History;
+Commits.で、すべてのコミットが40桁の「オブジェクト名」で保存されているの
+を見ました。実際、プロジェクトの履歴を表すために必要なすべての情報は、そ
+のような名前のオブジェクトに格納されています。いずれの場合も、名前はオブ
+ジェクトのコンテンツのSHA-1ハッシュを使用して計算されます。SHA-1ハッシュ
+は暗号化ハッシュ関数です。それが私たちにとって意味することは、同じ名前の
+2つの異なるオブジェクトを見つけることは不可能であるということです。これ
+には多くの利点があります:
+
+   • Gitは、名前を比較するだけで、2つのオブジェクトが同一であるかどうか
+     をすばやく判断できます。
+
+   • オブジェクト名はすべてのリポジトリで同じ方法で計算されるため、2つの
+     リポジトリに保存されている同じコンテンツ(same content)は常に同じ名
+     前(same name)で保存されます。
+
+   • Gitは、オブジェクトの名前がまだその内容のSHA-1ハッシュであるかどう
+     かを確認することによって、オブジェクトを読み取るときにエラーを検出
+     できます。
+
+   (オブジェクトのフォーマットとSHA-1計算の詳細については、*note Object
+storage format::を参照してください。)
+
+   オブジェクトには "blob"、"tree"、"commit"、"tag" の4種類があります。
+
+   • ブロブ オブジェクト("blob" object) (*note [def_blob_object]::)は、
+     ファイルデータを格納するために使用されます。
+
+   • ツリーオブジェクト("tree" object) (*note [def_tree_object]::)は、
+     1つ以上のブロブオブジェクトをディレクトリ構造に結び付けます。さらに
+     、ツリーオブジェクトは他のツリーオブジェクトを参照できるため、ディ
+     レクトリ階層が作成されます。
+
+   • コミットオブジェクト("commit" object) (*note
+     [def_commit_object]::)は、そのようなディレクトリ階層をリビジョンの
+     有向非巡回グラフ(directed acyclic graph) (*note [def_DAG]::)に結び
+     付けます。各コミットには、その時点でディレクトリ階層を指定する正確
+     に1つのツリーのオブジェクト名が含まれます。さらにコミットは、そのデ
+     ィレクトリ階層に到達した方法の履歴を説明する「親」コミットオブジェ
+     クトを参照します。
+
+   • タグオブジェクト("tag" object) (*note [def_tag_object]::)はシンボリ
+     ックに識別を行い、他のオブジェクトに署名するために使用できます。 こ
+     れには、オブジェクト名と別のオブジェクトのタイプ、（もちろん）シン
+     ボリック名、およびオプションで署名(signature)が含まれます。
+
+   オブジェクトタイプの詳細:
+
+* Menu:
+
+* Commit Object::
+* Tree Object::
+* Blob Object::
+* Trust(信頼性): Trust[信頼性].
+* Tag Object::
+* Gitがオブジェクトを効率的に保存する方法; pack files::
+* Dangling objects(宙ぶらりんオブジェクト): Dangling objects[宙ぶらりんオブジェクト].
+* 破損したリポジトリの回復::
+
+
+File: git.info,  Node: Commit Object,  Next: Tree Object,  Up: The Object Database
+
+7.1.1 Commit Object
+-------------------
+
+「commit」オブジェクトは、ツリーの物理的な状態を、そこに到達した方法とそ
+の理由の説明にリンクします。 ‘--pretty=raw’ オプションを伴った
+git-show(1) (git-show.html) または git-log(1) (git-log.html) を使用し、
+あなたのお気に入りのコミットを調べてみます:
+
+     $ git show -s --pretty=raw 2be7fcb476
+     commit 2be7fcb4764f2dbcee52635b91fedb1b3dcf7ab4
+     tree fb3a8bdd0ceddd019615af4d57a53f43d8cee2bf
+     parent 257a84d9d02e90447b149af58b271c19405edb6a
+     author Dave Watson <dwatson@mimvista.com> 1187576872 -0400
+     committer Junio C Hamano <gitster@pobox.com> 1187591163 -0700
+
+         Fix misspelling of 'suppress' in docs
+
+         Signed-off-by: Junio C Hamano <gitster@pobox.com>
+
+   コミットは以下のように定義されています:
+
+   • ツリー(a tree): ツリーオブジェクトのSHA-1名(以下で定義)。特定の時点
+     でのディレクトリの内容を表します。
+
+   • 親(親達)(parent(s)): プロジェクトの履歴の直前のステップを表す、いく
+     つかのコミットのSHA-1名。上記の例には1つの親があります。マージコミ
+     ットには複数のコミットが含まれる場合があります。親のないコミットは
+     「ルート」コミット(root commit)と呼ばれ、プロジェクトの初期リビジョ
+     ンを表します。各プロジェクトには、少なくとも1つのルート(root)が必要
+     です。プロジェクトは複数のルーツ(roots)を持つこともできますが、それ
+     は一般的ではありません(または必ずしも良い考えではありません)。
+
+   • 作者(an author): この変更の責任者の名前とその日付。
+
+   • コミッター(a committer)：実際にコミットを作成した人の名前と、コミッ
+     トが行われた日付。 これは、作者(auther)とは異なる場合があります。た
+     とえば、作者がパッチを作成し、それを使用してコミットを作成した人に
+     電子メールで送信した場合です。
+
+   • このコミットを説明するコメント。
+
+   注意: コミット自体には、実際に何が変更されたかに関する情報は含まれて
+いないことに注意してください。すべての変更は、このコミットによって参照さ
+れるツリーの内容を、その親に関連付けられているツリーと比較することによっ
+て計算されます。特に、Gitはファイルの名前変更を明示的に記録しようとはし
+ませんが、パスの変更時に同じファイルデータが存在することで名前変更が示唆
+される場合を特定できます。 (たとえば、 git-diff(1) (git-diff.html) の
+‘-M’ オプションを参照してください。)
+
+   コミットは通常、 git-commit(1) (git-commit.html) によって作成されます
+。これにより、親が通常は現在のHEADであり、ツリーが現在インデックスに格納
+されているコンテンツから取得されるコミットが作成されます。
+
+
+File: git.info,  Node: Tree Object,  Next: Blob Object,  Prev: Commit Object,  Up: The Object Database
+
+7.1.2 Tree Object
+-----------------
+
+汎用性の高い git-show(1) (git-show.html) コマンドを使用してツリーオブジ
+ェクトを調べることもできますが、あなたは git-ls-tree(1)
+(git-ls-tree.html) で詳細を確認できます。
+
+     $ git ls-tree fb3a8bdd0ce
+     100644 blob 63c918c667fa005ff12ad89437f2fdc80926e21c    .gitignore
+     100644 blob 5529b198e8d14decbe4ad99db3f7fb632de0439d    .mailmap
+     100644 blob 6ff87c4664981e4397625791c8ea3bbb5f2279a3    COPYING
+     040000 tree 2fb783e477100ce076f6bf57e4a6f026013dc745    Documentation
+     100755 blob 3c0032cec592a765692234f1cba47dfdcc3a9200    GIT-VERSION-GEN
+     100644 blob 289b046a443c0647624607d471289b2c7dcd470b    INSTALL
+     100644 blob 4eb463797adc693dc168b926b6932ff53f17d0b1    Makefile
+     100644 blob 548142c327a6790ff8821d67c2ee1eff7a656b52    README
+     ...
+
+   ご覧のとおり、ツリーオブジェクトにはエントリのリストが含まれており、
+各エントリにはモード(mode)とオブジェクトタイプ(object type)とSHA-1名
+(SHA-1 name)と名前(name)があり、名前でソートされています。これは、単一の
+ディレクトリツリーの内容を表します。
+
+   オブジェクトタイプは、ファイルの内容を表すブロブ(blob)でも、サブディ
+レクトリの内容を表す別のツリーでもかまいません。 ツリー(tree)とブロブ
+(blob)は、他のすべてのオブジェクトと同様に、その内容のSHA-1ハッシュによ
+って名前が付けられるため、内容(再帰的にすべてのサブディレクトリの内容を
+含む)が同一である場合に限り、2つのツリーは同じSHA-1名を持ちます。これに
+より、Gitは、同じオブジェクト名を持つエントリを無視できるため、2つの関連
+するツリーオブジェクト間の違いをすばやく判断できます。
+
+   (注意: サブモジュールが存在する場合、ツリーにはエントリとしてコミット
+が含まれる場合もあります。その文書については、*note Submodules:: を参照
+してください。)
+
+   注意: すべてのファイルのモードが644または755であることに注意してくだ
+さい。Gitは実際には実行可能ビット(executable bit)にのみ注意を払います。
+
+
+File: git.info,  Node: Blob Object,  Next: Trust[信頼性],  Prev: Tree Object,  Up: The Object Database
+
+7.1.3 Blob Object
+-----------------
+
+あなたは git-show(1) (git-show.html) を使用して、ブロブ(blob)の内容を調
+べることができます。たとえば、上のツリーから ‘COPYING’ のエントリのブロ
+ブを取得します:
+
+     $ git show 6ff87c4664
+
+      Note that the only valid version of the GPL as far as this project
+      is concerned is _this_ particular version of the license (ie v2, not
+      v2.2 or v3.x or whatever), unless explicitly otherwise stated.
+     ...
+
+   「ブロブ」(blob)オブジェクトは、データのバイナリブロブ(バイナリの小さ
+い塊)に他なりません。それは他のものを参照したり、いかなる種類の属性も持
+っていません。
+
+   ブロブはそのデータによって完全に定義されるため、ディレクトリツリー(ま
+たはリポジトリの複数の異なるバージョン)内の2つのファイルの内容が同じであ
+る場合、それらは同じブロブオブジェクトを共有します。オブジェクトはディレ
+クトリツリー内の場所から完全に独立しており、ファイルの名前を変更しても、
+ファイルが関連付けられているオブジェクトは変更されません。
+
+   注意: <revision>:<path> 構文で git-show(1) (git-show.html) を使用する
+と、任意のツリーまたはブロブオブジェクトを調べることができることに注意し
+てください。これは、現在チェックアウトされていないツリーの内容を参照する
+場合に役立つことがあります。
+
+
+File: git.info,  Node: Trust[信頼性],  Next: Tag Object,  Prev: Blob Object,  Up: The Object Database
+
+7.1.4 Trust(信頼性)
+-------------------
+
+あなたが、とあるソースからブロブのSHA-1名を受け取り、そのコンテンツを別
+の(おそらく信頼できない)ソースから受け取った場合でも、SHA-1名が一致する
+限り、それらの内容が正しいと信頼できます。これは、SHA-1が、同じハッシュ
+を生成する異なるコンテンツを見つけることが不可能になるように設計されてい
+るためです。
+
+   同様に、あなたがディレクトリ全体のコンテンツを信頼するためには、最上
+位ツリーオブジェクトのSHA-1名を信頼する事だけでよいのです。信頼できるソ
+ースからコミットのSHA-1名を受け取った場合、あなたは、そのコミットの親を
+介して到達可能なコミットの履歴全体、およびそれらのコミットによって参照さ
+れるツリーのすべてのコンテンツを簡単に確認できます。
+
+   したがって、システムに実際の信頼を導入するには、トップレベルのコミッ
+トの名前を含む「1つの」特別なメモにデジタル署名するだけです。あなたのデ
+ジタル署名は、あなたがそのコミットを信頼していることを他の人に示し、コミ
+ットの履歴の不変性は、彼らが履歴全体を信頼できることを他の人に伝えます。
+
+   いいかえると、あなたは、トップコミットの名前(SHA-1ハッシュ)を通知する
+一通の電子メールを送信するだけでアーカイブ全体を簡単に検証し、GPG/PGPな
+どを使用してその電子メールにデジタル署名することができます。
+
+   これを支援するために、Gitはタグオブジェクトも提供しています…
+
+
+File: git.info,  Node: Tag Object,  Next: Gitがオブジェクトを効率的に保存する方法; pack files,  Prev: Trust[信頼性],  Up: The Object Database
+
+7.1.5 Tag Object
+----------------
+
+タグオブジェクトには、オブジェクトとオブジェクトタイプとタグ名とタグを作
+成した人の名前("tagger")と、 git-cat-file(1) (git-cat-file.html) を使用
+して確認できるように、署名を含む可能性のあるメッセージが含まれます:
+
+     $ git cat-file tag v1.5.0
+     object 437b1b20df4b356c9342dac8d38849f24ef44f27
+     type commit
+     tag v1.5.0
+     tagger Junio C Hamano <junkio@cox.net> 1171411200 +0000
+
+     GIT 1.5.0
+     -----BEGIN PGP SIGNATURE-----
+     Version: GnuPG v1.4.6 (GNU/Linux)
+
+     iD8DBQBF0lGqwMbZpPMRm5oRAuRiAJ9ohBLd7s2kqjkKlq1qqC57SbnmzQCdG4ui
+     nLE/L9aUXdWeTFPron96DLA=
+     =2E+0
+     -----END PGP SIGNATURE-----
+
+   タグオブジェクトを作成および検証する方法については、 git-tag(1)
+(git-tag.html) コマンドを参照してください。 (注意: git-tag(1)
+(git-tag.html)を使用して、「軽量タグ」(lightweight tags)を作成することも
+できます。これは、タグオブジェクトではなく、名前が ‘refs/tags/’ で始まる
+単純な参照です)。
+
+
+File: git.info,  Node: Gitがオブジェクトを効率的に保存する方法; pack files,  Next: Dangling objects[宙ぶらりんオブジェクト],  Prev: Tag Object,  Up: The Object Database
+
+7.1.6 Gitがオブジェクトを効率的に保存する方法: pack files
+---------------------------------------------------------
+
+新しく作成されたオブジェクトは、最初にオブジェクトのSHA-1ハッシュにちな
+んで名付けられたファイル名のファイルとして作成されます( ‘.git/objects’ に
+保存されます)。
+
+   残念ながら、プロジェクトに多くのオブジェクトがあると、このシステムは
+非効率になります。 古いプロジェクトで以下を試してください:
+
+     $ git count-objects
+     6930 objects, 47620 kilobytes
+
+   最初の数は、個々のファイルに保持されているオブジェクトの数です。 2つ
+目は、これらの「緩い」オブジェクト("loose" objects)が占めるスペースの量
+です。
+
+   あなたは、これらの緩いオブジェクトを「パックファイル」(pack file)に移
+動することで、スペースを節約し、Gitを高速化できます。このファイルには、
+オブジェクトのグループが効率的な圧縮形式で保存されます。 パックファイル
+のフォーマットの詳細については、 pack format
+(technical/pack-format.html) をご覧ください。
+
+   緩いオブジェクトをパックに入れるには、 git repack を実行するだけです:
+
+     $ git repack
+     Counting objects: 6020, done.
+     Delta compression using up to 4 threads.
+     Compressing objects: 100% (6020/6020), done.
+     Writing objects: 100% (6020/6020), done.
+     Total 6020 (delta 4070), reused 0 (delta 0)
+
+   これにより、現在アンパックされているすべてのオブジェクトを含む単一の
+「パックファイル」が .git/objects/pack/ に作成されます。 あなたは、その
+後、以下を実行できます:
+
+     $ git prune
+
+   これは、今やパックに格納済の緩いオブジェクト("loose" objects)をすべて
+削除します。これにより、参照されていないオブジェクトも削除されます(たと
+えば、 ‘git reset’ を使用してコミットを削除すると作成される可能性があり
+ます)。 ‘.git/objects’ ディレクトリを確認するか、以下を実行することで、
+緩んだオブジェクトがなくなったことを確認できます。
+
+     $ git count-objects
+     0 objects, 0 kilobytes
+
+   オブジェクトファイルはなくなりましたが、それらのオブジェクトを参照す
+るコマンドは、以前とまったく同じように機能します。
+
+   git-gc(1) (git-gc.html) コマンドは、パッキング(packing)やプルーニング
+(pruning)を実行します。このため、通常、あなたに必要な高レベルのコマンド
+はこのコマンドだけです。
+
+
+File: git.info,  Node: Dangling objects[宙ぶらりんオブジェクト],  Next: 破損したリポジトリの回復,  Prev: Gitがオブジェクトを効率的に保存する方法; pack files,  Up: The Object Database
+
+7.1.7 Dangling objects(宙ぶらりんオブジェクト)
+----------------------------------------------
+
+git-fsck(1) (git-fsck.html) コマンドは、宙ぶらりんオブジェクト(dangling
+objects)について文句を言うことがあります。それらは問題ではありません。
+
+   宙ぶらりんオブジェクトの最も一般的な原因は、ブランチをリベースしたか
+、ブランチをリベースした他の誰かからプルしたことです。 *note Rewriting
+history and maintaining patch series:: を参照してください。 その場合、元
+のブランチの古いヘッドは、それが指しているすべてのものと同様に、まだ存在
+しています。ブランチポインタ自体は、別のポインタに置き換えたため、存在し
+ていません。
+
+   宙ぶらりんオブジェクトを引き起こす他の状況もあります。たとえば、ファ
+イルに「git add」を実行したために「宙ぶらりんブロブ」が発生する可能性が
+あります。実際にコミットして全体像の一部にする前に、そのファイル内の別の
+何かを変更し、その更新されたものをコミットした場合—この時最初に追加した
+古い状態は、コミットまたはツリーによってポイントされないため、宙ぶらりん
+ブロブオブジェクトになります。
+
+   同様に、 "ort" マージ戦略が実行され、交差マージ(criss-cross merge)が
+あり、したがって複数のマージベースがあることがわかった場合(これはかなり
+珍しいですが、実際に発生します)、一時的な内部マージベースとして1つの一時
+的な中間ツリーを生成します。そして、それらは実際のオブジェクトですが、最
+終結果はそれらを指すことにはならないため、リポジトリ内で「宙ぶらりん」に
+なります(または、交差マージが多数あり、マージベースが3つ以上ある場合は、
+さらに多くの可能性があります)。
+
+   一般的に、宙ぶらりんオブジェクトは心配する必要はありません。それらは
+非常に役立つことさえあります。あなたが何かを台無しにした場合、宙ぶらりん
+オブジェクトはあなたがあなたの古いツリーを回復する方法になることができま
+す(たとえば、リベースを行った後で、本当はリベースをやりたくなかった気づ
+きました。持っている宙ぶらりんオブジェクトを確認して、ヘッドを古い宙ぶら
+りん状態にリセットすることができます)。
+
+   コミットの場合は、あなたは以下を使用できます:
+
+     $ gitk <dangling-commit-sha-goes-here> --not --all
+
+   これは、指定されたコミットから到達可能なすべての履歴を要求しますが、
+ブランチ、タグ、またはその他の参照からは要求しません。 必要なものである
+と判断した場合は、いつでも新しい参照を作成できます。たとえば、
+
+     $ git branch recovered-branch <dangling-commit-sha-goes-here>
+
+   ブロブとツリーの場合、同じことはできませんが、それでも調べることがで
+きます。 あなたはただ以下のようにするだけです。
+
+     $ git show <dangling-blob/tree-sha-goes-here>
+
+   ブロブの内容が何であるか(または、ツリーの場合、基本的にそのディレクト
+リの ‘ls’ したのが何であるか)を示すために、それはあなたに宙ぶらりんオブ
+ジェクトを残した操作が何であったかについてのいくらかの考えを与えるかもし
+れません。
+
+   通常、宙ぶらりんのブロブやツリーはあまり興味深くはありません。ほとん
+どの場合、それらは中途のマージベースであるか(手動で修正した競合するマー
+ジがあった場合、ブローブにはマージからの競合マーカーが含まれることがよく
+あります)、または、‘git fetch’ で、あなたが ^C か何かで中断すると、オブ
+ジェクトデータベースに新しいオブジェクトの一部を残す事が発生しますが、そ
+れらは役に立たない単なる宙ぶらりんです。
+
+   とにかく、あなたは宙ぶらりん状態に興味がないと確信したら、あなたは到
+達できないすべてのオブジェクトを削除できます:
+
+     $ git prune
+
+   そしてそれらは消え去ります。(あなたは、静止した、活動していないリポジ
+トリでのみ ‘git prune’ を実行すべきです。これは、ファイルシステムの
+fsckリカバリを実行するようなものです。あなたはfsckを、ファイルシステムが
+マウントされている間は実行したくないでしょう。同様に ‘git prune’ は、リ
+ポジトリへの同時アクセスの場合でも害を及ぼさないように設計されていますが
+、紛らわしいメッセージや恐ろしいメッセージを受け取る可能性があります。）
+
+
+File: git.info,  Node: 破損したリポジトリの回復,  Prev: Dangling objects[宙ぶらりんオブジェクト],  Up: The Object Database
+
+7.1.8 破損したリポジトリの回復
+------------------------------
+
+設計上、Gitは信頼できるデータを慎重に扱います。ただし、Git自体にバグがな
+い場合でも、ハードウェアまたはオペレーティングシステムのエラーによってデ
+ータが破損する可能性があります。
+
+   このような問題に対する最初の防御策はバックアップです。cloneを使用する
+か、cp、tar、またはその他のバックアップメカニズムを使用して、Gitディレク
+トリをバックアップできます。
+
+   最後の手段として、破損したオブジェクトを検索し、手動で置き換えること
+ができます。その処理でさらに破損してしまう場合に備えて、これを試行する前
+にリポジトリをバックアップしてください。
+
+   私達は、問題は単一の欠落または破損したブロブであると想定しますが、こ
+れは解決可能な問題である場合があります。 (欠落しているツリー、特にコミッ
+トを回復することは*非常に*困難です)。
+
+   開始する前に、破損があることを確認し、 git-fsck(1) (git-fsck.html) を
+使用して破損がどこにあるかを把握します。これにはけっこう時間がかかる場合
+があります。
+
+   出力が次のようになっているとします:
+
+     $ git fsck --full --no-dangling
+     broken link from    tree 2d9263c6d23595e7cb2a21e5ebbb53655278dff8
+                   to    blob 4b9458b3786228369c63936db65827de3cc06200
+     missing blob 4b9458b3786228369c63936db65827de3cc06200
+
+   これで、ブロブ 4b9458b3 が欠落しており、ツリー 2d9263c6 がそれを指し
+ていることがわかります。欠落しているブロブブジェクトのコピーが1つだけ見
+つかった場合は、おそらく他のリポジトリで、それを
+‘.git/objects/4b/9458b3...’ に移動して実行できます。 しかし、あなたはそ
+れができなかったということにしましょう。そうするってぇと、あなたは
+git-ls-tree(1) (git-ls-tree.html) を使用して、それを指しているツリーを調
+べることができます。これにより、以下のような出力が得られるかもしれません
+:
+
+     $ git ls-tree 2d9263c6d23595e7cb2a21e5ebbb53655278dff8
+     100644 blob 8d14531846b95bfa3564b58ccfb7913a034323b8    .gitignore
+     100644 blob ebf9bf84da0aab5ed944264a5db2a65fe3a3e883    .mailmap
+     100644 blob ca442d313d86dc67e0a2e5d584b465bd382cbf5c    COPYING
+     ...
+     100644 blob 4b9458b3786228369c63936db65827de3cc06200    myfile
+     ...
+
+   これで、欠落しているブロブが ‘myfile’ という名前のファイルのデータで
+あることがわかりました。 また、ディレクトリを特定できる可能性もあります
+。たとえば、「somedirectory」にあるとします。 運が良ければ、不足している
+コピーは、作業ツリーの ‘somedirectory/myfile’ でチェックアウトしたコピー
+と同じである可能性があります。 git-hash-object(1) (git-hash-object.html)
+を使用して、それが正しいかどうかをテストできます:
+
+     $ git hash-object -w somedirectory/myfile
+
+   これにより、 somedirectory/myfile の内容を含むブロブオブジェクトが作
+成および保存され、そのオブジェクトのSHA-1が出力されます。 運が良ければ、
+4b9458b3786228369c63936db65827de3cc06200 になる可能性があります。その場
+合は、あなたの推測が正しかったということで、破損が修正されます。
+
+   それ以外の場合は、より多くの情報が必要です。あなたはファイルのどのバ
+ージョンが失われたかをどのように知ればよいのでしょうか？
+
+   これを行う最も簡単な方法は以下のとおりです:
+
+     $ git log --raw --all --full-history -- somedirectory/myfile
+
+   あなたは生の出力を問い合わせたので、あなたは以下のようなものを得ます
+。
+
+     commit abc
+     Author:
+     Date:
+     ...
+     :100644 100644 4b9458b newsha M somedirectory/myfile
+
+
+     commit xyz
+     Author:
+     Date:
+
+     ...
+     :100644 100644 oldsha 4b9458b M somedirectory/myfile
+
+   これは、ファイルの直前のバージョンが「newsha」であり、直前のバージョ
+ンが「oldsha」であったことを示しています。 また、oldshaから4b9458bへの変
+更、および4b9458bからnewshaへの変更に伴うコミットメッセージも分かります
+。
+
+   十分に小さな変更をコミットしている場合は、中間状態4b9458bの内容が再構
+築するのに適している可能性があります。
+
+   もしそれが可能でであれば、あなたは不足しているオブジェクトを以下のよ
+うに再作成できます。
+
+     $ git hash-object -w <recreated-file>
+
+   そしてあなたのリポジトリは再び正常になります。
+
+   (ところで、あなたは ‘fsck’ を無視する事がでます。以下の通り始めます。
+
+     $ git log --raw --all
+
+   そして、その全体の中で行方不明のオブジェクト(4b9458b)のshaを探しまし
+た。そうするかどうかはあなた次第です—Gitは多くの情報を*持っていて*、それ
+はただ1つの特定のブロブバージョンを失っているだけです。
+
+
+File: git.info,  Node: The index,  Prev: The Object Database,  Up: Gitの概念
+
+7.2 The index
+=============
+
+インデックスは、ソートされたパス名のリストを含むバイナリファイル(通常は
+‘.git/index’ に保持されます)であり、それぞれパーミッションとブロブオブジ
+ェクトのSHA-1を含んでいます。 git-ls-files(1) (git-ls-files.html) は、イ
+ンデックスの内容を表示できます。
+
+     $ git ls-files --stage
+     100644 63c918c667fa005ff12ad89437f2fdc80926e21c 0       .gitignore
+     100644 5529b198e8d14decbe4ad99db3f7fb632de0439d 0       .mailmap
+     100644 6ff87c4664981e4397625791c8ea3bbb5f2279a3 0       COPYING
+     100644 a37b2152bd26be2c2289e1f57a292534a51a93c7 0       Documentation/.gitignore
+     100644 fbefe9a45b00a54b58d94d06eca48b03d40a50e0 0       Documentation/Makefile
+     ...
+     100644 2511aef8d89ab52be5ec6a5e46236b4b6bcd07ea 0       xdiff/xtypes.h
+     100644 2ade97b2574a9f77e7ae4002a4e07a6a38e46d07 0       xdiff/xutils.c
+     100644 d5de8292e05e7c36c4b68857c1cf9855e3d2f70a 0       xdiff/xutils.h
+
+   注意: 古いドキュメントでは、「現在のディレクトリキャッシュ」または単
+に「キャッシュ」と呼ばれるインデックスが表示される場合があることに注意し
+てください。 これには3つの重要な特性があります:
+
+  1. インデックスには、単一の(一意に決定された)ツリーオブジェクトを生成
+     するために必要なすべての情報が含まれています。
+
+     たとえば、 git-commit(1) (git-commit.html) を実行すると、インデック
+     スからこのツリーオブジェクトが生成され、オブジェクトデータベースに
+     保存され、新しいコミットに関連付けられたツリーオブジェクトとして使
+     用されます。
+
+  2. インデックスを使用すると、インデックスが定義するツリーオブジェクト
+     と作業ツリーをすばやく比較できます。
+
+     これは、エントリごとにいくつかの追加データ(最終変更時刻など)を保存
+     することによって行われます。このデータは上に表示されず、作成された
+     ツリーオブジェクトに保存されませんが、作業ディレクトリ内のどのファ
+     イルがインデックスに保存されているものと異なるかをすばやく判断する
+     ために使用できるため、Gitはそのようなファイルからすべてのデータを読
+     み取って変更を探す必要がありません。
+
+  3. 異なるツリーオブジェクト間のマージの競合に関する情報を効率的に表す
+     ことができるため、各パス名を、関連するツリーに関する十分な情報に関
+     連付けて、それらの間で3方向のマージを作成できます。
+
+     私達はマージ中に、インデックスが1つのファイルの複数のバージョン（「
+     ステージ」と呼ばれる）を格納できることを *note
+     マージ作業中に競合解決の助けを得る:: で確認しました。上記の
+     git-ls-files(1) (git-ls-files.html) 出力の3番目の列はステージ番号で
+     あり、マージの競合があるファイルの場合は0以外の値を取ります。
+
+   したがって、インデックスは一種の一時的なステージング領域であり、作業
+中のツリーで埋められます。
+
+   あなたがインデックスを完全に吹き飛ばしても、それが記述されたツリーの
+名前を持っている限り、通常、情報は失われていません。
+
+
+File: git.info,  Node: Submodules,  Next: Low-level Git operations,  Prev: Gitの概念,  Up: Top
+
+8 Submodules
+************
+
+大規模なプロジェクトは、多くの場合、より小さな自己完結型のモジュールで構
+成されます。たとえば、組み込みLinuxディストリビューションのソースツリー
+には、いくつかのローカルな変更を加えたディストリビューション内のすべての
+ソフトウェアが含まれます。例えば動画プレーヤーは、特定の既知の動作バージ
+ョンの解凍ライブラリに対して構築する必要がある場合があります。複数の独立
+したプログラムがすべて同じビルドスクリプトを共有する場合があります。
+
+   一元化されたリビジョン管理システムでは、これは多くの場合、すべてのモ
+ジュールを1つのリポジトリに含めることで実現されます。 開発者は、すべての
+モジュールをチェックアウトすることも、操作する必要のあるモジュールのみを
+チェックアウトすることもできます。 物事を移動したり、APIや翻訳を更新した
+りしながら、1回のコミットで複数のモジュール間でファイルを変更することも
+できます。
+
+   Gitでは部分的なチェックアウトが許可されていないため、Gitでこのアプロ
+ーチを複製すると、開発者は触れたくないモジュールのローカルコピーを保持す
+る必要があります。巨大なチェックアウトでのコミットは、Gitがすべてのディ
+レクトリをスキャンして変更を確認する必要があるため、あなたが期待するより
+もずっと遅くなります。モジュールに多くのローカル履歴がある場合、クローン
+操作は永遠に終わりません。
+
+   プラス面として、分散型リビジョン管理システムは、外部ソースとはるかに
+うまく統合できます。 一元化されたモデルでは、外部プロジェクトの単一の任
+意のスナップショットが独自のリビジョン管理からエクスポートされ、ベンダー
+ブランチのローカルリビジョン管理にインポートされます。すべての歴史は隠さ
+れています。分散リビジョン管理を使用すると、外部履歴全体のクローンを作成
+し、開発をより簡単に追跡して、ローカルの変更を再マージできます。
+
+   Gitはサブモジュールのサポートにより、リポジトリに外部プロジェクトのチ
+ェックアウトをサブディレクトリとして含めることができます。サブモジュール
+は独自のIDを維持します。サブモジュールサポートは、サブモジュールリポジト
+リの場所とコミットIDを格納するだけなので、包含するプロジェクト
+("superproject")を複製する他の開発者は、同一リビジョンのすべてのサブモジ
+ュールを簡単に複製できます。スーパープロジェクトの部分的なチェックアウト
+ができます。あなたはサブモジュールのクローンを作成しない、一部、またはす
+べてを複製するようにGitに指示できます。
+
+   git-submodule(1) (git-submodule.html) コマンドは、Git1.5.3以降で使用
+できます。Git 1.5.2を使用しているユーザーは、リポジトリでサブモジュール
+のコミットを検索し、手動でチェックアウトできます。それ以前のバージョンは
+サブモジュールをまったく認識しません。
+
+   サブモジュールのサポートがどのように機能するかを確認するには、ここで
+、後でサブモジュールとして使用できる4つのリポジトリ例を作成します:
+
+     $ mkdir ~/git
+     $ cd ~/git
+     $ for i in a b c d
+     do
+             mkdir $i
+             cd $i
+             git init
+             echo "module $i" > $i.txt
+             git add $i.txt
+             git commit -m "Initial commit, submodule $i"
+             cd ..
+     done
+
+   次に、スーパープロジェクトを作成し、すべてのサブモジュールを追加しま
+す:
+
+     $ mkdir super
+     $ cd super
+     $ git init
+     $ for i in a b c d
+     do
+             git submodule add ~/git/$i $i
+     done
+
+     *Note*
+
+     ！スーパープロジェクトを公開する予定がある場合は、ここでローカル
+     URLを使用してはいけません！
+
+   ‘git submodule’ が作成したファイルをご覧下さい:
+
+     $ ls -a
+     .  ..  .git  .gitmodules  a  b  c  d
+
+   ‘git submodule add <repo> <path>’ コマンドは以下のことを行います:
+
+   • サブモジュールを ‘<repo>’ から現在のディレクトリの下の指定された
+     ‘<path>’ に複製し、デフォルトでmasterブランチをチェックアウトします
+     。
+
+   • サブモジュールのクローンパスを gitmodules(5) (gitmodules.html) ファ
+     イルに追加し、このファイルをインデックスに追加して、コミットの準備
+     をします。
+
+   • サブモジュールの現在のコミットIDをインデックスに追加し、コミットの
+     準備をします。
+
+   スーパープロジェクトをコミットします:
+
+     $ git commit -m "Add submodules a, b, c and d."
+
+   次に、スーパープロジェクトのクローンを作成します:
+
+     $ cd ..
+     $ git clone super cloned
+     $ cd cloned
+
+   サブモジュールディレクトリは存在しますが、空です:
+
+     $ ls -a a
+     .  ..
+     $ git submodule status
+     -d266b9873ad50488163457f025db7cdd9683d88b a
+     -e81d457da15309b4fef4249aba9b50187999670d b
+     -c1536a972b9affea0f16e0680ba87332dc059146 c
+     -d96249ff5d57de5de093e6baff9e0aafa5276a74 d
+
+     *Note*
+
+     上記のコミットオブジェクト名はユーザーによって異なりますが、リポジ
+     トリのHEADコミットオブジェクト名と一致している必要があります。 ‘git
+     ls-remote ../a’ を実行することで確認できます。
+
+   サブモジュールを引き出すのは2段階のプロセスです。 最初に ‘git
+submodule init’ を実行して、サブモジュールリポジトリのURLを
+‘.git/config’ に追加します:
+
+     $ git submodule init
+
+   次に、 ‘git submodule update’ を使用してリポジトリのクローンを作成し
+、スーパープロジェクトでチェックアウトされているコミットを確認します:
+
+     $ git submodule update
+     $ cd a
+     $ ls -a
+     .  ..  .git  a.txt
+
+   ‘git submodule update’ と ‘git submodule add’ の大きな違いの1つは、
+‘git submodule update’ がブランチの先端ではなく、特定のコミットをチェッ
+クアウトすることです。これは、タグをチェックアウトするようなものです。ヘ
+ッドが切り離されているため、あなたはブランチで作業していません。
+
+     $ git branch
+     * (detached from d266b98)
+       master
+
+   サブモジュール内で変更を加えたい場合で、ヘッドが切り離されている場合
+は、ブランチを作成またはチェックアウトし、変更を加え、サブモジュール内で
+変更を公開してから、スーパープロジェクトを更新して新しいコミットを参照す
+る必要があります:
+
+     $ git switch master
+
+   または
+
+     $ git switch -c fix-up
+
+   してから
+
+     $ echo "adding a line again" >> a.txt
+     $ git commit -a -m "Updated the submodule from within the superproject."
+     $ git push
+     $ cd ..
+     $ git diff
+     diff --git a/a b/a
+     index d266b98..261dfac 160000
+     --- a/a
+     +++ b/a
+     @@ -1 +1 @@
+     -Subproject commit d266b9873ad50488163457f025db7cdd9683d88b
+     +Subproject commit 261dfac35cb99d380eb966e102c1197139f7fa24
+     $ git add a
+     $ git commit -m "Updated submodule a."
+     $ git push
+
+   サブモジュールも更新する場合は、 ‘git pull’ の後に ‘git submodule
+update’ を実行する必要があります。
+
+* Menu:
+
+* サブモジュールの落とし穴::
+
+
+File: git.info,  Node: サブモジュールの落とし穴,  Up: Submodules
+
+8.1 サブモジュールの落とし穴
+============================
+
+サブモジュールの変更を参照するスーパープロジェクトに変更を公開する前に、
+必ずサブモジュールの変更を公開してください。サブモジュールの変更を公開す
+るのを忘れると、他の人はリポジトリのクローンを作成できなくなります:
+
+     $ cd ~/git/super/a
+     $ echo i added another line to this file >> a.txt
+     $ git commit -a -m "doing it wrong this time"
+     $ cd ..
+     $ git add a
+     $ git commit -m "Updated submodule a again."
+     $ git push
+     $ cd ~/git/cloned
+     $ git pull
+     $ git submodule update
+     error: pathspec '261dfac35cb99d380eb966e102c1197139f7fa24' did not match any file(s) known to git.
+     Did you forget to 'git add'?
+     Unable to checkout '261dfac35cb99d380eb966e102c1197139f7fa24' in submodule path 'a'
+
+   古いバージョンのGitでは、サブモジュールで新しいファイルや変更されたフ
+ァイルをコミットすることを簡単に忘れてしまう可能性があります。これにより
+、サブモジュールの変更をプッシュしないのと同様の問題が発生します。 Git
+1.7.0以降、スーパープロジェクトの ‘git status’ と ‘git diff’ はどちらも
+、サブモジュールが誤ってそのような状態になるのを防ぐために、新しいファイ
+ルまたは変更されたファイルが含まれている場合に変更されたものとして表示し
+ます。 ‘git diff’ は、パッチ出力を生成するとき、または ‘--submodule’ オ
+プションとともに使用するときに、作業ツリー側に ‘-dirty’ と付加します:
+
+     $ git diff
+     diff --git a/sub b/sub
+     --- a/sub
+     +++ b/sub
+     @@ -1 +1 @@
+     -Subproject commit 3f356705649b5d566d97ff843cf193359229a453
+     +Subproject commit 3f356705649b5d566d97ff843cf193359229a453-dirty
+     $ git diff --submodule
+     Submodule sub 3f35670..3f35670-dirty:
+
+   また、スーパープロジェクトでこれまでに記録されたコミットを超えて、サ
+ブモジュールのブランチを巻き戻さないでください。
+
+   最初にブランチをチェックアウトせずにサブモジュール内で変更を加えてコ
+ミットした場合、 ‘git submodule update’ を実行するのは安全ではありません
+。 それらは黙って上書きされます:
+
+     $ cat a.txt
+     module a
+     $ echo line added from private2 >> a.txt
+     $ git commit -a -m "line added inside private2"
+     $ cd ..
+     $ git submodule update
+     Submodule path 'a': checked out 'd266b9873ad50488163457f025db7cdd9683d88b'
+     $ cd a
+     $ cat a.txt
+     module a
+
+     *Note*
+
+     その変更は、サブモジュールのreflogに引き続き表示されます。
+
+   サブモジュールの作業ツリーにコミットされていない変更がある場合、 ‘git
+submodule update’ はそれらを上書きしません。 代わりに、ダーティブランチ
+から切り替えることができないという通常の警告が表示されます。
+
+
+File: git.info,  Node: Low-level Git operations,  Next: Hacking Git,  Prev: Submodules,  Up: Top
+
+9 Low-level Git operations
+**************************
+
+高レベルのコマンドの多くは、かつては低レベルのGitコマンドの小さなコアを
+使用するシェルスクリプトとして実装されていました。これらは、Gitで通常と
+は異なることを行う場合、またはGitの内部動作を理解する方法としても役立ち
+ます。
+
+* Menu:
+
+* Object access and manipulation::
+* The Workflow::
+* Examining the data::
+* Merging multiple trees::
+* Merging multiple trees, continued: Merging multiple trees; continued.
+
+
+File: git.info,  Node: Object access and manipulation,  Next: The Workflow,  Up: Low-level Git operations
+
+9.1 Object access and manipulation
+==================================
+
+git-cat-file(1) (git-cat-file.html) コマンドは、任意のオブジェクトの内容
+を表示できますが、通常は、より高いレベルの git-show(1) (git-show.html) の
+方が便利です。
+
+   git-commit-tree(1) (git-commit-tree.html) コマンドを使用すると、任意
+の親とツリーを使用してコミットを構築できます。
+
+   ツリーは git-write-tree(1) (git-write-tree.html) で作成でき、そのデー
+タには git-ls-tree(1) (git-ls-tree.html) でアクセスできます。 2つのツリ
+ーを git-diff-tree(1) (git-diff-tree.html) で比較できます。
+
+   タグは git-mktag(1) (git-mktag.html) で作成され、署名は
+git-verify-tag(1) (git-verify-tag.html) で確認できますが、通常は両方に
+git-tag(1) (git-tag.html) を使用する方が簡単です。
+
+
+File: git.info,  Node: The Workflow,  Next: Examining the data,  Prev: Object access and manipulation,  Up: Low-level Git operations
+
+9.2 The Workflow
+================
+
+git-commit(1) (git-commit.html) や git-restore(1) (git-restore.html) な
+どの高レベルの操作は、作業ツリー、インデックス、およびオブジェクトデータ
+ベース間でデータを移動することによって機能します。 Gitは、これらの各ステ
+ップを個別に実行する低レベルの操作を提供します。
+
+   通常、すべてのGit操作はインデックスファイルで機能します。一部の操作は
+インデックスファイルに対して*純粋に*機能します(インデックスの現在の状態
+を示す)が、ほとんどの操作は、インデックスファイルとデータベースまたは作
+業ディレクトリの間でデータを移動します。 したがって、Git操作には4つの主
+要な組み合わせがあります:
+
+* Menu:
+
+* working directory → index::
+* index → object database::
+* object database → index::
+* index → working directory::
+* 全てを結び付ける::
+
+
+File: git.info,  Node: working directory → index,  Next: index → object database,  Up: The Workflow
+
+9.2.1 working directory → index
+-------------------------------
+
+git-update-index(1) (git-update-index.html) コマンドは、作業ディレクトリ
+からの情報でインデックスを更新します。 通常、以下のように、更新するファ
+イル名を指定するだけでインデックス情報を更新します:
+
+     $ git update-index filename
+
+   ただし、ファイル名のグロブなどでよくある間違いを避けるために、コマン
+ドは通常、まったく新しいエントリを追加したり、古いエントリを削除したりし
+ません。つまり、通常は既存のキャッシュエントリを更新するだけです。
+
+   つまり、特定のファイルがもう存在しないこと、または新しいファイルを追
+加する必要があることをGitに伝えるには、それぞれ ‘--remove’ フラグと
+‘--add’ フラグを使用する必要があります。
+
+   注意！ ‘--remove’ フラグは、そのフラグの後ろに記述されたファイル名が
+必ずしも削除されることを意味しません。ファイルがディレクトリ構造にまだ存
+在する場合、インデックスは削除されずに新しいステータスで更新されます。
+‘--remove’ が意味する唯一のことは、update-indexが削除されたファイルを有
+効なものと見なし、ファイルが実際に存在しなくなった場合、それに応じてイン
+デックスを更新することです。
+
+   特別な場合として、 ‘git update-index --refresh’ を実行することもでき
+ます。これにより、各インデックスの「統計」情報が現在の統計情報と一致する
+ように更新されます。オブジェクトのステータス自体は「更新されません」。オ
+ブジェクトが古いバッキングストアオブジェクトとまだ一致するかどうかをすば
+やくテストするために使用されるフィールドのみが更新されます。
+
+   以前紹介した git-add(1) (git-add.html) は、 git-update-index(1)
+(git-update-index.html) の単なるラッパーです。
+
+
+File: git.info,  Node: index → object database,  Next: object database → index,  Prev: working directory → index,  Up: The Workflow
+
+9.2.2 index → object database
+-----------------------------
+
+あなたは、プログラムを使用して、現在のインデックスファイルを「ツリー」オ
+ブジェクトに書き込みます
+
+     $ git write-tree
+
+   これにはオプションはありません。現在のインデックスをその状態を説明す
+るツリーオブジェクトのセットに書き出すだけです。そして結果の最上位ツリー
+の名前が返されます。 そのツリーを使用して、いつでも別の方向からインデッ
+クスを再生成できます:
+
+
+File: git.info,  Node: object database → index,  Next: index → working directory,  Prev: index → object database,  Up: The Workflow
+
+9.2.3 object database → index
+-----------------------------
+
+オブジェクトデータベースから「ツリー」ファイルを読み取り、それを使用して
+現在のインデックスにデータを入力します(そして上書きします。後で復元する
+可能性のある未保存の状態がインデックスに含まれている場合は、やってはいけ
+ません！)。通常の操作は以下の通り
+
+     $ git read-tree <SHA-1 of tree>
+
+   これで、インデックスファイルは前に保存したツリーと同等になります。 た
+だし、これは「インデックス」ファイルのみです。作業ディレクトリの内容は変
+更されていません。
+
+
+File: git.info,  Node: index → working directory,  Next: 全てを結び付ける,  Prev: object database → index,  Up: The Workflow
+
+9.2.4 index → working directory
+-------------------------------
+
+ファイルを「チェックアウト」することにより、インデックスから作業ディレク
+トリを更新します。これはあまり一般的な操作ではありません。通常はファイル
+を更新したままにし、作業ディレクトリに書き込むのではなく、作業ディレクト
+リの変更についてインデックスファイルに通知するためです(つまり、 ‘git
+update-index’ )。
+
+   ただし、新しいバージョンにジャンプしたり、他の人のバージョンをチェッ
+クアウトしたり、以前のツリーを復元したりする場合は、インデックスファイル
+にread-treeを入力してから、結果をチェックアウトする必要があります。
+
+     $ git checkout-index filename
+
+   または、すべてのインデックスをチェックアウトする場合は、 ‘-a’ を使用
+します。
+
+   注意！ ‘git checkout-index’ は通常、古いファイルの上書きを拒否するた
+め、古いバージョンのツリーが既にチェックアウトされている場合は、 ‘-f’ フ
+ラグを指定する( ‘-a’ フラグ または filename より前に指定する)とチェック
+アウトを強制します。
+
+   最後に、これまでの範疇にない半端な話題をいくつか:
+
+
+File: git.info,  Node: 全てを結び付ける,  Prev: index → working directory,  Up: The Workflow
+
+9.2.5 全てを結び付ける
+----------------------
+
+‘git write-tree’ でインスタンス化したツリーをコミットするには、そのツリ
+ーとその背後にある履歴(最も注目すべきは、履歴上、その前にあった「親」の
+コミットです)を参照する「commit」オブジェクトを作成します。
+
+   通常、「コミット」には1つの親があります。つまり、特定の変更が行われる
+前のツリーの以前の状態です。ただし、2つ以上の親コミットを持つ場合もあり
+ます。その場合、そのようなコミットは、他のコミットによって表される2つ以
+上の以前の状態をまとめる(「マージする」)ため、「マージ」と呼びます。
+
+   つまり、「ツリー」は作業ディレクトリの特定のディレクトリ状態を表し、
+「コミット」は時間内のその状態を表し、どのようにしてそこに到達したかを説
+明します。
+
+   コミット時の状態を説明するツリーと親のリストをオブジェクトに与えるこ
+とで、コミットオブジェクトを作成します:
+
+     $ git commit-tree <tree> -p <parent> [(-p <parent2>)...]
+
+   次に、stdinでコミットの理由を示します(パイプまたはファイルからのリダ
+イレクト、またはttyで入力するだけ)。
+
+   ‘git commit-tree’ は、そのコミットを表すオブジェクトの名前を返します
+。あなたはそれを後で使用できるように保存しておくべきです。 通常、新しい
+‘HEAD’ 状態をコミットし、Gitはその状態に関するメモをどこに保存するかを気
+にしませんが、実際には、最後にコミットされた状態が何であったかを常に確認
+できるように、 ‘.git/HEAD’ が指すファイルに結果を書き込む傾向があります
+。
+
+   以下は、さまざまな部分がどのように組み合わされるかを示す図です:
+
+                          commit-tree
+                           commit obj
+                            +----+
+                            |    |
+                            |    |
+                            V    V
+                         +-----------+
+                         | Object DB |
+                         |  Backing  |
+                         |   Store   |
+                         +-----------+
+                            ^
+                write-tree  |     |
+                  tree obj  |     |
+                            |     |  read-tree
+                            |     |  tree obj
+                                  V
+                         +-----------+
+                         |   Index   |
+                         |  "cache"  |
+                         +-----------+
+              update-index  ^
+                  blob obj  |     |
+                            |     |
+         checkout-index -u  |     |  checkout-index
+                  stat      |     |  blob obj
+                                  V
+                         +-----------+
+                         |  Working  |
+                         | Directory |
+                         +-----------+
+
+
+File: git.info,  Node: Examining the data,  Next: Merging multiple trees,  Prev: The Workflow,  Up: Low-level Git operations
+
+9.3 Examining the data
+======================
+
+あなたはさまざまなヘルパーツールを使用して、オブジェクトデータベースとイ
+ンデックスに表示されているデータを調べることができます。すべてのオブジェ
+クトについて、 git-cat-file(1) (git-cat-file.html) を使用して、オブジェ
+クトに関する詳細を調べることができます:
+
+     $ git cat-file -t <objectname>
+
+   上記はオブジェクトのタイプを表示します。タイプを取得すると(もっとも、
+通常はオブジェクトの配置場所で自明ではありますけれども)、以下を使用でき
+ます
+
+     $ git cat-file blob|tree|commit|tag <objectname>
+
+   とすると、その内容を表示します。 注意！ ツリーの内容はバイナリです。
+よって、その内容を表示するための「git ls-tree」と呼ばれる特別なヘルパー
+が、内容のバイナリをより読みやすい形式に変換します。
+
+   「コミット」オブジェクトは小さく、かなり自明である傾向があるため、そ
+れらを確認することは特に有益です。 特に、あなたが ‘.git/HEAD’ に先頭コミ
+ット名を付けるという規則に従うと、以下のことができます。
+
+     $ git cat-file commit HEAD
+
+   は、先頭コミットが何であったかを表示します。
+
+
+File: git.info,  Node: Merging multiple trees,  Next: Merging multiple trees; continued,  Prev: Examining the data,  Up: Low-level Git operations
+
+9.4 Merging multiple trees
+==========================
+
+Gitは、3方向マージを実行するのに役立ちます。これは、マージ手順を数回繰り
+返すことで、多方向マージに使用できます。 通常の状況では、3方向マージ(2ラ
+インの履歴の調整)を1回だけ実行して結果をコミットしますが、必要に応じて、
+一度に複数のブランチをマージできます。
+
+   3方向マージを実行するには、マージする2つのコミットから開始し、最も近
+い共通の親(3番目のコミット)を見つけて、これら3つのコミットに対応するツリ
+ーを比較します。
+
+   マージの「ベース」を取得するには、2つのコミットの共通の親を検索します
+:
+
+     $ git merge-base <commit1> <commit2>
+
+   これにより、両方が基づいているコミットの名前が出力されます。これらの
+コミットのツリーオブジェクトを検索する必要があります。これは、以下の方法
+で簡単に実行できます
+
+     $ git cat-file commit <commitname> | head -1
+
+   これは、ツリーオブジェクト情報は常にコミットオブジェクトの最初の行に
+からです。
+
+   マージする3つのツリー(1つの「元の」ツリー（別名共通ツリー）と2つの「
+結果」ツリー（別名マージするブランチ))が分かったら、インデックスに「マー
+ジ」読み取りを行います。 古いインデックスの内容を破棄する必要がある場合
+には文句を言うので、それらをコミット済であることをことを確認する必要があ
+ります。実際、通常は常に最後のコミットに対してマージを実行します(したが
+って、とにかく現在のインデックスにあるものと一致する必要があります)。
+
+   マージを行うには以下を行います
+
+     $ git read-tree -m -u <origtree> <yourtree> <targettree>
+
+   これにより、とるにたりない些細な3方向マージ操作(trivial merge
+operations)の全てがインデックスファイルに対して直接実行され、 ‘git
+write-tree’ を使用して結果を書き出すことができます。(訳注:trivial;ラテン
+語「3 本の道が合する所，ありふれたこと」の意がある)
+
+
+File: git.info,  Node: Merging multiple trees; continued,  Prev: Merging multiple trees,  Up: Low-level Git operations
+
+9.5 Merging multiple trees, continued
+=====================================
+
+悲しいことに、多くのマージはとるにたりないものでもなく些細なものでもあり
+ません。 追加、移動、または削除されたファイルがある場合、または両方のブ
+ランチが同じファイルを変更した場合は、「マージエントリ」を含むインデック
+スツリーが残ります。 このようなインデックスツリーはツリーオブジェクトに
+書き出すことはできません。結果を書き出す前に、他のツールを使用してこのよ
+うなマージの衝突を解決する必要があります。
+
+   このようなインデックスの状態は、 ‘git ls-files --unmerged’ コマンドで
+調べることができます。 たとえば:
+
+     $ git read-tree -m $orig HEAD $target
+     $ git ls-files --unmerged
+     100644 263414f423d0e4d70dae8fe53fa34614ff3e2860 1       hello.c
+     100644 06fa6a24256dc7e560efa5687fa84b51f0263c3a 2       hello.c
+     100644 cc44c73eb783565da5831b4d820c962954019b69 3       hello.c
+
+   ‘git ls-files --unmerged’ 出力の各行は、ブロブモードビット、ブロブ
+SHA-1、「ステージ番号」、ファイル名 です。 「ステージ番号」は、Gitがどの
+ツリーから来たかを示す方法です。ステージ1は「$orig」ツリーに対応し、ステ
+ージ2は「HEAD」ツリーに対応し、ステージ3は「$target」ツリーに対応します
+。
+
+   ささいなマージは ‘git read-tree -m’ 内で行われると先に述べました。 た
+とえば、ファイルが ‘$orig’ から、 ‘HEAD’ または ‘$target’ に変更されなか
+った場合、または同様に、ファイルが ‘$orig’ から ‘HEAD’ に変更され、かつ
+、 ‘$orig’ が ‘$target’ に変更された場合、最終的な結果は明らかに ‘HEAD’
+にあるものです。上記の例が示すのは、ファイル ‘hello.c’ が ‘$orig’ から
+‘HEAD’ に、かつ、 ‘$ orig’ から ‘$target’ に別の方法で変更されたことです
+。これは、以下のように、あなたのお気に入りの3方向マージプログラム、例え
+ば、これら3つのステージのブロブオブジェクトに対する ‘diff3’ または
+‘merge’ またはGit独自の merge-file を実行することで解決できます:
+
+     $ git cat-file blob 263414f >hello.c~1
+     $ git cat-file blob 06fa6a2 >hello.c~2
+     $ git cat-file blob cc44c73 >hello.c~3
+     $ git merge-file hello.c~2 hello.c~1 hello.c~3
+
+   これにより、競合がある場合は競合マーカーとともに、マージ結果が
+‘hello.c~2’ ファイルに残ります。マージ結果が理にかなっていることを確認し
+た後、あなたは、このファイルの最終的なマージ結果が何であるかをGitに伝え
+ることができます:
+
+     $ mv -f hello.c~2 hello.c
+     $ git update-index hello.c
+
+   パスが「マージされていない」状態の場合、そのパスに対して ‘git
+update-index’ を実行すると、Gitにパスを解決済みとしてマークするように指
+示します。
+
+   上記は、内部で概念的に何が起こるかを理解するのに役立つ、最下位レベル
+でのGitマージの説明です。 実際には、Git自体でさえも、このために ‘git
+cat-file’ を3回実行する人は誰もいません。ステージを一時ファイルに抽出し
+、その上で「マージ」スクリプトを呼び出す ‘git merge-index’ プログラムが
+あります:
+
+     $ git merge-index git-merge-one-file hello.c
+
+   そして、これが、より高いレベルの ‘git merge -s resolve’ の実装になっ
+ています。
+
+
+File: git.info,  Node: Hacking Git,  Next: Git用語集,  Prev: Low-level Git operations,  Up: Top
+
+10 Hacking Git
+**************
+
+この章では、おそらくGit開発者だけが理解する必要があるGit実装の内部の詳細
+について説明します。
+
+* Menu:
+
+* Object storage format::
+* Gitのソースコードを俯瞰する::
+
+
+File: git.info,  Node: Object storage format,  Next: Gitのソースコードを俯瞰する,  Up: Hacking Git
+
+10.1 Object storage format
+==========================
+
+すべてのオブジェクトには、オブジェクトの形式(つまり、オブジェクトの使用
+方法や他のオブジェクトの参照方法)を識別する、静的に決定された「タイプ」(
+"type" )があります。 現在、「blob」、「tree」、「commit」、「tag」の4つ
+の異なるオブジェクトタイプがあります。
+
+   オブジェクトタイプに関係なく、すべてのオブジェクトは次の特性を共有し
+ます: すべてzlibで圧縮され、タイプを指定するだけでなく、オブジェクト内の
+データに関するサイズ情報も提供するヘッダーがあります。オブジェクトの名前
+付けに使用されるSHA-1ハッシュは、 元のデータ＋ヘッダー のハッシュである
+ため、 ‘sha1sum’ _file_ は _file_ のオブジェクト名と一致しないことに注意
+してください。
+
+   その結果、オブジェクトの一般的な整合性は、オブジェクトの内容やタイプ
+に関係なく常にテストできます。すべてのオブジェクトは、 (a)ハッシュがファ
+イルの内容と一致、かつ、 (b)オブジェクトが、 ‘<ascii type without space>
++ <space> + <ascii decimal size> + <byte\0> + <binary object data>’ とい
+うシーケンスのバイトストリームへちゃんと解凍できることで検証できます。
+
+   構造化オブジェクトは、その構造と他のオブジェクトへの接続をさらに検証
+できます。 これは通常、すべてのオブジェクトの完全な依存関係グラフを生成
+し、（ハッシュを介して表面的な一貫性を検証するだけでなく）内部の一貫性を
+検証する ‘gitfsck’ プログラムを使用して行われます。
+
+
+File: git.info,  Node: Gitのソースコードを俯瞰する,  Prev: Object storage format,  Up: Hacking Git
+
+10.2 Gitのソースコードを俯瞰する
+================================
+
+新しい開発者がGitのソースコードを見つけるのは必ずしも簡単ではありません
+。この節では、あなたがどこから始めればよいかを示すちょっとしたガイダンス
+を提供します。
+
+   開始するのに適した場所は、最初のコミットの内容から始めることです:
+
+     $ git switch --detach e83c5163
+
+   最初のリビジョンは、Gitが今日持っているほとんどすべての基礎を築きます
+が、一度に読むには十分小さくまとまっています。
+
+   そのリビジョン以降、用語が変更されていることに注意してください。 たと
+えば、そのリビジョンのREADMEは、 "changeset" という単語を使用して、今、
+commit (*note [def_commit_object]::) と呼んでいるものを説明しています。
+
+   また、それを「キャッシュ」と呼ぶのではなく、「インデックス」と呼びま
+す。 ただし、このファイルは引き続き ‘cache.h’ と呼ばれます。備考: これを
+変更する理由はたいしたものではありません。GitのすべてのCソースで
+includeされている基本的なヘッダーファイルであるため、他に適切な単一の名
+前がないためです。
+
+   あなたが最初のコミットでGitの考え方を把握したなら、あなたはより新しい
+バージョンをチェックして、 ‘cache.h’ と‘ object.h‘ と ‘commit.h’ を読み
+下すべきです。
+
+   初期のGitは、(UNIXの伝統でである)非常に単純なプログラムの集まりであり
+、スクリプトで使用して、出力を別のプログラムにパイプしていました。 新し
+いものをテストするのが簡単だったので、これは初期開発に適していました。た
+だし、最近、これらのパーツの多くが組み込みになり、コアの一部が「解放」(
+"libified" )されました。つまり、パフォーマンス、移植性、およびコードの重
+複を避けるために libgit.a に配置されました。
+
+   今や、あなたはインデックスが何であるか(および、対応するデータ構造を
+‘cache.h’ で探す)、そして最初のメンバーである ‘struct object’ から共通の
+構造を継承するオブジェクトタイプ(blobs と trees と commits と tags)がい
+くつかあることがわかりました(したがって、たとえば ‘(struct object
+*)commit’ をキャストして 、 ‘&commit->object’ と同じようにすることができ
+ます。つまり、オブジェクト名とフラグを取得します)。
+
+   ここで、この情報を吸収するために一服するとしましょう。
+
+   次のステップ: オブジェクトの命名に慣れてください。 *note Naming
+commits:: を読んでください。 オブジェクトに名前を付ける方法はたくさんあ
+ります(リビジョンだけではありません！)。 これらはすべて ‘sha1_name.c’ で
+処理されます。 関数 ‘get_sha1()’ をざっと見てください。特別な処理の多く
+は、 ‘get_sha1_basic()’ などの関数によって実行されます。
+
+   リビジョンウォーカー。これはGitの最も解放(libified)された部分にあなた
+がうまく適応できるようにします。
+
+   基本から行きましょう。 ‘git log’ の初期バージョンは、シェルスクリプト
+でした:
+
+     $ git-rev-list --pretty $(git-rev-parse --default HEAD "$@") | \
+             LESS=-S ${PAGER:-less}
+
+   これはどういう意味か？
+
+   ‘git rev-list’ は、リビジョンウォーカーのオリジナルバージョンであり、
+「常に」stdoutにリビジョンのリストを出力します。ほとんどの新しいGitコマ
+ンドは ‘git rev-list’ を使用するスクリプトとして開始されるため、これは引
+き続き機能し続ける必要があります。
+
+   ‘gitrev-parse’ はもはやそれほど重要ではありません。これは、スクリプト
+によって呼び出されたさまざまな配管コマンドに関連するオプションを除外する
+ためにのみ使用されました。
+
+   ‘git rev-list’ が行ったことのほとんどは、 ‘revision.c’ と
+‘revision.h’ に含まれています。 オプションを ‘rev_info’ という名前の構造
+体でラップします。この構造体は、どのリビジョンをどのように歩くか(walk)な
+どを制御します。
+
+   ‘git rev-parse`の元々の仕事は、今や関数 `setup_revisions()’ によって
+実行されるようになりました。この関数は、リビジョンとリビジョンウォーカー
+の一般的なコマンドラインオプションを解析します。この情報は、後で使用でき
+るように構造体 ‘rev_info’ に保存されます。 あなたは ‘setup_revisions()’
+を呼び出した後、独自のコマンドラインオプション解析を行うことができます。
+その後、初期化のために ‘prepare_revision_walk()’ を呼び出す必要がありま
+す。その後は、関数 ‘get_revision()’ を使用してコミットを1つずつ取得でき
+ます。
+
+   リビジョンウォーキング処理の詳細に興味があるなら ‘cmd_log()’ の最初の
+実装をご覧ください。 ‘git show v1.3.0~155^2~4’ を呼び出し、その関数まで
+スクロールダウンします( ‘setup_pager()’ を直接呼び出す必要がなくなったこ
+とに注意してください)。
+
+   今日では ‘git log’ は組み込みです。つまり、コマンド ‘git’ に含まれて
+いることを意味します。ビルトインのソースは、
+
+   • ‘cmd_<bla>’ と呼ばれる関数で、通常は ‘builtin.h’ で宣言され、
+     ‘builtin/<bla.c>’ で定義されます(Gitの古いバージョンでは、代わりに
+     ‘builtin-<bla>.c’ に含まれていたことに注意してください)。
+
+   • ‘git.c’ の ‘commands[]’ 配列のエントリ、および
+
+   • ‘Makefile’ の ‘BUILTIN_OBJECTS’ エントリ。
+
+   しばしば1つのソースファイルに複数のビルトインが含まれている場合があり
+ます。たとえば、 ‘cmd_whatchanged()’ と ‘cmd_log()’ はどちらも、かなりの
+コードを共有しているため、 ‘builtin/log.c’ にあります。その場合、それら
+が存在する ‘.c’ ファイルのように名前が付けられていないコマンドは、
+‘Makefile’ の ‘BUILT_INS’ にリストされている必要があります。
+
+   ‘git log‘は、元のスクリプトよりもC言語版の方が複雑に見えますが、これ
+により、柔軟性とパフォーマンスが大幅に向上します。
+
+   ここでも、一息入れることをお勧めします。
+
+   レッスン3: ソースコードを読んで学習します。マヂで、それはGitの機構に
+ついて学ぶための最良の方法です(あなたが基本的な概念を知った後であれば、
+ですが)。
+
+   そして、あなたが興味を持っている事について考えてください、例えば、「
+どうすればそれのオブジェクト名を知っているだけでブロブ(blob)にアクセスで
+きますか？」。 最初のステップは、それを実行できるGitコマンドを見つけるこ
+とです。 この例では、 ‘git show’ または ‘git cat-file’ のいずれかです。
+
+   ここでは分かりやすくするために、 ‘git cat-file’ を使用します。
+
+   • これは配管コマンドで、そして
+
+   • それは最初のコミットに見つかりました(文字通り ‘cat-file.c’ として約
+     20のリビジョンを経ただけで、ビルトインになったときに
+     ‘builtin/cat-file.c’ に名前が変更され、その後10に満たないバージョン
+     が表示されました)。
+
+   したがって、 ‘builtin/cat-file.c’ を調べ、 ‘cmd_cat_file()’ を検索し
+て、それが何をするかを調べます。
+
+             git_config(git_default_config);
+             if (argc != 3)
+                     usage("git cat-file [-t|-s|-e|-p|<type>] <sha1>");
+             if (get_sha1(argv[2], sha1))
+                     die("Not a valid object name %s", argv[2]);
+
+   自明な詳細は飛ばしましょう。 ここで本当に興味深いのは、 ‘get_sha1()’
+の呼び出しだけです。 ‘argv[2]’ をオブジェクト名として解釈しようとし、現
+在のリポジトリに存在するオブジェクトを参照している場合は、結果のSHA-1を
+変数 ‘sha1’ に書き込みます。
+
+   ここで興味深いのは以下の2つです:
+
+   • ‘get_sha1()‘は成功で0を返します。これは一部の新しいGitハッカーを驚
+     かせるかもしれませんが、UNIXには、さまざまなエラーの場合にさまざま
+     な負の数を返し、成功した場合は0を返すという長い伝統があります。
+
+   • ‘get_sha1()’ の関数シグネチャの変数 ‘sha1’ は ‘unsigned char *’ で
+     すが、実際には ‘unsigned char[20]’ へのポインタであることが期待され
+     ています。この変数には、指定されたコミットの160ビットのSHA-1が含ま
+     れます。SHA-1が ‘unsigned char *’ として渡される場合は常に、 ‘char
+     *’ として渡される16進文字のASCII表現とは対照的に、バイナリ表現であ
+     ることに注意してください。
+
+   コード全体でこれらの両方が表示されます。
+
+   さて、肝心の部分は:
+
+             case 0:
+                     buf = read_object_with_reference(sha1, argv[1], &size, NULL);
+
+   これはブロブ(実際にはブロブだけでなくあらゆるタイプのオブジェクト)を
+読み取る方法です。 関数 ‘read_object_with_reference()’ が実際にどのよう
+に機能するかを知るには、(Gitのリポジトリで ‘git grep read_object_with |
+grep ":[a-z]"’ などして)そのソースコードを探して拝んでください。
+
+   結果の使用方法を確認するには、 ‘cmd_cat_file()’ を読んでください:
+
+             write_or_die(1, buf, size);
+
+   機能を探す場所がわからない場合があります。このような多くの場合、 ‘git
+log’ の出力を検索してから、対応するコミットを ‘git show’ すると役に立ち
+ます。
+
+   例: ‘git bundle’ のテストケースがあったことはわかっているが、それがど
+こにあったか覚えていない場合(はいもちろん、あなたは ‘git grep bundle t/’
+できますが、そーゆー事を言いたい訳じゃない):
+
+     $ git log --no-merges t/
+
+   ページャー(‘less’)の中で、 "bundle" を検索し、数行前に戻って、それが
+コミット 18449ab0 にあることを確認します。このオブジェクト名をコピーして
+、コマンドラインに貼り付けます。
+
+     $ git show 18449ab0
+
+   できた！
+
+   別の例: スクリプトを組み込みにするために何をすべきかを調べます:
+
+     $ git log --no-merges --diff-filter=A builtin/*.c
+
+   ほらこのとおり。Gitは実際、Git自体のソースを見つけるのに最適なツール
+です！
+
+
+File: git.info,  Node: Git用語集,  Next: Git Quick Reference,  Prev: Hacking Git,  Up: Top
+
+11 Git用語集
+************
+
+* Menu:
+
+* Git解説::
+
+
+File: git.info,  Node: Git解説,  Up: Git用語集
+
+11.1 Git解説
+============
+
+alternate object database
+     代役(alternate)メカニズムを介して、 リポジトリ (*note
+     [def_repository]::) は オブジェクトデータベース (*note
+     [def_object_database]::) の一部を "alternate" (代役) 呼ばれる別のオ
+     ブジェクトデータベースから継承できます。
+
+bare repository
+     ベアリポジトリは通常、適切な名前のディレクトリ (*note
+     [def_directory]::)で、接尾辞は ‘.git’ で、リビジョン管理下にあるフ
+     ァイルのローカルでチェックアウトされたコピーはありません。つまり、
+     通常は非表示の ‘.git’ サブディレクトリに存在するすべてのGit管理ファ
+     イルと制御ファイルは、代わりに ‘repository.git’ ディレクトリに直接
+     存在し、他のファイルは存在せず、チェックアウトされません。通常、公
+     開リポジトリの発行者は、ベアリポジトリを利用可能にします。
+
+blob object(ブロブオブジェクト)
+     型の無いオブジェクト (*note [def_object]::)。例:ファイルの中身。
+
+branch
+     「ブランチ」は開発ラインです。ブランチの最新のコミット (*note
+     [def_commit]::)は、そのブランチの先端(the tip of that branch)と呼ば
+     れます。ブランチの先端はブランチhead (*note [def_head]::)によって参
+     照され、ブランチで追加の開発が行われると前進します。単一のGit リポ
+     ジトリ (*note [def_repository]::)は任意の数のブランチを追跡できます
+     が、あなたの作業ツリー (*note [def_working_tree]::)はそのうちの1つ
+     (「current branch」(現在のブランチ)または「checked out branch」(チ
+     ェックアウトされたブランチ))に関連付けられ、 HEAD (*note
+     [def_HEAD]::) はそのブランチを指します。
+
+cache
+     廃止。 index (*note [def_index]::) を使ってください。
+
+chain(チェーン,チェイン)
+     オブジェクトのリスト。リスト内の各 オブジェクト (*note
+     [def_object]::) には、その後ろへの参照が含まれます(たとえば、 コミ
+     ット (*note [def_commit]::) の後ろはその 親 (*note [def_parent]::)
+     の1つである可能性があります)。
+
+changeset
+     "コミット (*note [def_commit]::)" の BitKeeper/cvsps での言い方です
+     。 Git は変更(change)ではなく状態(state)を保存するため、Gitでコミッ
+     トを「changeset」と呼ぶのはナンセンスです。
+
+checkout
+     作業ツリー (*note [def_working_tree]::)の全部または一部をオブジェク
+     トデータベース (*note [def_object_database]::)のツリーオブジェクト
+     (*note [def_tree_object]::)またはブロブ (*note
+     [def_blob_object]::)で更新し、作業ツリー全体が新しいブランチ (*note
+     [def_branch]::)を指している場合は、インデックス (*note
+     [def_index]::)とHEAD (*note [def_HEAD]::)を更新する操作。
+
+cherry-picking(チェリーピック,チェリーピッキング)
+     SCM (*note [def_SCM]::) の専門用語では、 "cherry pick" (つまみ食い
+     )とは、一連の変更(通常はコミット)から変更のサブセットを選択し、それ
+     らを別のコードベースの上に新しい一連の変更として記録することを意味
+     します。Gitでは、これは "git cherry-pick" コマンドによって実行され
+     、既存のコミット (*note [def_commit]::)によって導入された変更を抽出
+     し、現在のブランチ (*note [def_branch]::)の先端に基づいてそれを新し
+     いコミットとして記録します。
+
+clean
+     現在のヘッド (*note [def_head]::)が参照するリビジョン (*note
+     [def_revision]::)と作業ツリー (*note [def_working_tree]::)が完全に
+     一致(correspond)しているのであれば、その作業ツリー (*note
+     [def_working_tree]::)はクリーンです。「dirty (*note [def_dirty]::)」
+     も参照下さい。
+
+commit
+     名詞として: Gitの履歴における一つのポイント。プロジェクトの履歴全体
+     は、相互に関連する一連のコミットとして表されます。「コミット」とい
+     う言葉は、他のリビジョン管理システムが「リビジョン」または「バージ
+     ョン」という言葉を使用するのと同じ場所で、Gitによってよく使用されま
+     す。 コミットオブジェクト (*note [def_commit_object]::) の省略形と
+     しても使用されます。
+
+     動詞として(コミットする): インデックス (*note [def_index]::)の現在
+     の状態を表す新しいコミットを作成し、その新しいコミットをポイントす
+     るようにHEAD (*note [def_HEAD]::)を進めることにより、プロジェクトの
+     状態の新しいスナップショットをGit履歴に保存する操作。
+
+commit object
+     親 (*note [def_parent]::)、コミッター、作者、日付、保存されたリビジ
+     ョンの最上位ディレクトリ (*note [def_directory]::)に対応するツリー
+     オブジェクト (*note [def_tree_object]::)など、特定のリビジョン
+     (*note [def_revision]::)に関する情報を含むオブジェクト (*note
+     [def_object]::)。
+
+commit-ish (also committish)(コミットっぽい;コミット風)
+     コミットオブジェクト (*note [def_commit_object]::)または、コミット
+     オブジェクト (*note [def_commit_object]::)に再帰的に逆参照可能なオ
+     ブジェクト (*note [def_object]::)。 コミットオブジェクト (*note
+     [def_commit_object]::)や、コミットオブジェクト (*note
+     [def_commit_object]::)を指すタグオブジェクト (*note
+     [def_tag_object]::)や、コミットオブジェクト (*note
+     [def_commit_object]::)を指すタグオブジェクト (*note
+     [def_tag_object]::)を指すタグオブジェクト (*note
+     [def_tag_object]::)などは全てcommit-ish(commit-ishes)です。
+
+core Git
+     Gitの基本的なデータ構造とユーティリティ。これは、限定的なソースコー
+     ド管理ツールのみです。
+
+DAG
+     有向非巡回グラフ(Directed acyclic graph)。 コミットオブジェクト
+     (*note [def_commit_object]::) は、(有向の)親を持ち、コミットオブジ
+     ェクトのグラフが非巡回(同じ オブジェクト (*note [def_object]::) で
+     開始・終了する チェイン (*note [def_chain]::) はありません)であるた
+     め有向非巡回グラフを形成します。
+
+dangling object
+     (ぶらぶら揺れるオブジェクト)他の到達不能オブジェクト (*note
+     [def_unreachable_object]::)からでも到達できない到達不能オブジェクト
+     (*note [def_unreachable_object]::)。 danglingオブジェクトには、リポ
+     ジトリ (*note [def_repository]::)内の任意のrefまたはオブジェクト
+     (*note [def_object]::)からの参照はありません。
+
+detached HEAD
+     通常、HEAD (*note [def_HEAD]::)はブランチ (*note [def_branch]::)の
+     名前を格納し、HEADが示す履歴を操作するコマンドは、HEADが指すブラン
+     チの先端につながる履歴を操作します。 ただし、Gitでは、必ずしも特定
+     のブランチの先端ではない任意のコミット (*note [def_commit]::)をチェ
+     ックアウト (*note [def_checkout]::)することもできます。このような状
+     態のHEADを「detached」(切り離されている、デタッチされている)と呼び
+     ます。
+
+     注意: 現在のブランチの履歴を操作するコマンド(たとえば、その上に新し
+     い履歴を構築するための ‘git commit’)は、HEADがデタッチされている間
+     も機能することに注意してください。それらは、ブランチに影響を与える
+     ことなく、更新された履歴の先端を指すようにHEADを更新します。現在の
+     ブランチに関する情報を更新または照会するコマンド(たとえば、現在のブ
+     ランチが統合するリモートトラッキングブランチを設定する ‘git branch
+     --set-upstream-to’)は、この状態で問い合わせる(実際の)現在のブランチ
+     がないため、明らかに機能しません。
+
+directory
+     あなたが "ls" で得られる一覧の事 :-)
+
+dirty
+     作業ツリー (*note [def_working_tree]::)で、現在のブランチ (*note
+     [def_branch]::)に対してコミット (*note [def_commit]::)されてない変
+     更が含まれている場合、「作業ツリー (*note [def_working_tree]::)はダ
+     ーティーである」と言われます。
+
+evil merge
+     邪悪なマージとは、どの 親 (*note [def_parent]::) にも表示されない変
+     更を導入する マージ (*note [def_merge]::) です。
+
+fast-forward
+     fast-forward(早送り)は、とあるリビジョン (*note [def_revision]::)に
+     、その子孫である別のブランチ (*note [def_branch]::)の変更をマージす
+     る特殊なタイプのマージ (*note [def_merge]::)です。このような場合、
+     新しいマージ (*note [def_merge]::)コミット (*note [def_commit]::)を
+     行うのではなく、マージするブランチと同じリビジョンを指すようにブラ
+     ンチを更新するだけです。これは、リモートリポジトリ (*note
+     [def_repository]::)のリモート追跡ブランチ (*note
+     [def_remote_tracking_branch]::)で頻繁に発生します。
+
+fetch
+     ブランチ (*note [def_branch]::)をフェッチするということは、リモート
+     リポジトリ (*note [def_repository]::)からブランチのhead ref (*note
+     [def_head_ref]::)を取得して、ローカルのオブジェクトデータベース
+     (*note [def_object_database]::)に欠落しているオブジェクトを見つけ、
+     そして欠落したオブジェクトを取得することを意味します。 git-fetch(1)
+     (git-fetch.html) も参照してください。
+
+file system
+     リーナス・トーバルズは当初、Gitをユーザー空間ファイルシステム、つま
+     りファイルとディレクトリを保持するインフラストラクチャとして設計し
+     ました。これにより、Gitの効率と速度が保証されました。
+
+Git archive
+     リポジトリ (*note [def_repository]::) の同義語(arch people 向け)。
+
+gitfile
+     実際のリポジトリであるディレクトリを指す、作業ツリーのルートにある
+     プレーンファイル ‘.git’
+
+grafts
+     graftsは、コミットの偽の祖先情報を記録することで、他の点では異なる
+     2つの開発ラインを結合できます。こうすることで、あるコミット (*note
+     [def_commit]::)が持つ親 (*note [def_parent]::)の組を、コミット作成
+     時に記録されたものとは異なるものとして Git に見せかけることができる
+     のです。これは ‘.git/info/grafts’ ファイルを介して構成されます。
+
+     注意: graftsメカニズムは時代遅れであり、リポジトリ間でオブジェクト
+     を転送する際に問題が発生する可能性があることに注意してください。 同
+     じことを行うためのより柔軟で堅牢なシステムについては、
+     git-replace(1) (git-replace.html) を参照してください。
+
+hash
+     Gitの文脈では オブジェクト名 (*note [def_object_name]::) と同義語。
+
+head
+     ブランチ (*note [def_branch]::) の先端にある コミット (*note
+     [def_commit]::) への、 名付けられた参照 (*note [def_ref]::) です。
+     パックされた参照を使用する場合を除いて、headは
+     ‘$GIT_DIR/refs/heads/’ ディレクトリのファイルに保存されます。
+     (linkgit: git-pack-refs[1] を参照してください。)
+
+HEAD
+     現在のブランチ (*note [def_branch]::)。 より詳細に言うと、あなたの
+     作業ツリー (*note [def_working_tree]::)は通常、HEADによって参照され
+     るツリーの状態から派生します。HEADは、リポジトリ内のhead (*note
+     [def_head]::)達のうちの一つへの参照です。ただし、detached HEAD
+     (*note [def_detached_HEAD]::)をの場合は、任意のコミットを直接参照し
+     ています。
+
+head ref
+     head (*note [def_head]::) の同義語。
+
+hook
+     いくつかのGitコマンドの通常の実行中に、開発者が機能を追加したりチェ
+     ックしたりできるようにするオプションのスクリプトを呼び出します。通
+     常、フックを使用すると、コマンドを事前に確認して中止することができ
+     、そしてまた、操作の完了後に事後通知を行うことができます。フックス
+     クリプトは ‘$GIT_DIR/hooks/’ ディレクトリにあり、ファイル名から
+     ‘.sample’ サフィックスを削除するだけで有効になります。以前のバージ
+     ョンのGitでは、それらを実行可能にする必要がありました。
+
+index
+     状態情報を含むファイルのコレクションで、その内容はオブジェクトとし
+     て保存されます。インデックスは、あなたの作業ツリー (*note
+     [def_working_tree]::)の保存バージョンです。正直なところ、これには、
+     マージ (*note [def_merge]::)のときに使用される、作業ツリーの2番目お
+     よび3番目のバージョンを含めることもできます。
+
+index entry
+     インデックス (*note [def_index]::)に保存されている特定のファイルに
+     関する情報。マージ (*note [def_merge]::)が開始されたが、まだ終了し
+     ていない場合(つまり、インデックスにそのファイルの複数のバージョンが
+     含まれている場合)、インデックスエントリをマージ解除(unmerge)できま
+     す。
+
+master
+     デフォルトの開発 ブランチ (*note [def_branch]::) 。 Git リポジトリ
+     (*note [def_repository]::) を作成するたびに、「master」という名前の
+     ブランチが作成され、アクティブなブランチになります。 ほとんどのロー
+     カル開発に含まれていますが、これは純粋に慣例によるものであり、必須
+     ではありません。
+
+merge
+     動詞として: 別のブランチ (*note [def_branch]::)(あるいは外部のリポ
+     ジトリ (*note [def_repository]::)から)の内容を現在のブランチに取り
+     込むこと。マージされたブランチが別のリポジトリからのものである場合
+     、これは最初にリモートブランチをフェッチ (*note [def_fetch]::)し、
+     次に結果を現在のブランチにマージすることによって行われます。このフ
+     ェッチ操作とマージ操作の組み合わせは、プル(pull) (*note
+     [def_pull]::)と呼ばれます。マージは、ブランチが分岐してから行われた
+     変更を識別し、それらすべての変更を一緒に適用する自動プロセスによっ
+     て実行されます。変更が競合する場合は、マージを完了するために手動に
+     よる介入が必要になる場合があります。
+
+     名詞として: fast-forward (*note [def_fast_forward]::)でない限り、マ
+     ージ成功の結果として、マージされたブランチ (*note [def_branch]::)の
+     先端を親 (*note [def_parent]::)に持つ新しいコミット (*note
+     [def_commit]::)が作成されます。このコミットは「マージコミット」と呼
+     ばれます。または単に「マージ」と呼ばれることもあります。
+
+object(オブジェクト)
+     Gitの保管ユニット(unit of storage)。その内容による SHA-1 (*note
+     [def_SHA1]::) によって一意に識別されます。したがって、オブジェクト
+     を変更することはできません。
+
+object database
+     「オブジェクト」の組を格納し、個々のオブジェクト (*note
+     [def_object]::)はそのオブジェクト名 (*note [def_object_name]::)によ
+     って識別されます。オブジェクトは通常、 ‘$GIT_DIR/objects/’ にありま
+     す。
+
+object identifier(オブジェクトID)
+     object name (*note [def_object_name]::) (オブジェクト名)の同義語
+
+object name(オブジェクト名)
+     オブジェクト> の一意の識別子。オブジェクト名は通常、40文字の16進文
+     字列で表されます。一般に <<def_SHA1 (*note [def_object]::) とも呼ば
+     れます。
+
+object type(オブジェクトタイプ)
+     「コミット (*note [def_commit_object]::) 識別子」または「ツリー
+     (*note [def_tree_object]::) 識別子」または「タグ (*note
+     [def_tag_object]::) 識別子」または「ブロブ (*note
+     [def_blob_object]::) 識別子」のいずれかで、 オブジェクト (*note
+     [def_object]::) のタイプを表します。
+
+octopus
+     3つ以上(more than two)のブランチをマージします
+
+origin
+     デフォルトの上流(upstream)リポジトリ (*note [def_repository]::)。ほ
+     とんどのプロジェクトには、追跡する上流プロジェクトが少なくとも1つあ
+     ります。デフォルトでは、「origin」がその目的で使用されます。新しい
+     上流更新分は、 origin/name-of-upstream-branch という名前の リモート
+     追跡ブランチ (*note [def_remote_tracking_branch]::)にフェッチされま
+     す。これは、 ‘git branch-r’ を使用して確認できます。
+
+overlay
+     ‘cp -R’ が宛先ディレクトリの内容を更新するのと同様に、ファイルを更
+     新して作業ディレクトリに追加するのみで削除を行いません。これは、イ
+     ンデックス (*note [def_index]::)またはツリー風の何か(tree-ish)
+     (*note [def_tree-ish]::)からファイルをチェックアウトするときの
+     checkout (*note [def_checkout]::)のデフォルトモードです。対照的に、
+     オーバーレイなしモード(no-overlay mode)では、 ‘rsync --delete’ と同
+     様に、ソース側に存在しない追跡ファイルは削除されます。
+
+pack
+     1つのファイルに圧縮されたオブジェクトの組(スペースを節約するため、
+     またはそれらを効率的に送信するため)。
+
+pack index
+     パックの内容に効率的にアクセスするのに役立つ、パック (*note
+     [def_pack]::)内のオブジェクトの識別子とその他の情報のリスト。
+
+pathspec
+     Gitコマンドでパスを制限するために使用されるパターン。
+
+     pathspecsは、「git ls-files」、「git ls-tree」、「git add」、「git
+     grep」、「git diff」、「git checkout」、および、ツリーまたはワーク
+     ツリーのサブセットへの操作の為にスコープを制限する他の多くのコマン
+     ドのコマンドラインで使用されます。パスが現在のディレクトリまたはト
+     ップレベルのどちらを基準にしているかについては、各コマンドのドキュ
+     メントを参照してください。 pathspecの構文は以下のとおりです:
+
+        • どのパスもそれ自体と一致します
+
+        • 最後がスラッシュであるpathspecは、ディレクトリプレフィックスを
+          表します。そのpathspecのスコープは、そのサブツリーに制限されて
+          います。
+
+        • pathspecの残りの部分は、pathnameの残りの部分のパターンです。 デ
+          ィレクトリプレフィックスに関連するパスは、 fnmatch(3) を使用し
+          てそのパターンと照合されます。特に、 _*_ と _?_ はディレクトリ
+          区切り文字と一致させる事ができます。
+
+     たとえば、 ‘Documentation/*.jpg’ は、
+     ‘Documentation/chapter_1/figure_1.jpg’ を含む、Documentationサブツ
+     リー内のすべての ‘.jpg’ ファイルと一致します。
+
+     コロン(‘:’)で始まるpathspecには特別な意味があります。短い形式では、
+     先頭のコロン(‘:’)の後に0個以上の「魔法記号」(magic signature)(オプ
+     ションで別のコロン(‘:’)で終了)が続き、残りはパスと照合するパターン
+     です。「魔法記号」は、英数字、グロブ、正規表現の特殊文字でもコロン
+     でもないASCII記号で構成されます。パターンが「魔法記号」シンボルセッ
+     トに属さず、コロンではない文字で始まる場合、「魔法記号」を終了する
+     オプションのコロンは省略できます。
+
+     長い形式では、先頭のコロン(‘:’)の後に開き括弧(‘(’) 、0個以上の「魔
+     法単語」(magic words)のコンマ区切りリスト、および閉じ括弧(‘)’) が続
+     き、残りは次のパターンです。パスと一致します。
+
+     コロンのみのpathspecは、「pathspecがない」ことを意味します。 この形
+     式は、他のpathspecと組み合わせないでください。
+
+     top
+          魔法単語 ‘top’ (魔法記号: ‘/’)は、サブディレクトリ内からコマン
+          ドを実行している場合でも、作業ツリーのルートからパターンを一致
+          させます。
+
+     literal
+          ‘*’ または ‘?’ などのパターンのワイルドカードはリテラル文字と
+          して扱われます。
+
+     icase
+          (英文字の)大文字小文字区別せずにマッチ
+
+     glob
+          Gitはパターンを、 FNM_PATHNAMEフラグを指定した fnmatch(3) に消
+          費されるのに適したシェルグロブとして扱います。パターン内のワイ
+          ルドカードは、パス名内の / と一致しません。 たとえば、「
+          Documentation/*.html」は「Documentation/git.html」と一致します
+          が、「Documentation/ppc/ppc.html」または「
+          tools/perf/Documentation/perf.html」とは一致しません。
+
+          フルパス名と一致するパターンの2つの連続するアスタリスク ‘**’ は
+          、特別な意味を持つ場合があります:
+
+             • 先頭の ‘**’ の後にスラッシュが続く場合は、すべてのディレ
+               クトリで一致することを意味します。たとえば、 ‘**/foo’ は
+               、パターン ‘foo’ と同じように、ファイルまたはディレクトリ
+               ‘foo’ のどこにでも一致します。 ‘**/foo/bar’ は、ディレク
+               トリ ‘foo’ の直下にあるファイルまたはディレクトリ ‘bar’ と
+               一致します。
+
+             • 末尾の ‘/**’ は、内部のすべてに一致します(matches
+               everything inside)。たとえば、 ‘abc/**’ は、 ‘.gitignore’
+               ファイルの場所を基準にして、ディレクトリ "abc" 内のすべて
+               のファイルと無限の深さで一致します。
+
+             • スラッシュの後に2つの連続するアスタリスクが続く場合、スラ
+               ッシュは0個以上のディレクトリに一致します。 たとえば、
+               ‘a/**/b’ は ‘a/b’ 、 ‘a/x/b’ 、‘a/x/y/b’ などと一致します
+               。
+
+             • 他の連続するアスタリスクは無効と見なされます。
+
+               グロブ魔法はリテラル魔法と互換性がありません。
+
+     attr
+          ‘attr:’ の後には、スペースで区切られた「属性要件」(attribute
+          requirements)のリストがあります。パスが一致すると見なされるに
+          は、これらすべてを満たす必要があります。これは、通常の非魔法
+          pathspecパターンマッチングに追加されます。 gitattributes(5)
+          (gitattributes.html) 参照。
+
+          パスの各属性要件は、以下のいずれかの形式を取ります:
+
+             • ‘ATTR’ では、属性 ‘ATTR’ を設定する必要があります。
+
+             • ‘-ATTR’ では、属性 ‘ATTR’ が設定されていない必要がありま
+               す。
+
+             • ‘ATTR = VALUE’ では、属性 ‘ATTR’ を文字列 ‘VALUE’ に設定
+               する必要があります。
+
+             • ‘!ATTR’ では、属性 ‘ATTR’ が指定されていない必要がありま
+               す。
+
+               注意: ツリーオブジェクトと照合する場合、属性は、指定され
+               たツリーオブジェクトからではなく、作業ツリーから取得され
+               ることに注意してください。
+
+     exclude
+          パスが非除外パススペックと一致すると、すべての除外パススペック
+          (魔法記号: ‘!’ またはその同義語 ‘^’)が実行されます。一致する場
+          合、パスは無視されます。非除外パススペックがない場合、パススペ
+          ックなしで呼び出されたかのように、除外が結果セットに適用されま
+          す。
+
+parent(親)
+     コミットオブジェクト (*note [def_commit_object]::)には、開発ライン
+     で論理的に前にあったもののリスト、つまり親が含まれています(あるいは
+     、前・親が無い場合は空です)。
+
+pickaxe
+     pickaxe (*note [def_pickaxe]::)(ピカクス;十字鋤;鶴嘴;つるはし)とい
+     う用語は、特定のテキスト文字列を追加または削除する変更を選択するの
+     に役立つdiffcoreルーチンのオプションを指します。 ‘--pickaxe-all’ オ
+     プションを使用すると、特定のテキスト行などを導入または削除した完全
+     なチェンジセット (*note [def_changeset]::)を表示するために使用でき
+     ます。 git-diff(1) (git-diff.html) を参照してください。
+
+plumbing(配管)
+     core Git (*note [def_core_git]::) のキュートな呼び方。
+
+porcelain(磁器)
+     core Git (*note [def_core_git]::)に依存するプログラムとプログラムス
+     イートのキュートな名前で、コアGitへの高レベルのアクセスを示します。
+     磁器(porcelain)は、配管(plumbing) (*note [def_plumbing]::)よりも多
+     くのSCM (*note [def_SCM]::)インターフェースを公開します。
+
+per-worktree ref
+     グローバルではなく、ワークツリー (*note [def_working_tree]::)ごとの
+     ref。これは現在、HEAD (*note [def_HEAD]::)と ‘refs/bisect/’ で始ま
+     るすべての参照のみですが、のちには普通でない他の参照が含まれる可能
+     性があります。
+
+pseudoref
+     疑似参照(pseudoref)は ‘$GIT_DIR’ の下にあるファイルのクラスであり、
+     rev-parseしたときrefのように動作しますが、それはgitによって特別扱さ
+     れます。疑似参照はすべて大文字の名前を持ち、かつ、常にSHA-1 (*note
+     [def_SHA1]::)とそれに続く空白(whitespace)で構成される行で始まります
+     。したがって、HEADは疑似参照ではありません。なぜならHEADはシンボリ
+     ック参照である場合があるためです。オプションで、いくつかの追加デー
+     タが含まれる場合があります。例としては ‘MERGE_HEAD’ と
+     ‘CHERRY_PICK_HEAD’ があります。 per-worktree refs (*note
+     [def_per_worktree_ref]::) とは異なり、これらのファイルはシンボリッ
+     クrefにすることはできず、reflogを含めることはできません。 また、通
+     常のref更新機構を使用して更新することもできません。代わりに、ファイ
+     ルに直接書き込むことによって更新されます。ただし、それらはrefである
+     かのように読み取ることができるため、 ‘git rev-parse MERGE_HEAD’ は
+     機能します。
+
+pull
+     ブランチ (*note [def_branch]::)をプルするとは、それをフェッチ
+     (*note [def_fetch]::)しマージ (*note [def_merge]::)することを意味し
+     ます。 git-pull(1) (git-pull.html) も参照してください。
+
+push
+     ブランチ (*note [def_branch]::)をプッシュするとは、リモートリポジト
+     リ (*note [def_repository]::)からブランチのヘッド参照 (*note
+     [def_head_ref]::)を取得し、それがブランチのローカルヘッド参照の祖先
+     であるかどうかを確認し、そしてその場合ローカルヘッド参照から到達可
+     能 (*note [def_reachable]::)であり、かつ、リモートリポジトリに欠落
+     しているすべてのオブジェクトを、リモートオブジェクトデータベース
+     (*note [def_object_database]::)に持っていき、リモートヘッド参照を更
+     新します。リモートヘッド (*note [def_head]::)がローカルヘッドの祖先
+     でない場合、プッシュは失敗します。
+
+reachable(到達可能)
+     特定のコミット (*note [def_commit]::)のすべての祖先は、その特定のコ
+     ミットから到達可能(reachable)であると言われます。より一般的には、タ
+     グ (*note [def_tag]::)付けしたものだったり、親またはツリーへのコミ
+     ットオブジェクト (*note [def_commit_object]::)だったり、ツリー
+     (*note [def_tree_object]::)に含まれるツリーやブロブだったり、をたど
+     るチェーン (*note [def_chain]::)によって、あるオブジェクト (*note
+     [def_object]::)から別のオブジェクト (*note [def_object]::)に到達で
+     きる場合に到達が可能です。
+
+rebase
+     一連の変更をブランチ (*note [def_branch]::)から別のベースに再適用し
+     、そのブランチのヘッド (*note [def_head]::)を再適用した結果にリセッ
+     トします。
+
+ref
+     オブジェクト名または別のrefを指す ‘refs/’ で始まる名前(例:
+     ‘refs/heads/master’;別のrefを指すrefは シンボリックref (*note
+     [def_symref]::) と呼ぶ)。便宜上、Gitコマンドの引数として使用する場
+     合は ‘refs/’ を省略できる場合があります。詳細については
+     gitrevisions(7) (gitrevisions.html) を参照してください。 refs は
+     repository (*note [def_repository]::) に保存されます。
+
+     ref名前空間は階層的です。さまざまなサブ階層がさまざまな目的で使用さ
+     れます(たとえば、 ‘refs/heads/’ 階層はローカルブランチを表すために
+     使用されます)。
+
+     ‘refs/’ で始まらない特別な目的のrefがいくつかあります。最も注目すべ
+     き例は ‘HEAD’ です。
+
+reflog
+     reflogは、refのローカルの「履歴」を示します。 つまり、このリポジト
+     リの最後の3番目のリビジョンが何であったか、およびこのリポジトリの昨
+     日の午後9時14分時点での「現在の状態」が何であったかを知ることができ
+     ます。詳細については git-reflog(1) (git-reflog.html) を参照してくだ
+     さい。
+
+refspec
+     「refspec」は、フェッチ (*note [def_fetch]::)やプッシュ (*note
+     [def_push]::)によって使用され、リモートref (*note [def_ref]::)とロ
+     ーカルrefの間のマッピングを記述します。
+
+remote repository
+     同じプロジェクトを追跡するために使用されるが、別の場所にあるリポジ
+     トリ (*note [def_repository]::)。リモートと通信するには、フェッチ
+     (*note [def_fetch]::)またはプッシュ (*note [def_push]::)を参照して
+     ください。
+
+remote-tracking branch
+     別のリポジトリ (*note [def_repository]::)からの変更を追跡するために
+     使用されるref (*note [def_ref]::)。 これは通常、
+     ‘refs/remotes/foo/bar’ のように見え(「foo」という名前のリモートで「
+     bar」という名前のブランチを追跡することを示します)、構成されたフェ
+     ッチrefspec (*note [def_refspec]::)の右側(right-hand-side)に一致し
+     ます。リモート追跡ブランチには、直接の変更を含めたり、ローカルコミ
+     ットを行ったりしないでください。
+
+repository
+     << def_ref,refs>>のコレクションと、refから到達可能 (*note
+     [def_reachable]::)なすべてのオブジェクトを含むオブジェクトデータベ
+     ース (*note [def_object_database]::)。1つまたは複数の磁器 (*note
+     [def_porcelain]::)コマンドからのメタデータが付随している可能性があ
+     ります。リポジトリは、代替メカニズム (*note
+     [def_alternate_object_database]::)を介してオブジェクトデータベース
+     を他のリポジトリと共有できます。
+
+resolve
+     失敗した自動 マージ (*note [def_merge]::) が残したものを手動で修正
+     する操作。
+
+revision
+     コミット (*note [def_commit]::) (名詞) の同義語
+
+rewind(巻き戻し)
+     開発の一部を破棄する、つまり、 head (*note [def_head]::) を以前の リ
+     ビジョン (*note [def_revision]::) に割り当てる。
+
+SCM
+     Source code management (tool).
+
+SHA-1
+     セキュアハッシュアルゴリズム1(Secure Hash Algorithm 1);暗号化ハッシ
+     ュ関数。 Git界隈ではオブジェクト名 (*note [def_object_name]::)の同
+     義語として使用されます。
+
+shallow clone
+     ほとんどの場合 shallowリポジトリ (*note [def_shallow_repository]::)
+     の同義語ですが、この言い方は、 ‘git clone --depth=...’ コマンドを実
+     行して作成されたこと明言したものです。
+
+shallow repository
+     浅いリポジトリ(shallow repository)には不完全な履歴があり、そのコミ
+     ットの一部では親が削除されて(cauterized away)います(言い換えると、
+     Gitは、コミットオブジェクトに記録があっても、これらのコミットには親
+     がないふりをするように指示されます)。これは、アップストリームで記録
+     された実際の履歴がはるかに大きい場合でも、プロジェクトの最近の履歴
+     のみに関心がある場合に役立つことがあります。浅いリポジトリは、
+     git-clone(1) (git-clone.html) に ‘--depth’ オプションを指定すること
+     で作成され、その履歴は後で git-fetch(1) (git-fetch.html) で深めるこ
+     とができます。
+
+stash entry
+     ダーティ (*note [def_dirty]::) な作業ディレクトリの内容とインデック
+     スを、将来の再利用のために一時的に保存するのに使用される オブジェク
+     ト (*note [def_object]::) 。
+
+submodule
+     とあるリポジトリの内部で、それとは別個のプロジェクトの履歴を保持す
+     る リポジトリ (*note [def_repository]::) (ここで、その、とあるリポ
+     ジトリを スーパープロジェクト (*note [def_superproject]::) と呼びま
+     す)。
+
+superproject
+     作業ツリー内の他のプロジェクトのリポジトリを サブモジュール (*note
+     [def_submodule]::) として参照する リポジトリ (*note
+     [def_repository]::) 。 スーパープロジェクトは、含まれているサブモジ
+     ュールのコミットオブジェクトの名前を知っています(ただし、そのコピー
+     は保持していません)。
+
+symref
+     シンボリックref(シンボリック参照): SHA-1 (*note [def_SHA1]::) ID自
+     体を含む代わりに「ref: refs/some/thing」の形式であり、参照されると
+     、この参照を再帰的に逆参照します。 _HEAD (*note [def_HEAD]::)_ は
+     symrefの代表的な例です。シンボリックrefは git-symbolic-ref(1)
+     (git-symbolic-ref.html) コマンドで操作されます。
+
+tag
+     任意のタイプのオブジェクトを指す ‘refs/tags/’ 名前空間の下のref
+     (*note [def_ref]::)(通常、タグは タグ (*note [def_tag_object]::) ま
+     たは コミットオブジェクト (*note [def_commit_object]::) のいずれか
+     を指します)。head (*note [def_head]::)とは対照的に、タグは ‘commit’
+     コマンドによって更新されません。Gitタグは、Lispタグとは何の関係もあ
+     りません(Git界隈では、それはオブジェクトタイプ (*note
+     [def_object_type]::)と呼ばれます)。タグは通常、コミットの祖先チェー
+     ン (*note [def_chain]::)の特定のポイントをマークするために使用され
+     ます。
+
+tag object
+     別のオブジェクトを指すref (*note [def_ref]::)を含むオブジェクト
+     (*note [def_object]::)。これには、コミットオブジェクト (*note
+     [def_commit_object]::)のようにメッセージを含めることができます。ま
+     たPGP署名を含めることもでき、その場合、「署名付きタグオブジェクト」
+     (signed tag object)と呼ばれます。
+
+topic branch
+     開発者が概念的な開発ラインを識別するために使用する通常のGitブランチ
+     (*note [def_branch]::)。(従来のSCMに比べて)ブランチは非常に簡単で処
+     理コストが掛からないため、それぞれが非常に明確に定義された概念また
+     は小さな増分であるが関連する変更を含む、いくつかの小さなブランチを
+     持つことが望ましい場合がよくあります。
+
+tree
+     作業ツリー (*note [def_working_tree]::)、または、ツリーオブジェクト
+     (*note [def_tree_object]::)とそれに依存するブロブ (*note
+     [def_blob_object]::)やツリーオブジェクト(つまり、作業ツリーの保存さ
+     れた表現)、のいずれか。
+
+tree object
+     ファイル名とモードのリスト、および関連するブロブやツリーオブジェク
+     トへのrefを含むオブジェクト (*note [def_object]::)。<< def_tree,ツ
+     リー>>とディレクトリ (*note [def_directory]::)は同じ意味です。
+
+tree-ish (also treeish)
+     ツリーっぽい何か。ツリーオブジェクトに再帰的に逆参照できる ツリーオ
+     ブジェクト (*note [def_tree_object]::) または オブジェクト (*note
+     [def_object]::) です。 コミットオブジェクト (*note
+     [def_commit_object]::) を逆参照すると、その リビジョン (*note
+     [def_revision]::) の最上位 ディレクトリ> に対応するツリーオブジェク
+     トが生成されます。※右記は全てツリーっぽい(tree-ish)モノです:
+     <<def_commit-ish (*note [def_directory]::) 、ツリーオブジェクト、ツ
+     リーオブジェクトを指す タグオブジェクト (*note [def_tag_object]::)
+     、タグオブジェクトを指すタグオブジェクト
+
+unmerged index
+     マージされていないインデックスエントリ (*note [def_index_entry]::)を
+     含むインデックス (*note [def_index]::)。
+
+unreachable object
+     ブランチ (*note [def_branch]::) または タグ (*note [def_tag]::) ま
+     たはその他の参照から 到達可能 (*note [def_reachable]::) ではない(辿
+     れない、ポイントされてない) オブジェクト (*note [def_object]::) 。
+
+upstream branch
+     当該のブランチからマージされる(または当該のブランチがリベースされる
+     )デフォルトのブランチ (*note [def_branch]::)。これは、
+     ‘branch.<name>.remote’ や ‘branch.<name>.merge’ を介して構成されま
+     す。Aのアップストリームブランチが ‘origin/B’ の場合、「Aは
+     ‘origin/B’ を追跡しています」と言うことがあります。
+
+working tree
+     実際にチェックアウトされたファイル群のツリー。 作業ツリーには通常、
+     HEAD (*note [def_HEAD]::) コミットのツリーの内容に加えて、任意の、
+     まだコミットされていないローカルの変更が含まれています。
+
+
+File: git.info,  Node: Git Quick Reference,  Next: Notes and todo list for this manual,  Prev: Git用語集,  Up: Top
+
+Appendix A Git Quick Reference
+******************************
+
+これは主要なコマンドの簡単な要約です。ここまでの章を読めば、これらがどの
+ように機能するか、より詳細に説明してあります。
+
+* Menu:
+
+* Creating a new repository: Creating a new repository <1>.
+* Managing branches::
+* Exploring history::
+* Making changes::
+* Merging::
+* Sharing your changes::
+* Repository maintenance::
+
+
+File: git.info,  Node: Creating a new repository <1>,  Next: Managing branches,  Up: Git Quick Reference
+
+A.1 Creating a new repository
+=============================
+
+tarballから持ってくる:
+
+     $ tar xzf project.tar.gz
+     $ cd project
+     $ git init
+     Initialized empty Git repository in .git/
+     $ git add .
+     $ git commit
+
+   リモートのリポジトリから持ってくる:
+
+     $ git clone git://example.com/pub/project.git
+     $ cd project
+
+
+File: git.info,  Node: Managing branches,  Next: Exploring history,  Prev: Creating a new repository <1>,  Up: Git Quick Reference
+
+A.2 Managing branches
+=====================
+
+     $ git branch                    # list all local branches in this repo
+     $ git switch test               # switch working directory to branch "test"
+     $ git branch new                # create branch "new" starting at current HEAD
+     $ git branch -d new             # delete branch "new"
+
+   現在のHEAD(デフォルト)に基づいて新しいブランチを作成する代わりに、以
+下を使用します:
+
+     $ git branch new test    # branch named "test"
+     $ git branch new v2.6.15 # tag named v2.6.15
+     $ git branch new HEAD^   # commit before the most recent
+     $ git branch new HEAD^^  # commit before that
+     $ git branch new test~10 # ten commits before tip of branch "test"
+
+   新しいブランチを作成と同時にその新しいブランチに切り替えます:
+
+     $ git switch -c new v2.6.15
+
+   あなたがクローンを作成した元のリポジトリから持ってきてブランチを更新
+・調査します:
+
+     $ git fetch             # update
+     $ git branch -r         # list
+       origin/master
+       origin/next
+       ...
+     $ git switch -c masterwork origin/master
+
+   別のリポジトリからブランチを取得し、あなたのリポジトリで新しい名前を
+付けます:
+
+     $ git fetch git://example.com/project.git theirbranch:mybranch
+     $ git fetch git://example.com/project.git v2.6.15:mybranch
+
+   定期的に使用するリポジトリのリストを保持します:
+
+     $ git remote add example git://example.com/project.git
+     $ git remote                    # list remote repositories
+     example
+     origin
+     $ git remote show example       # get details
+     * remote example
+       URL: git://example.com/project.git
+       Tracked remote branches
+         master
+         next
+         ...
+     $ git fetch example             # update branches from example
+     $ git branch -r                 # list all remote branches
+
+
+File: git.info,  Node: Exploring history,  Next: Making changes,  Prev: Managing branches,  Up: Git Quick Reference
+
+A.3 Exploring history
+=====================
+
+     $ gitk                      # visualize and browse history
+     $ git log                   # list all commits
+     $ git log src/              # ...modifying src/
+     $ git log v2.6.15..v2.6.16  # ...in v2.6.16, not in v2.6.15
+     $ git log master..test      # ...in branch test, not in branch master
+     $ git log test..master      # ...in branch master, but not in test
+     $ git log test...master     # ...in one branch, not in both
+     $ git log -S'foo()'         # ...where difference contain "foo()"
+     $ git log --since="2 weeks ago"
+     $ git log -p                # show patches as well
+     $ git show                  # most recent commit
+     $ git diff v2.6.15..v2.6.16 # diff between two tagged versions
+     $ git diff v2.6.15..HEAD    # diff with current head
+     $ git grep "foo()"          # search working directory for "foo()"
+     $ git grep v2.6.15 "foo()"  # search old tree for "foo()"
+     $ git show v2.6.15:a.txt    # look at old version of a.txt
+
+   デグレ(regression)を探します:
+
+     $ git bisect start
+     $ git bisect bad                # current version is bad
+     $ git bisect good v2.6.13-rc2   # last known good revision
+     Bisecting: 675 revisions left to test after this
+                                     # test here, then:
+     $ git bisect good               # if this revision is good, or
+     $ git bisect bad                # if this revision is bad.
+                                     # repeat until done.
+
+
+File: git.info,  Node: Making changes,  Next: Merging,  Prev: Exploring history,  Up: Git Quick Reference
+
+A.4 Making changes
+==================
+
+Gitにあなたが誰なのか教えてやってください:
+
+     $ cat >>~/.gitconfig <<\EOF
+     [user]
+             name = Your Name Comes Here
+             email = you@yourdomain.example.com
+     EOF
+
+   次のコミットに含めるファイルの内容を選択してから、コミットします:
+
+     $ git add a.txt    # updated file
+     $ git add b.txt    # new file
+     $ git rm c.txt     # old file
+     $ git commit
+
+   または、ワンステップでコミットを準備・作成します:
+
+     $ git commit d.txt # use latest content only of d.txt
+     $ git commit -a    # use latest content of all tracked files
+
+
+File: git.info,  Node: Merging,  Next: Sharing your changes,  Prev: Making changes,  Up: Git Quick Reference
+
+A.5 Merging
+===========
+
+     $ git merge test   # merge branch "test" into the current branch
+     $ git pull git://example.com/project.git master
+                        # fetch and merge in remote branch
+     $ git pull . test  # equivalent to git merge test
+
+
+File: git.info,  Node: Sharing your changes,  Next: Repository maintenance,  Prev: Merging,  Up: Git Quick Reference
+
+A.6 Sharing your changes
+========================
+
+パッチの輸出入(inport/export):
+
+     $ git format-patch origin..HEAD # format a patch for each commit
+                                     # in HEAD but not in origin
+     $ git am mbox # import patches from the mailbox "mbox"
+
+   別のGitリポジトリからブランチをフェッチしてから、現在のブランチにマー
+ジします:
+
+     $ git pull git://example.com/project.git theirbranch
+
+   現在のブランチにマージする前に、フェッチしたブランチをローカルブラン
+チに保存します:
+
+     $ git pull git://example.com/project.git theirbranch:mybranch
+
+   ローカルブランチでコミットを作成した後、あなたのコミットでリモートブ
+ランチを更新します:
+
+     $ git push ssh://example.com/project.git mybranch:theirbranch
+
+   リモートブランチとローカルブランチの両方に "test" という名前が付けら
+れている場合:
+
+     $ git push ssh://example.com/project.git test
+
+   頻繁に使用されるリモートリポジトリのショートカットバージョン:
+
+     $ git remote add example ssh://example.com/project.git
+     $ git push example test
+
+
+File: git.info,  Node: Repository maintenance,  Prev: Sharing your changes,  Up: Git Quick Reference
+
+A.7 Repository maintenance
+==========================
+
+破損(corruption)を確認します:
+
+     $ git fsck
+
+   再圧縮し、未使用の残骸を取り除きます:
+
+     $ git gc
+
+
+File: git.info,  Node: Notes and todo list for this manual,  Prev: Git Quick Reference,  Up: Top
+
+Appendix B Notes and todo list for this manual
+**********************************************
+
+* Menu:
+
+* Todo list::
+
+
+File: git.info,  Node: Todo list,  Up: Notes and todo list for this manual
+
+B.1 Todo list
+=============
+
+これらは未だ作業中です。
+
+   基本的な要件:
+
+   • Gitの特別な知識がなくても、UNIXコマンドラインの基本を理解していれば
+     、インテリジェントな人であれば最初から最後まで読みやすくする必要が
+     あります。必要に応じて、その他の前提条件が発生したときに具体的に言
+     及する必要があります。
+
+   • 可能な場合は常に、セクションの見出しで、実行方法を説明するタスクを
+     、必要以上の知識を必要としない言語で明確に説明する必要があります。
+     たとえば、 "the ‘git am’ command" ではなく "importing patches into
+     a project" です。
+
+   明確な章の依存関係グラフを作成する方法を考えてください。これにより、
+人々は必ずしもその間のすべてを読むことなく、重要なトピックにたどり着くこ
+とができます。
+
+   省略されている他のものについては、 ‘Documentation/’ を浚ってください
+。特に:
+
+   • howtoと
+
+   • ‘technical/’ のいくつかと
+
+   • フック
+
+   • git(1) (git.html) のコマンドの一覧
+
+   メールアーカイブをスキャンして、省略されている他のものを探します
+
+   マニュアルページをスキャンして、このマニュアルが提供するよりも多くの
+背景を想定しているものがあるかどうかを確認します。
+
+   より良い例を追加します。 クックブックの例だけのセクションを記述するの
+は良い考えです。 たいてい「高度な例」セクションを標準の章の最後のセクシ
+ョンにしますよね？
+
+   必要に応じて、用語集への相互参照を含めます。
+
+   CVSやSubversionや一連のリリースtarballのインポートなど、他のバージョ
+ン管理システムの操作に関するセクションを追加します。
+
+   配管コマンドの使用とスクリプトの作成に関する章を作成します。
+
+   代替、clone -reference、等。
+
+   リポジトリの破損からの回復の詳細は、以下:
+https://lore.kernel.org/git/Pine.LNX.4.64.0702272039540.12485@woody.linux-foundation.org/
+(https://lore.kernel.org/git/Pine.LNX.4.64.0702272039540.12485@woody.linux-foundation.org/)
+https://lore.kernel.org/git/Pine.LNX.4.64.0702141033400.3604@woody.linux-foundation.org/
+(https://lore.kernel.org/git/Pine.LNX.4.64.0702141033400.3604@woody.linux-foundation.org/)
+
+
+
+Tag Table:
+Node: Top212
+Node: Introduction3368
+Node: Repositories and Branches5162
+Node: How to get a Git repository5822
+Node: プロジェクトの別のバージョンをチェックアウトする方法7414
+Node: Understanding History; Commits10984
+Node: Understanding history; commits; parents; and reachability13711
+Node: Understanding history; History diagrams15334
+Node: Understanding history; What is a branch?16216
+Node: Manipulating branches17209
+Node: 新しいブランチを作成せずに古いバージョンを調べる19299
+Node: Examining branches from a remote repository21703
+Node: Naming branches; tags; and other references24029
+Node: Updating a repository with git fetch25925
+Node: Fetching branches from other repositories26782
+Node: Exploring Git history28695
+Node: How to use bisect to find a regression29696
+Node: Naming commits33800
+Node: Creating tags36740
+Node: Browsing revisions37499
+Node: Generating diffs39489
+Node: Viewing old file versions40442
+Node: Examples41192
+Node: Counting the number of commits on a branch41748
+Node: 2つのブランチが同じ履歴を指しているかどうかを確認します42495
+Node: 指定の修正を含む最初のタグ付きバージョンを検索する43905
+Node: 指定のブランチに固有のコミットを表示する47533
+Node: Creating a changelog and tarball for a software release49729
+Node: 指定の内容を含むファイルを参照するコミットを検索する52025
+Node: Gitでの開発作業53031
+Node: あなたの名前をGitに教える53568
+Node: Creating a new repository54615
+Node: How to make a commit55183
+Node: 適切なコミットメッセージの作成59152
+Node: Ignoring files60015
+Node: How to merge62918
+Node: Resolving a merge65609
+Node: マージ作業中に競合解決の助けを得る67492
+Node: マージを元に戻す72445
+Node: Fast-forward merges73292
+Node: 作業ミスを修正する74233
+Node: 新しいコミットによって作業ミスを修正する75714
+Node: 履歴を巻き戻す事によって作業ミスを修正する77027
+Node: Checking out an old version of a file78557
+Node: 作業中の作業を一時的に保存しておく79638
+Node: 良好なパフォーマンスの確保80921
+Node: 信頼性の確保81742
+Node: リポジトリの破損をチェックする81998
+Node: 失われた変更の回復83471
+Node: Reflogs83840
+Node: Examining dangling objects[宙ぶらりんオブジェクトを調べる]86317
+Node: Sharing development with others88771
+Node: Getting updates with git pull89227
+Node: Submitting patches to a project92140
+Node: Importing patches to a project93798
+Node: Public Git repositories95424
+Node: Setting up a public repository98513
+Node: Gitプロトコルを介したGitリポジトリのエクスポート99594
+Node: Exporting a git repository via HTTP101130
+Node: Pushing changes to a public repository102769
+Node: プッシュが失敗した場合の対処方法105626
+Node: Setting up a shared repository108817
+Node: Allowing web browsing of a repository111027
+Node: 最小限の履歴でGitリポジトリを取得する方法112057
+Node: Examples <1>113417
+Node: Maintaining topic branches for a Linux subsystem maintainer113664
+Node: Rewriting history and maintaining patch series124639
+Node: Creating the perfect patch series125694
+Node: Keeping a patch series up to date using git rebase127695
+Node: Rewriting a single commit130963
+Node: Reordering or selecting from a patch series132037
+Node: Using interactive rebases132863
+Node: Other tools135703
+Node: 履歴の書き換えに関する問題136079
+Node: なぜマージコミットをbisectすることが線形履歴をbisectするよりも難しい場合があるのか138381
+Node: Advanced branch management142201
+Node: Fetching individual branches142568
+Node: git fetch and fast-forwards144075
+Node: Forcing git fetch to do non-fast-forward updates145852
+Node: Configuring remote-tracking branches146867
+Node: Gitの概念148798
+Node: The Object Database149453
+Node: Commit Object153071
+Node: Tree Object156382
+Node: Blob Object158848
+Node: Trust[信頼性]160570
+Node: Tag Object162497
+Node: Gitがオブジェクトを効率的に保存する方法; pack files163804
+Node: Dangling objects[宙ぶらりんオブジェクト]166840
+Node: 破損したリポジトリの回復172262
+Node: The index177929
+Node: Submodules181663
+Node: サブモジュールの落とし穴190006
+Node: Low-level Git operations193274
+Node: Object access and manipulation193942
+Node: The Workflow194956
+Node: working directory → index196117
+Node: index → object database198399
+Node: object database → index199128
+Node: index → working directory199991
+Node: 全てを結び付ける201540
+Node: Examining the data204865
+Node: Merging multiple trees206410
+Node: Merging multiple trees; continued208919
+Node: Hacking Git212882
+Node: Object storage format213233
+Node: Gitのソースコードを俯瞰する215209
+Node: Git用語集227005
+Node: Git解説227156
+Ref: [def_alternate_object_database]227240
+Ref: [def_bare_repository]227568
+Ref: [def_blob_object]228271
+Ref: [def_branch]228403
+Ref: [def_cache]229201
+Ref: [def_chain]229279
+Ref: [def_changeset]229623
+Ref: [def_checkout]229880
+Ref: [def_cherry-picking]230370
+Ref: [def_clean]231064
+Ref: [def_commit]231428
+Ref: [def_commit_object]232356
+Ref: [def_commit-ish]232749
+Ref: [def_core_git]233496
+Ref: [def_DAG]233650
+Ref: [def_dangling_object]234072
+Ref: [def_detached_HEAD]234508
+Ref: [def_directory]235886
+Ref: [def_dirty]235952
+Ref: [def_evil_merge]236272
+Ref: [def_fast_forward]236444
+Ref: [def_fetch]237143
+Ref: [def_file_system]237665
+Ref: [def_git_archive]237972
+Ref: [def_gitfile]238069
+Ref: [def_grafts]238224
+Ref: [def_hash]239086
+Ref: [def_head]239182
+Ref: [def_HEAD]239581
+Ref: [def_head_ref]240062
+Ref: [def_hook]240119
+Ref: [def_index]240831
+Ref: [def_index_entry]241295
+Ref: [def_master]241714
+Ref: [def_merge]242143
+Ref: [def_object]243537
+Ref: [def_object_database]243795
+Ref: [def_object_identifier]244094
+Ref: [def_object_name]244216
+Ref: [def_object_type]244461
+Ref: [def_octopus]244863
+Ref: [def_origin]244939
+Ref: [def_overlay]245500
+Ref: [def_pack]246159
+Ref: [def_pack_index]246330
+Ref: [def_pathspec]246524
+Ref: [def_parent]253453
+Ref: [def_pickaxe]253711
+Ref: [def_plumbing]254281
+Ref: [def_porcelain]254369
+Ref: [def_per_worktree_ref]254745
+Ref: [def_pseudoref]255074
+Ref: [def_pull]256359
+Ref: [def_push]256610
+Ref: [def_reachable]257431
+Ref: [def_rebase]258144
+Ref: [def_ref]258364
+Ref: [def_reflog]259251
+Ref: [def_refspec]259675
+Ref: [def_remote]259915
+Ref: [def_remote_tracking_branch]260234
+Ref: [def_repository]260857
+Ref: [def_resolve]261430
+Ref: [def_revision]261553
+Ref: [def_rewind]261626
+Ref: [def_SCM]261807
+Ref: [def_SHA1]261848
+Ref: [def_shallow_clone]262079
+Ref: [def_shallow_repository]262340
+Ref: [def_stash]263174
+Ref: [def_submodule]263424
+Ref: [def_superproject]263734
+Ref: [def_symref]264157
+Ref: [def_tag]264585
+Ref: [def_tag_object]265338
+Ref: [def_topic_branch]265767
+Ref: [def_tree]266252
+Ref: [def_tree_object]266559
+Ref: [def_tree-ish]266848
+Ref: [def_unmerged_index]267645
+Ref: [def_unreachable_object]267810
+Ref: [def_upstream_branch]268096
+Ref: [def_working_tree]268555
+Node: Git Quick Reference268857
+Node: Creating a new repository <1>269418
+Node: Managing branches269892
+Node: Exploring history272016
+Node: Making changes273663
+Node: Merging274452
+Node: Sharing your changes274827
+Node: Repository maintenance276176
+Node: Notes and todo list for this manual276466
+Node: Todo list276685
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+End:

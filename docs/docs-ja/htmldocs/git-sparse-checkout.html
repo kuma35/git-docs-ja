@@ -1,0 +1,988 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 9.1.1" />
+<title>git-sparse-checkout(1)</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="manpage">
+<div id="header">
+<h1>
+git-sparse-checkout(1) Manual Page
+</h1>
+<h2>NAME</h2>
+<div class="sectionbody">
+<p>git-sparse-checkout -
+   チェックアウトをパターンのリストで指定されたパスのセットに減らします
+</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="verseblock">
+<pre class="content"><em>git sparse-checkout &lt;subcommand&gt; [options]</em></pre>
+<div class="attribution">
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>スパース(まばらな)チェックアウト構成を初期化および変更します。これにより、チェックアウトがパターンのリストで指定されたパスのセットに削減されます。</p></div>
+<div class="paragraph"><p>警告: このコマンドは実験的なものです。 その動作、およびスパースチェックアウトの存在下での他のコマンドの動作は、将来変更される可能性があります。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_commands">COMMANDS</h2>
+<div class="sectionbody">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+list
+</dt>
+<dd>
+<p>
+        sparse-checkoutファイルにパターンを記述します。
+</p>
+</dd>
+<dt class="hdlist1">
+init
+</dt>
+<dd>
+<p>
+        <code>core.sparseCheckout</code> 設定を有効にします。スパースチェックアウトファイル(sparse-checkout
+        file)が存在しない場合は、ルートディレクトリ内のすべてのファイルに一致し、他のディレクトリには一致しないパターンをスパースチェックアウトファイルに入力すると、Gitによって追跡されるすべてのディレクトリが削除されます。
+        スパースチェックアウトファイルにパターンを追加して、作業ディレクトリに再設定します。
+</p>
+<div class="paragraph"><p>他のワークツリーへの干渉を避けるために、最初に <code>extensions.worktreeConfig</code>
+設定を有効にし、ワークツリー固有の構成ファイルで必ず <code>core.sparseCheckout</code> 設定を設定します。</p></div>
+<div class="paragraph"><p><code>--cone</code> を指定すると、 <code>core.sparseCheckoutCone</code>
+設定も設定され、限定パターンのセットでパフォーマンスが向上します(下記の「CONE PATTERN SET」参照)。</p></div>
+<div class="paragraph"><p><code>--[no-]sparse-index</code> オプションを使用して、スパースインデックス形式の使用を切り替えます。
+これにより、インデックスのサイズが縮小され、スパースチェックアウト定義とより緊密に連携します。 これにより、<code>gits tatus</code> や <code>git
+add</code> などのコマンドのパフォーマンスが大幅に向上する可能性があります。 注意: この機能はまだ実験段階です。
+一部のコマンドは、機能と適切に統合されるまで、インデックスがまばら(sparse)であると遅くなる可能性があります。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">スパースインデックスを使用するには、外部ツールでは完全には理解できない方法でインデックスを変更する必要があります。 この互換性に問題がある場合は、
+<code>git sparse-checkout init --no-sparse-index</code> を実行して、インデックスがまばらにならないように書き換えます。
+古いバージョンのGitは、スパースディレクトリエントリのインデックス拡張機能を理解せず、それが無効になるまでリポジトリとのやり取りに失敗する可能性があります。</td>
+</tr></table>
+</div>
+</dd>
+<dt class="hdlist1">
+set
+</dt>
+<dd>
+<p>
+        setサブコマンドに続く引数のリストとして与えられた一連のパターンをスパースチェックアウトファイルに書き込みます。
+        新しいパターンに一致するように作業ディレクトリを更新します。 core.sparseCheckout
+        構成設定がまだ有効になっていない場合は、有効にします。
+</p>
+<div class="paragraph"><p><code>--stdin</code> オプションを指定すると、パターンは引数からではなく、改行で区切られたリストとして標準入力から読み込まれます。</p></div>
+<div class="paragraph"><p><code>core.sparseCheckoutCone</code>
+が有効になっている場合、入力リストはスパースチェックアウトパターンではなくディレクトリのリストと見なされます。
+このコマンドは、スパースチェックアウトファイルにパターンを書き込み、それらのディレクトリに含まれるすべてのファイル(と、以下のディレクトリを再帰的にたどります)と、祖先ディレクトリの兄弟であるファイルを含めます。
+入力形式は、 <code>git ls-tree --name-only</code> の出力と一致します。
+これには、二重引用符(<code>"</code>)で始まるパス名をCスタイルの引用符で囲まれた文字列として解釈することが含まれます。</p></div>
+</dd>
+<dt class="hdlist1">
+add
+</dt>
+<dd>
+<p>
+        スパースチェックアウトファイルを更新して、追加のパターンを含めます。 デフォルトでは、これらのパターンはコマンドライン引数から読み取られますが、
+        <code>--stdin</code> オプションを使用して標準入力から読み取ることができます。 <code>core.sparseCheckoutCone</code>
+        が有効になっている場合、指定されたパターンはsetサブコマンドのようにディレクトリ名として解釈されます。
+</p>
+</dd>
+<dt class="hdlist1">
+reapply
+</dt>
+<dd>
+<p>
+        作業ツリーのパスにスパースパターンルールを再適用します。
+        マージやリベースなどのコマンドは、作業を行うためのパスを具体化でき(たとえば、競合を表示するため)ますが、他のスパースチェックアウトコマンドは、個々のファイルをスパース化できない場合があります(たとえば、ステージングされていない変更や競合があるため)。
+        このような場合、影響を受けるパスをクリーンアップした後、(たとえば、競合の解決、変更の取り消しまたはコミットなどの)後で <code>git
+        sparse-checkout reapply</code> を実行するのが理にかなっています。
+</p>
+</dd>
+<dt class="hdlist1">
+disable
+</dt>
+<dd>
+<p>
+        <code>core.sparseCheckout</code> 構成設定を無効にし、すべてのファイルを含めるように作業ディレクトリを復元(restore)します。 その後
+        <em>git sparse-checkout init</em>
+        コマンドで作業ディレクトリが同じ状態に戻る可能性があるため、スパースチェックアウトファイルはそのまま残します。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sparse_checkout">SPARSE CHECKOUT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>「sparse checkout」(まばらなチェックアウト)を使用すると、作業ディレクトリにまばらにデータを入力できます。
+skip-worktreeビット(<a href="git-update-index.html">git-update-index(1)</a>
+参照)を使用して、作業ディレクトリ内のファイルを確認する価値があるかどうかをGitに通知します。
+skip-worktreeビットが設定されている場合、作業ディレクトリのファイルは無視されます。  Git
+はこれらのファイルの内容を入力しないので、多くのファイルがあるリポジトリで作業しているが、現在のユーザーにとって重要なものはごくわずかである場合に、まばらなチェックアウトが役に立ちます。</p></div>
+<div class="paragraph"><p><code>$GIT_DIR/info/sparse-checkout</code> ファイルは、スキップワークツリー参照ビットマップを定義するために使用されます。
+Gitが作業ディレクトリを更新すると、このファイルに基づいてインデックスのスキップワークツリービットが更新されます。
+ファイル内のパターンに一致するファイルは作業ディレクトリに表示され、残りは表示されません。</p></div>
+<div class="paragraph"><p>スパースチェックアウト機能を有効にするには、 <code>git sparse-checkout init</code>
+を実行してシンプルなスパースチェックアウトファイルを初期化し、 <code>core.sparseCheckout</code> 構成設定を有効にします。 次に、 <code>git
+sparse-checkout set</code> を実行して、スパースチェックアウトファイルのパターンを変更します。</p></div>
+<div class="paragraph"><p>作業ディレクトリにすべてのファイルを再入力するには、 <code>git sparse-checkou tdisable</code> コマンドを使用します。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_full_pattern_set">FULL PATTERN SET</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>デフォルトでは、sparse-checkoutファイルは <code>.gitignore</code> ファイルと同じ構文を使用します。</p></div>
+<div class="paragraph"><p>通常、 <code>$GIT_DIR/info/sparse-checkout</code>
+は、含まれるファイルを指定するために使用されますが、ネガティブパターンを使用して、「含まれない」ファイルを指定することもできます。 たとえば、ファイル
+unwanted を削除するには以下のようにします:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>/*
+!unwanted</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cone_pattern_set">CONE PATTERN SET</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>フルパターンセットにより、任意のパターンの一致と複雑な包含/除外ルールが可能になります。 これらにより、インデックスを更新するときに
+O(オー;N*M)パターンが一致する可能性があります。ここで、Nはパターンの数、Mはインデックス内のパスの数です。
+このパフォーマンスの問題に対処するために、 <code>core.sparseCheckoutCone</code>
+が有効になっている場合は、より制限されたパターンセットが許可されます。</p></div>
+<div class="paragraph"><p>円錐(cone)パターンセットで受け入れられるパターンは以下のとおりです:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<strong>再帰</strong>: (recursive)ディレクトリ内のすべてのパスが含まれます
+</p>
+</li>
+<li>
+<p>
+<strong>親</strong>: (parent)ディレクトリ直下のすべてのファイルが含まれます。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>上記の2つのパターンに加えて、ルートディレクトリ内のすべてのファイルが含まれていることも期待されます。再帰(recursive)パターンが追加されると、すべての先行ディレクトリが親(parent)パターンとして追加されます。</p></div>
+<div class="paragraph"><p>デフォルトでは、 <code>git sparse-checkout init</code> を実行すると、ルートディレクトリが親パターンとして追加されます。
+この時点で、スパースチェックアウトファイルには以下のパターンが含まれています:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>/*
+!/*/</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、「ルートは全てインクルードするが、ルートの2レベル下は何も含めない」という意味です。</p></div>
+<div class="paragraph"><p>円錐(cone)モードの場合、 <code>git sparse-checkout set</code>
+サブコマンドは、スパースチェックアウトパターンのリストではなく、ディレクトリのリストを取得します。 このモードでは、コマンド <code>git
+sparse-checkout set A/B/C</code> は、ディレクトリ <code>A/B/C</code> を再帰パターンとして設定し、ディレクトリ <code>A</code> と <code>A/B</code>
+は親パターンとして追加されます。 結果のスパースチェックアウトファイルは以下のようになります</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>/*
+!/*/
+/A/
+!/A/*/
+/A/B/
+!/A/B/*/
+/A/B/C/</code></pre>
+</div></div>
+<div class="paragraph"><p>ここでは順番が重要なので、ネガティブなパターンはファイルの下位に表示されるポジティブなパターンに上書きされます。</p></div>
+<div class="paragraph"><p><code>core.sparseCheckoutCone=true</code>
+の場合、Gitはこれらのタイプのパターンを期待してスパースチェックアウトファイルをパースします。 パターンが一致しない場合、Gitは警告を発します。
+パターンが期待される形式と一致する場合、Gitはより高速なハッシュベースのアルゴリズムを使用して、スパースチェックアウトに含めるモノを計算します。</p></div>
+<div class="paragraph"><p>円錐(cone)モードの場合、 <code>git sparse-checkout list</code>
+サブコマンドは、再帰(recursive)パターンを定義するディレクトリを一覧表示します。
+上記のスパースチェックアウトファイルの例の場合、出力は以下のようになります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git sparse-checkout list
+A/B/C</code></pre>
+</div></div>
+<div class="paragraph"><p><code>core.ignoreCase=true</code> の場合、パターンマッチングアルゴリズムは大文字と小文字を区別しないチェックを使用します。 これにより、
+<code>git sparse-checkout set</code>
+コマンドのファイル名が一致しない状況が修正され、作業ディレクトリに期待される円錐(cone)が反映されます。</p></div>
+<div class="paragraph"><p>円錐(cone)モードでスパースチェックアウトパターンを変更すると、Gitはスパースチェックアウト円錐(cone)内にない追跡中の各ディレクトリを検査して、追跡されていないファイルが含まれているかどうかを確認します。
+<code>.gitignore</code> パターンが原因でこれらのファイルがすべて無視された場合、ディレクトリは削除されます。
+そのディレクトリ内の追跡されていないファイルのいずれかが無視されない場合、そのディレクトリ内で削除は発生せず、警告メッセージが表示されます。
+これらのファイルが重要な場合は、スパースチェックアウト定義をリセットして含まれるようにし、 <code>git add</code> と <code>git commit</code>
+を使用してファイルを保存し、残りのファイルを手動で削除して、Gitが最適に動作できるようにします。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_submodules">SUBMODULES</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>あなたのリポジトリに1つ以上のサブモジュールが含まれている場合、サブモジュールは <code>git submodule</code>
+コマンドとの相互作用に基づいて入力されます。 具体的には、 <code>git submodule init -- &lt;path&gt;</code> は <code>&lt;path&gt;</code>
+のサブモジュールが存在することを確認し、 <code>git submodule deinit [-f] -- &lt;path&gt;</code> は <code>&lt;path&gt;</code>
+のサブモジュールのファイルを削除します(追跡されていないファイル、コミットされていない変更、プッシュされていない履歴を含む)。sparse-checkoutが作業ツリーからファイルを削除するが、インデックスにエントリを残す方法と同様に、初期化されていないサブモジュールは作業ディレクトリから削除されますが、インデックスにはエントリがあります。</p></div>
+<div class="paragraph"><p>サブモジュールにはプッシュされていない変更または追跡されていないファイルがある可能性があるため、それらを削除するとデータが失われる可能性があります。
+したがって、スパース 包含/除外 ルールを変更しても、すでにチェックアウトされているサブモジュールが作業コピーから削除されることはありません。
+別の言い方をすれば、サブモジュールを削除または追加するブランチを切り替えても、 <code>checkout</code>
+によってサブモジュールが自動的に削除または初期化されないのと同様に、 <code>sparse-checkout</code>
+を使用して「興味深い」ファイルの範囲を縮小または拡大してもサブモジュールの自動的な非初期化または初期化は発生しません。</p></div>
+<div class="paragraph"><p>さらに、上記の事実は、「追跡された」ファイルが作業コピーに存在しない可能性に複数の理由があることを意味します。スパースチェックアウトからのスパースパターンアプリケーション、およびサブモジュールの初期化状態です。
+したがって、作業コピー内の追跡されたファイルで機能する <code>git grep</code>
+のようなコマンドは、これらの制限のいずれかまたは両方によって制限される結果を返す可能性があります。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><a href="git-read-tree.html">git-read-tree(1)</a> <a href="gitignore.html">gitignore(5)</a></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_git">GIT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2022-04-30 10:16:36 JST
+</div>
+</div>
+</body>
+</html>
