@@ -1,4 +1,4 @@
-
+# $(BRANCH) specify make argument
 SRC_DIR = ../Documentation
 SEDOUT_DIR = ../Documentation-sedout
 SEDOUT_EXT = .txt
@@ -12,7 +12,7 @@ CONFIG_DIR = config
 HOWTO_DIR = howto
 SRC_INSTALL_TEXT = ../INSTALL
 PO_INSTALL_TEXT = $(addprefix $(PO_DIR)/,INSTALL.po)
-DST_INSTALL_TEXT = ../docs/INSTALL.txt
+DST_INSTALL_TEXT = ../docs/$(BRANCH)/INSTALL.txt
 
 # $(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
 
