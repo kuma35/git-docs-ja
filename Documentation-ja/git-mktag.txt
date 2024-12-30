@@ -1,0 +1,51 @@
+git-mktag(1)
+============
+
+NAME
+----
+git-mktag - 追加の検証(extra validation)でタグオブジェクトを作成します
+
+
+SYNOPSIS
+--------
+[verse]
+'git mktag'
+
+DESCRIPTION
+-----------
+
+標準入力でタグの内容を読み取り、タグオブジェクトを作成します。 出力は、新しいタグの <object> IDです。
+
+このコマンドは、 linkgit:git-hash-object[1] を `-t tag -w --stdin` オプションで呼び出すのとほとんど同じです。例:以下は両方とも、 `my-tag` ファイル中からタグの記述を見つけ、見つけたタグの記述からをタグオブジェクトを作成して書き込みます。
+
+    git mktag <my-tag
+    git hash-object -t tag -w --stdin <my-tag
+
+linkgit:git-hash-object[1] の違いは、タグが linkgit:git-fsck[1] チェックに合格しない場合、タグを書き込む前にmktagが停止することです。
+
+mktagで実行される「fsck」チェックは、すべての `fsck.<msg-id>` メッセージが警告からエラーに昇格されるという点で linkgit:git-fsck[1] がデフォルトで実行するものよりも厳密(strict)です(たとえば、tagger行の欠落はエラーです)。
+
+オブジェクトの余分なヘッダーもmktagではエラーになりますが、 linkgit:git-fsck[1] では無視されます。この追加のチェックは、適切な `fsck.<msg-id>` 変数を設定することでオフにできます:
+
+    git -c fsck.extraHeaderEntry=ignore mktag <my-tag-with-headers
+
+OPTIONS
+-------
+
+`--strict`::
+	デフォルトでは、mktagは linkgit:git-fsck[1] の `--strict` モードに相当するものをオンにします。無効にするには、 `--no-strict` を使用します。
+
+Tag Format
+----------
+このコマンドの標準入力に供給されるタグ署名ファイル(tag signature file)は、非常に単純な固定形式です。それは以下の4行からなります。
+
+  object <hash>
+  type <typename>
+  tag <tagname>
+  tagger <tagger>
+
+この後ろにいくつかのオプションの自由形式のメッセージが続きます(古いGitによって作成された一部のタグには `tagger` 行がない場合があります)。メッセージが存在する場合は、ヘッダーとは空白行で区切られます。メッセージ部分には、Git自体は気にしない署名が含まれている場合がありますが、それはgpgで確認できます。
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -1,0 +1,164 @@
+git-diff(1)
+===========
+
+NAME
+----
+git-diff - コミット、コミット、作業ツリーなどの間の変更を表示する
+
+
+SYNOPSIS
+--------
+[verse]
+git diff [<options>] [<commit>] [--] [<path>...]
+git diff [<options>] --cached [--merge-base] [<commit>] [--] [<path>...]
+git diff [<options>] [--merge-base] <commit> [<commit>...] <commit> [--] [<path>...]
+git diff [<options>] <commit>...<commit> [--] [<path>...]
+git diff [<options>] <blob> <blob>
+git diff [<options>] --no-index [--] <path> <path>
+
+DESCRIPTION
+-----------
+作業ツリーとインデックスまたはツリー間の変更、インデックスとツリー間の変更、2つのツリー間の変更、マージによる変更、2つのBLOBオブジェクト間の変更、ディスク上の2つのファイル間の変更を表示します。
+
+`git diff [<options>] [--] [<path>...]`::
+
+	この形式は、インデックス(次のコミットのステージング領域)に関連して行った変更を表示するためのものです。 言い換えれば、差異は、Gitにさらにインデックスに追加するように指示「可能な」ものですが、まだ追加していないものです。 linkgit:git-add[1] を使用して、これらの変更をステージングできます。
+
+`git diff [<options>] --no-index [--] <path> <path>`::
+
+	この形式は、ファイルシステム上の指定された2つのパスを比較するためのものです。 Gitによって制御される作業ツリーでコマンドを実行し、パスの少なくとも1つが作業ツリーの外部を指す場合、またはGitによって制御される作業ツリーの外部でコマンドを実行する場合は、 `--no-index` オプションを省略できます。 この形式は、 `--exit-code` の指定を含んでいます。
+
+`git diff [<options>] --cached [--merge-base] [<commit>] [--] [<path>...]`::
+
+	この形式は、指定された<commit>に関連する次のコミットのためにステージングした変更を表示するためのものです。 通常、最新のコミットとの比較が必要になるため、<commit>を指定しない場合、デフォルトでHEADになります。 HEADが存在せず(つまり、まだブランチが無い)、かつ、<commit>が指定されていない場合、すべてのステージされた変更が表示されます。 `--staged` は `--cached` の同義語です。
++
+`--merge-base` が指定されている場合は、<commit>を使用する代わりに、<commit>とHEADのマージベースを使用します。 `git diff --cached --merge-base A` は `git diff --cached $(git merge-base A HEAD)` と同等です。
+
+`git diff [<options>] [--merge-base] <commit> [--] [<path>...]`::
+
+	この形式は、指定された<commit>に関連する作業ツリーでの変更を表示するためのものです。 HEADを使用して最新のコミットと比較したり、ブランチ名を使用して別のブランチの先端と比較したりできます。
++
+`--merge-base` が指定されている場合は、<commit>を使用する代わりに、<commit>とHEADのマージベースを使用します。 `git diff --merge-base A` は `git diff $(git merge-base A HEAD)` と同等です。
+
+`git diff [<options>] [--merge-base] <commit> <commit> [--] [<path>...]`::
+
+	これは、2つの任意の<commit>間の変更を表示するためのものです。
++
+`--merge-base` が指定されている場合は、「前」側に2つのコミットのマージベースを使用します。 `git diff --merge-base A B` は `git diff --merge-baseAB` と同等です。
+
+`git diff [<options>] <commit> <commit>... <commit> [--] [<path>...]`::
+
+	この形式は、マージコミットの結果を表示するためのものです。 最初にリストされている<commit>は、マージ自体である必要があります。 必要なリビジョンの組を生成する便利な方法は、 接尾辞 `^@` と `^!` を使用することです。 A がマージ コミットの場合、 `git diff A A^@` と `git diff A^!` と `git show A` はすべて同一の、 結合された diff (combined diff)を返します。
+
+`git diff [<options>] <commit>..<commit> [--] [<path>...]`::
+
+	これは、2つの任意の<commit>間の変更を表示するための以前の形式(`..` なし)と同義です。片側の<commit>を省略すると、代わりにHEADを使用した場合と同じ効果があります。
+
+`git diff [<options>] <commit>\...<commit> [--] [<path>...]`::
+
+	この形式は、両方の<commit>の共通の祖先から開始して、2番目の<commit>を含むブランチの変更を表示するためのものです。 `git diff A...B` は `git diff $(git merge-base A B) B` と同等です。 <commit>のいずれかを省略できます。これは、代わりにHEADを使用するのと同じ効果があります。
+
+念のために書いておくと、 上記の説明の <commit>は、`--merge-base` の場合と、 `..` 表記を使った最後の2つの形式を除いて、 すべて任意の <tree> にすることができます。 対象となるツリーは、 特別な参照 `AUTO_MERGE` によって指されるツリーです。 これは、 マージ競合が発生したときに `ort` マージ戦略によって書き込まれます(linkgit:git-merge[1] 参照)。 作業ツリーと `AUTO_MERGE` を比較すると、 テキストの競合を解決するためにこれまでに加えた変更が表示されます(下記例参照)。
+
+<commit>を綴る方法のより完全なリストについては、 linkgit:gitrevisions[7] の「SPECIFYING REVISIONS」セクションを参照してください。 ただし、 diffは範囲ではなく2つの「エンドポイント」を比較することであり、その範囲表記(`<commit>..<commit>` や `<commit>...<commit>`)は、 linkgit:gitrevisions[7] の「SPECIFYING RANGES」セクションで定義されている範囲を意味するものではありません。
+
+`git diff [<options>] <blob> <blob>`::
+
+	この形式は、2つのBLOBオブジェクトの生のコンテンツの違いを表示するためのものです。
+
+OPTIONS
+-------
+:git-diff: 1
+include::diff-options.txt[]
+
+`-1 --base`::
+`-2 --ours`::
+`-3 --theirs`::
+	作業ツリーを、「base」バージョン(ステージ #1)または「our branch」(私達のブランチ)(ステージ #2)または「their branch」(彼らのブランチ)(ステージ #3) と比較します。 インデックスには、マージされていないエントリの場合、つまり競合を解決している場合にのみ、これらのステージが含まれます。 詳細については、 linkgit:git-read-tree[1] の「3-Way Merge」セクションを参照してください。
+
+`-0`::
+	マージされていないエントリのdiff出力を省略し、「Unmerged」とだけ表示します。 作業ツリーをインデックスと比較する場合にのみ使用できます。
+
+<path>...::
+	<paths>パラメータを指定すると、diffを名前付きパスに制限するために使用されます(あなたはディレクトリ名を指定して、その下にあるすべてのファイルのdiffを取得できます)。
+
+
+include::diff-format.txt[]
+
+EXAMPLES
+--------
+
+あなたの作業ツリーを確認するさまざまな方法::
++
+------------
+$ git diff            <1>
+$ git diff --cached   <2>
+$ git diff HEAD       <3>
+$ git diff AUTO_MERGE <4>
+------------
++
+<1> 次のコミットのためにまだステージングされていない作業ツリーの変更。
+<2> インデックスと最後のコミットの間の変更。 `-a` オプションなしで `git commit` を実行した場合にコミットする内容です。
+<3> 最後のコミット以降の作業ツリーの変更。 `git commit -a` を実行した場合にコミットする内容です。
+<4> 作業ツリーで、 これまでにテキストの競合を解決するために行った変更。
+
+任意のコミットとの比較::
++
+------------
+$ git diff test            <1>
+$ git diff HEAD -- ./test  <2>
+$ git diff HEAD^ HEAD      <3>
+------------
++
+<1> 現在のブランチの先端を使用する代わりに、「テスト」ブランチの先端と比較してください。
+<2> 「test」ブランチの先端と比較する代わりに、現在のブランチの先端と比較しますが、比較をファイル「test」に限定します。
+<3> 最後のコミットと、最後のコミットのその前のバージョンを比較します。
+
+Comparing branches::
++
+------------
+$ git diff topic master    <1>
+$ git diff topic..master   <2>
+$ git diff topic...master  <3>
+------------
++
+<1> topicの先端とmasterブランチの間の変更。
+<2> 上と同じ。
+<3> topicブランチが開始されてからmasterブランチで発生した変更。
+
+Limiting the diff output::
++
+------------
+$ git diff --diff-filter=MRC            <1>
+$ git diff --name-status                <2>
+$ git diff arch/i386 include/asm-i386   <3>
+------------
++
+<1> 変更、名前変更、コピーのみを表示し、追加や削除は表示しません。
+<2> 名前と変更の性質のみを表示し、実際の差分出力は表示しません。
+<3> diff出力を名前付きサブツリーに制限します。
+
+diff出力をこねくりまわす(muging)::
++
+------------
+$ git diff --find-copies-harder -B -C  <1>
+$ git diff -R                          <2>
+------------
++
+<1> 名前の変更、コピー、完全な書き換えを見つけるために余分なサイクルを費やします(非常に高価です)。
+<2> 逆のdiffを出力します。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/diff.txt[]
+
+SEE ALSO
+--------
+diff(1), linkgit:git-difftool[1], linkgit:git-log[1], linkgit:gitdiffcore[7], linkgit:git-format-patch[1], linkgit:git-apply[1], linkgit:git-show[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

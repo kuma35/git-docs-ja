@@ -1,0 +1,271 @@
+git-branch(1)
+=============
+
+NAME
+----
+git-branch - ブランチを、一覧表示または作成または削除します
+
+SYNOPSIS
+--------
+[verse]
+'git branch' [--color[=<when>] | --no-color] [--show-current]
+	[-v [--abbrev=<n> | --no-abbrev]]
+	[--column[=<options>] | --no-column] [--sort=<key>]
+	[--merged [<commit>]] [--no-merged [<commit>]]
+	[--contains [<commit>]] [--no-contains [<commit>]]
+	[--points-at <object>] [--format=<format>]
+	[(-r | --remotes) | (-a | --all)]
+	[--list] [<pattern>...]
+'git branch' [--track[=(direct|inherit)] | --no-track] [-f]
+	[--recurse-submodules] <branchname> [<start-point>]
+'git branch' (--set-upstream-to=<upstream> | -u <upstream>) [<branchname>]
+'git branch' --unset-upstream [<branchname>]
+'git branch' (-m | -M) [<oldbranch>] <newbranch>
+'git branch' (-c | -C) [<oldbranch>] <newbranch>
+'git branch' (-d | -D) [-r] <branchname>...
+'git branch' --edit-description [<branchname>]
+
+DESCRIPTION
+-----------
+
+`--list` が指定されている場合、またはオプション以外の引数がない場合は、既存のブランチが一覧表示されます。 現在のブランチは緑色(green)で強調表示され、アスタリスク(`*`)でマークされます。 リンクされたワークツリーでチェックアウトされたブランチは、シアン(cyan)で強調表示され、プラス記号(`+`)でマークされます。 オプション `-r` を指定すると、リモート追跡ブランチが一覧表示され、オプション `-a` はローカルブランチとリモートブランチの両方を表示します。
+
+`<pattern>` が指定されている場合、出力を、マッチするブランチに制限するためのシェルワイルドカードとして使用されます。 複数のパターンが指定されている場合、いずれかのパターンに一致するとブランチが表示されます。
+
+`<pattern>` を提供するときは、 `--list` を使用する必要があることに注意してください。 そうしないと、コマンドがブランチの作成として解釈される可能性があります。
+
+`--contains` を使用すると、名前付きコミットを含むブランチ(つまり、先端コミットが名前付きコミットの子孫であるブランチ)のみが表示され、 `--no-contains` はそれを反転します。 `--merged` を使用すると、指定されたコミットにマージされたブランチ(つまり、指定されたコミットから先端コミットに到達できるブランチ)のみが一覧表示されます。 `--no-merged` を使用すると、指定されたコミットにマージされていないブランチのみが一覧表示されます。 <commit> 引数が欠落している場合、デフォルトで `HEAD` (つまり、現在のブランチの先端)になります。
+
+コマンドの2番目の形式は、現在の `HEAD` 、または、指定されている場合は <start-point> を指す <branchname> という名前の新しいブランチヘッドを作成します。 特殊なケースとして、 <start-point> について、マージベースが1つしかない場合は、`A` と `B` のマージベースのショートカットとして `A...B` を使用できます。 最大で `A` と `B` のいずれかを省略できます。その場合、デフォルトで `HEAD` になります。
+
+注意: これにより新しいブランチが作成されますが、作業ツリーはそれに切り替わりません。 `git switch <newbranch>` を使用して、新しいブランチに切り替えます。
+
+ローカルブランチがリモート追跡ブランチから開始されると、Gitはブランチ(具体的には `branch.<name>.remote` と `branch.<name>.merge` の構成エントリ)をセットアップし、 `git pull` でリモート追跡ブランチから適切にマージするようにします。 この動作は、グローバルな `branch.autoSetupMerge` 構成フラグを介して変更できます。 この設定は、 `--track` および `--no-track` オプションを使用してオーバーライドでき、後で `git branch --set-upstream-to` を使用して変更できます。
+
+`-m` または `-M` オプションを使用すると、 <oldbranch> の名前を <newbranch> に名前変更します。 <oldbranch> に対応するreflogがある場合は、 <newbranch> に一致するように名前変更され、ブランチの名前変更を記憶するためにreflogエントリが作成されます。 <newbranch> が存在する場合は、 `-M` を使用して名前の変更を強制する必要があります。
+
+`-c` および `-C` オプションは、 `-m` および `-M` とまったく同一の意図(semantics)ですが、ブランチの名前が変更される代わりに、configおよびreflogとともに新しい名前にコピーされます。
+
+`-d` または `-D` オプションを使用すると、 `<branchname>` が削除されます。 削除するブランチを複数指定できます。 現在、ブランチがreflogを持っている場合、reflogも削除されます。
+
+`-r` を `-d` と一緒に使用して、リモート追跡ブランチを削除します。 リモート追跡ブランチを削除するのは、リモートリポジトリに存在しなくなった場合、または `git fetch` が再度フェッチしないように構成されている場合にのみ意味があることに注意してください。 廃止されたすべてのリモート追跡ブランチをクリーンアップする方法については、 linkgit:git-remote[1] の「prune」サブコマンドも参照してください。
+
+
+OPTIONS
+-------
+`-d`::
+`--delete`::
+	ブランチを削除します。 ブランチは、アップストリームブランチで完全にマージする必要があります。アップストリームが `--track` または `--set-upstream-to` で設定されていない場合は、`HEAD` でマージする必要があります。
+
+`-D`::
+	`--delete --force` のショートカットです。
+
+`--create-reflog`::
+	ブランチのreflogを作成します。 これにより、ブランチrefに加えられたすべての変更の記録がアクティブになり、 `<branchname>@\{yesterday}` などの日付ベースのsha1式を使用できるようになります。 非ベアリポジトリでは、通常、reflogはデフォルトで `core.logAllRefUpdates` 設定オプションによって有効になっていることに注意してください。 否定形式 `--no-create-reflog` は、それ以前の `--create-reflog` をオーバーライドするだけですが、現在のところ `core.logAllRefUpdates` の設定を否定しません。
+
+`-f`::
+`--force`::
+	<branchname> がすでに存在する場合でも、 <branchname> を <startpoint> にリセットします。 `-f` がないと、 `git branch` は既存のブランチの変更を拒否します。 `-d`(または `--delete`)と組み合わせて、マージされたステータスに関係なく、または有効なコミットを指しているかどうかに関係なく、ブランチを削除できるようにします。 `-m`(または `--move`)と組み合わせて、新しいブランチ名がすでに存在する場合でもブランチの名前を変更できるようにします。同じことが `-c`(または `--copy`)にも当てはまります。
++
+注意: `git branch -f <branchname> [<start-point>]` は、 `-f` を指定しても、 同一ポジトリにリンクされた別のワークツリーでチェックアウトされている既存のブランチ `<branchname>` を変更することを拒否することに注意してください。
+
+`-m`::
+`--move`::
+	ブランチを、その構成や reflog とともに 移動/名前変更 します。
+
+`-M`::
+	`--move --force` のショートカットです。
+
+`-c`::
+`--copy`::
+	ブランチを、その構成や reflog とともにコピーします。
+
+`-C`::
+	`--copy --force` のショートカットです。
+
+`--color[=<when>]`::
+	現在のブランチと、ローカルブランチと、リモート追跡ブランチを強調表示するためにブランチに色を付けます。値は always (デフォルト) または never または auto でなければなりません。
+
+`--no-color`::
+	構成ファイルでデフォルトのカラー出力が指定されている場合でも、ブランチの色付けをオフにします。 `--color=never` と同じです。
+
+`-i`::
+`--ignore-case`::
+	ブランチの並べ替えとフィルタリングでは英大文字小文字を区別しません(case insensitive)。
+
+`--omit-empty`::
+	書式が空の文字列に展開される、書式化された ref の後ろに改行を出力しないでください。
+
+`--column[=<options>]`::
+`--no-column`::
+	ブランチの一覧表示を複数列に表示します。 オプションの構文については、構成変数 `column.branch` を参照してください。 オプションのない `--column` と `--no-column` は、それぞれ `always` と `never` と同等です。
++
+このオプションは、非おしゃべりモード(non-verbose mode)でのみ適用できます。
+
+`-r`::
+`--remotes`::
+	リモートトラッキングブランチを一覧表示または削除(`-d` とともに使用する場合)します。 オプションのパターンに一致するように `--list` と組み合わせます。
+
+`-a`::
+`--all`::
+	リモートトラッキングブランチとローカルブランチの両方を一覧表示します。 `--list` と組み合わせて、オプションのパターンにマッチさせます。
+
+`-l`::
+`--list`::
+	ブランチを一覧表示します。 オプションの`<pattern>...`を使用します。 例: `git branch --list 'maint-*'` パターンにマッチするブランチのみをリストします。
+
+`--show-current`::
+	現在のブランチの名前を出力します。 HEADを切り離した(detached HEAD)状態では、何も出力されません。
+
+`-v`::
+`-vv`::
+`--verbose`::
+	リストモード(list mode)の場合は、sha1を表示し、各ヘッドの件名と、(存在する場合、)アップストリームブランチとの関係をコミットします。 2回指定した場合は、リンクされたワークツリーのパス(存在する場合)とアップストリームブランチの名前も出力します(`git remote show <remote>` も参照)。 現在のワークツリーのHEADにはパスが出力されないことに注意してください(常に現在のディレクトリになります)。
+
+`-q`::
+`--quiet`::
+	エラー以外のメッセージを抑制して、ブランチを作成または削除するときはもっと静かにしてください。
+
+`--abbrev=<n>`::
+	コミットオブジェクト名を示す詳細リストで、オブジェクトを一意に参照する、少なくとも16進数 '<n>' 桁の長さの最短のプレフィックスを表示します。 デフォルト値は 7 で、 `core.abbrev` 構成オプションでオーバーライドできます。
+
+`--no-abbrev`::
+	省略せずに、出力リストに完全なsha1を表示します。
+
+`-t`::
+`--track[=(direct|inherit)]`::
+	新しいブランチを作成するときは、 `branch.<name>.remote` および `branch.<name>.merge` 構成エントリをセットアップして、新しいブランチの「上流」追跡構成(upstream tracking configuration)を設定します。 この構成は、 `git status` と `git branch -v` で、2つのブランチの間の関係を表示するようにgitに指示します。 さらに、引数なしで `git pull` に、新しいブランチがチェックアウトされたときに上流(upstream)からプルするように指示します。
++
+オプションの引数に応じて、正確な上流(upstream)ブランチが選択されます。 `-t` または `--track` または `--track=direct` は、起点(start-point)ブランチ自体を上流として使用することを意味します。 `--track=inherit｀ は、起点ブランチの上流構成(upstream configuration)をコピーすることを意味します。
++
+branch.autoSetupMerge 構成変数は、`--track` も `--no-track` も指定されていない場合に、 `git switch` や `git checkout` や `git branch` がどのように振る舞うかを指定します:
++
+デフォルトのオプション `true` は、起点(start-point)がリモート追跡ブランチである場合はいつでも `--track=direct` が指定されたかのように振る舞います。 `false` は、`--no-track` が指定されたかのように振る舞います。 `always` は、`--track=direct` が指定されたかのように振る舞います。 `inherit` は `--track=inherit` が与えられたかのように振る舞います。 `simple` は、起点がリモート追跡ブランチであり、新しいブランチがリモート・ブランチと同じ名前を持つ場合にのみ、 `--track=direct` が指定されたかのように振る舞います。
++
+`branch.<name>.remote` および `branch.<name>.merge` オプションの使用方法に関する追加の説明については、 linkgit:git-pull[1] および linkgit:git-config[1] を参照してください。
+
+`--no-track`::
+	branch.autoSetupMerge構成変数がセットされている場合でも、「upstream」構成をセットアップしないでください。
+
+`--recurse-submodules`::
+	このオプションは実験的機能です! `submodule.propagateBranches` が有効になっている場合、現在のコマンドをサブモジュール内でも再帰させます。 linkgit:git-config[1] の `submodule.propagateBranches` を参照してください。 現在、ブランチの作成のみがサポートされています。
++
+ブランチの作成で使用すると、新しいブランチ <branchname> がスーパープロジェクトに作成され、すべてのサブモジュールがスーパープロジェクトの <start-point> に作成されます。 サブモジュールでは、ブランチはスーパープロジェクトの <start-point> でサブモジュールのコミットを指しますが、ブランチの追跡情報はサブモジュールのブランチとremoteに基づいて設定されます。 例えば `git branch --recurse-submodules topic origin/main` は、スーパープロジェクトの `origin/main` 内のサブモジュール・コミットを指すサブモジュール・ブランチ `topic` を作成しますが、サブモジュールの `origin/main` を追跡します。
+
+`--set-upstream`::
+	このオプションは構文がわかりにくいため、サポートされなくなりました。 代わりに `--track` または `--set-upstream-to` を使用してください。
+
+`-u <upstream>`::
+`--set-upstream-to=<upstream>`::
+	<branchname> の追跡情報を設定して、<upstream> が <branchname> のアップストリームブランチと見なされるようにします。 <branchname> が指定されていない場合、デフォルトで現在のブランチになります。
+
+`--unset-upstream`::
+	<branchname> のアップストリーム情報を削除します。 ブランチが指定されていない場合、デフォルトで現在のブランチになります。
+
+`--edit-description`::
+	エディタを開き、テキストを編集して、ブランチの目的を説明し、他のさまざまなコマンド(`format-patch` 、` request-pull` 、 `merge` (有効な場合) など)で使用できるようにします。 複数行の説明を使用できます。
+
+`--contains [<commit>]`::
+	指定されたコミットを含むブランチのみをリストします(指定されていない場合はHEAD)。 `--list` の指定を含んでいます。
+
+`--no-contains [<commit>]`::
+	指定されたコミットを含まないブランチのみをリストします(指定されていない場合はHEAD)。 `--list` の指定を含んでいます。
+
+`--merged [<commit>]`::
+	指定されたコミットから先端に到達できるブランチのみをリストします(指定されていない場合はHEAD)。 `--list` の指定を含んでいます。
+
+`--no-merged [<commit>]`::
+	指定されたコミットから先端に到達できないブランチのみをリストします(指定されていない場合はHEAD)。 `--list` の指定を含んでいます。
+
+<branchname>::
+	作成または削除するブランチの名前。 新しいブランチ名は、 linkgit:git-check-ref-format[1] で定義されているすべてのチェックに合格する必要があります。 これらのチェックの一部は、ブランチ名で許可される文字を制限する場合があります。
+
+<start-point>::
+	新しいブランチヘッドはこのコミットを指します。 ブランチ名 または commit-id または タグ として指定できます。 このオプションを省略すると、代わりに現在のHEADが使用されます。
+
+<oldbranch>::
+	名前を変更する既存のブランチの名前。
+
+<newbranch>::
+	既存のブランチの新しい名前。 <branchname> と同じ制限が適用されます。
+
+`--sort=<key>`::
+	指定されたキーに基づいて並べ替えます。 プレフィックス `-` を使用して、値の降順で並べ替えます。 `--sort=<key>` オプションを複数回使用できます。その場合、最後のキーが主キーになります。 サポートされているキーは、 `gitfor-each-ref` のキーと同じです。 ソート順は、デフォルトで、 `branch.sort` 変数が存在する場合はその値に設定されているか、完全なrefname (`refs/...` プレフィックスを含む)に基づいてソートされます。 これにより、切り離されたHEAD(detached HEAD)(存在する場合)が最初にリストされ、次にローカルブランチ、最後にリモート追跡ブランチがリストされます。 linkgit:git-config[1] を参照してください。
+
+
+`--points-at <object>`::
+	指定されたオブジェクトのブランチのみを一覧表示します。
+
+`--format <format>`::
+	表示されているブランチrefとそれが指すオブジェクトを `%(fieldname)` によって差し込みする書式文字列。 形式はlinkgit:git-for-each-ref[1] の形式と同じです。
+
+CONFIGURATION
+-------------
+`pager.branch` は、ブランチを一覧表示する場合、 つまり `--list` が使用または暗示されている場合にのみ尊重されます。 デフォルトでは、ページャーを使用します。 linkgit:git-config[1] を参照してください。
+
+include::includes/cmd-config-section-rest.txt[]
+
+include::config/branch.txt[]
+
+EXAMPLES
+--------
+
+Start development from a known tag::
++
+------------
+$ git clone git://git.kernel.org/pub/scm/.../linux-2.6 my2.6
+$ cd my2.6
+$ git branch my2.6.14 v2.6.14   <1>
+$ git switch my2.6.14
+------------
++
+<1> このステップと次のステップは、 `checkout -b my2.6.14 v2.6.14` を使用して1つのステップに組み合わせることができます。
+
+Delete an unneeded branch::
++
+------------
+$ git clone git://git.kernel.org/.../git.git my.git
+$ cd my.git
+$ git branch -d -r origin/todo origin/html origin/man   <1>
+$ git branch -D test                                    <2>
+------------
++
+<1> リモート追跡ブランチ「todo」と「html」と「man」を削除します。 この後の `fetch` または `pull` は、あなたが構成しないように構成しない限り、それらを再度作成します。 linkgit:git-fetch[1] を参照してください。
+<2> 「master」ブランチ(または現在チェックアウトされているブランチ)にtestブランチからのすべてのコミットがない場合でも、「test」ブランチを削除します。
+
+Listing branches from a specific remote::
++
+------------
+$ git branch -r -l '<remote>/<pattern>'                 <1>
+$ git for-each-ref 'refs/remotes/<remote>/<pattern>'    <2>
+------------
++
+<1> `-a` を使用すると、<remote>が、同じ<remote>パターンのプレフィックスが付いているローカルブランチと混同されます。
+<2> `for-each-ref` は幅広いオプションをとることができます。 linkgit:git-for-each-ref[1] を参照してください
+
+通常、パターンにはクォートが必要です。
+
+NOTES
+-----
+
+すぐに切り替えたいブランチを作成する場合は、 `git switch` コマンドとその `-c` オプションを使用して、1つのコマンドで同じことを行う方が簡単です。
+
+オプション `--contains` と ` --no-contains` と `--merged` と `--no-merged` は、4つの関連しているが異なる目的を果たします:
+
+- `--contains <commit>` は、<commit>がリベースまたは修正された場合に特別な注意が必要なすべてのブランチを検索するために使用されます。これらのブランチには、指定された<commit>が含まれているためです。
+
+- `--no-contains <commit>` はその逆です。つまり、指定された<commit>を含まないブランチです。
+
+- `--merged` は、安全に削除できるすべてのブランチを検索するために使用されます。これらのブランチはHEADに完全に含まれているためです。
+
+- `--no-merged` は、HEADにマージする候補となるブランチを見つけるために使用されます。これらのブランチは、HEADに完全には含まれていないためです。
+
+include::ref-reachability-filters.txt[]
+
+SEE ALSO
+--------
+linkgit:git-check-ref-format[1], linkgit:git-fetch[1], linkgit:git-remote[1], link:user-manual.html#what-is-a-branch[``Understanding history: What is a branch?''] in the Git User's Manual.
+
+GIT
+---
+Part of the linkgit:git[1] suite

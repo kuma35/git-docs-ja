@@ -1,0 +1,274 @@
+git-merge(1)
+============
+
+NAME
+----
+git-merge - 2つまたはそれ以上の開発履歴を結合します
+
+
+SYNOPSIS
+--------
+[verse]
+'git merge' [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
+	[--no-verify] [-s <strategy>] [-X <strategy-option>] [-S[<keyid>]]
+	[--[no-]allow-unrelated-histories]
+	[--[no-]rerere-autoupdate] [-m <msg>] [-F <file>]
+	[--into-name <branch>] [<commit>...]
+'git merge' (--continue | --abort | --quit)
+
+DESCRIPTION
+-----------
+名前付きのコミット(その履歴が現在のブランチから分岐した時点以降のもの)からの変更を現在のブランチに取り込みます。 このコマンドは、別のリポジトリからの変更を組み込むために `git pull` によって使用され、そして、あるブランチから別のブランチに変更をマージするために手動で使用できます。
+
+以下の履歴が存在し、現在のブランチが `master` であるとします:
+
+------------
+	  A---B---C topic
+	 /
+    D---E---F---G master
+------------
+
+次に、 `git merge topic` は、 `master` から分岐(ここでは `E`)してから、 `topic` ブランチの現在のコミット(`C`)まで `topic`ブランチに加えられた変更を `master` 上で再生(replay)します。 その結果を、 2つの親コミットの名前と、 変更を説明するユーザーからのログメッセージとともに、 新しいコミットに記録します。 操作前に `ORIG_HEAD` が現在のブランチの先端(`C`)に設定されます。
+
+------------
+	  A---B---C topic
+	 /         \
+    D---E---F---G---H master
+------------
+
+2番目の構文(`git merge --abort`)は、マージによって競合が発生した後にのみ実行できます。 `git merge --abort`はマージ処理を中止し、マージ前の状態を再構築しようとします。 ただし、マージの開始時にコミットされていない変更があった場合(特に、マージの開始後にそれらの変更がさらに変更された場合)、 `git merge --abort` は、元の(マージ前の)変更を再構築できない場合があります。つまり以下の事が言えます:
+
+WARNING: 自明でない未コミットの変更に対して `git merge` を実行することは推奨されません。
+可能ではありますが、
+競合が発生した場合に元に戻すのが難しい状態になる可能性があります。
+
+3番目の構文(`git merge --continue`)は、マージによって競合が発生した後にのみ実行できます。
+
+OPTIONS
+-------
+:git-merge: 1
+
+include::merge-options.txt[]
+
+`-m <msg>`::
+	マージコミットに使用するコミットメッセージを設定します(マージコミットが作成された場合)。
++
+`--log` が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。
++
+`git fmt-merge-msg` コマンドを使用して、自動化された `git merge` 呼び出しに適切なデフォルトを与えることができます。 自動メッセージには、ブランチの説明を含めることができます。
+
+`--into-name <branch>`::
+	マージ先の実際のブランチの名前ではなく、ブランチ `<branch>` にマージするかのように、デフォルトのマージ・メッセージを準備します。
+
+`-F <file>`::
+`--file=<file>`::
+	マージコミットに使用されるコミットメッセージを読み取ります(マージコミットが作成された場合)。
++
+`--log` が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。
+
+include::rerere-options.txt[]
+
+`--overwrite-ignore`::
+`--no-overwrite-ignore`::
+	マージ結果から無視されたファイルを黙って上書きします。 これがデフォルトの動作です。 中止(abort)するには、 `--no-overwrite-ignore` を使用します。
+
+`--abort`::
+	現在の競合解決プロセスを中止(abort)し、マージ前の状態を再構築してみてください。 自動スタッシュエントリが存在する場合は、それをワークツリーに適用します。
++
+マージの開始時にコミットされていないワークツリーの変更が存在した場合、 `git merge --abort` は、これらの変更を再構築できない場合があります。 したがって、 `git merge` を実行する前に、常にあなたの変更をコミット、またはスタッシュしておくことをお勧めします。
++
+`git merge --abort` は、 `MERGE_HEAD` がある場合は `git reset --merge` と同じです。ただし `MERGE_AUTOSTASH` もある場合は `git merge --abort` はスタッシュエントリをワークツリーに適用しますが、 `git reset --merge` は スタッシュリストにスタッシュした変更を保持したままにします。
+
+`--quit`::
+	進行中の現在のマージを忘れさせます。 インデックスと作業ツリーはそのままにしておきます。 `MERGE_AUTOSTASH` が存在する場合、スタッシュエントリはスタッシュリストに保存されます。
+
+`--continue`::
+	競合が原因で `git merge` が停止(stop)した後で、 `git merge --continue` を実行してマージを終了できます(下記「HOW TO RESOLVE CONFLICTS」セクション参照)。
+
+<commit>...::
+	私たちのブランチにマージするコミットです。通常は他のブランチヘッドです。 複数のコミットを指定すると、3つ以上の親とのマージが作成されます(Octopusマージという愛称で親しまれています)。
++
+コマンドラインからコミットが指定されていない場合は、現在のブランチがアップストリームとして使用するように構成されているリモート追跡ブランチをマージします。 このマニュアルページの構成(configuration)セクションも参照してください。
++
+FETCH_HEAD` が指定された場合(他のコミットは指定しない場合)、直前の `git fetch` によるマージによって `.git/FETCH_HEAD` ファイルに記録されたブランチは、現在のブランチにマージされます。
+
+
+PRE-MERGE CHECKS
+----------------
+
+外部の変更を適用する前に、自分の作業を良好な状態にしてローカルでコミットしとく必要があります。これにより、競合が発生した場合に作業が中断されることはなくなります。 linkgit:git-stash[1] も参照してください。 `git pull`/`git merge` は、ローカルのコミットされていない変更が `git pull`/`git merge` の更新が必要なファイルと重複する場合、何もせずに停止(stop)します。
+
+マージコミットに無関係な変更が記録されないようにするために、 `HEAD` コミットに関連する変更がインデックスに登録されている場合、 `git pull` と `git merge` も中止(abort)されます。 (使用されているマージ戦略によっては、このルールに対する特別な狭い例外が存在する場合がありますが、通常、インデックスはHEADと一致する必要があります。)
+
+すべての名前付きコミットがすでに `HEAD` の祖先である場合、`git merge` は "Already up to date." (既に最新です)というメッセージで早期に終了(exit)します。
+
+FAST-FORWARD MERGE
+------------------
+
+多くの場合、現在のブランチヘッドは、指定のコミットの祖先です。 これは、特に `git pull` から呼び出された場合に最も一般的なケースです: 例えば、あなたはアップストリームリポジトリを追跡していて、ローカルの変更をコミットしていないので、新しいアップストリームリビジョンに更新する必要があります。 この場合、結合された履歴を保存するために新しいコミットは必要ありませんが、代わりに、「HEAD」（およびインデックス）は、追加のマージコミットを作成せずに、指定のコミットを指すように更新されます。
+
+この振る舞いは、`--no-ff` オプションで抑制できます。
+
+TRUE MERGE
+----------
+
+早送りマージ(fast-forward merge)(上記参照)を除いて、マージされるブランチは、両方を親として持つマージコミットによって結合する必要があります。
+
+マージされるすべてのブランチの変更を調整したマージバージョンがコミットされ、`HEAD`、インデックス、作業ツリーがそのコミットに更新されます。 作業ツリーには、重ならない限りは変更を加えることができます。
+
+変更を調停する方法が明確でない場合、以下のようになります:
+
+1. `HEAD` ポインタは同一のままです。
+2. `MERGE_HEAD` ref は、他方のブランチヘッド(the other branch head)を指すように設定されています。
+3. 正常にマージされたパスは、インデックスファイルとあなたの作業ツリーの両方で更新されます。
+4. 競合するパスの場合、インデックスファイルには最大3つのバージョンが記録されます: ステージ1は、共通の祖先からのバージョンを格納し、ステージ2 は `HEAD` からのバージョン、 ステージ3 は `MERGE_HEAD` からのバージョンです(あなたは `git ls-files -u` でステージを検査できます)。 作業ツリーファイルにはマージ操作の結果が含まれています。 つまり、おなじみの競合マーカー `<<<` `===` `>>>` を使用した3方向マージの結果です。
+5. 特別なref `AUTO_MERGE` が書き込まれ、 作業ツリーの現在の内容に対応するツリーを指します(テキストの競合のための競合マーカーを含む)。 この ref は、 `ort` マージ戦略が使用される(これがデフォルトです)場合にのみ書き込まれることに注意してください。
+6. その他の変更は行われません。 特に、マージを開始する前に行ったローカルの変更は同じままであり、それらのインデックスエントリはそのまま、つまり「HEAD」と一致します。
+
+試しにマージした結果、複雑な競合が発生してしまったのでやり直したいという場合は、 `git merge --abort` で回復(recover)することができます。
+
+MERGING TAG
+-----------
+
+注釈付きの(可能ならば署名された)タグをマージする場合、早送りマージが可能であっても、Gitは常にマージコミットを作成し、コミットメッセージテンプレートはタグメッセージ付きで準備されます。 さらに、タグが署名されている場合、シグネチャチェックはメッセージテンプレートのコメントとして報告されます。 linkgit:git-tag[1] も参照してください。
+
+たまたまタグ付けされたコミットにつながる作業と統合し、例えば、アップストリームのリリースポイントと同期したい場合、あなたは不要なマージコミットを作成したくない場合があります。
+
+このような場合、タグを `git merge` にフィードする前に自分で「包装を解く」(unwrap)か、自分で作業を行わない場合は `--ff-only` を渡すことができます。 例えば以下ようにします
+
+----
+git fetch origin
+git merge v1.2.3^0
+git merge --ff-only v1.2.3
+----
+
+
+HOW CONFLICTS ARE PRESENTED
+---------------------------
+
+マージ中に、作業ツリーのファイルが更新されてマージの結果が反映されます。 共通の祖先のバージョンに加えられた変更の中で、重複しないもの(つまり、ファイルの領域を変更し、反対側がその領域をそのままにしておく、またはその逆)が最終結果にそのまま組み込まれます。 ただし、両方の側が同じ領域に変更を加えた場合、Gitは一方の側をもう一方の側からランダムに選択することはできず、両方の側がその領域に行ったことをファイルに残してあなたに解決するように求めます。
+
+デフォルトでは、GitはRCSスイートの「マージ」プログラムで使用されるものと同じスタイルを使用して、以下のように競合するハンクを表示します:
+
+------------
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed,
+or cleanly resolved because both sides changed the same way.
+<<<<<<< yours:sample.txt
+Conflict resolution is hard;
+let's go shopping.
+=======
+Git makes conflict resolution easy.
+>>>>>>> theirs:sample.txt
+And here is another line that is cleanly resolved or unmodified.
+------------
+
+競合する変更のペアが発生した領域は、マーカー `<<<<<<<` 、 `=======` 、 `>>>>>>>` でマークされます。 `=======` の前の部分は通常あなた側(your side)であり、後の部分は通常彼ら側(their side)です。
+
+デフォルトの形式では、競合している部分でオリジナルが何を言っているのかは分かりません。 自分側の何行が削除され、バービー人形の発言に置き換えられているのかは分かりません。 唯一わかるのは、あなた側(your side)は大変だから買い物に行きたいと言いたいのに、相手側(the other size)は簡単だと主張したいということです。
+
+`merge.conflictStyle` 構成変数を `diff3` または `zdiff3` に設定することで、別のスタイルを使用できます。 `diff3` スタイルでは、上記の競合は以下のようになります:
+
+------------
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed,
+<<<<<<< yours:sample.txt
+or cleanly resolved because both sides changed the same way.
+Conflict resolution is hard;
+let's go shopping.
+||||||| base:sample.txt
+or cleanly resolved because both sides changed identically.
+Conflict resolution is hard.
+=======
+or cleanly resolved because both sides changed the same way.
+Git makes conflict resolution easy.
+>>>>>>> theirs:sample.txt
+And here is another line that is cleanly resolved or unmodified.
+------------
+
+`zdiff3` スタイルでは、以下のようになります:
+
+------------
+Here are lines that are either unchanged from the common
+ancestor, or cleanly resolved because only one side changed,
+or cleanly resolved because both sides changed the same way.
+<<<<<<< yours:sample.txt
+Conflict resolution is hard;
+let's go shopping.
+||||||| base:sample.txt
+or cleanly resolved because both sides changed identically.
+Conflict resolution is hard.
+=======
+Git makes conflict resolution easy.
+>>>>>>> theirs:sample.txt
+And here is another line that is cleanly resolved or unmodified.
+------------
+
+`<<<<<<<` 、 `=======` 、 `>>>>>>>` マーカーに加えて、`|||||||` マーカーにオリジナルのテキストが続きます。 オリジナルは事実を述べただけであり、あなたの側(your side)は単にその声明に屈して諦めたのに対し、他の側(the oter side)はより前向きな態度をとろうとしたことがわかります。 オリジナルを表示することで、より良い解決策を思い付くことができる場合があります。
+
+
+HOW TO RESOLVE CONFLICTS
+------------------------
+
+競合を目にした後、あなたは以下の2つのことができます:
+
+ * マージしないことを決定します。 必要なクリーンアップは、インデックスファイルを `HEAD` コミットにリセットして (2) をリバースし、 (2) と (3) によって行われた作業ツリーの変更をクリーンアップすることだけです。 これには `git merge --abort` を使用できます。
+
+ * 競合を解決します。 Gitは、作業ツリーの競合をマークします。 ファイルを編集して形にし、`git add` してインデックスに追加します。 `git commit` または `git merge --continue` を使用して、取引を成立させます。 後者のコマンドは、 `git commit` を呼び出す前に、進行中の(中断(interrupted)された)マージがあるかどうかをチェックします。
+
+あなたはいくつかの道具を使用して、競合を解決できます:
+
+ * mergetoolの利用。 あなたが `git mergetool` を実行すると、グラフィカルな mergetool が起動し、マージ作業を行えます。
+
+ * diffを見てください。 `git diff` は3方向の差分を表示し、 `HEAD` バージョンと `MERGE_HEAD` バージョンの両方からの変更を強調表示します。 `git diff AUTO_MERGE` では、 あなたがテキストの競合を解決するためにこれまでに行った変更が表示されます。
+
+ * 各ブランチからのdiffを見てください。 `git log --merge -p <path>` は、最初に `HEAD` バージョンの差分を表示し、次に `MERGE_HEAD` バージョンを表示します。
+
+ * オリジナルを見てください。 `git show :1:filename` は共通の祖先を示し、 `git show :2:filename` は `HEAD` バージョンを示し、 `git show :3:filename` は `MERGE_HEAD` バージョンを示します。
+
+
+EXAMPLES
+--------
+
+* 現在のブランチにブランチ `fixes` と `enhancements` をマージし、octopusマージします:
++
+------------------------------------------------
+$ git merge fixes enhancements
+------------------------------------------------
+
+* `ours` マージ戦略を使用して、ブランチ `obsolete` を現在のブランチにマージします:
++
+------------------------------------------------
+$ git merge -s ours obsolete
+------------------------------------------------
+
+* ブランチ `maint` を現在のブランチにマージしますが、新しいコミットを自動的に行わないでください:
++
+------------------------------------------------
+$ git merge --no-commit maint
+------------------------------------------------
++
+これは、マージにさらに変更を加えたい場合、または独自のマージコミットメッセージを作成したい場合に使用できます。
++
+大幅な変更をマージコミットに忍び込ませるために、このオプションを悪用することは控えてください。 bumping release(微修正)/version name(バージョン名変更) のような小さな修正は許容されます。
+
+
+include::merge-strategies.txt[]
+
+CONFIGURATION
+-------------
+
+branch.<name>.mergeOptions::
+	ブランチ <name> にマージするためのデフォルトオプションを設定します。 構文とサポートされているオプションは `git merge` のものと同じですが、空白文字を含むオプション値は現在サポートされていません。
+
+include::includes/cmd-config-section-rest.txt[]
+
+include::config/merge.txt[]
+
+SEE ALSO
+--------
+linkgit:git-fmt-merge-msg[1], linkgit:git-pull[1], linkgit:gitattributes[5], linkgit:git-reset[1], linkgit:git-diff[1], linkgit:git-ls-files[1], linkgit:git-add[1], linkgit:git-rm[1], linkgit:git-mergetool[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

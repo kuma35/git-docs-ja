@@ -1,0 +1,199 @@
+git-merge-tree(1)
+=================
+
+NAME
+----
+git-merge-tree - インデックスまたは作業ツリーにに触れずに(without touching)マージを実行する
+
+
+SYNOPSIS
+--------
+[verse]
+'git merge-tree' [--write-tree] [<options>] <branch1> <branch2>
+'git merge-tree' [--trivial-merge] <base-tree> <branch1> <branch2> (deprecated)
+
+[[NEWMERGE]]
+DESCRIPTION
+-----------
+
+このコマンドには、 モダンな `--write-tree` モードと非推奨の `--trivial-merge` モードがあります。 最後の <<DEPMERGE,DEPRECATED DESCRIPTION>> セクションを除いて、このドキュメントの残りの部分では、モダンな `--write-tree` モードについて説明します。
+
+マージを実行しますが、新しいコミットは作成せず、作業ツリーまたはインデックスからの読み取りも書き込みも行いません。
+
+実行されるマージは、 以下を含む、「実際」の linkgit:git-merge[1] と同じ機能を使用します:
+
+  * 個々のファイルの 3 方向のコンテンツ・マージ
+  * 名前変更検出
+  * 適切な ディレクトリ/ファイル の競合処理
+  * 再帰的な祖先の統合(つまり、複数のマージ・ベースがある場合、マージ・ベースをマージして仮想マージ・ベースを作成)
+  * 等々。
+
+マージが完了すると、新しいトップレベル・ツリー・オブジェクトが作成されます。 詳細については、下記「OUTPUT」を参照してください。
+
+OPTIONS
+-------
+
+`-z`::
+	<Conflicted file info> セクションでファイル名をクォートしないでください。各ファイル名は、改行(newline)ではなく NUL 文字で終了してください。 また、 改行(newline)の代わりに NUL 文字でメッセージ・セクションを開始します。 詳細については、 下記 <<OUTPUT>> を参照してください。
+
+`--name-only`::
+	競合するファイルの情報(Conflicted file info)セクションでは、競合するファイルの出力に (mode, oid, stage, path) のタプルのリストを書き込む代わりに、 競合するファイル名のリストを提供するだけです(そして、複数の競合するステージがある場合、ファイル名を複数回リストしません)。
+
+`--[no-]messages`::
+	「Auto-merging <path>」や CONFLICT 通知などの情報メッセージを stdout の最後に書き込みます。 指定されていない場合、デフォルトでは、マージの競合がある場合はこれらのメッセージが含まれ、そうでない場合は省略されます。
+
+`--allow-unrelated-histories`::
+	指定の 2 つのブランチの間に共通の履歴の共有が無い場合、 merge-tree はデフォルトでエラーになります。 このフラグを指定して、 そのチェックをオーバーライドし、 とにかくマージを続行させることができます。
+
+`--merge-base=<commit>`::
+	<branch1> と <branch2> のマージ・ベースを検索する代わりに、 マージのマージ・ベースを指定します。 現在、 複数のベースの指定はサポートされていません。 このオプションは `--stdin` と互換性がありません。
+
+[[OUTPUT]]
+OUTPUT
+------
+
+マージが成功した場合、 git-merge-tree からの出力は以下の 1 行だけです:
+
+	<OID of toplevel tree>
+
+一方、競合するマージの場合、出力はデフォルトでは以下の形式になります:
+
+	<OID of toplevel tree>
+	<Conflicted file info>
+	<Informational messages>
+
+これらについては、後で個別に説明します。
+
+ただし例外があります。 `--stdin` が渡されると、 先頭に追加のセクションかつ最後に NUL 文字があり、 そして、 入力の各行に対してすべてのセクションが繰り返されます。 したがって、 最初のマージが競合し、 かつ、 2 番目のマージがクリーンな場合、 出力は以下の形式になります:
+
+	<Merge status>
+	<OID of toplevel tree>
+	<Conflicted file info>
+	<Informational messages>
+	NUL
+	<Merge status>
+	<OID of toplevel tree>
+	NUL
+
+[[MS]]
+Merge status
+~~~~~~~~~~~~
+
+これは NUL 文字が後に続く整数ステータスです。 整数のステータスは以下のとおりです:
+
+     0: 当該マージには競合があります
+     1: 当該マージには競合はありません
+     <0: (訳注:0未満の数値)何かがマージの実行を妨げています(例: ファイルシステムによって
+	 リポジトリ・オブジェクトへのアクセスが拒否された)
+
+[[OIDTLT]]
+OID of toplevel tree
+~~~~~~~~~~~~~~~~~~~~
+
+これは、 `git merge` の最後に作業ツリーでチェックアウトされるものを表すツリー・オブジェクトです。 競合があった場合、このツリー内のファイルには競合マーカーが埋め込まれている可能性があります。 このセクションの後には常に改行(newline)(または `-z` が渡された場合は NUL)が続きます。
+
+[[CFI]]
+Conflicted file info
+~~~~~~~~~~~~~~~~~~~~
+
+これは、以下の形式の一連の行です
+
+	<mode> <object> <stage> <filename>
+
+ファイル名は、 構成変数 `core.quotePath` で説明されているようにクォートされます(linkgit:git-config[1] 参照)。 ただし、 `--name-only` オプションが渡された場合、モードとオブジェクトとステージは省略されます。 `-z` が渡された場合、「行」は改行文字の代わりに NUL 文字で終了します。
+
+[[IM]]
+Informational messages
+~~~~~~~~~~~~~~~~~~~~~~
+
+このセクションでは、 通常は競合に関する情報メッセージを提供します。 セクションの書式は、 `-z` が渡されるかどうかによって大きく異なります。
+
+`-z` が渡された場合:
+
+出力形式は 0 個以上の競合情報レコードで、 それぞれの形式は以下のとおりです:
+
+	<list-of-paths><conflict-type>NUL<conflict-message>NUL
+
+ここで <list-of-paths> の形式は
+
+	<number-of-paths>NUL<path1>NUL<path2>NUL...<pathN>NUL
+
+で、 <conflict-message> には、 競合の影響を受けるパス(またはブランチ名)または情報メッセージが含まれます。 また <conflict-type> は、 以下のように競合の種類を説明する固定の文字列です。
+
+  * "Auto-merging"
+  * "CONFLICT (rename/delete)"
+  * "CONFLICT (submodule lacks merge base)"
+  * "CONFLICT (binary)"
+
+ここで、 <conflict-message> は競合に関するより詳細なメッセージであり、 (常にではありませんが、)多くの場合 <stable-short-type-description> がその中に埋め込まれます。 これらの文字列は、 将来の Git バージョンでは変更される可能性があります。 以下にいくつかの例を示します:
+
+  * "Auto-merging <file>"
+  * "CONFLICT (rename/delete): <oldfile> renamed...but deleted in..."
+  * "Failed to merge submodule <submodule> (no merge base)"
+  * "Warning: cannot merge binary files: <filename>"
+
+`-z` が渡されなかった場合:
+
+このセクションはそれ以前のセクションと区切るために空行で始まり、 直前のセクションの <conflict-message> 情報のみが含まれます(改行で区切られています)。 これらはスクリプトによって解析されるべきではない固定でない文字列であり、 人間による閲覧のみを目的としています。 また、 通常、 <conflict-message> 文字列には埋め込み改行が含まれていませんが、 含まれる場合もあることに注意してください。 (ただし、 自由形式のメッセージには NUL 文字が埋め込まれることはありません)。 したがって、 情報ブロック全体は、 すべての競合メッセージの集合体として、 人間の読者を対象としています。
+
+EXIT STATUS
+-----------
+
+マージが競合せずに成功した場合、 終了ステータス(exit status)は 0 です。 マージに競合がある場合、 終了ステータスは 1 です。 何らかのエラーが原因でマージを完了(または開始)できない場合、 終了ステータスは 0 や 1 以外の何かになります(そして、 出力はありません)。 `--stdin` が渡されると、 成功したマージと競合したマージの両方で戻りステータスは 0 になり、 要求されたすべてのマージを完了できない場合、 戻りステータスは 0 または 1 以外になります。
+
+USAGE NOTES
+-----------
+
+このコマンドは、 linkgit:git-hash-object[1] や linkgit:git-mktree[1] や linkgit:git-commit-tree[1] や linkgit:git-write-tree[1] や linkgit:git-update-ref[1] や linkgit:git-mktag[1] と同様に、低レベルの配管コマンドとして意図されています。 したがって、以下のような一連のステップの一部として使用できます:
+
+       NEWTREE=$(git merge-tree --write-tree $BRANCH1 $BRANCH2)
+       test $? -eq 0 || die "There were conflicts..."
+       NEWCOMMIT=$(git commit-tree $NEWTREE -p $BRANCH1 -p $BRANCH2)
+       git update-ref $BRANCH1 $NEWCOMMIT
+
+注意: 終了ステータス(exit status)がゼロ以外の場合、このシーケンスの `NEWTREE` には単なるツリーよりも多くの出力が含まれることに注意してください。
+
+競合の場合、出力には linkgit:git-merge[1] で得られるものと同じ情報が含まれます:
+
+  * 作業ツリーに何が書き込まれるか (<<OIDTLT,OID of toplevel tree>>)
+  * インデックスに書き込まれる高次ステージ(<<CFI,Conflicted file info>>)
+  * stdout に出力されるメッセージ(<<IM,Informational messages>>)
+
+INPUT FORMAT
+------------
+`git merge-tree --stdin` 入力形式は完全にテキストベースです。 各行の書式は以下のとおりです:
+
+	[<base-commit> -- ]<branch1> <branch2>
+
+行が `--` で区切られている場合、 `--` セパレータの前の文字列はマージのマージベースを指定するために使用され、 `--` セパレータの後の文字列はマージされるブランチを指定します。
+
+MISTAKES TO AVOID
+-----------------
+
+結果のトップレベル・ツリーを調べて、競合するファイルを見つけようと試みません。 代わりに <<CFI,Conflicted file info>> セクションをパースします。 大規模なリポジトリではツリー全体のパースが非常に遅くなるだけでなく、競合マーカーで表現できない競合の種類(変更/削除、モードの競合、両側で変更されたバイナリ・ファイル、ファイル/ディレクトリの競合、さまざまな名前変更の競合順列など)が数多くあります
+
+空の <<CFI,Conflicted file info>> リストをクリーンなマージ(clean merge)として解釈(interpret)しないでください。終了ステータス(exit status)を確認します。 マージでは、個々のファイルが競合しなくても競合が発生する可能性があります(このカテゴリに分類されるいくつかのタイプのディレクトリ名変更の競合があり、他のものも将来追加される可能性があります)。
+
+<<CFI,Conflicted file info>> リストから競合タイプを推測しようとしたり、ユーザーに推測させたりしないでください。 そこにある情報はそうするには不十分です。 例: Rename/rename(1to2) 競合(両側が同一ファイルの名前を別々に名前変更)により、3 つの異なるファイルが上位ステージ (ただし、それぞれ上位ステージは 1 つしかない) になり、 どの 3 つのファイルが関連しているかを (<<IM,Informational messages>> セクション以外で、) 判断する方法がありません。 ファイル/ディレクトリの競合によっても、1 つだけ上位ステージを持つファイルが生成されます。 ディレクトリ名の変更に関与する可能性のある(Possibly-involved-in-directory-rename)競合 ( `merge.directoryRenames` が設定されていない(unset)か、 あるいは `merge.directoryRenames` が `conflicts` に設定されている(set)場合)も、正確に 1 つの上位ステージを持つファイルになります。 すべての場合において、 <<IM,Informational messages>> セクションには必要な情報が含まれていますが、プログラムでパースできる(machine parseable)ようには設計されていません。
+
+<<CFI,Conflicted file info>> からの各パスと、 <<IM,Informational messages>> の論理的競合が 1 対 1 のマッピングを持っている、 または 1 対多のマッピングがあると想定しないでください。 マッピングではなく、 多対 1 のマッピングでもありません。 多対多のマッピングが存在します。つまり、各パスは 1 回のマージで多くの論理競合タイプを持つことができ、各論理競合タイプは多くのパスに影響を与える可能性があります。
+
+<<IM,Informational messages>> セクションにリストされているすべてのファイル名に競合があったと想定しないでください。 「Auto-merging <file>」など、競合のないファイルにメッセージを含めることができます。
+
+<<CFI,Conflicted file info>> から OID を取得し、それらを再マージして競合をユーザーに提示することは避けてください。 これにより、情報が失われます。 代わりに、 <<OIDTLT,OID of toplevel tree>> 内で見つかったファイルのバージョンを検索し、代わりにそれを表示します。 特に、 後者には、マージされている元の ブランチ/コミット と、名前変更が含まれている場合は元のファイル名で注釈が付けられた競合マーカーがあります。 再マージ時に競合マーカーの注釈に元の ブランチ/コミット を含めることはできますが、 元のファイル名は <<CFI,Conflicted file info>> から入手できないため、ユーザーが競合を解決するのに役立つ情報を失うことになります。
+
+[[DEPMERGE]]
+DEPRECATED DESCRIPTION
+----------------------
+
+<<NEWMERGE,DESCRIPTION>> に従う、このドキュメントの残りの部分とは異なり、このセクションでは非推奨の `--trivial-merge` モードについて説明します。
+
+オプションの `--trivial-merge` を除いて、このモードはオプションを受け入れません。
+
+このモードは 3 つのツリーっぽいものを読み取り、些細なマージ(trivial merge)結果と競合するステージを準差分(semi-diff)形式で標準出力に出力します。 これは、高レベルのスクリプトがその結果を使用してインデックスにマージするように設計されているため、 <branch1> に一致するエントリが省略されます。 この 2 番目の形式の結果は、 3 方向の `git read-tree -m` と似ていますが、 結果をインデックスに格納する代わりに、そのコマンドはエントリを標準出力に出力します。
+
+この形式は適用範囲が限られている(些細なマージ(trivial merge)では、個々のファイルの内容のマージのや、名前変更の検出や、適切な ディレクトリ/ファイル の競合の処理などを扱えません)だけでなく、出力形式も扱いにくく、通常、マージが成功した場合でも最初の形式よりもパフォーマンスが低下します(特に大規模なリポジトリで作業している場合)。
+
+GIT
+---
+Part of the linkgit:git[1] suite

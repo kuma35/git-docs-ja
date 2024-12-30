@@ -1,0 +1,108 @@
+gitmailmap(5)
+=============
+
+NAME
+----
+gitmailmap - 作者(author)/コミッター(committer) および/または 電子メールアドレス(E-Mail addresses)をマップします
+
+SYNOPSIS
+--------
+$GIT_WORK_TREE/.mailmap
+
+
+DESCRIPTION
+-----------
+
+ファイル `.mailmap` がリポジトリのトップレベルに存在する場合、または `mailmap.file` とか `mailmap.blob` 構成オプション(linkgit:git-config[1] 参照)が指す場所(ファイルパスとかブロブ)に存在する場合は、 作者とコミッターの名前と電子メールアドレスを、正規の本名と電子メールアドレスにマッピングするために使用されます。
+
+
+SYNTAX
+------
+
+`#` 文字から行末まではコメントで、空白行は無視されます。
+
+単純な形式では、ファイルの各行は、作成の正規の本名、空白、および名前にマップするためにコミットで使用される電子メールアドレス(`<` と `>` で囲まれている)で構成されます。 例えば:
+--
+	Proper Name <commit@email.xx>
+--
+
+より複雑な形式では:
+--
+	<proper@email.xx> <commit@email.xx>
+--
+で、これにより、メールマップはコミット用の電子メールアドレスのみを置き換えることができます。そして:
+--
+	Proper Name <proper@email.xx> <commit@email.xx>
+--
+では、mailmapは、指定されたコミット用電子メールアドレスに一致するコミッターの名前と電子メールのアドレス両方を置き換えることができます。そして:
+--
+	Proper Name <proper@email.xx> Commit Name <commit@email.xx>
+--
+では、mailmapは、指定されたコミッターの名前と電子メールアドレスの両方に一致するコミッターの名前と電子メールの両方を置き換えることができます。
+
+電子メールアドレスと名前の両方が大文字と小文字を区別せずに照合されます。たとえば、以下は上記の `Commit Name <commit&#64;email.xx>` とも一致します:
+--
+	Proper Name <proper@email.xx> CoMmIt NaMe <CoMmIt@EmAiL.xX>
+--
+
+NOTES
+-----
+
+作業ツリーの `.mailmap` ファイルにアクセスするとき、Gitはシンボリックリンクをたどりません。 これにより、ファイルがインデックスまたはツリーからアクセスされたときとファイルシステムからアクセスされたときの動作の一貫性が保たれます。
+
+EXAMPLES
+--------
+
+あなたの履歴には、JaneとJoeの2人の作者(authors)によるコミットが含まれています。これらの作成の名前は、リポジトリにいくつかの形式で表示されます:
+
+------------
+Joe Developer <joe@example.com>
+Joe R. Developer <joe@example.com>
+Jane Doe <jane@example.com>
+Jane Doe <jane@laptop.(none)>
+Jane D. <jane@desktop.(none)>
+------------
+
+ここで、Joeが当初は、ミドルネームを使用することを望み、Janeが彼女の家族名を完全に綴ることを好むとします。名前を修正するための `.mailmap` ファイルは以下のようになります:
+
+------------
+Joe R. Developer <joe@example.com>
+Jane Doe <jane@example.com>
+Jane Doe <jane@desktop.(none)>
+------------
+
+注意: 名前を修正するためだけに、 `<jane&#64;laptop.(none)>` の names をマップする必要はないことに注意してください。ただし、明らかに壊れた `<jane&#64;laptop.(none)>` と `<jane&#64;desktop.(none)>` という電子メールアドレスをそのままにしておくことは、通常、望むところではありません。したがって、これらも修正する `.mailmap` ファイルは以下のとおりです:
+
+------------
+Joe R. Developer <joe@example.com>
+Jane Doe <jane@example.com> <jane@laptop.(none)>
+Jane Doe <jane@example.com> <jane@desktop.(none)>
+------------
+
+最後に、JoeとJaneが電子メールアドレスを共有しているが、名前は共有していないとしましょう。バグ報告システムによって生成された履歴にそれぞれのコミットを含めるとします。つまり、履歴には以下のように名前があらわれます:
+
+------------
+Joe <bugs@example.com>
+Jane <bugs@example.com>
+------------
+
+これらのケースも処理する完全な `.mailmap` ファイル(上記の例に2行追加)は以下のようになります:
+
+------------
+Joe R. Developer <joe@example.com>
+Jane Doe <jane@example.com> <jane@laptop.(none)>
+Jane Doe <jane@example.com> <jane@desktop.(none)>
+Joe R. Developer <joe@example.com> Joe <bugs@example.com>
+Jane Doe <jane@example.com> Jane <bugs@example.com>
+------------
+
+
+
+SEE ALSO
+--------
+linkgit:git-check-mailmap[1]
+
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -1,0 +1,101 @@
+git-revert(1)
+=============
+
+NAME
+----
+git-revert - いくつかの既存のコミットを元に戻します
+
+SYNOPSIS
+--------
+[verse]
+'git revert' [--[no-]edit] [-n] [-m <parent-number>] [-s] [-S[<keyid>]] <commit>...
+'git revert' (--continue | --skip | --abort | --quit)
+
+DESCRIPTION
+-----------
+
+1つ以上の既存のコミットが与えられた場合、関連するパッチによって導入された変更を元に戻し、それらを記録するいくつかの新しいコミットを記録します。これには、作業ツリーがクリーンである必要があります(HEADコミットからの変更はありません)。
+
+注意: `git revert` は、いくつかの新しいコミットを記録して、以前のコミットの効果を元に戻すために使用されます(多くの場合、障害のあるコミットのみ)。あなたが作業ディレクトリ内のコミットされていないすべての変更を破棄したい場合は、 linkgit:git-reset[1] 、特に `--hard` オプションについて参照すべきです。あなたが別のコミットから特定のファイルを抽出したい場合は、 linkgit:git-restore[1] 、特に `--source` オプションについて参照すべきです。これらは作業ディレクトリ内のコミットされていない変更を破棄するため、これらの選択肢には注意してください。
+
+3つのコマンドの違いについては、 linkgit:git[1] の「Reset, restore and revert」を参照してください。
+
+OPTIONS
+-------
+<commit>...::
+	元に戻すためのコミットを指定。コミット名を綴る方法のより完全なリストについては、 linkgit:gitrevisions[7] を参照してください。コミットのセットを指定することもできますが、デフォルトではトラバーサルは実行されません。 linkgit:git-rev-list[1] と、その `--no-walk` オプションを参照してください。
+
+`-e`::
+`--edit`::
+	このオプションを使用すると、 `git revert` は「戻し」(the revert)をコミットする前にあなたにコミットメッセージを編集させます。これは、端末からコマンドを実行する場合のデフォルトです。
+
+`-m parent-number`::
+`--mainline parent-number`::
+	通常、マージのどの筋を本線(mainline)と見なすかわからないため、マージを元に戻すことはできません。 このオプションは、本線とする親番号(1から始まる)を指定し、指定された親を基準にして変更を元に戻すことができます。
++
+マージコミットを戻す(revert)と、そのマージによってもたらされたツリーの変更が不要になることが宣言されます。その結果、その後に行われるマージでは、先に戻されたマージの先祖ではないコミットによってもたらされたツリーの変更のみが適用されます。これはあなたの望むところかもしれませんし、そうでないかもしれません。
++
+詳細については、 link:howto/revert-a-faulty-merge.html[revert-a-faulty-merge How-To] (誤ったマージの取り消し方法)を参照してください。
+
+`--no-edit`::
+	このオプションを使うと、 'git revert' はコミットメッセージエディタを起動しません。
+
+`--cleanup=<mode>`::
+	このオプションは、コミットメッセージがコミット機構に渡される前にどのようにクリーンアップされるかを決定します。詳細については、linkgit:git-commit[1] を参照してください。 特に、競合が発生した場合、 <mode> に値 `scissors` が指定されていると、渡される前に、MERGE_MSG に切り取り線が追加されます。
+
+`-n`::
+`--no-commit`::
+	通常、コマンドは、どのコミットが元に戻されたかを示すコミットログメッセージを含むいくつかのコミットを自動的に作成します。このフラグは、名前付きコミットを作業ツリーとインデックスに戻すために必要な変更を適用(apply)しますが、コミットは行いません。さらに、このオプションを使用する場合、インデックスはHEADコミットと一致する必要はありません。 revertは、あなたのインデックスの開始状態に対して行われます。
++
+これは、複数のコミットの効果を連続してインデックスにrevertする場合に役立ちます。
+
+`-S[<keyid>]`::
+`--gpg-sign[=<keyid>]`::
+`--no-gpg-sign`::
+	GPG署名コミット。 `keyid` 引数はオプションであり、デフォルトはコミッターIDになります。指定する場合は、スペースなしでオプションに指定する必要があります。 `--no-gpg-sign` は、 `commit.gpgSign` 構成変数と、 それより前で指定された `--gpg-sign` の両方を打ち消すのに役立ちます。
+
+`-s`::
+`--signoff`::
+	コミットメッセージの最後に `Signed-off-by` トレーラーを追加します。 詳細については、 linkgit:git-commit[1] の signoff オプションを参照してください。
+
+`--strategy=<strategy>`::
+	指定されたマージ戦略を使用します。指定できるのは一度だけです。詳細については、 linkgit:git-merge[1] の「MERGE STRATEGIES」セクションを参照してください。
+
+`-X<option>`::
+`--strategy-option=<option>`::
+	マージ戦略固有のオプションをマージ戦略に渡します。詳細については、 linkgit:git-merge[1] を参照してください。
+
+include::rerere-options.txt[]
+
+`--reference`::
+	ログ・メッセージの本文を "This reverts <full object name of the commit being reverted>." で始める代わりに、 `--pretty=reference` 形式を使用してコミットを参照します(linkgit:git-log[1] 参照)。 `revert.reference` 構成変数を使用して、このオプションをデフォルトで有効にすることができます。
+
+
+SEQUENCER SUBCOMMANDS
+---------------------
+include::sequencer.txt[]
+
+EXAMPLES
+--------
+`git revert HEAD~3`::
+
+	HEADの最後から4番目のコミットで指定された変更を元に戻し、元に戻した変更を使用して新しいコミットを作成します。
+
+`git revert -n master~5..master~2`::
+
+	コミットによって行われた変更を、masterの最後から5番目のコミット(それ自身を含む)から、masterの最後から3番目のコミット(それ自身を含む)に戻しますが、元に戻した変更でコミットを作成しないでください。元に戻すと、作業ツリーとインデックスのみが変更されます。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/revert.txt[]
+
+SEE ALSO
+--------
+linkgit:git-cherry-pick[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

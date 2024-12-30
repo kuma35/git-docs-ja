@@ -1,0 +1,178 @@
+From: Junio C Hamano <gitster@pobox.com> and Carl Baldwin <cnb@fc.hp.com>
+Subject: control access to branches.
+Date: Thu, 17 Nov 2005 23:55:32 -0800
+Message-ID: <7vfypumlu3.fsf@assigned-by-dhcp.cox.net>
+Abstract: 誰がどのブランチにプッシュできるか、誰がタグを作成できるかなど、
+ リポジトリのメンテナンスポリシーを実装するための
+ フック/更新スクリプトの例を示します。
+Content-type: text/asciidoc
+
+How to use the update hook
+==========================
+
+あなたの開発したプログラムがリポジトリにgit-pushを実行すると、その開発したプログラムがgit-receive-packを(ローカルまたはssh経由で)実行し、フック/更新スクリプトも実行されます。以下はドキュメントの関連セクションからの引用です:
+
+    各refが更新される前に、 $GIT_DIR/hooks/update ファイルが存在し、実行可能である場合、
+    以下の3つのパラメーターで呼び出されます:
+
+           $GIT_DIR/hooks/update refname sha1-old sha1-new
+
+    refnameパラメーターは$GIT_DIRに関連しています。
+    例えば master head の場合、これは「refs/heads/master」です。
+    2つのsha1は、更新前後のrefnameのオブジェクト名です。
+    注意: フックはrefnameが更新される前に呼び出されるため、
+    sha1-oldが0{40}(そのようなrefがまだないことを意味します)であるか、
+    refnameに記録されているものと一致する必要があることに注意してください。
+
+したがって、ポリシーで、 (1)常に fast-forward プッシュが必要な場合(つまり「git-push repo +branch:branch」を許可しないでください)で、かつ、(2)各ブランチの更新を許可されているユーザーのリストがある場合で、かつ、(3)タグの上書きを禁止した場合は、フック/更新スクリプトとして以下のようなものを使用できます。
+
+(編注(jc): これは、私が元のアウトラインを投稿後、Carlによって大幅に改善されたバージョンです)
+
+----------------------------------------------------
+#!/bin/bash
+
+umask 002
+
+# If you are having trouble with this access control hook script
+# you can try setting this to true.  It will tell you exactly
+# why a user is being allowed/denied access.
+
+verbose=false
+
+# Default shell globbing messes things up downstream
+GLOBIGNORE=*
+
+function grant {
+  $verbose && echo >&2 "-Grant-		$1"
+  echo grant
+  exit 0
+}
+
+function deny {
+  $verbose && echo >&2 "-Deny-		$1"
+  echo deny
+  exit 1
+}
+
+function info {
+  $verbose && echo >&2 "-Info-		$1"
+}
+
+# Implement generic branch and tag policies.
+# - Tags should not be updated once created.
+# - Branches should only be fast-forwarded unless their pattern starts with '+'
+case "$1" in
+  refs/tags/*)
+    git rev-parse --verify -q "$1" &&
+    deny >/dev/null "You can't overwrite an existing tag"
+    ;;
+  refs/heads/*)
+    # No rebasing or rewinding
+    if expr "$2" : '0*$' >/dev/null; then
+      info "The branch '$1' is new..."
+    else
+      # updating -- make sure it is a fast-forward
+      mb=$(git merge-base "$2" "$3")
+      case "$mb,$2" in
+        "$2,$mb") info "Update is fast-forward" ;;
+	*)	  noff=y; info "This is not a fast-forward update.";;
+      esac
+    fi
+    ;;
+  *)
+    deny >/dev/null \
+    "Branch is not under refs/heads or refs/tags.  What are you trying to do?"
+    ;;
+esac
+
+# Implement per-branch controls based on username
+allowed_users_file=$GIT_DIR/info/allowed-users
+username=$(id -u -n)
+info "The user is: '$username'"
+
+if test -f "$allowed_users_file"
+then
+  rc=$(cat $allowed_users_file | grep -v '^#' | grep -v '^$' |
+    while read heads user_patterns
+    do
+      # does this rule apply to us?
+      head_pattern=${heads#+}
+      matchlen=$(expr "$1" : "${head_pattern#+}")
+      test "$matchlen" = ${#1} || continue
+
+      # if non-ff, $heads must be with the '+' prefix
+      test -n "$noff" &&
+      test "$head_pattern" = "$heads" && continue
+
+      info "Found matching head pattern: '$head_pattern'"
+      for user_pattern in $user_patterns; do
+        info "Checking user: '$username' against pattern: '$user_pattern'"
+        matchlen=$(expr "$username" : "$user_pattern")
+        if test "$matchlen" = "${#username}"
+        then
+          grant "Allowing user: '$username' with pattern: '$user_pattern'"
+        fi
+      done
+      deny "The user is not in the access list for this branch"
+    done
+  )
+  case "$rc" in
+    grant) grant >/dev/null "Granting access based on $allowed_users_file" ;;
+    deny)  deny  >/dev/null "Denying  access based on $allowed_users_file" ;;
+    *) ;;
+  esac
+fi
+
+allowed_groups_file=$GIT_DIR/info/allowed-groups
+groups=$(id -G -n)
+info "The user belongs to the following groups:"
+info "'$groups'"
+
+if test -f "$allowed_groups_file"
+then
+  rc=$(cat $allowed_groups_file | grep -v '^#' | grep -v '^$' |
+    while read heads group_patterns
+    do
+      # does this rule apply to us?
+      head_pattern=${heads#+}
+      matchlen=$(expr "$1" : "${head_pattern#+}")
+      test "$matchlen" = ${#1} || continue
+
+      # if non-ff, $heads must be with the '+' prefix
+      test -n "$noff" &&
+      test "$head_pattern" = "$heads" && continue
+
+      info "Found matching head pattern: '$head_pattern'"
+      for group_pattern in $group_patterns; do
+        for groupname in $groups; do
+          info "Checking group: '$groupname' against pattern: '$group_pattern'"
+          matchlen=$(expr "$groupname" : "$group_pattern")
+          if test "$matchlen" = "${#groupname}"
+          then
+            grant "Allowing group: '$groupname' with pattern: '$group_pattern'"
+          fi
+        done
+      done
+      deny "None of the user's groups are in the access list for this branch"
+    done
+  )
+  case "$rc" in
+    grant) grant >/dev/null "Granting access based on $allowed_groups_file" ;;
+    deny)  deny  >/dev/null "Denying  access based on $allowed_groups_file" ;;
+    *) ;;
+  esac
+fi
+
+deny >/dev/null "There are no more rules to check.  Denying access"
+----------------------------------------------------
+
+これは、 $GIT_DIR/info/allowed-users と $GIT_DIR/info/allowed-groups の2つのファイルを使用して、どのheadを誰がプッシュできるかを記述します。各ファイルの形式は以下のようになります:
+
+    refs/heads/master   junio
+    +refs/heads/seen    junio
+    refs/heads/cogito$  pasky
+    refs/heads/bw/.*    linus
+    refs/heads/tmp/.*   .*
+    refs/tags/v[0-9].*  junio
+
+これにより、Linus は「bw/penguin」または「bw/zebra」または「bw / panda」のブランチをプッシュまたは作成でき、Paskyは「cogito」のみ、JCはmasterと「seen」ブランチでそうする事ができ、バージョン管理されたタグを作成できます。 そして、誰でもtmp/blahブランチでそうする事ができます。「seen」レコードの「+」記号は、JCが non-fast-forward プッシュを実行できることを意味します。

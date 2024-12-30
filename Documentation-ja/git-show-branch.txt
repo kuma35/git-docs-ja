@@ -1,0 +1,150 @@
+git-show-branch(1)
+==================
+
+NAME
+----
+git-show-branch - ブランチとそのコミットを表示します
+
+SYNOPSIS
+--------
+[verse]
+'git show-branch' [-a | --all] [-r | --remotes] [--topo-order | --date-order]
+		[--current] [--color[=<when>] | --no-color] [--sparse]
+		[--more=<n> | --list | --independent | --merge-base]
+		[--no-name | --sha1-name] [--topics]
+		[(<rev> | <glob>)...]
+'git show-branch' (-g | --reflog)[=<n>[,<base>]] [--list] [<ref>]
+
+DESCRIPTION
+-----------
+
+<rev> または <glob> (または、 refs/heads および/または refs/tags の下のすべてのref)で名前が付けられたコミットから始まるコミットの祖先グラフを半視覚的に表示します。
+
+一度に29を超えるブランチとコミットを表示することはできません。
+
+コマンドラインで <rev> または <glob> が指定されていない場合は、 `showbranch.default` の複数値(multi-valued)の構成アイテムを使用します。
+
+
+OPTIONS
+-------
+<rev>::
+	通常はブランチヘッドまたはタグに名前を付ける任意の拡張SHA-1式 (linkgit:gitrevisions[7] 参照)。
+
+<glob>::
+	refs/ の下のブランチ名またはタグ名に一致するグロブパターン。 たとえば、 refs/heads/topic の下に多くのトピックブランチがある場合、 `topic/*` を指定するとそれらすべてが表示されます。
+
+`-r`::
+`--remotes`::
+	リモート追跡ブランチを表示します。
+
+`-a`::
+`--all`::
+	リモート追跡ブランチとローカルブランチの両方を表示します。
+
+`--current`::
+	このオプションを使用すると、コマンドラインに指定されていない場合に表示されるrevのリストに現在のブランチが含まれます。
+
+`--topo-order`::
+        デフォルトでは、ブランチとそのコミットは新しい順に表示されます。このオプションを使用すると、トポロジカル順に表示されます(つまり、子孫のコミットは親の前に表示されます)。
+
+`--date-order`::
+	このオプションは、すべての子の前に親が来ないという意味で `--topo-order` に似ていますが、それ以外の場合、コミットはコミット日に従って順序付けられます。
+
+`--sparse`::
+	デフォルトでは、出力には、表示されている1つの先端からのみ到達可能なマージが省略されています。このオプションにより、それらが表示されます。
+
+`--more=<n>`::
+	通常、コマンドは、すべてのブランチの共通の祖先であるコミットを表示すると出力を停止します。このフラグは、それを超えて共通のコミットを <n> 回表示するようコマンドに指示します。 <n>が負の場合、コミットの祖先ツリーを表示せずに、指定された <ref> のみを表示します。
+
+`--list`::
+	`--more=-1` と同義です。
+
+`--merge-base`::
+	コミットリストを表示する代わりに、指定されたコミットの可能なマージベースを決定します。すべてのマージベースは、指定されたすべてのコミットに含まれます。 これは、 linkgit:git-merge-base[1] が3つ以上のコミットの場合を処理する方法とは異なります。
+
+`--independent`::
+	与えられた <ref> のうち、他の <ref> から到達できないもののみを表示します。
+
+`--no-name`::
+	各コミットの名前付け文字列(naming strings)を表示しません。
+
+`--sha1-name`::
+	ヘッドからコミットに到達するためのパスを使用してコミットに名前を付ける代わりに(たとえば、「master」の祖父母を意味する「master~2」)、オブジェクト名の一意のプレフィックスを使用してコミットに名前を付けます。
+
+`--topics`::
+	指定された最初のブランチにないコミットのみを表示します。これは、すでに開発のメインラインにあるコミットを非表示にすることで、トピックブランチを追跡するのに役立ちます。 `git show-branch --topics master topic1 topic2` を指定すると、 `git rev-list {caret}master topic1 topic2` で指定されたリビジョンが表示されます。
+
+`-g`::
+`--reflog[=<n>[,<base>]] [<ref>]`::
+	指定された参照の最新の参照ログエントリを<n>個表示します。<base>が指定されている場合、<n>エントリはそのエントリから戻ります。 <base>は、カウントまたは日付として指定できます。 明示的な<ref>パラメータが指定されていない場合、デフォルトで現在のブランチ(またはデタッチされている場合は `HEAD` )になります。
+
+`--color[=<when>]`::
+	所属するブランチに対応する各コミットのステータス記号(`*` `！` `+` `-` )に色を付けます。値は always (デフォルト) または never または auto である必要があります。
+
+`--no-color`::
+	構成ファイルでデフォルトのカラー出力が指定されている場合でも、カラー出力をオフにします。 `--color=never` と同じです。
+
+`--more@ と `-list` と `-independent` と `--merge-base` オプションは相互に排他的であることに注意してください。
+
+
+OUTPUT
+------
+
+N 個の <ref> が与えられた場合、最初のN行はコミットメッセージからの各1行説明です。 $GIT_DIR/HEAD が指すブランチヘッドには、アスタリスクの `*` 文字が接頭辞として付けられ、他のヘッドには、 `!` 文字が接頭辞として付けられます。
+
+これらのN行に続いて、コミットごとに1行のログが表示され、N桁インデントされます。 コミットがI番目のブランチにある場合、I番目のインデント文字は `+` 記号を示します。それ以外の場合は、スペースが表示されます。 マージコミットは `-` 記号で示されます。各コミットは、そのコミットに名前を付けるための拡張SHA-1として使用できる短い名前が表示されます。
+
+以下の例は、「master」と「fixes」と「mhf」の3つのブランチを示しています:
+
+------------------------------------------------
+$ git show-branch master fixes mhf
+* [master] Add 'git show-branch'.
+ ! [fixes] Introduce "reset type" flag to "git reset"
+  ! [mhf] Allow "+remote:local" refspec to cause --force when fetching.
+---
+  + [mhf] Allow "+remote:local" refspec to cause --force when fetching.
+  + [mhf~1] Use git-octopus when pulling more than one heads.
+ +  [fixes] Introduce "reset type" flag to "git reset"
+  + [mhf~2] "git fetch --force".
+  + [mhf~3] Use .git/remote/origin, not .git/branches/origin.
+  + [mhf~4] Make "git pull" and "git fetch" default to origin
+  + [mhf~5] Infamous 'octopus merge'
+  + [mhf~6] Retire git-parse-remote.
+  + [mhf~7] Multi-head fetch.
+  + [mhf~8] Start adding the $GIT_DIR/remotes/ support.
+*++ [master] Add 'git show-branch'.
+------------------------------------------------
+
+これらの3つのブランチはすべて、共通のコミット[master]から分岐し、そのコミットメッセージは "Add \'git show-branch'" です。 `fixes` ブランチは、 `git reset` に `reset type` フラグを導入するコミットを1つ追加します。 `mhf` ブランチは、他の多くのコミットを追加します。 現在のブランチは `master` です。
+
+
+EXAMPLES
+--------
+
+プライマリブランチを `refs/heads` のすぐ下に置き、トピックブランチをそのサブディレクトリに保持する場合は、構成ファイルに以下の情報を含めると役立つ場合があります:
+
+------------
+[showbranch]
+	default = --topo-order
+	default = heads/*
+
+------------
+
+これにより、追加のパラメータがない `git show-branch` は、プライマリブランチのみを表示します。さらに、トピックブランチにいる場合は、それも表示されます。
+
+------------
+$ git show-branch --reflog="10,1 hour ago" --list master
+------------
+
+これは、1時間前の時点で先端から戻った10個のreflogエントリを示しています。 `--list` がない場合、出力には、これらのヒントがトポロジ的に相互にどのように関連しているかも示されます。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.txt[]
+
+include::config/showbranch.txt[]
+
+GIT
+---
+Part of the linkgit:git[1] suite

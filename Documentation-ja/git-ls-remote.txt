@@ -1,0 +1,110 @@
+git-ls-remote(1)
+================
+
+NAME
+----
+git-ls-remote - リモートリポジトリの参照を一覧表示する
+
+
+SYNOPSIS
+--------
+[verse]
+'git ls-remote' [--heads] [--tags] [--refs] [--upload-pack=<exec>]
+	      [-q | --quiet] [--exit-code] [--get-url] [--sort=<key>]
+	      [--symref] [<repository> [<patterns>...]]
+
+DESCRIPTION
+-----------
+リモートリポジトリで有効な参照を、関連するコミットIDとともに表示します。
+
+
+OPTIONS
+-------
+`-h`::
+`--heads`::
+`-t`::
+`--tags`::
+	それぞれ、refs/heads と refs/tags のみに制限します。これらのオプションは相互に排他的ではありません。両方を指定すると、 refs/heads と refs/tags に保存されている参照が表示されます。コマンドラインで他に何も指定せずに使用された `git ls-remote -h` は、他のgitサブコマンドと同じようにヘルプを提供することに注意してください。
+
+`--refs`::
+	ピーリングされたタグ(peeled tag)や `HEAD` のような疑似参照(pseudoref)を出力に表示しないでください。
+
+`-q`::
+`--quiet`::
+	stderrにリモートURLを出力しないでください。
+
+`--upload-pack=<exec>`::
+	リモートホストの「git-upload-pack」のフルパスを指定します。これにより、SSH経由でアクセスされ、SSHデーモンがユーザーによって構成されたPATHを使用しないリポジトリからの参照を一覧表示できます。
+
+`--exit-code`::
+	リモートリポジトリに一致する参照が見つからない場合は、ステータス「2」で終了します。通常、コマンドはステータス「0」で終了し、一致する参照が見つかったかどうかに関係なく、リモートリポジトリと正常に通信したことを示します。
+
+`--get-url`::
+	`url.<base>.insteadOf` 構成設定(linkgit:git-config[1]を参照)を考慮して、指定されたリモートリポジトリのURLを展開し、リモートと通信せずに終了します。
+
+`--symref`::
+	それが指すオブジェクトに加えて、シンボリックrefを表示するときに、それが指す基になるrefを表示します。 現在、upload-packはsymref HEADのみを表示するため、ls-remoteによって表示されるのはこれだけです。
+
+`--sort=<key>`::
+	指定されたキーに基づいて並べ替えます。接頭辞 `-` を使用して、値の降順で並べ替えます。 `version:refname` または `v:refname` をサポートします(タグ名はバージョンとして扱われます)。 `version:refname` のソート順は、 `versionsort.suffix` 構成変数の影響も受ける可能性があります。 その他の並べ替えオプションについては linkgit:git-for-each-ref[1] を参照してください。ただし、オブジェクト自体へのアクセスを必要とする `committerdate` のようなキーは、オブジェクトがまだリモートからフェッチされていないrefに対しては機能せず、 `missing object` エラーが発生することに注意してください。
+
+`-o <option>`::
+`--server-option=<option>`::
+	プロトコルバージョン2を使用して通信する場合は、指定された文字列をサーバーに送信します。指定された文字列には、NULまたはLF文字を含めることはできません。 複数の `--server-option=<option>` が指定されている場合、それらはコマンドラインにリストされている順序で送信されます。
+
+<repository>::
+	クエリする「リモート」リポジトリ。 このパラメーターは、URLまたはリモートの名前のいずれかです(linkgit:git-fetch[1] の「GIT URLS」と「REMOTES」セクションを参照してください)。
+
+<patterns>...::
+	指定しない場合、 `--heads` や `--tags` でフィルタリング後のすべての参照(references)が表示されます。 <patterns>... を指定すると、 指定のパターンに一致する参照(references)のみが表示されます。 各パターンは ref の「末尾」にマッチするグロブ(`glob` linkgit:gitglossary[7]) の `glob` 参照)として解釈され、 そのマッチングは ref の先頭(つまり、`refs/heads/foo` のようなフルネームにマッチ)または スラッシュ区切り(つまりパターン `bar` は `refs/heads/foobar` ではなく `refs/heads/bar` にマッチする)から開始します。
+
+OUTPUT
+------
+
+出力は以下の書式です:
+
+------------
+<oid> TAB <ref> LF
+------------
+
+注釈付きのタグを表示する場合、 `--refs` が指定されていない限り、 2 行表示されます。 1 行目はタグ自体の refname を `<ref>` として、 もう 1 行は `<ref>` の後に `^{}` が続きます。 最後の行の `<oid>` は、 タグが指すオブジェクト名を指し示します。
+
+EXAMPLES
+--------
+
+* 全ての参照(references)(シンボリックや疑似参照含む)をリストし、タグ剥がし(peeling tags)します:
++
+----
+$ git ls-remote
+27d43aaaf50ef0ae014b88bba294f93658016a2e	HEAD
+950264636c68591989456e3ba0a5442f93152c1a	refs/heads/main
+d9ab777d41f92a8c1684c91cfb02053d7dd1046b	refs/heads/next
+d4ca2e3147b409459955613c152220f4db848ee1	refs/tags/v2.40.0
+73876f4861cd3d187a4682290ab75c9dccadbc56	refs/tags/v2.40.0^{}
+----
+
+* 与えられたパターンにマッチする全ての参照(references):
++
+----
+$ git ls-remote http://www.kernel.org/pub/scm/git/git.git master seen rc
+5fe978a5381f1fbad26a80e682ddd2a401966740	refs/heads/master
+c781a84b5204fb294c9ccc79f8b3baceeb32c061	refs/heads/seen
+----
+
+* 与えられたワイルドカードパターンにマッチするタグのみをリストする:
++
+----
+$ git ls-remote --tags http://www.kernel.org/pub/scm/git/git.git v\*
+485a869c64a68cc5795dd99689797c5900f4716d	refs/tags/v2.39.2
+cbf04937d5b9fcf0a76c28f69e6294e9e3ecd7e6	refs/tags/v2.39.2^{}
+d4ca2e3147b409459955613c152220f4db848ee1	refs/tags/v2.40.0
+73876f4861cd3d187a4682290ab75c9dccadbc56	refs/tags/v2.40.0^{}
+----
+
+SEE ALSO
+--------
+linkgit:git-check-ref-format[1].
+
+GIT
+---
+Part of the linkgit:git[1] suite

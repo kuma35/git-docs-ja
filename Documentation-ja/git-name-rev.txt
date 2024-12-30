@@ -1,0 +1,94 @@
+git-name-rev(1)
+===============
+
+NAME
+----
+git-name-rev - 指定のrevのシンボリック名を検索します
+
+
+SYNOPSIS
+--------
+[verse]
+'git name-rev' [--tags] [--refs=<pattern>]
+	       ( --all | --annotate-stdin | <commit-ish>... )
+
+DESCRIPTION
+-----------
+`git rev-parse` で解析可能な任意の形式で指定されたリビジョンの、人間にとって読みやすい記号名を検索します。
+
+
+OPTIONS
+-------
+
+`--tags`::
+	ブランチ名は使用せず、コミットに名前を付けるためにタグのみを使用します
+
+`--refs=<pattern>`::
+	名前が特定のシェルパターンに一致するrefのみを使用します。 パターンは、ブランチ名、タグ名、または完全修飾ref名のいずれかです。複数回指定する場合は、指定したシェルパターンのいずれかに名前が一致するrefsを使用します。 `--no-refs` を使用して、既に指定済のrefパターンをクリアします。
+
+`--exclude=<pattern>`::
+	名前が特定のシェルパターンと一致するrefは使用しない。 パターンは、ブランチ名、タグ名、または完全修飾ref名のいずれかです。複数回指定された場合、指定されたパターンのいずれかに一致するrefは除外されます。 `--refs` と一緒に使用すると、refは少なくとも1つの `--refs` パターンに一致し、 `--exclude` パターンに一致しない場合にのみ一致として使用されます。 `--no-exclude` を使用して、除外パターンのリストをクリアします。
+
+`--all`::
+	すべてのrefから到達可能なすべてのコミットを一覧表示します
+
+`--annotate-stdin`::
+	16進40文字のSHA-1($hexとする)をすべて "$hex ($rev_name)" に置き換えて、 stdinを変換します。 `--name-only` と一緒に使用する場合は、 "$rev_name" に置き換えて、 $hex を完全に省略します。 このオプションは Git の古いバージョンでは `--stdin` と呼ばれていました。
++
+例えば:
++
+-----------
+$ cat sample.txt
+
+An abbreviated revision 2ae0a9cb82 will not be substituted.
+The full name after substitution is 2ae0a9cb8298185a94e5998086f380a355dd8907,
+while its tree object is 70d105cc79e63b81cfdcb08a15297c23e60b07ad
+(訳注: 省略されたリビジョン 2ae0a9cb82 は置き換えられません。
+置換後のフル・ネームは 2ae0a9cb8298185a94e5998086f380a355dd8907 で、
+そのツリー・オブジェクトは 70d105cc79e63b81cfdcb08a15297c23e60b07ad です)
+
+$ git name-rev --annotate-stdin <sample.txt
+
+An abbreviated revision 2ae0a9cb82 will not be substituted.
+The full name after substitution is 2ae0a9cb8298185a94e5998086f380a355dd8907 (master),
+while its tree object is 70d105cc79e63b81cfdcb08a15297c23e60b07ad
+
+$ git name-rev --name-only --annotate-stdin <sample.txt
+
+An abbreviated revision 2ae0a9cb82 will not be substituted.
+The full name after substitution is master,
+while its tree object is 70d105cc79e63b81cfdcb08a15297c23e60b07ad
+-----------
+
+`--name-only`::
+	SHA-1と名前の両方を印刷する代わりに、名前のみを印刷します。 `--tags` を指定すると、通常のタグプレフィックス "tags/" も名前から省略され、 `git-describe`の出力とより厳密に一致します。
+
+`--no-undefined`::
+	参照が未定義の場合、 `undefined` を出力する代わりに、エラーコード != 0 で終了します。
+
+`--always`::
+	一意を保つように省略されたコミットオブジェクトをフォールバックとして表示します。
+
+EXAMPLES
+--------
+
+コミットが与えられたら、そのローカルrefsとの相対的な位置を見つけます。 誰かがその素晴らしいコミット 33db5f4d9027a10e477ccf054b2c1ab94f74c85a についてあなたに述べたとしましょう。もちろん、あなたはそのコミットを調べますが、そこでは何が起こったのかを教えてくれるだけで、文脈は教えてくれません。
+
+`git name-rev` に入力します:
+
+------------
+% git name-rev 33db5f4d9027a10e477ccf054b2c1ab94f74c85a
+33db5f4d9027a10e477ccf054b2c1ab94f74c85a tags/v0.99~940
+------------
+
+あなたは今や、v0.99より前に940のリビジョンが発生したことが分かりましたね。
+
+別の方法:
+
+------------
+% git log | git name-rev --annotate-stdin
+------------
+
+GIT
+---
+Part of the linkgit:git[1] suite

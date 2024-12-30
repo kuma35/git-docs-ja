@@ -1,0 +1,379 @@
+CONFIGURATION FILE
+------------------
+
+Git構成ファイルには、Gitコマンドの動作に影響を与えるいくつかの変数が含まれています。各リポジトリ内のファイル `.git/config` と、オプションで `config.worktree` (linkgit:git-worktree[1] の「CONFIGURATION FILE」セクションを参照)は、そのリポジトリの設定を保存するために使用され、 `$HOME/.gitconfig` は、ユーザーごとの構成を `.git/config` ファイルのフォールバック値として保存するために使用されます。 ファイル `/etc/gitconfig` を使用して、システム全体のデフォルト設定を保存できます。
+
+構成変数は、Git配管コマンドとGit磁器コマンドの両方で使用されます。変数はセクションに分割されます。変数自体の完全修飾変数名は最後のドット区切りセグメントであり、セクション名は最後のドットより前のすべてです。変数名では大文字と小文字が区別されず、英数字(alphanumeric)と `-`(\x2d) のみが許可され、英字(alphabetic)で始まる必要があります。一部の変数は複数回現れる場合があり、その変数はmultivalueであると言います(訳注:multiple lines(複数行)という表現とmultivalueと言う表現が混在する。configでは同じ意味)。
+
+Syntax
+~~~~~~
+
+構文はかなり柔軟で寛容です。空白(whitespace)はほとんど無視されます。 `#` と `;` は、そこからその行の行末までコメントにします。 空白行は無視されます。
+
+このファイルは、 セクションと変数で構成されています。 セクションは角括弧内(`[` … `]`)のセクション名で始まり、 次のセクションが始まるまで続きます。 セクション名では大文字と小文字は区別されません。 セクション名には、 英数字(alphanumeric) と `-` (\x2d) と `.` (\x2e) のみを使用できます。 各変数はあるセクションに属している必要があります。 つまり、変数の最初の設定の前にセクション・ヘッダーが必要です。
+
+セクションはさらにサブセクションに分割できます。サブセクションを開始するには、以下の例のように、セクションヘッダーで、セクション名からスペースで区切って、その名前を二重引用符で囲みます:
+
+--------
+	[section "subsection"]
+
+--------
+
+サブセクション名では大文字と小文字が区別され、改行とヌルバイト(\x00)以外の任意の文字を含めることができます。 二重引用符 `"` (\x22)と バックスラッシュ(\x5c;日本の環境では円記号で表示される事がある)は、それぞれ `\"` と `\\` としてエスケープすることで含めることができます。 他の文字の前にあるバックスラッシュは、読み取るときに削除されます。 たとえば、 `\t` は `t` として読み取られ、 `\0` は `0` として読み取られます。セクションヘッダーは複数行にまたがることはできません。変数は、セクションまたは特定のサブセクションに直接属する場合があります。 `[section" subsection "]` がある場合は `[section]` も使用できますが、必須ではありません。
+
+非推奨の `[section.subsection]` 構文があります。この構文では、サブセクション名は小文字に変換され、大文字と小文字が区別されて比較されます。これらのサブセクション名は、セクション名と同じ制限に従います。
+
+他のすべての行(およびセクション・ヘッダーの後の行の残りの部分)は、 `name = value` (または単に `name` )の形式で設定変数として認識されます( `name` 形式は `name = true` の省略形で、変数をブール値 `true` に設定します)。変数名では大文字と小文字が区別されず、英数字(alphanumeric)と `-` (\x2d) のみが許可され、英字(alphabetic)で始まる必要があります。
+
+値を定義する行は、 `\` (\x5c) で終了することにより、次の行に続けることができます。続けた時、バックスラッシュと行末コードは削除されて認識されます。 `name =` の後の先頭の空白と、その行で最初に現れるコメント文字 `#` または `;` 以降行末まで、または、行末尾の空白は、二重引用符で囲まれていない限り破棄されます。 値内の内部空白はそのまま保持されます。
+
+ダブルクォートで囲まれた中では、ダブルクォート `"` とバックスラッシュ `\` 文字はエスケープしなければなりません。 `"` を表わすには `\"` を使い、 `\` を表わすには `\\` を使ってください。
+
+( `\"` と `\\` に加えて)認識されるエスケープシーケンスは、改行文字(NL;newline)が `\n` 、水平タブ(HT;TAB)が `\t` 、バックスペース(BS)が `\b` です。他のエスケープシーケンス(8進エスケープシーケンスを含む)は無効です。
+
+
+Includes
+~~~~~~~~
+
+`include` セクションと `includeIf` セクションを使用すると、別のソースからの設定ディレクティブを含めることができます。これら２つのセクションは、条件がtrueと評価されない場合 `includeIf` セクションは無視されることを除けば、全く同じ動作です。 以下の「Conditional includes」を参照してください。
+
+特別な `include.path` (または `includeIf.*.path` )変数をインクルードするファイルの名前に設定することにより、別の構成ファイルをインクルードできます。 変数はその値としてパス名を取り、チルダ展開の対象となります。これらの変数は複数回指定できます。
+
+インクルードファイルの内容は、includeディレクティブの場所で見つかったかのように、すぐに挿入されます。変数の値が相対パスである場合、そのパスは、includeディレクティブが見つかった構成ファイルからの相対パスであると見なされます。例については、以下を参照してください。
+
+Conditional includes
+~~~~~~~~~~~~~~~~~~~~
+
+`includeIf.<condition>.path` 変数をインクルードするファイルの名前に設定することにより、条件付きで別の構成ファイルをインクルードできます。
+
+条件は、キーワードで始まり、その後にコロンと、形式と意味がキーワードによって異なるいくつかのデータが続きます。サポートされているキーワードは以下のとおりです:
+
+`gitdir`::
+
+	キーワード `gitdir:` に続くデータは、グロブ・パターンとして使用されます。 .git ディレクトリの場所がパターンと一致する場合、インクルード条件が満たされます。
++
+`.git` の場所は自動検出されるか、 `$GIT_DIR` 環境変数から取得されます。 リポジトリが .git ファイルを介して(つまり、サブモジュールやリンクされたワークツリーなどから)自動検出される場合、最終的に検出される .git の場所とは、 .git ファイルの場所ではなく .git ファイルからたどった
+.gitディレクトリの場所です。
++
+パターンには、標準のグロブ・ワイルドカードと、複数のパス部分に一致する可能性のある2つの追加のワイルドカード `**/` と `/**` を含めることができます。 詳細については、 linkgit:gitignore[5] を参照してください。 便宜上、以下の記法が使えます:
+
+ * パターンが `~/` で始まる場合、 `~` は環境変数 `HOME` の内容に置き換えられます。
+
+ * パターンが `./` で始まる場合、現在の設定ファイルを含むディレクトリに置き換えられます。
+
+ * パターンが `~/` ・ `./` ・ `/` のいずれでも始まらない場合、 `**/` 自動的に先頭に追加されます。たとえば、パターン `foo/bar` は `**/foo/bar` になり、 `/any/path/to/foo/bar` と一致します。
+
+ * パターンが `/` で終わる場合、 `**` が自動的に追加されます。 たとえば、パターン `foo/` は `foo/**` になります。言い換えると、「foo」ディレクトリとその中のすべてに再帰的に一致します。
+
+`gitdir/i`::
+	これは、照合が大文字と小文字を区別せずに行われることを除いて、 `gitdir` と同じです(大文字と小文字を区別しないファイルシステムなど)。
+
+`onbranch`::
+	キーワード `onbranch:` に続くデータは、標準のグロブワイルドカードと、複数のパス部分に一致する可能性のある2つの追加のワイルドカード `**/` と `/**` を含むパターンと見なされます。現在チェックアウトされているブランチの名前がパターンと一致するワークツリーにいる場合、インクルード条件が満たされます。
++
+パターンが `/` で終わる場合、 `**` が自動的に追加されます。 たとえば、パターン `foo/` は `foo/**` になります。つまり、 `foo/` で始まるすべてのブランチに一致します。これは、ブランチが階層的に編成されていて、その階層内のすべてのブランチに構成を適用する場合に役立ちます。
+
+`hasconfig:remote.*.url:`::
+	このキーワードに続くデータは、標準のグロブ・ワイルドカード(globbing wildcards)と、複数コンポーネントに一致する 2 つの追加ワイルドカード `**/` と `/**` を使用したパターンと見なされます。 このキーワードが最初に表れた時、構成ファイルの残りでremote URL がスキャンされます(値は適用されません)。 このパターンに一致するremote URL が少なくとも 1 つ存在する場合、インクルード条件が満たされます。
++
+このオプションによって (直接的または間接的に) インクルードされるファイルには、remote URL を含めることはできません。
++
+注意:他の includeIf 条件とは異なり、この条件の解決は、条件を読み取る時点ではまだわかっていない情報に依存することに注意してください。 典型的なユース・ケースは、このオプションがシステム・レベルまたはグローバル・レベルの構成として存在し、 remote URL がローカル・レベルの構成にあるというものです。 したがって、この状態を解決するときは前方をスキャンする必要があります。 インクルードされる可能性のあるファイルが、そのようなファイルがインクルードされる可能性があるかどうかに影響を与える、鶏が先か卵が先かという問題を回避するために、Git は、これらのファイルがこれらの条件の解決に影響を与えることを禁止する (したがって remote URL を宣言することを禁止する) ことで、この循環を断ち切ります。
++
+このキーワードの命名に関しては、より多くの変数ベースのインクルード条件をサポートする命名スキームとの前方互換性のためですが、現在、Git は上記と正確に同じキーワードのみをサポートしています。
+
+`gitdir` と `gitdir/i` を介したマッチングに関するいくつかの注意事項:
+
+ * `$GIT_DIR` の中のシンボリックリンクは、マッチ前に解決されません。
+
+ * シンボリックリンクバージョンとrealpathバージョンの両方のパスが、 `$GIT_DIR` の値と照合されます。例えば `~/git` が `/mnt/storage/git` へのシンボリックリンクである場合、 `gitdir:~/git` と `gitdir:/mnt/storage/git` の両方が一致します。
++
+これは、Git v2.13.0 でのこの機能の最初のリリースには当てはまりませんでした。これは、realpathバージョンにのみ一致していました。この機能の初期リリースとの互換性を希望する構成では、realpathバージョンのみ、あるいは両方のバージョンを指定する必要があります。
+
+ * 注意: 「../」は特別なものではなく、文字通り一致することに注意してください。これは、あなたが望むものではない可能性があります。
+
+Example
+~~~~~~~
+
+----
+# Core variables
+[core]
+	; Don't trust file modes
+	filemode = false
+
+# Our diff algorithm
+[diff]
+	external = /usr/local/bin/diff-wrapper
+	renames = true
+
+[branch "devel"]
+	remote = origin
+	merge = refs/heads/devel
+
+# Proxy settings
+[core]
+	gitProxy="ssh" for "kernel.org"
+	gitProxy=default-proxy ; for the rest
+
+[include]
+	path = /path/to/foo.inc ; include by absolute path
+	path = foo.inc ; find "foo.inc" relative to the current file
+	path = ~/foo.inc ; find "foo.inc" in your `$HOME` directory
+
+; include if $GIT_DIR is /path/to/foo/.git
+[includeIf "gitdir:/path/to/foo/.git"]
+	path = /path/to/foo.inc
+
+; include for all repositories inside /path/to/group
+[includeIf "gitdir:/path/to/group/"]
+	path = /path/to/foo.inc
+
+; include for all repositories inside $HOME/to/group
+[includeIf "gitdir:~/to/group/"]
+	path = /path/to/foo.inc
+
+; relative paths are always relative to the including
+; file (if the condition is true); their location is not
+; affected by the condition
+[includeIf "gitdir:/path/to/group/"]
+	path = foo.inc
+
+; include only if we are in a worktree where foo-branch is
+; currently checked out
+[includeIf "onbranch:foo-branch"]
+	path = foo.inc
+
+; include only if a remote with the given URL exists (note
+; that such a URL may be provided later in a file or in a
+; file read after this file is read, as seen in this example)
+[includeIf "hasconfig:remote.*.url:https://example.com/**"]
+	path = foo.inc
+[remote "origin"]
+	url = https://example.com/git
+----
+
+Values
+~~~~~~
+
+多くの変数の値は単純な文字列として扱われますが、特定のタイプの値をとる変数があり、それらの綴り方に関する規則があります。
+
+boolean::
+
+       変数がブール値をとると言われるとき、 `true` や `false` や多くの同義語が受け入れられます。 なお、これらはすべて大文字と小文字を区別しません。
+
+	true;; ブール値 true のリテラルは、 `yes` と `on` と `true` と `1` です。 また、 `= <value>` 無しで定義された変数は true と見なされます。
+
+	false;; ブール値 false リテラルは、 `no` と `off` と `false` と `0` と 空文字列です。
++
+`--type = bool` 型指定子を使用して値を正規形に変換する場合、 `git config` は、値の出力を `true` または `false`（小文字で表記）にします。
+
+integer::
+       さまざまなサイズを指定する多くの変数の値には、「k」、「M」などの接尾辞を付けることができます。これは、「数値に1024掛けた値」、「数値に1024x1024を掛けた値」などを意味します。
+
+color::
+       色をとる変数の値は、スペースで区切られた色(最大で2つ、1つは前景用(foreground)、もう1つは背景用(background))と、(必要な数の)属性(attribute)の「リスト」です。
++
+使用できる基本色は、 `normal` と `black` と `red` と `green` と `yellow` と `blue` と `magenta` と `cyan` と `white` と `default` です。与えられた最初の色は前景用です。2番目は背景用です。 `normal` と `default` を除くすべての基本色には、 `brightred` のように色の前に `bright` と付けることで指定できる明るいバリエーションがあります。
++
+色 `normal` は色を変更しません。 空の文字列と同じですが、背景色のみを指定する場合の前景色として使用できます (たとえば、 `normal red`)。
++
+色 `default` は、色を端末のデフォルトに明示的にリセットします。たとえば、クリアされた背景を指定します。 端末によって異なりますが、これは通常 `white black` に設定するのと同じではありません。
++
+色は0から255までの数字で指定することもできます。これらはANSI256色モードを使用します(ただし、すべての端末がこれをサポートしているわけではないことに注意してください)。端末が24ビットRGB値をサポートしている場合は `#ff0ab3` のように16進数として指定することもできます。
++
+受け入れられる属性(attribute)は、 `bold` と `dim` と `ul` と `blink` と `reverse` と `italic` と `strike` (取り消し線(cross-out)または「取り消し線」の文字(strikethrough letters)の場合) です。色に関する属性の位置(前、後、または中間)は重要ではありません。特定の属性は、それらの前に「no」または「no-」を付けることによってオフにすることができます(たとえば、「noreverse」、「no-ul」など)。
++
+疑似属性 `reset` は、指定された色を適用する前に、すべての色と属性をリセットします。 たとえば、`reset green` は、アクティブな属性のない緑の前景とデフォルトの背景になります。
++
+空のカラー文字列は、色の効果をまったく生成しません。 これは、色を完全に無効にすることなく、特定の要素の色付けを回避するために使用できます。
++
+gitで事前定義されたカラースロットの場合、属性は、カラー出力の各アイテムの先頭でリセットされることを意図しています。したがって、 `color.decorate.branch`を` black`に設定すると、同じ出力行の前のものが `bold` または他の属性でペイントされるように設定されている場合(たとえば `log --decorate` 出力のブランチ名のリストの前で括弧を開く)でも、そのブランチ名がプレーンな `black` でペイントされます。ただし、カスタムログ形式では、より複雑で階層化された色付けが行われる場合があり、否定された形式が役立つ場合があります。
+
+pathname::
+	パス名の値をとる変数には、 `~/` または `~user/` で始まる文字列を指定できます。このような文字列には、通常のチルダ展開が行われます。 `~/` は `$HOME` の値に展開され、 `~user/` は指定のユーザーのホームディレクトリに展開されます。
++
+パスが `%(prefix)/` で始まる場合、残りはGitの「ランタイムプレフィックス」に関連するパス、つまりGit自体がインストールされた場所に関連するパスとして解釈されます。 たとえば、 `%(prefix)/bin/` は、Git実行可能ファイル自体が存在するディレクトリを指します。Gitがランタイムプレフィックスのサポートなしでコンパイルされた場合、代わりにコンパイルされたプレフィックスが置き換えられます。万が一、展開してはならないリテラルパスを指定する必要がある場合は、 `./%(prefix)/bin` のように接頭辞 `./` を付ける必要があります。
+
+
+Variables
+~~~~~~~~~
+
+注意: このリストは包括的ではなく、必ずしも完全ではないことに注意してください。コマンド固有の変数については、適切なマニュアルページに詳細な説明があります。
+
+他のgit関連ツールは、それら独自の変数を使用する場合があります。 あなた独自のツールで使用する新しい変数を考案するときは、 それらの名前がGit自体や他の一般的なツールで使用されているものと競合しないことを確認し、かつ、それをあなたのドキュメントに記述してください。
+
+include::config/advice.txt[]
+
+include::config/core.txt[]
+
+include::config/add.txt[]
+
+include::config/alias.txt[]
+
+include::config/am.txt[]
+
+include::config/apply.txt[]
+
+include::config/blame.txt[]
+
+include::config/branch.txt[]
+
+include::config/browser.txt[]
+
+include::config/bundle.txt[]
+
+include::config/checkout.txt[]
+
+include::config/clean.txt[]
+
+include::config/clone.txt[]
+
+include::config/color.txt[]
+
+include::config/column.txt[]
+
+include::config/commit.txt[]
+
+include::config/commitgraph.txt[]
+
+include::config/credential.txt[]
+
+include::config/completion.txt[]
+
+include::config/diff.txt[]
+
+include::config/difftool.txt[]
+
+include::config/extensions.txt[]
+
+include::config/fastimport.txt[]
+
+include::config/feature.txt[]
+
+include::config/fetch.txt[]
+
+include::config/format.txt[]
+
+include::config/filter.txt[]
+
+include::config/fsck.txt[]
+
+include::config/fsmonitor--daemon.txt[]
+
+include::config/gc.txt[]
+
+include::config/gitcvs.txt[]
+
+include::config/gitweb.txt[]
+
+include::config/grep.txt[]
+
+include::config/gpg.txt[]
+
+include::config/gui.txt[]
+
+include::config/guitool.txt[]
+
+include::config/help.txt[]
+
+include::config/http.txt[]
+
+include::config/i18n.txt[]
+
+include::config/imap.txt[]
+
+include::config/includeif.txt[]
+
+include::config/index.txt[]
+
+include::config/init.txt[]
+
+include::config/instaweb.txt[]
+
+include::config/interactive.txt[]
+
+include::config/log.txt[]
+
+include::config/lsrefs.txt[]
+
+include::config/mailinfo.txt[]
+
+include::config/mailmap.txt[]
+
+include::config/maintenance.txt[]
+
+include::config/man.txt[]
+
+include::config/merge.txt[]
+
+include::config/mergetool.txt[]
+
+include::config/notes.txt[]
+
+include::config/pack.txt[]
+
+include::config/pager.txt[]
+
+include::config/pretty.txt[]
+
+include::config/protocol.txt[]
+
+include::config/pull.txt[]
+
+include::config/push.txt[]
+
+include::config/rebase.txt[]
+
+include::config/receive.txt[]
+
+include::config/remote.txt[]
+
+include::config/remotes.txt[]
+
+include::config/repack.txt[]
+
+include::config/rerere.txt[]
+
+include::config/revert.txt[]
+
+include::config/safe.txt[]
+
+include::config/sendemail.txt[]
+
+include::config/sequencer.txt[]
+
+include::config/showbranch.txt[]
+
+include::config/sparse.txt[]
+
+include::config/splitindex.txt[]
+
+include::config/ssh.txt[]
+
+include::config/status.txt[]
+
+include::config/stash.txt[]
+
+include::config/submodule.txt[]
+
+include::config/tag.txt[]
+
+include::config/tar.txt[]
+
+include::config/trace2.txt[]
+
+include::config/transfer.txt[]
+
+include::config/uploadarchive.txt[]
+
+include::config/uploadpack.txt[]
+
+include::config/url.txt[]
+
+include::config/user.txt[]
+
+include::config/versionsort.txt[]
+
+include::config/web.txt[]
+
+include::config/worktree.txt[]
