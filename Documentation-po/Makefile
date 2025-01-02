@@ -39,6 +39,10 @@
 # | |- docs-ja-3 (old ver)
 # | |- docs-ja-4 (current ver at 2024/12)
 
+ifndef BRANCH
+    $(error "specify BRANCH at command-line.")
+endif
+
 SRC_DIR = ../Documentation
 SEDOUT_DIR = ../Documentation-sedout
 SEDOUT_EXT = .txt
@@ -123,7 +127,7 @@ help:
 .DEFAULT_GOAL := help
 
 # [ -e $@ ] || ... ターゲットが存在しない時だけ実行。
-# ファイルが追加された時に対応するため。
+# 原文ファイルが追加された時に対応
 # 構造が変わる時は mk-po4a-cfg.sh を作り変えなければならない
 # ので、その時は全 po4cfg ファイルを削除してから make 
 $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SEDOUT_DIR)/%$(ASCIIDOC_EXT)
@@ -138,17 +142,23 @@ $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
-$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT)
+# --no-translations --no-update は変更無しの時タイムスタンプ更新しないので
+# [ -e $@ ] || touch $@
+$(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) | %$(PO4A_CFG_EXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
+	[ -e $@ ] || touch $@
 
 $(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
+	[ -e $@ ] || touch $@
 
-$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT) %$(PO4A_CFG_EXT)
+$(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT) | %$(PO4A_CFG_EXT)
 	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
+	[ -e $@ ] || touch $@
 
 $(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
 	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
+	[ -e $@ ] || touch $@
 
 # Documentation/Makefile に 追加した場合に反映させる。 (technicalに一部html化されてないのがあった)
 $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
