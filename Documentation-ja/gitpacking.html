@@ -740,7 +740,7 @@ gitpacking(7) Manual Page
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>gitpacking -
-   Advanced concepts related to packing in Git
+   Git のパッキングに関連する高度な概念
 </p>
 </div>
 </div>
@@ -754,9 +754,9 @@ gitpacking(7) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This document aims to describe some advanced concepts related to packing in Git.</p></div>
-<div class="paragraph"><p>Many concepts are currently described scattered between manual pages of various Git commands, including <a href="git-pack-objects.html">git-pack-objects(1)</a>, <a href="git-repack.html">git-repack(1)</a>, and others, as well as <a href="gitformat-pack.html">gitformat-pack(5)</a>, and parts of the <code>Documentation/technical</code> tree.</p></div>
-<div class="paragraph"><p>There are many aspects of packing in Git that are not covered in this document that instead live in the aforementioned areas. Over time, those scattered bits may coalesce into this document.</p></div>
+<div class="paragraph"><p>この文書は、 Git のパッキングに関連するいくつかの高度な概念に焦点を当てて説明します。</p></div>
+<div class="paragraph"><p>現在、 多くの概念は、 <a href="git-pack-objects.html">git-pack-objects(1)</a> や <a href="git-repack.html">git-repack(1)</a> などのさまざまな Git コマンドのマニュアル・ページや、 <a href="gitformat-pack.html">gitformat-pack(5)</a> や、 technical ドキュメント群の一部に分散して説明されています。</p></div>
+<div class="paragraph"><p>Git のパッキングに関しては、 このドキュメントでは取り上げられていない多くの側面がありますが、 それらは上記の文書に散在しています。 しかし、 そのうち、 これらの散在した部分がこの文書に合流するかもしれません。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -767,25 +767,25 @@ gitpacking(7) Manual Page
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">Pseudo-merge bitmaps are considered an experimental feature, so the configuration and many of the ideas are subject to change.</td>
+<td class="content">疑似マージ・ビットマップ(Pseudo-merge bitmaps)は実験的な機能とみなされているため、 構成やアイデアの多くは変更される可能性があります。</td>
 </tr></table>
 </div>
 <div class="sect2">
 <h3 id="_background">Background</h3>
-<div class="paragraph"><p>Reachability bitmaps are most efficient when we have on-disk stored bitmaps for one or more of the starting points of a traversal. For this reason, Git prefers storing bitmaps for commits at the tips of refs, because traversals tend to start with those points.</p></div>
-<div class="paragraph"><p>But if you have a large number of refs, it&#8217;s not feasible to store a bitmap for <em>every</em> ref tip. It takes up space, and just OR-ing all of those bitmaps together is expensive.</p></div>
-<div class="paragraph"><p>One way we can deal with that is to create bitmaps that represent <em>groups</em> of refs. When a traversal asks about the entire group, then we can use this single bitmap instead of considering each ref individually. Because these bitmaps represent the set of objects which would be reachable in a hypothetical merge of all of the commits, we call them pseudo-merge bitmaps.</p></div>
+<div class="paragraph"><p>到達可能性ビットマップは、 走査(traversal)の 1 つ以上の開始点のビットマップがディスク上に保存されている場合に最も効率的です。 このため、 Git はコミットのビットマップを参照の先端に保存することを好みます。 これは、 走査(traversal)がそれらのポイントから開始される傾向があるためです。</p></div>
+<div class="paragraph"><p>しかし、 非常に多数の refs がある場合、 すべての ref 先端のビットマップを保存することは現実的ではありません。 これにはスペースが必要で、 かつ、 これらすべてのビットマップを OR 演算するだけでも高価なコストがかかります。</p></div>
+<div class="paragraph"><p>これに対処可能な方法の一つは、 refs の「グループ」を表すビットマップを作成することです。 走査(traversal)でグループ全体について尋ねる場合、 各 ref を個別に考慮する代わりに、 この単一のビットマップを使用できます。 これらのビットマップは、 すべてのコミットをマージしたと仮定(hypothetical)すると到達可能なオブジェクトのセットを表すため、 これらを擬似マージ・ビットマップ(pseudo-merge bitmaps)と呼びます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_overview">Overview</h3>
-<div class="paragraph"><p>A "pseudo-merge bitmap" is used to refer to a pair of bitmaps, as follows:</p></div>
+<div class="paragraph"><p>「疑似マージ・ビットマップ」(pseudo-merge bitmap)は、 以下のようなビットマップのペアを参照するために使用されます:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 Commit bitmap
 </dt>
 <dd>
 <p>
-  A bitmap whose set bits describe the set of commits included in the pseudo-merge&#8217;s "merge" bitmap (as below).
+  擬似マージ(pseudo-merge)の「マージ」ビットマップ(merge bitmap;下記)に含まれるコミットのセットを記述するセット・ビット群があるビットマップ。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -793,32 +793,32 @@ Merge bitmap
 </dt>
 <dd>
 <p>
-  A bitmap whose set bits describe the reachability closure over the set of commits in the pseudo-merge&#8217;s "commits" bitmap (as above). An identical bitmap would be generated for an octopus merge with the same set of parents as described in the commits bitmap.
+  (上記のように)擬似マージ(pseudo-merge)の「コミット」ビットマップ内のコミットのセットに対する到達可能性終端(reachability closure)を記述するセット・ビットを持つビットマップ。 コミット・ビットマップで説明されているように、 同一の親セットを持つ octopus マージに対して全く同じビットマップが生成されます。
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>Pseudo-merge bitmaps can accelerate bitmap traversals when all commits for a given pseudo-merge are listed on either side of the traversal, either directly (by explicitly asking for them as part of the <code>HAVES</code> or <code>WANTS</code>) or indirectly (by encountering them during a fill-in traversal).</p></div>
+<div class="paragraph"><p>擬似マージ・ビットマップ(pseudo-merge bitmaps)は、 特定の擬似マージのすべてのコミットが走査(traversal)のいずれかの側にリストされている場合に、 (「HAVES」または「WANTS」の一部として明示的に要求することによって)直接、 または(全体に渡る走査中にそれらに出くわす事によって)間接的に、 ビットマップ走査(traversal)を高速化できます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_use_cases">Use-cases</h3>
-<div class="paragraph"><p>For example, suppose there exists a pseudo-merge bitmap with a large number of commits, all of which are listed in the <code>WANTS</code> section of some bitmap traversal query. When pseudo-merge bitmaps are enabled, the bitmap machinery can quickly determine there is a pseudo-merge which satisfies some subset of the wanted objects on either side of the query. Then, we can inflate the EWAH-compressed bitmap, and <code>OR</code> it in to the resulting bitmap. By contrast, without pseudo-merge bitmaps, we would have to repeat the decompression and <code>OR</code>-ing step over a potentially large number of individual bitmaps, which can take proportionally more time.</p></div>
-<div class="paragraph"><p>Another benefit of pseudo-merges arises when there is some combination of (a) a large number of references, with (b) poor bitmap coverage, and (c) deep, nested trees, making fill-in traversal relatively expensive. For example, suppose that there are a large enough number of tags where bitmapping each of the tags individually is infeasible. Without pseudo-merge bitmaps, computing the result of, say, <code>git</code> <code>rev-list</code> <code>--use-bitmap-index</code> <code>--count</code> <code>--objects</code> <code>--tags</code> would likely require a large amount of fill-in traversal. But when a large quantity of those tags are stored together in a pseudo-merge bitmap, the bitmap machinery can take advantage of the fact that we only care about the union of objects reachable from all of those tags, and answer the query much faster.</p></div>
+<div class="paragraph"><p>たとえば、 非常に多数のコミットを含む疑似マージ・ビットマップが存在し、 その全てがビットマップ走査クエリー(bitmap traversal query)の「WANTS」セクションにリストされているとします。 擬似マージ・ビットマップが有効になっている場合、 ビットマップ機構は、 クエリーのいずれかの側に必要なオブジェクトの一部を満たす擬似マージが存在することを迅速に判断できます。 次に、 EWAH 圧縮ビットマップ(EWAH-compressed bitmap)を解凍し、 それを結果のビットマップと「OR」演算します。 対照的に、 擬似マージ・ビットマップがなければ、 潜在的に多数の個々のビットマップに対して解凍と「OR」演算ステップを繰り返す必要があり、 それに比例して時間がかかる可能性があります。</p></div>
+<div class="paragraph"><p>疑似マージのもう 1 つの利点は、 (a)多数の参照や、 (b)ビットマップ・カバレッジが不十分や、 (c)深くネストされたツリー、 が組み合わさり、 全体に渡る走査(traversal)が比較的高価になる場合に生じます。 たとえば、 非常にたくさんの数のタグがあり、 各タグを個別にビットマップすることが不可能であるとしましょう。 このとき、 疑似マージ・ビットマップがなければ、 たとえば <code>git rev-list --use-bitmap-index --count --objects --tags</code> の結果を計算するには、 大量の、 全体に渡る走査が必要になる可能性があります。 しかし、 これら大量のタグが擬似マージ・ビットマップにまとめて保存されている場合、 ビットマップ機構は、 それらすべてのタグから到達可能なオブジェクトの結合のみを考慮するという事実を利用することで、 クエリーにはるかに速く応答できます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_configuration">Configuration</h3>
-<div class="paragraph"><p>Reference tips are grouped into different pseudo-merge groups according to two criteria. A reference name matches one or more of the defined pseudo-merge patterns, and optionally one or more capture groups within that pattern which further partition the group.</p></div>
-<div class="paragraph"><p>Within a group, commits may be considered "stable", or "unstable" depending on their age. These are adjusted by setting the <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.stableThreshold</code> and <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.threshold</code> configuration values, respectively.</p></div>
-<div class="paragraph"><p>All stable commits are grouped into pseudo-merges of equal size (<code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.stableSize</code>). If the <code>stableSize</code> configuration is set to, say, 100, then the first 100 commits (ordered by committer date) which are older than the <code>stableThreshold</code> value will form one group, the next 100 commits will form another group, and so on.</p></div>
-<div class="paragraph"><p>Among unstable commits, the pseudo-merge machinery will attempt to combine older commits into large groups as opposed to newer commits which will appear in smaller groups. This is based on the heuristic that references whose tip commit is older are less likely to be modified to point at a different commit than a reference whose tip commit is newer.</p></div>
-<div class="paragraph"><p>The size of groups is determined by a power-law decay function, and the decay parameter roughly corresponds to "k" in <code>f</code>(<code>n</code>) <code>=</code> <code>C</code>*n^(<code>-k/100</code>), where <code>f</code>(<code>n</code>) describes the size of the <code>n</code>-th pseudo-merge group. The sample rate controls what percentage of eligible commits are considered as candidates. The threshold parameter indicates the minimum age (so as to avoid including too-recent commits in a pseudo-merge group, making it less likely to be valid). The "maxMerges" parameter sets an upper-bound on the number of pseudo-merge commits an individual group</p></div>
-<div class="paragraph"><p>The "stable"-related parameters control "stable" pseudo-merge groups, comprised of a fixed number of commits which are older than the configured "stable threshold" value and may be grouped together in chunks of "stableSize" in order of age.</p></div>
-<div class="paragraph"><p>The exact configuration for pseudo-merges is as follows:</p></div>
+<div class="paragraph"><p>参照の先端は、 2 つの基準に従って異なる擬似マージ・グループにグループ化されます。 参照名は、 定義された疑似マージ・パターンの 1 つ以上とマッチし、 オプションでグループをさらに分割するそのパターン内の 1 つ以上のキャプチャ・グループとマッチします。</p></div>
+<div class="paragraph"><p>グループ内では、 コミットはその年齢(age)に応じて「安定」(stable)または「不安定」(unstable)とみなされる場合があります。 これらは、それぞれ <code>bitmapPseudoMerge.&lt;name&gt;.stableThreshold</code> や <code>bitmapPseudoMerge.&lt;name&gt;.threshold</code> 構成値を設定することによって調整します。</p></div>
+<div class="paragraph"><p>すべての安定(stable)したコミットは、 同じサイズの疑似マージにグループ化されます(<code>`bitmapPseudoMerge.&lt;name&gt;.stableSize</code>)。 stableSize 設定が、 たとえば 100 に設定されている場合、 stableThreshold 値よりも古い最初の 100 コミ​​ット(コミッターの日付順) が 1 つのグループを形成し、 次の 100 コミ​​ットが別のグループを形成し、 その次からも同様にします。</p></div>
+<div class="paragraph"><p>不安定(unstable)なコミット群では、 疑似マージ機構は、 より小さなグループとして現れる比較的新しいコミット群とは対照的に、 古めのコミット群を大きなグループに結合しようとします。 これは、 先端コミットが古めの参照は、 先端コミットが新しい参照よりも異なるコミットを指すように変更される可能性が低いという経験値(ヒューリスティック)に基づいています。</p></div>
+<div class="paragraph"><p>グループのサイズはべき乗則の減衰関数(power-law decay function)によって決定され、 減衰パラメーターは <code>f(n) = C*n^(-k/100)</code> の <code>k</code> にほぼ対応します(ここで <code>f(n)</code> は n 番目の擬似マージ・グループのサイズを示します。 サンプル・レートは、 適格なコミットの何パーセントが候補として考慮されるかを制御します。 しきい値パラメーターは、 最小経過期間を示します(擬似マージ・グループに最近すぎるコミットが含まれ、 擬似マージ・グループが有効である可能性が低くなるのを避けるため)。 maxMerges パラメータは、 個々のグループの疑似マージ・コミット数の上限を設定します。</p></div>
+<div class="paragraph"><p>「安定」関連パラメータ(stable-related parameters)は、「安定」疑似マージ・グループを制御します。 このグループは、 設定された「安定しきい値」(stable threshold value)よりも古い、 固定数のコミットで構成され、 古い順に stableSize のサイズのチャンクにグループ化されます。</p></div>
+<div class="paragraph"><p>疑似マージ( pseudo-merges)の構成(configuration)は以下のとおりです:</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">The configuration options in <code>bitmapPseudoMerge.</code>* are considered EXPERIMENTAL and may be subject to change or be removed entirely in the future. For more information about the pseudo-merge bitmap feature, see the "Pseudo-merge bitmaps" section of <a href="gitpacking.html">gitpacking(7)</a>.</td>
+<td class="content">設定オプション <code>bitmapPseudoMerge.*</code> は「実験的」(EXPERIMENTAL)なものとみなされ、 将来変更されるか完全に削除される可能性があります。 擬似マージ・ビットマップ(pseudo-merge bitmap)機能の詳細については、 <a href="gitpacking.html">gitpacking(7)</a> の「Pseudo-merge bitmaps」セクションを参照してください。</td>
 </tr></table>
 </div>
 <div class="dlist"><dl>
@@ -891,7 +891,7 @@ bitmapPseudoMerge.&lt;name&gt;.stableSize
 </div>
 <div class="sect2">
 <h3 id="_examples">Examples</h3>
-<div class="paragraph"><p>Suppose that you have a repository with a large number of references, and you want a bare-bones configuration of pseudo-merge bitmaps that will enhance bitmap coverage of the <code>refs/</code> namespace. You may start with a configuration like so:</p></div>
+<div class="paragraph"><p>多数の参照を含むリポジトリがあり、 あなたは <code>refs/</code> 名前空間のビットマップ・カバレッジを強化する疑似マージ・ビットマップ(pseudo-merge bitmaps)のたたき台な構成が必要だとすると、 あなたは以下のような構成から始めることができます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>[bitmapPseudoMerge "all"]
@@ -901,14 +901,14 @@ bitmapPseudoMerge.&lt;name&gt;.stableSize
         sampleRate = 100
         maxMerges = 64</code></pre>
 </div></div>
-<div class="paragraph"><p>This will create pseudo-merge bitmaps for all references, regardless of their age, and group them into 64 pseudo-merge commits.</p></div>
-<div class="paragraph"><p>If you wanted to separate tags from branches when generating pseudo-merge commits, you would instead define the pattern with a capture group, like so:</p></div>
+<div class="paragraph"><p>これにより、 その履歴の古さに関係なく、 すべての参照のための疑似マージ・ビットマップ(pseudo-merge bitmaps)が生成され、 それらは 64 個の疑似マージ コミットにグループ化されます。</p></div>
+<div class="paragraph"><p>疑似マージ・コミット(pseudo-merge commits)を生成するときにブランチからタグを分離したい場合は、 上記の代わりに以下のようにキャプチャ・グループ(capture group)を使用してパターンを定義します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>[bitmapPseudoMerge "all"]
         pattern = "refs/(heads/tags)/"</code></pre>
 </div></div>
-<div class="paragraph"><p>Suppose instead that you are working in a fork-network repository, with each fork specified by some numeric ID, and whose refs reside in <code>refs/virtual/NNN/</code> (where <code>NNN</code> is the numeric ID corresponding to some fork) in the network. In this instance, you may instead write something like:</p></div>
+<div class="paragraph"><p>上記と異なり、 フォーク・ネットワーク・リポジトリ(fork-network repository)で作業しており、 各フォークが数値 ID で指定され、 その参照がネットワーク内の <code>refs/virtual/NNN/</code> に存在するとします(ここで、 NNN は各フォークに対応する数値 ID)。 この場合、 上記の代わりに以下のように書くこともできます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>[bitmapPseudoMerge "all"]
@@ -918,7 +918,7 @@ bitmapPseudoMerge.&lt;name&gt;.stableSize
         sampleRate = 100
         maxMerges = 64</code></pre>
 </div></div>
-<div class="paragraph"><p>Which would generate pseudo-merge group identifiers like "1234-heads", and "5678-tags" (for branches in fork "1234", and tags in remote "5678", respectively).</p></div>
+<div class="paragraph"><p>これにより、 「1234-heads」や「5678-tags」(それぞれ、 1234 でフォークしたブランチ、 リモートの 5678 へのタグ)などの疑似マージ・グループIDが生成されます。</p></div>
 </div>
 </div>
 </div>
@@ -939,7 +939,7 @@ bitmapPseudoMerge.&lt;name&gt;.stableSize
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-15 12:50:04 JST
+ 2025-01-05 16:52:55 JST
 </div>
 </div>
 </body>

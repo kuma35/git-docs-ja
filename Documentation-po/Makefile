@@ -131,10 +131,10 @@ help:
 # 構造が変わる時は mk-po4a-cfg.sh を作り変えなければならない
 # ので、その時は全 po4cfg ファイルを削除してから make 
 $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SEDOUT_DIR)/%$(ASCIIDOC_EXT)
-	[ -e $@ ] || ./mk-po4a-cfg.sh $< > $@;
+	./mk-po4a-cfg.sh $< > $@;
 
 $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
-	[ -e $@ ] || ./mk-po4a-cfg-install-text.sh $< $(DST_INSTALL_TEXT) > $@
+	./mk-po4a-cfg-install-text.sh $< $(DST_INSTALL_TEXT) > $@
 
 # $(error "debug stop")
 
@@ -143,22 +143,22 @@ $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
 	sed -f ./protect-opt-dash.sed < $< > $@
 
 # --no-translations --no-update は変更無しの時タイムスタンプ更新しないので
-# [ -e $@ ] || touch $@
+# touch --no-create して強制更新する
 $(PO_FILES): %$(PO_EXT) : $(SEDOUT_DIR)/%$(SEDOUT_EXT) | %$(PO4A_CFG_EXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
-	[ -e $@ ] || touch $@
+	touch --no-create $@
 
 $(PO_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 	po4a --no-translations --keep 0 --master-charset UTF-8 $(@:$(PO_EXT)=$(PO4A_CFG_EXT))
-	[ -e $@ ] || touch $@
+	touch --no-create $@
 
 $(DST_FILES): $(DST_DIR)/%$(ASCIIDOC_EXT) : %$(PO_EXT) | %$(PO4A_CFG_EXT)
 	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
-	[ -e $@ ] || touch $@
+	touch --no-create $@
 
 $(DST_INSTALL_TEXT): $(PO_INSTALL_TEXT)
 	po4a --no-update --keep 0 --master-charset UTF-8 $(<:$(PO_EXT)=$(PO4A_CFG_EXT))
-	[ -e $@ ] || touch $@
+	touch --no-create $@
 
 # Documentation/Makefile に 追加した場合に反映させる。 (technicalに一部html化されてないのがあった)
 $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile

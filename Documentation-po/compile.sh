@@ -32,8 +32,8 @@ if [ ${exitcode} -ne 0 ]; then
     notify-send -u critical git-docs-ja "publish-info.mak エラー"
     exit ${exitcode}
 fi
-# restore po4cfg, html and manpaese in Documentation-ja
-${PROJ}/Documentation-po/restore-po4cfg.sh
+# restore html and manpaese in Documentation-ja
+# ${PROJ}/Documentation-po/restore-po4cfg.sh
 ${PROJ}/Documentation-po/restore-htmls.sh
 ${PROJ}/Documentation-po/restore-manpages.sh
 # for github pages

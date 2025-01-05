@@ -13,9 +13,9 @@ pack.compression::
 注意: 圧縮レベルを変更しても、既存のすべてのオブジェクトが自動的に再圧縮されるわけではないことに注意してください。 `-F` オプションを linkgit:git-repack[1] に渡すことで、強制的に再圧縮できます。
 
 pack.allowPackReuse::
-	When true or "single", and when reachability bitmaps are enabled, pack-objects will try to send parts of the bitmapped packfile verbatim. When "multi", and when a multi-pack reachability bitmap is available, pack-objects will try to send parts of all packs in the MIDX.
+	`true` または `single` かつ、 到達可能性ビットマップ(reachability bitmaps)が有効になっている場合、 パック・オブジェクトはビット・マップ化されたパックファイル部品をそのままで送信しようと試みます。 `multi` かつ、 マルチ・パックな到達可能性ビットマップが有効になっている場合、 パック・オブジェクトは MIDX 内の全てのパック部品を送信しようと試みます。
 +
-If only a single pack bitmap is available, and `pack.allowPackReuse` is set to "multi", reuse parts of just the bitmapped packfile. This can reduce memory and CPU usage to serve fetches, but might result in sending a slightly larger pack. Defaults to true.
+使用可能なパック・ビットマップが 1 つだけで、 かつ、 `pack.allowPackReuse` が `multi` に設定されている場合、 ビットマップ化されたパックファイル部品のみを再利用します。 これにより、 フェッチを行うための、 メモリとCPUの使用量を減らすことができますが、 送信するパックが少し大きくなる可能性があります。 デフォルトは true です。
 
 pack.island::
 	デルタアイランド(delta islands)のセットを構成する拡張正規表現。詳細については、 linkgit:git-pack-objects[1] の「DELTA ISLANDS」を参照してください。
@@ -30,17 +30,17 @@ pack.deltaCacheLimit::
 	linkgit:git-pack-objects[1] でキャッシュされるデルタの最大サイズ。すべてのオブジェクトに最適なものが見つかった後、このキャッシュがあれば、最終的なデルタ結果を再計算する必要がないため、オブジェクトの書き込みフェーズを高速化します。そのために使用されます。デフォルトは1000です。最大値は65535です。
 
 pack.threads::
-	Specifies the number of threads to spawn when searching for best delta matches. This requires that linkgit:git-pack-objects[1] be compiled with pthreads otherwise this option is ignored with a warning. This is meant to reduce packing time on multiprocessor machines. The required amount of memory for the delta search window is however multiplied by the number of threads. Specifying 0 will cause Git to auto-detect the number of CPUs and set the number of threads accordingly.
+	最適なデルタ・マッチングを検索するときに生成するスレッドの数を指定します。 このためには linkgit:git-pack-objects[1]を pthread でコンパイルする必要があります。 そうしないと、 このオプションは無視され、 警告が表示されます。 これは、 マルチ・プロセッサ・マシンでのパッキング時間を短縮することを目的としています。 ただし、 デルタ検索ウィンドウに必要なメモリ量は、 スレッド数で乗算されます。 0を指定すると、 Git は CPU の数を自動検出し、 それに応じてスレッドの数を設定します。
 
 pack.indexVersion::
-	Specify the default pack index version. Valid values are 1 for legacy pack index used by Git versions prior to 1.5.2, and 2 for the new pack index with capabilities for packs larger than 4 GB as well as proper protection against the repacking of corrupted packs. Version 2 is the default. Note that version 2 is enforced and this config option is ignored whenever the corresponding pack is larger than 2 GB.
+	デフォルトのパック・インデックス・バージョンを指定します。有効な値は、 1.5.2 より前のバージョンで使用されていたレガシー・パック・インデックスの場合は 1 、 4GBを超えるパックの機能と破損したパックの再パックに対する適切な保護を備えた新しいパック・インデックスの場合は 2 です。 バージョン 2 がデフォルトです。 注意: 対応するパックが 2GB を超える場合はバージョン 2 が適用され、 この構成オプションは無視されることに注意してください。
 +
-If you have an old Git that does not understand the version 2 `*.idx` file, cloning or fetching over a non-native protocol (e.g. "http") that will copy both `*.pack` file and corresponding `*.idx` file from the other side may give you a repository that cannot be accessed with your older version of Git. If the `*.pack` file is smaller than 2 GB, however, you can use linkgit:git-index-pack[1] on the *.pack file to regenerate the `*.idx` file.
+バージョン 2 の `*.idx` ファイルを理解しない古い Git を使用している場合は、 `*.pack` ファイルと対応する `*.idx` ファイルの両方を反対側からコピーする非ネイティブ・プロトコル(例:http)を介してクローンを作成またはフェッチすると、 古いバージョンの Git ではアクセスできないリポジトリが提供される場合があります。けれども、 `*.pack` ファイルが2GBより小さい場合は、 *.pack に linkgit:git-index-pack[1] を使用して、 `*.idx` ファイルを再生成できます。
 
 pack.packSizeLimit::
 	パックの最大サイズ。この設定は、再パック時にファイルへパッキングするときのみ影響します。つまり、 git:// プロトコルは影響を受けません。 linkgit:git-repack[1] の `--max-pack-size` オプションでオーバーライドできます。この制限に達すると、複数のパックファイルが作成されます。
 +
-Note that this option is rarely useful, and may result in a larger total on-disk size (because Git will not store deltas between packs) and worse runtime performance (object lookup within multiple packs is slower than a single pack, and optimizations like reachability bitmaps cannot cope with multiple packs).
+注意: このオプションが役立つことはめったになく、 (Gitはパックにまたがるデルタを保存しないため、)ディスク上の合計サイズが大きくなり、 実行時のパフォーマンスが低下する可能性があることに注意してください(複数のパック内のオブジェクト・ルックアップは単一のパックで行うよりも遅く、 到達可能性ビットマップなどの最適化は複数パックに対応できません)。
 +
 (たとえば、ファイルシステムが大きいファイルをサポートしていないため、)あなたが小さいパックファイルを使用してGitをバリバリと使う必要がある場合、このオプションが役立かもしれません。ただし、限られたサイズをサポートするメディア(たとえば、リポジトリ全体を保存できないリムーバブルメディア)を介してパックファイルを送信することが目標である場合は、単一の大きなパックファイルを作成し、一般的なマルチボリュームアーカイブツール(例えば Unix `split` )を使用して分割する方がよいでしょう。
 +
