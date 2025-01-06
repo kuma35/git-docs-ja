@@ -802,15 +802,15 @@ Merge bitmap
 <div class="sect2">
 <h3 id="_use_cases">Use-cases</h3>
 <div class="paragraph"><p>たとえば、 非常に多数のコミットを含む疑似マージ・ビットマップが存在し、 その全てがビットマップ走査クエリー(bitmap traversal query)の「WANTS」セクションにリストされているとします。 擬似マージ・ビットマップが有効になっている場合、 ビットマップ機構は、 クエリーのいずれかの側に必要なオブジェクトの一部を満たす擬似マージが存在することを迅速に判断できます。 次に、 EWAH 圧縮ビットマップ(EWAH-compressed bitmap)を解凍し、 それを結果のビットマップと「OR」演算します。 対照的に、 擬似マージ・ビットマップがなければ、 潜在的に多数の個々のビットマップに対して解凍と「OR」演算ステップを繰り返す必要があり、 それに比例して時間がかかる可能性があります。</p></div>
-<div class="paragraph"><p>疑似マージのもう 1 つの利点は、 (a)多数の参照や、 (b)ビットマップ・カバレッジが不十分や、 (c)深くネストされたツリー、 が組み合わさり、 全体に渡る走査(traversal)が比較的高価になる場合に生じます。 たとえば、 非常にたくさんの数のタグがあり、 各タグを個別にビットマップすることが不可能であるとしましょう。 このとき、 疑似マージ・ビットマップがなければ、 たとえば <code>git rev-list --use-bitmap-index --count --objects --tags</code> の結果を計算するには、 大量の、 全体に渡る走査が必要になる可能性があります。 しかし、 これら大量のタグが擬似マージ・ビットマップにまとめて保存されている場合、 ビットマップ機構は、 それらすべてのタグから到達可能なオブジェクトの結合のみを考慮するという事実を利用することで、 クエリーにはるかに速く応答できます。</p></div>
+<div class="paragraph"><p>疑似マージのもう 1 つの利点は、 (a)多数の参照や、 (b)ビットマップ・カバレッジが不十分や、 (c)深くネストされたツリー、 が組み合わさり、 全体に渡る走査(traversal)が比較的高価になる場合に生じます。 たとえば、 非常にたくさんの数のタグがあり、 各タグを個別にビットマップすることが不可能であるとしましょう。 このとき、 疑似マージ・ビットマップがなければ、 たとえば <code>git</code> <code>rev-list</code> <code>--use-bitmap-index</code> <code>--count</code> <code>--objects</code> <code>--tags</code> の結果を計算するには、 大量の、 全体に渡る走査が必要になる可能性があります。 しかし、 これら大量のタグが擬似マージ・ビットマップにまとめて保存されている場合、 ビットマップ機構は、 それらすべてのタグから到達可能なオブジェクトの結合のみを考慮するという事実を利用することで、 クエリーにはるかに速く応答できます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_configuration">Configuration</h3>
 <div class="paragraph"><p>参照の先端は、 2 つの基準に従って異なる擬似マージ・グループにグループ化されます。 参照名は、 定義された疑似マージ・パターンの 1 つ以上とマッチし、 オプションでグループをさらに分割するそのパターン内の 1 つ以上のキャプチャ・グループとマッチします。</p></div>
-<div class="paragraph"><p>グループ内では、 コミットはその年齢(age)に応じて「安定」(stable)または「不安定」(unstable)とみなされる場合があります。 これらは、それぞれ <code>bitmapPseudoMerge.&lt;name&gt;.stableThreshold</code> や <code>bitmapPseudoMerge.&lt;name&gt;.threshold</code> 構成値を設定することによって調整します。</p></div>
-<div class="paragraph"><p>すべての安定(stable)したコミットは、 同じサイズの疑似マージにグループ化されます(<code>`bitmapPseudoMerge.&lt;name&gt;.stableSize</code>)。 stableSize 設定が、 たとえば 100 に設定されている場合、 stableThreshold 値よりも古い最初の 100 コミ​​ット(コミッターの日付順) が 1 つのグループを形成し、 次の 100 コミ​​ットが別のグループを形成し、 その次からも同様にします。</p></div>
+<div class="paragraph"><p>グループ内では、 コミットはその年齢(age)に応じて「安定」(stable)または「不安定」(unstable)とみなされる場合があります。 これらは、それぞれ <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.stableThreshold</code> や <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.threshold</code> 構成値を設定することによって調整します。</p></div>
+<div class="paragraph"><p>すべての安定(stable)したコミットは、 同じサイズの疑似マージにグループ化されます(<code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.stableSize</code>)。 stableSize 設定が、 たとえば 100 に設定されている場合、 stableThreshold 値よりも古い最初の 100 コミ​​ット(コミッターの日付順) が 1 つのグループを形成し、 次の 100 コミ​​ットが別のグループを形成し、 その次からも同様にします。</p></div>
 <div class="paragraph"><p>不安定(unstable)なコミット群では、 疑似マージ機構は、 より小さなグループとして現れる比較的新しいコミット群とは対照的に、 古めのコミット群を大きなグループに結合しようとします。 これは、 先端コミットが古めの参照は、 先端コミットが新しい参照よりも異なるコミットを指すように変更される可能性が低いという経験値(ヒューリスティック)に基づいています。</p></div>
-<div class="paragraph"><p>グループのサイズはべき乗則の減衰関数(power-law decay function)によって決定され、 減衰パラメーターは <code>f(n) = C*n^(-k/100)</code> の <code>k</code> にほぼ対応します(ここで <code>f(n)</code> は n 番目の擬似マージ・グループのサイズを示します。 サンプル・レートは、 適格なコミットの何パーセントが候補として考慮されるかを制御します。 しきい値パラメーターは、 最小経過期間を示します(擬似マージ・グループに最近すぎるコミットが含まれ、 擬似マージ・グループが有効である可能性が低くなるのを避けるため)。 maxMerges パラメータは、 個々のグループの疑似マージ・コミット数の上限を設定します。</p></div>
+<div class="paragraph"><p>グループのサイズはべき乗則の減衰関数(power-law decay function)によって決定され、 減衰パラメーターは <code>f</code>(<code>n</code>) <code>=</code> <code>C</code>*n^(<code>-k/100</code>) の <code>k</code> にほぼ対応します(ここで <code>f</code>(<code>n</code>) は n 番目の擬似マージ・グループのサイズを示します。 サンプル・レートは、 適格なコミットの何パーセントが候補として考慮されるかを制御します。 しきい値パラメーターは、 最小経過期間を示します(擬似マージ・グループに最近すぎるコミットが含まれ、 擬似マージ・グループが有効である可能性が低くなるのを避けるため)。 maxMerges パラメータは、 個々のグループの疑似マージ・コミット数の上限を設定します。</p></div>
 <div class="paragraph"><p>「安定」関連パラメータ(stable-related parameters)は、「安定」疑似マージ・グループを制御します。 このグループは、 設定された「安定しきい値」(stable threshold value)よりも古い、 固定数のコミットで構成され、 古い順に stableSize のサイズのチャンクにグループ化されます。</p></div>
 <div class="paragraph"><p>疑似マージ( pseudo-merges)の構成(configuration)は以下のとおりです:</p></div>
 <div class="admonitionblock">
@@ -823,68 +823,72 @@ Merge bitmap
 </div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.pattern
+<code>bitmapPseudoMerge.&lt;name&gt;.pattern</code>
 </dt>
 <dd>
 <p>
-        Regular expression used to match reference names. Commits pointed to by references matching this pattern (and meeting the below criteria, like <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.sampleRate</code> and <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.threshold</code>) will be considered for inclusion in a pseudo-merge bitmap.
+        参照名にマッチさせるために使用される正規表現。このパターンに一致するコミット(および下記の
+        <code>bitmapPseudoMerge.&lt;name&gt;.sampleRate</code> や <code>bitmapPseudoMerge.&lt;name&gt;.threshold</code>
+        などの基準を満たすコミット)は、 擬似マージ・ビットマップ(pseudo-merge bitmap)に含めることができるとみなされます。
 </p>
-<div class="paragraph"><p>Commits are grouped into pseudo-merge groups based on whether or not any reference(s) that point at a given commit match the pattern, which is an extended regular expression.</p></div>
-<div class="paragraph"><p>Within a pseudo-merge group, commits may be further grouped into sub-groups based on the capture groups in the pattern. These sub-groupings are formed from the regular expressions by concatenating any capture groups from the regular expression, with a <em>-</em> dash in between.</p></div>
-<div class="paragraph"><p>For example, if the pattern is <code>refs/tags/</code>, then all tags (provided they meet the below criteria) will be considered candidates for the same pseudo-merge group. However, if the pattern is instead <code>refs/remotes/</code>([<code>0-9</code>])<code>+/tags/</code>, then tags from different remotes will be grouped into separate pseudo-merge groups, based on the remote number.</p></div>
+<div class="paragraph"><p>コミット達は、 特定のコミットを指す参照がパターン(拡張正規表現)にマッチするかどうかに基づいて、 擬似マージ・グループにグループ化されます。</p></div>
+<div class="paragraph"><p>擬似マージ・グループ内では、 パターン内のキャプチャ・グループに基づいてコミットをさらにサブ・グループにグループ化できます。 これらのサブ・グループ名は、 正規表現のキャプチャ・グループを <code>-</code>(ダッシュ)を間に挟んで連結することにより、 正規表現から形成されます。</p></div>
+<div class="paragraph"><p>たとえば、 パターンが refs/tags/ の場合、 (下記の基準を満たす)すべてのタグが同一の擬似マージ・グループの候補とみなされます。
+ただし、パターンが refs/remotes/([0-9])+/tags/ の場合、 異なるリモートからのタグは、 リモート番号 ([0-9])+
+に基づいて別個の疑似マージ・グループにグループ化されます。</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.decay
+<code>bitmapPseudoMerge.&lt;name&gt;.decay</code>
 </dt>
 <dd>
 <p>
-        Determines the rate at which consecutive pseudo-merge bitmap groups decrease in size. Must be non-negative. This parameter can be thought of as <code>k</code> in the function <code>f</code>(<code>n</code>) <code>=</code> <code>C</code> * <code>n^-k</code>, where <code>f</code>(<code>n</code>) is the size of the `n`th group.
+        連続する擬似マージ・ビットマップ・グループのサイズが減少する速度を決定します。 負ではない必要があります。 このパラメータは、関数 <code>f(n) = C * n^-k</code> の <code>k</code> と考えることができます。 ここで、 <code>f(n)</code> は <code>n</code> 番目のグループのサイズです。
 </p>
-<div class="paragraph"><p>Setting the decay rate equal to <code>0</code> will cause all groups to be the same size. Setting the decay rate equal to <code>1</code> will cause the <code>n</code>`th <code>group</code> <code>to</code> <code>be</code> `1/n the size of the initial group. Higher values of the decay rate cause consecutive groups to shrink at an increasing rate. The default is <code>1</code>.</p></div>
-<div class="paragraph"><p>If all groups are the same size, it is possible that groups containing newer commits will be able to be used less often than earlier groups, since it is more likely that the references pointing at newer commits will be updated more often than a reference pointing at an old commit.</p></div>
+<div class="paragraph"><p>減衰率を「0​​」に設定すると、 すべてのグループが同一サイズになります。 減衰率を「1」に設定すると、「n」番目のグループのサイズが最初のグループの「1/n」になります。 減衰率の値が高くなると、 連続するグループが加速度的に縮小します。 デフォルトは「1」です。</p></div>
+<div class="paragraph"><p>すべてのグループのサイズが同じ場合、 新しいコミットを含むグループは、 以前のグループよりも使用頻度が低くなる可能性があります。 これは、 より新しいコミットを指す参照の方が、 それより古いコミットを指す参照よりも頻繁に更新される可能性が高いためです。。</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.sampleRate
+<code>bitmapPseudoMerge.&lt;name&gt;.sampleRate</code>
 </dt>
 <dd>
 <p>
-        Determines the proportion of non-bitmapped commits (among reference tips) which are selected for inclusion in an unstable pseudo-merge bitmap. Must be between <code>0</code> and <code>1</code> (inclusive). The default is <code>1</code>.
-</p>
-</dd>
-<dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.threshold
-</dt>
-<dd>
-<p>
-        Determines the minimum age of non-bitmapped commits (among reference tips, as above) which are candidates for inclusion in an unstable pseudo-merge bitmap. The default is <code>1.week.ago</code>.
+        不安定(unstable)な疑似マージ・ビットマップに含めるために選択される、(参照先端のうち)ビットマップ化されていないコミットの割合を決定します。 <code>0</code> と <code>1</code> の間 (両端を含む) でなければなりません。デフォルトは <code>1</code> です。
 </p>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.maxMerges
+<code>bitmapPseudoMerge.&lt;name&gt;.threshold</code>
 </dt>
 <dd>
 <p>
-        Determines the maximum number of pseudo-merge commits among which commits may be distributed.
+        不安定(unstable)な疑似マージ・ビットマップに含める候補となる、 ビットマップ化されていないコミット(上記の参照先端のうち)の最小経過期間を決定します。 デフォルトは <code>1.week.ago</code> です。
 </p>
-<div class="paragraph"><p>For pseudo-merge groups whose pattern does not contain any capture groups, this setting is applied for all commits matching the regular expression. For patterns that have one or more capture groups, this setting is applied for each distinct capture group.</p></div>
-<div class="paragraph"><p>For example, if your capture group is <code>refs/tags/</code>, then this setting will distribute all tags into a maximum of <code>maxMerges</code> pseudo-merge commits. However, if your capture group is, say, <code>refs/remotes/</code>([<code>0-9</code>]<code>+</code>)<code>/tags/</code>, then this setting will be applied to each remote&#8217;s set of tags individually.</p></div>
-<div class="paragraph"><p>Must be non-negative. The default value is 64.</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.stableThreshold
+<code>bitmapPseudoMerge.&lt;name&gt;.maxMerges</code>
 </dt>
 <dd>
 <p>
-        Determines the minimum age of commits (among reference tips, as above, however stable commits are still considered candidates even when they have been covered by a bitmap) which are candidates for a stable a pseudo-merge bitmap. The default is <code>1.month.ago</code>.
+        コミットを分散させる擬似マージ・コミットの最大数を決定します。
 </p>
-<div class="paragraph"><p>Setting this threshold to a smaller value (e.g., 1.week.ago) will cause more stable groups to be generated (which impose a one-time generation cost) but those groups will likely become stale over time. Using a larger value incurs the opposite penalty (fewer stable groups which are more useful).</p></div>
+<div class="paragraph"><p>パターンにキャプチャ・グループが含まれていない疑似マージ・グループの場合、 この設定は正規表現にマッチするすべてのコミットに適用されます。 1 つ以上のキャプチャ・グループを持つパターンの場合、 この設定は個別のキャプチャ・グループごとに適用されます。</p></div>
+<div class="paragraph"><p>たとえば、 キャプチャ・グループが refs/tags/ の場合、 この設定により、 すべてのタグが最大 maxMerges 個の疑似マージ・コミットに分散されます。 ただし、 キャプチャ・グループがたとえば refs/remotes/([0-9]+)/tags/ の場合、 この設定は各リモートのタグのセットに個別に適用されます。</p></div>
+<div class="paragraph"><p>値は負ではない必要があります。 デフォルト値は 64 です。</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.stableSize
+<code>bitmapPseudoMerge.&lt;name&gt;.stableThreshold</code>
 </dt>
 <dd>
 <p>
-        Determines the size (in number of commits) of a stable psuedo-merge bitmap. The default is <code>512</code>.
+        安定(stable)した疑似マージ・ビットマップの候補であるコミットの最小経過期間を決定します(上記の参照先端の中で。 ただし、 安定した(stable)コミットは既にビットマップでカバーされている場合でも候補とみなされます)。 デフォルトは <code>1.month.ago</code> です。
+</p>
+<div class="paragraph"><p>このしきい値をより小さい値(<code>1.week.ago</code> など)に設定すると、 より安定したグループ(more stable groups)が生成されますが(毎回の生成コストがかかります)、 それらのグループは時間の経過とともに古くなってしまう可能性があります。 より大きな値を使用すると、 逆のペナルティが発生します(安定したグループが少なくなり、 より役に立つようになります)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>bitmapPseudoMerge.&lt;name&gt;.stableSize</code>
+</dt>
+<dd>
+<p>
+        安定(stable)した疑似マージ・ビットマップ(psuedo-merge bitmap)のサイズ(コミット数)を指定します。 デフォルトは 512 です。
 </p>
 </dd>
 </dl></div>
@@ -939,7 +943,7 @@ bitmapPseudoMerge.&lt;name&gt;.stableSize
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-05 16:52:55 JST
+ 2025-01-07 06:02:40 JST
 </div>
 </div>
 </body>
