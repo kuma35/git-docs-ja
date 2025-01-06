@@ -2320,68 +2320,72 @@ attr.tree
 </div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.pattern
+<code>bitmapPseudoMerge.&lt;name&gt;.pattern</code>
 </dt>
 <dd>
 <p>
-        Regular expression used to match reference names. Commits pointed to by references matching this pattern (and meeting the below criteria, like <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.sampleRate</code> and <code>bitmapPseudoMerge.</code><em>&lt;name&gt;</em><code>.threshold</code>) will be considered for inclusion in a pseudo-merge bitmap.
+        参照名にマッチさせるために使用される正規表現。このパターンに一致するコミット(および下記の
+        <code>bitmapPseudoMerge.&lt;name&gt;.sampleRate</code> や <code>bitmapPseudoMerge.&lt;name&gt;.threshold</code>
+        などの基準を満たすコミット)は、 擬似マージ・ビットマップ(pseudo-merge bitmap)に含めることができるとみなされます。
 </p>
-<div class="paragraph"><p>Commits are grouped into pseudo-merge groups based on whether or not any reference(s) that point at a given commit match the pattern, which is an extended regular expression.</p></div>
-<div class="paragraph"><p>Within a pseudo-merge group, commits may be further grouped into sub-groups based on the capture groups in the pattern. These sub-groupings are formed from the regular expressions by concatenating any capture groups from the regular expression, with a <em>-</em> dash in between.</p></div>
-<div class="paragraph"><p>For example, if the pattern is <code>refs/tags/</code>, then all tags (provided they meet the below criteria) will be considered candidates for the same pseudo-merge group. However, if the pattern is instead <code>refs/remotes/</code>([<code>0-9</code>])<code>+/tags/</code>, then tags from different remotes will be grouped into separate pseudo-merge groups, based on the remote number.</p></div>
+<div class="paragraph"><p>コミット達は、 特定のコミットを指す参照がパターン(拡張正規表現)にマッチするかどうかに基づいて、 擬似マージ・グループにグループ化されます。</p></div>
+<div class="paragraph"><p>擬似マージ・グループ内では、 パターン内のキャプチャ・グループに基づいてコミットをさらにサブ・グループにグループ化できます。 これらのサブ・グループ名は、 正規表現のキャプチャ・グループを <code>-</code>(ダッシュ)を間に挟んで連結することにより、 正規表現から形成されます。</p></div>
+<div class="paragraph"><p>たとえば、 パターンが refs/tags/ の場合、 (下記の基準を満たす)すべてのタグが同一の擬似マージ・グループの候補とみなされます。
+ただし、パターンが refs/remotes/([0-9])+/tags/ の場合、 異なるリモートからのタグは、 リモート番号 ([0-9])+
+に基づいて別個の疑似マージ・グループにグループ化されます。</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.decay
+<code>bitmapPseudoMerge.&lt;name&gt;.decay</code>
 </dt>
 <dd>
 <p>
-        Determines the rate at which consecutive pseudo-merge bitmap groups decrease in size. Must be non-negative. This parameter can be thought of as <code>k</code> in the function <code>f</code>(<code>n</code>) <code>=</code> <code>C</code> * <code>n^-k</code>, where <code>f</code>(<code>n</code>) is the size of the `n`th group.
+        連続する擬似マージ・ビットマップ・グループのサイズが減少する速度を決定します。 負ではない必要があります。 このパラメータは、関数 <code>f(n) = C * n^-k</code> の <code>k</code> と考えることができます。 ここで、 <code>f(n)</code> は <code>n</code> 番目のグループのサイズです。
 </p>
-<div class="paragraph"><p>Setting the decay rate equal to <code>0</code> will cause all groups to be the same size. Setting the decay rate equal to <code>1</code> will cause the <code>n</code>`th <code>group</code> <code>to</code> <code>be</code> `1/n the size of the initial group. Higher values of the decay rate cause consecutive groups to shrink at an increasing rate. The default is <code>1</code>.</p></div>
-<div class="paragraph"><p>If all groups are the same size, it is possible that groups containing newer commits will be able to be used less often than earlier groups, since it is more likely that the references pointing at newer commits will be updated more often than a reference pointing at an old commit.</p></div>
+<div class="paragraph"><p>減衰率を「0​​」に設定すると、 すべてのグループが同一サイズになります。 減衰率を「1」に設定すると、「n」番目のグループのサイズが最初のグループの「1/n」になります。 減衰率の値が高くなると、 連続するグループが加速度的に縮小します。 デフォルトは「1」です。</p></div>
+<div class="paragraph"><p>すべてのグループのサイズが同じ場合、 新しいコミットを含むグループは、 以前のグループよりも使用頻度が低くなる可能性があります。 これは、 より新しいコミットを指す参照の方が、 それより古いコミットを指す参照よりも頻繁に更新される可能性が高いためです。。</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.sampleRate
+<code>bitmapPseudoMerge.&lt;name&gt;.sampleRate</code>
 </dt>
 <dd>
 <p>
-        Determines the proportion of non-bitmapped commits (among reference tips) which are selected for inclusion in an unstable pseudo-merge bitmap. Must be between <code>0</code> and <code>1</code> (inclusive). The default is <code>1</code>.
-</p>
-</dd>
-<dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.threshold
-</dt>
-<dd>
-<p>
-        Determines the minimum age of non-bitmapped commits (among reference tips, as above) which are candidates for inclusion in an unstable pseudo-merge bitmap. The default is <code>1.week.ago</code>.
+        不安定(unstable)な疑似マージ・ビットマップに含めるために選択される、(参照先端のうち)ビットマップ化されていないコミットの割合を決定します。 <code>0</code> と <code>1</code> の間 (両端を含む) でなければなりません。デフォルトは <code>1</code> です。
 </p>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.maxMerges
+<code>bitmapPseudoMerge.&lt;name&gt;.threshold</code>
 </dt>
 <dd>
 <p>
-        Determines the maximum number of pseudo-merge commits among which commits may be distributed.
+        不安定(unstable)な疑似マージ・ビットマップに含める候補となる、 ビットマップ化されていないコミット(上記の参照先端のうち)の最小経過期間を決定します。 デフォルトは <code>1.week.ago</code> です。
 </p>
-<div class="paragraph"><p>For pseudo-merge groups whose pattern does not contain any capture groups, this setting is applied for all commits matching the regular expression. For patterns that have one or more capture groups, this setting is applied for each distinct capture group.</p></div>
-<div class="paragraph"><p>For example, if your capture group is <code>refs/tags/</code>, then this setting will distribute all tags into a maximum of <code>maxMerges</code> pseudo-merge commits. However, if your capture group is, say, <code>refs/remotes/</code>([<code>0-9</code>]<code>+</code>)<code>/tags/</code>, then this setting will be applied to each remote&#8217;s set of tags individually.</p></div>
-<div class="paragraph"><p>Must be non-negative. The default value is 64.</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.stableThreshold
+<code>bitmapPseudoMerge.&lt;name&gt;.maxMerges</code>
 </dt>
 <dd>
 <p>
-        Determines the minimum age of commits (among reference tips, as above, however stable commits are still considered candidates even when they have been covered by a bitmap) which are candidates for a stable a pseudo-merge bitmap. The default is <code>1.month.ago</code>.
+        コミットを分散させる擬似マージ・コミットの最大数を決定します。
 </p>
-<div class="paragraph"><p>Setting this threshold to a smaller value (e.g., 1.week.ago) will cause more stable groups to be generated (which impose a one-time generation cost) but those groups will likely become stale over time. Using a larger value incurs the opposite penalty (fewer stable groups which are more useful).</p></div>
+<div class="paragraph"><p>パターンにキャプチャ・グループが含まれていない疑似マージ・グループの場合、 この設定は正規表現にマッチするすべてのコミットに適用されます。 1 つ以上のキャプチャ・グループを持つパターンの場合、 この設定は個別のキャプチャ・グループごとに適用されます。</p></div>
+<div class="paragraph"><p>たとえば、 キャプチャ・グループが refs/tags/ の場合、 この設定により、 すべてのタグが最大 maxMerges 個の疑似マージ・コミットに分散されます。 ただし、 キャプチャ・グループがたとえば refs/remotes/([0-9]+)/tags/ の場合、 この設定は各リモートのタグのセットに個別に適用されます。</p></div>
+<div class="paragraph"><p>値は負ではない必要があります。 デフォルト値は 64 です。</p></div>
 </dd>
 <dt class="hdlist1">
-bitmapPseudoMerge.&lt;name&gt;.stableSize
+<code>bitmapPseudoMerge.&lt;name&gt;.stableThreshold</code>
 </dt>
 <dd>
 <p>
-        Determines the size (in number of commits) of a stable psuedo-merge bitmap. The default is <code>512</code>.
+        安定(stable)した疑似マージ・ビットマップの候補であるコミットの最小経過期間を決定します(上記の参照先端の中で。 ただし、 安定した(stable)コミットは既にビットマップでカバーされている場合でも候補とみなされます)。 デフォルトは <code>1.month.ago</code> です。
+</p>
+<div class="paragraph"><p>このしきい値をより小さい値(<code>1.week.ago</code> など)に設定すると、 より安定したグループ(more stable groups)が生成されますが(毎回の生成コストがかかります)、 それらのグループは時間の経過とともに古くなってしまう可能性があります。 より大きな値を使用すると、 逆のペナルティが発生します(安定したグループが少なくなり、 より役に立つようになります)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>bitmapPseudoMerge.&lt;name&gt;.stableSize</code>
+</dt>
+<dd>
+<p>
+        安定(stable)した疑似マージ・ビットマップ(psuedo-merge bitmap)のサイズ(コミット数)を指定します。 デフォルトは 512 です。
 </p>
 </dd>
 <dt class="hdlist1">
