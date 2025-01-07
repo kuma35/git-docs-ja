@@ -1,30 +1,30 @@
 reftable.blockSize::
-	The size in bytes used by the reftable backend when writing blocks. The block size is determined by the writer, and does not have to be a power of 2. The block size must be larger than the longest reference name or log entry used in the repository, as references cannot span blocks.
+	ブロックを書き込むときに reftable バックエンドによって使用されるバイト単位のサイズ。 ブロック・サイズは書込器(writer)によって決定され、 2 の累乗である必要はありません。 参照は複数のブロックにまたがることはできないため、 ブロック・サイズはリポジトリで使用される最長の参照名またはログ・エントリより大きくなければなりません。
 +
-Powers of two that are friendly to the virtual memory system or filesystem (such as 4kB or 8kB) are recommended. Larger sizes (64kB) can yield better compression, with a possible increased cost incurred by readers during access.
+仮想メモリ・システムまたはファイル・システムに優しい 2 のべき乗(4kB や 8kB など)が推奨されます。 サイズがより大きく(64kB)なると、 圧縮率が向上しますが、アクセス中に読取器(reader)にかかるコストが増加する可能性があります。
 +
-The largest block size is `16777215` bytes (15.99 MiB). The default value is `4096` bytes (4kB). A value of `0` will use the default value.
+最大ブロック・サイズは 16777215 バイト(15.99 MiB)です。 デフォルト値は 4096 バイト(4kB)です。 値「0」を指定した場合はデフォルト値を使用します。
 
 reftable.restartInterval::
-	The interval at which to create restart points. The reftable backend determines the restart points at file creation. Every 16 may be more suitable for smaller block sizes (4k or 8k), every 64 for larger block sizes (64k).
+	再開ポイントを作成する間隔。 ファイル作成時の再開ポイントは reftable バックエンドが決めます。 小さいブロック・サイズ(4k または 8k)には 16 ごと、 大きいブロック・サイズ(64k)には 64 ごとが好ましいです。
 +
-More frequent restart points reduces prefix compression and increases space consumed by the restart table, both of which increase file size.
+再開ポイントをより頻繁に作るようにすると、 プレフィックスの圧縮が減り、 再開テーブル(restart table)によって消費されるスペースが増加します。 その両方によりファイル・サイズが増加します。
 +
-Less frequent restart points makes prefix compression more effective, decreasing overall file size, with increased penalties for readers walking through more records after the binary search step.
+再開ポイントの頻度が減ると、 プレフィックス圧縮がより効果的になり、 全体のファイル・サイズが現象しますが、 二分検索ステップの後に多くのレコードを閲覧する読取器(readers)では不利益が増加します。
 +
-A maximum of `65535` restart points per block is supported.
+1ブロックあたり最大 65535 の再スタート点がサポートされています。
 +
-The default value is to create restart points every 16 records. A value of `0` will use the default value.
+デフォルト値では、 16 レコードごとに再スタート点が作成されます。 値「0」を設定した場合、 デフォルト値を使用します。
 
 reftable.indexObjects::
-	Whether the reftable backend shall write object blocks. Object blocks are a reverse mapping of object ID to the references pointing to them.
+	reftable バックエンドがオブジェクト・ブロックを書き込むかどうか。 オブジェクト・ブロックは、 オブジェクト ID を、 それらを指す参照に逆マッピングしたものです。
 +
-The default value is `true`.
+デフォルト値は `true` です。
 
 reftable.geometricFactor::
-	Whenever the reftable backend appends a new table to the stack, it performs auto compaction to ensure that there is only a handful of tables. The backend does this by ensuring that tables form a geometric sequence regarding the respective sizes of each table.
+	reftable バックエンドが新しいテーブルをスタックに追加するたびに、 自動圧縮を実行してテーブルが少量になるようにします。 バックエンドは、 テーブルが各テーブルのそれぞれのサイズに関して等比数列(geometric sequence)を形成することを保証することによってこれを行います。
 +
-By default, the geometric sequence uses a factor of 2, meaning that for any table, the next-biggest table must at least be twice as big. A maximum factor of 256 is supported.
+デフォルトでは、 等比数列は係数 2 を使用します。 これは、 どのテーブルでも、 次に大きいテーブルは少なくとも 2 倍の大きさでなければならないことを意味します。 係数は最大 256 がサポートされています。
 
 reftable.lockTimeout::
-	Whenever the reftable backend appends a new table to the stack, it has to lock the central "tables.list" file before updating it. This config controls how long the process will wait to acquire the lock in case another process has already acquired it. Value 0 means not to retry at all; -1 means to try indefinitely. Default is 100 (i.e., retry for 100ms).
+	reftable バックエンドが新しいテーブルをスタックに追加するときは常に、 中央の `tables.list` ファイルを更新する前にロックする必要があります。 この構成は、 別のプロセスがすでにロックを取得している場合に、 プロセスがロックを取得するまで待機する時間を制御します。 値 0 は、 まったく再試行しないことを意味します。 -1 は無期限に試行することを意味します。 デフォルトは 100(つまり、100 ミリ秒再試行)です。
