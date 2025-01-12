@@ -140,7 +140,7 @@ $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
 
 
 $(SEDOUT_FILES): $(SEDOUT_DIR)/%$(SEDOUT_EXT) : $(SRC_DIR)/%$(ASCIIDOC_EXT)
-	gawk -f ./pre-gettext.awk < $< > $@
+	sed -f ./protect-opt-dash.sed $< | gawk -f ./pre-gettext.awk > $@
 
 # --no-translations --no-update は変更無しの時タイムスタンプ更新しないので
 # touch --no-create して強制更新する
