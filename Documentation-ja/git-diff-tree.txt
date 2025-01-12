@@ -8,7 +8,7 @@ git-diff-tree - 2つのツリーオブジェクト間で、ブロブの内容と
 
 SYNOPSIS
 --------
-[verse]
+[synopsis]
 'git diff-tree' [--stdin] [-m] [-s] [-v] [--no-commit-id] [--pretty]
 	      [-t] [-r] [-c | --cc] [--combined-all-paths] [--root] [--merge-base]
 	      [<common-diff-options>] <tree-ish> [<tree-ish>] [<path>...]
@@ -31,20 +31,27 @@ include::diff-options.txt[]
 <path>...::
 	<path>... が提供された場合、結果は提供されたパススペックの1つに一致するファイルのサブセットに制限されます。
 
-`-r`::
+`-r::`
 	Recurse into sub-trees.
 
-`-t`::
-	Show tree entry itself as well as subtrees. Implies -r.
+`-t::`
+	Show tree entry itself as well as subtrees.  Implies -r.
 
-`--root`::
-	`--root` が指定されている場合、最初のコミット(initial commit)は大きな作成イベント(big creation event)として表示されます。これは、NULLツリーに対する差分と同等です。
+`--root::`
+	When `--root` is specified the initial commit will be shown as a big
+	creation event. This is equivalent to a diff against the NULL tree.
 
-`--merge-base`::
-	<tree-ish>を直接比較する代わりに、2つの<tree-ish>間のマージベースをbefore側として使用します。2つの<tree-ish>が指定されている必要があり、両方ともコミットである必要があります。
+`--merge-base::`
+	Instead of comparing the <tree-ish>s directly, use the merge
+	base between the two <tree-ish>s as the "before" side.  There
+	must be two <tree-ish>s given and they must both be commits.
 
-`--stdin`::
-	`--stdin`が指定されている場合、コマンドはコマンドラインから<tree-ish>引数を取りません。代わりに、2つの<tree> または 1つの<commit> または <commit>のリストのいずれかを含む行を標準入力から読み取ります。（区切り文字として空白1文字を使用します。）
+`--stdin::`
+	When `--stdin` is specified, the command does not take
+	<tree-ish> arguments from the command line.  Instead, it
+	reads lines containing either two <tree>, one <commit>, or a
+	list of <commit> from its standard input.  (Use a single space
+	as separator.)
 +
 2つのツリーが与えられると、最初のツリーと2番目のツリーが比較されます。単一のコミットが与えられると、そのコミットをその親と比較します。 残りのコミットは、指定されると、最初のコミットの親であるかのように使用されます。
 +
@@ -52,31 +59,58 @@ include::diff-options.txt[]
 +
 以下のフラグは、(ツリーではなく、)コミットを比較するときの動作に影響します。
 
-`-m`::
-	デフォルトでは、 `git diff-tree --stdin` はマージコミットの違いを表示しません。 このフラグを使用すると、すべての親からのコミットとの違いが示されます。 `-c` も参照してください。
+`-m::`
+	By default, 'git diff-tree --stdin' does not show
+	differences for merge commits.  With this flag, it shows
+	differences to that commit from all of its parents. See
+	also `-c`.
 
-`-s`::
-	By default, 'git diff-tree --stdin' shows differences, either in machine-readable form (without `-p`) or in patch form (with `-p`). This output can be suppressed. It is only useful with the `-v` flag.
+`-s::`
+	By default, 'git diff-tree --stdin' shows differences,
+	either in machine-readable form (without `-p`) or in patch
+	form (with `-p`).  This output can be suppressed.  It is
+	only useful with the `-v` flag.
 
-`-v`::
-	このフラグにより、 `git diff-tree --stdin` は、違いの前にコミットメッセージも表示します。
+`-v::`
+	This flag causes 'git diff-tree --stdin' to also show
+	the commit message before the differences.
 
 include::pretty-options.txt[]
 
-`--no-commit-id`::
-	'git diff-tree' outputs a line with the commit ID when applicable. This flag suppresses the commit ID output.
+`--no-commit-id::`
+	'git diff-tree' outputs a line with the commit ID when
+	applicable.  This flag suppresses the commit ID output.
 
-`-c`::
-	このフラグは、マージコミットの表示方法を変更します(つまり、コマンドに1つの <tree-ish> 、または `--stdin` が指定されている場合にのみ役立ちます)。これは、親と結果を一度に1つずつ表示するのではなく、各親とマージ結果の違いを同時に表示します(これは、 `-m` オプションが行うことです)。さらに、すべての親から変更されたファイルのみが一覧表示されます。
+`-c::`
+	This flag changes the way a merge commit is displayed
+	(which means it is useful only when the command is given
+	one <tree-ish>, or `--stdin`).  It shows the differences
+	from each of the parents to the merge result simultaneously
+	instead of showing pairwise diff between a parent and the
+	result one at a time (which is what the `-m` option does).
+	Furthermore, it lists only files which were modified
+	from all parents.
 
-`--cc`::
-	This flag changes the way a merge commit patch is displayed, in a similar way to the `-c` option. It implies the `-c` and `-p` options and further compresses the patch output by omitting uninteresting hunks whose contents in the parents have only two variants and the merge result picks one of them without modification. When all hunks are uninteresting, the commit itself and the commit log message are not shown, just like in any other "empty diff" case.
+`--cc::`
+	This flag changes the way a merge commit patch is displayed,
+	in a similar way to the `-c` option. It implies the `-c`
+	and `-p` options and further compresses the patch output
+	by omitting uninteresting hunks whose contents in the parents
+	have only two variants and the merge result picks one of them
+	without modification.  When all hunks are uninteresting, the commit
+	itself and the commit log message are not shown, just like in any other
+	"empty diff" case.
 
-`--combined-all-paths`::
-	このフラグにより、結合された差分(combined diff)(マージコミットに使用)にすべての親からのファイルの名前が一覧表示されます。したがって、 `-c` または `--cc` が指定されている場合にのみ有効であり、ファイル名の変更が検出された場合(つまり、名前変更またはコピーの検出が要求された場合)にのみ役立つ可能性があります。
+`--combined-all-paths::`
+	This flag causes combined diffs (used for merge commits) to
+	list the name of the file from all parents.  It thus only has
+	effect when -c or --cc are specified, and is likely only
+	useful if filename changes are detected (i.e. when either
+	rename or copy detection have been requested).
 
-`--always`::
-	差分自体が空の場合でも、コミット自体とコミットログメッセージを表示します。
+`--always::`
+	Show the commit itself and the commit log message even
+	if the diff itself is empty.
 
 
 include::pretty-formats.txt[]

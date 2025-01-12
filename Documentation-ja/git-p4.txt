@@ -8,11 +8,11 @@ git-p4 - Perforceリポジトリからのインポートと、Perforceリポジ�
 
 SYNOPSIS
 --------
-[verse]
-'git p4 clone' [<sync-options>] [<clone-options>] <p4-depot-path>...
-'git p4 sync' [<sync-options>] [<p4-depot-path>...]
-'git p4 rebase'
-'git p4 submit' [<submit-options>] [<master-branch-name>]
+[synopsis]
+	'git p4 clone' [<sync-options>] [<clone-options>] <p4-depot-path>...
+	'git p4 sync' [<sync-options>] [<p4-depot-path>...]
+	'git p4 rebase'
+	'git p4 submit' [<submit-options>] [<master-branch-name>]
 
 
 DESCRIPTION
@@ -163,19 +163,21 @@ General options
 ~~~~~~~~~~~~~~~
 cloneを除くすべてのコマンドは、これらのオプションを受け入れます。
 
-`--git-dir <dir>`::
-	`GIT_DIR` 環境変数を設定します。 linkgit:git[1] 参照。
+`--git-dir`
+	Set the `GIT_DIR` environment variable.  See linkgit:git[1].
 
-`-v`::
-`--verbose`::
-	より多くの進捗情報を提供します。
+`-v::`
+`--verbose::`
+	Provide more progress information.
 
 Sync options
 ~~~~~~~~~~~~
 これらのオプションは、最初の「クローン」(clone)操作と後続の「同期」(sync)操作で使用できます。
 
-`--branch <ref>`::
-	変更を `refs/remotes/p4/master` ではなく <ref> にインポートします。 <ref>が `refs/` で始まる場合は、そのまま使用されます。それ以外の場合、 `p4/` で始まらない場合は、その接頭辞が追加されます。
+`--branch`
+	Import changes into <ref> instead of refs/remotes/p4/master.
+	If <ref> starts with refs/, it is used as is.  Otherwise, if
+	it does not start with p4/, that prefix is added.
 +
 デフォルトでは、 `refs/` で始まらない<ref>は、リモート追跡ブランチの名前として扱われます(`refs/remotes/` の下)。この動作は、 `--import-local` オプションを使用して変更できます。
 +
@@ -188,92 +190,145 @@ Sync options
     $ git p4 sync --branch=refs/remotes/p4/proj2 //depot/proj2
 ----
 
-`--detect-branches`::
-	ブランチ検出アルゴリズムを使用して、p4の新しいパスを見つけます。 これは、以下の「BRANCH DETECTION」で解説してあります。
+`--detect-branches::`
+	Use the branch detection algorithm to find new paths in p4.  It is
+	documented below in "BRANCH DETECTION".
 
-`--changesfile <file>`::
-	<file> にリストされているp4変更番号(p4 change numbers)を1行に1つずつ正確にインポートします。 通常、 `git p4` は、現在のp4リポジトリの状態を検査し、インポートする必要のある変更を検出します。
+`--changesfile`
+	Import exactly the p4 change numbers listed in 'file', one per
+	line.  Normally, 'git p4' inspects the current p4 repository
+	state and detects the changes it should import.
 
-`--silent`::
-	進捗情報を出力しません。
+`--silent::`
+	Do not print any progress information.
 
-`--detect-labels`::
-	デポパス(depot paths)に関連付けられているラベルをp4に問い合わせ、Gitにタグとして追加します。新しいチェンジリストに関連付けられたラベルのみをインポートするため、有用性は限られています。非推奨です。
+`--detect-labels::`
+	Query p4 for labels associated with the depot paths, and add
+	them as tags in Git. Limited usefulness as only imports labels
+	associated with new changelists. Deprecated.
 
-`--import-labels`::
-	p4からGitにラベルをインポートします。
+`--import-labels::`
+	Import labels from p4 into Git.
 
-`--import-local`::
-	デフォルトでは、p4ブランチは `refs/remotes/p4/` に保存され、 linkgit:git-branch[1] およびその他のコマンドによってリモート追跡ブランチとして扱われます。 このオプションは、代わりにp4ブランチを `refs/heads/p4/` に配置します。このオプション使用後、今後の同期操作では、 `refs/heads` でp4ブランチを見つけることができるように、 `--import-local` も指定する必要があることに注意してください。
+`--import-local::`
+	By default, p4 branches are stored in 'refs/remotes/p4/',
+	where they will be treated as remote-tracking branches by
+	linkgit:git-branch[1] and other commands.  This option instead
+	puts p4 branches in 'refs/heads/p4/'.  Note that future
+	sync operations must specify `--import-local` as well so that
+	they can find the p4 branches in refs/heads.
 
-`--max-changes <n>`::
-	指定されたリビジョン指定子(revision specifier)に含まれる変更の全範囲ではなく、最大で <n> 個の変更をインポートします。通常の使用法は、リビジョン指定子として `@all` を使用しますが、 `--max-changes 1000` を使用して、リビジョン履歴全体ではなく、最後の1000リビジョンのみをインポートします。
+`--max-changes`
+	Import at most 'n' changes, rather than the entire range of
+	changes included in the given revision specifier. A typical
+	usage would be use '@all' as the revision specifier, but then
+	to use '--max-changes 1000' to import only the last 1000
+	revisions rather than the entire revision history.
 
-`--changes-block-size <n>`::
-	`@all` などのリビジョン指定子を特定の変更番号のリストに変換するときに使用する内部ブロックサイズ。変換の変更の完全なリストを見つけるために `p4 changes` への単一の呼び出しを使用する代わりに、 `p4 changes -m` への一連の呼び出しがあり、それぞれが指定のサイズの変更の1ブロックを要求します。デフォルトのブロックサイズは500で、通常はこれが適切です。
+`--changes-block-size`
+	The internal block size to use when converting a revision
+	specifier such as '@all' into a list of specific change
+	numbers. Instead of using a single call to 'p4 changes' to
+	find the full list of changes for the conversion, there are a
+	sequence of calls to 'p4 changes -m', each of which requests
+	one block of changes of the given size. The default block size
+	is 500, which should usually be suitable.
 
-`--keep-path`::
-	デフォルトでは、p4デポパスからGitへのファイル名のマッピングには、デポパス全体の削除が含まれます。このオプションを使用すると、完全なp4デポパスがGitに保持されます。 たとえば、パス `//depot/main/foo/bar.c` は、 `//depot/main/` からインポートすると、 `foo/bar.c` になります。 `--keep-path`を使用すると、Gitパスは代わりに `depot/main/foo/bar.c` になります。
+`--keep-path::`
+	The mapping of file names from the p4 depot path to Git, by
+	default, involves removing the entire depot path.  With this
+	option, the full p4 depot path is retained in Git.  For example,
+	path '//depot/main/foo/bar.c', when imported from
+	'//depot/main/', becomes 'foo/bar.c'.  With `--keep-path`, the
+	Git path is instead 'depot/main/foo/bar.c'.
 
-`--use-client-spec`::
-	クライアント仕様(client spec)を使用して、p4でinterestingファイルのリストを見つけます。以下の「CLIENT SPEC」セクションを参照してください。
+`--use-client-spec::`
+	Use a client spec to find the list of interesting files in p4.
+	See the "CLIENT SPEC" section below.
 
-`-/ <path>`::
-	クローン作成または同期時に、選択したデポパスを除外します。
+`-/`
+	Exclude selected depot paths when cloning or syncing.
 
 Clone options
 ~~~~~~~~~~~~~
 これらのオプションは、上記の「sync」オプションとともに、最初の「clone」で使用できます。
 
-`--destination <directory>`::
-	Gitリポジトリを作成する場所。 指定しない場合、p4デポパス(p4 depot path)の最後のコンポーネントを使用して新しいディレクトリを作成します。
+`--destination`
+	Where to create the Git repository.  If not provided, the last
+	component in the p4 depot path is used to create a new
+	directory.
 
-`--bare`::
-	ベアクローン(bare clone)を実行します。 linkgit:git-clone[1] を参照してください。
+`--bare::`
+	Perform a bare clone.  See linkgit:git-clone[1].
 
 Submit options
 ~~~~~~~~~~~~~~
 これらのオプションを使用して、「git p4 submit」の動作を変更できます。
 
-`--origin <commit>`::
-	p4に送信するコミットが識別される上流の場所。デフォルトでは、これは `HEAD` から到達可能な最新のp4コミットです。
+`--origin`
+	Upstream location from which commits are identified to submit to
+	p4.  By default, this is the most recent p4 commit reachable
+	from `HEAD`.
 
-`-M`::
-	名前の変更(renames)を検出します。 linkgit:git-diff[1] を参照してください。名前の変更は、p4ででは明示的な「移動」操作を使用して表されます。コピーを検出するための対応するオプションはありませんが、移動とコピーの両方に変数があります。
+`-M::`
+	Detect renames.  See linkgit:git-diff[1].  Renames will be
+	represented in p4 using explicit 'move' operations.  There
+	is no corresponding option to detect copies, but there are
+	variables for both moves and copies.
 
-`--preserve-user`::
-	p4に送信する前に、p4の変更を再作成(re-author)してください。このオプションには、p4管理者権限が必要です。
+`--preserve-user::`
+	Re-author p4 changes before submitting to p4.  This option
+	requires p4 admin privileges.
 
-`--export-labels`::
-	Gitからタグをp4ラベルとしてエクスポートします。Gitで見つかったタグは、perforce 作業ディレクトリに適用されます。
+`--export-labels::`
+	Export tags from Git as p4 labels. Tags found in Git are applied
+	to the perforce working directory.
 
-`-n`::
-`--dry-run`::
-	どのコミットがp4に送信されるかだけを表示します。Gitまたはp4の状態を変更しないでください。
+`-n::`
+`--dry-run::`
+	Show just what commits would be submitted to p4; do not change
+	state in Git or p4.
 
-`--prepare-p4-only`::
-	通常の送信操作と同様に、p4ワークスペースにコミットを適用し、p4でファイルを開いたり、追加したり、削除したりします。 最後の「p4送信」を発行しません。代わりに、手動で送信する方法または元に戻す方法に関するメッセージを表示します。このオプションは、最初の(最も古い)コミット後に常に停止(stop)します。Gitタグはp4にエクスポートされません。
+`--prepare-p4-only::`
+	Apply a commit to the p4 workspace, opening, adding and deleting
+	files in p4 as for a normal submit operation.  Do not issue the
+	final "p4 submit", but instead print a message about how to
+	submit manually or revert.  This option always stops after the
+	first (oldest) commit.  Git tags are not exported to p4.
 
-`--shelve`::
-	送信する代わりに、一連の棚上げされたチェンジリスト(shelved changelists)を作成します。各シェルフ(shelve)を作成した後、関連するファイルは元に戻され(revert)/削除(delete)されます。保留中のコミットが複数ある場合は、複数のシェルフが作成されます。
+`--shelve::`
+	Instead of submitting create a series of shelved changelists.
+	After creating each shelve, the relevant files are reverted/deleted.
+	If you have multiple commits pending multiple shelves will be created.
 
-`--update-shelve CHANGELIST`::
-	このコミットで既存の棚上げされたチェンジリスト(shelved changelist)を更新します。 `--shelve` の指定を含んでいます。複数の棚上げされたチェンジリストに対して繰り返します。
+`--update-shelve`
+	Update an existing shelved changelist with this commit. Implies
+	--shelve. Repeat for multiple shelved changelists.
 
-`--conflict=(ask|skip|quit)`::
-	p4にコミットを適用すると、競合が発生する可能性があります。 これが発生した場合、デフォルトの動作("ask")は、このコミットをスキップして続行するか、終了するかを尋ねる動作です。このオプションを使用すると、プロンプトをバイパスして、競合するコミットを自動的にスキップしたり、プロンプトを表示せずにコミットの適用を中止(quit)したりできます。
+`--conflict=(ask|skip|quit)::`
+	Conflicts can occur when applying a commit to p4.  When this
+	happens, the default behavior ("ask") is to prompt whether to
+	skip this commit and continue, or quit.  This option can be used
+	to bypass the prompt, causing conflicting commits to be automatically
+	skipped, or to quit trying to apply commits, without prompting.
 
-`--branch <branch>`::
-	送信後、デフォルトの p4/master の代わりに、この名前付きブランチを同期します。詳細については、上記の「Sync options」セクションを参照してください。
+`--branch`
+	After submitting, sync this named branch instead of the default
+	p4/master.  See the "Sync options" section above for more
+	information.
 
-`--commit (<sha1>|<sha1>..<sha1>)`::
-    現在のGitブランチにある変更の完全なリストではなく、指定されたコミットまたはコミットの範囲のみを送信します。
+`--commit`
+    Submit only the specified commit or range of commits, instead of the full
+    list of changes that are in the current Git branch.
 
-`--disable-rebase`::
-    すべてのコミットが正常に送信された後の自動リベースを無効にします。 git-p4.disableRebase で設定することもできます。
+`--disable-rebase::`
+    Disable the automatic rebase after all commits have been successfully
+    submitted. Can also be set with git-p4.disableRebase.
 
-`--disable-p4sync`::
-    コミットが送信された後、Perforceからのp4/masterの自動同期を無効にします。 `--disable-rebase` の指定を含んでいます。git-p4.disableP4Sync で設定することもできます。 可能であれば、 origin/master との同期は引き続き続行されます。
+`--disable-p4sync::`
+    Disable the automatic sync of p4/master from Perforce after commits have
+    been submitted. Implies --disable-rebase. Can also be set with
+    git-p4.disableP4Sync. Sync with origin/master still goes ahead if possible.
 
 Hooks for submit
 ----------------
@@ -310,14 +365,15 @@ Rebase options
 ~~~~~~~~~~~~~~
 これらのオプションを使用して、「git p4 rebase」の動作を変更できます。
 
-`--import-labels`::
-	p4ラベルのインポート。
+`--import-labels::`
+	Import p4 labels.
 
 Unshelve options
 ~~~~~~~~~~~~~~~~
 
-`--origin`::
-    棚上げされたP4チェンジリスト(shelved P4 changelist)が比較される git refspec を設定します。デフォルトは p4/master です。
+`--origin::`
+    Sets the git refspec against which the shelved P4 changelist is compared.
+    Defaults to p4/master.
 
 DEPOT PATH SYNTAX
 -----------------

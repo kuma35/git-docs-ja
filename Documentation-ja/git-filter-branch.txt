@@ -7,7 +7,7 @@ git-filter-branch - ブランチを書き換えます
 
 SYNOPSIS
 --------
-[verse]
+[synopsis]
 'git filter-branch' [--setup <command>] [--subdirectory-filter <directory>]
 	[--env-filter <command>] [--tree-filter <command>]
 	[--index-filter <command>] [--parent-filter <command>]
@@ -48,29 +48,59 @@ Filters
 OPTIONS
 -------
 
-`--setup <command>`::
-	これは、コミットごとに実行される実際のフィルターではなく、ループの直前に1回だけセットアップされます。 したがって、このフィルターコマンドではコミット固有の変数はまだ定義されていません。 ここで定義された関数または変数は、技術的な理由により、コミットフィルターを除く次のフィルターステップで使用または変更できます。
+`--setup`
+	This is not a real filter executed for each commit but a one
+	time setup just before the loop. Therefore no commit-specific
+	variables are defined yet.  Functions or variables defined here
+	can be used or modified in the following filter steps except
+	the commit filter, for technical reasons.
 
-`--subdirectory-filter <directory>`::
-	指定のサブディレクトリにアクセスする履歴のみを探してください。 結果には、そのディレクトリ(かつ、それのみ)がプロジェクトルートとして含まれます。 <<Remap_to_ancestor>> を含んでいます。
+`--subdirectory-filter`
+	Only look at the history which touches the given subdirectory.
+	The result will contain that directory (and only that) as its
+	project root. Implies <<Remap_to_ancestor>>.
 
-`--env-filter <command>`::
-	このフィルターは、コミットが実行される環境変数を変更するだけでよい場合に使用できます。 具体的には、 作者/コミッター名/電子メールアドレス/時間 の環境変数を書き直したい場合です(詳細については、 linkgit:git-commit-tree[1] 参照)。
+`--env-filter`
+	This filter may be used if you only need to modify the environment
+	in which the commit will be performed.  Specifically, you might
+	want to rewrite the author/committer name/email/time environment
+	variables (see linkgit:git-commit-tree[1] for details).
 
-`--tree-filter <command>`::
-	これは、ツリーとその内容を書き換えるためのフィルターです。 フィルターコマンドの引数は、チェックアウトされたツリーのルートに設定された作業ディレクトリを使用してシェルで評価されます。 その後、新しいツリーがそのまま使用されます(新しいファイルは自動的に追加され、消えたファイルは自動的に削除されます。 `.gitignore` ファイルも他の無視ルールも「効果がありません！」)。
+`--tree-filter`
+	This is the filter for rewriting the tree and its contents.
+	The argument is evaluated in shell with the working
+	directory set to the root of the checked out tree.  The new tree
+	is then used as-is (new files are auto-added, disappeared files
+	are auto-removed - neither .gitignore files nor any other ignore
+	rules *HAVE ANY EFFECT*!).
 
-`--index-filter <command>`::
-	インデックスを書き換えるためのフィルタです。 これはツリーフィルターに似ていますが、ツリーをチェックアウトしないため、はるかに高速になります。 `git rm --cached --ignore-unmatch ...` で頻繁に使用されます。以下の例を参照してください。 ぞっとするほど危険なケースについては、 linkgit:git-update-index[1] を参照してください。
+`--index-filter`
+	This is the filter for rewriting the index.  It is similar to the
+	tree filter but does not check out the tree, which makes it much
+	faster.  Frequently used with `git rm --cached
+	--ignore-unmatch ...`, see EXAMPLES below.  For hairy
+	cases, see linkgit:git-update-index[1].
 
-`--parent-filter <command>`::
-	これは、コミットの親リストを書き換えるためのフィルターです。 フィルターコマンドは stdinで親の文字列を受け取り、stdoutで新しい親の文字列を出力します。 親の文字列は、 linkgit:git-commit-tree[1] で説明されている形式です。最初のコミットの場合は空、通常のコミットの場合は `-p parent` 、 マージコミットの場合は `-p parent1 -p parent2 -p parent3 ...` です。
+`--parent-filter`
+	This is the filter for rewriting the commit's parent list.
+	It will receive the parent string on stdin and shall output
+	the new parent string on stdout.  The parent string is in
+	the format described in linkgit:git-commit-tree[1]: empty for
+	the initial commit, "-p parent" for a normal commit and
+	"-p parent1 -p parent2 -p parent3 ..." for a merge commit.
 
-`--msg-filter <command>`::
-	これは、コミットメッセージを書き換えるためのフィルターです。 フィルターへの引数は、標準入力の元のコミットメッセージを使用してシェルで評価されます。 フィルターの標準出力は、新しいコミットメッセージとして使用されます。
+`--msg-filter`
+	This is the filter for rewriting the commit messages.
+	The argument is evaluated in the shell with the original
+	commit message on standard input; its standard output is
+	used as the new commit message.
 
-`--commit-filter <command>`::
-	これは、コミットを実行するためのフィルターです。 このフィルターを指定すると、 `git commit-tree` コマンドの代わりに、フィルターコマンドは `<TREE_ID> [(-p <PARENT_COMMIT_ID>)...]｀ 形式の引数とstdinのログメッセージを使用して呼び出されます。 stdoutにはコミットIDを出力することが期待されています。
+`--commit-filter`
+	This is the filter for performing the commit.
+	If this filter is specified, it will be called instead of the
+	'git commit-tree' command, with arguments of the form
+	"<TREE_ID> [(-p <PARENT_COMMIT_ID>)...]" and the log message on
+	stdin.  The commit id is expected on stdout.
 +
 特別な拡張機能として、コミットフィルターは複数のコミットIDを発行する場合があります。 その場合、元のコミットの書き直された子は、それらすべてを親として持ちます。
 +
@@ -78,28 +108,48 @@ OPTIONS
 +
 単一の親でコミットを保持したくない場合は、 `git commit-tree "$@"` の代わりに `git_commit_non_empty_tree "$@"` を使用することもできます。これにより、ツリーは変更されることはありません。
 
-`--tag-name-filter <command>`::
-	これは、タグ名を書き換えるためのフィルターです。 このフィルタが渡されると、書き換えられたオブジェクト(または書き換えられたオブジェクトを指すタグオブジェクト)を指す全てのタグrefに対してこのフィルタが呼び出されます。 元のタグ名は標準入力を介して渡され、新しいタグ名を標準出力に出力することが期待されます。
+`--tag-name-filter`
+	This is the filter for rewriting tag names. When passed,
+	it will be called for every tag ref that points to a rewritten
+	object (or to a tag object which points to a rewritten object).
+	The original tag name is passed via standard input, and the new
+	tag name is expected on standard output.
 +
 元のタグは削除されませんが、上書きできます。 `--tag-name-filter cat` を使用して、タグを更新するだけです。 この場合、変換が失敗した場合に備えて、古いタグをバックアップしておくなど、十分な注意が必要です。
 +
 タグオブジェクトは、ほぼ適切な書き換えがサポートされています。 タグにメッセージが添付されている場合、同一のメッセージと作者とタイムスタンプを使用して新しいタグオブジェクトが作成されます。 タグに署名が付いている場合、署名は削除されます。 定義上、署名を保持することは不可能です。 これが「ほぼ」適切である理由は、理想的には、タグが変更されていない場合(同じオブジェクトを指している、同じ名前を持っているなど)、署名を保持する必要があるためです。しかし署名は保持されません。 署名は常に削除されます。 利用者は注意してください。 また、作者またはタイムスタンプ(またはそのことについてのタグメッセージ)を変更することもサポートされていません。 他のタグを指すタグは、基になるコミットを指すように書き直されます。
 
-`--prune-empty`::
-	一部のフィルターは、ツリーをそのままにしておく空のコミットを生成します。 このオプションは、刈り込みされていない親が1個または0個しかない場合に、そのようなコミットを削除するようにgit-filter-branchに指示します。 したがって、マージコミットはそのまま残ります。 このオプションは `--commit-filter` と一緒に使用することはできませんが、コミットフィルターで提供されている `git_commit_non_empty_tree` 関数を使用することで同じ効果を得ることができます。
+`--prune-empty::`
+	Some filters will generate empty commits that leave the tree untouched.
+	This option instructs git-filter-branch to remove such commits if they
+	have exactly one or zero non-pruned parents; merge commits will
+	therefore remain intact.  This option cannot be used together with
+	`--commit-filter`, though the same effect can be achieved by using the
+	provided `git_commit_non_empty_tree` function in a commit filter.
 
-`--original <namespace>`::
-	このオプションを使用して、元のコミットが保存される名前空間を設定します。 デフォルト値は `refs/original` です。
+`--original`
+	Use this option to set the namespace where the original commits
+	will be stored. The default value is 'refs/original'.
 
-`-d <directory>`::
-	このオプションを使用して、書き換えに使用される一時ディレクトリへのパスを設定します。 ツリーフィルターを適用する場合、コマンドは一時的にツリーをあるディレクトリにチェックアウトする必要があります。これは、大規模なプロジェクトの場合、かなりのスペースを消費する可能性があります。 デフォルトでは、これは `.git-rewrite/` ディレクトリで行われますが、このパラメータでその選択を上書きできます。
+`-d`
+	Use this option to set the path to the temporary directory used for
+	rewriting.  When applying a tree filter, the command needs to
+	temporarily check out the tree to some directory, which may consume
+	considerable space in case of large projects.  By default it
+	does this in the `.git-rewrite/` directory but you can override
+	that choice by this parameter.
 
-`-f`::
-`--force`::
-	`git filter-branch` は、強制されない限り、既存の一時ディレクトリでの開始を拒否するか、 `refs/original/` で始まるrefがすでに存在する場合に拒否します。
+`-f::`
+`--force::`
+	'git filter-branch' refuses to start with an existing temporary
+	directory or when there are already refs starting with
+	'refs/original/', unless forced.
 
-`--state-branch <branch>`::
-	このオプションを使用すると、古いオブジェクトから新しいオブジェクトへのマッピングが、起動時に名前付きブランチから読み込まれ、終了時にそのブランチへの新しいコミットとして保存され、大きなツリーの増分が可能になります。 `<branch>` が存在しない場合は、作成されます。
+`--state-branch`
+	This option will cause the mapping from old to new objects to
+	be loaded from named branch upon startup and saved as a new
+	commit to that branch upon exit, enabling incremental of large
+	trees. If '<branch>' does not exist it will be created.
 
 <rev-list options>...::
 	`git rev-list` の引数。 これらのオプションに含まれるすべての正のref(positive refs)は書き直されます。 `--all` などのオプションを指定することもできますが、それらを `git filter-branch` のオプションから分離するには `--` を使用する必要があります。 <<Remap_to_ancestor>> を含んでいます。

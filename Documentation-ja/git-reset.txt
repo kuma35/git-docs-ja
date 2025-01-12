@@ -7,11 +7,11 @@ git-reset - 現在のHEADを指定の状態にリセットします
 
 SYNOPSIS
 --------
-[verse]
-'git reset' [-q] [<tree-ish>] [--] <pathspec>...
-'git reset' [-q] [--pathspec-from-file=<file> [--pathspec-file-nul]] [<tree-ish>]
-'git reset' (--patch | -p) [<tree-ish>] [--] [<pathspec>...]
-'git reset' [--soft | --mixed [-N] | --hard | --merge | --keep] [-q] [<commit>]
+[synopsis]
+	'git reset' [-q] [<tree-ish>] [--] <pathspec>...
+	'git reset' [-q] [--pathspec-from-file=<file> [--pathspec-file-nul]] [<tree-ish>]
+	'git reset' (--patch | -p) [<tree-ish>] [--] [<pathspec>...]
+	'git reset' [--soft | --mixed [-N] | --hard | --merge | --keep] [-q] [<commit>]
 
 DESCRIPTION
 -----------
@@ -34,27 +34,45 @@ DESCRIPTION
 	この形式は、現在のブランチヘッドを `<commit>` にリセットし、場合によっては、 `<mode>` に応じて、インデックス(`<commit>` のツリーにリセット)と作業ツリーを更新します。 操作前に、 現在のブランチの先端に `ORIG_HEAD` が設定されます。 `<mode>` を省略すると、デフォルトで `--mixed` になります。 `<mode>` は以下のいずれかである必要があります:
 +
 --
-`--soft`::
-	インデックスファイルまたは作業ツリーにはまったく触りません(しかし、すべてのモードと同様に、ヘッドを `<commit>` にリセットします)。 これにより、 `git status` が示すように、変更されたすべてのファイルが「コミットされる変更」(Changes to be committed)のままになります。
+`--soft::`
+	Does not touch the index file or the working tree at all (but
+	resets the head to `<commit>`, just like all modes do). This leaves
+	all your changed files "Changes to be committed", as `git status`
+	would put it.
 
-`--mixed`::
-	インデックスをリセットしますが、作業ツリーはリセットしません(つまり、変更されたファイルは保持されますが、コミットのマークは付けられません)。更新されていないものを報告します。 これがデフォルトのアクションです。
+`--mixed::`
+	Resets the index but not the working tree (i.e., the changed files
+	are preserved but not marked for commit) and reports what has not
+	been updated. This is the default action.
 +
 `-N` が指定されている場合、削除されたパスはadd対象(intent-to-add)としてマークされます(linkgit:git-add[1] 参照)。
 
-`--hard`::
-	インデックスと作業ツリーをリセットします。 `<commit>` 以降の作業ツリー内の追跡中のファイルへの変更はすべて破棄されます。追跡中のファイルの書き込み時に邪魔になる、追跡されていないファイルまたはディレクトリは、単に削除されます。
+`--hard::`
+	Resets the index and working tree. Any changes to tracked files in the
+	working tree since `<commit>` are discarded.  Any untracked files or
+	directories in the way of writing any tracked files are simply deleted.
 
-`--merge`::
-	インデックスをリセットし、作業ツリー内の `<commit>` と `HEAD` の間で異なるファイルを更新しますが、インデックスと作業ツリーの間で異なるファイル（つまり、まだ追加されていない変更があるもの）は保持します。 もし `<commit>` とインデックスの間で異なるファイルに、ステージされていない変更がある場合、リセットは中断(abort)されます。
+`--merge::`
+	Resets the index and updates the files in the working tree that are
+	different between `<commit>` and `HEAD`, but keeps those which are
+	different between the index and working tree (i.e. which have changes
+	which have not been added).
+	If a file that is different between `<commit>` and the index has
+	unstaged changes, reset is aborted.
 +
 つまり、 `--merge` は `git read-tree -u -m <commit>` のようなことをしますが、アンマージインデックスエントリは引き継ぎます。
 
-`--keep`::
-	インデックスエントリをリセットし、 `<commit>` と `HEAD` で異なる作業ツリー内のファイルを更新します。 `<commit>` と `HEAD` で異なるファイルにローカル変更がある場合、リセットは中止(abort)されます。
+`--keep::`
+	Resets index entries and updates files in the working tree that are
+	different between `<commit>` and `HEAD`.
+	If a file that is different between `<commit>` and `HEAD` has local
+	changes, reset is aborted.
 
-`--[no-]recurse-submodules`::
-	作業ツリーが更新される時、 `--recurse-submodules` を使用すると、スーパープロジェクトに記録されたコミットに従ってすべてのアクティブなサブモジュールの作業ツリーが再帰的にリセットされ、そのコミット時にサブモジュールのHEADが切り離されるよう(detach)に設定されます。
+`--[no-]recurse-submodules::`
+	When the working tree is updated, using --recurse-submodules will
+	also recursively reset the working tree of all active submodules
+	according to the commit recorded in the superproject, also setting
+	the submodules' HEAD to be detached at that commit.
 --
 
 3つのコマンドの違いについては、 linkgit:git[1] の「Reset, restore and revert」を参照してください。
@@ -63,19 +81,26 @@ DESCRIPTION
 OPTIONS
 -------
 
-`-q`::
-`--quiet`::
-	静かにして、エラーのみを報告してください。
+`-q::`
+`--quiet::`
+	Be quiet, only report errors.
 
-`--refresh`::
-`--no-refresh`::
-	混合リセット(mixed reset)後にインデックスを更新します。 デフォルトで有効になっています。
+`--refresh::`
+`--no-refresh::`
+	Refresh the index after a mixed reset. Enabled by default.
 
-`--pathspec-from-file=<file>`::
-	パススペックは、コマンドライン引数の代わりに `<file>` で渡されます。 `<file>` が正確に `-` の場合、標準入力が使用されます。 Pathspec要素は、LFまたはCR/LFで区切られます。 パススペック要素は、構成変数 `core.quotePath` で説明されているようにクォートできます(linkgit:git-config[1] 参照)。 `--pathspec-file-nul` および グローバルの `--literal-pathspecs` も参照してください。
+`--pathspec-from-file=<file>::`
+	Pathspec is passed in `<file>` instead of commandline args. If
+	`<file>` is exactly `-` then standard input is used. Pathspec
+	elements are separated by LF or CR/LF. Pathspec elements can be
+	quoted as explained for the configuration variable `core.quotePath`
+	(see linkgit:git-config[1]). See also `--pathspec-file-nul` and
+	global `--literal-pathspecs`.
 
-`--pathspec-file-nul`::
-	`--pathspec-from-file` 指定時のみ意味があります。 パススペック要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
+`--pathspec-file-nul::`
+	Only meaningful with `--pathspec-from-file`. Pathspec elements are
+	separated with NUL character and all other characters are taken
+	literally (including newlines and quotes).
 
 `--`::
 	これ以降の引数をオプションとして解釈しないでください。

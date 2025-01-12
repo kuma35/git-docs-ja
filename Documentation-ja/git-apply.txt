@@ -8,7 +8,7 @@ git-apply - パッチをファイルやインデックスに適用します
 
 SYNOPSIS
 --------
-[verse]
+[synopsis]
 'git apply' [--stat] [--numstat] [--summary] [--check]
 	  [--index | --intent-to-add] [--3way] [--ours | --theirs | --union]
 	  [--apply] [--no-add] [--build-fake-ancestor=<file>] [-R | --reverse]
@@ -30,88 +30,162 @@ OPTIONS
 <patch>...::
 	パッチを読み取るファイル。 `-` は、標準入力から読み取るために使用できます。
 
-`--stat`::
-	パッチを適用する代わりに、入力に対してdiffstatを出力します。 ※applyはオフです(適用操作しません)。
+`--stat::`
+	Instead of applying the patch, output diffstat for the
+	input.  Turns off "apply".
 
-`--numstat`::
-	`--stat` に似ていますが、機械読み取り用に、追加および削除された行数を10進表記で表示し、パス名を省略形で表示します。 バイナリファイルの場合、 `0 0` と言う代わりに2つの `-` を出力します。 ※applyはオフです(適用操作しません)。
+`--numstat::`
+	Similar to `--stat`, but shows the number of added and
+	deleted lines in decimal notation and the pathname without
+	abbreviation, to make it more machine friendly.  For
+	binary files, outputs two `-` instead of saying
+	`0 0`.  Turns off "apply".
 
-`--summary`::
-	Instead of applying the patch, output a condensed summary of information obtained from git diff extended headers, such as creations, renames, and mode changes. Turns off "apply".
+`--summary::`
+	Instead of applying the patch, output a condensed
+	summary of information obtained from git diff extended
+	headers, such as creations, renames, and mode changes.
+	Turns off "apply".
 
-`--check`::
-	パッチを適用する代わりに、パッチが現在の作業ツリーやインデックスファイルに適用可能かどうかを確認し、エラーを検出します。 ※applyはオフです(適用操作しません)。
+`--check::`
+	Instead of applying the patch, see if the patch is
+	applicable to the current working tree and/or the index
+	file and detects errors.  Turns off "apply".
 
-`--index`::
-	パッチをインデックスと作業ツリーの両方に適用します(または、 `--check` が有効になっている場合は、両方に正しく適用されることをチェックします)。 注意: `--index` はインデックスエントリと関連するパスの作業木のコピーが同じであることを期待し(それらの内容とファイルモードなどのメタデータは一致する必要があります)、そうでない場合には、たとえパッチがインデックスと作業ツリーのそれぞれに単独できれいに適用されるとしても、エラーを発生させることに注意してください。 
+`--index::`
+	Apply the patch to both the index and the working tree (or
+	merely check that it would apply cleanly to both if `--check` is
+	in effect). Note that `--index` expects index entries and
+	working tree copies for relevant paths to be identical (their
+	contents and metadata such as file mode must match), and will
+	raise an error if they are not, even if the patch would apply
+	cleanly to both the index and the working tree in isolation.
 
-`--cached`::
-	作業ツリーに触れることなく、インデックスのみにパッチを適用します。 `--check` が有効になっている場合は、インデックスエントリに正しく適用されることをチェックするだけです。
+`--cached::`
+	Apply the patch to just the index, without touching the working
+	tree. If `--check` is in effect, merely check that it would
+	apply cleanly to the index entry.
 
-`--intent-to-add`::
-	パッチを作業ツリーだけに適用する場合は、新規ファイルをマークして後でインデックスに追加します(linkgit:git-add[1] の `--intent-to-add` オプションを参照してください)。このオプションは、Git リポジトリ内で実行していて `--index` が指定されていない場合、無視されます。 なお、 `--index` は `--cached` や `--3way` などの他のオプションによって暗示される可能性があります。
+`--intent-to-add::`
+	When applying the patch only to the working tree, mark new
+	files to be added to the index later (see `--intent-to-add`
+	option in linkgit:git-add[1]). This option is ignored unless
+	running in a Git repository and `--index` is not specified.
+	Note that `--index` could be implied by other options such
+	as `--cached` or `--3way`.
 
-`-3`::
-`--3way`::
-	パッチが適用する予定のブロブのIDを記録していて、それらのブロブがローカルで利用可能である場合、3方向マージを試みます。作業ツリーのファイルに競合マーカーを残して、ユーザーが解決できるようにするかもしれません。 このオプションは、 `--cached` オプションが使用されていない限り、 `--index` オプションを意味し、 `--reject` オプションと互換性がありません。 また、 `--reject` オプションと互換性がありません。 `--cached` オプションと一緒に使用すると、競合があってもキャッシュの上位に残されます。
+`-3::`
+`--3way::`
+	Attempt 3-way merge if the patch records the identity of blobs it is supposed
+	to apply to and we have those blobs available locally, possibly leaving the
+	conflict markers in the files in the working tree for the user to
+	resolve.  This option implies the `--index` option unless the
+	`--cached` option is used, and is incompatible with the `--reject` option.
+	When used with the `--cached` option, any conflicts are left at higher stages
+	in the cache.
 
-`--ours`::
-`--theirs`::
-`--union`::
-	Instead of leaving conflicts in the file, resolve conflicts favouring our (or their or both) side of the lines. Requires --3way.
+`--ours::`
+`--theirs::`
+`--union::`
+	Instead of leaving conflicts in the file, resolve conflicts favouring
+	our (or their or both) side of the lines. Requires --3way.
 
-`--build-fake-ancestor=<file>`::
-	新しい `git diff` 出力には、パッチが適用される元のバージョンを識別するのに役立つ各ブロブの「インデックス情報」が埋め込まれています。 このオプションが指定され、元のバージョンのブロブがローカルで使用可能な場合は、それらのブロブを含む一時的なインデックスを作成します。
+`--build-fake-ancestor=<file>::`
+	Newer 'git diff' output has embedded 'index information'
+	for each blob to help identify the original version that
+	the patch applies to.  When this flag is given, and if
+	the original versions of the blobs are available locally,
+	builds a temporary index containing those blobs.
 +
 純粋なモード変更(インデックス情報を持たない)に遭遇した場合、代わりに現在のインデックスから情報が読み取られます。
 
-`-R`::
-`--reverse`::
-	パッチを逆に適用します。
+`-R::`
+`--reverse::`
+	Apply the patch in reverse.
 
-`--reject`::
-	アトミックな場合、 `git apply` はデフォルトでパッチ全体に失敗し、一部のハンクが適用されない場合は作業ツリーにアクセスしません。 このオプションを使用すると、パッチの該当する部分が適用され、拒否されたハンクが対応する `*.rej` ファイルに残されます。
+`--reject::`
+	For atomicity, 'git apply' by default fails the whole patch and
+	does not touch the working tree when some of the hunks
+	do not apply.  This option makes it apply
+	the parts of the patch that are applicable, and leave the
+	rejected hunks in corresponding *.rej files.
 
-`-z`::
-	`--numstat` が指定されている場合、パス名を変更せずに、NULで終了する機械可読形式を使用します。
+`-z::`
+	When `--numstat` has been given, do not munge pathnames,
+	but use a NUL-terminated machine-readable format.
 +
 このオプションがないと、構成変数 `core.quotePath` で説明されているように、「異常な」文字を含むパス名がクォートされます(linkgit:git-config[1] 参照)。
 
-`-p<n>`::
-	<n>個の先頭のパスコンポーネント(スラッシュで区切られている)を従来のdiffパスから削除します。 たとえば、 `-p2` を使用すると、 `a/dir/file` に対するパッチが `file` に直接適用されます。 デフォルトは1です。
+`-p<n>::`
+	Remove <n> leading path components (separated by slashes) from
+	traditional diff paths. E.g., with `-p2`, a patch against
+	`a/dir/file` will be applied directly to `file`. The default is
+	1.
 
-`-C<n>`::
-	各変更の前後で、周囲のコンテキストの少なくとも<n>行が一致することを確認してください。 周囲のコンテキストの行が少ない場合、それらはすべて一致する必要があります。 デフォルトでは、コンテキストが無視されることはありません。
+`-C<n>::`
+	Ensure at least <n> lines of surrounding context match before
+	and after each change.  When fewer lines of surrounding
+	context exist they all must match.  By default no context is
+	ever ignored.
 
-`--unidiff-zero`::
-	デフォルトでは、 `git apply` は、適用されるパッチが少なくとも1行のコンテキストを持つ統一された差分(unified diff)であることを想定しています。 これは優れた安全索を提供しますが、 `--unified=0` で生成されたdiffを適用すると機能しなくなります。 これらのチェックをバイパスするには、 `--unidiff-zero` を使用します。
+`--unidiff-zero::`
+	By default, 'git apply' expects that the patch being
+	applied is a unified diff with at least one line of context.
+	This provides good safety measures, but breaks down when
+	applying a diff generated with `--unified=0`. To bypass these
+	checks use `--unidiff-zero`.
 +
 Note, for the reasons stated above, the usage of context-free patches is discouraged.
 
-`--apply`::
-	上記の「※applyはオフです(適用操作しません)」と記されたされたオプションのいずれかを使用すると、 `git apply` は、実際にパッチを適用せずに、要求された情報を読み取って出力します。 これらのフラグの後にこのフラグを付けると、パッチも適用します。
+`--apply::`
+	If you use any of the options marked "Turns off
+	'apply'" above, 'git apply' reads and outputs the
+	requested information without actually applying the
+	patch.  Give this flag after those flags to also apply
+	the patch.
 
-`--no-add`::
-	パッチを適用するときは、パッチによる追加を無視してください。 これを使用して、最初に `diff` を実行し、このオプションを使用して結果を適用することにより、2つのファイル間の共通部分を抽出できます。これにより、削除部分は適用されますが、追加部分は適用されません。
+`--no-add::`
+	When applying a patch, ignore additions made by the
+	patch.  This can be used to extract the common part between
+	two files by first running 'diff' on them and applying
+	the result with this option, which would apply the
+	deletion part but not the addition part.
 
-`--allow-binary-replacement`::
-`--binary`::
-	Historically we did not allow binary patch application without an explicit permission from the user, and this flag was the way to do so. Currently, we always allow binary patch application, so this is a no-op.
+`--allow-binary-replacement::`
+`--binary::`
+	Historically we did not allow binary patch application
+	without an explicit permission from the user, and this
+	flag was the way to do so.  Currently, we always allow binary
+	patch application, so this is a no-op.
 
-`--exclude=<path-pattern>`::
-	与えられたパスパターンに一致するファイルに変更を適用しないでください。 これは、特定のファイルまたはディレクトリを除外するパッチセットをインポートするときに役立ちます。
+`--exclude=<path-pattern>::`
+	Don't apply changes to files matching the given path pattern. This can
+	be useful when importing patchsets, where you want to exclude certain
+	files or directories.
 
-`--include=<path-pattern>`::
-	与えられたパスパターンに一致するファイルに変更を適用します。 これは、特定のファイルまたはディレクトリを含めるパッチセットをインポートするときに役立ちます。
+`--include=<path-pattern>::`
+	Apply changes to files matching the given path pattern. This can
+	be useful when importing patchsets, where you want to include certain
+	files or directories.
 +
 `--exclude` および `--include` パターンが使用される場合、それらはコマンドラインに表示される順序で検査され、最初の一致によって各パスへのパッチが使用されるかどうかが決定されます。 どの include/exclude パターンにも一致しないパスへのパッチは、コマンドラインに include パターンがない場合は既定で使用され、includeパターンがある場合は無視されます。
 
-`--ignore-space-change`::
-`--ignore-whitespace`::
-	パッチを適用するときは、必要に応じてコンテキスト行の空白(whitespace)の変更を無視してください。 コンテキスト行は空白を保持し、`--whitespace` オプションの値に関係なく空白が修正されることはありません。 ただし、追加行はこのオプションに関わらず引き続き修正されます。
+`--ignore-space-change::`
+`--ignore-whitespace::`
+	When applying a patch, ignore changes in whitespace in context
+	lines if necessary.
+	Context lines will preserve their whitespace, and they will not
+	undergo whitespace fixing regardless of the value of the
+	`--whitespace` option. New lines will still be fixed, though.
 
-`--whitespace=<action>`::
-	パッチを適用するときは、空白エラー(whitespace errors)のある新しい行または変更された行を検出してください。 何を空白エラーと見なすのかは、 `core.whitespace` 構成で制御します。 デフォルトでは、末尾の空白(空白のみで構成される行を含む)と、行の最初のインデント内で直後にタブ文字が続くスペース文字は、空白エラーと見なされます。
+`--whitespace=<action>::`
+	When applying a patch, detect a new or modified line that has
+	whitespace errors.  What are considered whitespace errors is
+	controlled by `core.whitespace` configuration.  By default,
+	trailing whitespaces (including lines that solely consist of
+	whitespaces) and a space character that is immediately followed
+	by a tab character inside the initial indent of the line are
+	considered whitespace errors.
 +
 デフォルトでは、コマンドは警告メッセージを出力しますが、パッチを適用します。 `git-apply` が統計に使用され、パッチを適用しない場合、デフォルトで `nowarn` になります。
 +
@@ -123,32 +197,46 @@ Note, for the reasons stated above, the usage of context-free patches is discour
 * `error` は、そのようないくつかのエラーに対する警告を出力し、パッチの適用を拒否します。
 * `error-all` は `error` に似ていますが、すべてのエラーを表示します。
 
-`--inaccurate-eof`::
-	特定の状況下では、 `diff` の一部のバージョンは、ファイルの最後で欠落している改行を正しく検出しません。 その結果、そのような `diff` プログラムによって作成されたパッチは、不完全な行を正しく記録しません。 このオプションは、このバグを回避することにより、そのようなパッチを適用するためのサポートを追加します。
+`--inaccurate-eof::`
+	Under certain circumstances, some versions of 'diff' do not correctly
+	detect a missing new-line at the end of the file. As a result, patches
+	created by such 'diff' programs do not record incomplete lines
+	correctly. This option adds support for applying such patches by
+	working around this bug.
 
-`-v`::
-`--verbose`::
-	進捗状況をstderrに報告します。 デフォルトでは、現在適用されているパッチに関するメッセージのみが出力されます。 このオプションを使用すると、追加情報が報告されます。
+`-v::`
+`--verbose::`
+	Report progress to stderr. By default, only a message about the
+	current patch being applied will be printed. This option will cause
+	additional information to be reported.
 
-`-q`::
-`--quiet`::
-	stderr 出力を抑制します。 パッチのステータスや進行状況に関するメッセージは出力されません。
+`-q::`
+`--quiet::`
+	Suppress stderr output. Messages about patch status and progress
+	will not be printed.
 
-`--recount`::
-	ハンクヘッダーの行数を信頼せず、パッチを調べて推測してください。 (たとえば、ハンクヘッダーを適切に調整せずにパッチを編集した後。)
+`--recount::`
+	Do not trust the line counts in the hunk headers, but infer them
+	by inspecting the patch (e.g. after editing the patch without
+	adjusting the hunk headers appropriately).
 
-`--directory=<root>`::
-	すべてのファイル名の前に <root> を付けます。 `-p` 引数も渡された場合、 新しい <root> を前に付ける前に適用されます。
+`--directory=<root>::`
+	Prepend <root> to all filenames.  If a "-p" argument was also passed,
+	it is applied before prepending the new root.
 +
 たとえば、 `a/git-gui.sh` を `b/git-gui.sh` に更新することについて説明しているパッチを作業ツリー `modules/git-gui/git-gui.sh のファイルに適用できます。 `git apply --directory=modules/git-gui` を実行します。
 
-`--unsafe-paths`::
-	デフォルトでは、作業領域(Git制御の作業ツリー、または `git apply` がGNUパッチの代わりに使用される場合の現在の作業ディレクトリ)の外側に影響を与えるパッチは、間違い(またはいたずら)として拒否されます。
+`--unsafe-paths::`
+	By default, a patch that affects outside the working area
+	(either a Git controlled working tree, or the current working
+	directory when "git apply" is used as a replacement of GNU
+	patch) is rejected as a mistake (or a mischief).
 +
 `git apply` が「より良いGNUパッチ」として使用される場合、ユーザーは `--unsafe-paths` オプションを渡してこの安全性チェックをオーバーライドできます。 `--index` または `--cached` が使用されている場合、このオプションは効果がありません。
 
-`--allow-empty`::
-	Don't return an error for patches containing no diff. This includes empty patches and patches with commit text only.
+`--allow-empty::`
+	Don't return an error for patches containing no diff. This includes
+	empty patches and patches with commit text only.
 
 CONFIGURATION
 -------------

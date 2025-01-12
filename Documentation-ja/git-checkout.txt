@@ -7,16 +7,16 @@ git-checkout - ブランチの切り替え、または作業ツリーファイ�
 
 SYNOPSIS
 --------
-[verse]
-'git checkout' [-q] [-f] [-m] [<branch>]
-'git checkout' [-q] [-f] [-m] --detach [<branch>]
-'git checkout' [-q] [-f] [-m] [--detach] <commit>
-'git checkout' [-q] [-f] [-m] [[-b|-B|--orphan] <new-branch>] [<start-point>]
-'git checkout' [-f] <tree-ish> [--] <pathspec>...
-'git checkout' [-f] <tree-ish> --pathspec-from-file=<file> [--pathspec-file-nul]
-'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] [--] <pathspec>...
-'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] --pathspec-from-file=<file> [--pathspec-file-nul]
-'git checkout' (-p|--patch) [<tree-ish>] [--] [<pathspec>...]
+[synopsis]
+	'git checkout' [-q] [-f] [-m] [<branch>]
+	'git checkout' [-q] [-f] [-m] --detach [<branch>]
+	'git checkout' [-q] [-f] [-m] [--detach] <commit>
+	'git checkout' [-q] [-f] [-m] [[-b|-B|--orphan] <new-branch>] [<start-point>]
+	'git checkout' [-f] <tree-ish> [--] <pathspec>...
+	'git checkout' [-f] <tree-ish> --pathspec-from-file=<file> [--pathspec-file-nul]
+	'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] [--] <pathspec>...
+	'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] --pathspec-from-file=<file> [--pathspec-file-nul]
+	'git checkout' (-p|--patch) [<tree-ish>] [--] [<pathspec>...]
 
 DESCRIPTION
 -----------
@@ -67,46 +67,63 @@ that is to say, the branch is not reset/created unless "git checkout" is success
 
 OPTIONS
 -------
-`-q`::
-`--quiet`::
-	静かにします。フィードバックメッセージを抑制します。
+`-q::`
+`--quiet::`
+	Quiet, suppress feedback messages.
 
-`--progress`::
-`--no-progress`::
-	`--quiet` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、 `--quiet` に関係なく、端末に接続されていない場合でも進行状況のレポートを有効にします。
+`--progress::`
+`--no-progress::`
+	Progress status is reported on the standard error stream
+	by default when it is attached to a terminal, unless `--quiet`
+	is specified. This flag enables progress reporting even if not
+	attached to a terminal, regardless of `--quiet`.
 
-`-f`::
-`--force`::
-	ブランチを切り替えるとき、インデックスや作業ツリーが `HEAD` と異なっていても、また、邪魔な未追跡のファイルがあっても進行します。 これは、ローカルの変更や、邪魔な未追跡のファイルやディレクトリを捨てるために使用します。
+`-f::`
+`--force::`
+	When switching branches, proceed even if the index or the
+	working tree differs from `HEAD`, and even if there are untracked
+	files in the way.  This is used to throw away local changes and
+	any untracked files or directories that are in the way.
 +
 インデックスからパスをチェックアウトするときは、マージされていないエントリでエラーにしないでください。代わりに、マージされていないエントリは無視されます。
 
-`--ours`::
-`--theirs`::
-	インデックスからパスをチェックアウトするときは、ステージ#2(`ours`)または#3(`theirs`)でマージされていないパスをチェックアウトしてください。
+`--ours::`
+`--theirs::`
+	When checking out paths from the index, check out stage #2
+	('ours') or #3 ('theirs') for unmerged paths.
 +
 注意: `git rebase` と `git pull --rebase` での作業中、「ours」と「theirs」が入れ替わっているように見える場合があることに注意してください。 `--ours` は、変更がリベースされるブランチからのバージョンを提供し、 `--theirs` は、リベースされる作業を保持するブランチからのバージョンを提供します。
 +
 これは、リモートでの履歴を共有の正規の履歴として扱うワークフローで `rebase` が使用されているためです。リベースするブランチで行われた作業を、統合されるサードパーティの作業として扱います。そして、あなたは一時的にリベース中に正規の歴史の管理者の役割を引き受けています。正規の履歴の管理者として、リモートからの履歴を「私たち」(ours; つまり、「私達の共有された正規の履歴」)として表示する必要があり、サイドブランチで行ったことは「彼ら」(theirs;つまり「その上での貢献者の作品」)として表示する必要があります。
 
-`-b <new-branch>`::
-	`<start-point>` から開始する `<new-branch>` という名前の新しいブランチを作成し、 作成したブランチをチェックアウトします。 詳細については linkgit:git-branch[1] を参照してください。
+`-b`
+	Create a new branch named `<new-branch>`, start it at
+	`<start-point>`, and check the resulting branch out;
+	see linkgit:git-branch[1] for details.
 
-`-B <new-branch>`::
-	ブランチ `<new-branch>` を作成し、 そのブランチを `<start-point>` から開始します。 すでに存在する場合は、 そのブランチを `<start-point>` に再設定します。 そして、 結果のブランチをチェックアウトします。 これは、 `-f` を伴って `git branch` を実行し、続いてそのブランチに対して `git checkout` を実行するのと同じです。 詳細については、 linkgit:git-branch[1] を参照してください。
+`-B`
+	Creates the branch `<new-branch>`, start it at `<start-point>`;
+	if it already exists, then reset it to `<start-point>`. And then
+	check the resulting branch out.  This is equivalent to running
+	"git branch" with "-f" followed by "git checkout" of that branch;
+	see linkgit:git-branch[1] for details.
 
-`-t`::
-`--track[=(direct|inherit)]`::
-	新しいブランチを作成するときは、「アップストリーム構成」(upstream configuration)をセットアップします。 詳細については、 linkgit:git-branch[1]の `--track` を参照してください。
+`-t::`
+`--track[=(direct|inherit)]::`
+	When creating a new branch, set up "upstream" configuration. See
+	"--track" in linkgit:git-branch[1] for details.
 +
 `-b`オプションが指定されていない場合、新しいブランチの名前は、対応するリモート用に構成されたrefspecのローカル部分を調べ、最初の部分を `*` まで削除することにより、リモート追跡ブランチから派生させます。これにより、 `origin/hack` (または `remotes/origin/hack`、 あるいは `refs/remotes/origin/hack`) から分岐するときに、ローカルブランチとして `hack` を使用するように指示されます。指定された名前にスラッシュ(`/`)がない場合、または上記の推測の結果が空の名前になる場合、推測は中止されます。このような場合は、 `-b` を使用して明示的に名前を付けることができます。
 
-`--no-track`::
-	`branch.autoSetupMerge` 構成変数がtrueであっても、「アップストリーム構成」を設定しないでください。
+`--no-track::`
+	Do not set up "upstream" configuration, even if the
+	`branch.autoSetupMerge` configuration variable is true.
 
-`--guess`::
-`--no-guess`::
-	`<branch>`が見つからないが、名前が一致する1つのリモート( `<remote>`と呼びます)に追跡ブランチが存在する場合は、以下と同等としてあつかいます
+`--guess::`
+`--no-guess::`
+	If `<branch>` is not found but there does exist a tracking
+	branch in exactly one remote (call it `<remote>`) with a
+	matching name, treat as equivalent to
 +
 ------------
 $ git checkout -b <branch> --track <remote>/<branch>
@@ -118,15 +135,24 @@ $ git checkout -b <branch> --track <remote>/<branch>
 +
 デフォルトの振る舞いは、`checkout.guess` 構成変数を介して設定できます。
 
-`-l`::
-	新しいブランチのreflogを作成します。詳細については、 linkgit:git-branch[1] を参照してください。
+`-l::`
+	Create the new branch's reflog; see linkgit:git-branch[1] for
+	details.
 
-`-d`::
-`--detach`::
-	ブランチをチェックアウトして作業するのではなく、検査と破棄可能な実験のためのコミットをチェックアウトします。 これは、 `<commit>` がブランチ名でない場合の、 `git checkout <commit>` のデフォルトの動作です。 詳細については、以下の「DETACHED HEAD」セクションを参照してください。
+`-d::`
+`--detach::`
+	Rather than checking out a branch to work on it, check out a
+	commit for inspection and discardable experiments.
+	This is the default behavior of `git checkout <commit>` when
+	`<commit>` is not a branch name.  See the "DETACHED HEAD" section
+	below for details.
 
-`--orphan <new-branch>`::
-	Create a new unborn branch, named `<new-branch>`, started from `<start-point>` and switch to it. The first commit made on this new branch will have no parents and it will be the root of a new history totally disconnected from all the other branches and commits.
+`--orphan`
+	Create a new unborn branch, named `<new-branch>`, started from
+	`<start-point>` and switch to it.  The first commit made on this
+	new branch will have no parents and it will be the root of a new
+	history totally disconnected from all the other branches and
+	commits.
 +
 インデックスと作業ツリーは、以前に `git checkout <start-point>` を実行した場合と同じように調整されます。これにより、 ルート(root)をコミットするために容易に `git commit -a` 実行をでき、 `<start-point>` と同様のパスのセットを記録する新しい履歴を開始できます。
 +
@@ -134,12 +160,22 @@ $ git checkout -b <branch> --track <remote>/<branch>
 +
 `<start-point>` のパスとはまったく異なるパスのセットを記録する切断された履歴を開始する場合は、 作業ツリーの最上位から `git rm -rf .` を実行して、 孤立したブランチ(orphan branch)を作成した直後にインデックスと作業ツリーをクリアする必要があります。 その後に、 新しいファイルを準備したり、 作業ツリーを再作成したり、 他の場所からファイルをコピーしたり、 tarballを抽出したりする準備が整います。
 
-`--ignore-skip-worktree-bits`::
-	スパースチェックアウトモード(sparse checkout mode)では、 `git checkout -- <paths>` は、 `<paths>` と一致するエントリと、 `$GIT_DIR/info/sparse-checkout` のスパースパターン(sparse patterns)のみを更新します。このオプションは、スパースパターンを無視し、 `<paths>` 内のファイルを追加し直します。
+`--ignore-skip-worktree-bits::`
+	In sparse checkout mode, `git checkout -- <paths>` would
+	update only entries matched by `<paths>` and sparse patterns
+	in `$GIT_DIR/info/sparse-checkout`. This option ignores
+	the sparse patterns and adds back any files in `<paths>`.
 
-`-m`::
-`--merge`::
-	ブランチを切り替えるときに、現在のブランチと切り替え先のブランチの間で異なる1つ以上のファイルにローカルの変更がある場合、コマンドは、コンテキストでの変更を保持するためにブランチの切り替えを拒否します。ただし、このオプションを使用すると、現在のブランチ、作業ツリーの内容、および新しいブランチの間の3方向のマージを実行してから新しいブランチに移動します。
+`-m::`
+`--merge::`
+	When switching branches,
+	if you have local modifications to one or more files that
+	are different between the current branch and the branch to
+	which you are switching, the command refuses to switch
+	branches in order to preserve your modifications in context.
+	However, with this option, a three-way merge between the current
+	branch, your working tree contents, and the new branch
+	is done, and you will be on the new branch.
 +
 マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになります。競合を解決し、解決されたパスを `git add`（またはマージによってパスが削除される場合は `git rm`)でマークする必要があります。
 +
@@ -147,37 +183,65 @@ When checking out paths from the index, this option lets you recreate the confli
 +
 `--merge` でブランチを切り替えると、ステージされた変更が失われる可能性があります。
 
-`--conflict=<style>`::
-	上記の `--merge` オプションと同一ですが、競合するハンクの表示方法を変更し、 `merge.conflictStyle` 構成変数をオーバーライドします。 可能な値は `merge`(デフォルト)と `diff3` と `zdiff3` です。
+`--conflict=<style>::`
+	The same as `--merge` option above, but changes the way the
+	conflicting hunks are presented, overriding the
+	`merge.conflictStyle` configuration variable.  Possible values are
+	"merge" (default), "diff3", and "zdiff3".
 
-`-p`::
-`--patch`::
-	`<tree-ish>` (または指定されていない場合はインデックス)と作業ツリーの間の差分でハンクを対話的に選択します。選択されたハンクは、作業ツリー(`<tree-ish>` が指定されている場合はインデックス)に逆に適用されます。
+`-p::`
+`--patch::`
+	Interactively select hunks in the difference between the
+	`<tree-ish>` (or the index, if unspecified) and the working
+	tree.  The chosen hunks are then applied in reverse to the
+	working tree (and if a `<tree-ish>` was specified, the index).
 +
 これは、 `git checkout -p` を使用して、現在の作業ツリーから編集を選択的に破棄できることを意味します。 `--patch` モードの操作方法については、 linkgit:git-add[1] の「Interactive Mode」セクションを参照してください。
 +
 注意: このオプションはデフォルトでオーバーレイなしモードを使用します(`--overlay` も参照)。現在はオーバーレイモードをサポートしていないことに注意してください。
 
-`--ignore-other-worktrees`::
-	`git checkout` refuses when the wanted branch is already checked out or otherwise in use by another worktree. This option makes it check the branch out anyway. In other words, the branch can be in use by more than one worktree.
+`--ignore-other-worktrees::`
+	`git checkout` refuses when the wanted branch is already checked
+	out or otherwise in use by another worktree. This option makes
+	it check the branch out anyway. In other words, the branch can
+	be in use by more than one worktree.
 
-`--overwrite-ignore`::
-`--no-overwrite-ignore`::
-	ブランチを切り替えるときに、無視したファイルを黙って上書きします。これがデフォルトの動作です。新しいブランチに無視したファイルが含まれている場合に操作を中止するには、 `--no-overwrite-ignore` を使用します。
+`--overwrite-ignore::`
+`--no-overwrite-ignore::`
+	Silently overwrite ignored files when switching branches. This
+	is the default behavior. Use `--no-overwrite-ignore` to abort
+	the operation when the new branch contains ignored files.
 
-`--recurse-submodules`::
-`--no-recurse-submodules`::
-	`--recurse-submodules` を使用すると、スーパープロジェクトに記録されたコミットに従って、すべてのアクティブなサブモジュールのコンテンツが更新されます。サブモジュールのローカル変更が上書きされる場合、 `-f` が使用されない限り、チェックアウトは失敗します。何も使用されていない場合(または `--no-recurse-submodules`)、サブモジュールの作業ツリーは更新されません。 linkgit:git-submodule[1] と同様に、これはサブモジュールの `HEAD` を切り離します(detach)。
+`--recurse-submodules::`
+`--no-recurse-submodules::`
+	Using `--recurse-submodules` will update the content of all active
+	submodules according to the commit recorded in the superproject. If
+	local modifications in a submodule would be overwritten the checkout
+	will fail unless `-f` is used. If nothing (or `--no-recurse-submodules`)
+	is used, submodules working trees will not be updated.
+	Just like linkgit:git-submodule[1], this will detach `HEAD` of the
+	submodule.
 
-`--overlay`::
-`--no-overlay`::
-	デフォルトのオーバーレイモードでは、 `git checkout` がインデックスまたは作業ツリーからファイルを削除することはありません。 `--no-overlay` を指定すると、インデックスと作業ツリーには表示されるが、 `<tree-ish>` には表示されないファイルが削除され、 `<tree-ish>` と完全に一致するようになります。
+`--overlay::`
+`--no-overlay::`
+	In the default overlay mode, `git checkout` never
+	removes files from the index or the working tree.  When
+	specifying `--no-overlay`, files that appear in the index and
+	working tree, but not in `<tree-ish>` are removed, to make them
+	match `<tree-ish>` exactly.
 
-`--pathspec-from-file=<file>`::
-	pathspecは、コマンドライン引数の代わりに `<file>` で渡されます。 `<file>` が正確に `-` の場合、標準入力が使用されます。pathspec要素は、LFまたはCR/LFで区切られます。pathspec要素は、構成変数 `core.quotePath` で説明されているように、クォートできます(linkgit:git-config[1] 参照)。 `--pathspec-file-nul` および グローバル `--literal-pathspecs` も参照してください。
+`--pathspec-from-file=<file>::`
+	Pathspec is passed in `<file>` instead of commandline args. If
+	`<file>` is exactly `-` then standard input is used. Pathspec
+	elements are separated by LF or CR/LF. Pathspec elements can be
+	quoted as explained for the configuration variable `core.quotePath`
+	(see linkgit:git-config[1]). See also `--pathspec-file-nul` and
+	global `--literal-pathspecs`.
 
-`--pathspec-file-nul`::
-	`--pathspec-from-file`でのみ意味があります。Pathspec要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
+`--pathspec-file-nul::`
+	Only meaningful with `--pathspec-from-file`. Pathspec elements are
+	separated with NUL character and all other characters are taken
+	literally (including newlines and quotes).
 
 <branch>::
 	チェックアウトするブランチ。もしそれがブランチ(つまり、 `refs/heads/` を前につけたとき、有効なrefである名前)を参照しているなら、そのブランチはチェックアウトされます。そうでない場合、もしそれが有効なコミットを参照していれば、あなたの `HEAD` は "detached" となり、あなたはもはやどのブランチにもいません(詳しくは以下を参照してください)。

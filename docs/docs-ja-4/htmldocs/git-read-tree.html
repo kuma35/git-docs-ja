@@ -749,9 +749,9 @@ git-read-tree(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git read-tree</em> [(-m [--trivial] [--aggressive] | --reset | --prefix=&lt;prefix&gt;)
-                [-u | -i]] [--index-output=&lt;file&gt;] [--no-sparse-checkout]
-                (--empty | &lt;tree-ish1&gt; [&lt;tree-ish2&gt; [&lt;tree-ish3&gt;]])</pre>
+<pre class="content"><em>git <code>read-tree</code></em> [(<code>-m</code> [<code>--trivial</code>] [<code>--aggressive</code>] | <code>--reset</code> | <code>--prefix=</code><em>&lt;prefix&gt;</em>)
+                [<code>-u</code> | <code>-i</code>]] [<code>--index-output=</code><em>&lt;file&gt;</em>] [<code>--no-sparse-checkout</code>]
+                (<code>--empty</code> | <em>&lt;tree-ish1&gt;</em> [<em>&lt;tree-ish2&gt;</em> [<em>&lt;tree-ish3&gt;</em>]])</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -767,142 +767,79 @@ git-read-tree(1) Manual Page
 <div class="sect1">
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
+<div class="paragraph"><p><code>-m::</code>
+        Perform a merge, not just a read.  The command will
+        refuse to run if your index file has unmerged entries,
+        indicating that you have not finished a previous merge you
+        started.</p></div>
+<div class="paragraph"><p><code>--reset::</code>
+        Same as -m, except that unmerged entries are discarded instead
+        of failing.  When used with <code>-u</code>, updates leading to loss of
+        working tree changes or untracked files or directories will not
+        abort the operation.</p></div>
+<div class="paragraph"><p><code>-u::</code>
+        After a successful merge, update the files in the work
+        tree with the result of the merge.</p></div>
+<div class="paragraph"><p><code>-i::</code>
+        Usually a merge requires the index file as well as the
+        files in the working tree to be up to date with the
+        current head commit, in order not to lose local
+        changes.  This flag disables the check with the working
+        tree and is meant to be used when creating a merge of
+        trees that are not directly related to the current
+        working tree status into a temporary index file.</p></div>
+<div class="paragraph"><p><code>-n::</code>
+<code>--dry-run::</code>
+        Check if the command would error out, without updating the index
+        or the files in the working tree for real.</p></div>
+<div class="paragraph"><p><code>-v::</code>
+        Show the progress of checking files out.</p></div>
+<div class="paragraph"><p><code>--trivial::</code>
+        Restrict three-way merge by <em>git read-tree</em> to happen
+        only if there is no file-level merging required, instead
+        of resolving merge for trivial cases and leaving
+        conflicting files unresolved in the index.</p></div>
+<div class="paragraph"><p><code>--aggressive::</code>
+        Usually a three-way merge by <em>git read-tree</em> resolves
+        the merge for really trivial cases and leaves other
+        cases unresolved in the index, so that porcelains can
+        implement different merge policies.  This flag makes the
+        command resolve a few more cases internally:</p></div>
+<div class="paragraph"><p>+
+* 一方の側がパスを削除し、もう一方の側がパスを変更しないままにする場合。 解決策は、そのパスを削除することです。
+* 両側でパスを削除したとき。 解決策は、そのパスを削除することです。
+* 両側で同じようにパスを追加する場合。 解決策は、そのパスを追加することです。</p></div>
+<div class="paragraph"><p><code>--prefix=</code><em>&lt;prefix&gt;</em><code>::</code>
+        Keep the current index contents, and read the contents
+        of the named tree-ish under the directory at <em>&lt;prefix&gt;</em>.
+        The command will refuse to overwrite entries that already
+        existed in the original index file.</p></div>
+<div class="paragraph"><p><code>--index-output=</code><em>&lt;file&gt;</em><code>::</code>
+        Instead of writing the results out to <code>$GIT_INDEX_FILE</code>,
+        write the resulting index in the named file.  While the
+        command is operating, the original index file is locked
+        with the same mechanism as usual.  The file must allow
+        to be rename(2)ed into from a temporary file that is
+        created next to the usual index file; typically this
+        means it needs to be on the same filesystem as the index
+        file itself, and you need write permission to the
+        directories the index file and index output file are
+        located in.</p></div>
+<div class="paragraph"><p>&#8216;--[no-]recurse-submodules::`
+        Using --recurse-submodules will update the content of all active
+        submodules according to the commit recorded in the superproject by
+        calling read-tree recursively, also setting the submodules&#8217; HEAD to be
+        detached at that commit.</p></div>
+<div class="paragraph"><p><code>--no-sparse-checkout::</code>
+        Disable sparse checkout support even if <code>core.sparseCheckout</code>
+        is true.</p></div>
+<div class="paragraph"><p><code>--empty::</code>
+        Instead of reading tree object(s) into the index, just empty
+        it.</p></div>
+<div class="paragraph"><p><code>-q::</code>
+<code>--quiet::</code>
+        Quiet, suppress feedback messages.</p></div>
 <div class="dlist"><dl>
-<dt class="hdlist1">
-<code>-m</code>
-</dt>
-<dd>
-<p>
-        Perform a merge, not just a read. The command will refuse to run if your index file has unmerged entries, indicating that you have not finished a previous merge you started.
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--reset</code>
-</dt>
-<dd>
-<p>
-        <code>-m</code> と同じですが、マージされていないエントリが失敗する代わりに破棄される点が異なります。 <code>-u</code> と一緒に使うと、作業ツリーの変更が失われる原因になる更新によって、または、追跡されていないファイルやディレクトリが失われる原因になる更新によって、操作を中止(abort)されることはありません。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>-u</code>
-</dt>
-<dd>
-<p>
-        マージが成功したら、マージの結果で作業ツリーのファイルを更新します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>-i</code>
-</dt>
-<dd>
-<p>
-        通常、マージでは、ローカルの変更が失われないように、インデックスファイルと作業ツリー内のファイルが現在のヘッドコミットで最新である必要があります。 このフラグは、作業ツリーでのチェックを無効にし、現在の作業ツリーのステータスに直接関係しないツリーを一時的なインデックスファイルにマージするときに使用することを目的としています。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>-n</code>
-</dt>
-<dt class="hdlist1">
-<code>--dry-run</code>
-</dt>
-<dd>
-<p>
-        作業ツリー内のインデックスまたはファイルを実際に更新せずに、コマンドがエラーになるかどうかを確認します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>-v</code>
-</dt>
-<dd>
-<p>
-        ファイルのチェックアウトの進行状況を表示します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--trivial</code>
-</dt>
-<dd>
-<p>
-        trivial(些細な)ケースでマージ解決作業し、競合するファイルをインデックスに未解決のままにする代わりに、 <code>git</code> <code>read-tree</code> による3方向マージを、ファイルレベルのマージが必要ない場合にのみ発生するように制限します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--aggressive</code>
-</dt>
-<dd>
-<p>
-        通常、 <code>git</code> <code>read-tree</code> による3方向のマージは、本当にtrivial(些細な)ケースのマージを解決し、他のケースはインデックスに未解決のままにして、磁器コマンドがさまざまなマージポリシーを実装できるようにします。このフラグにより、コマンドはさらにいくつかのケースを内部的に解決します:
-</p>
-<div class="ulist"><ul>
-<li>
-<p>
-一方の側がパスを削除し、もう一方の側がパスを変更しないままにする場合。 解決策は、そのパスを削除することです。
-</p>
-</li>
-<li>
-<p>
-両側でパスを削除したとき。 解決策は、そのパスを削除することです。
-</p>
-</li>
-<li>
-<p>
-両側で同じようにパスを追加する場合。 解決策は、そのパスを追加することです。
-</p>
-</li>
-</ul></div>
-</dd>
-<dt class="hdlist1">
-<code>--prefix=</code><em>&lt;prefix&gt;</em>
-</dt>
-<dd>
-<p>
-        現在のインデックスの内容を保持し、 <em>&lt;prefix&gt;</em> のディレクトリの下にある名前付きtree-ishの内容を読み取ります。このコマンドは、元のインデックスファイルにすでに存在しているエントリの上書きを拒否します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--index-output=</code><em>&lt;file&gt;</em>
-</dt>
-<dd>
-<p>
-        結果を <code>$GIT_INDEX_FILE</code> に書き出す代わりに、結果のインデックスを名前付きファイルに書き込みます。コマンドの動作中は、元のインデックスファイルが通常と同じメカニズムでロックされます。ファイルは、通常のインデックスファイルの隣に作成される一時ファイルから名前を変更できるようにする必要があります(rename(2))。通常、これは、インデックスファイル自体と同じファイルシステム上にある必要があり、インデックスファイルとインデックス出力ファイルが配置されているディレクトリへの書き込み権限が必要であることを意味します。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>recurse-submodules</code>
-</dt>
-<dd>
-<p>
-        <code>--recurse-submodules</code> を使用すると、スーパープロジェクトに記録されたコミットに従ってすべてのアクティブなサブモジュールのコンテンツが更新され、read-treeが再帰的に呼び出され、そのコミット時にサブモジュールのHEADが切り離される(detach)ように設定されます。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--no-sparse-checkout</code>
-</dt>
-<dd>
-<p>
-        `core.sparseCheckout`がtrueの場合でも、スパースチェックアウト(sparse checkout)のサポートを無効にします。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>--empty</code>
-</dt>
-<dd>
-<p>
-        ツリーオブジェクトをインデックスに読み込む代わりに、空にします。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>-q</code>
-</dt>
-<dt class="hdlist1">
-<code>--quiet</code>
-</dt>
-<dd>
-<p>
-        静かにし、フィードバックメッセージを抑制します。
-</p>
-</dd>
 <dt class="hdlist1">
 &lt;tree-ish#&gt;
 </dt>
@@ -1118,7 +1055,7 @@ $ echo "Merge with Linus" | \
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-15 12:54:41 JST
+ 2025-01-12 09:41:39 JST
 </div>
 </div>
 </body>

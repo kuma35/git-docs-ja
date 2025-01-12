@@ -7,7 +7,7 @@ git-rebase - 別のベース先端の上にコミットを再適用します
 
 SYNOPSIS
 --------
-[verse]
+[synopsis]
 'git rebase' [-i | --interactive] [<options>] [--exec <cmd>]
 	[--onto <newbase> | --keep-base] [<upstream> [<branch>]]
 'git rebase' [-i | --interactive] [<options>] [--exec <cmd>] [--onto <newbase>]
@@ -166,33 +166,49 @@ MODE OPTIONS
 
 このセクションの各オプションは、このセクションのオプションを組み合わせる事も含めて、他のオプションと一緒に使うことはできません。
 
-`--continue`::
-	マージの競合を解決した後、リベースプロセスを再開します。
+`--continue::`
+	Restart the rebasing process after having resolved a merge conflict.
 
-`--skip`::
-	現在のパッチをスキップして、リベースプロセスを再開します。
+`--skip::`
+	Restart the rebasing process by skipping the current patch.
 
-`--abort`::
-	リベース操作を中止(abort)し、 `HEAD` を元のブランチにリセットします。リベース操作の開始時に `<branch>` が指定された場合、`HEAD` は `<branch>` にリセットされます。それ以外の場合、 `HEAD` はリベース操作が開始されたときの位置にリセットされます。
+`--abort::`
+	Abort the rebase operation and reset HEAD to the original
+	branch. If `<branch>` was provided when the rebase operation was
+	started, then `HEAD` will be reset to `<branch>`. Otherwise `HEAD`
+	will be reset to where it was when the rebase operation was
+	started.
 
-`--quit`::
-	リベース操作を中止(abort)しますが、HEADは元のブランチにリセットされません。その結果、インデックスと作業ツリーも変更されません。 `--autostash` を使用して一時的なstashエントリが作成された場合、それはstashリストに保存されます。
+`--quit::`
+	Abort the rebase operation but `HEAD` is not reset back to the
+	original branch. The index and working tree are also left
+	unchanged as a result. If a temporary stash entry was created
+	using `--autostash`, it will be saved to the stash list.
 
-`--edit-todo`::
-	対話リベース中にToDoリストを編集します。
+`--edit-todo::`
+	Edit the todo list during an interactive rebase.
 
-`--show-current-patch`::
-	対話的なリベース、または、競合のためにリベースが停止されたときに、現在のパッチを表示します。 これは `git show REBASE_HEAD` と同等です。
+`--show-current-patch::`
+	Show the current patch in an interactive rebase or when rebase
+	is stopped because of conflicts. This is the equivalent of
+	`git show REBASE_HEAD`.
 
 OPTIONS
 -------
-`--onto <newbase>`::
-	新しいコミットを作成する開始点を指定します。 `--onto` オプションが指定されていない場合、開始点は `<upstream>` です。これは、既存のブランチ名だけでなく、任意の有効なコミットである可能性があります。
+`--onto`
+	Starting point at which to create the new commits. If the
+	`--onto` option is not specified, the starting point is
+	`<upstream>`.  May be any valid commit, and not just an
+	existing branch name.
 +
 特別な場合として、マージベースが1つしかない場合は、あなたはAとBのマージベースのショートカットとして "A\...B" を使用できます。最大でAとBのいずれかを省略できます。その場合、デフォルトでHEADになります。
 
-`--keep-base`::
-	`<upstream>` の `<branch>` のマージベースへの新しいコミットを作成する開始点を設定します。 `git rebase --keep-base <upstream> <branch>` を実行することは `git rebase --reapply-cherry-picks --no-fork-point --onto <upstream>...<branch> <upstream> <branch>` を実行することと同等です。
+`--keep-base::`
+	Set the starting point at which to create the new commits to the
+	merge base of `<upstream>` and `<branch>`. Running
+	`git rebase --keep-base <upstream> <branch>` is equivalent to
+	running
+	`git rebase --reapply-cherry-picks --no-fork-point --onto <upstream>...<branch> <upstream> <branch>`.
 +
 このオプションは、アップストリームブランチの先頭で機能を開発している場合に役立ちます。この機能が働いている間に、アップストリームのブランチが進むことがあり、アップストリームの先頭にリベースを続けるのは得策ではなく、ベースのコミットをそのままにしておくことがあります。基底のコミットは変更されないので、このオプションはコミットの損失を避けるために `--reapply-cherry-picks` を暗黙的に指定します。
 +
@@ -206,13 +222,18 @@ OPTIONS
 <branch>::
 	作業するブランチ。デフォルトはHEADです。
 
-`--apply`::
-	適用戦略(applying strategies)を使用してリベースします(内部で `git-am` を呼び出します)。このオプションは、マージバックエンドがapplyのすべてを処理すると、将来的には動作しなくなる可能性があります。
+`--apply::`
+	Use applying strategies to rebase (calling `git-am`
+	internally).  This option may become a no-op in the future
+	once the merge backend handles everything the apply one does.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--empty=(drop|keep|stop)`::
-	How to handle commits that are not empty to start and are not clean cherry-picks of any upstream commit, but which become empty after rebasing (because they contain a subset of already upstream changes):
+`--empty=(drop|keep|stop)::`
+	How to handle commits that are not empty to start and are not
+	clean cherry-picks of any upstream commit, but which become
+	empty after rebasing (because they contain a subset of already
+	upstream changes):
 +
 --
 `drop`;;
@@ -228,9 +249,15 @@ OPTIONS
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--no-keep-empty`::
-`--keep-empty`::
-	リベースの前に空で始まるコミット(つまり、親から何も変更していないコミット)を結果に残さないようにします。 なぜなら、そのようなコミットを作成するには `git commit` に `--allow-empty` というオーバーライドするフラグを渡す必要があり、これはユーザーが意図的にそのようなコミットを作成し、それを保持したいことを意味しているからです。
+`--no-keep-empty::`
+`--keep-empty::`
+	Do not keep commits that start empty before the rebase
+	(i.e. that do not change anything from its parent) in the
+	result.  The default is to keep commits which start empty,
+	since creating such commits requires passing the `--allow-empty`
+	override flag to `git commit`, signifying that a user is very
+	intentionally creating such a commit and thus wants to keep
+	it.
 +
 対話的なリベースを起動し、不要なコミットに対応する行を削除するだけで、空で始まるコミットを取り除くことができるため、このフラグの使用はおそらくまれです。 このフラグは、外部ツールが多くの空のコミットを生成し、それらをすべて削除したい場合などの為の便利なショートカットとして存在します。
 +
@@ -238,9 +265,13 @@ OPTIONS
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--reapply-cherry-picks`::
-`--no-reapply-cherry-picks`::
-	我先にドロップしてしまうのではなく、アップストリームコミットのすべてのクリーンなチェリーピックを再適用します。 （これらのコミットがリベース後に空になった場合、それらにはすでにアップストリームの変更のサブセットが含まれているため、それらに対する動作は `--empty`フラグによって制御されます。）
+`--reapply-cherry-picks::`
+`--no-reapply-cherry-picks::`
+	Reapply all clean cherry-picks of any upstream commit instead
+	of preemptively dropping them. (If these commits then become
+	empty after rebasing, because they contain a subset of already
+	upstream changes, the behavior towards them is controlled by
+	the `--empty` flag.)
 +
 `--keep-base` がない場合(または `--no-reapply-cherry-picks` が指定されている場合)、これらのコミットは自動的にドロップされます。これにはすべてのアップストリームコミットを読み取る必要があるため、読み取る必要のあるアップストリームコミットが多数あるリポジトリではコストがかかる可能性があります。 `merge` バックエンドを使用する場合、（`--quiet` が指定されていない限り）ドロップされたコミットごとに警告が発行されます。 `advice.skippedCherryPicks` がfalseに設定されていない限り、アドバイスも表示されます (linkgit:git-config[1] を参照)。
 +
@@ -248,76 +279,96 @@ OPTIONS
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--allow-empty-message`::
-	何も操作しません。空のメッセージでコミットをリベースすると失敗(fail)しますが、このオプションはその動作をオーバーライドし、空のメッセージを含むコミットをリベースできます。つまり、空のメッセージでコミットしても、リベースは停止(halt)しません。
+`--allow-empty-message::`
+	No-op.  Rebasing commits with an empty message used to fail
+	and this option would override that behavior, allowing commits
+	with empty messages to be rebased.  Now commits with an empty
+	message do not cause rebasing to halt.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`-m`::
-`--merge`::
-	マージ戦略(merging strategies)を使用してリベースします(デフォルト)。
+`-m::`
+`--merge::`
+	Using merging strategies to rebase (default).
 +
 リベースマージは、<upstream>ブランチの上にある作業ブランチからの各コミットをリプレイすることによって機能することに注意してください。このため、マージの競合が発生した場合、 `ours` として報告される側は、<upstream>で始まるこれまでのリベースされたシリーズであり、 `theirs` は作業ブランチです。 つまり、サイドが入れ替わっています。
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`-s <strategy>`::
-`--strategy=<strategy>`::
-	デフォルトの `ort` の代わりに、指定のマージ戦略を使用します。 このオプションは `--merge` の指定を含んでいます。
+`-s`
+`--strategy=<strategy>::`
+	Use the given merge strategy, instead of the default `ort`.
+	This implies `--merge`.
 +
 `git rebase` は、指定された戦略を使用して<upstream>ブランチの上にある作業ブランチからの各コミットをリプレイするため、 `ours` 戦略を使用すると、<branch>からすべてのパッチが空になります。これはほとんど意味がありません。
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`-X <strategy-option>`::
-`--strategy-option=<strategy-option>`::
-	<strategy-option>をマージ戦略に渡します。 これは `--merge` の指定を含んでいて、戦略が指定されていない場合は `-s ort` を意味します。 `-m` オプションにて上記で述べたように、「ours」と「theirs」が逆になっていることに注意してください。
+`-X`
+`--strategy-option=<strategy-option>::`
+	Pass the <strategy-option> through to the merge strategy.
+	This implies `--merge` and, if no strategy has been
+	specified, `-s ort`.  Note the reversal of 'ours' and
+	'theirs' as noted above for the `-m` option.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
 include::rerere-options.txt[]
 
-`-S[<keyid>]`::
-`--gpg-sign[=<keyid>]`::
-`--no-gpg-sign`::
-	GPG署名コミットです。 `keyid` 引数はオプションであり、デフォルトでコミッターIDになります。 指定する場合は、スペースなしでオプションに串刺しする必要があります。 `--no-gpg-sign` は、`commit.gpgSign` 構成変数と、それより前で指定した `--gpg-sign` オプションの、その両方を打ち消すのに役立ちます。
+`-S[<keyid>]::`
+`--gpg-sign[=<keyid>]::`
+`--no-gpg-sign::`
+	GPG-sign commits. The `keyid` argument is optional and
+	defaults to the committer identity; if specified, it must be
+	stuck to the option without a space. `--no-gpg-sign` is useful to
+	countermand both `commit.gpgSign` configuration variable, and
+	earlier `--gpg-sign`.
 
-`-q`::
-`--quiet`::
-	静かにします。`--no-stat` の指定を含みます。
+`-q::`
+`--quiet::`
+	Be quiet. Implies `--no-stat`.
 
-`-v`::
-`--verbose`::
-	おしゃべりにします。 `--stat` の指定を含みます。
+`-v::`
+`--verbose::`
+	Be verbose. Implies `--stat`.
 
-`--stat`::
-	最後のリベース以降にアップストリームで変更されたもののdiffstatを表示します。 diffstatは、構成オプション rebase.stat によっても制御されます。
+`--stat::`
+	Show a diffstat of what changed upstream since the last rebase. The
+	diffstat is also controlled by the configuration option rebase.stat.
 
-`-n`::
-`--no-stat`::
-	リベース処理の一部としてdiffstatを表示しないでください。
+`-n::`
+`--no-stat::`
+	Do not show a diffstat as part of the rebase process.
 
-`--no-verify`::
-	このオプションは、リベース前のフック(pre-rebase hook)をバイパスします。 linkgit:githooks[5] も参照してください。
+`--no-verify::`
+	This option bypasses the pre-rebase hook.  See also linkgit:githooks[5].
 
-`--verify`::
-	リベース前フック(pre-rebase hook)の実行を許可します。これがデフォルトです。このオプションは、 `--no-verify` をオーバーライドするために使用できます。 linkgit:githooks[5] も参照してください。
+`--verify::`
+	Allows the pre-rebase hook to run, which is the default.  This option can
+	be used to override `--no-verify`.  See also linkgit:githooks[5].
 
-`-C<n>`::
-	各変更の前後で、少なくとも <n> 行の周囲のコンテキストが一致することを確認する。 周囲の文脈の行数が少ない場合は、すべて一致させなければならない。 デフォルトでは、コンテキストは無視されます。 `--apply` の指定を含んでいます。
+`-C<n>::`
+	Ensure at least `<n>` lines of surrounding context match before
+	and after each change.  When fewer lines of surrounding
+	context exist they all must match.  By default no context is
+	ever ignored.  Implies `--apply`.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--no-ff`::
-`--force-rebase`::
-`-f`::
-	変更されていないコミットを早送りす(fast-forward)るのではなく、リベースされたすべてのコミットを個別にリプレイします。これにより、リベースされたブランチの履歴全体が新しいコミットで構成されることが保証されます。
+`--no-ff::`
+`--force-rebase::`
+`-f::`
+	Individually replay all rebased commits instead of fast-forwarding
+	over the unchanged ones.  This ensures that the entire history of
+	the rebased branch is composed of new commits.
 +
 トピックブランチのマージを取り消した後にこのオプションを使うと便利です。このオプションはトピックブランチを新しいコミットで再作成するので、「戻しを戻す」(revert the reversion)必要はありません (詳細は link:howto/revert-a-faulty-merge.html[revert-a-faulty-merge How-To] をご覧ください)。
 
-`--fork-point`::
-`--no-fork-point`::
-	<branch>によって導入されたコミットを計算するときに、reflogを使用して、<upstream>と<branch>の間の、より一般的な祖先を見つけます。
+`--fork-point::`
+`--no-fork-point::`
+	Use reflog to find a better common ancestor between `<upstream>`
+	and `<branch>` when calculating which commits have been
+	introduced by `<branch>`.
 +
 `--fork-point` がアクティブな場合、<upstream>の代わりに `fork_point` を使用して、リベースするコミットのセットを計算します。ここで、 `fork_point` は、 `git merge-base --fork-point <upstream> <branch>` コマンドの結果です（linkgit:git-merge-base[1] 参照）。 `fork_point` が空になると、<upstream>がフォールバックとして使用されます。
 +
@@ -327,8 +378,10 @@ include::rerere-options.txt[]
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--ignore-whitespace`::
-	差分を調整しようとするときは、空白の違いを無視してください。現在、各バックエンドはこの振る舞いの近似を実装しています:
+`--ignore-whitespace::`
+	Ignore whitespace differences when trying to reconcile
+	differences. Currently, each backend implements an approximation of
+	this behavior:
 +
 apply backend;;
 	パッチを適用するときは、コンテキスト行の空白(whitespace)の変更を無視してください。残念ながら、これは、パッチによって置き換えられる「古い」行が既存のファイルと空白(whitespace)のみが異なる場合、パッチアプリケーションが成功する代わりに、マージの競合が発生することを意味します。
@@ -336,37 +389,55 @@ apply backend;;
 merge backend;;
 	空白(whitespace)のみが変更された行は、マージ時に変更されていないものとして扱います。残念ながら、これは、反対側に競合する変更がなかったとしても、空白(whitespace)を変更することを目的としたパッチハンクがドロップされることを意味します。
 
-`--whitespace=<option>`::
-	このフラグは、パッチを適用する `git apply` プログラム(linkgit:git-apply[1] 参照)に渡されます。 `--apply` の指定を含んでいます。
+`--whitespace=<option>::`
+	This flag is passed to the `git apply` program
+	(see linkgit:git-apply[1]) that applies the patch.
+	Implies `--apply`.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--committer-date-is-author-date`::
-	現在の時刻をコミッターの日付として使用する代わりに、リベースされるコミットの作成者の日付をコミッターの日付として使用します。このオプションは、 `--force-rebase` の指定を含んでいます。
+`--committer-date-is-author-date::`
+	Instead of using the current time as the committer date, use
+	the author date of the commit being rebased as the committer
+	date. This option implies `--force-rebase`.
 
-`--ignore-date`::
-`--reset-author-date`::
-	元のコミットの作成者の日付を使用する代わりに、現在の時刻をリベースされたコミットの作成者の日付として使用します。 このオプションは、 `--force-rebase` の指定を含んでいます。
+`--ignore-date::`
+`--reset-author-date::`
+	Instead of using the author date of the original commit, use
+	the current time as the	author date of the rebased commit.  This
+	option implies `--force-rebase`.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--signoff`::
-	すべてのリベースされたコミットに `Signed-off-by` トレーラーを追加します。注意: `--interactive` が指定されている場合、pick または edit または reword のマークが付けられたコミットのみにトレーラーが追加されることに注意してください。
+`--signoff::`
+	Add a `Signed-off-by` trailer to all the rebased commits. Note
+	that if `--interactive` is given then only commits marked to be
+	picked, edited or reworded will have the trailer added.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`-i`::
-`--interactive`::
-	リベースされようとしているコミットのリストを作成します。リベースする前に、ユーザーにそのリストを編集させます。このモードは、コミットの分割にも使用できます（以下の「SPLITTING COMMITS」を参照）。
+`-i::`
+`--interactive::`
+	Make a list of the commits which are about to be rebased.  Let the
+	user edit that list before rebasing.  This mode can also be used to
+	split commits (see SPLITTING COMMITS below).
 +
 The commit list format can be changed by setting the configuration option rebase.instructionFormat. A customized instruction format will automatically have the commit hash prepended to the format.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`-r`::
-`--rebase-merges[=(rebase-cousins|no-rebase-cousins)]`::
-`--no-rebase-merges`::
-	デフォルトでは、リベースはtodoリストからマージコミットを削除し、リベースされたコミットを単一の線形ブランチに配置します。 `--rebase-merges` を使用すると、リベースは代わりに、マージコミットを再作成することにより、リベースされるコミット内の分岐構造を保持しようとします。これらのマージコミットで解決されたマージの競合または手動の修正(amend)は、手動で 解決/再適用 する必要があります。 `--no-rebase-merges` は、 `rebase.rebaseMerges` 設定オプションと、 `--no-rebase-merges` より前で指定された `--rebase-merges` の両方を無効にするために使用できます。
+`-r::`
+`--rebase-merges[=(rebase-cousins|no-rebase-cousins)]::`
+`--no-rebase-merges::`
+	By default, a rebase will simply drop merge commits from the todo
+	list, and put the rebased commits into a single, linear branch.
+	With `--rebase-merges`, the rebase will instead try to preserve
+	the branching structure within the commits that are to be rebased,
+	by recreating the merge commits. Any resolved merge conflicts or
+	manual amendments in these merge commits will have to be
+	resolved/re-applied manually. `--no-rebase-merges` can be used to
+	countermand both the `rebase.rebaseMerges` config option and a previous
+	`--rebase-merges`.
 +
 マージをリベースする場合、 `rebase-cousins` (いとこ)と `no-rebase-cousins` (非いとこ)の 2 つのモードがあります。モードが指定されていない場合は、 `no-rebase-cousins` がデフォルトです。 `no-rebase-cousins` モードでは、直接の祖先として `<upstream>` を持たないコミットはオリジナルの分岐点を保持します。 つまり、 linkgit:git-log[1] の `--ancestry-path` オプションによって除外されるコミットは、デフォルトではオリジナルの祖先を保持します。 `rebase-cousins` モードでは、そのようなコミットは、 代わりに `<upstream>` (または指定されている場合は `<onto>`) にリベースされます。
 +
@@ -374,9 +445,12 @@ The commit list format can be changed by setting the configuration option rebase
 +
 下記の「REBASING MERGES」と「INCOMPATIBLE OPTIONS」も参照してください。
 
-`-x <cmd>`::
-`--exec <cmd>`::
-	最終履歴にコミットを作成する各行の後に `exec <cmd>` を追加します。 `<cmd>` は、1つ以上のシェルコマンドとして解釈されます。 失敗したコマンドは、exit code 1でリベースを中断(interrupt)します。
+`-x`
+`--exec`
+	Append "exec <cmd>" after each line creating a commit in the
+	final history. `<cmd>` will be interpreted as one or more shell
+	commands. Any command that fails will interrupt the rebase,
+	with exit code 1.
 +
 `--exec` の1つのインスタンスを複数のコマンドで使用することにより、複数のコマンドを実行できます:
 +
@@ -392,14 +466,22 @@ The commit list format can be changed by setting the configuration option rebase
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--root`::
-	<upstream>で制限するのではなく、<branch>から到達可能なすべてのコミットをリベースします。 これにより、ブランチのルートコミットをリベースできます。
+`--root::`
+	Rebase all commits reachable from `<branch>`, instead of
+	limiting them with an `<upstream>`.  This allows you to rebase
+	the root commit(s) on a branch.
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--autosquash`::
-`--no-autosquash`::
-	Automatically squash commits with specially formatted messages into previous commits being rebased. If a commit message starts with "squash! ", "fixup! " or "amend! ", the remainder of the subject line is taken as a commit specifier, which matches a previous commit if it matches the subject line or the hash of that commit. If no commit matches fully, matches of the specifier with the start of commit subjects are considered.
+`--autosquash::`
+`--no-autosquash::`
+	Automatically squash commits with specially formatted messages into
+	previous commits being rebased.  If a commit message starts with
+	"squash! ", "fixup! " or "amend! ", the remainder of the subject line
+	is taken as a commit specifier, which matches a previous commit if it
+	matches the subject line or the hash of that commit.  If no commit
+	matches fully, matches of the specifier with the start of commit
+	subjects are considered.
 +
 In the rebase todo list, the actions of squash, fixup and amend commits are changed from `pick` to `squash`, `fixup` or `fixup -C`, respectively, and they are moved right after the commit they modify. The `--interactive` option can be used to review and edit the todo list before proceeding.
 +
@@ -409,21 +491,28 @@ Setting configuration variable `rebase.autoSquash` to true enables auto-squashin
 +
 下記の「INCOMPATIBLE OPTIONS」(互換性のないオプション)も参照してください。
 
-`--autostash`::
-`--no-autostash`::
-	操作を開始する前に一時的なスタッシュエントリを自動的に作成し、操作の終了後に適用します。これは、汚れたワークツリー(dirty worktree)でリベースを実行できることを意味します。ただし、注意して使用してください。リベース成功後のスタッシュ適用の際、重要な競合を引き起こす可能性があります。
+`--autostash::`
+`--no-autostash::`
+	Automatically create a temporary stash entry before the operation
+	begins, and apply it after the operation ends.  This means
+	that you can run rebase on a dirty worktree.  However, use
+	with care: the final stash application after a successful
+	rebase might result in non-trivial conflicts.
 
-`--reschedule-failed-exec`::
-`--no-reschedule-failed-exec`::
-	失敗した `exec` コマンドを自動的に再スケジュールします。 これは、対話モード(または `--exec` オプションが提供された場合)でのみ意味があります。
+`--reschedule-failed-exec::`
+`--no-reschedule-failed-exec::`
+	Automatically reschedule `exec` commands that failed. This only makes
+	sense in interactive mode (or when an `--exec` option was provided).
 +
 This option applies once a rebase is started. It is preserved for the whole rebase based on, in order, the command line option provided to the initial `git rebase`, the `rebase.rescheduleFailedExec` configuration (see linkgit:git-config[1] or "CONFIGURATION" below), or it defaults to false.
 +
 Recording this option for the whole rebase is a convenience feature. Otherwise an explicit `--no-reschedule-failed-exec` at the start would be overridden by the presence of a `rebase.rescheduleFailedExec=true` configuration when `git rebase --continue` is invoked. Currently, you cannot pass `--[no-]reschedule-failed-exec` to `git rebase --continue`.
 
-`--update-refs`::
-`--no-update-refs`::
-	リベースされているコミットを指すブランチを自動的に強制更新します。 ワークツリーでチェックアウトされたブランチは、この方法では更新されません。
+`--update-refs::`
+`--no-update-refs::`
+	Automatically force-update any branches that point to commits that
+	are being rebased. Any branches that are checked out in a worktree
+	are not updated in this way.
 +
 構成変数 `rebase.updateRefs` が設定されている場合、このオプションを使用して、この設定をオーバーライドして無効にすることができます。
 +
