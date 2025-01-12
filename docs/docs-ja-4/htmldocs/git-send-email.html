@@ -784,265 +784,381 @@ Greg Kroah-Hartman の <code>send_lots_of_email.pl</code> スクリプトで使�
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_電子メール作成">電子メール作成</h3>
-<div class="paragraph"><p><code>--annotate::</code>
-        Review and edit each patch you&#8217;re about to send. Default is the value
-        of <code>sendemail.annotate</code>. See the CONFIGURATION section for
-        <code>sendemail.multiEdit</code>.</p></div>
-<div class="paragraph"><p><code>--bcc=</code><em>&lt;address&gt;</em><code>,</code><code>...</code><code>::</code>
-        Specify a "Bcc:" value for each email. Default is the value of
-        <code>sendemail.bcc</code>.</p></div>
-<div class="paragraph"><p>+
-このオプションは複数回指定できます。</p></div>
-<div class="paragraph"><p><code>--cc=</code><em>&lt;address&gt;</em><code>,</code><code>...</code><code>::</code>
-        Specify a starting "Cc:" value for each email.
-        Default is the value of <code>sendemail.cc</code>.</p></div>
-<div class="paragraph"><p>+
-このオプションは複数回指定できます。</p></div>
-<div class="paragraph"><p><code>--compose::</code>
-        Invoke a text editor (see GIT_EDITOR in <a href="git-var.html">git-var(1)</a>)
-        to edit an introductory message for the patch series.</p></div>
-<div class="paragraph"><p>+
-When <code>--compose</code> is used, git send-email will use the From, To, Cc, Bcc, Subject, Reply-To, and In-Reply-To headers specified in the message. If the body of the message (what you type after the headers and a blank line) only contains blank (or Git: prefixed) lines, the summary won&#8217;t be sent, but the headers mentioned above will be used unless they are removed.</p></div>
-<div class="paragraph"><p>+
-From ヘッダー または In-Reply-To ヘッダーが無い時はプロンプトが表示されます。</p></div>
-<div class="paragraph"><p>+
-<code>sendemail.multiEdit</code> の「CONFIGURATION」セクションを参照してください。</p></div>
-<div class="paragraph"><p><code>--from=</code><em>&lt;address&gt;</em><code>::</code>
-        Specify the sender of the emails.  If not specified on the command line,
-        the value of the <code>sendemail.from</code> configuration option is used.  If
-        neither the command-line option nor <code>sendemail.from</code> are set, then the
-        user will be prompted for the value.  The default for the prompt will be
-        the value of GIT_AUTHOR_IDENT, or GIT_COMMITTER_IDENT if that is not
-        set, as returned by "git var -l".</p></div>
-<div class="paragraph"><p><code>--reply-to=</code><em>&lt;address&gt;</em><code>::</code>
-        Specify the address where replies from recipients should go to.
-        Use this if replies to messages should go to another address than what
-        is specified with the --from parameter.</p></div>
-<div class="paragraph"><p><code>--in-reply-to=</code><em>&lt;identifier&gt;</em><code>::</code>
-        Make the first mail (or all the mails with <code>--no-thread</code>) appear as a
-        reply to the given Message-ID, which avoids breaking threads to
-        provide a new patch series.
-        The second and subsequent emails will be sent as replies according to
-        the <code>--</code>[<code>no-</code>]<code>chain-reply-to</code> setting.</p></div>
-<div class="paragraph"><p>+
-そのため、例えば <code>--thread</code> と <code>--no-chain-reply-to</code> を指定すると、以下のように [<code>PATCH</code> <code>v2</code> <code>0/3</code>] が [<code>PATCH</code> <code>0/2</code>] に対する返信になるように、2番目以降のパッチは最初のパッチへの返信になります:</p></div>
-<div class="paragraph"><p>+
-  [PATCH 0/2] Here is what I did&#8230;
-    [PATCH 1/2] Clean up and tests
-    [PATCH 2/2] Implementation
-    [PATCH v2 0/3] Here is a reroll
-      [PATCH v2 1/3] Clean up
-      [PATCH v2 2/3] New tests
-      [PATCH v2 3/3] Implementation</p></div>
-<div class="paragraph"><p>+
-<code>--compose</code> も設定されている場合のみ必要です。 <code>--compose</code> が設定されていない場合は、プロンプトが表示されます。</p></div>
-<div class="paragraph"><p><code>--subject=</code><em>&lt;string&gt;</em><code>::</code>
-        Specify the initial subject of the email thread.
-        Only necessary if --compose is also set.  If --compose
-        is not set, this will be prompted for.</p></div>
-<div class="paragraph"><p><code>--to=</code><em>&lt;address&gt;</em><code>,</code><code>...</code><code>::</code>
-        Specify the primary recipient of the emails generated. Generally, this
-        will be the upstream maintainer of the project involved. Default is the
-        value of the <code>sendemail.to</code> configuration value; if that is unspecified,
-        and --to-cmd is not specified, this will be prompted for.</p></div>
-<div class="paragraph"><p>+
-このオプションは複数回指定できます。</p></div>
-<div class="paragraph"><p><code>--8bit-encoding=</code><em>&lt;encoding&gt;</em><code>::</code>
-        When encountering a non-ASCII message or subject that does not
-        declare its encoding, add headers/quoting to indicate it is
-        encoded in &lt;encoding&gt;.  Default is the value of the
-        <em>sendemail.assume8bitEncoding</em>; if that is unspecified, this
-        will be prompted for if any non-ASCII files are encountered.</p></div>
-<div class="paragraph"><p>+
-注意:エンコーディングを検証する試みは一切行われないことに注意してください。</p></div>
-<div class="paragraph"><p><code>--compose-encoding=</code><em>&lt;encoding&gt;</em><code>::</code>
-        Specify encoding of compose message. Default is the value of the
-        <em>sendemail.composeEncoding</em>; if that is unspecified, UTF-8 is assumed.</p></div>
-<div class="paragraph"><p><code>--transfer-encoding=</code>(<code>7bit</code>|<code>8bit</code>|<code>quoted-printable</code>|<code>base64</code>|<code>auto</code>)<code>::</code>
-        Specify the transfer encoding to be used to send the message over SMTP.
-        7bit will fail upon encountering a non-ASCII message.  quoted-printable
-        can be useful when the repository contains files that contain carriage
-        returns, but makes the raw patch email file (as saved from a MUA) much
-        harder to inspect manually.  base64 is even more fool proof, but also
-        even more opaque.  auto will use 8bit when possible, and quoted-printable
-        otherwise.</p></div>
-<div class="paragraph"><p>+
-デフォルトは、<code>sendemail.transferEncoding</code> 構成値です。 それが指定されていない場合、デフォルトは <code>auto</code> です。</p></div>
-<div class="paragraph"><p><code>--xmailer::</code>
-<code>--no-xmailer::</code>
-        Add (or prevent adding) the "X-Mailer:" header.  By default,
-        the header is added, but it can be turned off by setting the
-        <code>sendemail.xmailer</code> configuration variable to <code>false</code>.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--annotate</code>
+</dt>
+<dd>
+<p>
+        Review and edit each patch you&#8217;re about to send. Default is the value of <code>sendemail.annotate</code>. See the CONFIGURATION section for <code>sendemail.multiEdit</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--bcc=</code><em>&lt;address&gt;</em><code>,.</code>..
+</dt>
+<dd>
+<p>
+        Specify a "Bcc:" value for each email. Default is the value of <code>sendemail.bcc</code>.
+</p>
+<div class="paragraph"><p>このオプションは複数回指定できます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--cc=</code><em>&lt;address&gt;</em><code>,.</code>..
+</dt>
+<dd>
+<p>
+        Specify a starting "Cc:" value for each email. Default is the value of <code>sendemail.cc</code>.
+</p>
+<div class="paragraph"><p>このオプションは複数回指定できます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--compose</code>
+</dt>
+<dd>
+<p>
+        Invoke a text editor (see GIT_EDITOR in <a href="git-var.html">git-var(1)</a>) to edit an introductory message for the patch series.
+</p>
+<div class="paragraph"><p>When <code>--compose</code> is used, git send-email will use the From, To, Cc, Bcc, Subject, Reply-To, and In-Reply-To headers specified in the message. If the body of the message (what you type after the headers and a blank line) only contains blank (or Git: prefixed) lines, the summary won&#8217;t be sent, but the headers mentioned above will be used unless they are removed.</p></div>
+<div class="paragraph"><p>From ヘッダー または In-Reply-To ヘッダーが無い時はプロンプトが表示されます。</p></div>
+<div class="paragraph"><p><code>sendemail.multiEdit</code> の「CONFIGURATION」セクションを参照してください。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--from=</code><em>&lt;address&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify the sender of the emails. If not specified on the command line, the value of the <code>sendemail.from</code> configuration option is used. If neither the command-line option nor <code>sendemail.from</code> are set, then the user will be prompted for the value. The default for the prompt will be the value of GIT_AUTHOR_IDENT, or GIT_COMMITTER_IDENT if that is not set, as returned by "git var -l".
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--reply-to=</code><em>&lt;address&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify the address where replies from recipients should go to. Use this if replies to messages should go to another address than what is specified with the --from parameter.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--in-reply-to=</code><em>&lt;identifier&gt;</em>
+</dt>
+<dd>
+<p>
+        Make the first mail (or all the mails with <code>--no-thread</code>) appear as a reply to the given Message-ID, which avoids breaking threads to provide a new patch series. The second and subsequent emails will be sent as replies according to the <code>--</code>[<code>no-</code>]<code>chain-reply-to</code> setting.
+</p>
+<div class="paragraph"><p>そのため、例えば <code>--thread</code> と <code>--no-chain-reply-to</code> を指定すると、以下のように [<code>PATCH</code> <code>v2</code> <code>0/3</code>] が [<code>PATCH</code> <code>0/2</code>] に対する返信になるように、2番目以降のパッチは最初のパッチへの返信になります:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>[PATCH 0/2] Here is what I did...
+  [PATCH 1/2] Clean up and tests
+  [PATCH 2/2] Implementation
+  [PATCH v2 0/3] Here is a reroll
+    [PATCH v2 1/3] Clean up
+    [PATCH v2 2/3] New tests
+    [PATCH v2 3/3] Implementation</code></pre>
+</div></div>
+<div class="paragraph"><p><code>--compose</code> も設定されている場合のみ必要です。 <code>--compose</code> が設定されていない場合は、プロンプトが表示されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--subject=</code><em>&lt;string&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify the initial subject of the email thread. Only necessary if --compose is also set. If --compose is not set, this will be prompted for.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--to=</code><em>&lt;address&gt;</em><code>,.</code>..
+</dt>
+<dd>
+<p>
+        Specify the primary recipient of the emails generated. Generally, this will be the upstream maintainer of the project involved. Default is the value of the <code>sendemail.to</code> configuration value; if that is unspecified, and --to-cmd is not specified, this will be prompted for.
+</p>
+<div class="paragraph"><p>このオプションは複数回指定できます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--8bit-encoding=</code><em>&lt;encoding&gt;</em>
+</dt>
+<dd>
+<p>
+        When encountering a non-ASCII message or subject that does not declare its encoding, add headers/quoting to indicate it is encoded in &lt;encoding&gt;. Default is the value of the <em>sendemail.assume8bitEncoding</em>; if that is unspecified, this will be prompted for if any non-ASCII files are encountered.
+</p>
+<div class="paragraph"><p>注意:エンコーディングを検証する試みは一切行われないことに注意してください。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--compose-encoding=</code><em>&lt;encoding&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify encoding of compose message. Default is the value of the <em>sendemail.composeEncoding</em>; if that is unspecified, UTF-8 is assumed.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--transfer-encoding=</code>(<code>7bit</code>|<code>8bit</code>|<code>quoted-printable</code>|<code>base64</code>|<code>auto</code>)
+</dt>
+<dd>
+<p>
+        Specify the transfer encoding to be used to send the message over SMTP. 7bit will fail upon encountering a non-ASCII message. quoted-printable can be useful when the repository contains files that contain carriage returns, but makes the raw patch email file (as saved from a MUA) much harder to inspect manually. base64 is even more fool proof, but also even more opaque. auto will use 8bit when possible, and quoted-printable otherwise.
+</p>
+<div class="paragraph"><p>デフォルトは、<code>sendemail.transferEncoding</code> 構成値です。 それが指定されていない場合、デフォルトは <code>auto</code> です。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--xmailer</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-xmailer</code>
+</dt>
+<dd>
+<p>
+        Add (or prevent adding) the "X-Mailer:" header. By default, the header is added, but it can be turned off by setting the <code>sendemail.xmailer</code> configuration variable to <code>false</code>.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_電子メール送信">電子メール送信</h3>
-<div class="paragraph"><p><code>--envelope-sender=</code><em>&lt;address&gt;</em><code>::</code>
-        Specify the envelope sender used to send the emails.
-        This is useful if your default address is not the address that is
-        subscribed to a list. In order to use the <em>From</em> address, set the
-        value to "auto". If you use the sendmail binary, you must have
-        suitable privileges for the -f parameter.  Default is the value of the
-        <code>sendemail.envelopeSender</code> configuration variable; if that is
-        unspecified, choosing the envelope sender is left to your MTA.</p></div>
-<div class="paragraph"><p><code>--sendmail-cmd=</code><em>&lt;command&gt;</em><code>::</code>
-        Specify a command to run to send the email. The command should
-        be sendmail-like; specifically, it must support the <code>-i</code> option.
-        The command will be executed in the shell if necessary.  Default
-        is the value of <code>sendemail.sendmailCmd</code>.  If unspecified, and if
-        --smtp-server is also unspecified, git-send-email will search
-        for <code>sendmail</code> in <code>/usr/sbin</code>, <code>/usr/lib</code> and $PATH.</p></div>
-<div class="paragraph"><p><code>--smtp-encryption=</code><em>&lt;encryption&gt;</em><code>::</code>
-        Specify in what way encrypting begins for the SMTP connection.
-        Valid values are <em>ssl</em> and <em>tls</em>. Any other value reverts to plain
-        (unencrypted) SMTP, which defaults to port 25.
-        Despite the names, both values will use the same newer version of TLS,
-        but for historic reasons have these names. <em>ssl</em> refers to "implicit"
-        encryption (sometimes called SMTPS), that uses port 465 by default.
-        <em>tls</em> refers to "explicit" encryption (often known as STARTTLS),
-        that uses port 25 by default. Other ports might be used by the SMTP
-        server, which are not the default. Commonly found alternative port for
-        <em>tls</em> and unencrypted is 587. You need to check your provider&#8217;s
-        documentation or your server configuration to make sure
-        for your own case. Default is the value of <code>sendemail.smtpEncryption</code>.</p></div>
-<div class="paragraph"><p><code>--smtp-domain=</code><em>&lt;FQDN&gt;</em><code>::</code>
-        Specifies the Fully Qualified Domain Name (FQDN) used in the
-        HELO/EHLO command to the SMTP server.  Some servers require the
-        FQDN to match your IP address.  If not set, git send-email attempts
-        to determine your FQDN automatically.  Default is the value of
-        <code>sendemail.smtpDomain</code>.</p></div>
-<div class="paragraph"><p><code>--smtp-auth=</code><em>&lt;mechanisms&gt;</em><code>::</code>
-        Whitespace-separated list of allowed SMTP-AUTH mechanisms. This setting
-        forces using only the listed mechanisms. Example:</p></div>
-<div class="paragraph"><p>+</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--envelope-sender=</code><em>&lt;address&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify the envelope sender used to send the emails. This is useful if your default address is not the address that is subscribed to a list. In order to use the <em>From</em> address, set the value to "auto". If you use the sendmail binary, you must have suitable privileges for the -f parameter. Default is the value of the <code>sendemail.envelopeSender</code> configuration variable; if that is unspecified, choosing the envelope sender is left to your MTA.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--sendmail-cmd=</code><em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify a command to run to send the email. The command should be sendmail-like; specifically, it must support the <code>-i</code> option. The command will be executed in the shell if necessary. Default is the value of <code>sendemail.sendmailCmd</code>. If unspecified, and if --smtp-server is also unspecified, git-send-email will search for <code>sendmail</code> in <code>/usr/sbin</code>, <code>/usr/lib</code> and $PATH.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-encryption=</code><em>&lt;encryption&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify in what way encrypting begins for the SMTP connection. Valid values are <em>ssl</em> and <em>tls</em>. Any other value reverts to plain (unencrypted) SMTP, which defaults to port 25. Despite the names, both values will use the same newer version of TLS, but for historic reasons have these names. <em>ssl</em> refers to "implicit" encryption (sometimes called SMTPS), that uses port 465 by default. <em>tls</em> refers to "explicit" encryption (often known as STARTTLS), that uses port 25 by default. Other ports might be used by the SMTP server, which are not the default. Commonly found alternative port for <em>tls</em> and unencrypted is 587. You need to check your provider&#8217;s documentation or your server configuration to make sure for your own case. Default is the value of <code>sendemail.smtpEncryption</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-domain=</code><em>&lt;FQDN&gt;</em>
+</dt>
+<dd>
+<p>
+        Specifies the Fully Qualified Domain Name (FQDN) used in the HELO/EHLO command to the SMTP server. Some servers require the FQDN to match your IP address. If not set, git send-email attempts to determine your FQDN automatically. Default is the value of <code>sendemail.smtpDomain</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-auth=</code><em>&lt;mechanisms&gt;</em>
+</dt>
+<dd>
+<p>
+        Whitespace-separated list of allowed SMTP-AUTH mechanisms. This setting forces using only the listed mechanisms. Example:
+</p>
 <div class="listingblock">
 <div class="content">
 <pre><code>$ git send-email --smtp-auth="PLAIN LOGIN GSSAPI" ...</code></pre>
 </div></div>
-<div class="paragraph"><p>+
-指定されたメカニズムの少なくとも1つがSMTPサーバによって宣伝(advertise)されたメカニズムと一致し、利用されるSASLライブラリによってサポートされている場合、そのメカニズムが認証に使用されます。 <code>sendemail.smtpAuth</code> と <code>--smtp-auth</code> のどちらも指定されない場合、SASL ライブラリでサポートされているすべてのメカニズムが使用される可能性があります。 特別な値として <code>none</code> を指定すると、 <code>--smtp-user</code> と独立して認証を完全に無効にすることができます。</p></div>
-<div class="paragraph"><p><code>--smtp-pass</code>[<code>=</code><em>&lt;password&gt;</em>]<code>::</code>
-        Password for SMTP-AUTH. The argument is optional: If no
-        argument is specified, then the empty string is used as
-        the password. Default is the value of <code>sendemail.smtpPass</code>,
-        however <code>--smtp-pass</code> always overrides this value.</p></div>
-<div class="paragraph"><p>+
-さらに、パスワードを構成ファイルまたはコマンドラインで指定する必要はありません。 ユーザー名が指定されている(<code>--smtp-user</code> または <code>sendemail.smtpUser</code> を使用)が、パスワードが指定されていない(<code>--smtp-pass</code> または <code>sendemail.smtpPass</code> を使用)場合、パスワード <code>git-credential</code> を使用して取得されます。</p></div>
-<div class="paragraph"><p><code>--no-smtp-auth::</code>
-        Disable SMTP authentication. Short hand for <code>--smtp-auth=none</code></p></div>
-<div class="paragraph"><p><code>--smtp-server=</code><em>&lt;host&gt;</em><code>::</code>
-        If set, specifies the outgoing SMTP server to use (e.g.
-        <code>smtp.example.com</code> or a raw IP address).  If unspecified, and if
-        <code>--sendmail-cmd</code> is also unspecified, the default is to search
-        for <code>sendmail</code> in <code>/usr/sbin</code>, <code>/usr/lib</code> and $PATH if such a
-        program is available, falling back to <code>localhost</code> otherwise.</p></div>
-<div class="paragraph"><p>+
-下位互換性のために、このオプションでは、代わりにsendmailのようなプログラムの絶対パス名を指定することもできます。 プログラムは <code>-i</code> オプションをサポートする必要があります。 このメソッドは、引数の受け渡しや平文コマンド名の使用をサポートしていません。 これらの場合には、代わりに <code>--sendmail-cmd</code> の使用を検討してください。</p></div>
-<div class="paragraph"><p><code>--smtp-server-port=</code><em>&lt;port&gt;</em><code>::</code>
-        Specifies a port different from the default port (SMTP
-        servers typically listen to smtp port 25, but may also listen to
-        submission port 587, or the common SSL smtp port 465);
-        symbolic port names (e.g. "submission" instead of 587)
-        are also accepted. The port can also be set with the
-        <code>sendemail.smtpServerPort</code> configuration variable.</p></div>
-<div class="paragraph"><p><code>--smtp-server-option=</code><em>&lt;option&gt;</em><code>::</code>
-        If set, specifies the outgoing SMTP server option to use.
-        Default value can be specified by the <code>sendemail.smtpServerOption</code>
-        configuration option.</p></div>
-<div class="paragraph"><p>+
-<code>--smtp-server-option</code> オプションは、サーバーに渡すオプションごとに繰り返す必要があります。 同様に、構成ファイルではオプションごとに異なる行を使用する必要があります。</p></div>
-<div class="paragraph"><p><code>--smtp-ssl::</code>
-        Legacy alias for <em>--smtp-encryption ssl</em>.</p></div>
-<div class="paragraph"><p><code>--smtp-ssl-cert-path::</code>
-        Path to a store of trusted CA certificates for SMTP SSL/TLS
-        certificate validation (either a directory that has been processed
-        by <em>c_rehash</em>, or a single file containing one or more PEM format
-        certificates concatenated together: see verify(1) -CAfile and
-        -CApath for more information on these). Set it to an empty string
-        to disable certificate verification. Defaults to the value of the
-        <code>sendemail.smtpSSLCertPath</code> configuration variable, if set, or the
-        backing SSL library&#8217;s compiled-in default otherwise (which should
-        be the best choice on most platforms).</p></div>
-<div class="paragraph"><p><code>--smtp-user=</code><em>&lt;user&gt;</em><code>::</code>
-        Username for SMTP-AUTH. Default is the value of <code>sendemail.smtpUser</code>;
-        if a username is not specified (with <code>--smtp-user</code> or <code>sendemail.smtpUser</code>),
-        then authentication is not attempted.</p></div>
-<div class="paragraph"><p><code>--smtp-debug=</code>(<code>0</code>|<code>1</code>)<code>::</code>
-        Enable (1) or disable (0) debug output. If enabled, SMTP
-        commands and replies will be printed. Useful to debug TLS
-        connection and authentication problems.</p></div>
-<div class="paragraph"><p><code>--batch-size=</code><em>&lt;num&gt;</em><code>::</code>
-        Some email servers (e.g. smtp.163.com) limit the number emails to be
-        sent per session (connection) and this will lead to a failure when
-        sending many messages.  With this option, send-email will disconnect after
-        sending $&lt;num&gt; messages and wait for a few seconds (see --relogin-delay)
-        and reconnect, to work around such a limit.  You may want to
-        use some form of credential helper to avoid having to retype
-        your password every time this happens.  Defaults to the
-        <code>sendemail.smtpBatchSize</code> configuration variable.</p></div>
-<div class="paragraph"><p><code>--relogin-delay=</code><em>&lt;int&gt;</em><code>::</code>
-        Waiting $&lt;int&gt; seconds before reconnecting to SMTP server. Used together
-        with --batch-size option.  Defaults to the <code>sendemail.smtpReloginDelay</code>
-        configuration variable.</p></div>
+<div class="paragraph"><p>指定されたメカニズムの少なくとも1つがSMTPサーバによって宣伝(advertise)されたメカニズムと一致し、利用されるSASLライブラリによってサポートされている場合、そのメカニズムが認証に使用されます。 <code>sendemail.smtpAuth</code> と <code>--smtp-auth</code> のどちらも指定されない場合、SASL ライブラリでサポートされているすべてのメカニズムが使用される可能性があります。 特別な値として <code>none</code> を指定すると、 <code>--smtp-user</code> と独立して認証を完全に無効にすることができます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-pass</code>[<code>=</code><em>&lt;password&gt;</em>]
+</dt>
+<dd>
+<p>
+        Password for SMTP-AUTH. The argument is optional: If no argument is specified, then the empty string is used as the password. Default is the value of <code>sendemail.smtpPass</code>, however <code>--smtp-pass</code> always overrides this value.
+</p>
+<div class="paragraph"><p>さらに、パスワードを構成ファイルまたはコマンドラインで指定する必要はありません。 ユーザー名が指定されている(<code>--smtp-user</code> または <code>sendemail.smtpUser</code> を使用)が、パスワードが指定されていない(<code>--smtp-pass</code> または <code>sendemail.smtpPass</code> を使用)場合、パスワード <code>git-credential</code> を使用して取得されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--no-smtp-auth</code>
+</dt>
+<dd>
+<p>
+        Disable SMTP authentication. Short hand for <code>--smtp-auth=none</code>
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-server=</code><em>&lt;host&gt;</em>
+</dt>
+<dd>
+<p>
+        If set, specifies the outgoing SMTP server to use (e.g. <code>smtp.example.com</code> or a raw IP address). If unspecified, and if <code>--sendmail-cmd</code> is also unspecified, the default is to search for <code>sendmail</code> in <code>/usr/sbin</code>, <code>/usr/lib</code> and $PATH if such a program is available, falling back to <code>localhost</code> otherwise.
+</p>
+<div class="paragraph"><p>下位互換性のために、このオプションでは、代わりにsendmailのようなプログラムの絶対パス名を指定することもできます。 プログラムは <code>-i</code> オプションをサポートする必要があります。 このメソッドは、引数の受け渡しや平文コマンド名の使用をサポートしていません。 これらの場合には、代わりに <code>--sendmail-cmd</code> の使用を検討してください。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-server-port=</code><em>&lt;port&gt;</em>
+</dt>
+<dd>
+<p>
+        Specifies a port different from the default port (SMTP servers typically listen to smtp port 25, but may also listen to submission port 587, or the common SSL smtp port 465); symbolic port names (e.g. "submission" instead of 587) are also accepted. The port can also be set with the <code>sendemail.smtpServerPort</code> configuration variable.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-server-option=</code><em>&lt;option&gt;</em>
+</dt>
+<dd>
+<p>
+        If set, specifies the outgoing SMTP server option to use. Default value can be specified by the <code>sendemail.smtpServerOption</code> configuration option.
+</p>
+<div class="paragraph"><p><code>--smtp-server-option</code> オプションは、サーバーに渡すオプションごとに繰り返す必要があります。 同様に、構成ファイルではオプションごとに異なる行を使用する必要があります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-ssl</code>
+</dt>
+<dd>
+<p>
+        Legacy alias for <em>--smtp-encryption ssl</em>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-ssl-cert-path</code>
+</dt>
+<dd>
+<p>
+        Path to a store of trusted CA certificates for SMTP SSL/TLS certificate validation (either a directory that has been processed by <em>c_rehash</em>, or a single file containing one or more PEM format certificates concatenated together: see verify(1) -CAfile and -CApath for more information on these). Set it to an empty string to disable certificate verification. Defaults to the value of the <code>sendemail.smtpSSLCertPath</code> configuration variable, if set, or the backing SSL library&#8217;s compiled-in default otherwise (which should be the best choice on most platforms).
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-user=</code><em>&lt;user&gt;</em>
+</dt>
+<dd>
+<p>
+        Username for SMTP-AUTH. Default is the value of <code>sendemail.smtpUser</code>; if a username is not specified (with <code>--smtp-user</code> or <code>sendemail.smtpUser</code>), then authentication is not attempted.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--smtp-debug=</code>(<code>0</code>|<code>1</code>)
+</dt>
+<dd>
+<p>
+        Enable (1) or disable (0) debug output. If enabled, SMTP commands and replies will be printed. Useful to debug TLS connection and authentication problems.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--batch-size=</code><em>&lt;num&gt;</em>
+</dt>
+<dd>
+<p>
+        Some email servers (e.g. smtp.163.com) limit the number emails to be sent per session (connection) and this will lead to a failure when sending many messages. With this option, send-email will disconnect after sending $&lt;num&gt; messages and wait for a few seconds (see --relogin-delay) and reconnect, to work around such a limit. You may want to use some form of credential helper to avoid having to retype your password every time this happens. Defaults to the <code>sendemail.smtpBatchSize</code> configuration variable.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--relogin-delay=</code><em>&lt;int&gt;</em>
+</dt>
+<dd>
+<p>
+        Waiting $&lt;int&gt; seconds before reconnecting to SMTP server. Used together with --batch-size option. Defaults to the <code>sendemail.smtpReloginDelay</code> configuration variable.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_自動化">自動化</h3>
-<div class="paragraph"><p><code>--no-to::</code>
-<code>--no-cc::</code>
-<code>--no-bcc::</code>
-        Clears any list of "To:", "Cc:", "Bcc:" addresses previously
-        set via config.</p></div>
-<div class="paragraph"><p><code>--no-identity::</code>
-        Clears the previously read value of <code>sendemail.identity</code> set
-        via config, if any.</p></div>
-<div class="paragraph"><p><code>--to-cmd=</code><em>&lt;command&gt;</em><code>::</code>
-        Specify a command to execute once per patch file which
-        should generate patch file specific "To:" entries.
-        Output of this command must be single email address per line.
-        Default is the value of <em>sendemail.toCmd</em> configuration value.</p></div>
-<div class="paragraph"><p><code>--cc-cmd=</code><em>&lt;command&gt;</em><code>::</code>
-        Specify a command to execute once per patch file which
-        should generate patch file specific "Cc:" entries.
-        Output of this command must be single email address per line.
-        Default is the value of <code>sendemail.ccCmd</code> configuration value.</p></div>
-<div class="paragraph"><p><code>--header-cmd=</code><em>&lt;command&gt;</em><code>::</code>
-        Specify a command that is executed once per outgoing message
-        and output RFC 2822 style header lines to be inserted into
-        them. When the <code>sendemail.headerCmd</code> configuration variable is
-        set, its value is always used. When --header-cmd is provided
-        at the command line, its value takes precedence over the
-        <code>sendemail.headerCmd</code> configuration variable.</p></div>
-<div class="paragraph"><p><code>--no-header-cmd::</code>
-        Disable any header command in use.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>chain-reply-to::</code>
-        If this is set, each email will be sent as a reply to the previous
-        email sent.  If disabled with "--no-chain-reply-to", all emails after
-        the first will be sent as replies to the first email sent.  When using
-        this, it is recommended that the first file given be an overview of the
-        entire patch series. Disabled by default, but the <code>sendemail.chainReplyTo</code>
-        configuration variable can be used to enable it.</p></div>
-<div class="paragraph"><p><code>--identity=</code><em>&lt;identity&gt;</em><code>::</code>
-        A configuration identity. When given, causes values in the
-        <em>sendemail.&lt;identity&gt;</em> subsection to take precedence over
-        values in the <em>sendemail</em> section. The default identity is
-        the value of <code>sendemail.identity</code>.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>signed-off-by-cc::</code>
-        If this is set, add emails found in the <code>Signed-off-by</code> trailer or Cc: lines to the
-        cc list. Default is the value of <code>sendemail.signedOffByCc</code> configuration
-        value; if that is unspecified, default to --signed-off-by-cc.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>cc-cover::</code>
-        If this is set, emails found in Cc: headers in the first patch of
-        the series (typically the cover letter) are added to the cc list
-        for each email set. Default is the value of <em>sendemail.ccCover</em>
-        configuration value; if that is unspecified, default to --no-cc-cover.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>to-cover::</code>
-        If this is set, emails found in To: headers in the first patch of
-        the series (typically the cover letter) are added to the to list
-        for each email set. Default is the value of <em>sendemail.toCover</em>
-        configuration value; if that is unspecified, default to --no-to-cover.</p></div>
-<div class="paragraph"><p><code>--suppress-cc=</code><em>&lt;category&gt;</em><code>::</code>
-        Specify an additional category of recipients to suppress the
-        auto-cc of:</p></div>
-<div class="paragraph"><p>+</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--no-to</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-cc</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-bcc</code>
+</dt>
+<dd>
+<p>
+        Clears any list of "To:", "Cc:", "Bcc:" addresses previously set via config.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-identity</code>
+</dt>
+<dd>
+<p>
+        Clears the previously read value of <code>sendemail.identity</code> set via config, if any.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--to-cmd=</code><em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify a command to execute once per patch file which should generate patch file specific "To:" entries. Output of this command must be single email address per line. Default is the value of <em>sendemail.toCmd</em> configuration value.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--cc-cmd=</code><em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify a command to execute once per patch file which should generate patch file specific "Cc:" entries. Output of this command must be single email address per line. Default is the value of <code>sendemail.ccCmd</code> configuration value.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--header-cmd=</code><em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify a command that is executed once per outgoing message and output RFC 2822 style header lines to be inserted into them. When the <code>sendemail.headerCmd</code> configuration variable is set, its value is always used. When --header-cmd is provided at the command line, its value takes precedence over the <code>sendemail.headerCmd</code> configuration variable.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-header-cmd</code>
+</dt>
+<dd>
+<p>
+        Disable any header command in use.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>chain-reply-to</code>
+</dt>
+<dd>
+<p>
+        If this is set, each email will be sent as a reply to the previous email sent. If disabled with "--no-chain-reply-to", all emails after the first will be sent as replies to the first email sent. When using this, it is recommended that the first file given be an overview of the entire patch series. Disabled by default, but the <code>sendemail.chainReplyTo</code> configuration variable can be used to enable it.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--identity=</code><em>&lt;identity&gt;</em>
+</dt>
+<dd>
+<p>
+        A configuration identity. When given, causes values in the <em>sendemail.&lt;identity&gt;</em> subsection to take precedence over values in the <em>sendemail</em> section. The default identity is the value of <code>sendemail.identity</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>signed-off-by-cc</code>
+</dt>
+<dd>
+<p>
+        If this is set, add emails found in the <code>Signed-off-by</code> trailer or Cc: lines to the cc list. Default is the value of <code>sendemail.signedOffByCc</code> configuration value; if that is unspecified, default to --signed-off-by-cc.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>cc-cover</code>
+</dt>
+<dd>
+<p>
+        If this is set, emails found in Cc: headers in the first patch of the series (typically the cover letter) are added to the cc list for each email set. Default is the value of <em>sendemail.ccCover</em> configuration value; if that is unspecified, default to --no-cc-cover.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>to-cover</code>
+</dt>
+<dd>
+<p>
+        If this is set, emails found in To: headers in the first patch of the series (typically the cover letter) are added to the to list for each email set. Default is the value of <em>sendemail.toCover</em> configuration value; if that is unspecified, default to --no-to-cover.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--suppress-cc=</code><em>&lt;category&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify an additional category of recipients to suppress the auto-cc of:
+</p>
 <div class="openblock">
 <div class="content">
 <div class="ulist"><ul>
@@ -1093,34 +1209,46 @@ From ヘッダー または In-Reply-To ヘッダーが無い時はプロンプ�
 </li>
 </ul></div>
 </div></div>
-<div class="paragraph"><p>+
-Default is the value of <code>sendemail.suppressCc</code> configuration value; if that is unspecified, default to <em>self</em> if --suppress-from is specified, as well as <em>body</em> if --no-signed-off-cc is specified.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>suppress-from::</code>
-        If this is set, do not add the From: address to the cc: list.
-        Default is the value of <code>sendemail.suppressFrom</code> configuration
-        value; if that is unspecified, default to --no-suppress-from.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>thread::</code>
-        If this is set, the In-Reply-To and References headers will be
-        added to each email sent.  Whether each mail refers to the
-        previous email (<code>deep</code> threading per <em>git format-patch</em>
-        wording) or to the first email (<code>shallow</code> threading) is
-        governed by "--[no-]chain-reply-to".</p></div>
-<div class="paragraph"><p>+
-<code>--no-thread</code> で無効にすると、それらのヘッダーは追加されません(<code>--in-reply-to</code> で指定されていない限り)。 デフォルトは、 <code>sendemail.thread</code> 構成の値です。 <code>sendemail.thread</code> 構成が指定されていない場合、デフォルトは <code>--thread</code> です。</p></div>
-<div class="paragraph"><p>+
-<code>git</code> <code>send-email</code> が In-Reply-To ヘッダを追加するように要求したときに、すでにそのヘッダが存在しないことを確認するのはユーザー側です((特に <code>git</code> <code>format-patch</code> がスレッド化するように設定されている場合は注意が必要です)。 これを怠ると、受信者の MUA で期待通りの結果が得られないことがあります。</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>mailmap::</code>
-        Use the mailmap file (see <a href="gitmailmap.html">gitmailmap(5)</a>) to map all
-        addresses to their canonical real name and email address. Additional
-        mailmap data specific to git-send-email may be provided using the
-        <code>sendemail.mailmap.file</code> or <code>sendemail.mailmap.blob</code> configuration
-        values. Defaults to <code>sendemail.mailmap</code>.</p></div>
+<div class="paragraph"><p>Default is the value of <code>sendemail.suppressCc</code> configuration value; if that is unspecified, default to <em>self</em> if --suppress-from is specified, as well as <em>body</em> if --no-signed-off-cc is specified.</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>suppress-from</code>
+</dt>
+<dd>
+<p>
+        If this is set, do not add the From: address to the cc: list. Default is the value of <code>sendemail.suppressFrom</code> configuration value; if that is unspecified, default to --no-suppress-from.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>thread</code>
+</dt>
+<dd>
+<p>
+        If this is set, the In-Reply-To and References headers will be added to each email sent. Whether each mail refers to the previous email (<code>deep</code> threading per <em>git format-patch</em> wording) or to the first email (<code>shallow</code> threading) is governed by "--[no-]chain-reply-to".
+</p>
+<div class="paragraph"><p><code>--no-thread</code> で無効にすると、それらのヘッダーは追加されません(<code>--in-reply-to</code> で指定されていない限り)。 デフォルトは、 <code>sendemail.thread</code> 構成の値です。 <code>sendemail.thread</code> 構成が指定されていない場合、デフォルトは <code>--thread</code> です。</p></div>
+<div class="paragraph"><p><code>git</code> <code>send-email</code> が In-Reply-To ヘッダを追加するように要求したときに、すでにそのヘッダが存在しないことを確認するのはユーザー側です((特に <code>git</code> <code>format-patch</code> がスレッド化するように設定されている場合は注意が必要です)。 これを怠ると、受信者の MUA で期待通りの結果が得られないことがあります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>mailmap</code>
+</dt>
+<dd>
+<p>
+        Use the mailmap file (see <a href="gitmailmap.html">gitmailmap(5)</a>) to map all addresses to their canonical real name and email address. Additional mailmap data specific to git-send-email may be provided using the <code>sendemail.mailmap.file</code> or <code>sendemail.mailmap.blob</code> configuration values. Defaults to <code>sendemail.mailmap</code>.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_管理">管理</h3>
-<div class="paragraph"><p><code>--confirm=</code><em>&lt;mode&gt;</em><code>::</code>
-        Confirm just before sending:</p></div>
-<div class="paragraph"><p>+</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--confirm=</code><em>&lt;mode&gt;</em>
+</dt>
+<dd>
+<p>
+        Confirm just before sending:
+</p>
 <div class="openblock">
 <div class="content">
 <div class="ulist"><ul>
@@ -1151,22 +1279,39 @@ Default is the value of <code>sendemail.suppressCc</code> configuration value; i
 </li>
 </ul></div>
 </div></div>
-<div class="paragraph"><p>+
-デフォルトは <code>sendemail.confirm</code> 構成の値です。 <code>sendemail.confirm</code> 構成が指定されていない場合、抑制オプション(suppress options)のいずれかが指定されていない限り、デフォルトは <code>auto</code> になります。抑制オプションのいずれかが指定されている場合は、デフォルトで `compose`になります。</p></div>
-<div class="paragraph"><p><code>--dry-run::</code>
-        Do everything except actually send the emails.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>format-patch::</code>
-        When an argument may be understood either as a reference or as a file name,
-        choose to understand it as a format-patch argument (<code>--format-patch</code>)
-        or as a file name (<code>--no-format-patch</code>). By default, when such a conflict
-        occurs, git send-email will fail.</p></div>
-<div class="paragraph"><p><code>--quiet::</code>
-        Make git-send-email less verbose.  One line per email should be
-        all that is output.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>validate::</code>
-        Perform sanity checks on patches.
-        Currently, validation means the following:</p></div>
-<div class="paragraph"><p>+</p></div>
+<div class="paragraph"><p>デフォルトは <code>sendemail.confirm</code> 構成の値です。 <code>sendemail.confirm</code> 構成が指定されていない場合、抑制オプション(suppress options)のいずれかが指定されていない限り、デフォルトは <code>auto</code> になります。抑制オプションのいずれかが指定されている場合は、デフォルトで `compose`になります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--dry-run</code>
+</dt>
+<dd>
+<p>
+        Do everything except actually send the emails.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>format-patch</code>
+</dt>
+<dd>
+<p>
+        When an argument may be understood either as a reference or as a file name, choose to understand it as a format-patch argument (<code>--format-patch</code>) or as a file name (<code>--no-format-patch</code>). By default, when such a conflict occurs, git send-email will fail.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--quiet</code>
+</dt>
+<dd>
+<p>
+        Make git-send-email less verbose. One line per email should be all that is output.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>validate</code>
+</dt>
+<dd>
+<p>
+        Perform sanity checks on patches. Currently, validation means the following:
+</p>
 <div class="openblock">
 <div class="content">
 <div class="ulist"><ul>
@@ -1182,24 +1327,38 @@ Warn of patches that contain lines longer than 998 characters unless a suitable 
 </li>
 </ul></div>
 </div></div>
-<div class="paragraph"><p>+
-デフォルトは <code>sendemail.validate</code> の値です。 これが設定されていない場合、デフォルトは <code>--validate</code> になります。</p></div>
-<div class="paragraph"><p><code>--force::</code>
-        Send emails even if safety checks would prevent it.</p></div>
+<div class="paragraph"><p>デフォルトは <code>sendemail.validate</code> の値です。 これが設定されていない場合、デフォルトは <code>--validate</code> になります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--force</code>
+</dt>
+<dd>
+<p>
+        Send emails even if safety checks would prevent it.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_情報">情報</h3>
-<div class="paragraph"><p><code>--dump-aliases::</code>
-        Instead of the normal operation, dump the shorthand alias names from
-        the configured alias file(s), one per line in alphabetical order. Note
-        that this only includes the alias name and not its expanded email addresses.
-        See <em>sendemail.aliasesFile</em> for more information about aliases.</p></div>
-<div class="paragraph"><p><code>--translate-aliases::</code>
-        Instead of the normal operation, read from standard input and
-        interpret each line as an email alias. Translate it according to the
-        configured alias file(s). Output each translated name and email
-        address to standard output, one per line. See <em>sendemail.aliasFile</em>
-        for more information about aliases.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--dump-aliases</code>
+</dt>
+<dd>
+<p>
+        Instead of the normal operation, dump the shorthand alias names from the configured alias file(s), one per line in alphabetical order. Note that this only includes the alias name and not its expanded email addresses. See <em>sendemail.aliasesFile</em> for more information about aliases.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--translate-aliases</code>
+</dt>
+<dd>
+<p>
+        Instead of the normal operation, read from standard input and interpret each line as an email alias. Translate it according to the configured alias file(s). Output each translated name and email address to standard output, one per line. See <em>sendemail.aliasFile</em> for more information about aliases.
+</p>
+</dd>
+</dl></div>
 </div>
 </div>
 </div>
@@ -1482,7 +1641,7 @@ $ git send-email outgoing/*</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 13:10:22 JST
+ 2025-01-12 21:20:33 JST
 </div>
 </div>
 </body>

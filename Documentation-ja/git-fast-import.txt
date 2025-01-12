@@ -23,102 +23,55 @@ fast-importは、標準入力から 混合 コマンド/データストリーム
 OPTIONS
 -------
 
-`--force::`
-	Force updating modified existing branches, even if doing
-	so would cause commits to be lost (as the new commit does
-	not contain the old commit).
+`--force`::
+	Force updating modified existing branches, even if doing so would cause commits to be lost (as the new commit does not contain the old commit).
 
-`--quiet::`
-	Disable the output shown by --stats, making fast-import usually
-	be silent when it is successful.  However, if the import stream
-	has directives intended to show user output (e.g. `progress`
-	directives), the corresponding messages will still be shown.
+`--quiet`::
+	Disable the output shown by --stats, making fast-import usually be silent when it is successful. However, if the import stream has directives intended to show user output (e.g. `progress` directives), the corresponding messages will still be shown.
 
-`--stats::`
-	Display some basic statistics about the objects fast-import has
-	created, the packfiles they were stored into, and the
-	memory used by fast-import during this run.  Showing this output
-	is currently the default, but can be disabled with --quiet.
+`--stats`::
+	Display some basic statistics about the objects fast-import has created, the packfiles they were stored into, and the memory used by fast-import during this run. Showing this output is currently the default, but can be disabled with --quiet.
 
-`--allow-unsafe-features::`
-	Many command-line options can be provided as part of the
-	fast-import stream itself by using the `feature` or `option`
-	commands. However, some of these options are unsafe (e.g.,
-	allowing fast-import to access the filesystem outside of the
-	repository). These options are disabled by default, but can be
-	allowed by providing this option on the command line.  This
-	currently impacts only the `export-marks`, `import-marks`, and
-	`import-marks-if-exists` feature commands.
+`--allow-unsafe-features`::
+	Many command-line options can be provided as part of the fast-import stream itself by using the `feature` or `option` commands. However, some of these options are unsafe (e.g., allowing fast-import to access the filesystem outside of the repository). These options are disabled by default, but can be allowed by providing this option on the command line. This currently impacts only the `export-marks`, `import-marks`, and `import-marks-if-exists` feature commands.
 +
-	Only enable this option if you trust the program generating the
-	fast-import stream! This option is enabled automatically for
-	remote-helpers that use the `import` capability, as they are
-	already trusted to run their own code.
+	Only enable this option if you trust the program generating the fast-import stream! This option is enabled automatically for remote-helpers that use the `import` capability, as they are already trusted to run their own code.
 
 Options for Frontends
 ~~~~~~~~~~~~~~~~~~~~~
 
-`--cat-blob-fd=<fd>::`
-	Write responses to `get-mark`, `cat-blob`, and `ls` queries to the
-	file descriptor <fd> instead of `stdout`.  Allows `progress`
-	output intended for the end-user to be separated from other
-	output.
+`--cat-blob-fd=<fd>`::
+	Write responses to `get-mark`, `cat-blob`, and `ls` queries to the file descriptor <fd> instead of `stdout`. Allows `progress` output intended for the end-user to be separated from other output.
 
-`--date-format=<fmt>::`
-	Specify the type of dates the frontend will supply to
-	fast-import within `author`, `committer` and `tagger` commands.
-	See ``Date Formats'' below for details about which formats
-	are supported, and their syntax.
+`--date-format=<fmt>`::
+	Specify the type of dates the frontend will supply to fast-import within `author`, `committer` and `tagger` commands. See ``Date Formats'' below for details about which formats are supported, and their syntax.
 
-`--done::`
-	Terminate with error if there is no `done` command at the end of
-	the stream.  This option might be useful for detecting errors
-	that cause the frontend to terminate before it has started to
-	write a stream.
+`--done`::
+	Terminate with error if there is no `done` command at the end of the stream. This option might be useful for detecting errors that cause the frontend to terminate before it has started to write a stream.
 
 Locations of Marks Files
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-`--export-marks=<file>::`
-	Dumps the internal marks table to <file> when complete.
-	Marks are written one per line as `:markid SHA-1`.
-	Frontends can use this file to validate imports after they
-	have been completed, or to save the marks table across
-	incremental runs.  As <file> is only opened and truncated
-	at checkpoint (or completion) the same path can also be
-	safely given to --import-marks.
+`--export-marks=<file>`::
+	Dumps the internal marks table to <file> when complete. Marks are written one per line as `:markid SHA-1`. Frontends can use this file to validate imports after they have been completed, or to save the marks table across incremental runs. As <file> is only opened and truncated at checkpoint (or completion) the same path can also be safely given to --import-marks.
 
-`--import-marks=<file>::`
-	Before processing any input, load the marks specified in
-	<file>.  The input file must exist, must be readable, and
-	must use the same format as produced by --export-marks.
-	Multiple options may be supplied to import more than one
-	set of marks.  If a mark is defined to different values,
-	the last file wins.
+`--import-marks=<file>`::
+	Before processing any input, load the marks specified in <file>. The input file must exist, must be readable, and must use the same format as produced by --export-marks. Multiple options may be supplied to import more than one set of marks. If a mark is defined to different values, the last file wins.
 
-`--import-marks-if-exists=<file>::`
-	Like --import-marks but instead of erroring out, silently
-	skips the file if it does not exist.
+`--import-marks-if-exists=<file>`::
+	Like --import-marks but instead of erroring out, silently skips the file if it does not exist.
 
-`--[no-]relative-marks::`
-	After specifying --relative-marks the paths specified
-	with --import-marks= and --export-marks= are relative
-	to an internal directory in the current repository.
-	In git-fast-import this means that the paths are relative
-	to the .git/info/fast-import directory. However, other
-	importers may use a different location.
+`--[no-]relative-marks`::
+	After specifying --relative-marks the paths specified with --import-marks= and --export-marks= are relative to an internal directory in the current repository. In git-fast-import this means that the paths are relative to the .git/info/fast-import directory. However, other importers may use a different location.
 +
 `--(no-)-relative-marks` を `--(import|export)-marks=` と織り交ぜることで、相対マークと非相対マークを組み合わせることができます。
 
 Submodule Rewriting
 ~~~~~~~~~~~~~~~~~~~
 
-`--rewrite-submodules-from=<name>:<file>::`
-`--rewrite-submodules-to=<name>:<file>::`
-  Rewrite the object IDs for the submodule specified by <name> from the values
-	used in the from <file> to those used in the to <file>. The from marks should
-	have been created by `git fast-export`, and the to marks should have been
-	created by `git fast-import` when importing that same submodule.
+`--rewrite-submodules-from=<name>:<file>`::
+`--rewrite-submodules-to=<name>:<file>`::
+Rewrite the object IDs for the submodule specified by <name> from the values used in the from <file> to those used in the to <file>. The from marks should have been created by `git fast-export`, and the to marks should have been created by `git fast-import` when importing that same submodule.
 +
 <name>は、コロン文字を含まない任意の文字列にすることができますが、対応するマークを指定するときは、両方のオプションで同じ値を使用する必要があります。 <name>の値が異なる複数のサブモジュールを指定できます。 対応するペアでこれらのオプションを使用しないのはエラーです。
 +
@@ -127,32 +80,20 @@ Submodule Rewriting
 Performance and Compression Tuning
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`--active-branches=<n>::`
-	Maximum number of branches to maintain active at once.
-	See ``Memory Utilization'' below for details.  Default is 5.
+`--active-branches=<n>`::
+	Maximum number of branches to maintain active at once. See ``Memory Utilization'' below for details. Default is 5.
 
-`--big-file-threshold=<n>::`
-	Maximum size of a blob that fast-import will attempt to
-	create a delta for, expressed in bytes.  The default is 512m
-	(512 MiB).  Some importers may wish to lower this on systems
-	with constrained memory.
+`--big-file-threshold=<n>`::
+	Maximum size of a blob that fast-import will attempt to create a delta for, expressed in bytes. The default is 512m (512 MiB). Some importers may wish to lower this on systems with constrained memory.
 
-`--depth=<n>::`
-	Maximum delta depth, for blob and tree deltification.
-	Default is 50.
+`--depth=<n>`::
+	Maximum delta depth, for blob and tree deltification. Default is 50.
 
-`--export-pack-edges=<file>::`
-	After creating a packfile, print a line of data to
-	<file> listing the filename of the packfile and the last
-	commit on each branch that was written to that packfile.
-	This information may be useful after importing projects
-	whose total object set exceeds the 4 GiB packfile limit,
-	as these commits can be used as edge points during calls
-	to 'git pack-objects'.
+`--export-pack-edges=<file>`::
+	After creating a packfile, print a line of data to <file> listing the filename of the packfile and the last commit on each branch that was written to that packfile. This information may be useful after importing projects whose total object set exceeds the 4 GiB packfile limit, as these commits can be used as edge points during calls to 'git pack-objects'.
 
-`--max-pack-size=<n>::`
-	Maximum size of each output packfile.
-	The default is unlimited.
+`--max-pack-size=<n>`::
+	Maximum size of each output packfile. The default is unlimited.
 
 fastimport.unpackLimit::
 	linkgit:git-config[1] 参照

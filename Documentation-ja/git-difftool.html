@@ -763,68 +763,117 @@ git-difftool(1) Manual Page
 <div class="sect1">
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>-d::</code>
-<code>--dir-diff::</code>
-        Copy the modified files to a temporary location and perform
-        a directory diff on them. This mode never prompts before
-        launching the diff tool.</p></div>
-<div class="paragraph"><p><code>-y::</code>
-<code>--no-prompt::</code>
-        Do not prompt before launching a diff tool.</p></div>
-<div class="paragraph"><p><code>--prompt::</code>
-        Prompt before each invocation of the diff tool.
-        This is the default behaviour; the option is provided to
-        override any configuration settings.</p></div>
-<div class="paragraph"><p><code>--rotate-to=</code><em>&lt;file&gt;</em><code>::</code>
-        Start showing the diff for the given path,
-        the paths before it will move to the end and output.</p></div>
-<div class="paragraph"><p><code>--skip-to=</code><em>&lt;file&gt;</em><code>::</code>
-        Start showing the diff for the given path, skipping all
-        the paths before it.</p></div>
-<div class="paragraph"><p><code>-t</code>
-<code>--tool=</code><em>&lt;tool&gt;</em><code>::</code>
-        Use the diff tool specified by &lt;tool&gt;.  Valid values include
-        emerge, kompare, meld, and vimdiff. Run <code>git</code> <code>difftool</code> <code>--tool-help</code>
-        for the list of valid &lt;tool&gt; settings.</p></div>
-<div class="paragraph"><p>+
-diffツールが指定されていない場合、 <code>git</code> <code>difftool</code> は構成変数 <code>diff.tool</code> を使用します。 構成変数 <code>diff.tool</code> が設定されていない場合、 <code>git</code> <code>difftool</code> は適切なデフォルトを選択します。</p></div>
-<div class="paragraph"><p>+
-あなたは構成変数 <code>difftool.</code><em>&lt;tool&gt;</em><code>.path</code> を設定することにより、ツール(&lt;tool&gt;)へのフルパスを明示的に指定できます。 たとえば、 <code>difftool.kdiff3.path</code> を設定することにより、kdiff3への絶対パスを構成できます。 それ以外の場合、 <code>git</code> <code>difftool</code> は、ツールがPATH上にあると想定します。</p></div>
-<div class="paragraph"><p>+
-既知のdiffツールの1つを実行する代わりに、構成変数 <code>difftool.</code><em>&lt;tool&gt;</em><code>.cmd</code> で、呼び出すコマンドラインを指定することにより、 <code>git</code> <code>difftool</code> をカスタマイズして代替プログラムを実行できます。</p></div>
-<div class="paragraph"><p>+
-このツールを使用して(<code>-t</code> または <code>--tool</code> オプションまたは <code>diff.tool</code> 構成変数を介して、) <code>git</code> <code>difftool</code> を呼び出すと、構成されたコマンドラインが次の変数を使用して呼び出されます。 <code>$LOCAL</code> は、diff pre-imageの内容を含む一時ファイルの名前に設定され、 <code>$REMOTE</code> は、diff post-imageの内容を含む一時ファイルの名前に設定されます。 <code>$MERGED</code> は、比較されるファイルの名前です。 <code>$BASE</code> は、カスタムマージツールコマンドとの互換性のために提供されており、 <code>$MERGED</code> と同じ値です。</p></div>
-<div class="paragraph"><p><code>--tool-help::</code>
-        Print a list of diff tools that may be used with <code>--tool</code>.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>symlinks::</code>
-        <em>git difftool</em>'s default behavior is to create symlinks to the
-        working tree when run in <code>--dir-diff</code> mode and the right-hand
-        side of the comparison yields the same content as the file in
-        the working tree.</p></div>
-<div class="paragraph"><p>+
-<code>--no-symlinks</code> を指定すると、代わりにコピーを作成するように <code>git</code> <code>difftool</code> に指示します。 <code>--no-symlinks</code> はWindowsのデフォルトです。</p></div>
-<div class="paragraph"><p><code>-x</code>
-<code>--extcmd=</code><em>&lt;command&gt;</em><code>::</code>
-        Specify a custom command for viewing diffs.
-        <em>git-difftool</em> ignores the configured defaults and runs
-        <em>&lt;command&gt;</em> <code>$LOCAL</code> <code>$REMOTE</code> when this option is specified.
-        Additionally, <code>$BASE</code> is set in the environment.</p></div>
-<div class="paragraph"><p><code>-g::</code>
-<code>--</code>[<code>no-</code>]<code>gui::</code>
-        When <em>git-difftool</em> is invoked with the <code>-g</code> or <code>--gui</code> option
-        the default diff tool will be read from the configured
-        <code>diff.guitool</code> variable instead of <code>diff.tool</code>. This may be
-        selected automatically using the configuration variable
-        <code>difftool.guiDefault</code>. The <code>--no-gui</code> option can be used to
-        override these settings. If <code>diff.guitool</code> is not set, we will
-        fallback in the order of <code>merge.guitool</code>, <code>diff.tool</code>,
-        <code>merge.tool</code> until a tool is found.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>trust-exit-code::</code>
-        Errors reported by the diff tool are ignored by default.
-        Use <code>--trust-exit-code</code> to make <em>git-difftool</em> exit when an
-        invoked diff tool returns a non-zero exit code.</p></div>
-<div class="paragraph"><p>+
-<code>git-difftool</code> は、 <code>--trust-exit-code</code> が使用されている場合、呼び出されたツールの終了コードを転送します。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-d</code>
+</dt>
+<dt class="hdlist1">
+<code>--dir-diff</code>
+</dt>
+<dd>
+<p>
+        Copy the modified files to a temporary location and perform a directory diff on them. This mode never prompts before launching the diff tool.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-y</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-prompt</code>
+</dt>
+<dd>
+<p>
+        Do not prompt before launching a diff tool.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--prompt</code>
+</dt>
+<dd>
+<p>
+        Prompt before each invocation of the diff tool. This is the default behaviour; the option is provided to override any configuration settings.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--rotate-to=</code><em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        Start showing the diff for the given path, the paths before it will move to the end and output.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--skip-to=</code><em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        Start showing the diff for the given path, skipping all the paths before it.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-t</code> <em>&lt;tool&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--tool=</code><em>&lt;tool&gt;</em>
+</dt>
+<dd>
+<p>
+        Use the diff tool specified by &lt;tool&gt;. Valid values include emerge, kompare, meld, and vimdiff. Run <code>git</code> <code>difftool</code> <code>--tool-help</code> for the list of valid &lt;tool&gt; settings.
+</p>
+<div class="paragraph"><p>diffツールが指定されていない場合、 <code>git</code> <code>difftool</code> は構成変数 <code>diff.tool</code> を使用します。 構成変数 <code>diff.tool</code> が設定されていない場合、 <code>git</code> <code>difftool</code> は適切なデフォルトを選択します。</p></div>
+<div class="paragraph"><p>あなたは構成変数 <code>difftool.</code><em>&lt;tool&gt;</em><code>.path</code> を設定することにより、ツール(&lt;tool&gt;)へのフルパスを明示的に指定できます。 たとえば、 <code>difftool.kdiff3.path</code> を設定することにより、kdiff3への絶対パスを構成できます。 それ以外の場合、 <code>git</code> <code>difftool</code> は、ツールがPATH上にあると想定します。</p></div>
+<div class="paragraph"><p>既知のdiffツールの1つを実行する代わりに、構成変数 <code>difftool.</code><em>&lt;tool&gt;</em><code>.cmd</code> で、呼び出すコマンドラインを指定することにより、 <code>git</code> <code>difftool</code> をカスタマイズして代替プログラムを実行できます。</p></div>
+<div class="paragraph"><p>このツールを使用して(<code>-t</code> または <code>--tool</code> オプションまたは <code>diff.tool</code> 構成変数を介して、) <code>git</code> <code>difftool</code> を呼び出すと、構成されたコマンドラインが次の変数を使用して呼び出されます。 <code>$LOCAL</code> は、diff pre-imageの内容を含む一時ファイルの名前に設定され、 <code>$REMOTE</code> は、diff post-imageの内容を含む一時ファイルの名前に設定されます。 <code>$MERGED</code> は、比較されるファイルの名前です。 <code>$BASE</code> は、カスタムマージツールコマンドとの互換性のために提供されており、 <code>$MERGED</code> と同じ値です。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--tool-help</code>
+</dt>
+<dd>
+<p>
+        Print a list of diff tools that may be used with <code>--tool</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>symlinks</code>
+</dt>
+<dd>
+<p>
+        <em>git difftool</em>'s default behavior is to create symlinks to the working tree when run in <code>--dir-diff</code> mode and the right-hand side of the comparison yields the same content as the file in the working tree.
+</p>
+<div class="paragraph"><p><code>--no-symlinks</code> を指定すると、代わりにコピーを作成するように <code>git</code> <code>difftool</code> に指示します。 <code>--no-symlinks</code> はWindowsのデフォルトです。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>-x</code> <em>&lt;command&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--extcmd=</code><em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify a custom command for viewing diffs. <em>git-difftool</em> ignores the configured defaults and runs <em>&lt;command&gt;</em> <code>$LOCAL</code> <code>$REMOTE</code> when this option is specified. Additionally, <code>$BASE</code> is set in the environment.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-g</code>
+</dt>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>gui</code>
+</dt>
+<dd>
+<p>
+        When <em>git-difftool</em> is invoked with the <code>-g</code> or <code>--gui</code> option the default diff tool will be read from the configured <code>diff.guitool</code> variable instead of <code>diff.tool</code>. This may be selected automatically using the configuration variable <code>difftool.guiDefault</code>. The <code>--no-gui</code> option can be used to override these settings. If <code>diff.guitool</code> is not set, we will fallback in the order of <code>merge.guitool</code>, <code>diff.tool</code>, <code>merge.tool</code> until a tool is found.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>trust-exit-code</code>
+</dt>
+<dd>
+<p>
+        Errors reported by the diff tool are ignored by default. Use <code>--trust-exit-code</code> to make <em>git-difftool</em> exit when an invoked diff tool returns a non-zero exit code.
+</p>
+<div class="paragraph"><p><code>git-difftool</code> は、 <code>--trust-exit-code</code> が使用されている場合、呼び出されたツールの終了コードを転送します。</p></div>
+</dd>
+</dl></div>
 <div class="paragraph"><p>サポートされているオプションの完全なリストについては、 <a href="git-diff.html">git-diff(1)</a> を参照してください。</p></div>
 </div>
 </div>
@@ -937,7 +986,7 @@ difftool.guiDefault
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 09:41:22 JST
+ 2025-01-12 21:20:10 JST
 </div>
 </div>
 </body>

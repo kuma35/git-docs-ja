@@ -923,145 +923,272 @@ $ git p4 unshelve 12345
 <div class="sect2">
 <h3 id="_general_options">General options</h3>
 <div class="paragraph"><p>cloneを除くすべてのコマンドは、これらのオプションを受け入れます。</p></div>
-<div class="paragraph"><p><code>--git-dir</code>
-        Set the <code>GIT_DIR</code> environment variable.  See <a href="git.html">git(1)</a>.</p></div>
-<div class="paragraph"><p><code>-v::</code>
-<code>--verbose::</code>
-        Provide more progress information.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--git-dir</code> <em>&lt;dir&gt;</em>
+</dt>
+<dd>
+<p>
+        Set the <code>GIT_DIR</code> environment variable. See <a href="git.html">git(1)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-v</code>
+</dt>
+<dt class="hdlist1">
+<code>--verbose</code>
+</dt>
+<dd>
+<p>
+        Provide more progress information.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_sync_options">Sync options</h3>
 <div class="paragraph"><p>これらのオプションは、最初の「クローン」(clone)操作と後続の「同期」(sync)操作で使用できます。</p></div>
-<div class="paragraph"><p><code>--branch</code>
-        Import changes into &lt;ref&gt; instead of refs/remotes/p4/master.
-        If &lt;ref&gt; starts with refs/, it is used as is.  Otherwise, if
-        it does not start with p4/, that prefix is added.</p></div>
-<div class="paragraph"><p>+
-デフォルトでは、 <code>refs/</code> で始まらない&lt;ref&gt;は、リモート追跡ブランチの名前として扱われます(<code>refs/remotes/</code> の下)。この動作は、 <code>--import-local</code> オプションを使用して変更できます。</p></div>
-<div class="paragraph"><p>+
-&lt;ref&gt; のデフォルトは "master" です。</p></div>
-<div class="paragraph"><p>+
-この例では、新しい remote "p4/proj2" を既存のGitリポジトリにインポートします:</p></div>
-<div class="paragraph"><p>+</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--branch</code> <em>&lt;ref&gt;</em>
+</dt>
+<dd>
+<p>
+        Import changes into &lt;ref&gt; instead of refs/remotes/p4/master. If &lt;ref&gt; starts with refs/, it is used as is. Otherwise, if it does not start with p4/, that prefix is added.
+</p>
+<div class="paragraph"><p>デフォルトでは、 <code>refs/</code> で始まらない&lt;ref&gt;は、リモート追跡ブランチの名前として扱われます(<code>refs/remotes/</code> の下)。この動作は、 <code>--import-local</code> オプションを使用して変更できます。</p></div>
+<div class="paragraph"><p>&lt;ref&gt; のデフォルトは "master" です。</p></div>
+<div class="paragraph"><p>この例では、新しい remote "p4/proj2" を既存のGitリポジトリにインポートします:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>    $ git init
     $ git p4 sync --branch=refs/remotes/p4/proj2 //depot/proj2</code></pre>
 </div></div>
-<div class="paragraph"><p><code>--detect-branches::</code>
-        Use the branch detection algorithm to find new paths in p4.  It is
-        documented below in "BRANCH DETECTION".</p></div>
-<div class="paragraph"><p><code>--changesfile</code>
-        Import exactly the p4 change numbers listed in <em>file</em>, one per
-        line.  Normally, <em>git p4</em> inspects the current p4 repository
-        state and detects the changes it should import.</p></div>
-<div class="paragraph"><p><code>--silent::</code>
-        Do not print any progress information.</p></div>
-<div class="paragraph"><p><code>--detect-labels::</code>
-        Query p4 for labels associated with the depot paths, and add
-        them as tags in Git. Limited usefulness as only imports labels
-        associated with new changelists. Deprecated.</p></div>
-<div class="paragraph"><p><code>--import-labels::</code>
-        Import labels from p4 into Git.</p></div>
-<div class="paragraph"><p><code>--import-local::</code>
-        By default, p4 branches are stored in <em>refs/remotes/p4/</em>,
-        where they will be treated as remote-tracking branches by
-        <a href="git-branch.html">git-branch(1)</a> and other commands.  This option instead
-        puts p4 branches in <em>refs/heads/p4/</em>.  Note that future
-        sync operations must specify <code>--import-local</code> as well so that
-        they can find the p4 branches in refs/heads.</p></div>
-<div class="paragraph"><p><code>--max-changes</code>
-        Import at most <em>n</em> changes, rather than the entire range of
-        changes included in the given revision specifier. A typical
-        usage would be use <em>@all</em> as the revision specifier, but then
-        to use <em>--max-changes 1000</em> to import only the last 1000
-        revisions rather than the entire revision history.</p></div>
-<div class="paragraph"><p><code>--changes-block-size</code>
-        The internal block size to use when converting a revision
-        specifier such as <em>@all</em> into a list of specific change
-        numbers. Instead of using a single call to <em>p4 changes</em> to
-        find the full list of changes for the conversion, there are a
-        sequence of calls to <em>p4 changes -m</em>, each of which requests
-        one block of changes of the given size. The default block size
-        is 500, which should usually be suitable.</p></div>
-<div class="paragraph"><p><code>--keep-path::</code>
-        The mapping of file names from the p4 depot path to Git, by
-        default, involves removing the entire depot path.  With this
-        option, the full p4 depot path is retained in Git.  For example,
-        path <em>//depot/main/foo/bar.c</em>, when imported from
-        <em>//depot/main/</em>, becomes <em>foo/bar.c</em>.  With <code>--keep-path</code>, the
-        Git path is instead <em>depot/main/foo/bar.c</em>.</p></div>
-<div class="paragraph"><p><code>--use-client-spec::</code>
-        Use a client spec to find the list of interesting files in p4.
-        See the "CLIENT SPEC" section below.</p></div>
-<div class="paragraph"><p><code>-/</code>
-        Exclude selected depot paths when cloning or syncing.</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--detect-branches</code>
+</dt>
+<dd>
+<p>
+        Use the branch detection algorithm to find new paths in p4. It is documented below in "BRANCH DETECTION".
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--changesfile</code> <em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        Import exactly the p4 change numbers listed in <em>file</em>, one per line. Normally, <em>git p4</em> inspects the current p4 repository state and detects the changes it should import.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--silent</code>
+</dt>
+<dd>
+<p>
+        Do not print any progress information.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--detect-labels</code>
+</dt>
+<dd>
+<p>
+        Query p4 for labels associated with the depot paths, and add them as tags in Git. Limited usefulness as only imports labels associated with new changelists. Deprecated.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--import-labels</code>
+</dt>
+<dd>
+<p>
+        Import labels from p4 into Git.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--import-local</code>
+</dt>
+<dd>
+<p>
+        By default, p4 branches are stored in <em>refs/remotes/p4/</em>, where they will be treated as remote-tracking branches by <a href="git-branch.html">git-branch(1)</a> and other commands. This option instead puts p4 branches in <em>refs/heads/p4/</em>. Note that future sync operations must specify <code>--import-local</code> as well so that they can find the p4 branches in refs/heads.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--max-changes</code> <em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        Import at most <em>n</em> changes, rather than the entire range of changes included in the given revision specifier. A typical usage would be use <em>@all</em> as the revision specifier, but then to use <em>--max-changes 1000</em> to import only the last 1000 revisions rather than the entire revision history.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--changes-block-size</code> <em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        The internal block size to use when converting a revision specifier such as <em>@all</em> into a list of specific change numbers. Instead of using a single call to <em>p4 changes</em> to find the full list of changes for the conversion, there are a sequence of calls to <em>p4 changes -m</em>, each of which requests one block of changes of the given size. The default block size is 500, which should usually be suitable.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--keep-path</code>
+</dt>
+<dd>
+<p>
+        The mapping of file names from the p4 depot path to Git, by default, involves removing the entire depot path. With this option, the full p4 depot path is retained in Git. For example, path <em>//depot/main/foo/bar.c</em>, when imported from <em>//depot/main/</em>, becomes <em>foo/bar.c</em>. With <code>--keep-path</code>, the Git path is instead <em>depot/main/foo/bar.c</em>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--use-client-spec</code>
+</dt>
+<dd>
+<p>
+        Use a client spec to find the list of interesting files in p4. See the "CLIENT SPEC" section below.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-/</code> <em>&lt;path&gt;</em>
+</dt>
+<dd>
+<p>
+        Exclude selected depot paths when cloning or syncing.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_clone_options">Clone options</h3>
 <div class="paragraph"><p>これらのオプションは、上記の「sync」オプションとともに、最初の「clone」で使用できます。</p></div>
-<div class="paragraph"><p><code>--destination</code>
-        Where to create the Git repository.  If not provided, the last
-        component in the p4 depot path is used to create a new
-        directory.</p></div>
-<div class="paragraph"><p><code>--bare::</code>
-        Perform a bare clone.  See <a href="git-clone.html">git-clone(1)</a>.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--destination</code> <em>&lt;directory&gt;</em>
+</dt>
+<dd>
+<p>
+        Where to create the Git repository. If not provided, the last component in the p4 depot path is used to create a new directory.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--bare</code>
+</dt>
+<dd>
+<p>
+        Perform a bare clone. See <a href="git-clone.html">git-clone(1)</a>.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_submit_options">Submit options</h3>
 <div class="paragraph"><p>これらのオプションを使用して、「git p4 submit」の動作を変更できます。</p></div>
-<div class="paragraph"><p><code>--origin</code>
-        Upstream location from which commits are identified to submit to
-        p4.  By default, this is the most recent p4 commit reachable
-        from <code>HEAD</code>.</p></div>
-<div class="paragraph"><p><code>-M::</code>
-        Detect renames.  See <a href="git-diff.html">git-diff(1)</a>.  Renames will be
-        represented in p4 using explicit <em>move</em> operations.  There
-        is no corresponding option to detect copies, but there are
-        variables for both moves and copies.</p></div>
-<div class="paragraph"><p><code>--preserve-user::</code>
-        Re-author p4 changes before submitting to p4.  This option
-        requires p4 admin privileges.</p></div>
-<div class="paragraph"><p><code>--export-labels::</code>
-        Export tags from Git as p4 labels. Tags found in Git are applied
-        to the perforce working directory.</p></div>
-<div class="paragraph"><p><code>-n::</code>
-<code>--dry-run::</code>
-        Show just what commits would be submitted to p4; do not change
-        state in Git or p4.</p></div>
-<div class="paragraph"><p><code>--prepare-p4-only::</code>
-        Apply a commit to the p4 workspace, opening, adding and deleting
-        files in p4 as for a normal submit operation.  Do not issue the
-        final "p4 submit", but instead print a message about how to
-        submit manually or revert.  This option always stops after the
-        first (oldest) commit.  Git tags are not exported to p4.</p></div>
-<div class="paragraph"><p><code>--shelve::</code>
-        Instead of submitting create a series of shelved changelists.
-        After creating each shelve, the relevant files are reverted/deleted.
-        If you have multiple commits pending multiple shelves will be created.</p></div>
-<div class="paragraph"><p><code>--update-shelve</code>
-        Update an existing shelved changelist with this commit. Implies
-        --shelve. Repeat for multiple shelved changelists.</p></div>
-<div class="paragraph"><p><code>--conflict=</code>(<code>ask</code>|<code>skip</code>|<code>quit</code>)<code>::</code>
-        Conflicts can occur when applying a commit to p4.  When this
-        happens, the default behavior ("ask") is to prompt whether to
-        skip this commit and continue, or quit.  This option can be used
-        to bypass the prompt, causing conflicting commits to be automatically
-        skipped, or to quit trying to apply commits, without prompting.</p></div>
-<div class="paragraph"><p><code>--branch</code>
-        After submitting, sync this named branch instead of the default
-        p4/master.  See the "Sync options" section above for more
-        information.</p></div>
-<div class="paragraph"><p><code>--commit</code>
-    Submit only the specified commit or range of commits, instead of the full
-    list of changes that are in the current Git branch.</p></div>
-<div class="paragraph"><p><code>--disable-rebase::</code>
-    Disable the automatic rebase after all commits have been successfully
-    submitted. Can also be set with git-p4.disableRebase.</p></div>
-<div class="paragraph"><p><code>--disable-p4sync::</code>
-    Disable the automatic sync of p4/master from Perforce after commits have
-    been submitted. Implies --disable-rebase. Can also be set with
-    git-p4.disableP4Sync. Sync with origin/master still goes ahead if possible.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--origin</code> <em>&lt;commit&gt;</em>
+</dt>
+<dd>
+<p>
+        Upstream location from which commits are identified to submit to p4. By default, this is the most recent p4 commit reachable from <code>HEAD</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-M</code>
+</dt>
+<dd>
+<p>
+        Detect renames. See <a href="git-diff.html">git-diff(1)</a>. Renames will be represented in p4 using explicit <em>move</em> operations. There is no corresponding option to detect copies, but there are variables for both moves and copies.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--preserve-user</code>
+</dt>
+<dd>
+<p>
+        Re-author p4 changes before submitting to p4. This option requires p4 admin privileges.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--export-labels</code>
+</dt>
+<dd>
+<p>
+        Export tags from Git as p4 labels. Tags found in Git are applied to the perforce working directory.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-n</code>
+</dt>
+<dt class="hdlist1">
+<code>--dry-run</code>
+</dt>
+<dd>
+<p>
+        Show just what commits would be submitted to p4; do not change state in Git or p4.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--prepare-p4-only</code>
+</dt>
+<dd>
+<p>
+        Apply a commit to the p4 workspace, opening, adding and deleting files in p4 as for a normal submit operation. Do not issue the final "p4 submit", but instead print a message about how to submit manually or revert. This option always stops after the first (oldest) commit. Git tags are not exported to p4.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--shelve</code>
+</dt>
+<dd>
+<p>
+        Instead of submitting create a series of shelved changelists. After creating each shelve, the relevant files are reverted/deleted. If you have multiple commits pending multiple shelves will be created.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--update-shelve</code> <code>CHANGELIST</code>
+</dt>
+<dd>
+<p>
+        Update an existing shelved changelist with this commit. Implies --shelve. Repeat for multiple shelved changelists.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--conflict=</code>(<code>ask</code>|<code>skip</code>|<code>quit</code>)
+</dt>
+<dd>
+<p>
+        Conflicts can occur when applying a commit to p4. When this happens, the default behavior ("ask") is to prompt whether to skip this commit and continue, or quit. This option can be used to bypass the prompt, causing conflicting commits to be automatically skipped, or to quit trying to apply commits, without prompting.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--branch</code> <em>&lt;branch&gt;</em>
+</dt>
+<dd>
+<p>
+        After submitting, sync this named branch instead of the default p4/master. See the "Sync options" section above for more information.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--commit</code> (<em>&lt;sha1&gt;</em>|<em>&lt;sha1&gt;</em><code>..</code><em>&lt;sha1&gt;</em>)
+</dt>
+<dd>
+<p>
+    Submit only the specified commit or range of commits, instead of the full list of changes that are in the current Git branch.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--disable-rebase</code>
+</dt>
+<dd>
+<p>
+    Disable the automatic rebase after all commits have been successfully submitted. Can also be set with git-p4.disableRebase.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--disable-p4sync</code>
+</dt>
+<dd>
+<p>
+    Disable the automatic sync of p4/master from Perforce after commits have been submitted. Implies --disable-rebase. Can also be set with git-p4.disableP4Sync. Sync with origin/master still goes ahead if possible.
+</p>
+</dd>
+</dl></div>
 </div>
 </div>
 </div>
@@ -1090,14 +1217,29 @@ $ git p4 unshelve 12345
 <div class="sect2">
 <h3 id="_rebase_options">Rebase options</h3>
 <div class="paragraph"><p>これらのオプションを使用して、「git p4 rebase」の動作を変更できます。</p></div>
-<div class="paragraph"><p><code>--import-labels::</code>
-        Import p4 labels.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--import-labels</code>
+</dt>
+<dd>
+<p>
+        Import p4 labels.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_unshelve_options">Unshelve options</h3>
-<div class="paragraph"><p><code>--origin::</code>
-    Sets the git refspec against which the shelved P4 changelist is compared.
-    Defaults to p4/master.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--origin</code>
+</dt>
+<dd>
+<p>
+    Sets the git refspec against which the shelved P4 changelist is compared. Defaults to p4/master.
+</p>
+</dd>
+</dl></div>
 </div>
 </div>
 </div>
@@ -1566,7 +1708,7 @@ p4からのチェンジセットは、Git fast-import を使用してインポ�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 13:10:20 JST
+ 2025-01-12 21:20:25 JST
 </div>
 </div>
 </body>

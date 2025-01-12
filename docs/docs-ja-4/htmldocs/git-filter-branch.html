@@ -800,96 +800,127 @@ git-filter-branch(1) Manual Page
 <div class="sect1">
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>--setup</code>
-        This is not a real filter executed for each commit but a one
-        time setup just before the loop. Therefore no commit-specific
-        variables are defined yet.  Functions or variables defined here
-        can be used or modified in the following filter steps except
-        the commit filter, for technical reasons.</p></div>
-<div class="paragraph"><p><code>--subdirectory-filter</code>
-        Only look at the history which touches the given subdirectory.
-        The result will contain that directory (and only that) as its
-        project root. Implies <a href="#Remap_to_ancestor">[Remap_to_ancestor]</a>.</p></div>
-<div class="paragraph"><p><code>--env-filter</code>
-        This filter may be used if you only need to modify the environment
-        in which the commit will be performed.  Specifically, you might
-        want to rewrite the author/committer name/email/time environment
-        variables (see <a href="git-commit-tree.html">git-commit-tree(1)</a> for details).</p></div>
-<div class="paragraph"><p><code>--tree-filter</code>
-        This is the filter for rewriting the tree and its contents.
-        The argument is evaluated in shell with the working
-        directory set to the root of the checked out tree.  The new tree
-        is then used as-is (new files are auto-added, disappeared files
-        are auto-removed - neither .gitignore files nor any other ignore
-        rules <strong>HAVE ANY EFFECT</strong>!).</p></div>
-<div class="paragraph"><p><code>--index-filter</code>
-        This is the filter for rewriting the index.  It is similar to the
-        tree filter but does not check out the tree, which makes it much
-        faster.  Frequently used with <code>git</code> <code>rm</code> <code>--cached</code>
-        <code>--ignore-unmatch</code> ..., see EXAMPLES below.  For hairy
-        cases, see <a href="git-update-index.html">git-update-index(1)</a>.</p></div>
-<div class="paragraph"><p><code>--parent-filter</code>
-        This is the filter for rewriting the commit&#8217;s parent list.
-        It will receive the parent string on stdin and shall output
-        the new parent string on stdout.  The parent string is in
-        the format described in <a href="git-commit-tree.html">git-commit-tree(1)</a>: empty for
-        the initial commit, "-p parent" for a normal commit and
-        "-p parent1 -p parent2 -p parent3 &#8230;" for a merge commit.</p></div>
-<div class="paragraph"><p><code>--msg-filter</code>
-        This is the filter for rewriting the commit messages.
-        The argument is evaluated in the shell with the original
-        commit message on standard input; its standard output is
-        used as the new commit message.</p></div>
-<div class="paragraph"><p><code>--commit-filter</code>
-        This is the filter for performing the commit.
-        If this filter is specified, it will be called instead of the
-        <em>git commit-tree</em> command, with arguments of the form
-        "&lt;TREE_ID&gt; [(-p &lt;PARENT_COMMIT_ID&gt;)&#8230;]" and the log message on
-        stdin.  The commit id is expected on stdout.</p></div>
-<div class="paragraph"><p>+
-特別な拡張機能として、コミットフィルターは複数のコミットIDを発行する場合があります。 その場合、元のコミットの書き直された子は、それらすべてを親として持ちます。</p></div>
-<div class="paragraph"><p>+
-あなたはこのフィルターで「map」便利関数やその他の便利関数を使用することもできます。 たとえば、 <code>skip_commit</code> "$@" を呼び出すと、現在のコミットが除外されます(ただし、変更は除外されます！ 必要に応じて、代わりに <code>git</code> <code>rebase</code> を使用してください)。</p></div>
-<div class="paragraph"><p>+
-単一の親でコミットを保持したくない場合は、 <code>git</code> <code>commit-tree</code> "$@" の代わりに <code>git_commit_non_empty_tree</code> "$@" を使用することもできます。これにより、ツリーは変更されることはありません。</p></div>
-<div class="paragraph"><p><code>--tag-name-filter</code>
-        This is the filter for rewriting tag names. When passed,
-        it will be called for every tag ref that points to a rewritten
-        object (or to a tag object which points to a rewritten object).
-        The original tag name is passed via standard input, and the new
-        tag name is expected on standard output.</p></div>
-<div class="paragraph"><p>+
-元のタグは削除されませんが、上書きできます。 <code>--tag-name-filter</code> <code>cat</code> を使用して、タグを更新するだけです。 この場合、変換が失敗した場合に備えて、古いタグをバックアップしておくなど、十分な注意が必要です。</p></div>
-<div class="paragraph"><p>+
-タグオブジェクトは、ほぼ適切な書き換えがサポートされています。 タグにメッセージが添付されている場合、同一のメッセージと作者とタイムスタンプを使用して新しいタグオブジェクトが作成されます。 タグに署名が付いている場合、署名は削除されます。 定義上、署名を保持することは不可能です。 これが「ほぼ」適切である理由は、理想的には、タグが変更されていない場合(同じオブジェクトを指している、同じ名前を持っているなど)、署名を保持する必要があるためです。しかし署名は保持されません。 署名は常に削除されます。 利用者は注意してください。 また、作者またはタイムスタンプ(またはそのことについてのタグメッセージ)を変更することもサポートされていません。 他のタグを指すタグは、基になるコミットを指すように書き直されます。</p></div>
-<div class="paragraph"><p><code>--prune-empty::</code>
-        Some filters will generate empty commits that leave the tree untouched.
-        This option instructs git-filter-branch to remove such commits if they
-        have exactly one or zero non-pruned parents; merge commits will
-        therefore remain intact.  This option cannot be used together with
-        <code>--commit-filter</code>, though the same effect can be achieved by using the
-        provided <code>git_commit_non_empty_tree</code> function in a commit filter.</p></div>
-<div class="paragraph"><p><code>--original</code>
-        Use this option to set the namespace where the original commits
-        will be stored. The default value is <em>refs/original</em>.</p></div>
-<div class="paragraph"><p><code>-d</code>
-        Use this option to set the path to the temporary directory used for
-        rewriting.  When applying a tree filter, the command needs to
-        temporarily check out the tree to some directory, which may consume
-        considerable space in case of large projects.  By default it
-        does this in the <code>.git-rewrite/</code> directory but you can override
-        that choice by this parameter.</p></div>
-<div class="paragraph"><p><code>-f::</code>
-<code>--force::</code>
-        <em>git filter-branch</em> refuses to start with an existing temporary
-        directory or when there are already refs starting with
-        <em>refs/original/</em>, unless forced.</p></div>
-<div class="paragraph"><p><code>--state-branch</code>
-        This option will cause the mapping from old to new objects to
-        be loaded from named branch upon startup and saved as a new
-        commit to that branch upon exit, enabling incremental of large
-        trees. If <em>&lt;branch&gt;</em> does not exist it will be created.</p></div>
 <div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--setup</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is not a real filter executed for each commit but a one time setup just before the loop. Therefore no commit-specific variables are defined yet. Functions or variables defined here can be used or modified in the following filter steps except the commit filter, for technical reasons.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--subdirectory-filter</code> <em>&lt;directory&gt;</em>
+</dt>
+<dd>
+<p>
+        Only look at the history which touches the given subdirectory. The result will contain that directory (and only that) as its project root. Implies <a href="#Remap_to_ancestor">[Remap_to_ancestor]</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--env-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This filter may be used if you only need to modify the environment in which the commit will be performed. Specifically, you might want to rewrite the author/committer name/email/time environment variables (see <a href="git-commit-tree.html">git-commit-tree(1)</a> for details).
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--tree-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is the filter for rewriting the tree and its contents. The argument is evaluated in shell with the working directory set to the root of the checked out tree. The new tree is then used as-is (new files are auto-added, disappeared files are auto-removed - neither .gitignore files nor any other ignore rules <strong>HAVE ANY EFFECT</strong>!).
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--index-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is the filter for rewriting the index. It is similar to the tree filter but does not check out the tree, which makes it much faster. Frequently used with <code>git</code> <code>rm</code> <code>--cached</code> <code>--ignore-unmatch</code> ..., see EXAMPLES below. For hairy cases, see <a href="git-update-index.html">git-update-index(1)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--parent-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is the filter for rewriting the commit&#8217;s parent list. It will receive the parent string on stdin and shall output the new parent string on stdout. The parent string is in the format described in <a href="git-commit-tree.html">git-commit-tree(1)</a>: empty for the initial commit, "-p parent" for a normal commit and "-p parent1 -p parent2 -p parent3 &#8230;" for a merge commit.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--msg-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is the filter for rewriting the commit messages. The argument is evaluated in the shell with the original commit message on standard input; its standard output is used as the new commit message.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--commit-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is the filter for performing the commit. If this filter is specified, it will be called instead of the <em>git commit-tree</em> command, with arguments of the form "&lt;TREE_ID&gt; [(-p &lt;PARENT_COMMIT_ID&gt;)&#8230;]" and the log message on stdin. The commit id is expected on stdout.
+</p>
+<div class="paragraph"><p>特別な拡張機能として、コミットフィルターは複数のコミットIDを発行する場合があります。 その場合、元のコミットの書き直された子は、それらすべてを親として持ちます。</p></div>
+<div class="paragraph"><p>あなたはこのフィルターで「map」便利関数やその他の便利関数を使用することもできます。 たとえば、 <code>skip_commit</code> "$@" を呼び出すと、現在のコミットが除外されます(ただし、変更は除外されます！ 必要に応じて、代わりに <code>git</code> <code>rebase</code> を使用してください)。</p></div>
+<div class="paragraph"><p>単一の親でコミットを保持したくない場合は、 <code>git</code> <code>commit-tree</code> "$@" の代わりに <code>git_commit_non_empty_tree</code> "$@" を使用することもできます。これにより、ツリーは変更されることはありません。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--tag-name-filter</code> <em>&lt;command&gt;</em>
+</dt>
+<dd>
+<p>
+        This is the filter for rewriting tag names. When passed, it will be called for every tag ref that points to a rewritten object (or to a tag object which points to a rewritten object). The original tag name is passed via standard input, and the new tag name is expected on standard output.
+</p>
+<div class="paragraph"><p>元のタグは削除されませんが、上書きできます。 <code>--tag-name-filter</code> <code>cat</code> を使用して、タグを更新するだけです。 この場合、変換が失敗した場合に備えて、古いタグをバックアップしておくなど、十分な注意が必要です。</p></div>
+<div class="paragraph"><p>タグオブジェクトは、ほぼ適切な書き換えがサポートされています。 タグにメッセージが添付されている場合、同一のメッセージと作者とタイムスタンプを使用して新しいタグオブジェクトが作成されます。 タグに署名が付いている場合、署名は削除されます。 定義上、署名を保持することは不可能です。 これが「ほぼ」適切である理由は、理想的には、タグが変更されていない場合(同じオブジェクトを指している、同じ名前を持っているなど)、署名を保持する必要があるためです。しかし署名は保持されません。 署名は常に削除されます。 利用者は注意してください。 また、作者またはタイムスタンプ(またはそのことについてのタグメッセージ)を変更することもサポートされていません。 他のタグを指すタグは、基になるコミットを指すように書き直されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--prune-empty</code>
+</dt>
+<dd>
+<p>
+        Some filters will generate empty commits that leave the tree untouched. This option instructs git-filter-branch to remove such commits if they have exactly one or zero non-pruned parents; merge commits will therefore remain intact. This option cannot be used together with <code>--commit-filter</code>, though the same effect can be achieved by using the provided <code>git_commit_non_empty_tree</code> function in a commit filter.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--original</code> <em>&lt;namespace&gt;</em>
+</dt>
+<dd>
+<p>
+        Use this option to set the namespace where the original commits will be stored. The default value is <em>refs/original</em>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-d</code> <em>&lt;directory&gt;</em>
+</dt>
+<dd>
+<p>
+        Use this option to set the path to the temporary directory used for rewriting. When applying a tree filter, the command needs to temporarily check out the tree to some directory, which may consume considerable space in case of large projects. By default it does this in the <code>.git-rewrite/</code> directory but you can override that choice by this parameter.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-f</code>
+</dt>
+<dt class="hdlist1">
+<code>--force</code>
+</dt>
+<dd>
+<p>
+        <em>git filter-branch</em> refuses to start with an existing temporary directory or when there are already refs starting with <em>refs/original/</em>, unless forced.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--state-branch</code> <em>&lt;branch&gt;</em>
+</dt>
+<dd>
+<p>
+        This option will cause the mapping from old to new objects to be loaded from named branch upon startup and saved as a new commit to that branch upon exit, enabling incremental of large trees. If <em>&lt;branch&gt;</em> does not exist it will be created.
+</p>
+</dd>
 <dt class="hdlist1">
 &lt;rev-list options&gt;&#8230;
 </dt>
@@ -1280,7 +1311,7 @@ Running git-filter-branch with either --tags or --all in your &lt;rev-list-optio
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 09:41:24 JST
+ 2025-01-12 21:20:12 JST
 </div>
 </div>
 </body>

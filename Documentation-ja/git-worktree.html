@@ -858,85 +858,150 @@ unlock
 <div class="sect1">
 <h2 id="_options">OPTIONS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><code>-f::</code>
-<code>--force::</code>
-        By default, <code>add</code> refuses to create a new worktree when
-        <em>&lt;commit-ish&gt;</em> is a branch name and is already checked out by
-        another worktree, or if <em>&lt;path&gt;</em> is already assigned to some
-        worktree but is missing (for instance, if <em>&lt;path&gt;</em> was deleted
-        manually). This option overrides these safeguards. To add a missing but
-        locked worktree path, specify <code>--force</code> twice.</p></div>
-<div class="paragraph"><p>+
-<code>--force</code> が2回指定されていない限り、 <code>move</code> はロックされたワークツリーの移動を拒否します。移動先がすでに他のワークツリーに割り当てられているが欠落している場合(たとえば、 <em>&lt;new-path&gt;</em> が手動で削除された場合)は、 <code>--force</code> で移動を続行できます。移動先がロックされている場合は、 <code>--force</code> を2回使用します。</p></div>
-<div class="paragraph"><p>+
-<code>remove</code> は、 <code>--force</code> が使用されない限り、 クリーンでないワークツリーの削除を拒否します。 ロックされたワークツリーを削除するには、 <code>--force</code> を 2 回指定します。</p></div>
-<div class="paragraph"><p><code>-b</code>
-<code>-B</code>
-        With <code>add</code>, create a new branch named <em>&lt;new-branch&gt;</em> starting at
-        <em>&lt;commit-ish&gt;</em>, and check out <em>&lt;new-branch&gt;</em> into the new worktree.
-        If <em>&lt;commit-ish&gt;</em> is omitted, it defaults to <code>HEAD</code>.
-        By default, <code>-b</code> refuses to create a new branch if it already
-        exists. <code>-B</code> overrides this safeguard, resetting <em>&lt;new-branch&gt;</em> to
-        <em>&lt;commit-ish&gt;</em>.</p></div>
-<div class="paragraph"><p><code>-d::</code>
-<code>--detach::</code>
-        With <code>add</code>, detach <code>HEAD</code> in the new worktree. See "DETACHED HEAD"
-        in <a href="git-checkout.html">git-checkout(1)</a>.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>checkout::</code>
-        By default, <code>add</code> checks out <em>&lt;commit-ish&gt;</em>, however, <code>--no-checkout</code> can
-        be used to suppress checkout in order to make customizations,
-        such as configuring sparse-checkout. See "Sparse checkout"
-        in <a href="git-read-tree.html">git-read-tree(1)</a>.</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>guess-remote::</code>
-        With <code>worktree</code> <code>add</code> <em>&lt;path&gt;</em>, without <em>&lt;commit-ish&gt;</em>, instead
-        of creating a new branch from <code>HEAD</code>, if there exists a tracking
-        branch in exactly one remote matching the basename of <em>&lt;path&gt;</em>,
-        base the new branch on the remote-tracking branch, and mark
-        the remote-tracking branch as "upstream" from the new branch.</p></div>
-<div class="paragraph"><p>+
-これは、 <code>worktree.guessRemote</code> 構成オプションを使用してデフォルトの動作として設定することもできます。</p></div>
-<div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>track::</code>
-        When creating a new branch, if <em>&lt;commit-ish&gt;</em> is a branch,
-        mark it as "upstream" from the new branch.  This is the
-        default if <em>&lt;commit-ish&gt;</em> is a remote-tracking branch.  See
-        <code>--track</code> in <a href="git-branch.html">git-branch(1)</a> for details.</p></div>
-<div class="paragraph"><p><code>--lock::</code>
-        Keep the worktree locked after creation. This is the
-        equivalent of <code>git</code> <code>worktree</code> <code>lock</code> after <code>git</code> <code>worktree</code> <code>add</code>,
-        but without a race condition.</p></div>
-<div class="paragraph"><p><code>-n::</code>
-<code>--dry-run::</code>
-        With <code>prune</code>, do not remove anything; just report what it would
-        remove.</p></div>
-<div class="paragraph"><p><code>--orphan::</code>
-        With <code>add</code>, make the new worktree and index empty, associating
-        the worktree with a new unborn branch named <em>&lt;new-branch&gt;</em>.</p></div>
-<div class="paragraph"><p><code>--porcelain::</code>
-        With <code>list</code>, output in an easy-to-parse format for scripts.
-        This format will remain stable across Git versions and regardless of user
-        configuration.  It is recommended to combine this with <code>-z</code>.
-        See below for details.</p></div>
-<div class="paragraph"><p><code>-z::</code>
-        Terminate each line with a NUL rather than a newline when
-        <code>--porcelain</code> is specified with <code>list</code>. This makes it possible
-        to parse the output when a worktree path contains a newline
-        character.</p></div>
-<div class="paragraph"><p><code>-q::</code>
-<code>--quiet::</code>
-        With <code>add</code>, suppress feedback messages.</p></div>
-<div class="paragraph"><p><code>-v::</code>
-<code>--verbose::</code>
-        With <code>prune</code>, report all removals.</p></div>
-<div class="paragraph"><p>+
-<code>list</code> と供に使用すると、ワークツリーに関する追加情報を出力します(後述)。</p></div>
-<div class="paragraph"><p><code>--expire</code>
-        With <code>prune</code>, only expire unused worktrees older than <em>&lt;time&gt;</em>.</p></div>
-<div class="paragraph"><p>+
-<code>list</code> と共に使うと、 <em>&lt;time&gt;</em> より古い場合は、欠落しているワークツリーに刈り込み可能(prunable)という注釈(annotate)を付けます。</p></div>
-<div class="paragraph"><p><code>--reason</code>
-        With <code>lock</code> or with <code>add</code> <code>--lock</code>, an explanation why the worktree
-        is locked.</p></div>
 <div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-f</code>
+</dt>
+<dt class="hdlist1">
+<code>--force</code>
+</dt>
+<dd>
+<p>
+        By default, <code>add</code> refuses to create a new worktree when <em>&lt;commit-ish&gt;</em> is a branch name and is already checked out by another worktree, or if <em>&lt;path&gt;</em> is already assigned to some worktree but is missing (for instance, if <em>&lt;path&gt;</em> was deleted manually). This option overrides these safeguards. To add a missing but locked worktree path, specify <code>--force</code> twice.
+</p>
+<div class="paragraph"><p><code>--force</code> が2回指定されていない限り、 <code>move</code> はロックされたワークツリーの移動を拒否します。移動先がすでに他のワークツリーに割り当てられているが欠落している場合(たとえば、 <em>&lt;new-path&gt;</em> が手動で削除された場合)は、 <code>--force</code> で移動を続行できます。移動先がロックされている場合は、 <code>--force</code> を2回使用します。</p></div>
+<div class="paragraph"><p><code>remove</code> は、 <code>--force</code> が使用されない限り、 クリーンでないワークツリーの削除を拒否します。 ロックされたワークツリーを削除するには、 <code>--force</code> を 2 回指定します。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>-b</code> <em>&lt;new-branch&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>-B</code> <em>&lt;new-branch&gt;</em>
+</dt>
+<dd>
+<p>
+        With <code>add</code>, create a new branch named <em>&lt;new-branch&gt;</em> starting at <em>&lt;commit-ish&gt;</em>, and check out <em>&lt;new-branch&gt;</em> into the new worktree. If <em>&lt;commit-ish&gt;</em> is omitted, it defaults to <code>HEAD</code>. By default, <code>-b</code> refuses to create a new branch if it already exists. <code>-B</code> overrides this safeguard, resetting <em>&lt;new-branch&gt;</em> to <em>&lt;commit-ish&gt;</em>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-d</code>
+</dt>
+<dt class="hdlist1">
+<code>--detach</code>
+</dt>
+<dd>
+<p>
+        With <code>add</code>, detach <code>HEAD</code> in the new worktree. See "DETACHED HEAD" in <a href="git-checkout.html">git-checkout(1)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>checkout</code>
+</dt>
+<dd>
+<p>
+        By default, <code>add</code> checks out <em>&lt;commit-ish&gt;</em>, however, <code>--no-checkout</code> can be used to suppress checkout in order to make customizations, such as configuring sparse-checkout. See "Sparse checkout" in <a href="git-read-tree.html">git-read-tree(1)</a>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>guess-remote</code>
+</dt>
+<dd>
+<p>
+        With <code>worktree</code> <code>add</code> <em>&lt;path&gt;</em>, without <em>&lt;commit-ish&gt;</em>, instead of creating a new branch from <code>HEAD</code>, if there exists a tracking branch in exactly one remote matching the basename of <em>&lt;path&gt;</em>, base the new branch on the remote-tracking branch, and mark the remote-tracking branch as "upstream" from the new branch.
+</p>
+<div class="paragraph"><p>これは、 <code>worktree.guessRemote</code> 構成オプションを使用してデフォルトの動作として設定することもできます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--</code>[<code>no-</code>]<code>track</code>
+</dt>
+<dd>
+<p>
+        When creating a new branch, if <em>&lt;commit-ish&gt;</em> is a branch, mark it as "upstream" from the new branch. This is the default if <em>&lt;commit-ish&gt;</em> is a remote-tracking branch. See <code>--track</code> in <a href="git-branch.html">git-branch(1)</a> for details.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--lock</code>
+</dt>
+<dd>
+<p>
+        Keep the worktree locked after creation. This is the equivalent of <code>git</code> <code>worktree</code> <code>lock</code> after <code>git</code> <code>worktree</code> <code>add</code>, but without a race condition.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-n</code>
+</dt>
+<dt class="hdlist1">
+<code>--dry-run</code>
+</dt>
+<dd>
+<p>
+        With <code>prune</code>, do not remove anything; just report what it would remove.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--orphan</code>
+</dt>
+<dd>
+<p>
+        With <code>add</code>, make the new worktree and index empty, associating the worktree with a new unborn branch named <em>&lt;new-branch&gt;</em>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--porcelain</code>
+</dt>
+<dd>
+<p>
+        With <code>list</code>, output in an easy-to-parse format for scripts. This format will remain stable across Git versions and regardless of user configuration. It is recommended to combine this with <code>-z</code>. See below for details.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-z</code>
+</dt>
+<dd>
+<p>
+        Terminate each line with a NUL rather than a newline when <code>--porcelain</code> is specified with <code>list</code>. This makes it possible to parse the output when a worktree path contains a newline character.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-q</code>
+</dt>
+<dt class="hdlist1">
+<code>--quiet</code>
+</dt>
+<dd>
+<p>
+        With <code>add</code>, suppress feedback messages.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-v</code>
+</dt>
+<dt class="hdlist1">
+<code>--verbose</code>
+</dt>
+<dd>
+<p>
+        With <code>prune</code>, report all removals.
+</p>
+<div class="paragraph"><p><code>list</code> と供に使用すると、ワークツリーに関する追加情報を出力します(後述)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--expire</code> <em>&lt;time&gt;</em>
+</dt>
+<dd>
+<p>
+        With <code>prune</code>, only expire unused worktrees older than <em>&lt;time&gt;</em>.
+</p>
+<div class="paragraph"><p><code>list</code> と共に使うと、 <em>&lt;time&gt;</em> より古い場合は、欠落しているワークツリーに刈り込み可能(prunable)という注釈(annotate)を付けます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--reason</code> <em>&lt;string&gt;</em>
+</dt>
+<dd>
+<p>
+        With <code>lock</code> or with <code>add</code> <code>--lock</code>, an explanation why the worktree is locked.
+</p>
+</dd>
 <dt class="hdlist1">
 &lt;worktree&gt;
 </dt>
@@ -1120,7 +1185,7 @@ $ git worktree remove ../temp</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 09:41:53 JST
+ 2025-01-12 21:20:43 JST
 </div>
 </div>
 </body>

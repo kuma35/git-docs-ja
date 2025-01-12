@@ -48,59 +48,29 @@ Filters
 OPTIONS
 -------
 
-`--setup`
-	This is not a real filter executed for each commit but a one
-	time setup just before the loop. Therefore no commit-specific
-	variables are defined yet.  Functions or variables defined here
-	can be used or modified in the following filter steps except
-	the commit filter, for technical reasons.
+`--setup <command>`::
+	This is not a real filter executed for each commit but a one time setup just before the loop. Therefore no commit-specific variables are defined yet. Functions or variables defined here can be used or modified in the following filter steps except the commit filter, for technical reasons.
 
-`--subdirectory-filter`
-	Only look at the history which touches the given subdirectory.
-	The result will contain that directory (and only that) as its
-	project root. Implies <<Remap_to_ancestor>>.
+`--subdirectory-filter <directory>`::
+	Only look at the history which touches the given subdirectory. The result will contain that directory (and only that) as its project root. Implies <<Remap_to_ancestor>>.
 
-`--env-filter`
-	This filter may be used if you only need to modify the environment
-	in which the commit will be performed.  Specifically, you might
-	want to rewrite the author/committer name/email/time environment
-	variables (see linkgit:git-commit-tree[1] for details).
+`--env-filter <command>`::
+	This filter may be used if you only need to modify the environment in which the commit will be performed. Specifically, you might want to rewrite the author/committer name/email/time environment variables (see linkgit:git-commit-tree[1] for details).
 
-`--tree-filter`
-	This is the filter for rewriting the tree and its contents.
-	The argument is evaluated in shell with the working
-	directory set to the root of the checked out tree.  The new tree
-	is then used as-is (new files are auto-added, disappeared files
-	are auto-removed - neither .gitignore files nor any other ignore
-	rules *HAVE ANY EFFECT*!).
+`--tree-filter <command>`::
+	This is the filter for rewriting the tree and its contents. The argument is evaluated in shell with the working directory set to the root of the checked out tree. The new tree is then used as-is (new files are auto-added, disappeared files are auto-removed - neither .gitignore files nor any other ignore rules *HAVE ANY EFFECT*!).
 
-`--index-filter`
-	This is the filter for rewriting the index.  It is similar to the
-	tree filter but does not check out the tree, which makes it much
-	faster.  Frequently used with `git rm --cached
-	--ignore-unmatch ...`, see EXAMPLES below.  For hairy
-	cases, see linkgit:git-update-index[1].
+`--index-filter <command>`::
+	This is the filter for rewriting the index. It is similar to the tree filter but does not check out the tree, which makes it much faster. Frequently used with `git rm --cached --ignore-unmatch ...`, see EXAMPLES below. For hairy cases, see linkgit:git-update-index[1].
 
-`--parent-filter`
-	This is the filter for rewriting the commit's parent list.
-	It will receive the parent string on stdin and shall output
-	the new parent string on stdout.  The parent string is in
-	the format described in linkgit:git-commit-tree[1]: empty for
-	the initial commit, "-p parent" for a normal commit and
-	"-p parent1 -p parent2 -p parent3 ..." for a merge commit.
+`--parent-filter <command>`::
+	This is the filter for rewriting the commit's parent list. It will receive the parent string on stdin and shall output the new parent string on stdout. The parent string is in the format described in linkgit:git-commit-tree[1]: empty for the initial commit, "-p parent" for a normal commit and "-p parent1 -p parent2 -p parent3 ..." for a merge commit.
 
-`--msg-filter`
-	This is the filter for rewriting the commit messages.
-	The argument is evaluated in the shell with the original
-	commit message on standard input; its standard output is
-	used as the new commit message.
+`--msg-filter <command>`::
+	This is the filter for rewriting the commit messages. The argument is evaluated in the shell with the original commit message on standard input; its standard output is used as the new commit message.
 
-`--commit-filter`
-	This is the filter for performing the commit.
-	If this filter is specified, it will be called instead of the
-	'git commit-tree' command, with arguments of the form
-	"<TREE_ID> [(-p <PARENT_COMMIT_ID>)...]" and the log message on
-	stdin.  The commit id is expected on stdout.
+`--commit-filter <command>`::
+	This is the filter for performing the commit. If this filter is specified, it will be called instead of the 'git commit-tree' command, with arguments of the form "<TREE_ID> [(-p <PARENT_COMMIT_ID>)...]" and the log message on stdin. The commit id is expected on stdout.
 +
 特別な拡張機能として、コミットフィルターは複数のコミットIDを発行する場合があります。 その場合、元のコミットの書き直された子は、それらすべてを親として持ちます。
 +
@@ -108,48 +78,28 @@ OPTIONS
 +
 単一の親でコミットを保持したくない場合は、 `git commit-tree "$@"` の代わりに `git_commit_non_empty_tree "$@"` を使用することもできます。これにより、ツリーは変更されることはありません。
 
-`--tag-name-filter`
-	This is the filter for rewriting tag names. When passed,
-	it will be called for every tag ref that points to a rewritten
-	object (or to a tag object which points to a rewritten object).
-	The original tag name is passed via standard input, and the new
-	tag name is expected on standard output.
+`--tag-name-filter <command>`::
+	This is the filter for rewriting tag names. When passed, it will be called for every tag ref that points to a rewritten object (or to a tag object which points to a rewritten object). The original tag name is passed via standard input, and the new tag name is expected on standard output.
 +
 元のタグは削除されませんが、上書きできます。 `--tag-name-filter cat` を使用して、タグを更新するだけです。 この場合、変換が失敗した場合に備えて、古いタグをバックアップしておくなど、十分な注意が必要です。
 +
 タグオブジェクトは、ほぼ適切な書き換えがサポートされています。 タグにメッセージが添付されている場合、同一のメッセージと作者とタイムスタンプを使用して新しいタグオブジェクトが作成されます。 タグに署名が付いている場合、署名は削除されます。 定義上、署名を保持することは不可能です。 これが「ほぼ」適切である理由は、理想的には、タグが変更されていない場合(同じオブジェクトを指している、同じ名前を持っているなど)、署名を保持する必要があるためです。しかし署名は保持されません。 署名は常に削除されます。 利用者は注意してください。 また、作者またはタイムスタンプ(またはそのことについてのタグメッセージ)を変更することもサポートされていません。 他のタグを指すタグは、基になるコミットを指すように書き直されます。
 
-`--prune-empty::`
-	Some filters will generate empty commits that leave the tree untouched.
-	This option instructs git-filter-branch to remove such commits if they
-	have exactly one or zero non-pruned parents; merge commits will
-	therefore remain intact.  This option cannot be used together with
-	`--commit-filter`, though the same effect can be achieved by using the
-	provided `git_commit_non_empty_tree` function in a commit filter.
+`--prune-empty`::
+	Some filters will generate empty commits that leave the tree untouched. This option instructs git-filter-branch to remove such commits if they have exactly one or zero non-pruned parents; merge commits will therefore remain intact. This option cannot be used together with `--commit-filter`, though the same effect can be achieved by using the provided `git_commit_non_empty_tree` function in a commit filter.
 
-`--original`
-	Use this option to set the namespace where the original commits
-	will be stored. The default value is 'refs/original'.
+`--original <namespace>`::
+	Use this option to set the namespace where the original commits will be stored. The default value is 'refs/original'.
 
-`-d`
-	Use this option to set the path to the temporary directory used for
-	rewriting.  When applying a tree filter, the command needs to
-	temporarily check out the tree to some directory, which may consume
-	considerable space in case of large projects.  By default it
-	does this in the `.git-rewrite/` directory but you can override
-	that choice by this parameter.
+`-d <directory>`::
+	Use this option to set the path to the temporary directory used for rewriting. When applying a tree filter, the command needs to temporarily check out the tree to some directory, which may consume considerable space in case of large projects. By default it does this in the `.git-rewrite/` directory but you can override that choice by this parameter.
 
-`-f::`
-`--force::`
-	'git filter-branch' refuses to start with an existing temporary
-	directory or when there are already refs starting with
-	'refs/original/', unless forced.
+`-f`::
+`--force`::
+	'git filter-branch' refuses to start with an existing temporary directory or when there are already refs starting with 'refs/original/', unless forced.
 
-`--state-branch`
-	This option will cause the mapping from old to new objects to
-	be loaded from named branch upon startup and saved as a new
-	commit to that branch upon exit, enabling incremental of large
-	trees. If '<branch>' does not exist it will be created.
+`--state-branch <branch>`::
+	This option will cause the mapping from old to new objects to be loaded from named branch upon startup and saved as a new commit to that branch upon exit, enabling incremental of large trees. If '<branch>' does not exist it will be created.
 
 <rev-list options>...::
 	`git rev-list` の引数。 これらのオプションに含まれるすべての正のref(positive refs)は書き直されます。 `--all` などのオプションを指定することもできますが、それらを `git filter-branch` のオプションから分離するには `--` を使用する必要があります。 <<Remap_to_ancestor>> を含んでいます。
