@@ -27,11 +27,11 @@ Gitは、参照の命名方法に以下のルールを課しています:
 
 . どこにも2つの連続したドット(`..`)を含めることはできません。
 
-. ASCII制御文字(つまり、値が \040 未満のバイト または \177(`DEL`))、スペース、チルダ(`~`)、キャレット(`^`)、コロン(`:`)はどこにでも含めることはできません。
+. ASCII制御文字(つまり、値が \040 未満のバイト または \177(`DEL`))、スペース、チルダ(`~`)、キャレット(`^`)、コロン(`:`)はどこにも含めることはできません。
 
 . 疑問符(`？`)、アスタリスク(`*`)、角かっこ(`[`)がどこにあってもいけません。この規則の例外については、以下の `--refspec-pattern` オプションを参照してください。
 
-. They cannot begin or end with a slash `/` or contain multiple consecutive slashes (see the `--normalize` option below for an exception to this rule).
+. スラッシュ(`/`)で開始または終了したり、複数の連続したスラッシュを含めることはできません(この規則の例外については、以下の `--normalize` オプションを参照してください)。
 
 . ドット(`.`)で終わらせることはできません。
 
@@ -45,24 +45,24 @@ Gitは、参照の命名方法に以下のルールを課しています:
 
 . 二重ドット(`..`)は、 `ref1..ref2` などとよく使用されます。一部のコンテキストでは、この表記は `^ref1 ref2` を意味します(つまり、`ref1` に無く かつ `ref2` にある)。
 
-. チルダ(`~`)とキャレット(`^`)は、接尾辞 'nth parent' (n番目の親)と 'peel onion' (玉ねぎ剥き)操作を導入するために使用されます。
+. チルダ(`~`)とキャレット(`^`)は、 n番目の親(nth parent)接尾辞と玉ねぎ剥き操作(peel onion)接尾辞を導入するために使用されます。
 
 . コロン(`：`)は、 `srcref:dstref` のように、フェッチおよびプッシュ操作で「srcrefの値を使用してdstrefに格納する」ことを意味するために使用されます。 `git cat-file blob v1.3.3:refs.c` のようにして `git cat-file` などで特定のオブジェクトを選択するためにも使用できます。
 
 . at-open-brace(`@{`)は、reflogエントリにアクセスするための表記法として使用されます。
 
-With the `--branch` option, the command takes a name and checks if it can be used as a valid branch name (e.g. when creating a new branch). But be cautious when using the previous checkout syntax that may refer to a detached HEAD state. The rule `git check-ref-format --branch $name` implements may be stricter than what `git check-ref-format refs/heads/$name` says (e.g. a dash may appear at the beginning of a ref component, but it is explicitly forbidden at the beginning of a branch name). When run with the `--branch` option in a repository, the input is first expanded for the ``previous checkout syntax'' `@{-n}`. For example, `@{-1}` is a way to refer the last thing that was checked out using "git switch" or "git checkout" operation. This option should be used by porcelains to accept this syntax anywhere a branch name is expected, so they can act as if you typed the branch name. As an exception note that, the ``previous checkout operation'' might result in a commit object name when the N-th last thing checked out was not a branch.
+`--branch` オプションを使用すると、コマンドは名前を取得し、それが有効なブランチ名として使用できるかどうかを確認します(たとえば、新しいブランチを作成するとき)。ただし、切り離された(detached)HEAD状態を参照する可能性のある、遡及チェックアウト構文(previous checkout syntax)を使用する場合は注意が必要です。 `git check-ref-format --branch $name` が実装するルールは、 `git check-ref-format refs/heads/$name` が言うことよりも厳しい場合があります(たとえば、参照コンポーネントの先頭にダッシュが表示される場合がありますが、ブランチ名の先頭では明示的に禁止されています)。リポジトリで `--branch` オプションを指定して実行すると、入力は最初に「遡及チェックアウト構文」 `@{-n}` 用に展開されます。たとえば、 `@{-1}` は、 `git switch` または `git checkout` 操作を使用して最後にチェックアウトされたものを参照する方法です。磁器コマンドでは、ブランチ名が必要な場所でこの構文を受け入れるために、このオプションを使用する必要があります。これにより、あなたがブランチ名を入力したかのように機能できます。注意: 「遡及チェックアウト操作」では、例外として、チェックアウトされたN番目の最後のものがブランチではなかった場合にコミットオブジェクト名が生成される可能性があることに注意してください。
 
 OPTIONS
 -------
 `--[no-]allow-onelevel`::
-	Controls whether one-level refnames are accepted (i.e., refnames that do not contain multiple `/`-separated components). The default is `--no-allow-onelevel`.
+	1レベルのrefnameを受け入れるかどうかを制御します(つまり、複数の `/` で区切られたコンポーネントを含まないrefname)。 デフォルトは `--no-allow-onelevel` です。
 
 `--refspec-pattern`::
-	Interpret <refname> as a reference name pattern for a refspec (as used with remote repositories). If this option is enabled, <refname> is allowed to contain a single `*` in the refspec (e.g., `foo/bar*/baz` or `foo/bar*baz/` but not `foo/bar*/baz*`).
+	<refname>を(リモートリポジトリで使用される)refspecの参照名パターンとして解釈します。このオプションを有効にすると、<refname>はrefspecに単一の `*` を含めることができます(例: `foo/bar*/baz` または `foo/bar*baz/` はOKですが、 `foo/bar*/baz*` はダメです)。
 
 `--normalize`::
-	Normalize 'refname' by removing any leading slash (`/`) characters and collapsing runs of adjacent slashes between name components into a single slash. If the normalized refname is valid then print it to standard output and exit with a status of 0, otherwise exit with a non-zero status. (`--print` is a deprecated way to spell `--normalize`.)
+	先行スラッシュ(`/`)文字を削除し、名前コンポーネント間の隣接するスラッシュを1つのスラッシュに折りたたむことにより、 `refname` を正規化します。正規化された refname が有効な場合は、それを標準出力に出力し、ステータス0で終了します。それ以外の場合は、ゼロ以外のステータスで終了(exit)します。 ( `--print` は `--normalize` を綴る非推奨の方法です。)
 
 
 EXAMPLES
