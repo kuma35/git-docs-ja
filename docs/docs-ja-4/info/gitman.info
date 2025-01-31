@@ -15358,9 +15358,9 @@ Gitには、システム固有のヘルパーから資格情報(credentials)を�
 したり、ユーザーにユーザー名とパスワードの入力を求めたりするための内部イ
 ンターフェイスがあります。 git-credentialコマンドは、Gitと同じ方法で資格
 情報を取得、保存、または要求する可能性のあるスクリプトにこのインターフェ
-イスを公開します。 このスクリプト可能なインターフェイスの設計は、内部
-CAPIをモデル化しています。 概念の背景については、credential.hを参照して
-ください。
+イスを公開します。 この、 スクリプトで処理可能なインターフェイスの設計は
+、 内部 C API をモデルにしています。 概念の背景については、 credential.h
+を参照してください。
 
    git-credentialは、コマンドラインで「action」オプション(‘fill’ または
 ‘approve’ または ‘reject’ のいずれか)を取り、stdinで資格情報の説明
@@ -15381,8 +15381,8 @@ FORMAT::) を参照)
 ルパーに説明(description)を送信します。 これにより、 説明(description)に
 一致する保存済みの資格情報が消去される場合があります。
 
-   If the action is ‘capability’, git-credential will announce any
-capabilities it supports to standard output.
+   アクションが ‘capability’ の場合、 git-credential はサポートするすべ
+ての機能を標準出力に通知します。
 
    アクションが ‘approve’(承認)または ‘reject’(拒否)の場合、出力は生成さ
 れません。
@@ -15429,15 +15429,14 @@ git-credentialを使用するアプリケーションは、通常、以下の手
   3. 資格情報を使用し(たとえば、手順(2)のユーザー名とパスワードを使用し
      てURLにアクセスします)、それが受け入れられるかどうかを確認します。
 
-  4. Report on the success or failure of the password.  If the
-     credential allowed the operation to complete successfully, then it
-     can be marked with an "approve" action to tell ‘git credential’ to
-     reuse it in its next invocation.  If the credential was rejected
-     during the operation, use the "reject" action so that ‘git
-     credential’ will ask for a new password in its next invocation.  In
-     either case, ‘git credential’ should be fed with the credential
-     description obtained from step (2) (which also contains the fields
-     provided in step (1)).
+  4. パスワードの成功または失敗について報告します。資格情報によって操作
+     が正常に完了することが許可された場合は、「approve」アクションでマー
+     クを付けて、 ‘git credential’ に、 次の呼び出しで再利用するように指
+     示できます。操作中に資格情報が拒否された場合は、「reject」アクショ
+     ンを使用して、 ‘git credential’ が次の呼び出しで新しいパスワードを
+     要求するようにします。 いずれの場合も、 ‘git credential’ には、ステ
+     ップ(2)で取得した資格情報の説明(description)(これにはステップ(1)で
+     指定したフィールドも含まれます)を指定する必要があります。
 
 INPUT/OUTPUT FORMAT
 *******************
@@ -15451,10 +15450,10 @@ INPUT/OUTPUT FORMAT
 。 各属性は、キーと値のペアで指定され、 ‘=’ (等号)記号と、改行で続けます
 。
 
-   The key may contain any bytes except ‘=’, newline, or NUL. The value
-may contain any bytes except newline or NUL. A line, including the
-trailing newline, may not exceed 65535 bytes in order to allow
-implementations to parse efficiently.
+   キーには、 ‘=’ または改行またはNUL以外の任意のバイトを含めることがで
+きます。値には、改行またはNUL以外の任意のバイトを含めることができます。
+効率的なパースが実装できるようにするために、 行の長さは末尾の改行を含め
+て 65535 バイトを超えてはなりません。
 
    C言語スタイルの配列括弧 ‘[]’ で終わるキーを持つ属性は複数の値を持つこ
 とができます。 複数値属性の各インスタンスは、 順序付けられた値のリストを
@@ -15480,8 +15479,8 @@ implementations to parse efficiently.
      セスする場合、これはサーバー上のリポジトリのパスになります。
 
 ‘username’
-     私達が既に持っている(たとえば、URL、構成、ユーザー、または以前に実
-     行したヘルパーから)場合、資格情報のユーザー名。
+     既にどれか(たとえば、URL、構成、ユーザー、または以前に実行したヘル
+     パー由来)が手元にある場合、 その資格情報のユーザー名。
 
 ‘password’
      資格情報のパスワード(私達が保存を要求している場合)。
@@ -15513,64 +15512,62 @@ implementations to parse efficiently.
      ないとか)は未設定のままになります。
 
 ‘authtype’
-     This indicates that the authentication scheme in question should be
-     used.  Common values for HTTP and HTTPS include ‘basic’, ‘bearer’,
-     and ‘digest’, although the latter is insecure and should not be
-     used.  If ‘credential’ is used, this may be set to an arbitrary
-     string suitable for the protocol in question (usually HTTP).
+     これは、 該当する認証スキームを使用する必要があることを示します。
+     HTTP と HTTPS の一般的な値には、 ‘basic’ と ‘bearer’ と ‘digest’ が
+     ありますが、 後者は安全ではないため使用すべきではありません。
+     ‘credential’ が使用される場合、 これは問い合わせのプロトコル(通常は
+     HTTP)に適した任意の文字列に設定できます。
 
-     This value should not be sent unless the appropriate capability
-     (see below) is provided on input.
+     適切な機能(下記参照)が入力に提供されていない限り、 この値は送信され
+     るべきではありません。
 
 ‘credential’
-     The pre-encoded credential, suitable for the protocol in question
-     (usually HTTP). If this key is sent, ‘authtype’ is mandatory, and
-     ‘username’ and ‘password’ are not used.  For HTTP, Git concatenates
-     the ‘authtype’ value and this value with a single space to
-     determine the ‘Authorization’ header.
+     対象のプロトコル(通常は HTTP)に適した、 事前にエンコードされた資格
+     情報。 このキーが送信される場合、‘authtype’ は必須であり、
+     ‘username’ と ‘password’ は使用されません。 HTTP の場合、 Git は
+     ‘authtype’ 値とこの値を 1 つの空白で連結して、 ‘Authorization’ ヘッ
+     ダーを決定します。
 
-     This value should not be sent unless the appropriate capability
-     (see below) is provided on input.
+     適切な機能(下記参照)が入力に提供されていない限り、 この値は送信され
+     るべきではありません。
 
 ‘ephemeral’
-     This boolean value indicates, if true, that the value in the
-     ‘credential’ field should not be saved by the credential helper
-     because its usefulness is limited in time.  For example, an HTTP
-     Digest ‘credential’ value is computed using a nonce and reusing it
-     will not result in successful authentication.  This may also be
-     used for situations with short duration (e.g., 24-hour)
-     credentials.  The default value is false.
+     このブール値が true の場合、 資格情報ヘルパーの有用性は時間的に制限
+     されているため、 ‘credential’ フィールドの値を資格情報ヘルパーによ
+     って保存すべきではないことを示します。 たとえば、HTTP Digest の
+     ‘credential’ 値は nonce を使用して計算され、 そして、 それを再利用
+     しても認証は成功しません。 これは、 資格情報が短期間(24 時間など)の
+     場合にも使用できます。 デフォルト値は false です。
 
-     The credential helper will still be invoked with ‘store’ or ‘erase’
-     so that it can determine whether the operation was successful.
+     資格情報ヘルパーは引き続き ‘store’ または ‘erase’ を使用して呼び出
+     され、操作が成功したかどうかを判断できます。
 
-     This value should not be sent unless the appropriate capability
-     (see below) is provided on input.
+     適切な機能(下記参照)が入力に提供されていない限り、 この値は送信され
+     るべきではありません。
 
 ‘state[]’
-     This value provides an opaque state that will be passed back to
-     this helper if it is called again.  Each different credential
-     helper may specify this once.  The value should include a prefix
-     unique to the credential helper and should ignore values that don’t
-     match its prefix.
+     この値は、 再度呼び出された場合にこのヘルパーに返される不明瞭な状態
+     (an opaque state)を提供します。 それぞれの異なる資格情報ヘルパーで
+     これを 1 回指定できます。 値には資格情報ヘルパーに固有のプレフィッ
+     クスを含める必要があり、かつ、そのプレフィックスと一致しない値は無
+     視する必要があります。
 
-     This value should not be sent unless the appropriate capability
-     (see below) is provided on input.
+     適切な機能(下記参照)が入力に提供されていない限り、 この値は送信され
+     るべきではありません。
 
 ‘continue’
-     This is a boolean value, which, if enabled, indicates that this
-     authentication is a non-final part of a multistage authentication
-     step.  This is common in protocols such as NTLM and Kerberos, where
-     two rounds of client authentication are required, and setting this
-     flag allows the credential helper to implement the multistage
-     authentication step.  This flag should only be sent if a further
-     stage is required; that is, if another round of authentication is
-     expected.
+     これはブール値で、 有効にすると、 この認証が多段階認証ステップの最
+     終部分ではないことを示します。 これは、 2 ラウンドのクライアント認
+     証が必要な NTLM や Kerberos などのプロトコルで一般的であり、 このフ
+     ラグを設定すると、 資格情報ヘルパーが多段階認証ステップを実装できる
+     ようになります。 このフラグは、 さらなる段階が必要な場合にのみ送信
+     する必要があります。 つまり、 別の認証ラウンドが予期される場合です
+     。
 
-     This value should not be sent unless the appropriate capability
-     (see below) is provided on input.  This attribute is _one-way_ from
-     a credential helper to pass information to Git (or other programs
-     invoking ‘git credential’).
+     適切な機能(下記参照)が入力に提供されていない限り、 この値は送信され
+     るべきではありません。 この属性は、 認証情報ヘルパーから Git (また
+     は ‘git credential’ を呼び出す他のプログラム)に情報を渡すための「一
+     方通行」の属性です。
 
 ‘wwwauth[]’
      1 つ以上の ‘WWW-Authenticate’ 認証ヘッダーを含む HTTP レスポンスが
@@ -15583,47 +15580,46 @@ implementations to parse efficiently.
      方通行」の属性です。
 
 ‘capability[]’
-     This signals that Git, or the helper, as appropriate, supports the
-     capability in question.  This can be used to provide better, more
-     specific data as part of the protocol.  A ‘capability[]’ directive
-     must precede any value depending on it and these directives
-     _should_ be the first item announced in the protocol.
+     これは、 Git またはヘルパーが必要に応じて当該の機能をサポートしてい
+     ることを示します。 これを使用すると、 プロトコルの一部として、 より
+     適切でより具体的なデータを提供できます。 ‘capability[]’ ディレクテ
+     ィブは、 それに応じた値の前に置く必要があり、 これらのディレクティ
+     ブはプロトコルでアナウンスされる最初の項目であるべきです。
 
-     There are two currently supported capabilities.  The first is
-     ‘authtype’, which indicates that the ‘authtype’, ‘credential’, and
-     ‘ephemeral’ values are understood.  The second is ‘state’, which
-     indicates that the ‘state[]’ and ‘continue’ values are understood.
+     現在サポートされている機能は 2 つあります。 1 つ目は ‘authtype’ で
+     、 これは ‘authtype’ や ‘credential’ や ‘ephemeral’ の値が理解され
+     ることを示します。 2 番目は ‘state’ で ‘state[]’ や ' continue' の
+     値が理解されることを示します。
 
-     It is not obligatory to use the additional features just because
-     the capability is supported, but they should not be provided
-     without the capability.
+     機能(capability)がサポートされているからといって、 その追加機能
+     (additional features)を使用することは必須ではありませんが、 機能な
+     しで追加機能を提供すべきではありません。
 
-   Unrecognised attributes and capabilities are silently discarded.
+   ※認識されない属性(attributes)と機能(capabilities)は通知なく破棄されま
+す。
 
 CAPABILITY INPUT/OUTPUT FORMAT
 ******************************
 
-For ‘git credential capability’, the format is slightly different.
-First, a ‘version 0’ announcement is made to indicate the current
-version of the protocol, and then each capability is announced with a
-line like ‘capability authtype’.  Credential helpers may also implement
-this format, again with the ‘capability’ argument.  Additional lines may
-be added in the future; callers should ignore lines which they don’t
-understand.
+‘git credential capability’ の場合、形式は少し異なります。まず、プロトコ
+ルの現在のバージョンを示すために ‘version 0’ のアナウンスが行われ、 次に
+‘capability authtype’ のような行で各機能(capability)がアナウンスされます
+。 資格情報ヘルパーも、 やはり ‘capability’ 引数を使用してこの形式を実装
+できます。 将来的には追加の行が追加される可能性があります。 呼び出し側は
+理解できない行を無視する必要があります。
 
-   Because this is a new part of the credential helper protocol, older
-versions of Git, as well as some credential helpers, may not support it.
-If a non-zero exit status is received, or if the first line doesn’t
-start with the word ‘version’ and a space, callers should assume that no
-capabilities are supported.
+   これは認証情報ヘルパー・プロトコルの新しい部分であるため、 古いバージ
+ョンの Git や一部の認証情報ヘルパーはこれをサポートしていない可能性があ
+ります。 ゼロ以外の終了ステータスを受信した場合、 または最初の行が単語
+‘version’ と空白1文字で始まっていない場合、 呼び出し側は機能がサポートさ
+れていないと想定する必要があります。
 
-   The intention of this format is to differentiate it from the
-credential output in an unambiguous way.  It is possible to use very
-simple credential helpers (e.g., inline shell scripts) which always
-produce identical output.  Using a distinct format allows users to
-continue to use this syntax without having to worry about correctly
-implementing capability advertisements or accidentally confusing callers
-querying for capabilities.
+   この形式の目的は、 資格情報の出力と明確に区​​別することです。 常に同一
+の出力を生成する非常に単純な資格情報ヘルパー(インライン・シェル・スクリ
+プトなど)を使用することが可能です。 個別の形式を使用すると、 ユーザーは
+、 機能広告(capability advertisements)を正しく実装したり、 機能をクエリ
+(querying for capabilities)する呼び出し元を誤って混乱させたりすることを
+心配することなく、この構文を使い続けることができます。
 
 GIT
 ***
@@ -15668,52 +15664,54 @@ OPTIONS
 *******
 
 ‘-c’
-     Commit automatically if the patch applied cleanly.  It will not
-     commit if any hunks fail to apply or there were other problems.
+     パッチが正常に適用された場合、自動的にコミットします。ハンクが適用
+     されない場合、またはその他の問題が発生した場合、コミットされません
+     。
 
 ‘-p’
-     Be pedantic (paranoid) when applying patches.  Invokes patch with
-     -fuzz=0
+     パッチを適用するときは、pedantic(衒学的)(paranoid;病的なほど疑り深
+     い)にする。 ‘--fuzz=0’ でpatchを呼び出します。
 
 ‘-a’
-     Add authorship information.  Adds Author line, and Committer (if
-     different from Author) to the message.
+     著者情報を追加します。作者行と(作成者と異なる場合)コミッターをメッ
+     セージに追加します。
 
 ‘-d’
-     Set an alternative CVSROOT to use.  This corresponds to the CVS -d
-     parameter.  Usually users will not want to set this, except if
-     using CVS in an asymmetric fashion.
+     使用する代替CVSROOTを設定します。これは、 ‘CVS -d’ パラメーターに対
+     応します。 非対称的な方法でCVSを使用する場合を除いて、通常、ユーザ
+     ーはこれを設定することは無いと思います。
 
 ‘-f’
-     Force the merge even if the files are not up to date.
+     ファイルが最新でない場合でも、強制的にマージします。
 
 ‘-P’
-     Force the parent commit, even if it is not a direct parent.
+     直接の親でなくても、親を強制的にコミットします。
 
 ‘-m’
-     Prepend the commit message with the provided prefix.  Useful for
-     patch series and the like.
+     コミットメッセージの前に、指定のプレフィックスを付けます。パッチシ
+     リーズなどに便利です。
 
 ‘-u’
-     Update affected files from CVS repository before attempting export.
+     エクスポートを試みる前に、影響を受けるファイルをCVSリポジトリから更
+     新してください。
 
 ‘-k’
-     Reverse CVS keyword expansion (e.g.  $Revision: 1.2.3.4$ becomes
-     $Revision$) in working CVS checkout before applying patch.
+     パッチを適用する前に、CVSチェックアウトの動作でCVSキーワード拡張を
+     逆にします。 (例: $Revision: 1.2.3.4$ は $Revision$ になります)
 
 ‘-w’
-     Specify the location of the CVS checkout to use for the export.
-     This option does not require GIT_DIR to be set before execution if
-     the current directory is within a Git repository.  The default is
-     the value of _cvsexportcommit.cvsdir_.
+     エクスポートに使用するCVSチェックアウトの場所を指定します。現在のデ
+     ィレクトリがGitリポジトリ内にある場合、このオプションでは、実行前に
+     GIT_DIRを設定する必要はありません。 デフォルトは
+     ‘cvsexportcommit.cvsdir’ の値です。
 
 ‘-W’
-     Tell cvsexportcommit that the current working directory is not only
-     a Git checkout, but also the CVS checkout.  Therefore, Git will
-     reset the working directory to the parent commit before proceeding.
+     現在の作業ディレクトリがGitチェックアウトであるだけでなく、CVSチェ
+     ックアウトでもあることをcvsexportcommitに伝えます。したがって、
+     Gitは続行する前に作業ディレクトリを親コミットにリセットします。
 
 ‘-v’
-     Verbose.
+     おしゃべりにします。
 
 CONFIGURATION
 *************
@@ -15765,11 +15763,12 @@ DESCRIPTION
 
      *Warning*
 
-     ‘git cvsimport’ uses cvsps version 2, which is considered
-     deprecated; it does not work with cvsps version 3 and later.  If
-     you are performing a one-shot import of a CVS repository consider
-     using cvs2git (http://cvs2svn.tigris.org/cvs2git.html) or
-     cvs-fast-export (https://gitlab.com/esr/cvs-fast-export).
+     ‘git cvsimport’ は cvsps バージョン 2 を使用しますが、 cvsps バージ
+     ョン 2 は非推奨とされています。 ‘git cvsimport’ は cvsps バージョン
+     3 以降では動作しません。 CVSリポジトリのワンショット・インポートを
+     実行している場合は、 cvs2git
+     (http://cvs2svn.tigris.org/cvs2git.html) または cvs-fast-export
+     (https://gitlab.com/esr/cvs-fast-export) の使用を検討してください。
 
    CVSリポジトリをGitにインポートします。新しいリポジトリを作成するか、
 既存のリポジトリに追加インポートします。
@@ -15823,8 +15822,8 @@ OPTIONS
      remotes/<remote>/<branch> に移動します。
 
 ‘-o <branch-for-HEAD>’
-     (‘-r`を介して)リモートが指定されていない場合、CVSからの `HEAD’ ブラ
-     ンチはGitリポジトリ内の ‘origin’ ブランチにインポートされます。 こ
+     (‘-r’ を介して)リモートが指定されていない場合、CVSからの ‘HEAD’ ブ
+     ランチはGitリポジトリ内の ‘origin’ ブランチにインポートされます。 こ
      れは、 ‘HEAD’ がすでにGitに対して特別な意味を持っているためです。 リ
      モートが指定されると、 ‘HEAD’ ブランチの名前は
      ‘remotes/<remote>/master’ になり、 ‘git clone’ の振る舞いを真似しま
@@ -15976,7 +15975,7 @@ ISSUES
    これらの問題のいずれかがインポートするリポジトリに当てはまると思われ
 る場合は、cvs2gitの使用を検討してください:
 
-   • cvs2git (part of cvs2svn), ‘https://subversion.apache.org/’
+   • cvs2git (cvs2svnの一部です), ‘https://subversion.apache.org/’
 
 GIT
 ***
@@ -16028,24 +16027,24 @@ OPTIONS
 います。
 
 ‘--base-path <path>’
-     Prepend _path_ to requested CVSROOT
+     要求された CVSROOT の前に ‘path’ を追加します
 
 ‘--strict-paths’
-     Don’t allow recursing into subdirectories
+     サブディレクトリへの再帰を許可しない
 
 ‘--export-all’
-     Don’t check for ‘gitcvs.enabled’ in config.  You also have to
-     specify a list of allowed directories (see below) if you want to
-     use this option.
+     構成で ‘gitcvs.enabled’ をチェックしないでください。 このオプション
+     を使用する場合は、許可されるディレクトリのリスト(list of allowed
+     directories)(下記参照)も指定する必要があります。
 
 ‘-V’
 ‘--version’
-     Print version information and exit
+     バージョン情報を出力して終了(exit)します
 
 ‘-h’
 ‘-H’
 ‘--help’
-     Print usage information and exit
+     使用法を出力して終了(exit)します
 
 <directory>
      残りの引数は、ディレクトリのリストを提供します。 ディレクトリが指定
@@ -16059,9 +16058,10 @@ LIMITATIONS
 CVS クライアントは、タグ付け、ブランチ、Git マージを実行することはできま
 せん。
 
-   「git-cvsserver」は、GitブランチをCVSモジュールにマップします。 これ
-は、ほとんどのCVSユーザーが期待するものとは大きく異なります。これは、
-CVSモジュールでは通常1つ以上のディレクトリを表すためです。
+   「git-cvsserver」は、GitブランチをCVSモジュールにマッピングします。 こ
+れは、ほとんどのCVSユーザーが期待するものとは大きく異なります。これは、
+CVSモジュールでは通常、 モジュールが1つ以上のディレクトリを表すためです
+。
 
 INSTALLATION
 ************
@@ -16169,11 +16169,12 @@ INSTALLATION
      るSSHクライアントの場合、.bashrc が妥当な代替手段となる可能性があり
      ます。
 
-  5. Clients should now be able to check out the project.  Use the CVS
-     _module_ name to indicate what Git _head_ you want to check out.
-     This also sets the name of your newly checked-out directory, unless
-     you tell it otherwise with ‘-d <dir-name>’.  For example, this
-     checks out _master_ branch to the ‘project-master’ directory:
+  5. これで、クライアントはプロジェクトをチェックアウトできるようになり
+     ます。 CVSの ‘module’ 名を使用して、チェックアウトするGitの ‘head’
+     を示します。 これにより、 ‘-d <dir-name>’ で特に指定しない限り、新
+     しくチェックアウトしたディレクトリの名前も設定されます。 たとえば、
+     以下は ‘master’ ブランチを ‘project-master’ ディレクトリにチェック
+     アウトします:
 
              cvs co -d project-master master
 
@@ -16194,12 +16195,12 @@ DATABASE BACKEND
 ス権を持っている必要があります(それ以外の場合は、 ‘git-cvsserver’ が実行
 されるたびにデータベースが最新であることを確認する必要があります)。
 
-   By default it uses SQLite databases in the Git directory, named
-‘gitcvs.<module-name>.sqlite’.  Note that the SQLite backend creates
-temporary files in the same directory as the database file on write so
-it might not be enough to grant the users using _git-cvsserver_ write
-access to the database file without granting them write access to the
-directory, too.
+   デフォルトでは、Gitディレクトリにある ‘gitcvs.<module-name>.sqlite’ と
+いう名前のSQLiteデータベースを使用します。 SQLiteバックエンドは書き込み
+時にデータベースファイルと同じディレクトリに一時ファイルを作成するため、
+‘git-cvsserver’ を使用するユーザーにディレクトリへの書き込みアクセスを許
+可せずにデータベースファイルへの書き込みアクセスを許可するだけでは不十分
+な場合があることに注意してください 。
 
    追跡しているブランチが変更された後、データベースを一貫した形式で確実
 に再生成することはできません。 例:マージされたブランチの場合、
@@ -16362,12 +16363,12 @@ module」パラメーターはブランチ名として解釈され、メイン�
 するだけで機能する場合があります。 一部のCVSクライアントは、引数の健全性
 チェックをあまり行っていないようです。 次に、それが失敗した場合は、CVSタ
 グで有効な文字のみを使用する特殊文字エスケープメカニズムを使用できます。
-書式の4文字または5文字のシーケンス(アンダースコア(‘_’)と、ダッシュ
-(‘-’)と、1〜2字と、ダッシュ(‘-’))は、1〜2字に基づいてさまざまな文字をエ
-ンコードできます: スラッシュ(‘/’)の場合は ‘s’ 、または ピリオド(‘.’)の場
-合は ‘p’ 、または アンダースコア(‘_’)の場合は ‘u’ 、または 2桁の16進数で
-表される任意のバイト値(通常はASCIIコード。またはUTF-8でエンコードされた
-文字の一部)。
+書式の4文字または5文字のシーケンス(アンダースコア(‘_’)、ダッシュ(‘-’)、
+1〜2文字、ダッシュ(‘-’))は、 その 1〜2文字 を使ってさまざまな文字をエン
+コードできます: これは、 スラッシュ(‘/’)の場合は ‘s’ 、または ピリオド
+(‘.’)の場合は ‘p’ 、または アンダースコア(‘_’)の場合は ‘u’ 、または 2桁
+の16進数で表される任意のバイト値(通常はASCIIコード。またはUTF-8でエンコ
+ードされた文字の一部)です。
 
    従来の監視操作(edit、watch 関連)はサポートされていません。 エクスポー
 トとタグ付け(タグとブランチ)は、この段階ではサポートされていません。
@@ -16496,11 +16497,12 @@ OPTIONS
      ションとは互換性がありません。
 
 ‘--listen=<host-or-ipaddr>’
-     Listen on a specific IP address or hostname.  IP addresses can be
-     either an IPv4 address or an IPv6 address if supported.  If IPv6 is
-     not supported, then -listen=<hostname> is also not supported and
-     -listen must be given an IPv4 address.  Can be given more than
-     once.  Incompatible with ‘--inetd’ option.
+     特定のIPアドレスまたはホスト名でリッスンします。IPアドレスは、
+     IPv4アドレス、または、サポートされている場合はIPv6アドレス、 のいず
+     れかになります。 IPv6がサポートされてい無い場合、
+     ‘--listen=<hostname>’ もサポートされてい無いため、 ‘--listen’ には
+     IPv4アドレスを指定する必要があります。 このオプションは複数回与える
+     ことができます。 ‘--inetd’ オプションとは互換性がありません。
 
 ‘--port=<n>’
      代わりのポートでリッスンします。 ‘--inetd’ オプションと互換性があり
@@ -16545,12 +16547,12 @@ OPTIONS
 
 ‘--user-path’
 ‘--user-path=<path>’
-     Allow ~user notation to be used in requests.  When specified with
-     no parameter, a request to git://host/~alice/foo is taken as a
-     request to access _foo_ repository in the home directory of user
-     ‘alice’.  If ‘--user-path=<path>’ is specified, the same request is
-     taken as a request to access ‘<path>/foo’ repository in the home
-     directory of user ‘alice’.
+     ~user 表記をリクエストで使用できるようにします。パラメータなしで指
+     定した場合、 git://host/~alice/foo へのリクエストは、 ユーザー
+     ‘alice’ のホーム・ディレクトリにある ‘foo’ リポジトリへのアクセス・
+     リクエストと見なされます。 ‘--user-path=<path>’ が指定されている場
+     合、このリクエストは、ユーザー ‘alice’ のホーム・ディレクトリにある
+     ‘<path>/foo’ リポジトリにアクセスするリクエストと見なされます。
 
 ‘--verbose’
      着信接続と要求されたファイルに関する詳細をログに記録します。
@@ -16645,7 +16647,7 @@ archive’ を実行できるようしたい時)、リポジトリごとの構�
 upload-pack
      これは、 ‘git fetch-pack’ と ‘git ls-remote’ クライアントにサービス
      を提供します。デフォルトで有効になっていますが、リポジトリでは
-     ‘daemon.uploadpack `構成アイテムを `false’ に設定することで無効にで
+     ‘daemon.uploadpack’ 構成アイテムを ‘false’ に設定することで無効にで
      きます。
 
 upload-archive
@@ -16706,9 +16708,10 @@ EXAMPLES
                           /pub/192.168.1.200/software
                           /pub/10.10.220.23/software
 
-     IPアドレスに基づいて複数の仮想ホストのリポジトリを処理する通常の非
-     inetdサービスとして「git daemon」を設定するには、以下のようにデーモ
-     ンを起動します。
+     この例では、 ルート・レベルのディレクトリ ‘/pub’ には、 サポートさ
+     れている各仮想ホストIPアドレスのサブディレクトリが含まれます。 ただ
+     し、 これらのホスト名がIPアドレスに対応しているならば、 ホスト名で
+     リポジトリにアクセスできます。
 
 selectively enable/disable services per repository
      リポジトリに対して ‘git archive --remote’ を有効にし、 ‘git fetch’
@@ -16776,95 +16779,92 @@ OPTIONS
 
 ‘--dirty[=<mark>]’
 ‘--broken[=<mark>]’
-     Describe the state of the working tree.  When the working tree
-     matches HEAD, the output is the same as "git describe HEAD". If the
-     working tree has local modification "-dirty" is appended to it.  If
-     a repository is corrupt and Git cannot determine if there is local
-     modification, Git will error out, unless ‘-broken’ is given, which
-     appends the suffix "-broken" instead.
+     作業ツリーの状態を説明します。 作業ツリーがHEADと一致する場合、出力
+     は ‘git describe HEAD’ と同じになります。 作業ツリーにローカル変更
+     がある場合、接尾辞 ‘-dirty’ が追加されます。 リポジトリが破損してい
+     て、 Gitがローカルでの変更があるかどうかを判断できない場合、 Gitは
+     エラーになります。 ただし ‘--broken’ を指定すると、 エラーにする代
+     わりに接尾辞 ‘-broken’ を追加します。
 
 ‘--all’
-     Instead of using only the annotated tags, use any ref found in
-     ‘refs/’ namespace.  This option enables matching any known branch,
-     remote-tracking branch, or lightweight tag.
+     注釈付きタグのみを使用する代わりに、 ‘refs/’ 名前空間にあるrefを使
+     用してください。 このオプションを使用すると、既知のブランチ または
+     リモート追跡ブランチ または 軽量タグ を照合できます。
 
 ‘--tags’
-     Instead of using only the annotated tags, use any tag found in
-     ‘refs/tags’ namespace.  This option enables matching a lightweight
-     (non-annotated) tag.
+     注釈付きタグのみを使用する代わりに、 ‘refs/tags’ 名前空間にあるタグ
+     を使用してください。 このオプションを使用すると、軽量(注釈なし)タグ
+     のマッチングが可能になります。
 
 ‘--contains’
-     Instead of finding the tag that predates the commit, find the tag
-     that comes after the commit, and thus contains it.  Automatically
-     implies -tags.
+     そのコミットより前のタグを見つける代わりに、そのコミットの後に来る
+     タグを見つけて、それを含めます。 自動的に ‘--tags’ の指定を含んでい
+     ます。
 
 ‘--abbrev=<n>’
-     Instead of using the default number of hexadecimal digits (which
-     will vary according to the number of objects in the repository with
-     a default of 7) of the abbreviated object name, use <n> digits, or
-     as many digits as needed to form a unique object name.  An <n> of 0
-     will suppress long format, only showing the closest tag.
+     省略されたオブジェクト名のデフォルトの16進数(これは、リポジトリ内の
+     オブジェクトの数によって異なりますが、デフォルトは7桁です)を使用す
+     る代わりに、<n>桁、または一意のオブジェクト名を形成するために必要な
+     数の桁を使用します。<n>が0の場合、長い形式は抑制され、最も近いタグ
+     のみが表示されます。
 
 ‘--candidates=<n>’
-     Instead of considering only the 10 most recent tags as candidates
-     to describe the input commit-ish consider up to <n> candidates.
-     Increasing <n> above 10 will take slightly longer but may produce a
-     more accurate result.  An <n> of 0 will cause only exact matches to
-     be output.
+     入力のコミットっぽいのを説明するための候補として最新の10個のタグの
+     みを考慮するのではなく、最大<n>個の候補を考慮してください。 <n>を
+     10より大きくすると、少し時間がかかりますが、より正確な結果が得られ
+     る場合があります。 <n>が0の場合、完全一致のみが出力されます。
 
 ‘--exact-match’
-     Only output exact matches (a tag directly references the supplied
-     commit).  This is a synonym for -candidates=0.
+     完全一致のみを出力します(タグは指定されたコミットを直接参照します
+     )。 これは ‘--candidates=0’ の同義語です。
 
 ‘--debug’
-     Verbosely display information about the searching strategy being
-     employed to standard error.  The tag name will still be printed to
-     standard out.
+     標準エラーに、検索戦略に関する情報を詳細に表示します。タグ名は引き
+     続き標準出力で印刷されます。
 
 ‘--long’
-     Always output the long format (the tag, the number of commits and
-     the abbreviated commit name) even when it matches a tag.  This is
-     useful when you want to see parts of the commit object name in
-     "describe" output, even when the commit in question happens to be a
-     tagged version.  Instead of just emitting the tag name, it will
-     describe such a commit as v1.2-0-gdeadbee (0th commit since tag
-     v1.2 that points at object deadbee….).
+     タグと一致する場合でも、常に長い形式(タグとコミット数と省略されたコ
+     ミット名)を出力します。 これは、問題のコミットがタグ付きバージョン
+     である場合でも、 ‘describe’ 出力にコミットオブジェクト名の一部を表
+     示する場合に役立ちます。 タグ名を発行するだけでなく、
+     v1.2-0-gdeadbeeなどのコミットを記述します(オブジェクトdeadbeeを指す
+     タグv1.2以降の0番目のコミット…)。
 
 ‘--match <pattern>’
-     Only consider tags matching the given ‘glob(7)’ pattern, excluding
-     the "refs/tags/" prefix.  If used with ‘--all’, it also considers
-     local branches and remote-tracking references matching the pattern,
-     excluding respectively "refs/heads/" and "refs/remotes/" prefix;
-     references of other types are never considered.  If given multiple
-     times, a list of patterns will be accumulated, and tags matching
-     any of the patterns will be considered.  Use ‘--no-match’ to clear
-     and reset the list of patterns.
+     ‘refs/tags/’ プレフィックスを除いて、指定された glob(7) パターンに
+     一致するタグのみを考慮してください。 ‘--all’ と一緒に使用すると、パ
+     ターンに一致するローカルブランチとリモート追跡参照も考慮されます。
+     ただし、それぞれ ‘refs/heads/’ と ‘refs/remotes/’ プレフィックスは
+     除外されます。 他のタイプの参照は考慮されません。 複数回指定すると
+     、パターンのリストが蓄積され、いずれかのパターンに一致するタグが考
+     慮されます。 パターンのリストをクリアしてリセットするには、
+     ‘--no-match’ を使用します。
 
 ‘--exclude <pattern>’
-     Do not consider tags matching the given ‘glob(7)’ pattern,
-     excluding the "refs/tags/" prefix.  If used with ‘--all’, it also
-     does not consider local branches and remote-tracking references
-     matching the pattern, excluding respectively "refs/heads/" and
-     "refs/remotes/" prefix; references of other types are never
-     considered.  If given multiple times, a list of patterns will be
-     accumulated and tags matching any of the patterns will be excluded.
-     When combined with -match a tag will be considered when it matches
-     at least one -match pattern and does not match any of the -exclude
-     patterns.  Use ‘--no-exclude’ to clear and reset the list of
-     patterns.
+     ‘refs/tags/’ プレフィックスを除いて、指定された glob(7) パターンに
+     一致するタグを考慮しないでください。 ‘--all’ と一緒に使用すると、そ
+     れぞれ ‘refs/heads/’ と ‘refs/remotes/’ プレフィックスを除いて、パ
+     ターンに一致するローカルブランチとリモート追跡参照も考慮されません
+     。 他のタイプの参照は考慮されません。 複数回指定すると、パターンの
+     リストが蓄積され、いずれかのパターンに一致するタグが除外されます。
+     ‘--match’ と組み合わせると、タグが少なくとも1つの ‘--match’ パター
+     ンに一致し、 ‘--exclude’ パターンのいずれにも一致しない場合にタグが
+     考慮されます。 パターンのリストをクリアしてリセットするには、
+     ‘--no-exclude’ を使用します。
 
 ‘--always’
-     Show uniquely abbreviated commit object as fallback.
+     ユニークさを保ちつつ省略されたコミットオブジェクトをフォールバック
+     として表示します。
 
 ‘--first-parent’
-     Follow only the first parent commit upon seeing a merge commit.
-     This is useful when you wish to not match tags on branches merged
-     in the history of the target commit.
+     マージコミットを確認したら、最初の親コミットのみを追跡します。 これ
+     は、ターゲットコミットの履歴でマージされたブランチのタグを一致させ
+     たくない場合に役立ちます。
 
 EXAMPLES
 ********
 
-git.gitのツリーのようなナニカなら、以下のようなものを得るでしょう:
+git.git の現在のツリーのようなナニカなら、 以下を得ました:
 
      [torvalds@g5 git]$ git describe parent
      v1.0.4-14-g2414721
@@ -16875,14 +16875,14 @@ git.gitのツリーのようなナニカなら、以下のようなものを得�
 しました。
 
    追加のコミットの数は、 ‘git log v1.0.4..parent’ によって表示されるコ
-ミットの数です。 ハッシュ接尾辞は ‘-g’ 親の先端コミットの明確な略語です
-(これは ‘2414721b194453f058079d897d13c4e377f92dc6’ でした)。 省略形の長
-さは、リポジトリ内のオブジェクトのおおよその数と、誕生日のパラドックスに
-関する少しの計算を使用して、リポジトリが大きくなるにつれてスケーリングさ
-れ、デフォルトでは最小7になります。 ‘g’ プレフィックスは ‘git’ を表し、
-ソフトウェアが管理されているSCMに応じてソフトウェアのバージョンを記述で
-きるようにするために使用されます。 これは、人々がさまざまなSCMを使用する
-可能性がある環境で役立ちます。
+ミットの数です。 ハッシュ接尾辞は、 ‘-g’ ＋ 親の先端コミットの明確な省略
+形、です(これは ‘2414721b194453f058079d897d13c4e377f92dc6’ でした)。 省
+略形の長さは、リポジトリ内のオブジェクトのおおよその数と、誕生日のパラド
+ックス(the birthday paradox)に関する少々の計算により、リポジトリが大きく
+なるにつれてスケーリングされ、デフォルトでは最小7になります。 ‘g’ プレフ
+ィックスは ‘git’ を表し、ソフトウェアが管理されているSCMに応じてソフトウ
+ェアのバージョンを記述できるようにするために使用されます。 これは、人々
+がさまざまなSCMを使用する可能性がある環境で役立ちます。
 
    タグ名に対して ‘git describe’ を実行すると、タグ名が表示されるだけで
 す:
@@ -16899,8 +16899,8 @@ git.gitのツリーのようなナニカなら、以下のようなものを得�
      [torvalds@g5 git]$ git describe --all --abbrev=4 HEAD^
      heads/lt/describe-7-g975b
 
-   '-abbrev'を0に設定すると、このコマンドを使用して、接尾辞(suffix)なし
-で最も近いタグ名を見つけることができます:
+   ‘--abbrev’ を0に設定すると、このコマンドを使用して、接尾辞(suffix)な
+しで最も近いタグ名を見つけることができます:
 
      [torvalds@g5 git]$ git describe --abbrev=0 v1.0.5^2
      tags/v1.0.0
@@ -16964,7 +16964,8 @@ DESCRIPTION
 ユーザーのマシンや、 Git クライアントや、 リポジトリの状態に関する詳細情
 報を収集し、 その情報を zip アーカイブにパッケージ化します。 生成された
 アーカイブは、 たとえば、Git メーリング・リストと共有して、 問題のデバッ
-グを支援したり、 独立したデバッグの参照として使用したりできます。
+グを支援したり、 独立したデバッグのための参考資料として使用したりできま
+す。
 
    デフォルトでは以下の情報がアーカイブに収められます:
 
@@ -16992,19 +16993,19 @@ OPTIONS
 
 ‘-o <path>’
 ‘--output-directory <path>’
-     Place the resulting diagnostics archive in ‘<path>’ instead of the
-     current directory.
+     結果の診断アーカイブを、 現在のディレクトリではなく ‘<path>’ に配置
+     します。
 
 ‘-s <format>’
 ‘--suffix <format>’
-     Specify an alternate suffix for the diagnostics archive name, to
-     create a file named _git-diagnostics-<formatted-suffix>_.  This
-     should take the form of a strftime(3) format string; the current
-     local time will be used.
+     診断アーカイブ名の代替サフィックスを指定して、
+     ‘git-diagnostics-<formatted-suffix>’ という名前のファイルを作成しま
+     す。 これは、 strftime(3) 書式文字列の形式を取る必要があり、 現地の
+     現在時間(current local time)が使用されます。
 
 ‘--mode=(stats|all)’
-     Specify the type of diagnostics that should be collected.  The
-     default behavior of _git diagnose_ is equivalent to ‘--mode=stats’.
+     収集する必要がある診断のタイプを指定します。 ‘git diagnostic’ のデ
+     フォルトの動作は ‘--mode=stats’ と同等です。
 
      ‘--mode=all’ オプションは、 ‘--mode=stats’ に含まれるすべてのものと
      、 ‘.git’ と ‘.git/hooks’ と ‘.git/info’ と ‘.git/logs’ と
@@ -17103,7 +17104,7 @@ OPTIONS
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -17466,8 +17467,8 @@ OPTIONS
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -17484,11 +17485,11 @@ OPTIONS
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -17622,8 +17623,8 @@ OPTIONS
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -17749,22 +17750,23 @@ OPTIONS
 ‘-2 --ours’
 ‘-3 --theirs’
 ‘-0’
-     Diff against the "base" version, "our branch", or "their branch"
-     respectively.  With these options, diffs for merged entries are not
-     shown.
+     それぞれ「base バージョン」または「our branch」または「their
+     branch」に対して diff を取ります。 これらのオプションを使用すると、
+     マージされたエントリの diff は表示されません。
 
      デフォルトでは、 our branch (-2) とクリーンに解決されたパスに対して
-     diffを取ります。オプション -0 を指定すると、マージされていないエン
-     トリのdiff出力を省略し、 "Unmerged" と表示することができます。
+     diffを取ります。オプション ‘-0’ (マイナス・ゼロ)を指定すると、マー
+     ジされていないエントリのdiff出力を省略し、 "Unmerged" と表示するこ
+     とができます。
 
 ‘-c’
 ‘--cc’
-     This compares stage 2 (our branch), stage 3 (their branch), and the
-     working tree file and outputs a combined diff, similar to the way
-     _diff-tree_ shows a merge commit with these flags.
+     これは、 ステージ2(our ブランチ)とステージ3(their ブランチ)と作業ツ
+     リー・ファイルを比較し、 ‘diff-tree’ がこれらのフラグを使用してマー
+     ジ・コミットを示すのと同様に、 combined diff を出力します。
 
 ‘-q’
-     Remain silent even for nonexistent files
+     存在しないファイルでも黙っています
 
 Raw output format
 *****************
@@ -17931,7 +17933,7 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
 
      名前の変更/コピーが含まれない限り、 ‘a/’ と ‘b/’ のファイル名は同じ
      です。 特に、作成または削除の場合でも、 ‘a/’ または ‘b/’ ファイル名
-     の代わりに ‘/dev/ null’ が使用されることはありません。
+     の代わりに ‘/dev/null’ が使用されることはありません。
 
      名前変更/コピー が含まれる場合、 ‘file1’ と ‘file2’ は、それぞれ 名
      前変更/コピー のソース・ファイルの名前と、 名前変更/コピー が生成す
@@ -17968,9 +17970,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
      <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の
      場合、別々の行は古いモードと新しいモードを示します。
 
-  3. 通常の文字でないキャラクタ(\"unusual\" characters)を含むパス名は、
-     構成変数 ‘core.quotePath’ で説明されているように引用符で囲まれてい
-     ます( git-config(1)参照)。
+  3. 通常の文字でないキャラクタ("unusual" characters)を含むパス名は、構
+     成変数 ‘core.quotePath’ で説明されているようにクォートされています(
+     git-config(1)参照)。
 
   4. 出力内のすべての ‘file1’ ファイルはコミット前のファイルを参照し、す
      べての ‘file2’ ファイルはコミット後のファイルを参照します。各変更を
@@ -17985,9 +17987,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
           rename to a
 
   5. ハンク・ヘッダーには、 ハンクが適用される関数の名前が記載されていま
-     す。 これを特定の言語に合わせて調整する方法の詳細については、
-     gitattributes(5) の「Defining a custom hunk-header」(カスタム・ハン
-     ク・ヘッダーの定義)を参照してください。
+     す。 これを特定のプログラミング言語に合わせて調整する方法の詳細につ
+     いては、 gitattributes(5) の「Defining a custom hunk-header」(カス
+     タム・ハンク・ヘッダーの定義)を参照してください。
 
 Combined diff format
 ********************
@@ -18082,13 +18084,13 @@ git-diff(1) または git-show(1) でのマージを表示するときのデフ�
 
      合成diff形式のチャンクヘッダーには親の数+1の ‘@’ 文字があります。
 
-   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナスは
-Aに表示されますが、Bでは削除されます) または ‘+’ (プラスはAにはありませ
-んが、Bには追加されます)、または ‘" "’（スペースは変更なし) プレフィック
-スを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1,
-file2,… を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示し
-ます。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどの
-ように異なるかを示します。
+   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナス:Aに
+表示されますが、Bでは削除されます) または ‘+’ (プラス:Aにはありませんが
+、Bには追加されます)、または " " (スペース:変更なし)なプレフィックスを持
+つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,… を
+1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファ
+イルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異な
+るかを示します。
 
    列Nの ‘-’ 文字は、その行が fileN に表示されているが、結果には表示され
 ていないことを意味します。 列Nの ‘+’ 文字は、結果に行が表示され、 fileN
@@ -18198,11 +18200,10 @@ Synopsis
 DESCRIPTION
 ***********
 
-Compare the content and mode of the blobs found in a tree object with
-the corresponding tracked files in the working tree, or with the
-corresponding paths in the index.  When <path> arguments are present,
-compare only paths matching those patterns.  Otherwise all tracked files
-are compared.
+ツリーオブジェクトで見つかったブロブの内容とモードを、作業ツリー内の対応
+する追跡中のファイルまたはインデックス内の対応するパスと比較します。
+<path>引数が存在する場合、それらのパターンに一致するパスのみを比較します
+。それ以外の場合は、追跡中のすべてのファイルが比較されます。
 
 OPTIONS
 *******
@@ -18268,7 +18269,7 @@ OPTIONS
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -18631,8 +18632,8 @@ OPTIONS
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -18649,11 +18650,11 @@ OPTIONS
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -18787,8 +18788,8 @@ OPTIONS
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -18914,16 +18915,17 @@ OPTIONS
      diffするツリーオブジェクトのID。
 
 ‘--cached’
-     Do not consider the on-disk file at all.
+     ディスク上のファイルはまったく考慮しないでください。
 
 ‘--merge-base’
-     Instead of comparing <tree-ish> directly, use the merge base
-     between <tree-ish> and HEAD instead.  <tree-ish> must be a commit.
+     <tree-ish>を直接比較する代わりに、<tree-ish>とHEADの間のマージベー
+     スを使用してください。 <tree-ish>はコミットでなければなりません。
 
 ‘-m’
-     By default, files recorded in the index but not checked out are
-     reported as deleted.  This flag makes _git diff-index_ say that all
-     non-checked-out files are up to date.
+     デフォルトでは、インデックスに記録されているがチェックアウトされて
+     いないファイルは削除済みとして報告されます。このフラグにより、 ‘git
+     diff-index’ はチェックアウトされていないファイルは全て最新とします
+     。
 
 Raw output format
 *****************
@@ -19090,7 +19092,7 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
 
      名前の変更/コピーが含まれない限り、 ‘a/’ と ‘b/’ のファイル名は同じ
      です。 特に、作成または削除の場合でも、 ‘a/’ または ‘b/’ ファイル名
-     の代わりに ‘/dev/ null’ が使用されることはありません。
+     の代わりに ‘/dev/null’ が使用されることはありません。
 
      名前変更/コピー が含まれる場合、 ‘file1’ と ‘file2’ は、それぞれ 名
      前変更/コピー のソース・ファイルの名前と、 名前変更/コピー が生成す
@@ -19127,9 +19129,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
      <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の
      場合、別々の行は古いモードと新しいモードを示します。
 
-  3. 通常の文字でないキャラクタ(\"unusual\" characters)を含むパス名は、
-     構成変数 ‘core.quotePath’ で説明されているように引用符で囲まれてい
-     ます( git-config(1)参照)。
+  3. 通常の文字でないキャラクタ("unusual" characters)を含むパス名は、構
+     成変数 ‘core.quotePath’ で説明されているようにクォートされています(
+     git-config(1)参照)。
 
   4. 出力内のすべての ‘file1’ ファイルはコミット前のファイルを参照し、す
      べての ‘file2’ ファイルはコミット後のファイルを参照します。各変更を
@@ -19144,9 +19146,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
           rename to a
 
   5. ハンク・ヘッダーには、 ハンクが適用される関数の名前が記載されていま
-     す。 これを特定の言語に合わせて調整する方法の詳細については、
-     gitattributes(5) の「Defining a custom hunk-header」(カスタム・ハン
-     ク・ヘッダーの定義)を参照してください。
+     す。 これを特定のプログラミング言語に合わせて調整する方法の詳細につ
+     いては、 gitattributes(5) の「Defining a custom hunk-header」(カス
+     タム・ハンク・ヘッダーの定義)を参照してください。
 
 Combined diff format
 ********************
@@ -19241,13 +19243,13 @@ git-diff(1) または git-show(1) でのマージを表示するときのデフ�
 
      合成diff形式のチャンクヘッダーには親の数+1の ‘@’ 文字があります。
 
-   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナスは
-Aに表示されますが、Bでは削除されます) または ‘+’ (プラスはAにはありませ
-んが、Bには追加されます)、または ‘" "’（スペースは変更なし) プレフィック
-スを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1,
-file2,… を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示し
-ます。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどの
-ように異なるかを示します。
+   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナス:Aに
+表示されますが、Bでは削除されます) または ‘+’ (プラス:Aにはありませんが
+、Bには追加されます)、または " " (スペース:変更なし)なプレフィックスを持
+つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,… を
+1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファ
+イルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異な
+るかを示します。
 
    列Nの ‘-’ 文字は、その行が fileN に表示されているが、結果には表示され
 ていないことを意味します。 列Nの ‘+’ 文字は、結果に行が表示され、 fileN
@@ -19393,13 +19395,13 @@ diff-tree' でエミュレートできないという点で、2つのモード�
      表示 - インデックスの内容や最新でないファイル
 
    これは明らかに非常に役立つ質問です。何をコミットできるかがわかるから
-です。 この場合も、出力は _git diff-tree -r_ の出力と完全に一致しますが
+です。 この場合も、出力は ‘git diff-tree -r’ の出力と完全に一致しますが
 、更にひとひねりあります。
 
    そのひとひねりとは、一部のファイルがインデックスと一致しない場合、そ
 のファイルには裏付けがないことです。これを示すために、魔法の「オールゼロ
-」sha1を使用します。 ‘kernel/sched.c’ を編集したが、実際にはまだ _git
-update-index_ を実行していないとしましょう。そうすると、新しい状態に関連
+」sha1を使用します。 ‘kernel/sched.c’ を編集したが、実際にはまだ ‘git
+update-index’ を実行していないとしましょう。そうすると、新しい状態に関連
 付けられた「オブジェクト」はなく、以下のようになります:
 
      torvalds@ppc970:~/v2.6/linux> git diff-index --abbrev HEAD
@@ -19451,7 +19453,7 @@ Synopsis
 DESCRIPTION
 ***********
 
-Compare the content and mode of blobs found via two tree objects.
+2つのツリーオブジェクト間で、ブロブの内容とモードを比較します
 
    <tree-ish> が1つだけ指定されている場合、コミットはその親と比較されま
 す(以下の ‘--stdin’ 参照)。
@@ -19523,7 +19525,7 @@ OPTIONS
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -19886,8 +19888,8 @@ OPTIONS
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -19904,11 +19906,11 @@ OPTIONS
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -20042,8 +20044,8 @@ OPTIONS
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -20173,26 +20175,27 @@ OPTIONS
      るファイルのサブセットに制限されます。
 
 ‘-r’
-     Recurse into sub-trees.
+     サブツリーを再帰的に辿ります。
 
 ‘-t’
-     Show tree entry itself as well as subtrees.  Implies -r.
+     ツリー・エントリ自体とサブ・ツリーを表示します。 ‘-r’ の機能を含み
+     ます。
 
 ‘--root’
-     When ‘--root’ is specified the initial commit will be shown as a
-     big creation event.  This is equivalent to a diff against the NULL
-     tree.
+     ‘--root’ が指定されている場合、最初のコミット(initial commit)は大き
+     な作成イベント(big creation event)として表示されます。これは、
+     NULLツリーに対する差分と同等です。
 
 ‘--merge-base’
-     Instead of comparing the <tree-ish>s directly, use the merge base
-     between the two <tree-ish>s as the "before" side.  There must be
-     two <tree-ish>s given and they must both be commits.
+     <tree-ish>を直接比較する代わりに、2つの<tree-ish>間のマージベースを
+     before側として使用します。2つの<tree-ish>が指定されている必要があり
+     、両方ともコミットである必要があります。
 
 ‘--stdin’
-     When ‘--stdin’ is specified, the command does not take <tree-ish>
-     arguments from the command line.  Instead, it reads lines
-     containing either two <tree>, one <commit>, or a list of <commit>
-     from its standard input.  (Use a single space as separator.)
+     '-stdin'が指定されている場合、コマンドはコマンドラインから
+     <tree-ish>引数を取りません。代わりに、2つの<tree> または 1つの
+     <commit> または <commit>のリストのいずれかを含む行を標準入力から読
+     み取ります。（区切り文字として空白1文字を使用します。）
 
      2つのツリーが与えられると、最初のツリーと2番目のツリーが比較されま
      す。単一のコミットが与えられると、そのコミットをその親と比較します
@@ -20207,19 +20210,18 @@ OPTIONS
      響します。
 
 ‘-m’
-     By default, _git diff-tree -stdin_ does not show differences for
-     merge commits.  With this flag, it shows differences to that commit
-     from all of its parents.  See also ‘-c’.
+     デフォルトでは、 ‘git diff-tree --stdin’ はマージコミットの違いを表
+     示しません。 このフラグを使用すると、すべての親からのコミットとの違
+     いが示されます。 ‘-c’ も参照してください。
 
 ‘-s’
-     By default, _git diff-tree -stdin_ shows differences, either in
-     machine-readable form (without ‘-p’) or in patch form (with ‘-p’).
-     This output can be suppressed.  It is only useful with the ‘-v’
-     flag.
+     デフォルトでは、 ‘git diff-tree --stdin’ は、機械可読形式( ‘-p’ な
+     し) または パッチ形式( ' -p' あり)のいずれかで違いを示します。この
+     出力を抑制できます。 ‘-v’ フラグでのみ役立ちます。
 
 ‘-v’
-     This flag causes _git diff-tree -stdin_ to also show the commit
-     message before the differences.
+     このフラグにより、 ‘git diff-tree --stdin’ は、違いの前にコミットメ
+     ッセージも表示します。
 
 ‘--pretty[=<format>]’
 ‘--format=<format>’
@@ -20324,38 +20326,36 @@ OPTIONS
      有効性を確認し出力します。
 
 ‘--no-commit-id’
-     _git diff-tree_ outputs a line with the commit ID when applicable.
-     This flag suppresses the commit ID output.
+     ‘git diff-tree’ は、該当する場合、コミットIDを含む行を出力します。
+     このフラグは、コミットIDの出力を抑制します。
 
 ‘-c’
-     This flag changes the way a merge commit is displayed (which means
-     it is useful only when the command is given one <tree-ish>, or
-     ‘--stdin’).  It shows the differences from each of the parents to
-     the merge result simultaneously instead of showing pairwise diff
-     between a parent and the result one at a time (which is what the
-     ‘-m’ option does).  Furthermore, it lists only files which were
-     modified from all parents.
+     このフラグは、マージコミットの表示方法を変更します(つまり、コマンド
+     に1つの <tree-ish> 、または ‘--stdin’ が指定されている場合にのみ役
+     立ちます)。これは、親と結果を一度に1つずつ表示するのではなく、各親
+     とマージ結果の違いを同時に表示します(これは、 ‘-m’ オプションが行う
+     ことです)。さらに、すべての親から変更されたファイルのみが一覧表示さ
+     れます。
 
 ‘--cc’
-     This flag changes the way a merge commit patch is displayed, in a
-     similar way to the ‘-c’ option.  It implies the ‘-c’ and ‘-p’
-     options and further compresses the patch output by omitting
-     uninteresting hunks whose contents in the parents have only two
-     variants and the merge result picks one of them without
-     modification.  When all hunks are uninteresting, the commit itself
-     and the commit log message are not shown, just like in any other
-     "empty diff" case.
+     このフラグは、 ‘-c’ オプションと同様に、マージコミットパッチの表示
+     方法を変更します。これは ‘-c’ と ‘-p’ オプションの機能を含んでいて
+     、さらに、パッチの出力を圧縮するために、親のコンテンツが二つのバリ
+     エーションしかなく、マージ結果がそのうちの一つをそのまま選んでしま
+     うような、つまらないハンクは省きます。すべてのハンクがつまらない場
+     合、他の「空の差分」の場合と同様に、コミット自体とコミットログメッ
+     セージは表示されません。
 
 ‘--combined-all-paths’
-     This flag causes combined diffs (used for merge commits) to list
-     the name of the file from all parents.  It thus only has effect
-     when -c or -cc are specified, and is likely only useful if filename
-     changes are detected (i.e.  when either rename or copy detection
-     have been requested).
+     このフラグにより、結合された差分(combined diff)(マージコミットに使
+     用)にすべての親からのファイルの名前が一覧表示されます。したがって、
+     ‘-c’ または ‘--cc’ が指定されている場合にのみ有効であり、ファイル名
+     の変更が検出された場合(つまり、名前変更またはコピーの検出が要求され
+     た場合)にのみ役立つ可能性があります。
 
 ‘--always’
-     Show the commit itself and the commit log message even if the diff
-     itself is empty.
+     差分自体が空の場合でも、コミット自体とコミットログメッセージを表示
+     します。
 
 PRETTY FORMATS
 **************
@@ -21099,7 +21099,7 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
 
      名前の変更/コピーが含まれない限り、 ‘a/’ と ‘b/’ のファイル名は同じ
      です。 特に、作成または削除の場合でも、 ‘a/’ または ‘b/’ ファイル名
-     の代わりに ‘/dev/ null’ が使用されることはありません。
+     の代わりに ‘/dev/null’ が使用されることはありません。
 
      名前変更/コピー が含まれる場合、 ‘file1’ と ‘file2’ は、それぞれ 名
      前変更/コピー のソース・ファイルの名前と、 名前変更/コピー が生成す
@@ -21136,9 +21136,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
      <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の
      場合、別々の行は古いモードと新しいモードを示します。
 
-  3. 通常の文字でないキャラクタ(\"unusual\" characters)を含むパス名は、
-     構成変数 ‘core.quotePath’ で説明されているように引用符で囲まれてい
-     ます( git-config(1)参照)。
+  3. 通常の文字でないキャラクタ("unusual" characters)を含むパス名は、構
+     成変数 ‘core.quotePath’ で説明されているようにクォートされています(
+     git-config(1)参照)。
 
   4. 出力内のすべての ‘file1’ ファイルはコミット前のファイルを参照し、す
      べての ‘file2’ ファイルはコミット後のファイルを参照します。各変更を
@@ -21153,9 +21153,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
           rename to a
 
   5. ハンク・ヘッダーには、 ハンクが適用される関数の名前が記載されていま
-     す。 これを特定の言語に合わせて調整する方法の詳細については、
-     gitattributes(5) の「Defining a custom hunk-header」(カスタム・ハン
-     ク・ヘッダーの定義)を参照してください。
+     す。 これを特定のプログラミング言語に合わせて調整する方法の詳細につ
+     いては、 gitattributes(5) の「Defining a custom hunk-header」(カス
+     タム・ハンク・ヘッダーの定義)を参照してください。
 
 Combined diff format
 ********************
@@ -21250,13 +21250,13 @@ git-diff(1) または git-show(1) でのマージを表示するときのデフ�
 
      合成diff形式のチャンクヘッダーには親の数+1の ‘@’ 文字があります。
 
-   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナスは
-Aに表示されますが、Bでは削除されます) または ‘+’ (プラスはAにはありませ
-んが、Bには追加されます)、または ‘" "’（スペースは変更なし) プレフィック
-スを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1,
-file2,… を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示し
-ます。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどの
-ように異なるかを示します。
+   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナス:Aに
+表示されますが、Bでは削除されます) または ‘+’ (プラス:Aにはありませんが
+、Bには追加されます)、または " " (スペース:変更なし)なプレフィックスを持
+つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,… を
+1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファ
+イルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異な
+るかを示します。
 
    列Nの ‘-’ 文字は、その行が fileN に表示されているが、結果には表示され
 ていないことを意味します。 列Nの ‘+’ 文字は、結果に行が表示され、 fileN
@@ -21525,7 +21525,7 @@ OPTIONS
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -21892,8 +21892,8 @@ OPTIONS
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -21910,11 +21910,11 @@ OPTIONS
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -22048,8 +22048,8 @@ OPTIONS
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -22364,7 +22364,7 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
 
      名前の変更/コピーが含まれない限り、 ‘a/’ と ‘b/’ のファイル名は同じ
      です。 特に、作成または削除の場合でも、 ‘a/’ または ‘b/’ ファイル名
-     の代わりに ‘/dev/ null’ が使用されることはありません。
+     の代わりに ‘/dev/null’ が使用されることはありません。
 
      名前変更/コピー が含まれる場合、 ‘file1’ と ‘file2’ は、それぞれ 名
      前変更/コピー のソース・ファイルの名前と、 名前変更/コピー が生成す
@@ -22401,9 +22401,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
      <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の
      場合、別々の行は古いモードと新しいモードを示します。
 
-  3. 通常の文字でないキャラクタ(\"unusual\" characters)を含むパス名は、
-     構成変数 ‘core.quotePath’ で説明されているように引用符で囲まれてい
-     ます( git-config(1)参照)。
+  3. 通常の文字でないキャラクタ("unusual" characters)を含むパス名は、構
+     成変数 ‘core.quotePath’ で説明されているようにクォートされています(
+     git-config(1)参照)。
 
   4. 出力内のすべての ‘file1’ ファイルはコミット前のファイルを参照し、す
      べての ‘file2’ ファイルはコミット後のファイルを参照します。各変更を
@@ -22418,9 +22418,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
           rename to a
 
   5. ハンク・ヘッダーには、 ハンクが適用される関数の名前が記載されていま
-     す。 これを特定の言語に合わせて調整する方法の詳細については、
-     gitattributes(5) の「Defining a custom hunk-header」(カスタム・ハン
-     ク・ヘッダーの定義)を参照してください。
+     す。 これを特定のプログラミング言語に合わせて調整する方法の詳細につ
+     いては、 gitattributes(5) の「Defining a custom hunk-header」(カス
+     タム・ハンク・ヘッダーの定義)を参照してください。
 
 Combined diff format
 ********************
@@ -22515,13 +22515,13 @@ git-diff(1) または git-show(1) でのマージを表示するときのデフ�
 
      合成diff形式のチャンクヘッダーには親の数+1の ‘@’ 文字があります。
 
-   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナスは
-Aに表示されますが、Bでは削除されます) または ‘+’ (プラスはAにはありませ
-んが、Bには追加されます)、または ‘" "’（スペースは変更なし) プレフィック
-スを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1,
-file2,… を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示し
-ます。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどの
-ように異なるかを示します。
+   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナス:Aに
+表示されますが、Bでは削除されます) または ‘+’ (プラス:Aにはありませんが
+、Bには追加されます)、または " " (スペース:変更なし)なプレフィックスを持
+つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,… を
+1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファ
+イルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異な
+るかを示します。
 
    列Nの ‘-’ 文字は、その行が fileN に表示されているが、結果には表示され
 ていないことを意味します。 列Nの ‘+’ 文字は、結果に行が表示され、 fileN
@@ -27801,7 +27801,7 @@ OPTIONS
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -27975,8 +27975,8 @@ OPTIONS
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -27993,11 +27993,11 @@ OPTIONS
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -28058,8 +28058,8 @@ OPTIONS
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -34311,7 +34311,7 @@ default format for merge commits.
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -34678,8 +34678,8 @@ default format for merge commits.
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -34696,11 +34696,11 @@ default format for merge commits.
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -34834,8 +34834,8 @@ default format for merge commits.
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -34963,7 +34963,7 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
 
      名前の変更/コピーが含まれない限り、 ‘a/’ と ‘b/’ のファイル名は同じ
      です。 特に、作成または削除の場合でも、 ‘a/’ または ‘b/’ ファイル名
-     の代わりに ‘/dev/ null’ が使用されることはありません。
+     の代わりに ‘/dev/null’ が使用されることはありません。
 
      名前変更/コピー が含まれる場合、 ‘file1’ と ‘file2’ は、それぞれ 名
      前変更/コピー のソース・ファイルの名前と、 名前変更/コピー が生成す
@@ -35000,9 +35000,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
      <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の
      場合、別々の行は古いモードと新しいモードを示します。
 
-  3. 通常の文字でないキャラクタ(\"unusual\" characters)を含むパス名は、
-     構成変数 ‘core.quotePath’ で説明されているように引用符で囲まれてい
-     ます( git-config(1)参照)。
+  3. 通常の文字でないキャラクタ("unusual" characters)を含むパス名は、構
+     成変数 ‘core.quotePath’ で説明されているようにクォートされています(
+     git-config(1)参照)。
 
   4. 出力内のすべての ‘file1’ ファイルはコミット前のファイルを参照し、す
      べての ‘file2’ ファイルはコミット後のファイルを参照します。各変更を
@@ -35017,9 +35017,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
           rename to a
 
   5. ハンク・ヘッダーには、 ハンクが適用される関数の名前が記載されていま
-     す。 これを特定の言語に合わせて調整する方法の詳細については、
-     gitattributes(5) の「Defining a custom hunk-header」(カスタム・ハン
-     ク・ヘッダーの定義)を参照してください。
+     す。 これを特定のプログラミング言語に合わせて調整する方法の詳細につ
+     いては、 gitattributes(5) の「Defining a custom hunk-header」(カス
+     タム・ハンク・ヘッダーの定義)を参照してください。
 
 Combined diff format
 ********************
@@ -35114,13 +35114,13 @@ git-diff(1) または git-show(1) でのマージを表示するときのデフ�
 
      合成diff形式のチャンクヘッダーには親の数+1の ‘@’ 文字があります。
 
-   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナスは
-Aに表示されますが、Bでは削除されます) または ‘+’ (プラスはAにはありませ
-んが、Bには追加されます)、または ‘" "’（スペースは変更なし) プレフィック
-スを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1,
-file2,… を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示し
-ます。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどの
-ように異なるかを示します。
+   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナス:Aに
+表示されますが、Bでは削除されます) または ‘+’ (プラス:Aにはありませんが
+、Bには追加されます)、または " " (スペース:変更なし)なプレフィックスを持
+つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,… を
+1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファ
+イルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異な
+るかを示します。
 
    列Nの ‘-’ 文字は、その行が fileN に表示されているが、結果には表示され
 ていないことを意味します。 列Nの ‘+’ 文字は、結果に行が表示され、 fileN
@@ -55956,7 +55956,7 @@ DIFF FORMATTING
      patience diff」アルゴリズムを使用します。
 
 ‘--diff-algorithm=(patience|minimal|histogram|myers)’
-     diffアルゴリズムを選択します。その派生(variants)は以下のとおりです:
+     diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
 
      ‘default’
      ‘myers’
@@ -56323,8 +56323,8 @@ DIFF FORMATTING
 
 ‘-C[<n>]’
 ‘--find-copies[=<n>]’
-     名前と同様にコピーを検出します。 ‘--find-copies-harder’ も参照して
-     ください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
+     名前変更と同様にコピーを検出します。 ‘--find-copies-harder’ も参照
+     してください。 ‘n’ を指定すると、 ‘-M<n>’ と同じ意味になります。
 
 ‘--find-copies-harder’
      パフォーマンス上の理由から、デフォルトでは、 ‘-C’ オプションは、コ
@@ -56341,11 +56341,11 @@ DIFF FORMATTING
      チは、 ‘patch’ または ‘git apply’ で適用されることを意図していませ
      ん。これは、変更後にテキストを確認することに集中したい人のためだけ
      のものです。さらに、出力には明らかに、そのようなパッチを手動でも逆
-     に適用するのに十分な情報が不足しているため、オプションの名前が付け
-     られています。
+     に適用するのに十分な情報が不足しているため、このようなオプション名
+     になっています。
 
      ‘-B’ と併用する場合は、削除/作成ペアの削除部分のプリイメージ
-     (preimage)も省略してください。
+     (preimage)も省略します。
 
 ‘-l<num>’
      ‘-M’ および ‘-C’ オプションには、名前変更/コピーのサブセットを安価
@@ -56479,8 +56479,8 @@ DIFF FORMATTING
      用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示す
      るように指示できます。サブディレクトリ(ベアリポジトリなど)にいない
      場合は、引数として <path> を指定することで、出力を作成するサブディ
-     レクトリに名前を付けることができます。 ‘--no-relative`は、
-     `diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
+     レクトリに名前を付けることができます。 ‘--no-relative’ は、
+     ‘diff.relative’ 設定オプションと以前の ‘--relative’ の両方を打ち消
      すために使用できます。
 
 ‘-a’
@@ -56608,7 +56608,7 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
 
      名前の変更/コピーが含まれない限り、 ‘a/’ と ‘b/’ のファイル名は同じ
      です。 特に、作成または削除の場合でも、 ‘a/’ または ‘b/’ ファイル名
-     の代わりに ‘/dev/ null’ が使用されることはありません。
+     の代わりに ‘/dev/null’ が使用されることはありません。
 
      名前変更/コピー が含まれる場合、 ‘file1’ と ‘file2’ は、それぞれ 名
      前変更/コピー のソース・ファイルの名前と、 名前変更/コピー が生成す
@@ -56645,9 +56645,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
      <mode> は、ファイルモードが変更されない場合に含まれます。それ以外の
      場合、別々の行は古いモードと新しいモードを示します。
 
-  3. 通常の文字でないキャラクタ(\"unusual\" characters)を含むパス名は、
-     構成変数 ‘core.quotePath’ で説明されているように引用符で囲まれてい
-     ます( git-config(1)参照)。
+  3. 通常の文字でないキャラクタ("unusual" characters)を含むパス名は、構
+     成変数 ‘core.quotePath’ で説明されているようにクォートされています(
+     git-config(1)参照)。
 
   4. 出力内のすべての ‘file1’ ファイルはコミット前のファイルを参照し、す
      べての ‘file2’ ファイルはコミット後のファイルを参照します。各変更を
@@ -56662,9 +56662,9 @@ git-diff-tree(1) 、 git-diff-files(1) に ‘-p’ オプションを付けて�
           rename to a
 
   5. ハンク・ヘッダーには、 ハンクが適用される関数の名前が記載されていま
-     す。 これを特定の言語に合わせて調整する方法の詳細については、
-     gitattributes(5) の「Defining a custom hunk-header」(カスタム・ハン
-     ク・ヘッダーの定義)を参照してください。
+     す。 これを特定のプログラミング言語に合わせて調整する方法の詳細につ
+     いては、 gitattributes(5) の「Defining a custom hunk-header」(カス
+     タム・ハンク・ヘッダーの定義)を参照してください。
 
 Combined diff format
 ********************
@@ -56759,13 +56759,13 @@ git-diff(1) または git-show(1) でのマージを表示するときのデフ�
 
      合成diff形式のチャンクヘッダーには親の数+1の ‘@’ 文字があります。
 
-   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナスは
-Aに表示されますが、Bでは削除されます) または ‘+’ (プラスはAにはありませ
-んが、Bには追加されます)、または ‘" "’（スペースは変更なし) プレフィック
-スを持つ単一の列で表示される場合、この形式は2つ以上のファイル file1,
-file2,… を1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示し
-ます。ファイルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどの
-ように異なるかを示します。
+   従来の統一diff形式とは異なり、2つのファイルAとBが、 ‘-’ (マイナス:Aに
+表示されますが、Bでは削除されます) または ‘+’ (プラス:Aにはありませんが
+、Bには追加されます)、または " " (スペース:変更なし)なプレフィックスを持
+つ単一の列で表示される場合、この形式は2つ以上のファイル file1, file2,… を
+1つのファイルXと比較し、Xが各 fileN とどのように異なるかを示します。ファ
+イルNごとに1つの列が出力行の前に追加され、Xの行が出力行とどのように異な
+るかを示します。
 
    列Nの ‘-’ 文字は、その行が fileN に表示されているが、結果には表示され
 ていないことを意味します。 列Nの ‘+’ 文字は、結果に行が表示され、 fileN
@@ -81698,181 +81698,181 @@ Node: git-credential-cache--daemon845443
 Node: git-credential-cache846611
 Node: git-credential-store849797
 Node: git-credential854709
-Node: git-cvsexportcommit870066
-Node: git-cvsimport873947
-Node: git-cvsserver885602
-Node: git-daemon907650
-Node: git-describe925537
-Node: git-diagnose935801
-Node: git-diff-files938637
-Node: git-diff-index999587
-Node: git-diff-tree1065472
-Node: git-diff1162014
-Node: git-difftool1249456
-Node: git-fast-export1257866
-Node: git-fast-import1271293
-Node: git-fetch-pack1358452
-Node: git-fetch1363610
-Node: git-filter-branch1423091
-Node: git-fmt-merge-msg1463905
-Node: git-for-each-ref1467284
-Node: git-for-each-repo1492771
-Node: git-format-patch1495239
-Node: git-fsck-objects1560702
-Node: git-fsck1561112
-Node: git-fsmonitor--daemon1582915
-Node: git-gc1588850
-Node: git-get-tar-commit-id1609284
-Node: git-grep1610609
-Node: git-gui1629179
-Node: git-hash-object1634034
-Node: git-help1636529
-Node: git-hook1645997
-Node: git-http-backend1647071
-Node: git-http-fetch1660629
-Node: git-http-push1662747
-Node: git-imap-send1666511
-Node: git-index-pack1673885
-Node: git-init-db1681818
-Node: git-init1682254
-Node: git-instaweb1692074
-Node: git-interpret-trailers1694588
-Node: git-log1716817
-Node: git-ls-files1879562
-Node: git-ls-remote1896931
-Node: git-ls-tree1903087
-Node: git-mailinfo1910638
-Node: git-mailsplit1916106
-Node: git-maintenance1917774
-Node: git-merge-base1949080
-Node: git-merge-file1958955
-Node: git-merge-index1963548
-Node: git-merge-one-file1966708
-Node: git-merge-tree1967164
-Node: git-merge1982929
-Node: git-mergetool--lib2034649
-Node: git-mergetool2036456
-Node: git-mktag2058171
-Node: git-mktree2060395
-Node: git-multi-pack-index2061682
-Node: git-mv2068573
-Node: git-name-rev2071408
-Node: git-notes2075543
-Ref: git-notes-Footnote-12099351
-Node: git-p42099589
-Node: git-pack-objects2140636
-Node: git-pack-redundant2169161
-Node: git-pack-refs2171773
-Node: git-patch-id2177124
-Node: git-prune-packed2180212
-Node: git-prune2181385
-Node: git-pull2183940
-Node: git-push2245048
-Node: git-quiltimport2303474
-Node: git-range-diff2305475
-Node: git-read-tree2319020
-Node: git-rebase2341358
-Node: git-receive-pack2424898
-Node: git-reflog2437753
-Node: git-refs2443833
-Node: git-remote-ext2446094
-Node: git-remote-fd2451261
-Node: git-remote2453171
-Node: git-repack2465930
-Node: git-replace2479108
-Node: git-replay2485203
-Node: git-request-pull2547333
-Node: git-rerere2549829
-Node: git-reset2560470
-Node: git-restore2587805
-Node: git-rev-list2596686
-Node: git-rev-parse2698243
-Node: git-revert2745993
-Node: git-rm2754208
-Node: git-send-email2763713
-Node: git-send-pack2799833
-Node: git-sh-i18n--envsubst2806154
-Node: git-sh-i18n2807505
-Node: git-sh-setup2809140
-Node: git-shell2813243
-Node: git-shortlog2817125
-Node: git-show-branch2864128
-Node: git-show-index2871916
-Node: git-show-ref2874577
-Node: git-show2881557
-Node: git-sparse-checkout2975115
-Node: git-stage3007643
-Node: git-stash3007975
-Node: git-status3028521
-Node: git-stripspace3056335
-Node: git-submodule3058727
-Node: git-svn3089517
-Node: git-switch3155549
-Node: git-symbolic-ref3169535
-Node: git-tag3172481
-Node: git-unpack-file3195185
-Node: git-unpack-objects3195706
-Node: git-update-index3197238
-Node: git-update-ref3231816
-Node: git-update-server-info3240418
-Node: git-upload-archive3241495
-Node: git-upload-pack3244382
-Node: git-var3247953
-Node: git-verify-commit3251526
-Node: git-verify-pack3252176
-Node: git-verify-tag3253553
-Node: git-version3254181
-Node: git-web--browse3254846
-Node: git-whatchanged3259272
-Node: git-worktree3260477
-Node: git-write-tree3289729
-Node: git3291026
-Node: gitattributes3370454
-Node: gitcli3437298
-Node: gitcore-tutorial3450902
-Node: gitcredentials3535108
-Node: gitcvs-migration3549980
-Node: gitdiffcore3559973
-Node: giteveryday3576551
-Node: gitfaq3597926
-Node: gitformat-bundle3633735
-Node: gitformat-chunk3637816
-Node: gitformat-commit-graph3645815
-Ref: OID Fanout [ID; {O; I; D; F}] [256 * 4 bytes]3648957
-Ref: OID Lookup [ID; {O; I; D; L}] [N * H bytes]3649249
-Ref: Commit Data [ID; {C; D; A; T }] [N * [H + 16] bytes]3649419
-Ref: Generation Data [ID; {G; D; A; 2 }] [N * 4 bytes] [Optional]3650438
-Ref: Generation Data Overflow [ID; {G; D; O; 2 }] [Optional]3651488
-Ref: Extra Edge List [ID; {E; D; G; E}] [Optional]3652026
-Ref: Bloom Filter Index [ID; {B; I; D; X}] [N * 4 bytes] [Optional]3652639
-Ref: Bloom Filter Data [ID; {B; D; A; T}] [Optional]3653233
-Ref: Base Graphs List [ID; {B; A; S; E}] [Optional]3655320
-Node: gitformat-index3656585
-Node: gitformat-pack3679742
-Node: gitformat-signature3719214
-Node: gitglossary3728857
-Node: githooks3777161
-Node: gitignore3817766
-Node: gitk3830315
-Node: gitmailmap3839692
-Node: gitmodules3844505
-Node: gitnamespaces3850975
-Node: gitpacking3856699
-Node: gitprotocol-capabilities3873630
-Node: gitprotocol-common3895001
-Node: gitprotocol-http3899211
-Node: gitprotocol-pack3925318
-Node: gitprotocol-v23962843
-Node: gitremote-helpers4007421
-Node: gitrepository-layout4038654
-Node: gitrevisions4060557
-Node: gitsubmodules4085439
-Node: gittutorial-24099992
-Node: gittutorial4117309
-Node: gitweb.conf4143323
-Node: gitweb4199704
-Node: gitworkflows4233250
-Node: scalar4256180
+Node: git-cvsexportcommit872040
+Node: git-cvsimport876570
+Node: git-cvsserver888398
+Node: git-daemon911061
+Node: git-describe929518
+Node: git-diagnose941144
+Node: git-diff-files944131
+Node: git-diff-index1005334
+Node: git-diff-tree1071586
+Node: git-diff1169131
+Node: git-difftool1256588
+Node: git-fast-export1264998
+Node: git-fast-import1278425
+Node: git-fetch-pack1365584
+Node: git-fetch1370742
+Node: git-filter-branch1430223
+Node: git-fmt-merge-msg1471037
+Node: git-for-each-ref1474416
+Node: git-for-each-repo1499903
+Node: git-format-patch1502371
+Node: git-fsck-objects1567844
+Node: git-fsck1568254
+Node: git-fsmonitor--daemon1590057
+Node: git-gc1595992
+Node: git-get-tar-commit-id1616426
+Node: git-grep1617751
+Node: git-gui1636321
+Node: git-hash-object1641176
+Node: git-help1643671
+Node: git-hook1653139
+Node: git-http-backend1654213
+Node: git-http-fetch1667771
+Node: git-http-push1669889
+Node: git-imap-send1673653
+Node: git-index-pack1681027
+Node: git-init-db1688960
+Node: git-init1689396
+Node: git-instaweb1699216
+Node: git-interpret-trailers1701730
+Node: git-log1723959
+Node: git-ls-files1886719
+Node: git-ls-remote1904088
+Node: git-ls-tree1910244
+Node: git-mailinfo1917795
+Node: git-mailsplit1923263
+Node: git-maintenance1924931
+Node: git-merge-base1956237
+Node: git-merge-file1966112
+Node: git-merge-index1970705
+Node: git-merge-one-file1973865
+Node: git-merge-tree1974321
+Node: git-merge1990086
+Node: git-mergetool--lib2041806
+Node: git-mergetool2043613
+Node: git-mktag2065328
+Node: git-mktree2067552
+Node: git-multi-pack-index2068839
+Node: git-mv2075730
+Node: git-name-rev2078565
+Node: git-notes2082700
+Ref: git-notes-Footnote-12106508
+Node: git-p42106746
+Node: git-pack-objects2147793
+Node: git-pack-redundant2176318
+Node: git-pack-refs2178930
+Node: git-patch-id2184281
+Node: git-prune-packed2187369
+Node: git-prune2188542
+Node: git-pull2191097
+Node: git-push2252205
+Node: git-quiltimport2310631
+Node: git-range-diff2312632
+Node: git-read-tree2326177
+Node: git-rebase2348515
+Node: git-receive-pack2432055
+Node: git-reflog2444910
+Node: git-refs2450990
+Node: git-remote-ext2453251
+Node: git-remote-fd2458418
+Node: git-remote2460328
+Node: git-repack2473087
+Node: git-replace2486265
+Node: git-replay2492360
+Node: git-request-pull2554490
+Node: git-rerere2556986
+Node: git-reset2567627
+Node: git-restore2594962
+Node: git-rev-list2603843
+Node: git-rev-parse2705400
+Node: git-revert2753150
+Node: git-rm2761365
+Node: git-send-email2770870
+Node: git-send-pack2806990
+Node: git-sh-i18n--envsubst2813311
+Node: git-sh-i18n2814662
+Node: git-sh-setup2816297
+Node: git-shell2820400
+Node: git-shortlog2824282
+Node: git-show-branch2871285
+Node: git-show-index2879073
+Node: git-show-ref2881734
+Node: git-show2888714
+Node: git-sparse-checkout2982287
+Node: git-stage3014815
+Node: git-stash3015147
+Node: git-status3035693
+Node: git-stripspace3063507
+Node: git-submodule3065899
+Node: git-svn3096689
+Node: git-switch3162721
+Node: git-symbolic-ref3176707
+Node: git-tag3179653
+Node: git-unpack-file3202357
+Node: git-unpack-objects3202878
+Node: git-update-index3204410
+Node: git-update-ref3238988
+Node: git-update-server-info3247590
+Node: git-upload-archive3248667
+Node: git-upload-pack3251554
+Node: git-var3255125
+Node: git-verify-commit3258698
+Node: git-verify-pack3259348
+Node: git-verify-tag3260725
+Node: git-version3261353
+Node: git-web--browse3262018
+Node: git-whatchanged3266444
+Node: git-worktree3267649
+Node: git-write-tree3296901
+Node: git3298198
+Node: gitattributes3377626
+Node: gitcli3444470
+Node: gitcore-tutorial3458074
+Node: gitcredentials3542280
+Node: gitcvs-migration3557152
+Node: gitdiffcore3567145
+Node: giteveryday3583723
+Node: gitfaq3605098
+Node: gitformat-bundle3640907
+Node: gitformat-chunk3644988
+Node: gitformat-commit-graph3652987
+Ref: OID Fanout [ID; {O; I; D; F}] [256 * 4 bytes]3656129
+Ref: OID Lookup [ID; {O; I; D; L}] [N * H bytes]3656421
+Ref: Commit Data [ID; {C; D; A; T }] [N * [H + 16] bytes]3656591
+Ref: Generation Data [ID; {G; D; A; 2 }] [N * 4 bytes] [Optional]3657610
+Ref: Generation Data Overflow [ID; {G; D; O; 2 }] [Optional]3658660
+Ref: Extra Edge List [ID; {E; D; G; E}] [Optional]3659198
+Ref: Bloom Filter Index [ID; {B; I; D; X}] [N * 4 bytes] [Optional]3659811
+Ref: Bloom Filter Data [ID; {B; D; A; T}] [Optional]3660405
+Ref: Base Graphs List [ID; {B; A; S; E}] [Optional]3662492
+Node: gitformat-index3663757
+Node: gitformat-pack3686914
+Node: gitformat-signature3726386
+Node: gitglossary3736029
+Node: githooks3784333
+Node: gitignore3824938
+Node: gitk3837487
+Node: gitmailmap3846864
+Node: gitmodules3851677
+Node: gitnamespaces3858147
+Node: gitpacking3863871
+Node: gitprotocol-capabilities3880802
+Node: gitprotocol-common3902173
+Node: gitprotocol-http3906383
+Node: gitprotocol-pack3932490
+Node: gitprotocol-v23970015
+Node: gitremote-helpers4014593
+Node: gitrepository-layout4045826
+Node: gitrevisions4067729
+Node: gitsubmodules4092611
+Node: gittutorial-24107164
+Node: gittutorial4124481
+Node: gitweb.conf4150495
+Node: gitweb4206876
+Node: gitworkflows4240422
+Node: scalar4263352
 
 End Tag Table
 
