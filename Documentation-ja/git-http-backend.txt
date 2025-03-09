@@ -14,7 +14,7 @@ DESCRIPTION
 -----------
 `http://` と `https://` プロトコルを介してリポジトリにアクセスするGitクライアントにGitリポジトリのコンテンツを提供するための単純なCGIプログラム。 このプログラムは、スマートHTTPプロトコルと下位互換性のあるダムHTTPプロトコルの両方を使用してフェッチするクライアント、およびスマートHTTPプロトコルを使用してプッシュするクライアントをサポートします。 適切に構成されていれば、Gitのより効率的な「v2」プロトコルもサポートします。 以下の「ENVIRONMENT」セクションの「GIT_PROTOCOL」の説明を参照してください。
 
-It verifies that the directory has the magic file "git-daemon-export-ok", and it will refuse to export any Git directory that hasn't explicitly been marked for export this way (unless the `GIT_HTTP_EXPORT_ALL` environment variable is set).
+ディレクトリにマジックファイル `git-daemon-export-ok` があることを確認し、この方法でエクスポートのマークが明示されていないGitディレクトリのエクスポートを拒否します(`GIT_HTTP_EXPORT_ALL` 環境変数が設定されている場合を除く)。
 
 デフォルトでは、 `upload-pack` サービスのみが有効になっており、 `git fetch` や `git pull` や `git clone` から呼び出される `git fetch-pack` クライアントと `git ls-remote` クライアントにサービスを提供します。クライアントが認証されると、 `receive-pack` サービスが有効になります。このサービスは `git push` から呼び出される `git send-pack` クライアントにサービスを提供します。
 
@@ -23,10 +23,10 @@ SERVICES
 これらのサービスは、リポジトリごとの構成ファイルを使用して有効/無効にできます。
 
 http.getanyfile::
-	This serves Git clients older than version 1.6.6 that are unable to use the upload pack service. When enabled, clients are able to read any file within the repository, including objects that are no longer reachable from a branch but are still present. It is enabled by default, but a repository can disable it by setting this configuration value to `false`.
+	これはバージョン 1.6.6 より古い Git クライアントに対応しており、 アップロード・パック・サービスを利用できないクライアントをサポートします。 これが有効になっていると、 クライアントはリポジトリ内の、 ブランチから到達できなくなったオブジェクトも含む、 すべてのファイルを読み取ることができます。 デフォルトでは有効ですが、 リポジトリは、 この設定値を `false` に設定することで無効にすることができます。
 
 http.uploadpack::
-	This serves 'git fetch-pack' and 'git ls-remote' clients. It is enabled by default, but a repository can disable it by setting this configuration value to `false`.
+	これは、 `git fetch-pack` および `git ls-remote` クライアントにサービスを提供します。 デフォルトで有効になっていますが、リポジトリはこの構成値を `false` に設定することで無効にできます。
 
 http.receivepack::
 	これは `git send-pack` クライアントにサービスを提供し、プッシュを可能にします。 匿名ユーザーの場合はデフォルトで無効になっており、Webサーバーによって認証されたユーザーの場合はデフォルトで有効になっています。 この項目を `false` に設定することで無効にするか、 `true` に設定することで匿名ユーザーを含むすべてのユーザーに対して有効にすることができます。
@@ -210,9 +210,9 @@ ENVIRONMENT
 * QUERY_STRING
 * REQUEST_METHOD
 
-The `GIT_HTTP_EXPORT_ALL` environment variable may be passed to 'git-http-backend' to bypass the check for the "git-daemon-export-ok" file in each repository before allowing export of that repository.
+`GIT_HTTP_EXPORT_ALL` 環境変数を `git-http-backend` に渡して、各リポジトリの `git-daemon-export-ok` ファイルのチェックをバイパスしてから、そのリポジトリのエクスポートを許可することができます。
 
-The `GIT_HTTP_MAX_REQUEST_BUFFER` environment variable (or the `http.maxRequestBuffer` config option) may be set to change the largest ref negotiation request that git will handle during a fetch; any fetch requiring a larger buffer will not succeed. This value should not normally need to be changed, but may be helpful if you are fetching from a repository with an extremely large number of refs. The value can be specified with a unit (e.g., `100M` for 100 megabytes). The default is 10 megabytes.
+`GIT_HTTP_MAX_REQUEST_BUFFER` 環境変数(または `http.maxRequestBuffer` 構成オプション)は、gitがフェッチ中に処理する最大のrefネゴシエーション要求を変更するように設定できます。これより大きなバッファを必要とするフェッチは成功しません。 通常、この値を変更する必要はありませんが、ref数が非常に多いリポジトリからフェッチする場合に役立つことがあります。 値は単位毎に指定できます(たとえば、100メガバイトの場合は「100M」)。 デフォルトは10メガバイトです。
 
 クライアントは、 `Git-Protocol` HTTPヘッダーを使用して、オプションのプロトコル機能（v2プロトコルなど）を探査(probe)できます。 これらをサポートするには、そのヘッダーの内容が `GIT_PROTOCOL` 環境変数に含まれている必要があります。 ほとんどのウェブサーバーはこのヘッダーを `HTTP_GIT_PROTOCOL` 変数を介してCGIに渡し、`git-http-backend` はそれを `GIT_PROTOCOL` に自動的にコピーします。 ただし、一部のWebサーバーは、渡すヘッダーをより選択的にする場合があります。その場合には明示的に構成する必要があります(上記EXAMPLESセクションのApache構成の「Git-Protocol」の説明を参照してください)。
 
