@@ -18,9 +18,9 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-Incorporates changes from the named commits (since the time their histories diverged from the current branch) into the current branch. This command is used by `git pull` to incorporate changes from another repository and can be used by hand to merge changes from one branch into another.
+指定のコミットからの変更(それらの履歴が現在のブランチから分岐した時点以降のもの)を現在のブランチに取り込みます。 このコマンドは、 別のリポジトリからの変更を組み込むために `git pull` によって使用され、 そしてまた、 手動で、 あるブランチから別のブランチへの変更をマージするためにも使用できます。
 
-Assume the following history exists and the current branch is `master`:
+以下の履歴が存在し、現在のブランチが `master` であるとします:
 
 ------------
 	  A---B---C topic
@@ -28,7 +28,7 @@ Assume the following history exists and the current branch is `master`:
     D---E---F---G master
 ------------
 
-Then `git merge topic` will replay the changes made on the `topic` branch since it diverged from `master` (i.e., `E`) until its current commit (`C`) on top of `master`, and record the result in a new commit along with the names of the two parent commits and a log message from the user describing the changes. Before the operation, `ORIG_HEAD` is set to the tip of the current branch (`C`).
+ここで `git merge topic` を実行すると、 `topic` ブランチが `master` から分岐した時点(ここでは E)以降に `topic` ブランチで行われた変更を再生(replay)し、 現在のコミット\(C)までを `master` 上に適用します。 そして、 その結果を新しいコミットとして記録し、 一緒に、 2つの親コミットの名前と、 ユーザーが変更を説明するログ・メッセージを保存します。 `ORIG_HEAD` は、 この操作の前に、 現在のブランチの先端\(C)に設定されます。
 
 ------------
 	  A---B---C topic
@@ -36,13 +36,13 @@ Then `git merge topic` will replay the changes made on the `topic` branch since 
     D---E---F---G---H master
 ------------
 
-A merge stops if there's a conflict that cannot be resolved automatically or if `--no-commit` was provided when initiating the merge. At that point you can run `git merge --abort` or `git merge --continue`.
+マージでは、 自動的に解決できない競合が発生した場合や、 マージを開始する際に `--no-commit` が指定された場合に停止(stop)します。 その時点で、 あなたは `git merge --abort` または `git merge --continue` を実行できます。
 
-`git merge --abort` will abort the merge process and try to reconstruct the pre-merge state. However, if there were uncommitted changes when the merge started (and especially if those changes were further modified after the merge was started), `git merge --abort` will in some cases be unable to reconstruct the original (pre-merge) changes. Therefore:
+`git merge --abort` はマージ処理を中止し、 マージ前の状態を再構築しようとします。 ただし、マージの開始時にコミットされていない変更があった場合(特に、マージの開始後にそれらの変更がさらに変更された場合)、 `git merge --abort` は、元の(マージ前の)変更を再構築できない場合があります。 つまり以下の事が言えます:
 
-*Warning*: Running `git merge` with non-trivial uncommitted changes is
-discouraged: while possible, it may leave you in a state that is hard to
-back out of in the case of a conflict.
+WARNING: 自明でない未コミットの変更に対して `git merge` を実行することは推奨されません。
+可能ではありますが、
+競合が発生した場合に元に戻すのが難しい状態になる可能性があります。
 
 OPTIONS
 -------
@@ -51,18 +51,18 @@ OPTIONS
 include::merge-options.txt[]
 
 `-m <msg>`::
-	Set the commit message to be used for the merge commit (in case one is created).
+	マージコミットに使用するコミットメッセージを設定します(マージコミットが作成された場合)。
 +
 `--log` が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。
 +
-The `git fmt-merge-msg` command can be used to give a good default for automated `git merge` invocations. The automated message can include the branch description.
+`git fmt-merge-msg` コマンドを使用して、自動化された `git merge` 呼び出しに適切なデフォルトを与えることができます。 自動メッセージには、ブランチの説明を含めることができます。
 
 `--into-name <branch>`::
-	Prepare the default merge message as if merging to the branch `<branch>`, instead of the name of the real branch to which the merge is made.
+	マージ先の実際のブランチの名前ではなく、ブランチ `<branch>` にマージするかのように、デフォルトのマージ・メッセージを準備します。
 
 `-F <file>`::
 `--file=<file>`::
-	Read the commit message to be used for the merge commit (in case one is created).
+	(マージ・コミットが作成される場合に備えて)マージ・コミットに使用するコミット・メッセージを読み取ります。
 +
 `--log` が指定されている場合、マージされるコミットのショートログが与えられたメッセージに追加されます。
 
@@ -70,25 +70,25 @@ include::rerere-options.txt[]
 
 `--overwrite-ignore`::
 `--no-overwrite-ignore`::
-	Silently overwrite ignored files from the merge result. This is the default behavior. Use `--no-overwrite-ignore` to abort.
+	マージ結果から無視されたファイルを黙って上書きします。 これがデフォルトの動作です。 中止(abort)するには、 `--no-overwrite-ignore` を使用します。
 
 `--abort`::
-	Abort the current conflict resolution process, and try to reconstruct the pre-merge state. If an autostash entry is present, apply it to the worktree.
+	現在の競合解決プロセスを中止(abort)し、マージ前の状態を再構築してみてください。 自動スタッシュエントリが存在する場合は、それをワークツリーに適用します。
 +
-If there were uncommitted worktree changes present when the merge started, `git merge --abort` will in some cases be unable to reconstruct these changes. It is therefore recommended to always commit or stash your changes before running `git merge`.
+マージの開始時にコミットされていないワーク・ツリーの変更が存在した場合、 `git merge --abort` は、これらの変更を再構築できない場合があります。 したがって、 `git merge` を実行する前に、常にあなたの変更をコミット、またはスタッシュしておくことをお勧めします。
 +
-`git merge --abort` is equivalent to `git reset --merge` when `MERGE_HEAD` is present unless `MERGE_AUTOSTASH` is also present in which case `git merge --abort` applies the stash entry to the worktree whereas `git reset --merge` will save the stashed changes in the stash list.
+`git merge --abort` は、 `MERGE_HEAD` がある場合は `git reset --merge` と同じです。ただし `MERGE_AUTOSTASH` もある場合は `git merge --abort` はスタッシュ・エントリをワーク・ツリーに適用しますが、 `git reset --merge` は スタッシュ・リストにスタッシュした変更を保持したままにします。
 
 `--quit`::
-	Forget about the current merge in progress. Leave the index and the working tree as-is. If `MERGE_AUTOSTASH` is present, the stash entry will be saved to the stash list.
+	進行中の現在のマージを忘れさせます。 インデックスと作業ツリーはそのままにしておきます。 `MERGE_AUTOSTASH` が存在する場合、スタッシュエントリはスタッシュリストに保存されます。
 
 `--continue`::
-	After a `git merge` stops due to conflicts you can conclude the merge by running `git merge --continue` (see "HOW TO RESOLVE CONFLICTS" section below).
+	競合が原因で `git merge` が停止(stop)した後で、 `git merge --continue` を実行してマージを終了できます(下記「HOW TO RESOLVE CONFLICTS」セクション参照)。
 
 <commit>...::
-	私たちのブランチにマージするコミットです。通常は他のブランチヘッドです。 複数のコミットを指定すると、3つ以上の親とのマージが作成されます(Octopusマージという愛称で親しまれています)。
+	通常、 他のブランチのヘッドであるコミットを、 私たちのブランチにマージします。 2つ以上のコミットを指定すると、 3つ以上の親を持つマージが作成されます(Octopusマージという愛称で親しまれています)。
 +
-コマンドラインからコミットが指定されていない場合は、現在のブランチがアップストリームとして使用するように構成されているリモート追跡ブランチをマージします。 このマニュアルページの構成(configuration)セクションも参照してください。
+コマンドラインからコミットが指定されていない場合は、現在のブランチがアップストリームとして使用するように構成されているリモート追跡ブランチをマージします。 このマニュアルページの CONFIGURATION セクションも参照してください。
 +
 FETCH_HEAD` が指定された場合(他のコミットは指定しない場合)、直前の `git fetch` によるマージによって `.git/FETCH_HEAD` ファイルに記録されたブランチは、現在のブランチにマージされます。
 
@@ -96,16 +96,16 @@ FETCH_HEAD` が指定された場合(他のコミットは指定しない場合)
 PRE-MERGE CHECKS
 ----------------
 
-Before applying outside changes, you should get your own work in good shape and committed locally, so it will not be clobbered if there are conflicts. See also linkgit:git-stash[1]. `git pull` and `git merge` will stop without doing anything when local uncommitted changes overlap with files that `git pull`/`git merge` may need to update.
+外部の変更を適用する前に、自分の作業を良好な状態にしてローカルでコミットしとく必要があります。これにより、競合が発生した場合に作業が中断されることはなくなります。 linkgit:git-stash[1] も参照してください。 `git pull`/`git merge` は、ローカルのコミットされていない変更が `git pull`/`git merge` の更新が必要なファイルと重複する場合、何もせずに停止(stop)します。
 
-To avoid recording unrelated changes in the merge commit, `git pull` and `git merge` will also abort if there are any changes registered in the index relative to the `HEAD` commit. (Special narrow exceptions to this rule may exist depending on which merge strategy is in use, but generally, the index must match HEAD.)
+マージ・コミットに無関係な変更が記録されないようにするために、 `HEAD` コミットに関連する変更がインデックスに登録されている場合、 `git pull` と `git merge` も中止(abort)されます。 (使用されているマージ戦略によっては、このルールに対する特別な狭い例外が存在する場合がありますが、通常、インデックスはHEADと一致する必要があります。)
 
-If all named commits are already ancestors of `HEAD`, `git merge` will exit early with the message "Already up to date."
+すべての名前付きコミットがすでに `HEAD` の祖先である場合、`git merge` は "Already up to date." (既に最新です)というメッセージで早期に終了(exit)します。
 
 FAST-FORWARD MERGE
 ------------------
 
-Often the current branch head is an ancestor of the named commit. This is the most common case especially when invoked from `git pull`: you are tracking an upstream repository, you have committed no local changes, and now you want to update to a newer upstream revision. In this case, a new commit is not needed to store the combined history; instead, the `HEAD` (along with the index) is updated to point at the named commit, without creating an extra merge commit.
+多くの場合、現在のブランチヘッドは、指定のコミットの祖先です。 これは、特に `git pull` から呼び出された場合に最も一般的なケースです: 例えば、あなたはアップストリーム・リポジトリーを追跡していて、ローカルの変更をコミットしていないので、新しいアップストリーム・リビジョンに更新する必要があります。 この場合、結合された履歴を保存するために新しいコミットは必要ありませんが、代わりに、「HEAD」（およびインデックス）は、追加のマージ・コミットを作成せずに、指定のコミットを指すように更新されます。
 
 この振る舞いは、`--no-ff` オプションで抑制できます。
 
@@ -114,7 +114,7 @@ TRUE MERGE
 
 早送りマージ(fast-forward merge)(上記参照)を除いて、マージされるブランチは、両方を親として持つマージコミットによって結合する必要があります。
 
-マージされるすべてのブランチの変更を調整したマージバージョンがコミットされ、`HEAD`、インデックス、作業ツリーがそのコミットに更新されます。 作業ツリーには、重ならない限りは変更を加えることができます。
+マージされるすべてのブランチの変更を調整したマージバージョンがコミットされ、`HEAD`、インデックス、作業ツリーがそのコミットに更新されます。 作業ツリーには、この更新と重ならない限りは変更を加えることができます。
 
 変更を調停する方法が明確でない場合、以下のようになります:
 
@@ -122,7 +122,7 @@ TRUE MERGE
 2. `MERGE_HEAD` ref は、他方のブランチヘッド(the other branch head)を指すように設定されています。
 3. 正常にマージされたパスは、インデックスファイルとあなたの作業ツリーの両方で更新されます。
 4. 競合するパスの場合、インデックスファイルには最大3つのバージョンが記録されます: ステージ1は、共通の祖先からのバージョンを格納し、ステージ2 は `HEAD` からのバージョン、 ステージ3 は `MERGE_HEAD` からのバージョンです(あなたは `git ls-files -u` でステージを検査できます)。 作業ツリーファイルにはマージ操作の結果が含まれています。 つまり、おなじみの競合マーカー `<<<` `===` `>>>` を使用した3方向マージの結果です。
-5. A ref named `AUTO_MERGE` is written, pointing to a tree corresponding to the current content of the working tree (including conflict markers for textual conflicts). Note that this ref is only written when the 'ort' merge strategy is used (the default).
+5. `AUTO_MERGE` という名前の ref が書き込まれ、 作業ツリーの現在の内容に対応するツリーを指します(テキストの競合のための競合マーカーを含む)。 この ref は、 `ort` マージ戦略が使用される(これがデフォルトです)場合にのみ書き込まれることに注意してください。
 6. その他の変更は行われません。 特に、マージを開始する前に行ったローカルの変更は同じままであり、それらのインデックスエントリはそのまま、つまり「HEAD」と一致します。
 
 試しにマージした結果、複雑な競合が発生してしまったのでやり直したいという場合は、 `git merge --abort` で回復(recover)することができます。
@@ -143,8 +143,8 @@ git merge --ff-only v1.2.3
 ----
 
 
-HOW CONFLICTS ARE PRESENTED
----------------------------
+HOW CONFLICTS ARE PRESENTED(競合の提示方法)
+------------------------------------
 
 マージ中に、作業ツリーのファイルが更新されてマージの結果が反映されます。 共通の祖先のバージョンに加えられた変更の中で、重複しないもの(つまり、ファイルの領域を変更し、反対側がその領域をそのままにしておく、またはその逆)が最終結果にそのまま組み込まれます。 ただし、両方の側が同じ領域に変更を加えた場合、Gitは一方の側をもう一方の側からランダムに選択することはできず、両方の側がその領域に行ったことをファイルに残してあなたに解決するように求めます。
 
@@ -167,7 +167,7 @@ And here is another line that is cleanly resolved or unmodified.
 
 デフォルトの形式では、競合している部分でオリジナルが何を言っているのかは分かりません。 自分側の何行が削除され、バービー人形の発言に置き換えられているのかは分かりません。 唯一わかるのは、あなた側(your side)は大変だから買い物に行きたいと言いたいのに、相手側(the other size)は簡単だと主張したいということです。
 
-An alternative style can be used by setting the `merge.conflictStyle` configuration variable to either "diff3" or "zdiff3". In "diff3" style, the above conflict may look like this:
+`merge.conflictStyle` 構成変数を `diff3` または `zdiff3` に設定することで、別のスタイルを使用できます。 `diff3` スタイルでは、上記の競合は以下のようになります:
 
 ------------
 Here are lines that are either unchanged from the common
@@ -214,11 +214,11 @@ HOW TO RESOLVE CONFLICTS
 
  * マージしないことを決定します。 必要なクリーンアップは、インデックスファイルを `HEAD` コミットにリセットして (2) をリバースし、 (2) と (3) によって行われた作業ツリーの変更をクリーンアップすることだけです。 これには `git merge --abort` を使用できます。
 
- * Resolve the conflicts. Git will mark the conflicts in the working tree. Edit the files into shape and `git add` them to the index. Use `git commit` or `git merge --continue` to seal the deal. The latter command checks whether there is a (interrupted) merge in progress before calling `git commit`.
+ * 競合を解決します。 Gitは、作業ツリーの競合をマークします。 ファイルを編集して形にし、`git add` してインデックスに追加します。 `git commit` または `git merge --continue` を使用して、取引を成立させます。 後者のコマンドは、 `git commit` を呼び出す前に、進行中の(中断(interrupted)された)マージがあるかどうかをチェックします。
 
 あなたはいくつかの道具を使用して、競合を解決できます:
 
- * Use a mergetool. `git mergetool` to launch a graphical mergetool which will work through the merge with you.
+ * mergetool を使用します。 `git mergetool` を実行すると、 グラフィカルなマージ・ツールが起動し、 あなたと一緒にマージ作業を進めてくれます。
 
  * diffを見てください。 `git diff` は3方向の差分を表示し、 `HEAD` バージョンと `MERGE_HEAD` バージョンの両方からの変更を強調表示します。 `git diff AUTO_MERGE` では、 あなたがテキストの競合を解決するためにこれまでに行った変更が表示されます。
 
@@ -259,7 +259,7 @@ CONFIGURATION
 -------------
 
 branch.<name>.mergeOptions::
-	Sets default options for merging into branch <name>. The syntax and supported options are the same as those of `git merge`, but option values containing whitespace characters are currently not supported.
+	ブランチ <name> にマージするためのデフォルト・オプションを設定します。 構文とサポートされているオプションは `git merge` のものと同じですが、空白文字を含むオプション値は現在サポートされていません。
 
 include::includes/cmd-config-section-rest.txt[]
 
