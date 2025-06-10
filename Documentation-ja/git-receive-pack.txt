@@ -15,13 +15,13 @@ DESCRIPTION
 -----------
 `git send-pack` によって呼び出され、リモート側からもたらされた情報でリポジトリを更新します。
 
-This command is usually not invoked directly by the end user. The UI for the protocol is on the 'git send-pack' side, and the program pair is meant to be used to push updates to a remote repository. For pull operations, see linkgit:git-fetch-pack[1].
+このコマンドは通常、エンド・ユーザーによって直接呼び出されることはありません。 プロトコルのUIは `git send-pack` 側にあり、プログラム・ペアは更新をリモート・リポジトリーにプッシュするために使用されることを目的としています。 プル操作については、 linkgit:git-fetch-pack[1] を参照してください。
 
-The command allows for the creation and fast-forwarding of sha1 refs (heads/tags) on the remote end (strictly speaking, it is the local end 'git-receive-pack' runs, but to the user who is sitting at the send-pack end, it is updating the remote. Confused?)
+このコマンドを使用すると、リモート側で sha1 ref (ヘッド/タグ)の作成と早送り(fast-forwarding)がきます(厳密に言えば、ローカル側では `git-receive-pack` が実行されますが、send-pack側に居るユーザにとってはリモートの更新をしている事になります。混乱しないでね？)
 
-Documentation/howtoディレクトリには、更新フック(update hook)と更新後フック(post-update hook)を使用した実例が他にもあります。
+Documentation/howto ディレクトリには、更新フック(update hook)と更新後フック(post-update hook)を使用した実例が他にもあります。
 
-'git-receive-pack' は、 receive.denyNonFastForwards 構成オプションを尊重します。このオプションは、refの更新が早送りでない場合に拒否する必要があるかどうかを通知します。
+`git-receive-pack` は、 receive.denyNonFastForwards 構成オプションを尊重します。 このオプションは、 refの更新が早送り(fast-forwards)で無い場合に拒否する必要があるかどうかを通知します。
 
 他の多くの `receive.*` 構成オプションを使用して、その動作を微調整できます。 linkgit:git-config[1] を参照してください。
 
@@ -31,11 +31,11 @@ OPTIONS
 	同期するリポジトリ。
 
 `--http-backend-info-refs`::
-	Used by linkgit:git-http-backend[1] to serve up `$GIT_URL/info/refs?service=git-receive-pack` requests. See `--http-backend-info-refs` in linkgit:git-upload-pack[1].
+	linkgit:git-http-backend[1] が、 `$GIT_URL/info/refs?service=git-receive-pack` リクエストを処理するために使用します。 linkgit:git-upload-pack[1] の `--http-backend-info-refs` を参照してください。
 
 PRE-RECEIVE HOOK
 ----------------
-refが更新される前に、 $GIT_DIR/hooks/pre-receive ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、更新される参照ごとに1行になります:
+refが更新される前に、 $GIT_DIR/hooks/pre-receive ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、更新される ref ごとに1行になります:
 
        sha1-old SP sha1-new SP refname LF
 
@@ -74,7 +74,7 @@ refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッド
 
 受信前(pre-receive)フックがゼロ以外の終了ステータスで終了した場合、更新は実行されず、更新(update)フックや受信後フック(post-receive)や更新後(post-update)フックも呼び出されません。 これは、更新がサポートされない場合に迅速に救済するのに役立ちます。
 
-以下の検疫環境(quarantine environment)に関する注記を参照してください。
+下記にある検疫隔離環境(quarantine environment)に関する注記を参照してください。
 
 UPDATE HOOK
 -----------
@@ -98,7 +98,7 @@ refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッド
 
 署名されたプッシュを受け入れた後、 `pre-receive` フックの場合と同様に、 `GIT_PUSH_CERT*` 環境変数を検査できます。
 
-このフックを使用すると、リポジトリの更新を説明するメールを簡単に生成できます。 このサンプルスクリプトは、リポジトリにプッシュされたコミットを一覧表示するrefごとに1つのメールメッセージを送信し、適切な署名を持つ署名付きプッシュのプッシュ証明書をログ取りサービス(logger service)に記録します:
+このフックを使用すると、リポジトリの更新を説明するメールを簡単に生成できます。 以下のサンプル・スクリプトは、 リポジトリーにプッシュされたコミットを一覧表示するrefごとに1つのメール・メッセージを送信し、適切な署名を持つ署名付きプッシュのプッシュ証明書をログ取りサービス(logger service)に記録します:
 
 ----
 #!/bin/sh
@@ -144,10 +144,10 @@ exec git update-server-info
 ----
 
 
-QUARANTINE ENVIRONMENT
-----------------------
+QUARANTINE ENVIRONMENT(検疫隔離環境)
+------------------------------
 
-`receive-pack` がオブジェクトを取り込むと、それらは `$GIT_DIR/objects` ディレクトリ内の一時的な「隔離」(quarantine)ディレクトリに配置され、 `pre-receive` フックが完了した後にのみメインオブジェクトストアに移行されます。 それ以前にプッシュが失敗した場合、一時ディレクトリは完全に削除されます。
+`receive-pack` がオブジェクトを取り込むと、それらは `$GIT_DIR/objects` ディレクトリ内の一時的な「検疫隔離」(quarantine)ディレクトリに配置され、 `pre-receive` フックが完了した後にのみメインオブジェクトストアに移行されます。 それ以前にプッシュが失敗した場合、一時ディレクトリは完全に削除されます。
 
 これには、ユーザーからも見えるいくつかの影響と注意事項があります:
 
