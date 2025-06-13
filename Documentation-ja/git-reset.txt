@@ -19,14 +19,14 @@ DESCRIPTION
 
 `git reset' [-q] [<tree-ish>] [--] <pathspec>...`::
 `git reset [-q] [--pathspec-from-file=<file> [--pathspec-file-nul]] [<tree-ish>]`::
-	これらの形式は、 `<pathspec>` を `<tree-ish>` の状態に一致させるすべてのパスのインデックスエントリをリセットします。 (作業ツリーや現在のブランチには影響しません。)
+	これらの形式は、 `<pathspec>` にマッチするすべてのパスのインデックス・エントリを、 `<tree-ish>` での状態にリセットします。 (作業ツリーや現在のブランチには影響しません。)
 +
 これは、 `git reset <pathspec>` が `git add <pathspec>` の反対であることを意味します。 このコマンドは、 `git restore [--source=<tree-ish>] --staged <pathspec>...` と同等です。
 +
-`git reset <pathspec>` を実行してインデックスエントリを更新した後、 linkgit:git-restore[1] を使用して、インデックスの内容を作業ツリーにチェックアウトできます。 または、 linkgit:git-restore[1] を使用し、 `--source` でコミットを指定すると、コミットからインデックスと作業ツリーへのパスの内容を一度にコピーできます。
+`git reset <pathspec>` を実行してインデックスエントリを更新した後、 linkgit:git-restore[1] を使用して、インデックスの内容を作業ツリーにチェックアウトできます。 または、 linkgit:git-restore[1] を使用し、 `--source` でコミットを指定すると、コミットからパスの内容を、インデックスと作業ツリーへ一度にコピーできます。
 
 `git reset (--patch | -p) [<tree-ish>] [--] [<pathspec>...]`::
-	インデックスと `<tree-ish>` (デフォルトは `HEAD`)の違いでハンクを対話的に選択します。 選択したハンクは、インデックスから適用を外します(apply in reverse)。
+	インデックスと `<tree-ish>` (デフォルトは `HEAD`)の差分から、 ハンクを対話的に選択します。選択したハンクはインデックスに対して逆順に適用されます。
 +
 これは、 `git reset -p` が `git add -p` の反対であることを意味します。つまり、これを使用してハンクを選択的にリセットできます。 `--patch` モードの操作方法については、 linkgit:git-add[1] の「Interactive Mode」セクションを参照してください。
 
@@ -35,26 +35,26 @@ DESCRIPTION
 +
 --
 `--soft`::
-	Does not touch the index file or the working tree at all (but resets the head to `<commit>`, just like all modes do). This leaves all your changed files "Changes to be committed", as `git status` would put it.
+	インデックスファイルまたは作業ツリーにはまったく触りません(しかし、すべてのモードと同様に、ヘッドを `<commit>` にリセットします)。 これにより、 `git status` が示すように、変更されたすべてのファイルが「コミット予定の変更」(Changes to be committed)のままになります。
 
 `--mixed`::
-	Resets the index but not the working tree (i.e., the changed files are preserved but not marked for commit) and reports what has not been updated. This is the default action.
+	インデックスをリセットしますが、作業ツリーはリセットしません(つまり、変更されたファイルは保持されますが、コミットのマークは付けられません)。更新されていないものを報告します。 これがデフォルトのアクションです。
 +
-`-N` が指定されている場合、削除されたパスはadd対象(intent-to-add)としてマークされます(linkgit:git-add[1] 参照)。
+`-N` が指定されている場合、削除されたパスは intent-to-add としてマークされます(linkgit:git-add[1] 参照)。
 
 `--hard`::
-	Resets the index and working tree. Any changes to tracked files in the working tree since `<commit>` are discarded. Any untracked files or directories in the way of writing any tracked files are simply deleted.
+	インデックスと作業ツリーをリセットします。 `<commit>` 以降の作業ツリー内の追跡中のファイルへの変更はすべて破棄されます。追跡中のファイルの書き込み時に邪魔になる、追跡されていないファイルまたはディレクトリは、単に削除されます。
 
 `--merge`::
-	Resets the index and updates the files in the working tree that are different between `<commit>` and `HEAD`, but keeps those which are different between the index and working tree (i.e. which have changes which have not been added). If a file that is different between `<commit>` and the index has unstaged changes, reset is aborted.
+	インデックスをリセットし、 `<commit>` と `HEAD` の間で異なる、 作業ツリー内のファイルを更新します。 しかし、 インデックスと作業ツリーの間で異なるファイル(つまり、 追加されていない変更があるファイル)は保持します。 `<commit>` とインデックスの間で異なるファイルにステージングされていない変更がある場合、 リセットは中止(abort)されます。
 +
-つまり、 `--merge` は `git read-tree -u -m <commit>` のようなことをしますが、アンマージインデックスエントリは引き継ぎます。
+言い換えると、 `--merge` は `git read-tree -u -m <commit>` のような操作を行い、 未マージのインデックス・エントリを保持します。
 
 `--keep`::
-	Resets index entries and updates files in the working tree that are different between `<commit>` and `HEAD`. If a file that is different between `<commit>` and `HEAD` has local changes, reset is aborted.
+	インデックスエントリをリセットし、 `<commit>` と `HEAD` で異なる作業ツリー内のファイルを更新します。 `<commit>` と `HEAD` で異なるファイルにローカル変更がある場合、リセットは中止(abort)されます。
 
 `--[no-]recurse-submodules`::
-	When the working tree is updated, using --recurse-submodules will also recursively reset the working tree of all active submodules according to the commit recorded in the superproject, also setting the submodules' HEAD to be detached at that commit.
+	作業ツリーが更新される時、 `--recurse-submodules` を使用すると、スーパープロジェクトに記録されたコミットに従ってすべてのアクティブなサブモジュールの作業ツリーが再帰的にリセットされ、そのコミット時にサブモジュールのHEADが切り離されるよう(detach)に設定されます。
 --
 
 3つのコマンドの違いについては、 linkgit:git[1] の「Reset, restore and revert」を参照してください。
@@ -65,17 +65,17 @@ OPTIONS
 
 `-q`::
 `--quiet`::
-	Be quiet, only report errors.
+	静かにして、エラーのみを報告してください。
 
 `--refresh`::
 `--no-refresh`::
-	Refresh the index after a mixed reset. Enabled by default.
+	混合リセット(mixed reset)後にインデックスを更新します。 デフォルトで有効になっています。
 
 `--pathspec-from-file=<file>`::
-	Pathspec is passed in `<file>` instead of commandline args. If `<file>` is exactly `-` then standard input is used. Pathspec elements are separated by LF or CR/LF. Pathspec elements can be quoted as explained for the configuration variable `core.quotePath` (see linkgit:git-config[1]). See also `--pathspec-file-nul` and global `--literal-pathspecs`.
+	パススペックは、コマンドライン引数の代わりに `<file>` で渡されます。 `<file>` が正確に `-` の場合、標準入力が使用されます。 パススペックの要素は、LFまたはCR/LFで区切られます。 パススペックの要素は、構成変数 `core.quotePath` で説明されているようにクォートできます(linkgit:git-config[1] 参照)。 `--pathspec-file-nul` および グローバルの `--literal-pathspecs` も参照してください。
 
 `--pathspec-file-nul`::
-	Only meaningful with `--pathspec-from-file`. Pathspec elements are separated with NUL character and all other characters are taken literally (including newlines and quotes).
+	`--pathspec-from-file` 指定時のみ意味があります。 パススペックの要素はNUL文字で区切られ、他のすべての文字は文字通りに解釈されます(改行と引用符を含む)。
 
 `--`::
 	これ以降の引数をオプションとして解釈しないでください。
@@ -255,15 +255,15 @@ $ git commit ...                            <8>
 DISCUSSION
 ----------
 
-以下の表は、実行時に何が起こるかを示しています:
+下記の表達は、 以下のコマンドの実行時に何が起こるかを示します:
 
 ----------
 git reset --option target
 ----------
 
-ファイルの状態に応じて異なるリセットオプションを使用して、 `HEAD` を別のコミット(`target`)にリセットします。
+これは、 ファイルの状態に応じて異なるリセット・オプション(`--option`)を使用して、 `HEAD` を別のコミット(`target`)にリセットします。
 
-これらの表で、 `A` 、`B` 、`C` 、`D` はファイルのいくつかの異なる状態を表しています。例えば、最初のテーブルの1行目は、あるファイルが作業ツリーの状態 `A` 、インデックスの状態 `B` 、HEADの状態 `C`、ターゲットの状態 `D` にある場合、 `git reset --soft target` は作業ツリーの状態 `A` とインデックスの状態 `B` を残したままにすることを意味しています。 これは、`HEAD` (つまり、現在のブランチの先端)を `target` (状態 `D` のファイルがある)にリセット(つまり移動)するものです。
+これらの表では、 `A` 、`B` 、`C` 、`D` はファイルのいくつかの異なる状態を表しています。 例えば、最初の表の1行目は、あるファイルが作業ツリーの状態 `A` 、インデックスの状態 `B` 、HEADの状態 `C`、ターゲットの状態 `D` にある場合、 `git reset --soft target` は作業ツリーの状態 `A` とインデックスの状態 `B` を残したままにすることを意味しています。 これは、`HEAD` (つまり、現在のブランチの先端)を `target` (状態 `D` のファイルがある)にリセット(つまり移動)するものです。
 
 ....
 working index HEAD target         working index HEAD
@@ -325,11 +325,11 @@ working index HEAD target         working index HEAD
 			  --keep   B       C     C
 ....
 
-`reset --merge` は、競合するマージからリセットするときに使用することを目的としています。 マージ操作は、マージに関係する作業ツリーファイルが、開始前にインデックスに対してローカルな変更がないこと、そしてその結果を作業ツリーに書き出すことを保証しています。 したがって、インデックスとターゲットの間、およびインデックスと作業ツリーの間に何らかの違いが見られる場合、それは、マージ中の操作が競合で失敗した後に残した状態からリセットされていないことを意味します。 そのため、この場合は `--merge` オプションを使用を許可しません。
+`reset --merge` は、競合するマージからリセットするときに使用することを目的としています。 マージ操作は、マージに関係する作業ツリーファイルが、開始前にインデックスに対してローカルな変更がないこと、そしてその結果を作業ツリーに書き出すことを保証しています。 したがって、インデックスとターゲットの間、およびインデックスと作業ツリーの間に何らかの違いが見られる場合、それは、マージ中の操作が競合で失敗した後に残した状態からリセットされていないことを意味します。 そのため、この場合は `--merge` オプションの使用を許可しません。
 
-`reset --keep` は、作業ツリーの変更を維持しながら、現在のブランチの最後のコミットの一部を削除するときに使用することを目的としています。 削除するコミットの変更と保持する作業ツリーの変更の間に競合が発生する可能性がある場合、リセットは許可されません。 そのため、作業ツリーと `HEAD` の間、および `HEAD` とターゲットの間の両方に変更がある場合、リセットは許可されません。 安全のため、アンマージエントリがある場合もリセットは許可されません。
+`reset --keep` は、作業ツリーの変更を維持しながら、現在のブランチの最後のコミットの一部を削除するときに使用することを目的としています。 削除するコミットの変更と保持する作業ツリーの変更の間に競合が発生する可能性がある場合、リセットは許可されません。 そのため、作業ツリーと `HEAD` の間、および `HEAD` とターゲットの間の両方に変更がある場合、リセットは許可されません。 安全のため、 未マージ・エントリがある場合もリセットは許可されません。
 
-以下の表は、アンマージエントリがある場合に何が起こるかを示しています:
+以下の表達は、 未マージ・エントリがある場合に何が起こるかを示しています:
 
 ....
 working index HEAD target         working index HEAD
@@ -351,7 +351,7 @@ working index HEAD target         working index HEAD
 			  --keep  (disallowed)
 ....
 
-`X` は任意の状態を意味し、 `U` はアンマージインデックスを意味します。
+`X` は任意の状態を意味し、 `U` は未マージ・インデックス(unmerged index)を意味します。
 
 GIT
 ---
