@@ -12,15 +12,15 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-Given two arguments, stores the <new-oid> in the <ref>, possibly dereferencing the symbolic refs. E.g. `git update-ref HEAD <new-oid>` updates the current branch head to the new object.
+2つの引数が与えられた場合、 <new-oid> を <ref> に保存し、 必要に応じてシンボリック ref を解決します。 たとえば、 `git update-ref HEAD <new-oid>` は現在のブランチの先頭を新しいオブジェクトに更新します。
 
-Given three arguments, stores the <new-oid> in the <ref>, possibly dereferencing the symbolic refs, after verifying that the current value of the <ref> matches <old-oid>. E.g. `git update-ref refs/heads/master <new-oid> <old-oid>` updates the master branch head to <new-oid> only if its current value is <old-oid>. You can specify 40 "0" or an empty string as <old-oid> to make sure that the ref you are creating does not exist.
+3つの引数が与えられた場合、 <ref> の現在の値が <old-oid> と一致することを確認した後、 <new-oid> を <ref> に格納し、 必要に応じてシンボリック rer を解決します。 たとえば、 `git update-ref refs/heads/master <new-oid> <old-oid>` は、 master ブランチの先頭を <new-oid> に更新しますが、 これは現在の値が <old-oid> と一致する場合に限られます。 あなたは <old-oid> として40個の 0(ゼロ) または空の文字列を指定することで、 作成しようとしている ref がまだ存在しないことを示す事ができます。
 
-The final arguments are object names; this command without any options does not support updating a symbolic ref to point to another ref (see linkgit:git-symbolic-ref[1]). But `git update-ref --stdin` does have the `symref-*` commands so that regular refs and symbolic refs can be committed in the same transaction.
+最後の引数はオブジェクト名です。 このコマンドは、 オプションなしではシンボリック ref を別の ref に更新することをサポートしていません(linkgit:git-symbolic-ref[1] 参照)。 ただし、 `git update-ref --stdin` には `symref-*` コマンドがあり、 通常の ref とシンボリック ref を同一の取引内(transaction)でコミットできます。
 
 `--no-deref` を指定すると、シンボリックポインターをたどった結果ではなく、<ref>自体が上書きされます。
 
-With `-d`, it deletes the named <ref> after verifying that it still contains <old-oid>.
+`-d` オプションを使用すると、 指定の <ref> がまだ <old-oid> を含んでいることを確認(verify)後、 その <ref> を削除します。
 
 `--stdin` を使用すると、update-refは標準入力から命令を読み取り、すべての変更を一緒に実行します。 以下の形式のコマンドを指定します:
 
@@ -63,54 +63,53 @@ Cソースコードの文字列であるかのように空白を含むフィー�
 どちらの形式でも、Gitがオブジェクト名として認識する任意の形式で値を指定できます。他の形式のコマンドまたは繰り返される<ref>は、エラーを生成します。 コマンドの意味は以下のとおりです:
 
 update::
-	Set <ref> to <new-oid> after verifying <old-oid>, if given. Specify a zero <new-oid> to ensure the ref does not exist after the update and/or a zero <old-oid> to make sure the ref does not exist before the update.
+	<ref> を <new-oid> に設定します。 指定されている場合は <old-oid> を検証した後に行います。 <new-oid> をゼロに指定すると、 更新後に ref が存在しないことを保証します。 または、 <old-oid> をゼロに指定すると、 更新前に ref が存在しないことを指定します。
 
 create::
-	Create <ref> with <new-oid> after verifying it does not exist. The given <new-oid> may not be zero.
+	<ref> が存在しないことを確認した後、 <new-oid> で <ref> を作成します。 指定された <new-oid> はゼロであってはなりません。
 
 delete::
-	Delete <ref> after verifying it exists with <old-oid>, if given. If given, <old-oid> may not be zero.
+	<old-oid> が指定されている場合は、それが存在することを確認した後、 <ref> を削除します。 指定した場合、 <old-oid> はゼロではない可能性があります。
 
 symref-update::
-	Set <ref> to <new-target> after verifying <old-target> or <old-oid>, if given. Specify a zero <old-oid> to ensure that the ref does not exist before the update.
+	<ref> を <new-target> に設定します。 指定されている場合は <old-target> または <old-oid> を検証した後に行います。 <old-oid> をゼロに指定すると、 更新前に ref が存在しないことを保証します。
 
 verify::
-	Verify <ref> against <old-oid> but do not change it. If <old-oid> is zero or missing, the ref must not exist.
+	<ref> を <old-oid> と照合して検証しますが、 変更はしません。 <old-oid> がゼロまたは指定されていない場合、 ref は存在してはなりません。
 
-symref-create:
-	Create symbolic ref <ref> with <new-target> after verifying
-	it does not exist.
+symref-create::
+	<ref> が存在しないことを確認した後、 <new-target> でシンボリック参照 <ref> を作成します。
 
 symref-delete::
-	Delete <ref> after verifying it exists with <old-target>, if given.
+	指定されている場合、 <ref> が <old-target> で存在することを確認した後、 <ref> を削除します。
 
 symref-verify::
-	Verify symbolic <ref> against <old-target> but do not change it. If <old-target> is missing, the ref must not exist. Can only be used in `no-deref` mode.
+	シンボリック参照 <ref> を <old-target> と照合して検証しますが、 変更はしません。 <old-target> が指定されていない場合、 ref は存在してはなりません。 `no-deref` モードでのみ使用可能です。
 
 option::
-	Modify the behavior of the next command naming a <ref>. The only valid option is `no-deref` to avoid dereferencing a symbolic ref.
+	次に <ref> を指定するコマンドの振る舞いを変更します。 唯一有効なオプションは、 シンボリック ref のデリファレンスを回避するための `no-deref` です。
 
 start::
-	トランザクションを開始します。 非トランザクションセッションとは対照的に、セッションが明示的なコミットなしで終了すると、トランザクションは自動的に中止(abort)されます。 このコマンドは、現在のトランザクションがすでにコミットまたは中止(abort)されている場合に、新しい空のトランザクションを作成する場合があります。
+	取引(transaction)を開始します。 非取引セッションとは対照的に、 セッションが明示的なコミットなしで終了すると、 取引は自動的に中止(abort)されます。 このコマンドは、現在の取引がすでにコミットまたは中止(abort)されている場合に、 新しい空の取引を作成する場合があります。
 
 prepare::
-	トランザクションをコミットする準備をします。 これにより、キューに入れられたすべての参照更新のロックファイルが作成されます。 ロックできない参照がある場合、トランザクションは中止(abort)されます。
+	取引(transaction)をコミットする準備をします。 これにより、 キューに入れられたすべての参照更新のロック・ファイルが作成されます。 ロックできない参照がある場合、 取引は中止(abort)されます。
 
 commit::
-	トランザクションのためにキューに入れられたすべての参照更新をコミットし、トランザクションを終了(ending)します。
+	取引(transaction)のためにキューに入れられたすべての参照更新をコミットし、 取引を終了(ending)します。
 
 abort::
-	トランザクションを中止(abort)し、トランザクションが準備済み状態(prepared state)の場合はすべてのロックを解除します。
+	取引(transaction)を中止(abort)し、 取引が準備済み状態(prepared state)の場合はすべてのロックを解除します。
 
-If all <ref>s can be locked with matching <old-oid>s simultaneously, all modifications are performed. Otherwise, no modifications are performed. Note that while each individual <ref> is updated or deleted atomically, a concurrent reader may still see a subset of the modifications.
+すべての <ref> を一致する <old-oid> で同時にロックできる場合、すべての変更が実行されます。 それ以外の場合、変更は実行されません。 注意: 個々の <ref> はアトミックに更新または削除されますが、 並行読み取り(concurrent reader)では変更のサブセットが表示される場合があることに注意してください。
 
 LOGGING UPDATES
 ---------------
-構成パラメーター `core.logAllRefUpdates `がtrueで、参照が `refs/heads/` の下にある場合、 `refs/remotes/` または `refs/notes/` または HEADやORIG_HEADのような疑似参照 または ファイル `$GIT_DIR/logs/<ref>` が存在する場合に、 `git update-ref` はログファイル `$GIT_DIR/logs/<ref>` にref値の変更を説明する行を追加します(ログ名を作成する前に、すべてのシンボリックrefを間接参照します)。 ログ行は以下のようにフォーマットされます:
+構成パラメーター `core.logAllRefUpdates` がtrueで、参照が `refs/heads/` の下にある場合、 `refs/remotes/` または `refs/notes/` または HEADやORIG_HEADのような疑似参照 または ファイル `$GIT_DIR/logs/<ref>` が存在する場合に、 `git update-ref` はログファイル `$GIT_DIR/logs/<ref>` にref値の変更を説明する行を追加します(ログ名を作成する前に、すべてのシンボリックrefを間接参照します)。 ログ行は以下のようにフォーマットされます:
 
     oldsha1 SP newsha1 SP committer LF
 
-Where "oldsha1" is the 40 character hexadecimal value previously stored in <ref>, "newsha1" is the 40 character hexadecimal value of <new-oid> and "committer" is the committer's name, email address and date in the standard Git committer ident format.
+「oldsha1」は以前に<ref>に保存された40文字の16進値であり、「newsha1」は <new-oid> の40文字の16進値であり、「committer」は標準のGitコミッターID形式のコミッターの名前、メールアドレス、日付です。
 
 オプションで `-m` と一緒に使用すると:
 
@@ -123,9 +122,9 @@ Where "oldsha1" is the 40 character hexadecimal value previously stored in <ref>
 NOTES
 -----
 
-Symbolic refs were initially implemented using symbolic links. This is now deprecated since not all filesystems support symbolic links.
+シンボリック ref は当初、 シンボリック・リンクを使用して実装されていました。 しかし、 すべてのファイルシステムがシンボリック・リンクをサポートしているわけではないため、 現在ではこの方法は非推奨となっています。
 
-This command follows *real* symlinks only if they start with "refs/": otherwise it will just try to read them and update them as a regular file (i.e. it will allow the filesystem to follow them, but will overwrite such a symlink to somewhere else with a regular filename).
+このコマンドは、 シンボリック・リンクが `refs/` で始まる場合にのみ「実際の」シンボリック・リンクをたどります。 それ以外の場合は、 単にそれらを読み取って通常のファイルとして更新しようとします(つまり、 ファイルシステムがシンボリック・リンクをたどることを許可しますが、 別の場所を指すシンボリック・リンクを通常のファイル名で上書きします)。
 
 SEE ALSO
 --------
