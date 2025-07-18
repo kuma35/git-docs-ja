@@ -17,13 +17,13 @@ DESCRIPTION
 
 多くのコマンドは、引数としてリビジョン(revisions)(それはほとんどの場合「コミット」(commits)ですが、文脈とコマンドによっては「ツリーっぽい」(tree-ish)場合もあります)と、パス(paths)を取ります。ルールは以下のとおりです:
 
- * Options come first and then args. A subcommand may take dashed options (which may take their own arguments, e.g. "--max-parents 2") and arguments. You SHOULD give dashed options first and then arguments. Some commands may accept dashed options after you have already given non-option arguments (which may make the command ambiguous), but you should not rely on it (because eventually we may find a way to fix these ambiguities by enforcing the "options then args" rule).
+ * オプションは最初に指定し、 次に引数を指定します。 サブコマンドは、 ダッシュ付きのオプション(例えば `--max-parents 2` のように独自の引数を取る場合があります)と引数を受け取ることができます。 ダッシュ付きのオプションを先に指定し、 その次に引数を指定するべきです。 一部のコマンドでは、 オプションでない引数を指定した後にダッシュ付きのオプションを受け入れる場合があります(これによりコマンドが曖昧になる可能性があります)が、 これに依存するべきではありません(将来的に「オプションを先に、引数を後に」というルールを強制することで、 これらの曖昧さを修正する事になるかもしれないからです)。
 
  * リビジョン達が最初に来て、その次にパス達が来ます。 例えば、 `git diff v1.0 v2.0 arch/x86 include/asm-x86` では `v1.0` と `v2.0` はリビジョン達であり、 `arch/x86` と `include/asm-x86` はパス達です。
 
- * When an argument can be misunderstood as either a revision or a path, they can be disambiguated by placing `--` between them. E.g. `git diff -- HEAD` is, "I have a file called HEAD in my work tree. Please show changes between the version I staged in the index and what I have in the work tree for that file", not "show the difference between the HEAD commit and the work tree as a whole". You can say `git diff HEAD --` to ask for the latter.
+ * 引数がリビジョンまたはパスのいずれかと誤解される可能性がある場合は、それらの間に `--` を配置することで曖昧さを解消できます。例えば、 `git diff -- HEAD` は、「作業ツリーにHEADというファイルがあります。インデックスにステージングしたバージョンと、そのファイルの作業ツリーにあるバージョンとの変更を表示してください」であり、「HEADコミットとワークツリー全体の違いを表示する」ではありません。後者を求めるには `git diff HEAD --` とします。
 
- * Without disambiguating `--`, Git makes a reasonable guess, but errors out and asks you to disambiguate when ambiguous. E.g. if you have a file called HEAD in your work tree, `git diff HEAD` is ambiguous, and you have to say either `git diff HEAD --` or `git diff -- HEAD` to disambiguate.
+ * `--` を明示しなくても、Gitは合理的な推測を行いますが、あいまいな場合はエラーが発生し、あなたに明確にするように求めます。例えば、作業ツリーにHEADというファイルがある場合、 `git diff HEAD` はあいまいであり、曖昧さを解消するには、 `git diff HEAD --` または `git diff -- HEAD` のいずれかを指定する必要があります。
 
  * 一部のコマンドでは、 `--` はリビジョンとパスを明確に区別するために使われるため、これら一部のコマンドでオプションとリビジョンを分離するために使用することはできません。これら一部のコマンドではオプションとリビジョンを分離するために `--end-of-options` を使用できます(これら以外のパスのリビジョンを区別しないコマンドでも機能します。その場合、 `--end-of-options` は単に `--` のエイリアスです)。
 +
@@ -63,7 +63,7 @@ Magic Options
 拡張オプションパーサーがアクティブになっているコマンドはすべて、いくつかの魔法のコマンドラインオプション(magic command-line options)を理解します:
 
 `-h`::
-	gives a pretty printed usage of the command.
+	コマンドの、かなり整った使用法を提供します。
 +
 ---------------------------------------------
 $ git describe -h
@@ -81,7 +81,7 @@ usage: git describe [<options>] <commit-ish>*
 注意: 一部のサブコマンド(例: `git grep` )は、コマンドラインに `-h` 以外のものがある場合、動作が異なる場合がありますが、コマンドラインに何も含まれていない `git subcmd -h` は、一貫して使用法を提供することを目的としています。
 
 `--help-all`::
-	Some Git commands take options that are only used for plumbing or that are deprecated, and such options are hidden from the default usage. This option gives the full list of options.
+	一部のGitコマンドは、配管コマンドにのみ使用されるオプションまたは非推奨のオプションを取り、そのようなオプションはデフォルトの使用法から隠されています。 このオプションはオプションの完全なリストを提供します。
 
 
 否定オプション
@@ -127,7 +127,7 @@ $ git describe --abbrev 10 HEAD  # NOT WHAT YOU MEANT
 
  * `--index` オプションは、通常は作業ツリー内のファイルで機能するコマンドに、「インデックスにも」影響を与えるように要求するために使用されます。たとえば、 `git stash apply` は通常、stashエントリに記録された変更を作業ツリーにマージしますが、 `--index` オプションを使用すると、インデックスへの変更もマージします。
 
-`git apply`コマンドは、 `--cached` または `--index` のいずれかを伴って使用できます(同時に使用することはできません。通常、このコマンドは作業ツリー内のファイルにのみ影響しますが、 `--index` を使用すると、ファイルとそのインデックスエントリの両方にパッチが適用され、 `--cached` を使用すると、インデックスエントリのみが変更されます。
+`git apply` コマンドは、 `--cached` または `--index` のいずれかを伴って使用できます(同時に使用することはできません。通常、このコマンドは作業ツリー内のファイルにのみ影響しますが、 `--index` を使用すると、ファイルとそのインデックスエントリの両方にパッチが適用され、 `--cached` を使用すると、インデックスエントリのみが変更されます。
 
 詳細については https://lore.kernel.org/git/7v64clg5u9.fsf@assigned-by-dhcp.cox.net/ と https://lore.kernel.org/git/7vy7ej9g38.fsf@gitster.siamese.dyndns.org/ も参照してください。
 
