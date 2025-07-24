@@ -767,7 +767,7 @@ gitformat-chunk(5) Manual Page
   | 0x0000             | OFFSET[C+1]            |</code></pre>
 </div></div>
 <div class="paragraph"><p>各行(row)は、4バイトのチャンク識別子(ID)と8バイトのオフセットで構成されます。各整数はネットワークバイトオーダーで格納されます。</p></div>
-<div class="paragraph"><p>The chunk identifier <code>ID</code>[<code>i</code>] is a label for the data stored within this file from <code>OFFSET</code>[<code>i</code>] (inclusive) to <code>OFFSET</code>[<code>i+1</code>] (exclusive). Thus, the size of the <code>i</code>`th <code>chunk</code> <code>is</code> <code>equal</code> <code>to</code> <code>the</code> <code>difference</code> <code>between</code> `OFFSET[<code>i+1</code>] and <code>OFFSET</code>[<code>i</code>]. This requires that the chunk data appears contiguously in the same order as the table of contents.</p></div>
+<div class="paragraph"><p>チャンク識別子 <code>ID</code>[<code>i</code>] は、 このフィル内 <code>OFFSET</code>[<code>i</code>] (含む) から <code>OFFSET</code>[<code>i+1</code>] (含まない) (訳注: OFFSET[i] &#8656; ID[i]のデータ &lt; OFFSET[i+1])まで格納されたデータのラベルです。 したがって、 <code>i</code> 番目のチャンクのサイズは、<code>OFFSET</code>[<code>i+1</code>] と <code>OFFSET</code>[<code>i</code>] の差に等しくなります(訳注: つまり、サイズ = OFFSET[i+1] - OFFSET[i])。 このためには、 チャンク・データが目次と同じ順序で連続して配置されている必要があります。</p></div>
 <div class="paragraph"><p>目次の最後のエントリは、4つのゼロバイトである必要があります。 これにより、目次が終了していることが確認され、チャンクベースのデータの終了のオフセットが提供されます。</p></div>
 <div class="paragraph"><p>注意: チャンクベース形式では、ファイルの <code>OFFSET</code>[<code>C+1</code>] の後に、「少なくとも」末尾のハッシュ(trailing hash)が含まれている必要があります。</p></div>
 <div class="paragraph"><p>チャンクベースのファイル形式を操作するための関数は、 <code>chunk-format.h</code> で宣言されています。 これらのメソッドを使用すると、開発者が新しいファイル形式を作成するときに役立つ追加のチェックが提供されます。</p></div>
@@ -776,10 +776,10 @@ gitformat-chunk(5) Manual Page
 <div class="sect1">
 <h2 id="_writing_chunk_based_file_formats">Writing chunk-based file formats</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>チャンクベースファイル形式を作成するには、 <code>init_chunkfile</code>()<code>_</code> を呼び出して `struct <code>chunkfile</code> を作成し、 <code>struct</code> <code>hashfile</code> ポインタを渡します。 呼び出し元は、 <code>hashfile</code> を開き、ヘッダー情報を書き込む責任があります。これにより、チャンクベース形式が始まる前にファイル形式を識別できます。</p></div>
-<div class="paragraph"><p>Then, call <code>add_chunk</code>() for each chunk that is intended for writing. This populates the <code>chunkfile</code> with information about the order and size of each chunk to write. Provide a <code>chunk_write_fn</code> function pointer to perform the write of the chunk data upon request.</p></div>
+<div class="paragraph"><p>チャンクベースファイル形式を作成するには、 <code>init_chunkfile</code>() を呼び出して <code>struct</code> <code>chunkfile</code> を作成し、 <code>struct</code> <code>hashfile</code> ポインタを渡します。 呼び出し元は、 <code>hashfile</code> を開き、ヘッダー情報を書き込む責任があります。これにより、チャンクベース形式が始まる前にファイル形式を識別できます。</p></div>
+<div class="paragraph"><p>次に、書き込み用のチャンクごとに <code>add_chunk</code>() を呼び出します。 これにより、<code>chunkfile</code> に書き込む各チャンクの順序とサイズに関する情報が入力されます。 要求に応じてチャンクデータの書き込みを実行するための <code>chunk_write_fn</code> 関数ポインタを提供します。</p></div>
 <div class="paragraph"><p><code>write_chunkfile</code>() を呼び出して、目次(table of contents)を <code>hashfile</code> に書き込み、その後に各チャンクを書き込みます。 これにより、各チャンクが予想される量のデータを書き込んだことを確認し、目次が正しいことを確認します。</p></div>
-<div class="paragraph"><p>最後に、 <code>free_chunkfile</code>() を呼び出して、 <code>structc</code> <code>hunkfile</code> データをクリアします。 呼び出し元は、末尾のハッシュ(trailing hash)を書き込んでファイルを閉じることにより、 <code>hashfile</code> を完成させる責任があります。</p></div>
+<div class="paragraph"><p>最後に、 <code>free_chunkfile</code>() を呼び出して、 <code>struct</code> <code>chunkfile</code> データをクリアします。 呼び出し元は、末尾のハッシュ(trailing hash)を書き込んでファイルを閉じることにより、 <code>hashfile</code> を完成させる責任があります。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -787,7 +787,7 @@ gitformat-chunk(5) Manual Page
 <div class="sectionbody">
 <div class="paragraph"><p>チャンクベースファイル形式を読み取るには、ファイルをメモリマップ領域(memory-mapped region)として開く必要があります。 チャンク形式のAPIは、ファイル全体が連続したメモリ領域としてマップされることを想定しています。</p></div>
 <div class="paragraph"><p><code>init_chunkfile</code>(<code>NULL</code>) で <code>struct</code> <code>chunkfile</code> ポインタを初期化します。</p></div>
-<div class="paragraph"><p>ファイルの先頭からチャンクカウント(chunk count)を含むヘッダー情報を読み取った後、 <code>read_table_of_contents</code>() を呼び出して、 <code>structc</code> <code>hunkfile</code> にチャンクのリスト、それらのオフセット、およびそれらのサイズを入力します。</p></div>
+<div class="paragraph"><p>ファイルの先頭からチャンクカウント(chunk count)を含むヘッダー情報を読み取った後、 <code>read_table_of_contents</code>() を呼び出して、 <code>struct</code> <code>chunkfile</code> にチャンクのリスト、それらのオフセット、およびそれらのサイズを入力します。</p></div>
 <div class="paragraph"><p><code>pair_chunk</code>() または <code>read_chunk</code>() を使用して、各チャンクのデータ情報を抽出します:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -801,7 +801,7 @@ gitformat-chunk(5) Manual Page
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>これらのメソッドを呼び出した後、 <code>free_chunkfile</code>() を呼び出して <code>structc</code> <code>hunkfile</code> データをクリアします。 これにより、メモリマップ領域は閉じられません。 呼び出し元は、領域へのポインタが必要とされている間はデータを所有しつづけることが期待されます。</p></div>
+<div class="paragraph"><p>これらのメソッドを呼び出した後、 <code>free_chunkfile</code>() を呼び出して <code>struct</code> <code>chunkfile</code> データをクリアします。 これにより、メモリマップ領域は閉じられません。 呼び出し元は、領域へのポインタが必要とされている間はデータを所有しつづけることが期待されます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -839,7 +839,7 @@ multi-pack-index
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-15 12:50:02 JST
+ 2025-07-24 09:01:13 JST
 </div>
 </div>
 </body>
