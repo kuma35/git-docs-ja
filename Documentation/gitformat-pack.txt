@@ -42,36 +42,24 @@ Similarly, in SHA-256 repositories, these values are computed using SHA-256.
   4-byte number of objects contained in the pack (network byte order)::
   Observation: we cannot have more than 4G versions ;-) and more than 4G objects in a pack.
 
-     4-byte signature:
-         The signature is: {'P', 'A', 'C', 'K'}
-
-     4-byte version number (network byte order):
-	 Git currently accepts version number 2 or 3 but
-         generates version 2 only.
-
-     4-byte number of objects contained in the pack (network byte order)
-
-     Observation: we cannot have more than 4G versions ;-) and
-     more than 4G objects in a pack.
-
-   - The header is followed by a number of object entries, each of
-     which looks like this:
-
-     (undeltified representation)
+* The header is followed by a number of object entries, each of which looks like this
+     (undeltified representation)::
      n-byte type and length (3-bit type, (n-1)*7+4-bit length)
-     compressed data
-
-     (deltified representation)
++
+compressed data
++
+     (deltified representation)::
      n-byte type and length (3-bit type, (n-1)*7+4-bit length)
-     base object name if OBJ_REF_DELTA or a negative relative
-	 offset from the delta object's position in the pack if this
-	 is an OBJ_OFS_DELTA object
-     compressed delta data
-
-     Observation: the length of each object is encoded in a variable
-     length format and is not constrained to 32-bit or anything.
-
-  - The trailer records a pack checksum of all of the above.
++
+base object name if OBJ_REF_DELTA or a negative relative
+offset from the delta object's position in the pack if this
+is an OBJ_OFS_DELTA object
++
+compressed delta data
++
+* Observation: the length of each object is encoded in a variable
+  length format and is not constrained to 32-bit or anything.
+* The trailer records a pack checksum of all of the above.
 
 === Object types
 
@@ -295,12 +283,11 @@ offset encoding::
     objects toward the front, so most object references should
     not need to refer to this table.
 
-  - The same trailer as a v1 pack file:
-
-    A copy of the pack checksum at the end of the
-    corresponding packfile.
-
-    Index checksum of all of the above.
+  * The same trailer as a v1 pack file:
++
+A copy of the pack checksum at the end of the corresponding packfile.
++
+  * Index checksum of all of the above.
 
 == pack-*.rev files have the format:
 
@@ -419,70 +406,68 @@ Object Offsets (ID: {'O', 'O', 'F', 'F'})::
 === TRAILER:
 
 
-	(C + 1) * 12 bytes providing the chunk offsets:
-	    First 4 bytes describe chunk id. Value 0 is a terminating label.
-	    Other 8 bytes provide offset in current file for chunk to start.
-	    (Chunks are provided in file-order, so you can infer the length
-	    using the next chunk position if necessary.)
+(C + 1) * 12 bytes providing the chunk offsets::
+    First 4 bytes describe chunk id. Value 0 is a terminating label.
++
+Other 8 bytes provide offset in current file for chunk to start.
+(Chunks are provided in file-order, so you can infer the length
+using the next chunk position if necessary.)
++
+The CHUNK LOOKUP matches the table of contents from
+the chunk-based file format, see linkgit:gitformat-chunk[5].
++
+The remaining data in the body is described one chunk at a time, and
+these chunks may be given in any order. Chunks are required unless
+otherwise specified.
 
-	The CHUNK LOOKUP matches the table of contents from
-	the chunk-based file format, see linkgit:gitformat-chunk[5].
+=== CHUNK DATA:
 
-	The remaining data in the body is described one chunk at a time, and
-	these chunks may be given in any order. Chunks are required unless
-	otherwise specified.
+Packfile Names (ID: {'P', 'N', 'A', 'M'})::
+    Store the names of packfiles as a sequence of NUL-terminated
+    strings. There is no extra padding between the filenames,
+    and they are listed in lexicographic order. The chunk itself
+    is padded at the end with between 0 and 3 NUL bytes to make the
+    chunk size a multiple of 4 bytes.
+Bitmapped Packfiles (ID: {'B', 'T', 'M', 'P'})::
+    Stores a table of two 4-byte unsigned integers in network order.
+    Each table entry corresponds to a single pack (in the order that
+    they appear above in the `PNAM` chunk). The values for each table
+    entry are as follows:
++
+- The first bit position (in pseudo-pack order, see below) to
+  contain an object from that pack.
+- The number of bits whose objects are selected from that pack.
++
+OID Fanout (ID: {'O', 'I', 'D', 'F'})::
+    The ith entry, F[i], stores the number of OIDs with first
+    byte at most i. Thus F[255] stores the total
+    number of objects.
+OID Lookup (ID: {'O', 'I', 'D', 'L'})::
+    The OIDs for all objects in the MIDX are stored in lexicographic
+    order in this chunk.
+Object Offsets (ID: {'O', 'O', 'F', 'F'})::
+    Stores two 4-byte values for every object.
++
+. The pack-int-id for the pack storing this object.
+. The offset within the pack.
+  If all offsets are less than 2^32, then the large offset chunk
+  will not exist and offsets are stored as in IDX v1.
+  If there is at least one offset value larger than 2^32-1, then
+  the large offset chunk must exist, and offsets larger than
+  2^31-1 must be stored in it instead. If the large offset chunk
+  exists and the 31st bit is on, then removing that bit reveals
+  the row in the large offsets containing the 8-byte offset of
+  this object.
+[Optional] Object Large Offsets (ID: {'L', 'O', 'F', 'F'})::
+    8-byte offsets into large packfiles.
+[Optional] Bitmap pack order (ID: {'R', 'I', 'D', 'X'})::
+    A list of MIDX positions (one per object in the MIDX, num_objects in
+    total, each a 4-byte unsigned integer in network byte order), sorted
+    according to their relative bitmap/pseudo-pack positions.
 
-CHUNK DATA:
+=== TRAILER:
 
-	Packfile Names (ID: {'P', 'N', 'A', 'M'})
-	    Store the names of packfiles as a sequence of NUL-terminated
-	    strings. There is no extra padding between the filenames,
-	    and they are listed in lexicographic order. The chunk itself
-	    is padded at the end with between 0 and 3 NUL bytes to make the
-	    chunk size a multiple of 4 bytes.
-
-	Bitmapped Packfiles (ID: {'B', 'T', 'M', 'P'})
-	    Stores a table of two 4-byte unsigned integers in network order.
-	    Each table entry corresponds to a single pack (in the order that
-	    they appear above in the `PNAM` chunk). The values for each table
-	    entry are as follows:
-	    - The first bit position (in pseudo-pack order, see below) to
-	      contain an object from that pack.
-	    - The number of bits whose objects are selected from that pack.
-
-	OID Fanout (ID: {'O', 'I', 'D', 'F'})
-	    The ith entry, F[i], stores the number of OIDs with first
-	    byte at most i. Thus F[255] stores the total
-	    number of objects.
-
-	OID Lookup (ID: {'O', 'I', 'D', 'L'})
-	    The OIDs for all objects in the MIDX are stored in lexicographic
-	    order in this chunk.
-
-	Object Offsets (ID: {'O', 'O', 'F', 'F'})
-	    Stores two 4-byte values for every object.
-	    1: The pack-int-id for the pack storing this object.
-	    2: The offset within the pack.
-		If all offsets are less than 2^32, then the large offset chunk
-		will not exist and offsets are stored as in IDX v1.
-		If there is at least one offset value larger than 2^32-1, then
-		the large offset chunk must exist, and offsets larger than
-		2^31-1 must be stored in it instead. If the large offset chunk
-		exists and the 31st bit is on, then removing that bit reveals
-		the row in the large offsets containing the 8-byte offset of
-		this object.
-
-	[Optional] Object Large Offsets (ID: {'L', 'O', 'F', 'F'})
-	    8-byte offsets into large packfiles.
-
-	[Optional] Bitmap pack order (ID: {'R', 'I', 'D', 'X'})
-	    A list of MIDX positions (one per object in the MIDX, num_objects in
-	    total, each a 4-byte unsigned integer in network byte order), sorted
-	    according to their relative bitmap/pseudo-pack positions.
-
-TRAILER:
-
-	Index checksum of the above contents.
+    * Index checksum of the above contents.
 
 == multi-pack-index reverse indexes
 
