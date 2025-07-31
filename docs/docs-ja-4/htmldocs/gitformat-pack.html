@@ -760,7 +760,7 @@ $GIT_DIR/objects/pack/multi-pack-index</code></pre>
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The Git pack format is how Git stores most of its primary repository data. Over the lifetime of a repository, loose objects (if any) and smaller packs are consolidated into larger pack(s). See <a href="git-gc.html">git-gc(1)</a> and <a href="git-pack-objects.html">git-pack-objects(1)</a>.</p></div>
+<div class="paragraph"><p>Git パック形式は、 Git がリポジトリーの主要なデータを保存する方法です。 リポジトリーの存続期間中に、 (もしあれば)緩いオブジェクト(loose objects)や小さなパックは、 より大きなパックに統合されます。 詳細は <a href="git-gc.html">git-gc(1)</a> や <a href="git-pack-objects.html">git-pack-objects(1)</a> を参照してください。</p></div>
 <div class="paragraph"><p>パック形式は通信(over-the-wire)でも使用されます。 たとえば <a href="gitprotocol-v2.html">gitprotocol-v2(5)</a> を参照して下さい。 そして、 <a href="gitformat-bundle.html">gitformat-bundle(5)</a> では他のコンテナ形式の一部です。</p></div>
 </div>
 </div>
@@ -788,7 +788,7 @@ $GIT_DIR/objects/pack/multi-pack-index</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-4-byte version number (network byte order)
+4-byte version number (ネットワーク・バイト・オーダー)
 </dt>
 <dd>
 <p>
@@ -796,7 +796,7 @@ $GIT_DIR/objects/pack/multi-pack-index</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-4-byte パックに含まれるオブジェクトの数(network byte order)
+4-byte パックに含まれるオブジェクトの数(ネットワーク・バイト・オーダー)
 </dt>
 <dd>
 <p>
@@ -805,37 +805,37 @@ $GIT_DIR/objects/pack/multi-pack-index</code></pre>
 </dd>
 </dl></div>
 </li>
-</ul></div>
-<div class="paragraph"><p>4-byte signature:
-The signature is: {<em>P</em>, <em>A</em>, <em>C</em>, <em>K</em>}</p></div>
-<div class="paragraph"><p>4-byte version number (network byte order): Git currently accepts version number 2 or 3 but generates version 2 only.</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>4-byte パックに含まれるオブジェクトの数(network byte order)</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>所見: このバージョンでは、パック内のオブジェクトは4Gを超えることはできず、パックも4Gを超えることはできません。</code></pre>
-</div></div>
-<div class="ulist"><ul>
 <li>
 <p>
-The header is followed by a number of object entries, each of which looks like this:
+ヘッダーの後ろには多くのオブジェクト・エントリが続き、 それぞれは以下のようになります
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>(undeltified representation)
-n-byte type and length (3-bit type, (n-1)*7+4-bit length)
-compressed data</code></pre>
-</div></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(非デルタ化表現)
+</dt>
+<dd>
+<p>
+     n-byte type and length (type:3ビット幅、length: (n-1)*7+4 ビット幅)
+</p>
+<div class="paragraph"><p>圧縮データ</p></div>
+</dd>
+<dt class="hdlist1">
+(デルタ化表現)
+</dt>
+<dd>
+<p>
+     n-byte type and length (type:3ビット幅、length: (n-1)*7+4 ビット幅)
+</p>
+<div class="paragraph"><p>OBJ_REF_DELTAの場合はベースオブジェクト名、OBJ_OFS_DELTAオブジェクトの場合はパック内のデルタオブジェクトの位置からの負の相対オフセット</p></div>
+<div class="paragraph"><p>圧縮デルタデータ</p></div>
+</dd>
+</dl></div>
 </li>
-</ul></div>
-<div class="paragraph"><p>(deltified representation) n-byte type and length (3-bit type, (n-1)*7+4-bit length) base object name if OBJ_REF_DELTA or a negative relative offset from the delta object&#8217;s position in the pack if this is an OBJ_OFS_DELTA object compressed delta data</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Observation: the length of each object is encoded in a variable length format and is not constrained to 32-bit or anything.</code></pre>
-</div></div>
-<div class="ulist"><ul>
+<li>
+<p>
+所見: 各オブジェクトの長さは可変長形式でエンコードされ、32ビットなどに制限されません。
+</p>
+</li>
 <li>
 <p>
 トレーラー(trailer)は、上記のすべてのパックチェックサムを記録します。
@@ -889,7 +889,7 @@ OBJ_REF_DELTA (7)
 <div class="paragraph"><p>概念的には、commit、tree、tag、blobの4つのオブジェクトタイプしかありません。 ただし、スペースを節約するために、オブジェクトを別の「ベース」(base)オブジェクトの「デルタ」(delta)として格納できます。 これらの表現には、パックファイルでのみ有効な新しいタイプの ref-delta および ofs-delta が割り当てられます。</p></div>
 <div class="paragraph"><p>ofs-deltaとref-deltaはどちらも、オブジェクトを再構築するために別のオブジェクト(「ベースオブジェクト」と呼ばれる)に適用される「デルタ」を格納します。 それらの違いは、ref-deltaがベースオブジェクト名を直接エンコードすることです。 ベースオブジェクトが同じパックにある場合、ofs-deltaは代わりにパック内のベースオブジェクトのオフセットをエンコードします。</p></div>
 <div class="paragraph"><p>同一パックに含まれている場合は、ベースオブジェクトを削除することもできます。 ref-deltaは、パック外のオブジェクト(つまり、いわゆる「薄いパック」(thin pack)）を参照することもできます。 ただし、ディスクに保存する場合は、循環依存を回避するためにパックを自己完結型にする必要があります。</p></div>
-<div class="paragraph"><p>The delta data starts with the size of the base object and the size of the object to be reconstructed. These sizes are encoded using the size encoding from above. The remainder of the delta data is a sequence of instructions to reconstruct the object from the base object. If the base object is deltified, it must be converted to canonical form first. Each instruction appends more and more data to the target object until it&#8217;s complete. There are two supported instructions so far: one for copying a byte range from the source object and one for inserting new data embedded in the instruction itself.</p></div>
+<div class="paragraph"><p>デルタ・データは、 ベース・オブジェクトのサイズと再構築されるオブジェクトのサイズから始まります。 これらのサイズは、 上記サイズ・エンコーディングを使用してエンコードされます。 デルタ・データの残りの部分は、 ベース・オブジェクトからオブジェクトを再構築するための一連の命令です。 ベース・オブジェクトが削除されている場合は、 最初に標準形に変換する必要があります。 各命令は、 完了するまでターゲット・オブジェクトにどんどんデータを追加します。 現時点でサポートされている命令は2つあります。 1つはソース・オブジェクトからバイト範囲をコピーするためのもので、 もう1つは命令自体に埋め込む新しいデータを挿入するためのものです。</p></div>
 <div class="paragraph"><p>各命令の長さは可変です。 命令タイプは、最初のオクテット(訳注:1バイト(8ビット))のビット7(訳注:つまりこのバイトの最上位ビット)によって決定されます。 以下の図は、RFC 1951（Deflate compressed data format;圧縮データ形式の解凍）の規則に従います。</p></div>
 <div class="sect3">
 <h4 id="_ベースオブジェクトからのコピー命令">ベースオブジェクトからのコピー命令</h4>
@@ -900,7 +900,7 @@ OBJ_REF_DELTA (7)
 +----------+---------+---------+---------+---------+-------+-------+-------+</code></pre>
 </div></div>
 <div class="paragraph"><p>これは、ソースオブジェクトからバイト範囲をコピーするための命令です。 コピー元のオフセットとコピーするバイト数をエンコードします。 オフセットとサイズはリトルエンディアンです。</p></div>
-<div class="paragraph"><p>All offset and size bytes are optional. This is to reduce the instruction size when encoding small offsets or sizes. The first seven bits in the first octet determine which of the next seven octets is present. If bit zero is set, offset1 is present. If bit one is set offset2 is present and so on.</p></div>
+<div class="paragraph"><p>すべてのオフセットバイトとサイズバイトはオプションです。 これは、小さなオフセットまたはサイズをエンコードするときに命令サイズを減らすためです。 最初のオクテットの最初の7つのビット(訳注:bit6〜0)は、次の7つのオクテットのどれが存在するかを決定します。 ビットゼロが設定されている場合、offset1が存在します。 ビット1が設定されている場合、offset2が存在します。</p></div>
 <div class="paragraph"><p>注意: よりコンパクトな形式は、オフセットとサイズのエンコーディングを変更しないことに注意してください。 たとえば、以下のようにoffset2のみが省略されている場合でも、offset3にはビット16〜23が含まれています。 それはoffset1の隣に続くからoffset2という訳ではなくて、(offset3の)ビット8〜15が含まれています。</p></div>
 <div class="literalblock">
 <div class="content">
@@ -918,7 +918,7 @@ OBJ_REF_DELTA (7)
 | 0xxxxxxx |    data    |
 +----------+============+</code></pre>
 </div></div>
-<div class="paragraph"><p>This is the instruction to construct the target object without the base object. The following data is appended to the target object. The first seven bits of the first octet determine the size of data in bytes. The size must be non-zero.</p></div>
+<div class="paragraph"><p>これは、 ベース・オブジェクトなしでターゲット・オブジェクトを構築するための命令です。 続くデータがターゲット・オブジェクトに追加されます。 最初のオクテットの最初の7つのビット(訳注:bit6〜0)は、 データのサイズをバイト単位で決定します。 サイズはゼロ以外でなければなりません。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_reserved_instruction">Reserved instruction</h4>
@@ -1081,7 +1081,7 @@ offset encoding
 <div class="ulist"><ul>
 <li>
 <p>
-4-byte マジックナンバー \377tOc は、 unreasonable fanout[0] 値です。
+4-byte マジックナンバー \377tOc (訳注: 0xFF, 0x74, 0x4F, 0x63)は、 unreasonable fanout[0] 値です。
 </p>
 </li>
 <li>
@@ -1113,22 +1113,17 @@ v1と同様の256エントリのファンアウトテーブル。
 <p>
 8バイトのオフセットエントリのテーブル(2 GiB未満のパックファイルの場合は空)。 パックファイルは、頻繁に使用されるオブジェクトを手前に配置するように編成されているため、ほとんどのオブジェクト参照はこのテーブルを参照する必要はありません。
 </p>
-<div class="ulist"><ul>
+</li>
 <li>
 <p>
 v1パックファイルと同一のトレーラー:
 </p>
-<div class="literalblock">
-<div class="content">
-<pre><code>A copy of the pack checksum at the end of the
-corresponding packfile.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>上記すべてのインデックスチェックサム。</code></pre>
-</div></div>
+<div class="paragraph"><p>対応するパックファイルの最後にあるパックチェックサムのコピー。</p></div>
 </li>
-</ul></div>
+<li>
+<p>
+上記すべてのインデックスチェックサム。
+</p>
 </li>
 </ul></div>
 </div>
@@ -1347,49 +1342,114 @@ Object Offsets (ID: {<code>O</code>, <code>O</code>, <code>F</code>, <code>F</co
 </div>
 <div class="sect2">
 <h3 id="_trailer">TRAILER:</h3>
-<div class="paragraph"><p>(C + 1) * 12 bytes providing the chunk offsets: First 4 bytes describe chunk id. Value 0 is a terminating label. Other 8 bytes provide offset in current file for chunk to start. (Chunks are provided in file-order, so you can infer the length using the next chunk position if necessary.)</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>CHUNK LOOKUP は、チャンク・ベースのファイル形式の目次と一致します。 linkgit:gitformat-chunk[5] を参照してください。</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>ボディの残りのデータは一度に1つのチャンクで記述され、これらのチャンクは任意の順序で指定できます。 特に指定がない限り、チャンクは必要です。</code></pre>
-</div></div>
-<div class="paragraph"><p>CHUNK DATA:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Packfile Names (ID: {'P', 'N', 'A', 'M'})
-    Store the names of packfiles as a sequence of NUL-terminated
-    strings. There is no extra padding between the filenames,
-    and they are listed in lexicographic order. The chunk itself
-    is padded at the end with between 0 and 3 NUL bytes to make the
-    chunk size a multiple of 4 bytes.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Bitmapped Packfiles (ID: {'B', 'T', 'M', 'P'})
-    Stores a table of two 4-byte unsigned integers in network order.
-    Each table entry corresponds to a single pack (in the order that
-    they appear above in the `PNAM` chunk). The values for each table
-    entry are as follows:
-    - The first bit position (in pseudo-pack order, see below) to
-      contain an object from that pack.
-    - The number of bits whose objects are selected from that pack.</code></pre>
-</div></div>
-<div class="paragraph"><p>OID Fanout (ID: {<em>O</em>, <em>I</em>, <em>D</em>, <em>F</em>})
-The ith entry, F[i], stores the number of OIDs with first
-byte at most i. Thus F[255] stores the total
-number of objects.</p></div>
-<div class="paragraph"><p>OID Lookup (ID: {<em>O</em>, <em>I</em>, <em>D</em>, <em>L</em>}) The OIDs for all objects in the MIDX are stored in lexicographic order in this chunk.</p></div>
-<div class="paragraph"><p>Object Offsets (ID: {<em>O</em>, <em>O</em>, <em>F</em>, <em>F</em>}) Stores two 4-byte values for every object. 1: The pack-int-id for the pack storing this object. 2: The offset within the pack. If all offsets are less than 2<sup>32, then the large offset chunk will not exist and offsets are stored as in IDX v1. If there is at least one offset value larger than 2</sup>32-1, then the large offset chunk must exist, and offsets larger than 2^31-1 must be stored in it instead. If the large offset chunk exists and the 31st bit is on, then removing that bit reveals the row in the large offsets containing the 8-byte offset of this object.</p></div>
-<div class="paragraph"><p>[Optional] Object Large Offsets (ID: {<em>L</em>, <em>O</em>, <em>F</em>, <em>F</em>}) 8-byte offsets into large packfiles.</p></div>
-<div class="paragraph"><p>[Optional] Bitmap pack order (ID: {<em>R</em>, <em>I</em>, <em>D</em>, <em>X</em>}) A list of MIDX positions (one per object in the MIDX, num_objects in total, each a 4-byte unsigned integer in network byte order), sorted according to their relative bitmap/pseudo-pack positions.</p></div>
-<div class="paragraph"><p>TRAILER:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Index checksum of the above contents.</code></pre>
-</div></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+(C + 1) * 12 bytes はチャンクオフセットを提供します
+</dt>
+<dd>
+<p>
+    最初の4バイトはチャンクIDです。値 0 はラベル終端です。
+</p>
+<div class="paragraph"><p>他の8バイトは、現在のファイルでチャンクを開始するためのオフセットを提供します。(チャンクはファイル順に提供されるため、必要に応じて次のチャンク位置を使用して長さを推測できます。)</p></div>
+<div class="paragraph"><p>CHUNK LOOKUP は、チャンク・ベースのファイル形式の目次と一致します。 <a href="gitformat-chunk.html">gitformat-chunk(5)</a> を参照してください。</p></div>
+<div class="paragraph"><p>ボディの残りのデータは一度に1つのチャンクで記述され、これらのチャンクは任意の順序で指定できます。 特に指定がない限り、チャンクは必要です。</p></div>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_chunk_data_2">CHUNK DATA:</h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Packfile Names (ID: {<code>P</code>, <code>N</code>, <code>A</code>, <code>M</code>})
+</dt>
+<dd>
+<p>
+    パック・ファイルの名前を、 NUL文字で終わる文字列のシーケンスとして保存します。 ファイル名とファイル名の間には余分なパディングはなく、 辞書順(lexicographic order)にリストされます。 チャンク自体は、 チャンク・サイズが4バイトの倍数になるように、 末尾に0～3個のNULバイトでパディングされます。
+</p>
+</dd>
+<dt class="hdlist1">
+Bitmapped Packfiles (ID: {<code>B</code>, <code>T</code>, <code>M</code>, <code>P</code>})
+</dt>
+<dd>
+<p>
+    2つの4バイトの符号なし整数をネットワークバイトオーダーで格納するテーブルを保存します。 各テーブル・エントリは、 <code>PNAM</code> チャンクで上記に記載された順序で単一のパックに対応します。 各テーブル・エントリの値は以下の通りです:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+そのパックに含まれるオブジェクトを含む最初のビット位置(下記の擬似パック順序(pseudo-pack order)で)。
+</p>
+</li>
+<li>
+<p>
+そのパックから選択されるオブジェクトのビット数。
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
+OID Fanout (ID: {<code>O</code>, <code>I</code>, <code>D</code>, <code>F</code>})
+</dt>
+<dd>
+<p>
+    i番目のエントリF[i]は、最初のバイトが最大iのOIDの数を格納します。 したがって、F[255]はオブジェクトの総数を格納します。
+</p>
+</dd>
+<dt class="hdlist1">
+OID Lookup (ID: {<code>O</code>, <code>I</code>, <code>D</code>, <code>L</code>})
+</dt>
+<dd>
+<p>
+    MIDX内のすべてのオブジェクトのOIDは、このチャンクに辞書式順序(lexicographic order)で格納されます。
+</p>
+</dd>
+<dt class="hdlist1">
+Object Offsets (ID: {<code>O</code>, <code>O</code>, <code>F</code>, <code>F</code>})
+</dt>
+<dd>
+<p>
+    オブジェクトごとに2つの4バイト値を格納します。
+</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+このオブジェクトを格納するパックの pack-int-id。
+</p>
+</li>
+<li>
+<p>
+パック内オフセット。 すべてのオフセットが 2<sup>32 未満(less than)の場合、 巨大オフセット・チャンク(large offset chunk)は存在せず、 IDX v1 としてオフセットが格納されます。 2</sup>32-1 を超える(larger than)オフセット値が少なくとも 1 つある場合、 巨大オフセット・チャンクが存在する必要があり、 2^31-1 を超えるオフセットはそこに格納されなければなりません。 巨大オフセット・チャンクが存在し、 31 番目のビットがオンの場合、 そのビットを削除すると、 このオブジェクトの 8バイト・オフセットを含む、 巨大オフセット(large offsets)の行(row)位置が判ります。
+</p>
+</li>
+</ol></div>
+</dd>
+<dt class="hdlist1">
+[オプション] Object Large Offsets (ID: {<code>L</code>, <code>O</code>, <code>F</code>, <code>F</code>})
+</dt>
+<dd>
+<p>
+    8-byte 大きなパックファイル(large packfiles)へのオフセット。
+</p>
+</dd>
+<dt class="hdlist1">
+[Optional] Bitmap pack order (ID: {<code>R</code>, <code>I</code>, <code>D</code>, <code>X</code>})
+</dt>
+<dd>
+<p>
+    MIDX 位置のリスト(MIDX 内のオブジェクトごとに 1 つ、 合計で num_objects 個、 それぞれがネットワーク・バイト順で 4 バイトの符号なし整数)で、相対的な ビットマップ/疑似パック 位置に従って並べ替えられます。
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="sect2">
+<h3 id="_trailer_2">TRAILER:</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+上記の内容のインデックスチェックサム。
+</p>
+</li>
+</ul></div>
 </div>
 </div>
 </div>
@@ -1430,35 +1490,35 @@ number of objects.</p></div>
 <div class="paragraph"><p>要するに、MIDXの擬似パックは、MIDXによって保存されたパック内のオブジェクトをパック順に並べ、パックをMIDX順(優先パックが先に来る)に並べたものを重複排除して連結したものです。</p></div>
 <div class="paragraph"><p>MIDX の逆インデックスは、 MIDX 自体内の、オプションの <code>RIDX</code> チャンクに格納されます。</p></div>
 <div class="sect2">
-<h3 id="_code_btmp_code_chunk"><code>BTMP</code> chunk</h3>
-<div class="paragraph"><p>The Bitmapped Packfiles (<code>BTMP</code>) chunk encodes additional information about the objects in the multi-pack index&#8217;s reachability bitmap. Recall that objects from the MIDX are arranged in "pseudo-pack" order (see above) for reachability bitmaps.</p></div>
-<div class="paragraph"><p>From the example above, suppose we have packs "a", "b", and "c", with 10, 15, and 20 objects, respectively. In pseudo-pack order, those would be arranged as follows:</p></div>
+<h3 id="_btmp_chunk">BTMP chunk</h3>
+<div class="paragraph"><p>ビットマップ付きパック・ファイル(<code>BTMP</code>)チャンクは、 マルチパック・インデックスの到達可能性ビットマップにおけるオブジェクトに関する追加情報をエンコードします。 MIDXのオブジェクトは、 到達可能性ビットマップのために「擬似パック」(pseudo-pack)順序(上記参照)で配置されていることを思い出してください。</p></div>
+<div class="paragraph"><p>上記の例にならって、 仮にパック「a」と「b」と「c」があり、 それぞれ 10、 15、 20個のオブジェクトを持つとします。 擬似パック順序では、 それらは以下のように配置されます:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>|a,0|a,1|...|a,9|b,0|b,1|...|b,14|c,0|c,1|...|c,19|</code></pre>
 </div></div>
-<div class="paragraph"><p>When working with single-pack bitmaps (or, equivalently, multi-pack reachability bitmaps with a preferred pack), <a href="git-pack-objects.html">git-pack-objects(1)</a> performs &#8220;verbatim&#8221; reuse, attempting to reuse chunks of the bitmapped or preferred packfile instead of adding objects to the packing list.</p></div>
-<div class="paragraph"><p>When a chunk of bytes is reused from an existing pack, any objects contained therein do not need to be added to the packing list, saving memory and CPU time. But a chunk from an existing packfile can only be reused when the following conditions are met:</p></div>
+<div class="paragraph"><p>単一パック・ビットマップ(または、 優先パックを持つマルチパック到達可能性ビットマップと同等)を使用する場合、 <a href="git-pack-objects.html">git-pack-objects(1)</a> は「そのままの」(verbatim)再利用を行い、 ビットマップ付きまたは優先パックファイルのチャンクを再利用しようと試み、 パッキング・リストにオブジェクトを追加する代わりにします。</p></div>
+<div class="paragraph"><p>既存のパックからバイトのチャンク(chunk of bytes)が再利用されると、 そこに含まれるオブジェクトはパッキング・リストに追加する必要がないため、 メモリとCPU時間を節約できます。 ただし、 既存のパック・ファイルからのチャンクは、 以下の条件が満たされた場合にのみ再利用できます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-The chunk contains only objects which were requested by the caller (i.e. does not contain any objects which the caller didn&#8217;t ask for explicitly or implicitly).
+チャンクには、 呼び出し元が要求したオブジェクトのみが含まれている(つまり、 呼び出し元が明示的または暗黙的に要求してい無いオブジェクトを含ま無い)。
 </p>
 </li>
 <li>
 <p>
-All objects stored in non-thin packs as offset- or reference-deltas also include their base object in the resulting pack.
+非・薄いパック(non-thin packs)にオフセット・デルタまたは参照デルタとして格納されているすべてのオブジェクトは、 結果として得られるパックにそのベース・オブジェクトを含めます。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>The <code>BTMP</code> chunk encodes the necessary information in order to implement multi-pack reuse over a set of packfiles as described above. Specifically, the <code>BTMP</code> chunk encodes three pieces of information (all 32-bit unsigned integers in network byte-order) for each packfile <code>p</code> that is stored in the MIDX, as follows:</p></div>
+<div class="paragraph"><p><code>BTMP</code> チャンクは、 上記のように一連のパック・ファイルに対してマルチ・パックの再利用を実装するために必要な情報をエンコードします。 具体的には、<code>BTMP</code> チャンクは、 MIDXに格納されている各パック・ファイル <code>p</code> に対して、 以下の3つの情報(すべてネットワーク・バイト・オーダーの32ビット符号なし整数)をエンコードします:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 <code>bitmap_pos</code>
 </dt>
 <dd>
 <p>
-The first bit position (in pseudo-pack order) in the multi-pack index&#8217;s reachability bitmap occupied by an object from <code>p</code>.
+マルチパック・インデックスの到達可能性ビットマップにおいて、 <code>p</code> からのオブジェクトが占める最初のビット位置(擬似パック(pseudo-pack)順序で)。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1466,11 +1526,11 @@ The first bit position (in pseudo-pack order) in the multi-pack index&#8217;s re
 </dt>
 <dd>
 <p>
-The number of bit positions (including the one at <code>bitmap_pos</code>) that encode objects from that pack <code>p</code>.
+そのパック <code>p</code> からのオブジェクトをエンコードするビット位置の数(<code>bitmap_pos</code> の位置を含む)。
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>For example, the <code>BTMP</code> chunk corresponding to the above example (with packs &#8220;a&#8221;, &#8220;b&#8221;, and &#8220;c&#8221;) would look like:</p></div>
+<div class="paragraph"><p>たとえば、 パック「a」と「b」と「c」がある、 上記の例に対応する <code>BTMP</code> チャンクは以下のようになります:</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
@@ -1503,7 +1563,7 @@ cellspacing="0" cellpadding="4">
 </tbody>
 </table>
 </div>
-<div class="paragraph"><p>With this information in place, we can treat each packfile as individually reusable in the same fashion as verbatim pack reuse is performed on individual packs prior to the implementation of the <code>BTMP</code> chunk.</p></div>
+<div class="paragraph"><p>この情報があれば、 各パック・ファイルを個別に再利用可能として扱うことができます。 これは、 <code>BTMP</code> チャンクが実装される前に、 個々のパックに対して行われていたそのままの(verbatim)パック再利用と同じ方法です。</p></div>
 </div>
 </div>
 </div>
@@ -1555,7 +1615,7 @@ cellspacing="0" cellpadding="4">
 <div class="ulist"><ul>
 <li>
 <p>
-The location of the per-object mtime data.
+オブジェクトごとの mtime データの配置。
 </p>
 </li>
 </ul></div>
@@ -1574,7 +1634,7 @@ The location of the per-object mtime data.
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 13:10:24 JST
+ 2025-07-26 02:21:58 JST
 </div>
 </div>
 </body>

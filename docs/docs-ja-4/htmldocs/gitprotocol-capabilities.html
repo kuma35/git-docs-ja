@@ -768,7 +768,7 @@ gitprotocol-capabilities(5) Manual Page
 <div class="paragraph"><p>サーバーは、このドキュメントで定義されているすべての機能をサポートするべきです。</p></div>
 <div class="paragraph"><p>receive-pack および upload-pack の最初のサーバー応答の最初の行で、最初の参照の後に NUL バイトが続き、次にスペースで区切られたサーバー機能のリストが続きます。 これらにより、サーバーはクライアントに対してサポートできるものとサポートできないものを宣言できます。</p></div>
 <div class="paragraph"><p>次に、クライアントは、有効にしたい機能のスペース区切りのリストを送信します。 クライアントは、サーバーがサポートしているとは言っていない機能を要求してはいけません。</p></div>
-<div class="paragraph"><p>Server MUST diagnose and abort if capabilities it does not understand were sent. Server MUST NOT ignore capabilities that client requested and server advertised. As a consequence of these rules, server MUST NOT advertise capabilities it does not understand.</p></div>
+<div class="paragraph"><p>サーバーは送信された機能について診断し、理解できない機能が送信された場合、中止(abort)しなければなりません。サーバーは、クライアントが要求し、かつ、サーバーが宣伝(advertise)した機能の実行を無視してはなりません。 これらのルールの結果として、サーバーは理解できない機能を宣伝してはなりません。</p></div>
 <div class="paragraph"><p>atomic 機能と report-status 機能と report-status-v2 機能と delete-refs 機能と quiet 機能と push-cert 機能が送信され、 receive-pack 処理(サーバーへのプッシュ処理)によって認識されます。</p></div>
 <div class="paragraph"><p><code>ofs-delta</code> と <code>side-band-64k</code> 機能は、 upload-pack プロトコルと receive-pack プロトコルの両方によって送信および認識されます。 agent 機能と session-id 機能は、オプションで両方のプロトコルで送信できます。</p></div>
 <div class="paragraph"><p>他のすべての機能は、upload-pack (サーバーからのフェッチ) 処理によってのみ認識されます。</p></div>
@@ -779,25 +779,25 @@ gitprotocol-capabilities(5) Manual Page
 <div class="sectionbody">
 <div class="paragraph"><p>「multi_ack」機能により、サーバーは、クライアントの要求セットと所持しているセットの間で、共通のベースとして使用できるコミットを見つけるとすぐに「ACK obj-id continue」を返すことができます。</p></div>
 <div class="paragraph"><p>これを早期に送信することで、サーバーは、クライアントがクライアントのリポジトリ履歴の特定のブランチをさらにたどり下っていくのを防ぐことができます。 クライアントは、サーバーが DAG を完全に通過するまで、またはクライアントが「完了」と言うまで、他のブランチをたどってそれらのラインを送信する必要がある場合があります。</p></div>
-<div class="paragraph"><p>Without multi_ack, a client sends have lines in --date-order until the server has found a common base. That means the client will send have lines that are already known by the server to be common, because they overlap in time with another branch on which the server hasn&#8217;t found a common base yet.</p></div>
+<div class="paragraph"><p>multi_ack が無い場合、 クライアントはサーバーが共通のベースを見つけるまで、 <code>--date-order</code> で have 行を送信します。 これは、 クライアントがサーバーにとってすでに共通であるとわかっている have 行を送信することを意味します。 なぜなら、 サーバーがまだ共通のベースを見つけていない別のブランチの have 行を送信と時間的に重なっているためです。</p></div>
 <div class="paragraph"><p>たとえば、以下の図のように、クライアントにはサーバーにない大文字で表されるのコミットがあり、サーバーにはクライアントにはない小文字で表されるコミットがあるとします:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>       +---- u ---------------------- x
-/              +----- y
-/              /
-a -- b -- c -- d -- E -- F
-\
+      /              +----- y
+     /              /
+    a -- b -- c -- d -- E -- F
+       \
         +--- Q -- R -- S</code></pre>
 </div></div>
-<div class="paragraph"><p>クライアントが x,y を必要としていて、最初に have F,S と言って開始した場合、サーバーは F,S が何であるかを知りません。 最終的に、クライアントは「have d」と言い、サーバーは「ACK d continue」を送信して、クライアントにそのラインをたどるのをやめるように通知します（したがって、c-b-a を送信しないでください）が、しかし、まだ完了していないため、x のベースが必要です。 クライアントは、a に到達するまで S-R-Q を続行し、到達した時点でサーバーは明確なベースを持ち、すべてが終了します。</p></div>
-<div class="paragraph"><p>multi_ackがなければ、クライアントは S-R-Q を差し挟んで、いずれにせよ c-b-a チェーンを送信していたでしょう。</p></div>
+<div class="paragraph"><p>クライアントが x と y を求め、 最初に『have F,S』を送信した場合、 サーバーは F と S が何かを知りません。 その後、 クライアントが『have d』を送信すると、 サーバーは『ACK d continue』を送信して、 クライアントにそのラインを進むのを止めるよう伝えます(つまり、 c-b-aを送信しないでください、と伝える)。 しかし、 まだ完了していません。 サーバーは x のベースを必要とします。 クライアントは S-R-Q を続け、 a に到達するまで進みます。 この時点でサーバーは明確なベースを得て、 すべてが終了します。</p></div>
+<div class="paragraph"><p>multi_ack がなければ、 クライアントは S-R-Q と交互に c-b-a のチェーンを送信していたでしょう。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_multi_ack_detailed">multi_ack_detailed</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This is an extension of multi_ack that permits the client to better understand the server&#8217;s in-memory state. See <a href="gitprotocol-pack.html">gitprotocol-pack(5)</a>, section "Packfile Negotiation" for more information.</p></div>
+<div class="paragraph"><p>これは、クライアントがサーバーのメモリ内状態をよりよく理解できるようにする multi_ack の拡張です。 詳細については、 <a href="gitprotocol-pack.html">gitprotocol-pack(5)</a> の「Packfile Negotiation」セクションを参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -819,7 +819,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_side_band_side_band_64k">side-band, side-band-64k</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>This capability means that the server can send, and the client can understand, multiplexed progress reports and error info interleaved with the packfile itself.</p></div>
+<div class="paragraph"><p>この機能により、 サーバーはパック・ファイル自体にプログレス・レポートやエラー情報を多重化して送信でき、 クライアントはそれらを理解できます。</p></div>
 <div class="paragraph"><p>これら 2 つのオプションは相互に排他的です。 最新のクライアントは、常に「side-band-64k」を好みます。</p></div>
 <div class="paragraph"><p>いずれのモードも、パックファイルデータが「side_band」の場合は最大 1000 バイト、「side_band_64k」の場合は 65520 バイトのパケットに分割されてストリーミングされることを示します。 各パケットは、パケット内のデータ量を示す先頭の 4 バイトの pkt-line 長と、その後に続く 1 バイトのストリームコード、および実際のデータで構成されます。</p></div>
 <div class="paragraph"><p>ストリームコードは以下のいずれか一つです:</p></div>
@@ -829,15 +829,15 @@ a -- b -- c -- d -- E -- F
 2 - 進行メッセージ
 3 - ストリームが中止(abort)される直前の致命的なエラーメッセージ</code></pre>
 </div></div>
-<div class="paragraph"><p>「side-band-64k」機能は、古いクライアントとの下位互換性を維持しながら、実際にはほぼいっぱいに詰め込まれたパケットを要求するために、はるかに大きなパケットを処理できる新しいクライアントの方法として生まれました。</p></div>
+<div class="paragraph"><p>「side-band-64k」機能は、 より新しいクライアントがはるかに大きなパケットを処理できるように、 ほぼ一杯に詰め込まれたパケットを要求する方法として導入され、古いクライアントとの後方互換性を維持します。</p></div>
 <div class="paragraph"><p>さらに、 side-band とその最大 1000 バイトのメッセージを使用すると、実際には 999 バイトのペイロードと 1 バイトのストリームコードになります。 side-band-64k を使用すると、同じ取引で、最大 65519 バイトのデータと 1 バイトのストリームコードで使用できます。</p></div>
-<div class="paragraph"><p>The client MUST send only one of "side-band" and "side- band-64k". The server MUST diagnose it as an error if client requests both.</p></div>
+<div class="paragraph"><p>クライアントは『side-band』と『side-band-64k』のいずれか一方のみを送信しなければなりません。 クライアントが両方を要求した場合、 サーバーはこれをエラーとして診断しなければなりません。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_ofs_delta">ofs-delta</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The server can send, and the client can understand, PACKv2 with delta referring to its base by position in pack rather than by an obj-id. That is, they can send/read OBJ_OFS_DELTA (aka type 6) in a packfile.</p></div>
+<div class="paragraph"><p>サーバーは、 PACKv2 を送信でき、 クライアントはそれを理解できます。 この PACKv2 では、 デルタがベースをオブジェクトIDではなくパック内の位置で参照します。 つまり、 パック・ファイル内で OBJ_OFS_DELTA(別名タイプ6)を 送信/読み取り できます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -849,7 +849,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_object_format">object-format</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>ハッシュアルゴリズムを引数として取るこの機能は、サーバーが特定のハッシュ アルゴリズムをサポートしていることを示します。 複数回送信される場合があります。 その場合、最初に指定されたものは、ref 広告(ref advertisement)で使用されたものです。</p></div>
+<div class="paragraph"><p>ハッシュ・アルゴリズムを引数として取るこの機能は、 サーバーが特定のハッシュ・アルゴリズムをサポートしていることを示します。 複数回送信される場合があります。 その場合、 最初に指定されたものは、 参照広告(ref advertisement)で使用されたものです。</p></div>
 <div class="paragraph"><p>クライアントによって提供された場合、これは、クライアントが指定のハッシュアルゴリズムを使用して通信することを意図していることを示します。 提供されるアルゴリズムは、サーバーがサポートするものでなければなりません。</p></div>
 <div class="paragraph"><p>この機能が提供されていない場合、サポートされているアルゴリズムは SHA-1 だけであると見なされます。</p></div>
 </div>
@@ -857,7 +857,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_symref">symref</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>このパラメーター化された機能は、どのシンボリック ref がどの ref を指しているかを受信者に通知するために使用されます。 たとえば、 <code>symref=HEAD:refs/heads/master</code> は、HEAD が master を指していることをレシーバーに伝えます。 この機能を繰り返して、複数の symref を表すことができます。</p></div>
+<div class="paragraph"><p>このパラメーター化された機能は、どのシンボリック参照がどの参照を指しているかを受信者に通知するために使用されます。 たとえば、 <code>symref=HEAD:refs/heads/master</code> は、HEAD が master を指していることを受信側に伝えます。 この機能を繰り返して、 複数の symref を表すことができます。</p></div>
 <div class="paragraph"><p>HEAD symref が送信される参照の 1 つである場合、サーバーはこの機能を HEAD symref に含めるべきです。</p></div>
 <div class="paragraph"><p>クライアントは、この機能のパラメーターを使用して、リポジトリのクローンを作成するときに適切な初期ブランチを選択するでしょう。</p></div>
 </div>
@@ -883,13 +883,13 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_deepen_relative">deepen-relative</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>この機能がクライアントによって要求された場合、「deepen」コマンドのセマンティクスが変更されます。 「深さ」引数は、リモートrefからの深さではなく、現在の浅い境界からの深さです。</p></div>
+<div class="paragraph"><p>この機能がクライアントによって要求された場合、「deepen」コマンドのセマンティクスが変更されます。 「深さ」引数は、リモート参照からの深さではなく、 現在の浅い境界(current shallow boundary)からの深さです。</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_no_progress">no-progress</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The client was started with "git clone -q" or something similar, and doesn&#8217;t want that side band 2. Basically the client just says "I do not wish to receive stream 2 on sideband, so do not send it to me, and if you did, I will drop it on the floor anyway". However, the sideband channel 3 is still used for error responses.</p></div>
+<div class="paragraph"><p>クライアントは『git clone -q』またはそれに類するコマンドで開始されており、 サイドバンド2 を受け取りたくありません。 基本的に、 クライアントは『私はサイドバンドのストリーム2を受け取りたくないので、 送信しないでください。 もし送信されても、 私はそれを無視します』と言っています。 ただし、 サイドバンド・チャネル3はエラーレスポンスのために引き続き使用されます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -897,7 +897,7 @@ a -- b -- c -- d -- E -- F
 <div class="sectionbody">
 <div class="paragraph"><p>「include-tag」機能は、それらが指すオブジェクトを送信する場合に、注釈付きタグを送信することに関するものです。 オブジェクトをクライアントにパックし、タグ オブジェクトがそのオブジェクトを正確に指す場合、タグオブジェクトもパックします。 一般に、これにより、クライアントは単一のネットワーク接続でブランチをフェッチするときに、すべての新しい注釈付きタグを取得できます。</p></div>
 <div class="paragraph"><p>クライアントは、サーバーがこの機能を宣伝するときに、常に include-tag を要求にハードコーディングして送信しても構いません。 クライアントが include-tag を要求するかどうかの決定は、サーバーが <code>refs/tags/</code>* 名前空間でオブジェクトを宣伝したかどうかに関係なく、タグデータに対するクライアントの要求にのみ関係があります。</p></div>
-<div class="paragraph"><p>Servers MUST pack the tags if their referent is packed and the client has requested include-tags.</p></div>
+<div class="paragraph"><p>サーバーは、 参照先(referrant)がパックされており、 クライアントが include-tags を要求している場合、 タグをパックしなければなりません。</p></div>
 <div class="paragraph"><p>クライアントは、サーバーが include-tag を無視し、パック内のタグを実際に送信していない場合に備えなければなりません。 そのような場合、クライアントは後続のフェッチを発行して、そうでなければ include-tag がクライアントに与えるタグを取得する必要があります。</p></div>
 <div class="paragraph"><p>サーバーは、使用可能なタグがあるかどうかに関係なく、サポートしている場合、 include-tag を送信すべきです。</p></div>
 </div>
@@ -929,7 +929,7 @@ a -- b -- c -- d -- E -- F
 <div class="sect1">
 <h2 id="_atomic">atomic</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>サーバーが「atomic」機能を送信すると、アトミック プッシュを受け入れることができます。 プッシュするクライアントがこの機能を要求すると、サーバーはたった 1 つのアトミック取引(atomic transaction)でrefを更新します。 すべてのrefが更新されるか、まったく更新されません。</p></div>
+<div class="paragraph"><p>サーバーが「atomic」機能を送信すると、 アトミック・プッシュを受け入れることができます。 プッシュするクライアントがこの機能を要求すると、 サーバーはたった 1 つのアトミック取引(atomic transaction)で参照を更新します。 すべての参照が更新されるか、 あるいは全く更新されないか、 です。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -980,7 +980,7 @@ a -- b -- c -- d -- E -- F
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-12 09:42:01 JST
+ 2025-07-28 07:05:01 JST
 </div>
 </div>
 </body>

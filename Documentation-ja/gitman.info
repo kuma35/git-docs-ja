@@ -70630,10 +70630,10 @@ Synopsis
 DESCRIPTION
 ***********
 
-The Git pack format is how Git stores most of its primary repository
-data.  Over the lifetime of a repository, loose objects (if any) and
-smaller packs are consolidated into larger pack(s).  See git-gc(1) and
-git-pack-objects(1).
+Git パック形式は、 Git がリポジトリーの主要なデータを保存する方法です。
+リポジトリーの存続期間中に、 (もしあれば)緩いオブジェクト(loose
+objects)や小さなパックは、 より大きなパックに統合されます。 詳細は
+git-gc(1) や git-pack-objects(1) を参照してください。
 
    パック形式は通信(over-the-wire)でも使用されます。 たとえば
 gitprotocol-v2(5) を参照して下さい。 そして、 gitformat-bundle(5) では他
@@ -70655,36 +70655,35 @@ pack-*.pack files have the following format:
      4-byte シグネチャ
           The signature is: {‘P’, ‘A’, ‘C’, ‘K’}
 
-     4-byte version number (network byte order)
+     4-byte version number (ネットワーク・バイト・オーダー)
           Gitは現在バージョン番号2または3を受け入れますが、バージョン2の
           みを生成します。
 
-     4-byte パックに含まれるオブジェクトの数(network byte order)
+     4-byte パックに含まれるオブジェクトの数(ネットワーク・バイト・オーダー)
           所見: このバージョンでは、パック内のオブジェクトは4Gを超えるこ
           とはできず、パックも4Gを超えることはできません。
 
-   4-byte signature: The signature is: {_P_, _A_, _C_, _K_}
+   • ヘッダーの後ろには多くのオブジェクト・エントリが続き、 それぞれは以
+     下のようになります
 
-   4-byte version number (network byte order): Git currently accepts
-version number 2 or 3 but generates version 2 only.
+     (非デルタ化表現)
+          n-byte type and length (type:3ビット幅、length: (n-1)*7+4 ビッ
+          ト幅)
 
-     4-byte パックに含まれるオブジェクトの数(network byte order)
+          圧縮データ
 
-     所見: このバージョンでは、パック内のオブジェクトは4Gを超えることはできず、パックも4Gを超えることはできません。
+     (デルタ化表現)
+          n-byte type and length (type:3ビット幅、length: (n-1)*7+4 ビッ
+          ト幅)
 
-   • The header is followed by a number of object entries, each of which
-     looks like this:
+          OBJ_REF_DELTAの場合はベースオブジェクト名、OBJ_OFS_DELTAオブジ
+          ェクトの場合はパック内のデルタオブジェクトの位置からの負の相対
+          オフセット
 
-          (undeltified representation)
-          n-byte type and length (3-bit type, (n-1)*7+4-bit length)
-          compressed data
+          圧縮デルタデータ
 
-   (deltified representation) n-byte type and length (3-bit type,
-(n-1)*7+4-bit length) base object name if OBJ_REF_DELTA or a negative
-relative offset from the delta object’s position in the pack if this is
-an OBJ_OFS_DELTA object compressed delta data
-
-     Observation: the length of each object is encoded in a variable length format and is not constrained to 32-bit or anything.
+   • 所見: 各オブジェクトの長さは可変長形式でエンコードされ、32ビットな
+     どに制限されません。
 
    • トレーラー(trailer)は、上記のすべてのパックチェックサムを記録します
      。
@@ -70741,15 +70740,15 @@ Deltified representation(デルタ化表現)
 ク」(thin pack)）を参照することもできます。 ただし、ディスクに保存する場
 合は、循環依存を回避するためにパックを自己完結型にする必要があります。
 
-   The delta data starts with the size of the base object and the size
-of the object to be reconstructed.  These sizes are encoded using the
-size encoding from above.  The remainder of the delta data is a sequence
-of instructions to reconstruct the object from the base object.  If the
-base object is deltified, it must be converted to canonical form first.
-Each instruction appends more and more data to the target object until
-it’s complete.  There are two supported instructions so far: one for
-copying a byte range from the source object and one for inserting new
-data embedded in the instruction itself.
+   デルタ・データは、 ベース・オブジェクトのサイズと再構築されるオブジェ
+クトのサイズから始まります。 これらのサイズは、 上記サイズ・エンコーディ
+ングを使用してエンコードされます。 デルタ・データの残りの部分は、 ベース
+・オブジェクトからオブジェクトを再構築するための一連の命令です。 ベース
+・オブジェクトが削除されている場合は、 最初に標準形に変換する必要があり
+ます。 各命令は、 完了するまでターゲット・オブジェクトにどんどんデータを
+追加します。 現時点でサポートされている命令は2つあります。 1つはソース・
+オブジェクトからバイト範囲をコピーするためのもので、 もう1つは命令自体に
+埋め込む新しいデータを挿入するためのものです。
 
    各命令の長さは可変です。 命令タイプは、最初のオクテット(訳注:1バイト
 (8ビット))のビット7(訳注:つまりこのバイトの最上位ビット)によって決定され
@@ -70767,11 +70766,11 @@ data embedded in the instruction itself.
 コピー元のオフセットとコピーするバイト数をエンコードします。 オフセット
 とサイズはリトルエンディアンです。
 
-   All offset and size bytes are optional.  This is to reduce the
-instruction size when encoding small offsets or sizes.  The first seven
-bits in the first octet determine which of the next seven octets is
-present.  If bit zero is set, offset1 is present.  If bit one is set
-offset2 is present and so on.
+   すべてのオフセットバイトとサイズバイトはオプションです。 これは、小さ
+なオフセットまたはサイズをエンコードするときに命令サイズを減らすためです
+。 最初のオクテットの最初の7つのビット(訳注:bit6〜0)は、次の7つのオクテ
+ットのどれが存在するかを決定します。 ビットゼロが設定されている場合、
+offset1が存在します。 ビット1が設定されている場合、offset2が存在します。
 
    注意: よりコンパクトな形式は、オフセットとサイズのエンコーディングを
 変更しないことに注意してください。 たとえば、以下のようにoffset2のみが省
@@ -70794,10 +70793,10 @@ offset1の隣に続くからoffset2という訳ではなくて、(offset3の)ビ
      | 0xxxxxxx |    data    |
      +----------+============+
 
-   This is the instruction to construct the target object without the
-base object.  The following data is appended to the target object.  The
-first seven bits of the first octet determine the size of data in bytes.
-The size must be non-zero.
+   これは、 ベース・オブジェクトなしでターゲット・オブジェクトを構築する
+ための命令です。 続くデータがターゲット・オブジェクトに追加されます。 最
+初のオクテットの最初の7つのビット(訳注:bit6〜0)は、 データのサイズをバイ
+ト単位で決定します。 サイズはゼロ以外でなければなりません。
 
 Reserved instruction
 --------------------
@@ -70902,8 +70901,8 @@ offset encoding
 バージョン2 pack-*.idx ファイルは4GiBより大きいパックをサポートし、他のいくつかの再編成があります。それらの形式は以下のとおりです:
 **********************************************************************************************************************************
 
-   • 4-byte マジックナンバー ‘\377tOc’ は、 unreasonable fanout[0] 値で
-     す。
+   • 4-byte マジックナンバー ‘\377tOc’ (訳注: 0xFF, 0x74, 0x4F, 0x63)は
+     、 unreasonable fanout[0] 値です。
 
    • 4-byte バージョン番号 (= 2)
 
@@ -70927,12 +70926,11 @@ offset encoding
      置するように編成されているため、ほとんどのオブジェクト参照はこのテ
      ーブルを参照する必要はありません。
 
-        • v1パックファイルと同一のトレーラー:
+   • v1パックファイルと同一のトレーラー:
 
-               A copy of the pack checksum at the end of the
-               corresponding packfile.
+     対応するパックファイルの最後にあるパックチェックサムのコピー。
 
-               上記すべてのインデックスチェックサム。
+   • 上記すべてのインデックスチェックサム。
 
 pack-*.rev ファイルは以下の形式です:
 ************************************
@@ -71071,61 +71069,77 @@ Object Offsets (ID: {‘O’, ‘O’, ‘F’, ‘F’})
 TRAILER:
 ========
 
-(C + 1) * 12 bytes providing the chunk offsets: First 4 bytes describe
-chunk id.  Value 0 is a terminating label.  Other 8 bytes provide offset
-in current file for chunk to start.  (Chunks are provided in file-order,
-so you can infer the length using the next chunk position if necessary.)
+(C + 1) * 12 bytes はチャンクオフセットを提供します
+     最初の4バイトはチャンクIDです。値 0 はラベル終端です。
 
-     CHUNK LOOKUP は、チャンク・ベースのファイル形式の目次と一致します。 linkgit:gitformat-chunk[5] を参照してください。
+     他の8バイトは、現在のファイルでチャンクを開始するためのオフセットを
+     提供します。(チャンクはファイル順に提供されるため、必要に応じて次の
+     チャンク位置を使用して長さを推測できます。)
 
-     ボディの残りのデータは一度に1つのチャンクで記述され、これらのチャンクは任意の順序で指定できます。 特に指定がない限り、チャンクは必要です。
+     CHUNK LOOKUP は、チャンク・ベースのファイル形式の目次と一致します。
+     gitformat-chunk(5) を参照してください。
 
-   CHUNK DATA:
+     ボディの残りのデータは一度に1つのチャンクで記述され、これらのチャン
+     クは任意の順序で指定できます。 特に指定がない限り、チャンクは必要で
+     す。
 
-     Packfile Names (ID: {'P', 'N', 'A', 'M'})
-         Store the names of packfiles as a sequence of NUL-terminated
-         strings. There is no extra padding between the filenames,
-         and they are listed in lexicographic order. The chunk itself
-         is padded at the end with between 0 and 3 NUL bytes to make the
-         chunk size a multiple of 4 bytes.
+CHUNK DATA:
+===========
 
-     Bitmapped Packfiles (ID: {'B', 'T', 'M', 'P'})
-         Stores a table of two 4-byte unsigned integers in network order.
-         Each table entry corresponds to a single pack (in the order that
-         they appear above in the `PNAM` chunk). The values for each table
-         entry are as follows:
-         - The first bit position (in pseudo-pack order, see below) to
-           contain an object from that pack.
-         - The number of bits whose objects are selected from that pack.
+Packfile Names (ID: {‘P’, ‘N’, ‘A’, ‘M’})
+     パック・ファイルの名前を、 NUL文字で終わる文字列のシーケンスとして
+     保存します。 ファイル名とファイル名の間には余分なパディングはなく、
+     辞書順(lexicographic order)にリストされます。 チャンク自体は、 チャ
+     ンク・サイズが4バイトの倍数になるように、 末尾に0～3個のNULバイトで
+     パディングされます。
 
-   OID Fanout (ID: {_O_, _I_, _D_, _F_}) The ith entry, F[i], stores the
-number of OIDs with first byte at most i.  Thus F[255] stores the total
-number of objects.
+Bitmapped Packfiles (ID: {‘B’, ‘T’, ‘M’, ‘P’})
+     2つの4バイトの符号なし整数をネットワークバイトオーダーで格納するテ
+     ーブルを保存します。 各テーブル・エントリは、 ‘PNAM’ チャンクで上記
+     に記載された順序で単一のパックに対応します。 各テーブル・エントリの
+     値は以下の通りです:
 
-   OID Lookup (ID: {_O_, _I_, _D_, _L_}) The OIDs for all objects in the
-MIDX are stored in lexicographic order in this chunk.
+        • そのパックに含まれるオブジェクトを含む最初のビット位置(下記の
+          擬似パック順序(pseudo-pack order)で)。
 
-   Object Offsets (ID: {_O_, _O_, _F_, _F_}) Stores two 4-byte values
-for every object.  1: The pack-int-id for the pack storing this object.
-2: The offset within the pack.  If all offsets are less than 2^32, then
-the large offset chunk will not exist and offsets are stored as in IDX
-v1.  If there is at least one offset value larger than 232-1, then the
-large offset chunk must exist, and offsets larger than 2^31-1 must be
-stored in it instead.  If the large offset chunk exists and the 31st bit
-is on, then removing that bit reveals the row in the large offsets
-containing the 8-byte offset of this object.
+        • そのパックから選択されるオブジェクトのビット数。
 
-   [Optional] Object Large Offsets (ID: {_L_, _O_, _F_, _F_}) 8-byte
-offsets into large packfiles.
+OID Fanout (ID: {‘O’, ‘I’, ‘D’, ‘F’})
+     i番目のエントリF[i]は、最初のバイトが最大iのOIDの数を格納します。 し
+     たがって、F[255]はオブジェクトの総数を格納します。
 
-   [Optional] Bitmap pack order (ID: {_R_, _I_, _D_, _X_}) A list of
-MIDX positions (one per object in the MIDX, num_objects in total, each a
-4-byte unsigned integer in network byte order), sorted according to
-their relative bitmap/pseudo-pack positions.
+OID Lookup (ID: {‘O’, ‘I’, ‘D’, ‘L’})
+     MIDX内のすべてのオブジェクトのOIDは、このチャンクに辞書式順序
+     (lexicographic order)で格納されます。
 
-   TRAILER:
+Object Offsets (ID: {‘O’, ‘O’, ‘F’, ‘F’})
+     オブジェクトごとに2つの4バイト値を格納します。
 
-     Index checksum of the above contents.
+       1. このオブジェクトを格納するパックの pack-int-id。
+
+       2. パック内オフセット。 すべてのオフセットが 2^32 未満(less
+          than)の場合、 巨大オフセット・チャンク(large offset chunk)は存
+          在せず、 IDX v1 としてオフセットが格納されます。 232-1 を超え
+          る(larger than)オフセット値が少なくとも 1 つある場合、 巨大オ
+          フセット・チャンクが存在する必要があり、 2^31-1 を超えるオフセ
+          ットはそこに格納されなければなりません。 巨大オフセット・チャ
+          ンクが存在し、 31 番目のビットがオンの場合、 そのビットを削除
+          すると、 このオブジェクトの 8バイト・オフセットを含む、 巨大オ
+          フセット(large offsets)の行(row)位置が判ります。
+
+[オプション] Object Large Offsets (ID: {‘L’, ‘O’, ‘F’, ‘F’})
+     8-byte 大きなパックファイル(large packfiles)へのオフセット。
+
+[Optional] Bitmap pack order (ID: {‘R’, ‘I’, ‘D’, ‘X’})
+     MIDX 位置のリスト(MIDX 内のオブジェクトごとに 1 つ、 合計で
+     num_objects 個、 それぞれがネットワーク・バイト順で 4 バイトの符号
+     なし整数)で、相対的な ビットマップ/疑似パック 位置に従って並べ替え
+     られます。
+
+TRAILER:
+========
+
+   • 上記の内容のインデックスチェックサム。
 
 multi-pack-index reverse indexes
 ********************************
@@ -71208,60 +71222,63 @@ MIDXによって保存された)数値IDに基づいてパックの順序を定�
 BTMP chunk
 ==========
 
-The Bitmapped Packfiles (‘BTMP’) chunk encodes additional information
-about the objects in the multi-pack index’s reachability bitmap.  Recall
-that objects from the MIDX are arranged in "pseudo-pack" order (see
-above) for reachability bitmaps.
+ビットマップ付きパック・ファイル(‘BTMP’)チャンクは、 マルチパック・イン
+デックスの到達可能性ビットマップにおけるオブジェクトに関する追加情報をエ
+ンコードします。 MIDXのオブジェクトは、 到達可能性ビットマップのために「
+擬似パック」(pseudo-pack)順序(上記参照)で配置されていることを思い出して
+ください。
 
-   From the example above, suppose we have packs "a", "b", and "c", with
-10, 15, and 20 objects, respectively.  In pseudo-pack order, those would
-be arranged as follows:
+   上記の例にならって、 仮にパック「a」と「b」と「c」があり、 それぞれ
+10、 15、 20個のオブジェクトを持つとします。 擬似パック順序では、 それら
+は以下のように配置されます:
 
      |a,0|a,1|...|a,9|b,0|b,1|...|b,14|c,0|c,1|...|c,19|
 
-   When working with single-pack bitmaps (or, equivalently, multi-pack
-reachability bitmaps with a preferred pack), git-pack-objects(1)
-performs “verbatim” reuse, attempting to reuse chunks of the bitmapped
-or preferred packfile instead of adding objects to the packing list.
+   単一パック・ビットマップ(または、 優先パックを持つマルチパック到達可
+能性ビットマップと同等)を使用する場合、 git-pack-objects(1) は「そのまま
+の」(verbatim)再利用を行い、 ビットマップ付きまたは優先パックファイルの
+チャンクを再利用しようと試み、 パッキング・リストにオブジェクトを追加す
+る代わりにします。
 
-   When a chunk of bytes is reused from an existing pack, any objects
-contained therein do not need to be added to the packing list, saving
-memory and CPU time.  But a chunk from an existing packfile can only be
-reused when the following conditions are met:
+   既存のパックからバイトのチャンク(chunk of bytes)が再利用されると、 そ
+こに含まれるオブジェクトはパッキング・リストに追加する必要がないため、 メ
+モリとCPU時間を節約できます。 ただし、 既存のパック・ファイルからのチャ
+ンクは、 以下の条件が満たされた場合にのみ再利用できます:
 
-   • The chunk contains only objects which were requested by the caller
-     (i.e.  does not contain any objects which the caller didn’t ask for
-     explicitly or implicitly).
+   • チャンクには、 呼び出し元が要求したオブジェクトのみが含まれている
+     (つまり、 呼び出し元が明示的または暗黙的に要求してい無いオブジェク
+     トを含ま無い)。
 
-   • All objects stored in non-thin packs as offset- or reference-deltas
-     also include their base object in the resulting pack.
+   • 非・薄いパック(non-thin packs)にオフセット・デルタまたは参照デルタ
+     として格納されているすべてのオブジェクトは、 結果として得られるパッ
+     クにそのベース・オブジェクトを含めます。
 
-   The ‘BTMP’ chunk encodes the necessary information in order to
-implement multi-pack reuse over a set of packfiles as described above.
-Specifically, the ‘BTMP’ chunk encodes three pieces of information (all
-32-bit unsigned integers in network byte-order) for each packfile ‘p’
-that is stored in the MIDX, as follows:
+   ‘BTMP’ チャンクは、 上記のように一連のパック・ファイルに対してマルチ
+・パックの再利用を実装するために必要な情報をエンコードします。 具体的に
+は、‘BTMP’ チャンクは、 MIDXに格納されている各パック・ファイル ‘p’ に対
+して、 以下の3つの情報(すべてネットワーク・バイト・オーダーの32ビット符
+号なし整数)をエンコードします:
 
 ‘bitmap_pos’
-     The first bit position (in pseudo-pack order) in the multi-pack
-     index’s reachability bitmap occupied by an object from ‘p’.
+     マルチパック・インデックスの到達可能性ビットマップにおいて、 ‘p’ か
+     らのオブジェクトが占める最初のビット位置(擬似パック(pseudo-pack)順
+     序で)。
 
 ‘bitmap_nr’
-     The number of bit positions (including the one at ‘bitmap_pos’)
-     that encode objects from that pack ‘p’.
+     そのパック ‘p’ からのオブジェクトをエンコードするビット位置の数
+     (‘bitmap_pos’ の位置を含む)。
 
-   For example, the ‘BTMP’ chunk corresponding to the above example
-(with packs “a”, “b”, and “c”) would look like:
+   たとえば、 パック「a」と「b」と「c」がある、 上記の例に対応する
+‘BTMP’ チャンクは以下のようになります:
 
                ‘bitmap_pos’                  ‘bitmap_nr’
 packfile “a”   ‘0’                           ‘10’
 packfile “b”   ‘10’                          ‘15’
 packfile “c”   ‘25’                          ‘20’
 
-   With this information in place, we can treat each packfile as
-individually reusable in the same fashion as verbatim pack reuse is
-performed on individual packs prior to the implementation of the ‘BTMP’
-chunk.
+   この情報があれば、 各パック・ファイルを個別に再利用可能として扱うこと
+ができます。 これは、 ‘BTMP’ チャンクが実装される前に、 個々のパックに対
+して行われていたそのままの(verbatim)パック再利用と同じ方法です。
 
 cruft packs
 ***********
@@ -71357,7 +71374,7 @@ Alternatives
 
 この設計の注目すべき代替案は以下のとおりです:
 
-   • The location of the per-object mtime data.
+   • オブジェクトごとの mtime データの配置。
 
    mtime データの配置においては、 ‘.idx’ 形式の複雑化を避けるために、 パ
 ックに関連付けられた新しい補助ファイルが選択されました。 ‘.idx’ 形式がオ
@@ -71417,11 +71434,10 @@ git-config(1) 参照)。
 行には、 その行が前の行から継続していることを示すために、 SP が前に付け
 られます。
 
-   これは、もともとの空行にも当てはまります。 以下の例では、空白
-(whitespace)文字で終わる行末が ‘$’ 記号で強調表示されています。 これらの
-例を手作業で再現しようとしている場合は、 それらをカット・アンド・ペース
-トしないでください。 — これらは主に、行末の余分な空白を強調するために存
-在します。
+   これは、 元々の空行についても当てはまります。 以下の例では、 空白
+(whitespace)文字で終わる行の末尾を ‘$’ 記号で強調しています。 これらの例
+を手動で再現しようとする場合、 コピー＆ペーストしないでください。 これら
+は主に、 行末に余分な空白があることを強調するために存在しています。
 
    署名されたペイロードと署名の埋め込み方法は、オブジェクト応答タイプや
 取引に依存します。
@@ -72429,13 +72445,12 @@ $GIT_DIR/hooks/* (or 'git config core.hooksPath'/*)
 DESCRIPTION
 ***********
 
-フック(hook)は、フック・ディレクトリ(hooks directory)に配置して、gitの実
-行の特定の時点でアクションをトリガーできるプログラムです。実行可能ビット
-が設定されていないフックは無視されます。
+フック(hook)は、 フック・ディレクトリに配置して、 git の実行の特定の時点
+でアクションをトリガーできるプログラムです。 実行可能ビット(executable
+bit)が設定されていないフックは無視されます。
 
-   デフォルトでは、フック・ディレクトリ(hooks directory)は
-‘$GIT_DIR/hooks’ ですが、これは ‘core.hooksPath’ 構成変数を介して変更で
-きます(git-config(1) 参照)。
+   デフォルトでは、 フック・ディレクトリは ‘$GIT_DIR/hooks’ ですが、 こ
+れは ‘core.hooksPath’ 構成変数を介して変更できます(git-config(1) 参照)。
 
    Gitはフックを呼び出す前に、ベア・リポジトリでは作業ディレクトリを
 $GIT_DIRに変更し、非ベア・リポジトリでは作業ディレクトリを作業ツリーのル
@@ -72493,8 +72508,8 @@ pre-applypatch
    これがゼロ以外のステータスで終了する場合、パッチの適用後に作業ツリー
 はコミットされません。
 
-   It can be used to inspect the current working tree and refuse to make
-a commit if it does not pass certain tests.
+   現在の作業ツリーを検査し、 特定のテストに合格しない場合はコミットを拒
+否するために使用できます。
 
    デフォルトの ‘pre-applypatch’ フックが有効になっている場合に
 ‘pre-commit’ フックが有効になっている場合は、 ‘pre-commit’ フックが実行
@@ -72567,10 +72582,11 @@ commitオブジェクト名。
 
    終了ステータスがゼロ以外の場合、 ‘git commit’ は中止(abort)されます。
 
-   The purpose of the hook is to edit the message file in place, and it
-is not suppressed by the ‘--no-verify’ option.  A non-zero exit means a
-failure of the hook and aborts the commit.  It should not be used as a
-replacement for the pre-commit hook.
+   このフックの目的は、 メッセージ・ファイルを所定の位置で編集することで
+あり、 ‘--no-verify’ オプションによって抑制されることはありません。 ゼロ
+以外のステータスでの終了(exit)は、 フックの失敗を意味し、 コミットを中止
+(abort)します。 pre-commit フックの代わりとして使用すべきではありません
+。
 
    Gitに付属するサンプルの ‘prepare-commit-msg’ フックは、コミットテンプ
 レートのコメント部分にあるヘルプメッセージを削除します。
@@ -72613,19 +72629,19 @@ pre-rebase
 post-checkout
 =============
 
-このフックは、ワークツリーを更新した後に git-checkout(1) または
-git-switch(1) が実行されたときに呼び出されます。フックには、以前のHEADの
-ref、新しいHEADのref(変更されている場合と変更されていない場合があります
-)、およびチェックアウトがブランチチェックアウト(ブランチの変更、
-flag=1)あるいはファイルのチェックアウト(インデックスからファイルを取得、
-flag=0)のいずれかであるかどうかを示すフラグ、の3つのパラメーターが与えら
-れます。このフックは、フックの終了ステータスがこれら2つのコマンドの終了
-ステータスになることを除いて、 ‘git switch’ または ‘git checkout’ の結果
-に影響を与えることはできません。
+このフックは、 ワークツリーを更新した後に git-checkout(1) または
+git-switch(1) が実行されたときに呼び出されます。フックには、 以前の
+HEADの参照、 新しいHEADの参照(変更されている場合と変更されていない場合が
+あります)、 およびチェックアウトがブランチ・チェックアウト(ブランチの変
+更、 flag=1)あるいはファイルのチェックアウト(インデックスからファイルを
+取得、 flag=0)のいずれかであるかどうかを示すフラグ、 の3つのパラメーター
+が与えられます。 このフックは、 フックの終了(exit)ステータスがこれら2つ
+のコマンドの終了ステータスになることを除いて、 ‘git switch’ または ‘git
+checkout’ の結果に影響を与えることはできません。
 
    これは ‘--no-checkout’ (‘-n’)オプションが使用されていない限り、
 git-clone(1)の後でも実行されます。 フックに指定された最初のパラメーター
-は null-refで、2番目は新しいHEADのrefであり、フラグは常に1です。
+は null-refで、2番目は新しいHEADの参照であり、フラグは常に1です。
 ‘--no-checkout’ が使用されていない限り、 ‘git worktree add’ についても同
 様です。
 
@@ -72666,13 +72682,12 @@ pre-push
 
      refs/heads/master 67890 refs/heads/foreign 12345
 
-   although the full object name would be supplied.  If the foreign ref
-does not yet exist the ‘<remote-object-name>’ will be the all-zeroes
-object name.  If a ref is to be deleted, the ‘<local-ref>’ will be
-supplied as ‘(delete)’ and the ‘<local-object-name>’ will be the
-all-zeroes object name.  If the local commit was specified by something
-other than a name which could be expanded (such as ‘HEAD~’, or an object
-name) it will be supplied as it was originally given.
+   ただし、 完全なオブジェクト名が提供されます。 外部参照がまだ存在しな
+い場合、 ‘<remote-object-name>’ はすべてゼロのオブジェクト名になります。
+参照を削除する場合は、 ‘<local-ref>’ が ‘(delete)’ として提供され、
+‘<local-object-name>’ がすべてゼロのオブジェクト名になります。 ローカル
+・コミットが拡張可能な名前以外の名前(‘HEAD~’ やオブジェクト名など)で指定
+された場合は、 最初に指定されたとおりに提供されます。
 
    このフックがゼロ以外のステータスで終了した場合、 ‘git push’ は何もプ
 ッシュせずに中止(abort)します。プッシュが拒否された理由に関する情報は、
@@ -72681,24 +72696,24 @@ name) it will be supplied as it was originally given.
 pre-receive
 ===========
 
-このフックは、 ‘git push’ に反応し、リポジトリ内の参照を更新するときに、
-git-receive-pack(1) によって呼び出されます。リモートリポジトリのrefの更
-新を開始する直前に、pre-receiveフックが呼び出されます。その終了ステータ
-スによって、更新の成功または失敗が決まります。
+このフックは、 ‘git push’ に反応し、 リポジトリー内の参照を更新するとき
+に、 git-receive-pack(1) によって呼び出されます。 リモート・リポジトリー
+の参照の更新を開始する直前に、 pre-receive フックが呼び出されます。 その
+終了(exit)ステータスによって、 更新の成功または失敗が決まります。
 
-   このフックは、受信操作に対して1回実行されます。引数は必要ありませんが
-、更新される各refについて、標準入力で以下の形式の行を受け取ります:
+   このフックは、 受信操作に対して1回実行されます。 引数は必要ありません
+が、 更新される各参照について、 標準入力で以下の形式の行を受け取ります:
 
      <old-oid> SP <new-oid> SP <ref-name> LF
 
-   where ‘<old-oid>’ is the old object name stored in the ref,
-‘<new-oid>’ is the new object name to be stored in the ref and
-‘<ref-name>’ is the full name of the ref.  When creating a new ref,
-‘<old-oid>’ is the all-zeroes object name.
+   ここで、 ‘<old-oid>’ は、 参照に保存されている古いオブジェクト名です
+。 ‘<new-oid>’ は参照に格納される新しいオブジェクト名です。 ‘<ref-name>’
+は参照のフルネームです。 新しい参照を作成する場合、 ‘<old-oid>’ はすべて
+ゼロのオブジェクト名です。
 
-   フックがゼロ以外のステータスで終了した場合、どのrefも更新されません。
-フックがゼロで終了する場合でも、個々のrefの更新は‘update’ (*note
-update::)フックによって防ぐことができます。
+   フックがゼロ以外のステータスで終了(exit)した場合、 どの参照も更新され
+ません。 フックがゼロで終了する場合でも、 個々の参照の更新は‘update’
+(*note update::)フックによって防ぐことができます。
 
    標準出力と標準エラー出力の両方がもう一方の側の ‘git send-pack’ に転送
 (forward)されるため、ユーザーにメッセージを ‘echo’ するだけで済みます。
@@ -72717,33 +72732,33 @@ Environment」のセクションを参照してください。
 update
 ======
 
-このフックは、 ‘git push’ に反応し、リポジトリ内の参照を更新するときに、
-git-receive-pack(1) によって呼び出されます。リモートリポジトリのrefを更
-新する直前に、 update フックが呼び出されます。その終了ステータスによって
-、ref更新の成功または失敗が決まります。
+このフックは、 ‘git push’ に反応し、 リポジトリー内の参照を更新するとき
+に、 git-receive-pack(1) によって呼び出されます。 リモート・リポジトリー
+の参照を更新する直前に、 update フックが呼び出されます。 その終了
+(exit)ステータスによって、 参照更新の成功または失敗が決まります。
 
-   フックは、更新されるrefごとに1回実行され、以下の3つのパラメーターを取
-ります:
+   フックは、 更新される参照ごとに1回実行され、 以下の3つのパラメーター
+を取ります:
 
-   • 更新されるrefの名前
+   • 更新される参照の名前
 
-   • refに保存されている古いオブジェクト名
+   • 参照に保存されている古いオブジェクト名
 
-   • refに格納される新しいオブジェクト名
+   • 参照に格納される新しいオブジェクト名
 
-   更新フックがゼロステータスで終了すると、refを更新できます。ゼロ以外の
-ステータスで終了すると、 ‘git receive-pack’ はそのrefを更新できなくなり
-ます。
+   更新フックがゼロ・ステータスで終了(exit)すると、 参照を更新できます。
+ゼロ以外のステータスで終了すると、 ‘git receive-pack’ はその参照を更新で
+きなくなります。
 
-   このフックは、オブジェクト名が古いオブジェクト名で指定されたコミット
-オブジェクトの子孫であるコミットオブジェクトであることを確認することによ
-り、特定のrefでの「強制」更新を防ぐために使用できます。つまり、「早送り
-のみ」(fast-forward only)のポリシーを適用します。
+   このフックは、 オブジェクト名が古いオブジェクト名で指定されたコミット
+・オブジェクトの子孫であるコミット・オブジェクトであることを確認すること
+により、 特定の参照での「強制」更新を防ぐために使用できます。 つまり、 「
+早送りのみ」(fast-forward only)のポリシーを適用します。
 
-   また、 old..new ステータスをログに記録するために使用することもできま
-す。ただし、ブランチのセット全体を認識しているわけではないため、単純に使
-用すると、refごとに1つの電子メールが送信されることになります。そのために
-は‘post-receive’ (*note post-receive::)フックの方が適しています。
+   このフックは、 old..new の状態をログに記録するためにも使用できます。
+ただし、 ブランチの全体のセットを知らないため、 単純に使用すると参照ごと
+に1通のメールを送信することになります。 参照更新ごとに通知する目的には
+‘post-receive’ (*note post-receive::) フックの方がより適しています。
 
    ユーザーのアクセスをネットワーク経由のgitコマンドのみに制限する環境で
 は、このフックを使用して、ファイルシステムの所有権やグループメンバーシッ
@@ -72754,9 +72769,9 @@ git-receive-pack(1) によって呼び出されます。リモートリポジト
    標準出力と標準エラー出力の両方がもう一方の側の ‘git send-pack’ に転送
 (forward)されるため、ユーザーにメッセージを ‘echo’ するだけで済みます。
 
-   The default _update_ hook, when enabled—and with
-‘hooks.allowunannotated’ config option unset or set to false—prevents
-unannotated tags from being pushed.
+   デフォルトの _update_ フックが有効(かつ ‘hooks.allowunannotated’ 設定
+オプションが未設定または false に設定されている)の場合、 注釈なしのタグ
+がプッシュされるのを防ぎます。
 
 proc-receive
 ============
@@ -72821,20 +72836,21 @@ push)が使用されていない限り、送信したコマンドグループの
 post-receive
 ============
 
-This hook is invoked by git-receive-pack(1) when it reacts to ‘git push’
-and updates reference(s) in its repository.  The hook executes on the
-remote repository once after all the proposed ref updates are processed
-and if at least one ref is updated as the result.
+このフックは、 git-receive-pack(1) が ‘git push’ に対応し、 リポジトリー
+内の参照を更新する際に呼び出されます。 フックは、 リモート・リポジトリー
+上で、 提案されたすべての参照更新が処理された後、 かつ、 少なくとも1つの
+参照が更新された場合に一度だけ実行されます。
 
-   The hook takes no arguments.  It receives one line on standard input
-for each ref that is successfully updated following the same format as
-the _pre-receive_ (*note pre-receive::) hook.
+   このフックは引数を受け取りません。 標準入力から、 ‘pre-receive’
+(*note pre-receive::) フックと同じ形式で、 正常に更新された参照ごとに1行
+を受け取ります。
 
    このフックは、実際の作業が完了した後に呼び出されるため、 ‘git
 receive-pack’ の結果には影響しません。
 
-   これは、名前に加えてすべてのrefの古い値と新しい値の両方を取得するとい
-う点で、 ‘post-update’ (*note post-update::) フックに取って代わります。
+   これは、名前に加えてすべての参照の古い値と新しい値の両方を取得すると
+いう点で、 ‘post-update’ (*note post-update::) フックに取って代わります
+。
 
    標準出力と標準エラー出力の両方がもう一方の側の ‘git send-pack’ に転送
 (forward)されるため、ユーザーにメッセージを ‘echo’ するだけで済みます。
@@ -72851,18 +72867,18 @@ receive-pack’ の結果には影響しません。
 を選択したが、何も送信しない場合、カウント変数はゼロ、つまり
 ‘GIT_PUSH_OPTION_COUNT=0’ に設定されます。
 
-   See the "post-receive" section in git-receive-pack(1) for additional
-details.
+   詳細については git-receive-pack(1) の「post-receive」セクションを参照
+してください。
 
 post-update
 ===========
 
-このフックは、 ‘git push’ に反応し、リポジトリ内の参照を更新するときに、
-git-receive-pack(1) によって呼び出されます。すべてのrefが更新された後、
-リモートリポジトリで実行されます。
+このフックは、 ‘git push’ に反応し、 リポジトリー内の参照を更新するとき
+に、 git-receive-pack(1) によって呼び出されます。すべての参照が更新され
+た後、 リモート・リポジトリーで実行されます。
 
-   可変数のパラメーターを取ります。各パラメーターは、実際に更新された
-refの名前です。
+   可変数のパラメーターを取ります。 各パラメーターは、 実際に更新された
+参照の名前です。
 
    このフックは主に通知用であり、 ‘git receive-pack’ の結果に影響を与え
 ることはできません。
@@ -72885,10 +72901,10 @@ update-server-info’ を実行して、バカ転送(dumb transports)(例:HTTP)�
 reference-transaction
 =====================
 
-This hook is invoked by any Git command that performs reference updates.
-It executes whenever a reference transaction is prepared, committed or
-aborted and may thus get called multiple times.  The hook also supports
-symbolic reference updates.
+このフックは、 参照更新を行う任意の Git コマンドによって呼び出されます。
+参照取引(reference transaction)が準備またはコミットまたは中止(abort)され
+るたびに実行され、 したがって複数回呼び出される可能性があります。 このフ
+ックは、 シンボリック参照の更新もサポートします。
 
    フックは引数を1つだけ取りますが、これは指定された参照トランザクション
 の現在の状態です:
@@ -72907,16 +72923,17 @@ symbolic reference updates.
 
      <old-value> SP <new-value> SP <ref-name> LF
 
-   ここで、 ‘<old-value>’ は、参照トランザクションに渡された古いオブジェ
-クト名です。 ‘<new-value>’ はrefに格納される新しいオブジェクト名であり、
-‘<ref-name>’ はrefのフルネームです。現在の値に関係なく参照を強制的に更新
-する場合、または参照を新たに作成する場合は、 ‘<old-value>’ はすべてゼロ
-のオブジェクト名です。あなたは、これらのケースを区別するために、
-‘gitrev-parse’ を介して ‘<ref-name>’ の現在の値を調べることができます。
+   ここで、 ‘<old-value>’ は、参照取引(reference transaction)に渡された
+古いオブジェクト名です。 ‘<new-value>’ は参照に格納される新しいオブジェ
+クト名であり、 ‘<ref-name>’ は参照のフルネームです。 現在の値に関係なく
+参照を強制的に更新する場合、 または参照を新たに作成する場合は、
+‘<old-value>’ はすべてゼロのオブジェクト名です。 あなたは、 これらのケー
+スを区別するために、 ‘gitrev-parse’ を介して ‘<ref-name>’ の現在の値を調
+べることができます。
 
-   For symbolic reference updates the ‘<old_value>’ and ‘<new-value>’
-fields could denote references instead of objects.  A reference will be
-denoted with a _ref:_ prefix, like ‘ref:<ref-target>’.
+   シンボリック参照の更新の場合、 ‘<old_value>’ および ‘<new_value>’ フ
+ィールドはオブジェクトではなく参照を示すことがあります。 参照は
+‘ref:<ref-target>’ のように _ref:_ プレフィックスで表されます。
 
    フックの終了ステータスは、「prepared」(準備済み)状態を除くすべての状
 態で無視されます。「prepared」状態では、ゼロ以外の終了ステータスにより、
@@ -73194,13 +73211,13 @@ DESCRIPTION
      上位まで)にある ‘.gitignore’ ファイルから読み取られたパターン。ディ
      レクトリの上位レベルのファイルのパターンは、‘.gitignore’ ファイルを
      含むディレクトリまでディレクトリ下位レベルの ‘.gitignore’ ファイル
-     のパターンによって上書きされますこれらのパターンは、 ‘.gitignore’ フ
-     ァイルのあるディレクトリを基準にしてマッチします。 プロジェクトは通
-     常、リポジトリにそのような、プロジェクトビルドの部品として生成され
-     たファイルのパターンを含んだ ‘.gitignore’ ファイルを含みます。(訳注
-     :各サブディレクトリに .gigignore ファイルを含む事ができ、各ディレク
-     トリの .gitignore はその親ディレクトリまたはその上位ディレクトリの
-     .gitignore をオーバーライドする)
+     のパターンによって上書きされます。これらのパターンは、 ‘.gitignore’
+     ファイルのあるディレクトリを基準にしてマッチします。 プロジェクトは
+     通常、リポジトリにそのような、プロジェクトビルドの部品として生成さ
+     れたファイルのパターンを含んだ ‘.gitignore’ ファイルを含みます。(訳
+     注:各サブディレクトリに .gigignore ファイルを含む事ができ、各ディレ
+     クトリの .gitignore はその親ディレクトリまたはその上位ディレクトリ
+     の .gitignore をオーバーライドする)
 
    • パターンは ‘$GIT_DIR/info/exclude’ から読み取られます。
 
@@ -73225,7 +73242,7 @@ DESCRIPTION
      $XDG_CONFIG_HOME/git/ignore です。 $XDG_CONFIG_HOME が設定されてい
      ないか空の場合、代わりに $HOME/.config/git/ignore が使用されます。
 
-   ‘gitls-files’ や ‘git read-tree’ などの基盤となるGit配管コマンドツー
+   ‘git ls-files’ や ‘git read-tree’ などの基盤となるGit配管コマンドツー
 ルは、 コマンドラインオプションで指定された ‘gitignore’ パターンを読み取
 るか、 コマンドラインオプションで指定されたファイルから読み取ります。
 ‘git status’ や ‘git add’ などの高レベルのGitツールは、 上記で指定された
@@ -73238,10 +73255,10 @@ PATTERN FORMAT
      として使えます。
 
    • ‘#’ で始まる行はコメントとして機能します。 ‘#’ で始まるパターンの最
-     初の ‘#’ の前にはバックスラッシュ(「‘\’」)を置きます。
+     初の ‘#’ の前にはバックスラッシュ(‘\’)を置きます。
 
-   • 末尾の空白は、バックススラッシュ(‘\’)でクォートされていない限り無視
-     されます。
+   • 末尾の空白は、バックスラッシュ(‘\’)でクォートされていない限り無視さ
+     れます。
 
    • パターンを否定するオプションのプレフィックス ‘!’ 。以前のパターンで
      除外されたマッチするファイルは、再び含まれるようになります。そのフ
@@ -73252,9 +73269,9 @@ PATTERN FORMAT
      始まるパターンの場合は、最初の ‘!’ の前にバックスラッシュ(‘\’)を付
      けます(例: ‘\!important!.txt’)。
 
-   • The slash "‘/’" is used as the directory separator.  Separators may
-     occur at the beginning, middle or end of the ‘.gitignore’ search
-     pattern.
+   • スラッシュ ‘/’ はディレクトリ区切り文字として使用されます。区切り文
+     字は、 ‘.gitignore’ 検索パターンの最初、中間、または最後に発生する
+     可能性があります。
 
    • パターンの先頭または中間(あるいはその両方)に区切り文字がある場合、
      パターンは特定の ‘.gitignore’ ファイル自体のディレクトリレベルに関
@@ -73274,8 +73291,8 @@ PATTERN FORMAT
    • アスタリスク(‘*’)はスラッシュ(‘/’)以外のものと一致します。文字 ‘?’
      は、 ‘/’ 以外の任意の1文字と一致します。 範囲表記、例えば
      ‘[a-zA-Z]’ は、範囲内の文字の1つと一致させるために使用できます。詳
-     細については、 fnmatch3）および FNM_PATHNAME フラグを参照してくださ
-     い。
+     細については、 fnmatch(3）および FNM_PATHNAME フラグを参照してくだ
+     さい。
 
    フルパス名と一致するパターンの、2つの連続するアスタリスク(‘**’)は、以
 下の特別な意味を持つ場合があります:
@@ -73339,10 +73356,10 @@ EXAMPLES
      でも同じ効果があります。つまり、パターンの中間にスラッシュ(‘/’)があ
      る場合、先頭のスラッシュは関係ありません。
 
-   • The pattern ‘foo/*’, matches ‘foo/test.json’ (a regular file),
-     ‘foo/bar’ (a directory), but it does not match ‘foo/bar/hello.c’ (a
-     regular file), as the asterisk in the pattern does not match
-     ‘bar/hello.c’ which has a slash in it.
+   • パターン ‘foo/*’ は、 ‘foo/test.json’ (通常のファイル) や ‘foo/bar’
+     (ディレクトリ)とマッチしますが、パターンのアスタリスク(‘*’)がスラッ
+     シュ(‘/’)を含む ‘bar/hello.c’ とマッチしないため、
+     ‘foo/bar/hello.c’ (通常のファイル)とは一致しません。
 
          $ git status
          [...]
@@ -73430,8 +73447,8 @@ OPTIONS
 て導入される変更の表示方法を制御します。最後に、いくつかのgitk固有のオプ
 ションをサポートします。
 
-   gitk generally only understands options with arguments in the _stuck_
-form (see gitcli(7)) due to limitations in the command-line parser.
+   gitkは通常、 コマンドライン・パーサーの制限により、 串刺し形式(stuck
+form)の引数を持つオプションのみを理解します(linkgit: gitcli[7] 参照)。
 
 rev-list options and arguments
 ==============================
@@ -73441,54 +73458,48 @@ rev-list options and arguments
 。
 
 ‘--all’
-     Show all refs (branches, tags, etc.).
+     全ての参照(ブランチ、タグ、等)を表示します。
 
 ‘--branches[=<pattern>]’
 ‘--tags[=<pattern>]’
 ‘--remotes[=<pattern>]’
-     Pretend as if all the branches (tags, remote branches, resp.)  are
-     listed on the command line as _<commit>_.  If _<pattern>_ is given,
-     limit refs to ones matching given shell glob.  If pattern lacks
-     _?_, _*_, or _[_, _/*_ at the end is implied.
 
 ‘--since=<date>’
-     Show commits more recent than a specific date.
+     指定の日付よりも新しいコミットを表示します。
 
 ‘--until=<date>’
-     Show commits older than a specific date.
+     指定の日付より古いコミットを表示します。
 
 ‘--date-order’
-     Sort commits by date when possible.
+     可能な場合は、コミットを日付順で並べ替えます。
 
 ‘--merge’
-     After an attempt to merge stops with conflicts, show the commits on
-     the history between two branches (i.e.  the HEAD and the
-     MERGE_HEAD) that modify the conflicted files and do not exist on
-     all the heads being merged.
+     マージの試みが競合で停止した後、競合するファイルを変更し、マージさ
+     れるすべてのヘッドに存在しない2つのブランチ間(つまり、HEADと
+     MERGE_HEAD)の履歴のコミットを表示します。
 
 ‘--left-right’
-     Mark which side of a symmetric difference a commit is reachable
-     from.  Commits from the left side are prefixed with a ‘<’ symbol
-     and those from the right with a ‘>’ symbol.
+     対称差のどちら側からコミットに到達できるかをマークします。左側から
+     のコミットには ‘<’ 記号が接頭辞として付けられ、右側からのコミットに
+     は ‘>’ 記号が付けられます。
 
 ‘--full-history’
-     When filtering history with _<path>…_, does not prune some history.
-     (See "History simplification" in git-log(1) for a more detailed
-     explanation.)
+     ‘<path>...’ で履歴をフィルタリングする場合、一部の履歴は削除されま
+     せん。(詳細な説明については、 git-log(1) の「History
+     simplification」を参照してください。)
 
 ‘--simplify-merges’
-     Additional option to ‘--full-history’ to remove some needless
-     merges from the resulting history, as there are no selected commits
-     contributing to this merge.  (See "History simplification" in
-     git-log(1) for a more detailed explanation.)
+     ‘--full-history’ への追加オプションで、このマージに寄与する選択され
+     たコミットがないため、結果の履歴からいくつかの不要なマージを削除し
+     ます。(詳細な説明については、 git-log(1) の「History
+     simplification」を参照してください。)
 
 ‘--ancestry-path’
-     When given a range of commits to display (e.g.  _commit1..commit2_
-     or _commit2 ^commit1_), only display commits that exist directly on
-     the ancestry chain between the _commit1_ and _commit2_, i.e.
-     commits that are both descendants of _commit1_, and ancestors of
-     _commit2_.  (See "History simplification" in git-log(1) for a more
-     detailed explanation.)
+     表示するコミットの範囲が指定されている(例: ‘commit1..commit2’ また
+     は ‘commit2 {caret}commit1’)場合、 commit1とcommit2の間の祖先チェー
+     ンに直接存在するコミット、つまりcommit1の子孫であり、commit2の祖先
+     でもあるコミットのみを表示します。(詳細な説明については、 linkgit：
+     git-log[1] の「History simplification」を参照してください。)
 
 ‘-L<start>,<end>:<file>’
 ‘-L:<funcname>:<file>’
@@ -73550,15 +73561,15 @@ gitk-specific options
 =====================
 
 ‘--argscmd=<command>’
-     Command to be run each time gitk has to determine the revision
-     range to show.  The command is expected to print on its standard
-     output a list of additional revisions to be shown, one per line.
-     Use this instead of explicitly specifying a _<revision-range>_ if
-     the set of commits to show may vary between refreshes.
+     gitk が表示するリビジョン範囲を決定する必要があるたびに実行されるコ
+     マンド。 このコマンドは、 標準出力に、 表示される追加のリビジョンの
+     リストを1行に1つずつ出力することが期待されています。 表示するコミッ
+     トのセットが更新ごとに異なる可能性がある場合は、 <revision-range> を
+     明示的に指定する代わりにこれを使用してください。
 
 ‘--select-commit=<ref>’
-     Select the specified commit after loading the graph.  Default
-     behavior is equivalent to specifying _-select-commit=HEAD_.
+     グラフを読み込んだ後、指定したコミットを選択します。デフォルトの動
+     作は、 ‘-select-commit=HEAD’ を指定するのと同じです。
 
 Examples
 ********
@@ -73567,11 +73578,11 @@ gitk v2.6.12.. include/scsi drivers/scsi
      バージョン「v2.6.12」以降の変更で、include/scsiまたはdrivers/scsiサ
      ブディレクトリ内で変更されたファイルを表示する
 
-gitk -since="2 weeks ago" - gitk
+‘gitk --since="2 weeks ago" -- gitk’
      ファイル ‘gitk’ について過去2週間の変更を表示します。 ‘--’ は、ブラ
      ンチ名 ‘gitk’ と混同されるのを避けるために必要です。
 
-gitk -max-count=100 -all - Makefile
+‘gitk --max-count=100 --all -- Makefile’
      ファイル ‘Makefile’ に加えられた最大100個の変更を表示します。現在の
      ブランチの変更だけを探すのではなく、すべてのブランチを調べます。
 
@@ -73746,7 +73757,7 @@ File: gitman.info,  Node: gitmodules,  Up: Top
 Name
 ****
 
-gitmodules — サブモジュールプロパティの定義
+gitmodules — サブモジュール・プロパティの定義
 
 Synopsis
 ********
@@ -73767,8 +73778,8 @@ submodule add’ の ‘--name’ プションでカスタマイズされてい�
 
 submodule.<name>.path
      サブモジュールがチェックアウトされると予想される、Git作業ツリーの最
-     上位ディレクトリを基準にしたパスを定義します。 パス名は'/' で終わら
-     せてはいけません。 すべてのサブモジュールパスは、 ‘.gitmodules’ フ
+     上位ディレクトリを基準にしたパスを定義します。 パス名は ‘/’ で終わ
+     らせてはいけません。 すべてのサブモジュールパスは、 ‘.gitmodules’ フ
      ァイル内で一意である必要があります。
 
 submodule.<name>.url
@@ -73780,13 +73791,14 @@ submodule.<name>.url
    さらに、いくつかのオプションのキーがあります:
 
 submodule.<name>.update
-     Defines the default update procedure for the named submodule, i.e.
-     how the submodule is updated by the ‘git submodule update’ command
-     in the superproject.  This is only used by ‘git submodule init’ to
-     initialize the configuration variable of the same name.  Allowed
-     values here are _checkout_, _rebase_, _merge_ or _none_, but not
-     _!command_ (for security reasons).  See the description of the
-     _update_ command in git-submodule(1) for more details.
+     名前付きサブモジュールのデフォルトの更新手順を定義します。 つまり、
+     スーパープロジェクトで ‘git submodule update’ コマンドによってサブ
+     モジュールがどのように更新されるかを指定します。 この設定は、 ‘git
+     submodule init’ によって同名の構成変数を初期化する際にのみ使用され
+     ます。 許可される値は ‘checkout’ または ‘rebase’ または ‘merge’ ま
+     たは ‘none’ です。 しかし、 セキュリティ上の理由から ‘!command’ は
+     使用できません。 詳細については、 git-submodule(1) の _update_ コマ
+     ンドの説明を参照してください。
 
 submodule.<name>.branch
      上流サブモジュールの更新を追跡するためのリモートブランチ名。このオ
@@ -73809,23 +73821,23 @@ submodule.<name>.ignore
      更済みとして表示するかを定義します。指定できるのは以下の値です:
 
      all
-          The submodule will never be considered modified (but will
-          nonetheless show up in the output of status and commit when it
-          has been staged).
+          サブモジュールは変更されたものと見なされることは決してありませ
+          ん(それでも、 ステータスの出力に表示され、 ステージングされた
+          ときはコミットします)。
 
      dirty
-          All changes to the submodule’s work tree will be ignored, only
-          committed differences between the ‘HEAD’ of the submodule and
-          its recorded state in the superproject are taken into account.
+          サブモジュールのワークツリーに対するすべての変更は無視され、 サ
+          ブモジュールの ‘HEAD’ とスーパープロジェクトに記録された状態と
+          の間のコミットされた差分のみが考慮されます。
 
      untracked
-          Only untracked files in submodules will be ignored.  Committed
-          differences and modifications to tracked files will show up.
+          サブモジュール内の非追跡ファイルのみが無視されます。 コミット
+          された差分および追跡中のファイルへの変更は表示されます。
 
      none
-          No modifications to submodules are ignored, all of committed
-          differences, and modifications to tracked and untracked files
-          are shown.  This is the default option.
+          サブモジュールの変更は一切無視されず、 かつ、 コミットされた差
+          分や、 追跡中のファイルおよび非追跡のファイルへの変更すべてが
+          表示されます。 これがデフォルトのオプションです。
 
      このオプションがスーパープロジェクトの ‘.git/config’ のサブモジュー
      ルのエントリにも存在する場合、そこでの設定は ‘.gitmodules’ にある設
@@ -73894,41 +73906,42 @@ Synopsis
 DESCRIPTION
 ***********
 
-Gitは、単一のリポジトリのrefを複数の名前空間に分割することをサポートして
-います。各名前空間には、独自のブランチ、タグ、およびHEADがあります。
-Gitは、オブジェクトストアを共有し、すべてのrefを git-gc(1) などの操作に
-公開しながら、プル元とプッシュ先の独立したリポジトリとして各名前空間を公
-開できます。
+Git は、単一のリポジトリーの参照を複数の名前空間に分割することをサポート
+しています。 各名前空間には、 独自のブランチやタグや HEAD があります。
+Git は、 オブジェクト・ストアを共有し、 すべての参照を git-gc(1) などの
+操作に公開しながら、 プル元とプッシュ先が独立したリポジトリーとして各名
+前空間を公開できます。
 
-   複数のリポジトリを単一のリポジトリの名前空間として保存すると、同じソ
-ースの複数のブランチを保存する場合など、同じオブジェクトの重複コピーを保
-存することを回避できます。代替メカニズムは、重複を回避するための同様のサ
-ポートを提供しますが、名前空間が行うのに対し、代替は、継続的なメンテナン
-スなしでリポジトリに追加された新しいオブジェクト間の重複を防止しません。
+   複数のリポジトリーを単一のリポジトリーの名前空間として保存すると、同
+じソースの複数のブランチを保存する場合など、同じオブジェクトの重複コピー
+を保存することを回避できます。代替メカニズム(alternates mechanism)は、重
+複を回避するための同様のサポートを提供しますが、名前空間が行うのに対し、
+代替は、継続的なメンテナンスなしでリポジトリーに追加された新しいオブジェ
+クト間の重複を防止しません。
 
    名前空間を指定するには、 ‘GIT_NAMESPACE’ 環境変数に名前空間を設定しま
-す。 ref名前空間ごとに、Gitは対応するrefを ‘refs/namespaces/’ の下のディ
-レクトリに保存します。 たとえば、 ‘GIT_NAMESPACE=foo’ はrefを
+す。 参照名前空間ごとに、 Git は対応する参照を ‘refs/namespaces/’ の下の
+ディレクトリに保存します。 たとえば、 ‘GIT_NAMESPACE=foo’ は参照を
 ‘refs/namespaces/foo/’ の下に保存します。 git(1) の ‘--namespace’ オプシ
 ョンを使用して名前空間を指定することもできます。
 
-   注意: ‘/’ を含む名前空間は、名前空間の階層に拡張されることに注意して
-ください。たとえば、 ‘GIT_NAMESPACE=foo/bar’ はrefを
+   注意: ‘/’ を含む名前空間は、 名前空間の階層に拡張されることに注意して
+ください。 たとえば、 ‘GIT_NAMESPACE=foo/bar’ は参照を
 ‘refs/namespaces/foo/refs/namespaces/bar/’ の下に保存します。 これにより
 、 ‘GIT_NAMESPACE’ のパスが階層的に動作するため、
 ‘GIT_NAMESPACE=foo/bar’ でクローンを作成すると、 ‘GIT_NAMESPACE=foo’ で
-クローンを作成してそのリポジトリから ‘GIT_NAMESPACE=bar’ でクローンを作
-成するのと同じ結果が得られます。また、 ‘foo/refs/heads/’ などの奇妙な名
-前空間パスとのあいまいさを回避します。そうしないと、 ‘refs’ ディレクトリ
-内で ディレクトリ/ファイル の競合が発生する可能性があります。
+クローンを作成してそのリポジトリーから ‘GIT_NAMESPACE=bar’ でクローンを
+作成するのと同じ結果が得られます。また、 ‘foo/refs/heads/’ などの奇妙な
+名前空間パスとのあいまいさを回避します。そうしないと、 ‘refs’ ディレクト
+リ内で ディレクトリ/ファイル の競合が発生する可能性があります。
 
    git-upload-pack(1) と git-receive-pack(1) は、 ‘GIT_NAMESPACE’ で指定
-されているようにrefの名前を書き換えます。 git-upload-pack と
-git-receive-pack は、指定された名前空間外のすべてのrefを無視します。
+されているように参照の名前を書き換えます。 git-upload-pack と
+git-receive-pack は、指定された名前空間外のすべての参照を無視します。
 
    スマートHTTPサーバー git-http-backend(1) は、 GIT_NAMESPACE をバック
-エンドプログラムに渡します。リポジトリの名前空間をリポジトリとして公開す
-るための設定例については、 git-http-backend(1) を参照してください。
+エンドプログラムに渡します。リポジトリーの名前空間をリポジトリーとして公
+開するための設定例については、 git-http-backend(1) を参照してください。
 
    簡単なローカルテストには、あなたは git-remote-ext(1) を使用できます:
 
@@ -74295,10 +74308,11 @@ DESCRIPTION
 します。 クライアントは、サーバーがサポートしているとは言っていない機能
 を要求してはいけません。
 
-   Server MUST diagnose and abort if capabilities it does not understand
-were sent.  Server MUST NOT ignore capabilities that client requested
-and server advertised.  As a consequence of these rules, server MUST NOT
-advertise capabilities it does not understand.
+   サーバーは送信された機能について診断し、理解できない機能が送信された
+場合、中止(abort)しなければなりません。サーバーは、クライアントが要求し
+、かつ、サーバーが宣伝(advertise)した機能の実行を無視してはなりません。
+これらのルールの結果として、サーバーは理解できない機能を宣伝してはなりま
+せん。
 
    atomic 機能と report-status 機能と report-status-v2 機能と
 delete-refs 機能と quiet 機能と push-cert 機能が送信され、 receive-pack
@@ -74324,40 +74338,40 @@ multi_ack
 アントが「完了」と言うまで、他のブランチをたどってそれらのラインを送信す
 る必要がある場合があります。
 
-   Without multi_ack, a client sends have lines in -date-order until the
-server has found a common base.  That means the client will send have
-lines that are already known by the server to be common, because they
-overlap in time with another branch on which the server hasn’t found a
-common base yet.
+   multi_ack が無い場合、 クライアントはサーバーが共通のベースを見つける
+まで、 ‘--date-order’ で have 行を送信します。 これは、 クライアントがサ
+ーバーにとってすでに共通であるとわかっている have 行を送信することを意味
+します。 なぜなら、 サーバーがまだ共通のベースを見つけていない別のブラン
+チの have 行を送信と時間的に重なっているためです。
 
    たとえば、以下の図のように、クライアントにはサーバーにない大文字で表
 されるのコミットがあり、サーバーにはクライアントにはない小文字で表される
 コミットがあるとします:
 
             +---- u ---------------------- x
-     /              +----- y
-     /              /
-     a -- b -- c -- d -- E -- F
-     \
+           /              +----- y
+          /              /
+         a -- b -- c -- d -- E -- F
+            \
              +--- Q -- R -- S
 
-   クライアントが x,y を必要としていて、最初に have F,S と言って開始した
-場合、サーバーは F,S が何であるかを知りません。 最終的に、クライアントは
-「have d」と言い、サーバーは「ACK d continue」を送信して、クライアントに
-そのラインをたどるのをやめるように通知します（したがって、c-b-a を送信し
-ないでください）が、しかし、まだ完了していないため、x のベースが必要です
-。 クライアントは、a に到達するまで S-R-Q を続行し、到達した時点でサーバ
-ーは明確なベースを持ち、すべてが終了します。
+   クライアントが x と y を求め、 最初に『have F,S』を送信した場合、 サ
+ーバーは F と S が何かを知りません。 その後、 クライアントが『have d』を
+送信すると、 サーバーは『ACK d continue』を送信して、 クライアントにその
+ラインを進むのを止めるよう伝えます(つまり、 c-b-aを送信しないでください
+、と伝える)。 しかし、 まだ完了していません。 サーバーは x のベースを必
+要とします。 クライアントは S-R-Q を続け、 a に到達するまで進みます。 こ
+の時点でサーバーは明確なベースを得て、 すべてが終了します。
 
-   multi_ackがなければ、クライアントは S-R-Q を差し挟んで、いずれにせよ
-c-b-a チェーンを送信していたでしょう。
+   multi_ack がなければ、 クライアントは S-R-Q と交互に c-b-a のチェーン
+を送信していたでしょう。
 
 multi_ack_detailed
 ******************
 
-This is an extension of multi_ack that permits the client to better
-understand the server’s in-memory state.  See gitprotocol-pack(5),
-section "Packfile Negotiation" for more information.
+これは、クライアントがサーバーのメモリ内状態をよりよく理解できるようにす
+る multi_ack の拡張です。 詳細については、 gitprotocol-pack(5) の「
+Packfile Negotiation」セクションを参照してください。
 
 no-done
 *******
@@ -74400,9 +74414,8 @@ thin-pack」を宣伝(advertise)します。 クライアントは、それを�
 side-band, side-band-64k
 ************************
 
-This capability means that the server can send, and the client can
-understand, multiplexed progress reports and error info interleaved with
-the packfile itself.
+この機能により、 サーバーはパック・ファイル自体にプログレス・レポートや
+エラー情報を多重化して送信でき、 クライアントはそれらを理解できます。
 
    これら 2 つのオプションは相互に排他的です。 最新のクライアントは、常
 に「side-band-64k」を好みます。
@@ -74419,24 +74432,26 @@ the packfile itself.
      2 - 進行メッセージ
      3 - ストリームが中止(abort)される直前の致命的なエラーメッセージ
 
-   「side-band-64k」機能は、古いクライアントとの下位互換性を維持しながら
-、実際にはほぼいっぱいに詰め込まれたパケットを要求するために、はるかに大
-きなパケットを処理できる新しいクライアントの方法として生まれました。
+   「side-band-64k」機能は、 より新しいクライアントがはるかに大きなパケ
+ットを処理できるように、 ほぼ一杯に詰め込まれたパケットを要求する方法と
+して導入され、古いクライアントとの後方互換性を維持します。
 
    さらに、 side-band とその最大 1000 バイトのメッセージを使用すると、実
 際には 999 バイトのペイロードと 1 バイトのストリームコードになります。
 side-band-64k を使用すると、同じ取引で、最大 65519 バイトのデータと 1 バ
 イトのストリームコードで使用できます。
 
-   The client MUST send only one of "side-band" and "side- band-64k".
-The server MUST diagnose it as an error if client requests both.
+   クライアントは『side-band』と『side-band-64k』のいずれか一方のみを送
+信しなければなりません。 クライアントが両方を要求した場合、 サーバーはこ
+れをエラーとして診断しなければなりません。
 
 ofs-delta
 *********
 
-The server can send, and the client can understand, PACKv2 with delta
-referring to its base by position in pack rather than by an obj-id.
-That is, they can send/read OBJ_OFS_DELTA (aka type 6) in a packfile.
+サーバーは、 PACKv2 を送信でき、 クライアントはそれを理解できます。 この
+PACKv2 では、 デルタがベースをオブジェクトIDではなくパック内の位置で参照
+します。 つまり、 パック・ファイル内で OBJ_OFS_DELTA(別名タイプ6)を 送信
+/読み取り できます。
 
 agent
 *****
@@ -74455,10 +74470,10 @@ git/1.8.3.1」など) の形式になります。 エージェント文字列は
 object-format
 *************
 
-ハッシュアルゴリズムを引数として取るこの機能は、サーバーが特定のハッシュ
-アルゴリズムをサポートしていることを示します。 複数回送信される場合があ
-ります。 その場合、最初に指定されたものは、ref 広告(ref advertisement)で
-使用されたものです。
+ハッシュ・アルゴリズムを引数として取るこの機能は、 サーバーが特定のハッ
+シュ・アルゴリズムをサポートしていることを示します。 複数回送信される場
+合があります。 その場合、 最初に指定されたものは、 参照広告(ref
+advertisement)で使用されたものです。
 
    クライアントによって提供された場合、これは、クライアントが指定のハッ
 シュアルゴリズムを使用して通信することを意図していることを示します。 提
@@ -74470,11 +74485,11 @@ SHA-1 だけであると見なされます。
 symref
 ******
 
-このパラメーター化された機能は、どのシンボリック ref がどの ref を指して
-いるかを受信者に通知するために使用されます。 たとえば、
-‘symref=HEAD:refs/heads/master’ は、HEAD が master を指していることをレ
-シーバーに伝えます。 この機能を繰り返して、複数の symref を表すことがで
-きます。
+このパラメーター化された機能は、どのシンボリック参照がどの参照を指してい
+るかを受信者に通知するために使用されます。 たとえば、
+‘symref=HEAD:refs/heads/master’ は、HEAD が master を指していることを受
+信側に伝えます。 この機能を繰り返して、 複数の symref を表すことができま
+す。
 
    HEAD symref が送信される参照の 1 つである場合、サーバーはこの機能を
 HEAD symref に含めるべきです。
@@ -74511,17 +74526,17 @@ deepen-relative
 ***************
 
 この機能がクライアントによって要求された場合、「deepen」コマンドのセマン
-ティクスが変更されます。 「深さ」引数は、リモートrefからの深さではなく、
-現在の浅い境界からの深さです。
+ティクスが変更されます。 「深さ」引数は、リモート参照からの深さではなく
+、 現在の浅い境界(current shallow boundary)からの深さです。
 
 no-progress
 ***********
 
-The client was started with "git clone -q" or something similar, and
-doesn’t want that side band 2.  Basically the client just says "I do not
-wish to receive stream 2 on sideband, so do not send it to me, and if
-you did, I will drop it on the floor anyway".  However, the sideband
-channel 3 is still used for error responses.
+クライアントは『git clone -q』またはそれに類するコマンドで開始されており
+、 サイドバンド2 を受け取りたくありません。 基本的に、 クライアントは『
+私はサイドバンドのストリーム2を受け取りたくないので、 送信しないでくださ
+い。 もし送信されても、 私はそれを無視します』と言っています。 ただし、
+サイドバンド・チャネル3はエラーレスポンスのために引き続き使用されます。
 
 include-tag
 ***********
@@ -74539,8 +74554,8 @@ include-tag を要求するかどうかの決定は、サーバーが ‘refs/ta
 間でオブジェクトを宣伝したかどうかに関係なく、タグデータに対するクライア
 ントの要求にのみ関係があります。
 
-   Servers MUST pack the tags if their referent is packed and the client
-has requested include-tags.
+   サーバーは、 参照先(referrant)がパックされており、 クライアントが
+include-tags を要求している場合、 タグをパックしなければなりません。
 
    クライアントは、サーバーが include-tag を無視し、パック内のタグを実際
 に送信していない場合に備えなければなりません。 そのような場合、クライア
@@ -74593,10 +74608,10 @@ receive-pack サーバーが「quiet」機能を宣伝する場合、受信し�
 atomic
 ******
 
-サーバーが「atomic」機能を送信すると、アトミック プッシュを受け入れるこ
-とができます。 プッシュするクライアントがこの機能を要求すると、サーバー
-はたった 1 つのアトミック取引(atomic transaction)でrefを更新します。 す
-べてのrefが更新されるか、まったく更新されません。
+サーバーが「atomic」機能を送信すると、 アトミック・プッシュを受け入れる
+ことができます。 プッシュするクライアントがこの機能を要求すると、 サーバ
+ーはたった 1 つのアトミック取引(atomic transaction)で参照を更新します。
+すべての参照が更新されるか、 あるいは全く更新されないか、 です。
 
 push-options
 ************
@@ -74676,8 +74691,9 @@ Synopsis
 DESCRIPTION
 ***********
 
-This document defines things common to various over-the-wire protocols
-and file formats used in Git.
+このドキュメントでは、 Git で使用されるさまざまなネットワークを介したプ
+ロトコル(over-the-wire protocols)やファイル形式に共通するものを定義して
+います。
 
 ABNF Notation
 *************
@@ -74694,7 +74710,7 @@ ABNF Notation
        obj-id    =  40*(HEXDIGIT)
 
        refname  =  "HEAD"
-       refname /=  "refs/" <see discussion below>
+       refname /=  "refs/" <下記参照>
 
    refnameは、 "refs/" で始まり、 ‘git-check-ref-format’ コマンドの検証
 ルールに違反していない階層的な8ビット文字列(octet string)です。より具体
@@ -74742,8 +74758,8 @@ LFが含まれているかどうかに関係なく同じように処理する必
 存在する場合はそれを取り除き、欠落している場合は文句を言いません)。
 
    pkt-lineのデータコンポーネントの最大長は65516バイトです。実装は、長さ
-が65520(65516バイトのペイロード+4バイトの長さデータ)を超えるpkt-lineの送
-信は禁止でです。
+が65520(65516バイトのペイロード+長さデータ用の4バイト)を超えるpkt-lineの
+送信は禁止でです。
 
    実装は空のpkt-line("0004")を送信すべきではありません。
 
@@ -74815,7 +74831,7 @@ HTTP によってアクセスされる Git リポジトリの URL は、RFC 1738
 プロトコルの両方が、ユーザーが指定した ‘$GIT_URL’ 文字列の末尾に追加のパ
 スコンポーネントを追加することによって動作するためです。
 
-   An example of a dumb client requesting a loose object:
+   ルーズ・オブジェクトをリクエストするバカ(dumb)クライアントの例:
 
      $GIT_URL:     http://example.com:8080/git/repo.git
      URL request:  http://example.com:8080/git/repo.git/objects/d0/49f6c27a2244e12041955e262a404c7faba355
@@ -74958,10 +74974,10 @@ charset=utf-8’ であるべきですが、任意の Content-Type である場�
    応答クライアントを調べる場合、HTTP ステータス コードのみを調べる必要
 があります。 有効な応答は、 ‘200 OK’ または ‘304 Not Modified’ です。
 
-   返されるコンテンツは、各refとその既知の値を記述した UNIX 形式のテキス
-トファイルです。 ファイルは、C ロケールの順序に従って名前でソートする必
-要があります。 ファイルには、 ‘HEAD’ という名前のデフォルトrefを含めるべ
-きではありません。
+   返されるコンテンツは、各参照とその既知の値を記述した UNIX 形式のテキ
+ストファイルです。 ファイルは、C ロケールの順序に従って名前でソートする
+必要があります。 ファイルには、 ‘HEAD’ という名前のデフォルト参照を含め
+るべきではありません。
 
      info_refs   =  *( ref_record )
      ref_record  =  any_ref / peeled_ref
@@ -75012,7 +75028,7 @@ info/refs ファイルに対してパラメーター化された要求を行う�
 gitprotocol-pack(5) 参照) を、 Git-Protocol HTTP ヘッダーでコロンで区切
 られた文字列として送信できます。
 
-   '-http-backend-info-refs@ オプションを git-upload-pack(1) に使用しま
+   ‘--http-backend-info-refs’ オプションを git-upload-pack(1) に使用しま
 す。
 
 Dumb Server Response
@@ -75065,10 +75081,10 @@ Smart Server Response
    サーバーは、魔法の ‘0000’ pkt-line 終了マーカー(the magic ‘0000’ end
 pkt-line marker)で応答を終了する必要があります。
 
-   返される応答は、各refとその既知の値を説明する pkt-line ストリームです
-。 ストリームは、C ロケールの順序に従って名前でソートする必要があります
-。 ストリームには、最初のrefとして ‘HEAD’ という名前のデフォルトref照を
-含める必要があります。 ストリームは、最初のrefの NUL の後ろに機能宣言
+   返される応答は、各参照とその既知の値を説明する pkt-line ストリームで
+す。 ストリームは、C ロケールの順序に従って名前でソートする必要がありま
+す。 ストリームには、最初の参照として ‘HEAD’ という名前のデフォルト参照
+を含める必要があります。 ストリームは、最初の参照の NUL の後ろに機能宣言
 (capability declarations)を含める必要があります。
 
    "version=1" が 追加パラメータ(Extra Parameter) として送信された場合、
@@ -75101,7 +75117,7 @@ Smart Service git-upload-pack
 このサービスは、 ‘$GIT_URL’ が指すリポジトリから読み込みます。
 
    クライアントは、最初に ‘$GIT_URL/info/refs?service=git-upload-pack’ を
-使用して ref 検出を実行しなければなりません。
+使用して 参照 検出を実行しなければなりません。
 
      C: POST $GIT_URL/git-upload-pack HTTP/1.0
      C: Content-Type: application/x-git-upload-pack-request
@@ -75126,8 +75142,8 @@ Smart Service git-upload-pack
    クライアントは、リクエスト本文で少なくとも 1 つの ‘want’ コマンドを送
 信する必要があります。 サーバーが機能 ‘allow-tip-sha1-in-want’ または
 ‘allow-reachable-sha1-in-want’ を宣伝(advertise)しない限り、クライアント
-は ‘want’ コマンドで ref 検出によって取得された応答に表示されなかった ID
-を参照してはいけません。
+は ‘want’ コマンドで 参照 検出によって取得された応答に表示されなかった
+ID を参照してはいけません。
 
      compute_request   =  want_list
                           have_list
@@ -75150,25 +75166,25 @@ The Negotiation Algorithm
 最小パックを選択するための計算は以下のように行われます(C = クライアント
 、S = サーバー):
 
-   ‘初期化ステップ:’
+   初期化ステップ:
 
-   C: 広告されたref(advertised refs)を取得するためにref検出を使用します
-。
+   C: 広告された参照(advertised refs)を取得するために参照検出を使用しま
+す。
 
    C: 検出したオブジェクトを ‘advertised’ セットに配置します。
 
    C: 後で両端にあると判断されるかもしれないオブジェクトを保持するために
 、 空のセット ‘common’ を作成します。
 
-   C: Build a set, ‘want’, of the objects from ‘advertised’ that the
-client wants to fetch, based on what it saw during ref discovery.
+   C: 参照発見中にクライアントが見た内容に基づいて、 クライアントが取得
+したい ‘advertised’ からのオブジェクトのセット ‘want’ を構築する。
 
    C: コミット時間順に並べられたキュー ‘c_pending’ を開始(最新のものを最
-初に取り出す(pop))。 すべてのクライアントrefを追加します。 コミットがキ
+初に取り出す(pop))。 すべてのクライアント参照を追加します。 コミットがキ
 ューから取り出される(pop)と、その親が自動的に挿入し直されます(SHOULD)。
 コミットがキューに入るのはは一度だけでなければなりません。
 
-   ‘1回分の計算ステップ:’
+   1回分の計算ステップ:
 
    C: ‘$GIT_URL/git-upload-pack’ リクエストを1つ送信します:
 
@@ -75203,8 +75219,9 @@ client wants to fetch, based on what it saw during ref discovery.
 能 (デフォルト SHA-1) によってネゴシエートされたオブジェクトフォーマット
 を使用して与える必要があります。
 
-   The ‘have’ list is created by popping the first 32 commits from
-‘c_pending’.  Fewer can be supplied if ‘c_pending’ empties.
+   ‘have’ リストは、 ‘c_pending’ から最初の32のコミットを取り出して
+(pop)作成されます。 ‘c_pending’ が空の場合、 それより少ない数が提供され
+ることがあります。
 
    クライアントが 256 の ‘have’ コミットを送信し、 ‘s_common’ からそれら
 の 1 つをまだ受信していない場合、またはクライアントが ‘c_pending’ を空に
@@ -75215,7 +75232,7 @@ client wants to fetch, based on what it saw during ref discovery.
 
    S: git-upload-pack リクエストをパースする:
 
-   ‘want’ 内のすべてのオブジェクトがrefから直に到達可能であることを確認
+   ‘want’ 内のすべてのオブジェクトが参照から直に到達可能であることを確認
 (verify)します。
 
    サーバーは、履歴または reflog をさかのぼって、気持ち古いリクエストを
@@ -75233,9 +75250,9 @@ client wants to fetch, based on what it saw during ref discovery.
 
    クライアントから提供された順序でオブジェクトをループします。
 
-   各オブジェクトについて、サーバーに ref から到達可能なオブジェクトがあ
-る場合は、それを ‘s_common’ に追加します。 コミットが s_common に追加さ
-れた場合、祖先が have に含まれていても追加しないでください。
+   各オブジェクトについて、サーバーに 参照 から到達可能なオブジェクトが
+ある場合は、それを ‘s_common’ に追加します。 コミットが s_common に追加
+された場合、祖先が have に含まれていても追加しないでください。
 
    S: git-upload-pack 応答を送信:
 
@@ -75257,7 +75274,9 @@ side-band-64k プロトコルであり、パックはストリーム 1 に埋め
    サーバーがさらに情報を必要とする場合、サーバーは status continue 応答
 で応答します: TODO: パック以外の応答を文書化する
 
-   C: Parse the upload-pack response: TODO: Document parsing response
+   • C: upload-pack 応答をパース:
+
+     TODO: 文書パース応答
 
    ‘次の回の計算ステップを実行します。’
 
@@ -75267,7 +75286,7 @@ Smart Service git-receive-pack
 このサービスは、 ‘$GIT_URL’ が指すリポジトリから読み込みます。
 
    クライアントは、最初に ‘$GIT_URL/info/refs?service=git-receive-pack’
-を使用して ref 検出を実行する必要があります。
+を使用して 参照 検出を実行する必要があります。
 
      C: POST $GIT_URL/git-receive-pack HTTP/1.0
      C: Content-Type: application/x-git-receive-pack-request
@@ -75289,8 +75308,8 @@ Smart Service git-receive-pack
    サーバーは、ここで定義されたすべての機能をサポートすべきです。
 
    クライアントは、リクエスト本文で少なくとも 1 つのコマンドを送信する必
-要があります。 リクエストボディのコマンド部分内で、クライアントは、ref 検
-出を通じて取得した ID を old_id として送信する必要があります。
+要があります。 リクエストボディのコマンド部分内で、クライアントは、参照
+検出を通じて取得した ID を old_id として送信する必要があります。
 
      update_request  =  command_list
                         "PACK" <binary-data>
@@ -81976,30 +81995,30 @@ Ref: Bloom Filter Data [ID; {B; D; A; T}] [Optional]3760193
 Ref: Base Graphs List [ID; {B; A; S; E}] [Optional]3762516
 Node: gitformat-index3763781
 Node: gitformat-pack3786920
-Node: gitformat-signature3826392
-Node: gitglossary3836035
-Node: githooks3884303
-Node: gitignore3924908
-Node: gitk3937457
-Node: gitmailmap3946834
-Node: gitmodules3951647
-Node: gitnamespaces3958100
-Node: gitpacking3963911
-Node: gitprotocol-capabilities3980842
-Node: gitprotocol-common4002213
-Node: gitprotocol-http4006423
-Node: gitprotocol-pack4032530
-Node: gitprotocol-v24070055
-Node: gitremote-helpers4114633
-Node: gitrepository-layout4145866
-Node: gitrevisions4167769
-Node: gitsubmodules4192651
-Node: gittutorial-24207204
-Node: gittutorial4224521
-Node: gitweb.conf4250535
-Node: gitweb4306916
-Node: gitworkflows4340462
-Node: scalar4363300
+Node: gitformat-signature3829461
+Node: gitglossary3839083
+Node: githooks3887351
+Node: gitignore3928972
+Node: gitk3941687
+Node: gitmailmap3951488
+Node: gitmodules3956301
+Node: gitnamespaces3963314
+Node: gitpacking3969203
+Node: gitprotocol-capabilities3986134
+Node: gitprotocol-common4008591
+Node: gitprotocol-http4012908
+Node: gitprotocol-pack4039238
+Node: gitprotocol-v24076763
+Node: gitremote-helpers4121341
+Node: gitrepository-layout4152574
+Node: gitrevisions4174477
+Node: gitsubmodules4199359
+Node: gittutorial-24213912
+Node: gittutorial4231229
+Node: gitweb.conf4257243
+Node: gitweb4313624
+Node: gitworkflows4347170
+Node: scalar4370008
 
 End Tag Table
 

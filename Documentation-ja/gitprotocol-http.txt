@@ -31,7 +31,7 @@ HTTP によってアクセスされる Git リポジトリの URL は、RFC 1738
 
 サーバーは、`$GIT_URL` に一致する場所へのすべてのリクエストを処理するべきです。 これは、Git で使用される「スマート」および「バカ」(dumb) HTTP プロトコルの両方が、ユーザーが指定した `$GIT_URL` 文字列の末尾に追加のパスコンポーネントを追加することによって動作するためです。
 
-An example of a dumb client requesting a loose object:
+ルーズ・オブジェクトをリクエストするバカ(dumb)クライアントの例:
 
   $GIT_URL:     http://example.com:8080/git/repo.git
   URL request:  http://example.com:8080/git/repo.git/objects/d0/49f6c27a2244e12041955e262a404c7faba355
@@ -128,7 +128,7 @@ Cache-Control および/または Expires ヘッダーがキャッシュを許�
 
 応答クライアントを調べる場合、HTTP ステータス コードのみを調べる必要があります。 有効な応答は、 `200 OK` または `304 Not Modified` です。
 
-返されるコンテンツは、各refとその既知の値を記述した UNIX 形式のテキストファイルです。 ファイルは、C ロケールの順序に従って名前でソートする必要があります。 ファイルには、 `HEAD` という名前のデフォルトrefを含めるべきではありません。
+返されるコンテンツは、各参照とその既知の値を記述した UNIX 形式のテキストファイルです。 ファイルは、C ロケールの順序に従って名前でソートする必要があります。 ファイルには、 `HEAD` という名前のデフォルト参照を含めるべきではありません。
 
   info_refs   =  *( ref_record )
   ref_record  =  any_ref / peeled_ref
@@ -171,7 +171,7 @@ Cache-Control および/または Expires ヘッダーがキャッシュを許�
 
 クライアントは、 追加パラメーター(Extra Parameters; linkgit:gitprotocol-pack[5] 参照) を、 Git-Protocol HTTP ヘッダーでコロンで区切られた文字列として送信できます。
 
-`--http-backend-info-refs@ オプションを linkgit:git-upload-pack[1] に使用します。
+`--http-backend-info-refs` オプションを linkgit:git-upload-pack[1] に使用します。
 
 ==== Dumb Server Response
 
@@ -199,7 +199,7 @@ Content-Type は `application/x-$servicename-advertisement` でなければな�
 
 サーバーは、魔法の `0000` pkt-line 終了マーカー(the magic `0000` end pkt-line marker)で応答を終了する必要があります。
 
-返される応答は、各refとその既知の値を説明する pkt-line ストリームです。 ストリームは、C ロケールの順序に従って名前でソートする必要があります。 ストリームには、最初のrefとして `HEAD` という名前のデフォルトref照を含める必要があります。 ストリームは、最初のrefの NUL の後ろに機能宣言(capability declarations)を含める必要があります。
+返される応答は、各参照とその既知の値を説明する pkt-line ストリームです。 ストリームは、C ロケールの順序に従って名前でソートする必要があります。 ストリームには、最初の参照として `HEAD` という名前のデフォルト参照を含める必要があります。 ストリームは、最初の参照の NUL の後ろに機能宣言(capability declarations)を含める必要があります。
 
 "version=1" が 追加パラメータ(Extra Parameter) として送信された場合、返される応答には "version 1" が含まれます。
 
@@ -229,7 +229,7 @@ Content-Type は `application/x-$servicename-advertisement` でなければな�
 
 このサービスは、 `$GIT_URL` が指すリポジトリから読み込みます。
 
-クライアントは、最初に `$GIT_URL/info/refs?service=git-upload-pack` を使用して ref 検出を実行しなければなりません。
+クライアントは、最初に `$GIT_URL/info/refs?service=git-upload-pack` を使用して 参照 検出を実行しなければなりません。
 
    C: POST $GIT_URL/git-upload-pack HTTP/1.0
    C: Content-Type: application/x-git-upload-pack-request
@@ -249,7 +249,7 @@ Content-Type は `application/x-$servicename-advertisement` でなければな�
 
 サーバーは、ここで定義されたすべての機能をサポートすべきです。
 
-クライアントは、リクエスト本文で少なくとも 1 つの `want` コマンドを送信する必要があります。 サーバーが機能 `allow-tip-sha1-in-want` または `allow-reachable-sha1-in-want` を宣伝(advertise)しない限り、クライアントは `want` コマンドで ref 検出によって取得された応答に表示されなかった ID を参照してはいけません。
+クライアントは、リクエスト本文で少なくとも 1 つの `want` コマンドを送信する必要があります。 サーバーが機能 `allow-tip-sha1-in-want` または `allow-reachable-sha1-in-want` を宣伝(advertise)しない限り、クライアントは `want` コマンドで 参照 検出によって取得された応答に表示されなかった ID を参照してはいけません。
 
   compute_request   =  want_list
 		       have_list
@@ -270,24 +270,24 @@ TODO: 更に文書化する
 
 最小パックを選択するための計算は以下のように行われます(C = クライアント、S = サーバー):
 
-`初期化ステップ:`
+初期化ステップ:
 
-C: 広告されたref(advertised refs)を取得するためにref検出を使用します。
+C: 広告された参照(advertised refs)を取得するために参照検出を使用します。
 
 C: 検出したオブジェクトを `advertised` セットに配置します。
 
 C: 後で両端にあると判断されるかもしれないオブジェクトを保持するために、
    空のセット `common` を作成します。
 
-C: Build a set, `want`, of the objects from `advertised` that the client
-   wants to fetch, based on what it saw during ref discovery.
+C: 参照発見中にクライアントが見た内容に基づいて、
+   クライアントが取得したい `advertised` からのオブジェクトのセット `want` を構築する。
 
 C: コミット時間順に並べられたキュー `c_pending` を開始(最新のものを最初に取り出す(pop))。
-   すべてのクライアントrefを追加します。
+   すべてのクライアント参照を追加します。
    コミットがキューから取り出される(pop)と、その親が自動的に挿入し直されます(SHOULD)。
    コミットがキューに入るのはは一度だけでなければなりません。
 
-`1回分の計算ステップ:`
+1回分の計算ステップ:
 
 C: `$GIT_URL/git-upload-pack` リクエストを1つ送信します:
 
@@ -313,7 +313,7 @@ C: `$GIT_URL/git-upload-pack` リクエストを1つ送信します:
 
 単一の `want` または `have` コマンドは、その値として 1 つの 16 進形式のオブジェクト名を持たなければなりません。 複数のオブジェクト名は複数のコマンドを送信する必要があります。 オブジェクト名は、 `object-format` 機能 (デフォルト SHA-1) によってネゴシエートされたオブジェクトフォーマットを使用して与える必要があります。
 
-The `have` list is created by popping the first 32 commits from `c_pending`. Fewer can be supplied if `c_pending` empties.
+`have` リストは、 `c_pending` から最初の32のコミットを取り出して(pop)作成されます。 `c_pending` が空の場合、 それより少ない数が提供されることがあります。
 
 クライアントが 256 の `have` コミットを送信し、 `s_common` からそれらの 1 つをまだ受信していない場合、またはクライアントが `c_pending` を空にした場合、サーバーに続行しないことを知らせる `done` コマンドを含める必要があります:
 
@@ -321,7 +321,7 @@ The `have` list is created by popping the first 32 commits from `c_pending`. Few
 
 S: git-upload-pack リクエストをパースする:
 
-`want` 内のすべてのオブジェクトがrefから直に到達可能であることを確認(verify)します。
+`want` 内のすべてのオブジェクトが参照から直に到達可能であることを確認(verify)します。
 
 サーバーは、履歴または reflog をさかのぼって、気持ち古いリクエストを許可する場合があります。
 
@@ -335,7 +335,7 @@ S: git-upload-pack リクエストをパースする:
 
 クライアントから提供された順序でオブジェクトをループします。
 
-各オブジェクトについて、サーバーに ref から到達可能なオブジェクトがある場合は、それを `s_common` に追加します。 コミットが s_common に追加された場合、祖先が have に含まれていても追加しないでください。
+各オブジェクトについて、サーバーに 参照 から到達可能なオブジェクトがある場合は、それを `s_common` に追加します。 コミットが s_common に追加された場合、祖先が have に含まれていても追加しないでください。
 
 S: git-upload-pack 応答を送信:
 
@@ -349,8 +349,9 @@ S: git-upload-pack 応答を送信:
 
 サーバーがさらに情報を必要とする場合、サーバーは status continue 応答で応答します: TODO: パック以外の応答を文書化する
 
-C: Parse the upload-pack response:
-   TODO: Document parsing response
+- C: upload-pack 応答をパース:
++
+TODO: 文書パース応答
 
 `次の回の計算ステップを実行します。`
 
@@ -359,7 +360,7 @@ C: Parse the upload-pack response:
 
 このサービスは、 `$GIT_URL` が指すリポジトリから読み込みます。
 
-クライアントは、最初に `$GIT_URL/info/refs?service=git-receive-pack` を使用して ref 検出を実行する必要があります。
+クライアントは、最初に `$GIT_URL/info/refs?service=git-receive-pack` を使用して 参照 検出を実行する必要があります。
 
    C: POST $GIT_URL/git-receive-pack HTTP/1.0
    C: Content-Type: application/x-git-receive-pack-request
@@ -378,7 +379,7 @@ C: Parse the upload-pack response:
 
 サーバーは、ここで定義されたすべての機能をサポートすべきです。
 
-クライアントは、リクエスト本文で少なくとも 1 つのコマンドを送信する必要があります。 リクエストボディのコマンド部分内で、クライアントは、ref 検出を通じて取得した ID を old_id として送信する必要があります。
+クライアントは、リクエスト本文で少なくとも 1 つのコマンドを送信する必要があります。 リクエストボディのコマンド部分内で、クライアントは、参照 検出を通じて取得した ID を old_id として送信する必要があります。
 
   update_request  =  command_list
 		     "PACK" <binary-data>
