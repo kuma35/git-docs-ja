@@ -18,18 +18,18 @@ DESCRIPTION
   * 複数のサービス名の代わりに、単一のサービスで複数のコマンドがサポートされます
   * 機能(capability)がプロトコルの独自のセクションに移動され、NULバイトの後ろに隠されたり、pkt行のサイズによって制限されたりすることがないため、簡単に拡張できます。
   * NULバイトの後ろに隠されている他の情報を分離します(たとえば、機能(capability)としてのエージェント文字列とsymrefsは `ls-refs` を使用して要求できます)
-  * 明示的に要求されない限り、 reference advertisement は省略されます
-  * 一部のrefを明示的に要求する ls-refs コマンド
+  * 明示的に要求されない限り、 参照広告(reference advertisement)は省略されます
+  * 一部の参照を明示的に要求する ls-refs コマンド
   * http と stateless-rpc を念頭に置いて設計されています。明確なフラッシュセマンティクス(flush semantics)を使用すると、httpリモートヘルパーは単にプロキシとして機能できます
 
-In protocol v2 communication is command oriented. When first contacting a server a list of capabilities will be advertised. Some of these capabilities will be commands which a client can request be executed. Once a command has completed, a client can reuse the connection and request that other commands be executed.
+プロトコルv2では、 通信はコマンド指向です。 サーバーに最初に連絡するときに、 機能(capability)のリストが広告(advertise)されます。 これらの機能の一部は、 クライアントが実行を要求(request)できるコマンドになります。 コマンドが完了すると、 クライアントは接続を再利用して、 他のコマンドの実行を要求できます。
 
 Packet-Line Framing
 -------------------
 
 すべての通信は、v1と同様に、パケットラインフレーミングを使用して行われます。 詳細については、 linkgit:gitprotocol-pack[5] と linkgit:gitprotocol-common[5] を参照してください。
 
-プロトコルv2では、これらの特別なパケットの意味は以下のとおりです:
+プロトコルv2での、 特別なパケットの意味は以下のとおりです:
 
   * `0000` フラッシュパケット (flush-pkt) - メッセージの終わりを示します
   * `0001` 区切りパケット (delim-pkt) - メッセージのセクションを区切ります
@@ -38,24 +38,24 @@ Packet-Line Framing
 Initial Client Request
 ----------------------
 
-一般に、クライアントは、使用されているトランスポートのそれぞれのサイドチャネルを介して `version=2` を送信することにより、プロトコルv2を話すように要求できます。これにより、必然的に `GIT_PROTOCOL` が定されます。詳細については linkgit:gitprotocol-pack[5] や linkgit:gitprotocol-http[5] と、 `git.txt` の `GIT_PROTOCOL` 定義を参照してください。すべての場合において、サーバーからの応答は機能広告(capability advertisement)です。
+一般に、クライアントは、 使用されている転送(transport)のそれぞれのサイドチャネルを介して `version=2` を送信することにより、 プロトコルv2を話すように要求できます。これにより、必然的に `GIT_PROTOCOL` が設定されます。 詳細については linkgit:gitprotocol-pack[5] や linkgit:gitprotocol-http[5] と、 `git.txt` の `GIT_PROTOCOL` 定義を参照してください。 すべての場合において、 サーバーからの応答は機能広告(capability advertisement)です。
 
 Git Transport
 ~~~~~~~~~~~~~
 
-git:// 輸送を使用する場合、追加のパラメーターとして "version=2" を送信することにより、プロトコルv2の使用を要求できます:
+git:// 転送(transport)を使用する場合、 追加のパラメーターとして "version=2" を送信することにより、 プロトコルv2の使用を要求できます:
 
    003egit-upload-pack /project.git\0host=myserver.com\0\0version=2\0
 
 SSH and File Transport
 ~~~~~~~~~~~~~~~~~~~~~~
 
-ssh:// 輸送 または file:// 輸送 のどちらかを使用する場合、GIT_PROTOCOL環境変数を明示的に設定して「version=2」を含める必要があります。この環境変数が渡されるようにサーバーを構成する必要がある場合があります。
+ssh:// 転送または file:// 転送のどちらかを使用する場合、 GIT_PROTOCOL 環境変数を明示的に設定して `version=2` を含める必要があります。 この環境変数が渡されるようにサーバーを構成する必要がある場合があります。
 
 HTTP Transport
 ~~~~~~~~~~~~~~
 
-http:// 輸送または https:// 輸送を使用する場合、 クライアントは linkgit:gitprotocol-http[5] で説明されているように「smart」な info/refs リクエストを作成し、 `Git-Protocol` ヘッダー内で「version=2」を指定してv2を使用するように要求します。
+http:// 転送または https:// 転送を使用する場合、 クライアントは linkgit:gitprotocol-http[5] で説明されているように「smart」な info/refs リクエストを作成し、 `Git-Protocol` ヘッダー内で「version=2」を指定してv2を使用するように要求します。
 
    C: GET $GIT_URL/info/refs?service=git-upload-pack HTTP/1.0
    C: Git-Protocol: version=2
@@ -109,7 +109,7 @@ Command Request
     command-specific-argsは、個々のコマンドによって定義される
     パケットラインフレームの引数です。
 
-次に、サーバーは、クライアントの要求が、広告された有効な機能だけでなく、有効なコマンドで構成されていることを確認します。リクエストが有効な場合、サーバーはコマンドを実行します。 サーバーは、応答を発行する前に、クライアントの要求全体を受信するまで待機する必要があります。応答の形式は実行中のコマンドによって決まりますが、すべての場合で、flush-pktは応答の終了を示します。
+次に、 サーバーは、 クライアントの要求が、 広告された有効な機能だけでなく、 有効なコマンドで構成されていることを確認します。 要求が有効な場合、 サーバーはコマンドを実行します。 サーバーは、 応答を発行する前に、 クライアントの要求全体を受信するまで待機する必要があります。 応答の形式は実行中のコマンドによって決まりますが、 すべての場合で、 flush-pkt は応答の終了を示します。
 
 コマンドが終了し、クライアントがサーバーからの応答全体を受信すると、クライアントは別のコマンドの実行を要求するか、接続を終了することができます。 クライアントは、オプションで、flush-pktのみで構成される空の要求を送信して、これ以上要求が行われないことを示すことができます。
 
@@ -123,19 +123,19 @@ Capabilities(機能)
 agent
 ~~~~~
 
-サーバーは、値 `X` (`agent=X` 形式)を使用して `agent` 機能を広告ズし、サーバーがバージョン `X` を実行していることをクライアントに通知できます。クライアントは、サーバーへの要求に値 `Y` (`agent=Y` 形式)を持つ `agent` 機能を含めることにより、オプションで独自のエージェント文字列を送信できます(ただし、サーバーがagent機能を広告しなかった場合は、クライアントから送信してはいけません(MUST NOT))。`X` および `Y` 文字列には、スペースを除く任意の印刷可能なASCII文字(つまり、バイト範囲32 < x <127)を含めることができ、通常は「パッケージ/バージョン」(例: 「git/1.8.3.1」形式です)。エージェント文字列は、統計およびデバッグの目的で純粋に情報を提供するものであり、特定の機能の有無をプログラムで想定するために使用してはいけません(MUST NOT)。
+サーバーは、値 `X` (`agent=X` 形式)を使用して `agent` 機能を広告し、 サーバーがバージョン `X` を実行していることをクライアントに通知できます。 クライアントは、 サーバーへの要求に値 `Y` (`agent=Y` 形式)を持つ `agent` 機能を含めることにより、 オプションで独自のエージェント文字列を送信できます(ただし、 サーバーが agent 機能を広告しなかった場合は、 クライアントから送信してはいけません(MUST NOT))。 `X` および `Y` 文字列には、 空白を除く任意の印刷可能なASCII文字(つまり、 バイト範囲32 < x <127)を含めることができ、 通常は「パッケージ/バージョン」(例: 「git/1.8.3.1」形式です)です。 エージェント文字列は、 統計およびデバッグの目的で純粋に情報を提供するものであり、 特定の機能の有無をプログラムで想定するために使用してはいけません(MUST NOT)。
 
 ls-refs
 ~~~~~~~
 
 `ls-refs` は、v2で参照広告を要求するために使用されるコマンドです。現在の参照広告とは異なり、ls-refsは、サーバーから送信される参照を制限するために使用できる引数を取ります。
 
-Additional features not supported in the base command will be advertised as the value of the command in the capability advertisement in the form of a space separated list of features: "<command>=<feature-1> <feature-2>"
+基本コマンドでサポートされていない追加の機能は、 機能広告のコマンドの値として、 スペースで区切られた機能のリストの形式で広告されます: "<command>=<feature-1> <feature-2>"
 
 ls-refsは以下の引数を取ります:
 
     symrefs::
-	それが指すオブジェクトに加えて、シンボリックrefを表示するときに、それが指す基になるrefを表示します。
+	それが指すオブジェクトに加えて、シンボリック参照を表示するときに、それが指す基になる参照を表示します。
 
     peel::
 	剥いたタグ(peeled tags)を表示します。
@@ -161,9 +161,9 @@ ls-refsの出力は以下のとおりです:
 fetch
 ~~~~~
 
-`fetch` は、v2でパックファイルをフェッチするために使用されるコマンドです。 これは、v1 fetch の修正バージョンと見なすことができ、(`ls-refs` コマンドがその役割を果たしているため、)ref-advertisementが削除され、メッセージ形式が調整されて冗長性が排除され、将来の拡張機能を簡単に追加できるようになっています。
+`fetch` は、v2でパックファイルをフェッチするために使用されるコマンドです。 これは、v1 fetch の修正バージョンと見なすことができ、(`ls-refs` コマンドがその役割を果たしているため、)参照広告(ref-advertisement)が削除され、メッセージ形式が調整されて冗長性が排除され、将来の拡張機能を簡単に追加できるようになっています。
 
-Additional features not supported in the base command will be advertised as the value of the command in the capability advertisement in the form of a space separated list of features: "<command>=<feature-1> <feature-2>"
+基本コマンドでサポートされていない追加の機能は、 機能広告のコマンドの値として、 スペースで区切られた機能のリストの形式で広告されます: "<command>=<feature-1> <feature-2>"
 
 `fetch` リクエストは、以下の引数を取ることができます:
 
@@ -213,14 +213,14 @@ Additional features not supported in the base command will be advertised as the 
 「ref-in-want」機能が広告される場合、以下で説明するように、以下の引数をクライアントの要求に含めることができ、サーバーの応答に「wanted-refs」セクションを追加する可能性があります。
 
     want-ref <ref>::
-	Indicates to the server that the client wants to retrieve a particular ref, where <ref> is the full name of a ref on the server. It is a protocol error to send want-ref for the same ref more than once.
+	クライアントが特定の参照を取得したいとサーバーに通知します。 ここで、 <ref> はサーバー上の参照のフルネームです。 同一参照のために Want-Ref を複数回送信するとプロトコル・エラーになります。
 
 `sideband-all` 機能が広告される場合、以下の引数をクライアントの要求に含めることができます:
 
     sideband-all::
 	packfileセクションだけでなく、応答全体を多重化して送信するようにサーバーに指示します。(packfileセクションだけでなく、)応答内のすべての非フラッシュ(non-flush)および non-delim PKT-LINEは、そのサイドバンド(1または2または3)を示すバイトで始まります。サーバーは、キープアライブパケットとして「0005\2」（ペイロードのないサイドバンド2のPKT-LINE)を送信する場合があります。
 
-If the 'packfile-uris' feature is advertised, the following argument can be included in the client's request as well as the potential addition of the 'packfile-uris' section in the server's response as explained below. Note that at most one `packfile-uris` line can be sent to the server.
+「packfile-uris」機能が広告される場合、 以下で説明するように、 以下の引数をクライアントの要求に含めることができ、 サーバーの応答に「packfile-uris」セクションを追加する可能性があります。 注意: サーバーに送信可能な「Packfile-uris」行は 1 行だけであることに注意してください。
 
     packfile-uris <comma-separated-list-of-protocols>::
 	クライアントが、送信されたパックファイル内のオブジェクトの代わりに、指定されたプロトコルのいずれかのURIを受信する用意があることをサーバーに提示します。 接続チェックを実行する前に、クライアントは指定されたすべてのURIからダウンロードする必要があります。 現在、サポートされているプロトコルは「http」と「https」です。
@@ -288,7 +288,7 @@ If the 'packfile-uris' feature is advertised, the following argument can be incl
 	* サーバーは、クライアントが要求の一部としてshallowを指示していないものに対して、「unshallow」行を送信しては「いけません」。
 
     wanted-refs section::
-	* このセクションは、クライアントが「want-ref」行を使用してrefを要求し、packfileセクションも応答に含まれている場合にのみ含まれます。
+	* このセクションは、クライアントが「want-ref」行を使用して参照を要求し、packfileセクションも応答に含まれている場合にのみ含まれます。
 
 	* 常にセクションヘッダー「wanted-refs」で始まります。
 
@@ -385,7 +385,7 @@ DISCUSSION of bundle-uri
 
 新しいクローンやフェッチを、 最近生成された *.bundle ファイルの先端(tips)に対して、より予測可能で一般的なネゴシエーションを行うようにする。 サーバーは、新しいプッシュが来ると `uploadpack.packObjectsHook` のために、そのようなネゴシエーションの結果を事前に生成するかもしれません。
 
-サーバーがこれらのバンドルを利用する方法の一つは、新しいクローンが既知のバンドルをダウンロードし、その後にそのバンドルにある ref 先端(tips) を使ってリポジトリの現在の状態に追いつくことをサーバーが予測することである。
+サーバーがこれらのバンドルを利用する方法の一つは、新しいクローンが既知のバンドルをダウンロードし、その後にそのバンドルにある 参照 先端(tips) を使ってリポジトリの現在の状態に追いつくことをサーバーが予測することである。
 
 PROTOCOL for bundle-uri
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -407,7 +407,7 @@ URI CONTENTS::
 広告された URI には、 `git config --list` が受け入れられるプレーンテキスト・ファイルが含まれる場合もあります(`--file` オプションを使用)。このリストのキーと値のペアは、 `bundle.*` 名前空間内にあります (linkgit:git-config[1] 参照)。
 
 bundle-uri CLIENT ERROR RECOVERY::
-そのエラーが、 バンドルURIの欠落やデータの誤りによるものであれ、クライアントがバンドルヘッダとその前提関係を理解せず解析しきれないほど間抜けであるためであれ、あるいは他の何かによるものであれ、クライアントは何よりもまず、エラーに対してすなおに縮退しなければなりません(MUST)。
+そのエラーが、 バンドルURIの欠落やデータの誤りによるものであれ、クライアントがバンドルヘッダとその前提関係を理解せず解析しきれないほど間抜けであるためであれ、あるいは他の何かによるものであれ、クライアントは何よりもまず、素直に機能縮退しなければなりません(MUST)。
 +
 サーバー管理者は、「bundle-uri」機能をオンにすることで、例えばCDNがダウンした場合でも、クローンやフェッチが重大な失敗することを心配する必要がなくなります。サーバーのバンドルが不完全であったり、何らかの形で不良であったりしても、クライアントは、このプロトコル拡張を使用しないことを選択した場合と同じように、機能するリポジトリを手にすることができます。
 +
@@ -422,7 +422,7 @@ bundle-uri CLIENT TO SERVER::
 クライアントは、バンドル・ヘッダーで見つかった参照先端(reference tips)を、後続の「fetch」要求の「have」行として提供する必要があります。 クライアントは、何らかの理由、バンドルがダウンロードできない場合、見つけた先端(tips)が気に入らない場合など、 バンドル処理するほうがより悪いとみなされる場合、バンドルを完全に無視してもよいです。
 
 WHEN ADVERTISED BUNDLE(S) REQUIRE NO FURTHER NEGOTIATION(宣伝されたバンドルにそれ以上ネゴが必要ない場合)::
-`bundle-uri` と `ls-refs` を発行し、バンドルのヘッダーを取得後、クライアントが必要なすべての ref 先端(tips)を広告されたバンドルから取得できることがわかった場合、クライアントはGit サーバーから切断してもよいです。このような「clone」または「fetch」の結果は、 bundle-uri を使用せずに得られた状態と区別できないものであるべきです。
+`bundle-uri` と `ls-refs` を発行し、バンドルのヘッダーを取得後、クライアントが必要なすべての 参照 先端(tips)を広告されたバンドルから取得できることがわかった場合、クライアントはGit サーバーから切断してもよいです。このような「clone」または「fetch」の結果は、 bundle-uri を使用せずに得られた状態と区別できないものであるべきです。
 
 EARLY CLIENT DISCONNECTIONS AND ERROR RECOVERY(クライアントの早期切断とエラーリカバリ)::
 クライアントは、バンドルのダウンロード中(ヘッダーの転送・パース後)、早期切断を実行してもよい。 このような場合、クライアントは、バンドルのダウンロード終了と検証に関連するエラーから適切に回復しなければなりません。
@@ -459,7 +459,7 @@ pre-URI Key-Value の後方互換性のない追加は 新しい `bundle.version
 +
 これにより、「メイン」ブランチ および/または その増分更新のみを含む 1 つの「大きなバンドル」を提供したいサーバーの一般的なケースを最適化できます。
 +
-A client receiving such a response MAY assume that they can skip retrieving the header from a bundle at the indicated URI, and thus save themselves and the server(s) the request(s) needed to inspect the headers of that bundle or bundles.
+そのような応答を受信したクライアントは、指定された URI にあるバンドルからヘッダーを取得することをスキップできると想定しても構いません(MAY)。これにより、そのバンドルのヘッダーを検査するために必要なリクエストを自分自身とサーバーが節約することができます。
 
 GIT
 ---

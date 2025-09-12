@@ -3,7 +3,7 @@ gitprotocol-pack(5)
 
 NAME
 ----
-gitprotocol-pack - パックが通信(over-the-wire)で転送される方法
+gitprotocol-pack - パックの、インターネットを介した(over-the-wire)転送方法
 
 SYNOPSIS
 --------
@@ -20,7 +20,7 @@ Git は、 `ssh://` や `git://` や `http://` や `file://` 転送を介した�
 == pkt-line Format
 
 
-The descriptions below build on the pkt-line format described in linkgit:gitprotocol-common[5]. When the grammar indicates `PKT-LINE(...)`, unless otherwise noted the usual pkt-line LF rules apply: the sender SHOULD include a LF, but the receiver MUST NOT complain if it is not present.
+以下の説明は、 linkgit:gitprotocol-common[5] で説明されている pkt-line 形式に基づいています。 文法が `PKT-LINE(...)` を示す場合、 特に明記しない限り、 通常の pkt-line LF ルールが適用されます。
 
 エラーパケットは、エラー文字列を含む特別な pkt-line です。
 
@@ -94,7 +94,7 @@ SSH 経由で upload-pack または receive-pack プロセスを開始するこ�
 		    v
     ssh user@example.com "git-upload-pack '/project.git'"
 
-In a "user@host:path" format URI, it's relative to the user's home directory, because the Git client will run:
+`user@host:path` 形式の URI では、Git クライアントが以下を実行するため、 ユーザーのホーム・ディレクトリに対する相対パスとなります:
 
      git clone user@example.com:project.git
 		    |
@@ -139,11 +139,11 @@ In a "user@host:path" format URI, it's relative to the user's home directory, be
    003fe92df48743b7bc7d26bcaabfddde0a1e20cae47c refs/tags/v1.0^{}
    0000
 
-返される応答は、各refとその現在の値を説明する pkt-line ストリームです。 そのストリームは、C ロケールの順序に従って名前でソートする必要があります。
+返される応答は、各参照とその現在の値を説明する pkt-line ストリームです。 そのストリームは、C ロケールの順序に従って名前でソートする必要があります。
 
-HEAD が有効な ref である場合、HEAD は最初に広告(advertise)された ref として表示されなければなりません。 HEAD が有効な ref でない場合、HEAD は広告(advertise)リストにまったく表示されてはなりませんが、他の ref は表示される可能性があります。
+HEAD が有効な 参照 である場合、HEAD は最初に広告(advertise)された 参照 として表示されなければなりません。 HEAD が有効な 参照 でない場合、HEAD は広告(advertise)リストにまったく表示されてはなりませんが、他の 参照 は表示される可能性があります。
 
-ストリームは、最初のrefの NUL の後ろに機能宣言を含める必要があります。 ref の皮をむいた値(the (peeled value) (つまり、`ref^{}`) は、提示される場合、ref 自体の直後になければなりません。 準拠するサーバーは、注釈付きタグの場合、ref を皮むき(peel)しなければなりません。
+ストリームは、最初の参照の NUL の後ろに機能宣言を含める必要があります。 参照 の皮をむいた値(the (peeled value) (つまり、`ref^{}`) は、提示される場合、参照 自体の直後になければなりません。 準拠するサーバーは、注釈付きタグの場合、参照 を皮むき(peel)しなければなりません。
 
 ----
   advertised-refs  =  *1("version 1")
@@ -203,7 +203,7 @@ HEAD が有効な ref である場合、HEAD は最初に広告(advertise)され
   filter-request    =  PKT-LINE("filter" SP filter-spec)
 ----
 
-クライアントは、参照検出フェーズから必要なすべての obj-id を `want` 行として送信する必要があります。 クライアントは、リクエスト本文で少なくとも 1 つの `want` コマンドを送信する必要があります。 クライアントは、ref 検出によって取得された応答に表示されなかった obj-id について `want` コマンドで言及してはなりません。
+クライアントは、参照検出フェーズから必要なすべての obj-id を `want` 行として送信する必要があります。 クライアントは、リクエスト本文で少なくとも 1 つの `want` コマンドを送信する必要があります。 クライアントは、参照 検出によって取得された応答に表示されなかった obj-id について `want` コマンドで言及してはなりません。
 
 クライアントは、サーバーがクライアントの履歴の制限を認識できるように、浅い(shallow)コピーしか持たない (つまり、コミットの親を持たない) すべての obj-id を `shallow` 行として書き込まなければなりません。
 
@@ -225,7 +225,7 @@ HEAD が有効な ref である場合、HEAD は最初に広告(advertise)され
   unshallow-line   =  PKT-LINE("unshallow" SP obj-id)
 ----
 
-If the client has requested a positive depth, the server will compute the set of commits which are no deeper than the desired depth. The set of commits starts at the client's wants.
+クライアントが正の深さをリクエストした場合、サーバーは目的の深さまでの一連のコミットを計算します。 一連のコミットは、クライアントの要求(wants)から始まります。
 
 サーバーは、結果として親が送信されないコミットごとに `shallow` 行を書き込みます。 サーバーは、クライアントが浅いと示したコミットごとに、現在要求されている深さ(depth)ではもはや浅く(shallow)は無いため、 `unshallow` 行を書き込みます(つまり、その親が送信されます)。 サーバーは、クライアントが浅い(shallow)と示していないものを非浅い(unshallow)としてマークしてはなりません。
 
@@ -260,11 +260,11 @@ multi_ack または multi_ack_detailed を使用しない場合:
 
  * 共通オブジェクトがまだ見つからない場合、 upload-pack は flush-pkt で `NAK` を送信します。 1 つ見つかった場合、ACK が既に送信されている場合は、 flush-pkt では何も言いません。
 
-クライアントが十分な ACK 応答を取得して、サーバーが効率的なパックファイルを送信するのに十分な情報を持っていると判断した場合(正規の実装では、 これは `--date-order` キューに残っているすべてをサーバーと共通のものとして色付けできるほど十分な ACK を受信した場合、 または `--date-order` キューが空である場合、に決定されます)、またはクライアントがあきらめたい(wants to give up)と判断した場合(正規の実装では、これは、クライアントが 256 の `have｀行をサーバーからの ACK を取得せずに送信したとき -- これはサーバーとの共通点がなく、サーバーはすべてのオブジェクトを送信する必要があることを意味します-- に決定されます)、クライアントは `done` コマンドを送信します。 `done` コマンドは、クライアントがパックファイルデータを受信する準備ができていることをサーバーに通知します。
+クライアントが十分なACK応答を受け取り、サーバーが効率的なパックファイル（packfile）を送信するために必要な情報をサーバーが持っていると判断した後(標準的な実装では、 クライアントが `--date-order` キューに残っているすべてのオブジェクトをサーバーと共通であるとマークできるだけの ACK を受け取ったとき、 または `--date-order` キューが空になったときに判断が行わます)、 またはクライアントが諦めたいと判断した場合(標準的な実装では、 クライアントが 256 行の `have` 行を送信してもサーバーから一つも ACK されなかった場合、 つまり共通のオブジェクトがなく、 サーバーがすべてのオブジェクトを送信する必要があると判断された場合)、 クライアントは `done` コマンドを送信します。 `done` コマンドは、 クライアントがパックファイル・データの受信準備ができたことをサーバーに通知します。
 
 ただし、256 の制限は、前のラウンド中に少なくとも 1 つの `ACK %s continue` を受信した場合にのみ、正規のクライアント実装で有効になります。 これにより、完全にあきらめる(give up)前に、共通の祖先を少なくとも 1 つ見つけることができます。
 
-`done` 行がクライアントから読み取られると、サーバーは最後の `ACK obj-id` を送信するか、あるいは `NAK`を送信する場合があります。 `obj-id` は、一般的であると判断された最後のコミットのオブジェクト名です。 サーバーは、少なくとも 1 つの共通ベースがあり、 multi_ack または multi_ack_detailed が有効になっている場合にのみ、 `done` 後に ACK を送信します。 共通のベースが見つからない場合、サーバーは `done` 後に常に NAK を送信します。
+`done` 行がクライアントから読み取られると、 サーバーは最後の `ACK obj-id` を送信するか、 `NAK` を送信します。 `obj-id` は、 共通であると判断された最後のコミットのオブジェクト名です。 サーバーは、 少なくとも 1 つの共通ベースがあり、 multi_ack または multi_ack_detailed が有効になっている場合にのみ、 `done` 後に ACK を送信します。 共通のベースが見つからない場合、サーバーは `done` 後に常に NAK を送信します。
 
 `ACK` または `NAK` の代わりに、サーバーはエラーメッセージを送信する場合があります(たとえば、クライアントから受信した `want` 行のオブジェクトを認識できない場合)。
 
@@ -409,20 +409,20 @@ multi_ack または multi_ack_detailed を使用しない場合:
 
 使用されるコマンドが `delete` のみの場合、パックファイルを送信してはなりません。
 
-create または update コマンドを使用する場合は、サーバーに必要なすべての
-オブジェクトが既にある場合でも、パックファイルを送信する必要があります。
-の場合、クライアントは空のパックファイルを送信する必要があります。
-クライアントが既存の obj-id を指す新しいブランチまたはタグを
-作成している場合に、これが発生する可能性が高いです。
+パックファイルは、 作成(create)または更新(update)コマンドが使用される場合、
+サーバーがすでに必要なすべてのオブジェクトを持っている場合でも送信されなければなりません。
+この場合、 クライアントは空のパックファイルを送信する必要があります。
+これが発生する可能性があるのは、
+クライアントが新しいブランチや既存の obj-id を指すタグを作成している場合に限られます。
 
-サーバーはパックファイルを受け取り、アンパックし、更新中の各参照がリクエストの処理中に変更されていないこと(obj-id は古い old-id と同一のままでである)を検証(validate)し、更新フックを実行して、更新が受け入れられることを確かめます。 すべて問題なければ、サーバーは参照を更新します。
+サーバーはパックファイルを受け取り、 アンパックし、 更新中の各参照がリクエストの処理中に変更されていないこと(obj-id は古い old-id と同一のままであること)を検証(validate)し、 更新フックを実行して、 更新が受け入れられることを確かめます。 すべて問題なければ、 サーバーは参照を更新します。
 
 == Push Certificate
 
 
-プッシュ証明書は一連のヘッダー行で始まります。 ヘッダーと1行の空行の後に、プロトコル コマンドが 1 行に 1 つずつ続きます。 push-cert PKT-LINE の末尾の LF は「オプションでは無い」ことに注意してください。 しかし push-cert PKT-LINE の末尾の LF は存在していなければなりません。
+プッシュ証明書は一連のヘッダー行達で始まります。 ヘッダーと1行の空行の後に、 プロトコル・コマンドが 1 行に 1 つずつ続きます。 注意: push-cert PKT-LINE の末尾の LF は「オプションでは無い」ことに注意してください。 push-cert PKT-LINE の末尾の LF は存在していなければなりません。
 
-現在、以下のヘッダーフィールドが定義されています:
+現在、以下のヘッダー・フィールドが定義されています:
 
 `pusher` ID::
 	`Human Readable Name <email@address>` 形式で GPG キーを識別します。
@@ -433,7 +433,7 @@ create または update コマンドを使用する場合は、サーバーに�
 `nonce` ノンス::
 	リプレイ攻撃(replay attacks)を防ぐために、受信リポジトリ側がプッシュするユーザーに証明書に含めるように要求した「ノンス」(nonce)文字列。
 
-GPG 署名行は、署名ブロックが開始される前にプッシュ証明書に記録された、コンテンツから切り離された署名(detached signature)です。 切り離された署名(detached signature)は、署名者(signer)でなければならないプッシャー(pusher)によってコマンドが与えられたことを証明するために使用されます。
+GPG 署名行は、署名ブロックが開始される前にプッシュ証明書に記録された、コンテンツから切り離された署名(detached signature)です。 切り離された署名(detached signature)は、署名者(signer)でなければならないプッシュ側(pusher)によってコマンドが与えられたことを証明するために使用されます。
 
 == Report Status
 
