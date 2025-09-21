@@ -3,7 +3,7 @@ GIT bitmap v1 format
 
 == Pack and multi-pack bitmaps
 
-ビットマップは、オブジェクトのセットに関する到達可能性情報をパックファイルまたはマルチパック インデックス (MIDX) に格納します。 前者の定義は明白であり、後者は MIDX に含まれるパック内のオブジェクトの結合として定義されます。
+ビットマップは、オブジェクトのセットに関する到達可能性情報をパックファイルまたはマルチパック インデックス (MIDX) に格納します。 前者の定義は明白であり、後者は MIDX に含まれるパック内のオブジェクトの結合(union)として定義されます。
 
 ビットマップは、1 つのパックまたはリポジトリのマルチパック インデックス (存在する場合) のいずれかに属します。 リポジトリには、最大で 1 つのビットマップを含めることができます。
 
@@ -46,11 +46,11 @@ GIT bitmap v1 format
 	    ** {empty}
 	    BITMAP_OPT_HASH_CACHE (0x4): :::
 
-	    存在する場合、ビットマップ ファイルの末尾には、パック/MIDX 内のオブジェクトごとに 1 つの 32 ビットの名前ハッシュ値(Nとする)が含まれます。 name-hash の形式と意味については後述します。
+	    存在する場合、 ビットマップ・ファイルの末尾には、 パック/MIDX 内のオブジェクトごとに 1 つづつ、 `N` 個の 32 ビットの名前ハッシュ値(name-hash values)が含まれます。 名前ハッシュ(name-hash)の形式と意味については後述します。
 
 		** {empty}
 		BITMAP_OPT_LOOKUP_TABLE (0x10): :::
-		存在する場合、 ビット・マップ・ファイルの末尾には、 <commit_pos, offset, xor_row> という3つの値の組(triplets)(これを `N` とする)のリストを持つ表が含まれます。
+		存在する場合、 ビットマップ・ファイルの末尾には、 `N` 個の <commit_pos, offset, xor_row> 3つの値の組(triplets)のリストを含む表(table)が含まれます。 表の形式と意味は下記にて説明されています。
 +
 NOTE: 個々のビットマップを圧縮するために使用される xor_offset とは異なり、 `xor_row` は、 現在のエントリからの相対位置ではなく、 「絶対」インデックスをルックアップ表に格納します。
 
@@ -79,7 +79,7 @@ Git オブジェクト タイプごとにビットマップがあり、以下の
 
     * インデックス付きコミットごとに 1 つずつの、圧縮されたビットマップを含む N エントリ
 +
-Where `N` is the total number of entries in this bitmap index. Each entry contains the following:
+「N」は、このビットマップ・インデックス内のエントリ数の合計です。 各エントリには以下のものが含まれます:
 
 	** {empty}
 	4バイト。 オブジェクト位置(ネットワーク・バイト順):::
@@ -88,11 +88,11 @@ Where `N` is the total number of entries in this bitmap index. Each entry contai
 
 	** {empty}
 	1バイト。 XORオフセット:::
-	    The xor offset used to compress this bitmap. For an entry
-	    in position `x`, an XOR offset of `y` means that the actual
-	    bitmap representing this commit is composed by XORing the
-	    bitmap for this entry with the bitmap in entry `x-y` (i.e.
-	    the bitmap `y` entries before this one).
+	    このビットマップの圧縮に使用される xor オフセット。
+	    位置 `x` のエントリの場合、`y` という XOR オフセットは、
+	    このコミットを表す実際のビットマップが、エントリ `x-y` のビットマップ
+	    (つまり、このエントリより前のビットマップ `y` エントリ)
+	    との XOR によって構成されることを意味します。
 +
 NOTE: この圧縮は再帰的に行うことができる。 このエントリを前のエントリと XOR するには、 前のエントリを最初に解凍する必要があります。
 +
@@ -165,9 +165,9 @@ BITMAP_OPT_HASH_CACHE フラグが設定されている場合、ビットマッ�
 Commit lookup table
 -------------------
 
-BITMAP_OPT_LOOKUP_TABLE フラグが設定されている場合、 `.bitmap` ファイルの最後の `N * (4 + 8 + 4)` バイト(名前ハッシュ(name-hash)キャッシュの前と、 後続ハッシュ)は、 以前の不要なビットマップを解析せずにエントリから目的のビットマップを取得するために必要な情報を指定するルックアップ表を含んでいます。
+BITMAP_OPT_LOOKUP_TABLE フラグが設定されている場合、 `.bitmap` ファイルの最後の `N * (4 + 8 + 4)` バイト(これは名前ハッシュ(name-hash)キャッシュに先行されていて、 後ろにハッシュが続く)は、 目的のビットマップより前の不要なビットマップ達をパースせずにエントリから目的のビットマップを取得するために必要な情報を指定するルックアップ表を含んでいます。
 
-For a `.bitmap` containing `nr_entries` reachability bitmaps, the table contains a list of `nr_entries` <commit_pos, offset, xor_row> triplets (sorted in the ascending order of `commit_pos`). The content of the i'th triplet is -
+`nr_entries` 到達可能性ビットマップを含む `.bitmap` の場合、 表には `nr_entries` <commit_pos, offset, xor_row> 三つ組(triplet) (`commit_pos` の昇順でソート) のリストが含まれます。 その i 番目の三つ組の内容は…
 
 	* {empty}
 	commit_pos (4バイト。 整数。 ネットワーク・バイト順):::
@@ -181,16 +181,16 @@ For a `.bitmap` containing `nr_entries` reachability bitmaps, the table contains
 	xor_row (4バイト。整数。 ネットワーク・バイト順):::
 	このビットマップを圧縮するために使用される三つ組の位置、 またはそのようなビットマップが存在しない場合は `0xffffffff` 。
 
-Pseudo-merge bitmaps
---------------------
+Pseudo-merge bitmaps(疑似マージ・ビットマップ)
+----------------------------------
 
-If the `BITMAP_OPT_PSEUDO_MERGES` flag is set, a variable number of bytes (preceding the name-hash cache, commit lookup table, and trailing checksum) of the `.bitmap` file is used to store pseudo-merge bitmaps.
+`BITMAP_OPT_PSEUDO_MERGES` フラグが設定されている場合、 `.bitmap` ファイルの可変長バイト(名前ハッシュ・キャッシュとコミット・ルックアップ・テーブルと末尾のチェックサムより前)が、 疑似マージ・ビットを保存するために使用されます。
 
-For more information on what pseudo-merges are, why they are useful, and how to configure them, see the information in linkgit:gitpacking[7].
+疑似マージとは何か、 なぜそれが有用か、 そしてその設定方法についての詳細は、 linkgit:gitpacking[7] の情報を参照してください。
 
 === File format
 
-If enabled, pseudo-merge bitmaps are stored in an optional section at the end of a `.bitmap` file. The format is as follows:
+有効にされている場合、 疑似マージ・ビットマップは `.bitmap` ファイルの末尾にあるオプションのセクションに保存されます。 その形式は以下の通りです:
 
 ....
 +-------------------------------------------+
@@ -256,37 +256,34 @@ If enabled, pseudo-merge bitmaps are stored in an optional section at the end of
 +-------------------------------------------+
 ....
 
-* One or more pseudo-merge bitmaps, each containing:
+* 1つ以上の擬似マージ・ビットマップは、 各々が以下を含んでいます:
 
-  ** `commits_bitmap`, an EWAH-compressed bitmap describing the set of commits included in the this psuedo-merge.
+  ** `commits_bitmap` この疑似マージに含まれるコミットの組を説明する EWAH 圧縮ビットマップ。
 
-  ** `merge_bitmap`, an EWAH-compressed bitmap describing the union of the set of objects reachable from all commits listed in the `commits_bitmap`.
+  ** `commits_bitmap` に記載されているすべてのコミットから到達可能なオブジェクトの組の結合(union)を説明する EWAH 圧縮されたビットマップ。
 
-* A lookup table, mapping pseudo-merged commits to the pseudo-merges they belong to. Entries appear in increasing order of each commit's bit position. Each entry is 12 bytes wide, and is comprised of the following:
+* 疑似マージされたコミットを、 それらが属する疑似マージにマッピングするルックアップ・テーブル。 エントリは各コミットのビット位置の昇順で配置されます。 各エントリは12バイト幅で、 以下の内容で構成されています:
 
-  ** `commit_pos`, a 4-byte unsigned value (in network byte-order) containing the bit position for this commit.
+  ** `commit_pos` 4バイトの符号なし値(ネットワークバイト順)で、 このコミットのビット位置を含んでいます。
 
-  ** `offset`, an 8-byte unsigned value (also in network byte-order)
-  containing either one of two possible offsets, depending on whether or not the most-significant bit is set.
+  ** `offset` 8バイトの符号無し値(ネットワークバイト順)で、 最上位ビットが設定されているかどうかによって、 以下の2つの可能なオフセットのいずれかを含みます。
 
-    *** If unset (i.e. `offset & ((uint64_t)1<<63) == 0`), the offset
-	(relative to the beginning of the `.bitmap` file) at which the pseudo-merge bitmap for this commit can be read. This indicates only a single pseudo-merge bitmap contains this commit.
+    *** 最上位ビットが設定されていない場合(つまり、 `offset & ((uint64_t)1<<63) == 0`)、 このコミットの疑似マージビットマップを読み取る事ができる、 `.bitmap` ファイルの先頭からのオフセットを示します。 これは、 このコミットが単一の疑似マージ・ビットマップにのみ含まれていることを示します。
 
-    *** If set (i.e. `offset & ((uint64_t)1<<63) != 0`), the offset
-	(again relative to the beginning of the `.bitmap` file) at which the extended offset table can be located describing the set of pseudo-merge bitmaps which contain this commit. This indicates that multiple pseudo-merge bitmaps contain this commit.
+    *** 最上位ビットが設定されている場合(つまり、`offset & ((uint64_t)1<<63) != 0`)、 このコミットを含む疑似マージビットマップの組を記述する拡張オフセット・テーブルが、 `.bitmap` ファイルの先頭からのオフセットで配置されている場所を示します。 これは、 複数の疑似マージ・ビットマップがこのコミットを含んでいることを示します。
 
-* An (optional) extended lookup table (written if and only if there is at least one commit which appears in more than one pseudo-merge). There are as many entries as commits which appear in multiple pseudo-merges. Each entry contains the following:
+* (オプションの)拡張ルックアップ・テーブル(1つ以上のコミットが複数の疑似マージに含まれる場合にのみ書き込まれる)。 複数の疑似マージに含まれるコミットの数だけエントリがあります。 各エントリには以下が含まれます:
 
-  ** `N`, a 4-byte unsigned value equal to the number of pseudo-merges which contain a given commit.
+  ** `N` 4バイトの符号なしの値。与えられたコミットを含む擬似マージの数に等しい。
 
-  ** An array of `N` 8-byte unsigned values, each of which is interpreted as an offset (relative to the beginning of the `.bitmap` file) at which a pseudo-merge bitmap for this commit can be read. These values occur in no particular order.
+  ** `N` 個の8バイト符号なし値の配列。 配列の各値は、 このコミットの疑似マージ・ビットマップを読み取る事ができる、 `.bitmap` ファイルの先頭からのオフセットとして解釈されます。 これらの値は特定の順序で配置されていません。
 
-* Positions for all pseudo-merges, each stored as an 8-byte unsigned value (in network byte-order) containing the offset (relative to the beginning of the `.bitmap` file) of each consecutive pseudo-merge.
+* すべての疑似マージの位置。 各位置は、 連続する疑似マージのそれぞれのオフセット(`.bitmap` ファイルの先頭からの相対位置)を格納する8バイトの符号なし値(ネットワークバイト順)として保存されます。
 
-* A 4-byte unsigned value (in network byte-order) equal to the number of pseudo-merges.
+* 擬似マージの数に等しい4バイトの符号無し値(ネットワークバイト順)。
 
-* A 4-byte unsigned value (in network byte-order) equal to the number of unique commits which appear in any pseudo-merge.
+* 4バイトの符号無し値(ネットワークバイト順)。 疑似マージに含まれるユニークなコミットの数に等しい。
 
-* An 8-byte unsigned value (in network byte-order) equal to the number of bytes between the start of the pseudo-merge section and the beginning of the lookup table.
+* 8バイトの符号無し値(ネットワークバイト順)。 疑似マージ・セクションの開始からルックアップ・テーブルの開始までのバイト数に等しい。
 
-* An 8-byte unsigned value (in network byte-order) equal to the number of bytes in the pseudo-merge section (including this field).
+* 8バイトの符号無し値(ネットワークバイト順)。 疑似マージ・セクションのバイト数(このフィールドを含む)に等しい。

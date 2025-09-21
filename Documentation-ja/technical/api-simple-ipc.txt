@@ -1,21 +1,21 @@
 Simple-IPC API
 ==============
 
-The Simple-IPC API is a collection of `ipc_` prefixed library routines and a basic communication protocol that allows an IPC-client process to send an application-specific IPC-request message to an IPC-server process and receive an application-specific IPC-response message.
+Simple-IPC APIは、 `ipc_` プレフィックス付きライブラリルーチンと基本的な通信プロトコルのコレクションであり、IPCクライアントプロセスがアプリケーション固有のIPC要求メッセージをIPCサーバープロセスに送信し、アプリケーション固有のIPC応答メッセージを受信できるようにします。
 
 通信は、Windowsでは名前付きパイプを介して、他のプラットフォームではUnixドメインソケットを介して行われます。 IPCクライアントとIPCサーバーは、コンピューターシステムに対してローカルである、以前に合意されたアプリケーション固有のパス名(この設計の範囲外)で会合(rendezvous)します。
 
 サーバーアプリケーションプロセス内のIPCサーバールーチンは、接続をリッスンし、複数の同時IPCクライアントから要求メッセージを受信するためのスレッドプールを作成します。 受信すると、これらのメッセージは処理のためにサーバーアプリケーションのコールバックまでディスパッチされます。 次に、IPCサーバールーチンは、応答をIPCクライアントに段階的にリレー(incrementally relay)します。
 
-The IPC-client routines within a client application process connect to the IPC-server and send a request message and wait for a response. When received, the response is returned back to the caller.
+クライアントアプリケーションプロセス内のIPCクライアントルーチンはIPCサーバーに接続し、要求メッセージを送信して応答を待ちます。 受信すると、応答は呼び出し元に返されます。
 
-For example, the `fsmonitor--daemon` feature will be built as a server application on top of the IPC-server library routines. It will have threads watching for file system events and a thread pool waiting for client connections. Clients, such as `git status`, will request a list of file system events since a point in time and the server will respond with a list of changed files and directories. The formats of the request and response are application-specific; the IPC-client and IPC-server routines treat them as opaque byte streams.
+例えば、 `fsmonitor--daemon` 機能は `IPC-server` ライブラリ・ルーチンを土台としてサーバー・アプリケーションとして構築されます。 このデーモンは、 ファイルシステム・イベントを監視するスレッド群と、 クライアントからの接続を待つスレッド・プールを持つことになります。 `git status` のようなクライアントは、 ある時点以降のファイルシステム・イベントのリストをリクエストし、 サーバーは変更されたファイルとディレクトリーのリストで応答します。 リクエストと応答のフォーマットはアプリケーション固有であり、 `IPC-client` と `IPC-server` のルーチンはそれらを不透明なバイト・ストリームとして扱います。
 
 
 サブプロセスモデルとの比較
 -------------
 
-The Simple-IPC mechanism differs from the existing `sub-process.c` model (Documentation/technical/long-running-process-protocol.txt) and used by applications like Git-LFS. In the LFS-style sub-process model, the helper is started by the foreground process, communication happens via a pair of file descriptors bound to the stdin/stdout of the sub-process, the sub-process only serves the current foreground process, and the sub-process exits when the foreground process terminates.
+Simple-IPCメカニズムは、 既存の `sub-process.c` モデル(Documentation/technical/long-running-process-protocol.txt)や Git-LFS のようなアプリケーションで使用されているモデルとは異なります。 LFS スタイルのサブプロセス・モデルでは、 ヘルパーはフォアグラウンド・プロセスによって起動され、 通信はサブプロセスの標準入出力(stdin/stdout)に結び付けられた一対のファイル・ディスクリプターを介して行われます。 サブプロセスは現在のフォアグラウンドプロセスのみを処理し、 フォアグラウンドプロセスが終了するとサブプロセスも終了します。
 
 Simple-IPCモデルでは、サーバーは非常に長時間実行されるサービスです。 同時に多くのクライアントにサービスを提供でき、アクティブな各クライアントへのプライベートソケットまたは名前付きパイプ接続があります。 現在のクライアントプロセスによって(オンデマンドで)開始されたか、以前のクライアントまたは起動時にOSによって開始された可能性があります。 サーバープロセスは端末に関連付けられておらず、クライアントが終了した後も存続します。 クライアントはサーバープロセスの stdin/stdout にアクセスできないため、ソケットまたは名前付きパイプを介して通信する必要があります。
 
@@ -41,4 +41,4 @@ pkt-lineルーチン達(linkgit:gitprotocol-common[5])は、メッセージの�
 Summary
 -------
 
-Conceptually, the Simple-IPC protocol is similar to an HTTP REST request. Clients connect, make an application-specific and stateless request, receive an application-specific response, and disconnect. It is a one round trip facility for querying the server. The Simple-IPC routines hide the socket, named pipe, and thread pool details and allow the application layer to focus on the task at hand.
+概念的には、 Simple-IPC プロトコルは HTTP REST リクエストに似ています。 クライアントが接続し、 アプリケーション固有のステートレスなリクエストを行い、 アプリケーション固有の応答を受け取り、 切断します。 これはサーバーに問い合わせるための1往復の機能です。 Simple-IPC ルーチンは、 ソケットや、 名前付きパイプや、 スレッドプールの詳細を隠し、 アプリケーション層が手元のタスクに集中できるようにします。

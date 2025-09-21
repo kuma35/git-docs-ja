@@ -735,13 +735,13 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>GIT bitmap v1 format</h1>
-<span id="revdate">2024-12-15</span>
+<span id="revdate">2025-09-12</span>
 </div>
 <div id="content">
 <div class="sect1">
 <h2 id="_pack_and_multi_pack_bitmaps">Pack and multi-pack bitmaps</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>ビットマップは、オブジェクトのセットに関する到達可能性情報をパックファイルまたはマルチパック インデックス (MIDX) に格納します。 前者の定義は明白であり、後者は MIDX に含まれるパック内のオブジェクトの結合として定義されます。</p></div>
+<div class="paragraph"><p>ビットマップは、オブジェクトのセットに関する到達可能性情報をパックファイルまたはマルチパック インデックス (MIDX) に格納します。 前者の定義は明白であり、後者は MIDX に含まれるパック内のオブジェクトの結合(union)として定義されます。</p></div>
 <div class="paragraph"><p>ビットマップは、1 つのパックまたはリポジトリのマルチパック インデックス (存在する場合) のいずれかに属します。 リポジトリには、最大で 1 つのビットマップを含めることができます。</p></div>
 <div class="paragraph"><p>オブジェクトは、ビットマップ内のビット位置によって一意に記述されます:</p></div>
 <div class="ulist"><ul>
@@ -828,7 +828,7 @@ BITMAP_OPT_HASH_CACHE (0x4):
 </dt>
 <dd>
 <p>
-            存在する場合、ビットマップ ファイルの末尾には、パック/MIDX 内のオブジェクトごとに 1 つの 32 ビットの名前ハッシュ値(Nとする)が含まれます。 name-hash の形式と意味については後述します。
+            存在する場合、 ビットマップ・ファイルの末尾には、 パック/MIDX 内のオブジェクトごとに 1 つづつ、 <code>N</code> 個の 32 ビットの名前ハッシュ値(name-hash values)が含まれます。 名前ハッシュ(name-hash)の形式と意味については後述します。
 </p>
 <div class="ulist"><ul>
 <li>
@@ -842,7 +842,7 @@ BITMAP_OPT_LOOKUP_TABLE (0x10):
 </dt>
 <dd>
 <p>
-                存在する場合、 ビット・マップ・ファイルの末尾には、 &lt;commit_pos, offset, xor_row&gt; という3つの値の組(triplets)(これを <code>N</code> とする)のリストを持つ表が含まれます。
+                存在する場合、 ビットマップ・ファイルの末尾には、 <code>N</code> 個の &lt;commit_pos, offset, xor_row&gt; 3つの値の組(triplets)のリストを含む表(table)が含まれます。 表の形式と意味は下記にて説明されています。
 </p>
 <div class="admonitionblock">
 <table><tr>
@@ -907,7 +907,7 @@ Tags
 <p>
 インデックス付きコミットごとに 1 つずつの、圧縮されたビットマップを含む N エントリ
 </p>
-<div class="paragraph"><p>Where <code>N</code> is the total number of entries in this bitmap index. Each entry contains the following:</p></div>
+<div class="paragraph"><p>「N」は、このビットマップ・インデックス内のエントリ数の合計です。 各エントリには以下のものが含まれます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -933,11 +933,11 @@ Tags
 </dt>
 <dd>
 <p>
-            The xor offset used to compress this bitmap. For an entry
-            in position <code>x</code>, an XOR offset of <code>y</code> means that the actual
-            bitmap representing this commit is composed by XORing the
-            bitmap for this entry with the bitmap in entry <code>x-y</code> (i.e.
-            the bitmap <code>y</code> entries before this one).
+            このビットマップの圧縮に使用される xor オフセット。
+            位置 <code>x</code> のエントリの場合、<code>y</code> という XOR オフセットは、
+            このコミットを表す実際のビットマップが、エントリ <code>x-y</code> のビットマップ
+            (つまり、このエントリより前のビットマップ <code>y</code> エントリ)
+            との XOR によって構成されることを意味します。
 </p>
 <div class="admonitionblock">
 <table><tr>
@@ -1082,8 +1082,8 @@ while ((c = *name++))
 <div class="sect1">
 <h2 id="_commit_lookup_table">Commit lookup table</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>BITMAP_OPT_LOOKUP_TABLE フラグが設定されている場合、 <code>.bitmap</code> ファイルの最後の <code>N</code> * (<code>4</code> <code>+</code> <code>8</code> <code>+</code> <code>4</code>) バイト(名前ハッシュ(name-hash)キャッシュの前と、 後続ハッシュ)は、 以前の不要なビットマップを解析せずにエントリから目的のビットマップを取得するために必要な情報を指定するルックアップ表を含んでいます。</p></div>
-<div class="paragraph"><p>For a <code>.bitmap</code> containing <code>nr_entries</code> reachability bitmaps, the table contains a list of <code>nr_entries</code> &lt;commit_pos, offset, xor_row&gt; triplets (sorted in the ascending order of <code>commit_pos</code>). The content of the i&#8217;th triplet is -</p></div>
+<div class="paragraph"><p>BITMAP_OPT_LOOKUP_TABLE フラグが設定されている場合、 <code>.bitmap</code> ファイルの最後の <code>N</code> * (<code>4</code> <code>+</code> <code>8</code> <code>+</code> <code>4</code>) バイト(これは名前ハッシュ(name-hash)キャッシュに先行されていて、 後ろにハッシュが続く)は、 目的のビットマップより前の不要なビットマップ達をパースせずにエントリから目的のビットマップを取得するために必要な情報を指定するルックアップ表を含んでいます。</p></div>
+<div class="paragraph"><p><code>nr_entries</code> 到達可能性ビットマップを含む <code>.bitmap</code> の場合、 表には <code>nr_entries</code> &lt;commit_pos, offset, xor_row&gt; 三つ組(triplet) (<code>commit_pos</code> の昇順でソート) のリストが含まれます。 その i 番目の三つ組の内容は…</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1131,13 +1131,13 @@ xor_row (4バイト。整数。 ネットワーク・バイト順)
 </div>
 </div>
 <div class="sect1">
-<h2 id="_pseudo_merge_bitmaps">Pseudo-merge bitmaps</h2>
+<h2 id="_pseudo_merge_bitmaps_疑似マージ_ビットマップ">Pseudo-merge bitmaps(疑似マージ・ビットマップ)</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>If the <code>BITMAP_OPT_PSEUDO_MERGES</code> flag is set, a variable number of bytes (preceding the name-hash cache, commit lookup table, and trailing checksum) of the <code>.bitmap</code> file is used to store pseudo-merge bitmaps.</p></div>
-<div class="paragraph"><p>For more information on what pseudo-merges are, why they are useful, and how to configure them, see the information in <a href="../gitpacking.html">gitpacking(7)</a>.</p></div>
+<div class="paragraph"><p><code>BITMAP_OPT_PSEUDO_MERGES</code> フラグが設定されている場合、 <code>.bitmap</code> ファイルの可変長バイト(名前ハッシュ・キャッシュとコミット・ルックアップ・テーブルと末尾のチェックサムより前)が、 疑似マージ・ビットを保存するために使用されます。</p></div>
+<div class="paragraph"><p>疑似マージとは何か、 なぜそれが有用か、 そしてその設定方法についての詳細は、 <a href="../gitpacking.html">gitpacking(7)</a> の情報を参照してください。</p></div>
 <div class="sect2">
 <h3 id="_file_format">File format</h3>
-<div class="paragraph"><p>If enabled, pseudo-merge bitmaps are stored in an optional section at the end of a <code>.bitmap</code> file. The format is as follows:</p></div>
+<div class="paragraph"><p>有効にされている場合、 疑似マージ・ビットマップは <code>.bitmap</code> ファイルの末尾にあるオプションのセクションに保存されます。 その形式は以下の通りです:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>+-------------------------------------------+
@@ -1205,47 +1205,44 @@ xor_row (4バイト。整数。 ネットワーク・バイト順)
 <div class="ulist"><ul>
 <li>
 <p>
-One or more pseudo-merge bitmaps, each containing:
+1つ以上の擬似マージ・ビットマップは、 各々が以下を含んでいます:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>commits_bitmap</code>, an EWAH-compressed bitmap describing the set of commits included in the this psuedo-merge.
+<code>commits_bitmap</code> この疑似マージに含まれるコミットの組を説明する EWAH 圧縮ビットマップ。
 </p>
 </li>
 <li>
 <p>
-<code>merge_bitmap</code>, an EWAH-compressed bitmap describing the union of the set of objects reachable from all commits listed in the <code>commits_bitmap</code>.
+<code>commits_bitmap</code> に記載されているすべてのコミットから到達可能なオブジェクトの組の結合(union)を説明する EWAH 圧縮されたビットマップ。
 </p>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-A lookup table, mapping pseudo-merged commits to the pseudo-merges they belong to. Entries appear in increasing order of each commit&#8217;s bit position. Each entry is 12 bytes wide, and is comprised of the following:
+疑似マージされたコミットを、 それらが属する疑似マージにマッピングするルックアップ・テーブル。 エントリは各コミットのビット位置の昇順で配置されます。 各エントリは12バイト幅で、 以下の内容で構成されています:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>commit_pos</code>, a 4-byte unsigned value (in network byte-order) containing the bit position for this commit.
+<code>commit_pos</code> 4バイトの符号なし値(ネットワークバイト順)で、 このコミットのビット位置を含んでいます。
 </p>
 </li>
 <li>
 <p>
-<code>offset</code>, an 8-byte unsigned value (also in network byte-order)
-  containing either one of two possible offsets, depending on whether or not the most-significant bit is set.
+<code>offset</code> 8バイトの符号無し値(ネットワークバイト順)で、 最上位ビットが設定されているかどうかによって、 以下の2つの可能なオフセットのいずれかを含みます。
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-If unset (i.e. <code>offset</code> &amp; ((<code>uint64_t</code>)<code>1</code>&lt;&lt;63) <code>==</code> <code>0</code>), the offset
-        (relative to the beginning of the <code>.bitmap</code> file) at which the pseudo-merge bitmap for this commit can be read. This indicates only a single pseudo-merge bitmap contains this commit.
+最上位ビットが設定されていない場合(つまり、 <code>offset</code> &amp; ((<code>uint64_t</code>)<code>1</code>&lt;&lt;63) <code>==</code> <code>0</code>)、 このコミットの疑似マージビットマップを読み取る事ができる、 <code>.bitmap</code> ファイルの先頭からのオフセットを示します。 これは、 このコミットが単一の疑似マージ・ビットマップにのみ含まれていることを示します。
 </p>
 </li>
 <li>
 <p>
-If set (i.e. <code>offset</code> &amp; ((<code>uint64_t</code>)<code>1</code>&lt;&lt;63) != <code>0</code>), the offset
-        (again relative to the beginning of the <code>.bitmap</code> file) at which the extended offset table can be located describing the set of pseudo-merge bitmaps which contain this commit. This indicates that multiple pseudo-merge bitmaps contain this commit.
+最上位ビットが設定されている場合(つまり、<code>offset</code> &amp; ((<code>uint64_t</code>)<code>1</code>&lt;&lt;63) != <code>0</code>)、 このコミットを含む疑似マージビットマップの組を記述する拡張オフセット・テーブルが、 <code>.bitmap</code> ファイルの先頭からのオフセットで配置されている場所を示します。 これは、 複数の疑似マージ・ビットマップがこのコミットを含んでいることを示します。
 </p>
 </li>
 </ul></div>
@@ -1254,44 +1251,44 @@ If set (i.e. <code>offset</code> &amp; ((<code>uint64_t</code>)<code>1</code>&lt
 </li>
 <li>
 <p>
-An (optional) extended lookup table (written if and only if there is at least one commit which appears in more than one pseudo-merge). There are as many entries as commits which appear in multiple pseudo-merges. Each entry contains the following:
+(オプションの)拡張ルックアップ・テーブル(1つ以上のコミットが複数の疑似マージに含まれる場合にのみ書き込まれる)。 複数の疑似マージに含まれるコミットの数だけエントリがあります。 各エントリには以下が含まれます:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>N</code>, a 4-byte unsigned value equal to the number of pseudo-merges which contain a given commit.
+<code>N</code> 4バイトの符号なしの値。与えられたコミットを含む擬似マージの数に等しい。
 </p>
 </li>
 <li>
 <p>
-An array of <code>N</code> 8-byte unsigned values, each of which is interpreted as an offset (relative to the beginning of the <code>.bitmap</code> file) at which a pseudo-merge bitmap for this commit can be read. These values occur in no particular order.
+<code>N</code> 個の8バイト符号なし値の配列。 配列の各値は、 このコミットの疑似マージ・ビットマップを読み取る事ができる、 <code>.bitmap</code> ファイルの先頭からのオフセットとして解釈されます。 これらの値は特定の順序で配置されていません。
 </p>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-Positions for all pseudo-merges, each stored as an 8-byte unsigned value (in network byte-order) containing the offset (relative to the beginning of the <code>.bitmap</code> file) of each consecutive pseudo-merge.
+すべての疑似マージの位置。 各位置は、 連続する疑似マージのそれぞれのオフセット(<code>.bitmap</code> ファイルの先頭からの相対位置)を格納する8バイトの符号なし値(ネットワークバイト順)として保存されます。
 </p>
 </li>
 <li>
 <p>
-A 4-byte unsigned value (in network byte-order) equal to the number of pseudo-merges.
+擬似マージの数に等しい4バイトの符号無し値(ネットワークバイト順)。
 </p>
 </li>
 <li>
 <p>
-A 4-byte unsigned value (in network byte-order) equal to the number of unique commits which appear in any pseudo-merge.
+4バイトの符号無し値(ネットワークバイト順)。 疑似マージに含まれるユニークなコミットの数に等しい。
 </p>
 </li>
 <li>
 <p>
-An 8-byte unsigned value (in network byte-order) equal to the number of bytes between the start of the pseudo-merge section and the beginning of the lookup table.
+8バイトの符号無し値(ネットワークバイト順)。 疑似マージ・セクションの開始からルックアップ・テーブルの開始までのバイト数に等しい。
 </p>
 </li>
 <li>
 <p>
-An 8-byte unsigned value (in network byte-order) equal to the number of bytes in the pseudo-merge section (including this field).
+8バイトの符号無し値(ネットワークバイト順)。 疑似マージ・セクションのバイト数(このフィールドを含む)に等しい。
 </p>
 </li>
 </ul></div>
@@ -1303,7 +1300,7 @@ An 8-byte unsigned value (in network byte-order) equal to the number of bytes in
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-15 12:50:11 JST
+ 2025-09-21 19:01:28 JST
 </div>
 </div>
 </body>
