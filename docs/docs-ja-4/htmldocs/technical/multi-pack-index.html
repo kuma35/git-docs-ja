@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Multi-Pack-Index (MIDX) Design Notes</h1>
-<span id="revdate">2024-12-15</span>
+<span id="revdate">2025-09-21</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -831,31 +831,31 @@ MIDXファイル形式は、オプションのデータを追加できるチャ�
 <div class="sect1">
 <h2 id="_incremental_multi_pack_indexes">Incremental multi-pack indexes</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>As repositories grow in size, it becomes more expensive to write a multi-pack index (MIDX) that includes all packfiles. To accommodate this, the "incremental multi-pack indexes" feature allows for combining a "chain" of multi-pack indexes.</p></div>
-<div class="paragraph"><p>Each individual component of the chain need only contain a small number of packfiles. Appending to the chain does not invalidate earlier parts of the chain, so repositories can control how much time is spent updating the MIDX chain by determining the number of packs in each layer of the MIDX chain.</p></div>
+<div class="paragraph"><p>リポジトリーのサイズが大きくなると、 全てのパックファイルを包含するマルチパック・インデックス(MIDX)へ書き込みコストが増大します。 これに対応するため、 「インクリメンタル・マルチパック・インデックス」機能により、 マルチパック・インデックスのチェーン(chain;連なり)を結合することが可能になります。</p></div>
+<div class="paragraph"><p>チェーンの各個別のコンポーネントは、 少数のパックファイルのみを含む必要があります。 チェーンに追加しても、 チェーンの以前の部分が無効になることはありません。 そのため、 リポジトリーは、 MIDX チェーンの各レイヤーに含まれるパックファイルの数を決めることで、 MIDXチェーンの更新に費やす時間を制御できます。</p></div>
 <div class="sect2">
 <h3 id="_design_state">Design state</h3>
-<div class="paragraph"><p>At present, the incremental multi-pack indexes feature is missing two important components:</p></div>
+<div class="paragraph"><p>現在、 インクリメンタル・マルチパック・インデックス機能には以下の 2 つの重要なコンポーネントが欠けています:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-The ability to rewrite earlier portions of the MIDX chain (i.e., to "compact" some collection of adjacent MIDX layers into a single MIDX). At present the only supported way of shrinking a MIDX chain is to rewrite the entire chain from scratch without the <code>--split</code> flag.
+MIDX チェーンで初期に作られた部分を書き直す能力(つまり、 隣接する MIDX レイヤーの一部を単一のMIDXに「圧縮」する能力)。 現在のところ、 MIDX チェーンを縮小する唯一のサポートされている方法は、 <code>--split</code> フラグなしでチェーン全体をイチから書き直すことです。
 </p>
-<div class="paragraph"><p>There are no fundamental limitations that stand in the way of being able to implement this feature. It is omitted from the initial implementation in order to reduce the complexity, but will be added later.</p></div>
+<div class="paragraph"><p>この機能を導入する上で根本的な制限は存在しません。 初期の実装では複雑さを軽減するために省略されていますが、 今後追加される予定です。</p></div>
 </li>
 <li>
 <p>
-Support for reachability bitmaps. The classic single MIDX implementation does support reachability bitmaps (see the section titled "multi-pack-index reverse indexes" in <a href="../gitformat-pack.html">gitformat-pack(5)</a> for more details).
+到達可能性ビットマップ(reachability bitmaps)のサポート。 従来の単一の MIDX 実装では到達可能性ビットマップをサポートしています(詳細は <a href="../gitformat-pack.html">gitformat-pack(5)</a> の「multi-pack-index reverse indexes」セクション参照)。
 </p>
-<div class="paragraph"><p>As above, there are no fundamental limitations that stand in the way of extending the incremental MIDX format to support reachability bitmaps. The design below specifically takes this into account, and support for reachability bitmaps will be added in a future patch series. It is omitted from the current implementation for the same reason as above.</p></div>
-<div class="paragraph"><p>In brief, to support reachability bitmaps with the incremental MIDX feature, the concept of the pseudo-pack order is extended across each layer of the incremental MIDX chain to form a concatenated pseudo-pack order. This concatenation takes place in the same order as the chain itself (in other words, the concatenated pseudo-pack order for a chain {$H1, <code>$H2,</code> <code>$H3</code>} would be the pseudo-pack order for <code>$H1</code>, followed by the pseudo-pack order for <code>$H2</code>, followed by the pseudo-pack order for <code>$H3</code>).</p></div>
-<div class="paragraph"><p>The layout will then be extended so that each layer of the incremental MIDX chain can write a *.bitmap. The objects in each layer&#8217;s bitmap are offset by the number of objects in the previous layers of the chain.</p></div>
+<div class="paragraph"><p>上記と同様に、 インクリメンタルMIDX形式を拡張して到達可能性ビットマップをサポートする上で、 根本的な制限は存在しません。 以下の設計ではこの点を特に考慮しており、 到達可能性ビットマップのサポートは将来のパッチ・シリーズで追加される予定です。 現在の実装では、上記と同じ理由で省略されています。</p></div>
+<div class="paragraph"><p>簡潔に言うと、 インクリメンタルMIDX機能で到達可能性ビットマップをサポートするために、 疑似パック順序の概念をインクリメンタルMIDXチェーンの各レイヤーに拡張し、 連結された疑似パック順序を形成します。 この連結はチェーン自体の順序と同じ順で行われます(言い換えると、 チェーン {$H1, $H2, $H3} の連結された疑似パック順序は、 $H1 の疑似パック順序に続き、 $H2の疑似パック順序、 そして$H3の疑似パック順序、 となります)。</p></div>
+<div class="paragraph"><p>レイアウトは、 インクリメンタルMIDXチェーンの各レイヤーが *.bitmap へ書き込みできるように拡張されます。 各レイヤーのビットマップに含まれるオブジェクトは、 そのチェーンの前のレイヤーにあるオブジェクトの数だけオフセットされます。</p></div>
 </li>
 </ul></div>
 </div>
 <div class="sect2">
 <h3 id="_file_layout">File layout</h3>
-<div class="paragraph"><p>Instead of storing a single <code>multi-pack-index</code> file (with an optional <code>.rev</code> and <code>.bitmap</code> extension) in <code>$GIT_DIR/objects/pack</code>, incremental MIDXs are stored in the following layout:</p></div>
+<div class="paragraph"><p>単一の <code>multi-pack-index</code> ファイル(オプションで <code>.rev</code> や <code>.bitmap</code> 拡張子付き)を <code>$GIT_DIR/objects/pack</code> に保存する代わりに、 インクリメンタル MIDX は 以下のレイアウトで保存されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$GIT_DIR/objects/pack/multi-pack-index.d/
@@ -864,26 +864,25 @@ $GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H1.midx
 $GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H2.midx
 $GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H3.midx</code></pre>
 </div></div>
-<div class="paragraph"><p>The <code>multi-pack-index-chain</code> file contains a list of the incremental MIDX files in the chain, in order. The above example shows a chain whose <code>multi-pack-index-chain</code> file would contain the following lines:</p></div>
+<div class="paragraph"><p><code>multi-pack-index-chain</code> ファイルには、 チェーン内のインクリメンタル MIDX ファイルのリストが順番に記載されています。 上の例では、 <code>multi-pack-index-chain</code> ファイルには以下の行が含まれます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>$H1
 $H2
 $H3</code></pre>
 </div></div>
-<div class="paragraph"><p>The <code>multi-pack-index-$H1.midx</code> file contains the first layer of the multi-pack-index chain. The <code>multi-pack-index-$H2.midx</code> file contains the second layer of the chain, and so on.</p></div>
-<div class="paragraph"><p>When both an incremental- and non-incremental MIDX are present, the non-incremental MIDX is always read first.</p></div>
+<div class="paragraph"><p><code>multi-pack-index-$H1.midx</code> ファイルには、 マルチパック・インデックス・チェーンの最初のレイヤーが含まれています。 <code>multi-pack-index-$H2.midx</code> ファイルには、 チェーンの2番目のレイヤーが含まれ、 以降も同様です。</p></div>
+<div class="paragraph"><p>インクリメンタル MIDX と非インクリメンタル MIDX の両方が存在する場合、 常に非インクリメンタルMIDXが最初に読み込まれます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_object_positions_for_incremental_midxs">Object positions for incremental MIDXs</h3>
-<div class="paragraph"><p>In the original multi-pack-index design, we refer to objects via their lexicographic position (by object IDs) within the repository&#8217;s singular multi-pack-index. In the incremental multi-pack-index design, we refer to objects via their index into a concatenated lexicographic ordering among each component in the MIDX chain.</p></div>
-<div class="paragraph"><p>If <code>objects_nr</code>() is a function that returns the number of objects in a given MIDX layer, then the index of an object at lexicographic position <code>i</code> within, say, $H3 is defined as:</p></div>
+<div class="paragraph"><p>オリジナルのマルチパック・インデックスの設計では、 リポジトリーの単一のマルチパック・インデックス内で、 オブジェクトIDによる辞書順(lexicographic)の位置を参照してオブジェクトを指定します。 インクリメンタル・マルチパック・インデックスの設計では、 MIDX チェーンの各コンポーネント間で、 連結された辞書順のインデックスを介してオブジェクトを参照します。</p></div>
+<div class="paragraph"><p><code>objects_nr</code>() が指定された MIDX レイヤーのオブジェクト数を返す関数であるとした場合、 たとえば $H3 内で辞書順の位置 <code>i</code> にあるオブジェクトのインデックスは以下のように定義されます:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>objects_nr($H2) + objects_nr($H1) + i</code></pre>
 </div></div>
-<div class="paragraph"><p>(in the C implementation, this is often computed as <code>i</code> <code>+</code>
-<code>m-</code>&gt;<code>num_objects_in_base</code>).</p></div>
+<div class="paragraph"><p>(C 言語での実装では、 これは多くの場合 <code>i</code> <code>+</code> <code>m-</code>&gt;<code>num_objects_in_base</code> として実装されます)。</p></div>
 </div>
 </div>
 </div>
@@ -925,7 +924,7 @@ multi-pack-indexが拡張されて「安定したオブジェクトの順序」(
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-15 12:50:12 JST
+ 2025-10-16 15:58:49 JST
 </div>
 </div>
 </body>

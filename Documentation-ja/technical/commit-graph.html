@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Git Commit-Graph Design Notes</h1>
-<span id="revdate">2024-12-15</span>
+<span id="revdate">2025-09-21</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -854,7 +854,7 @@ A と B がそれぞれコミット時間 X と Y でコミットされており
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>修正コミット日付がない場合(Git の古いバージョンや世代混合のグラフチェーンなど)、現在、このヒューリスティックは、計算がクロックスキューのためにトポロジー関係に違反することが許可されている場合に常に使用されます (デフォルトの順序での「git log」など)。ただし、トポロジーの順序が必要な場合は使用されません (マージベース計算、「git log --graph」など)。</p></div>
+<div class="paragraph"><p>修正コミット日付がない場合(Git の古いバージョンや混合生成グラフチェーン(mixed generation graph chains)など)、 このヒューリスティックは、 計算がクロック・スキューのためにトポロジー関係に違反することが許可されている場合に現在使用されていますが(デフォルトの順序での「git log」など)、 トポロジカルな順序が必要な場合は使用されません (マージベース計算、 <code>git</code> <code>log</code> <code>--graph</code> など)。</p></div>
 <div class="paragraph"><p>実際には、いくつかのコミットが最近作成され、コミットグラフに保存されていないことが予想されます。 これらのコミットを「無限」(infinite)の世代番号を持つものとして扱い、既知の世代番号を持つコミットに到達するまでウォークします。</p></div>
 <div class="paragraph"><p>コミットグラフファイルにないコミットをマークするには、マクロ GENERATION_NUMBER_INFINITY を使用します。 世代番号を計算しないバージョンの Git によってコミットグラフファイルが書き込まれた場合、それらのコミットには、マクロ GENERATION_NUMBER_ZERO = 0 で表される世代番号が含まれます。</p></div>
 <div class="paragraph"><p>コミットグラフファイルは到達可能な状態で閉じられているため、すべてのコミットで以下のより弱い条件を保証できます:</p></div>
@@ -890,7 +890,7 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 </li>
 <li>
 <p>
-Commit grafts and replace objects can change the shape of the commit history. The latter can also be enabled/disabled on the fly using <code>--no-replace-objects</code>. This leads to difficulty storing both possible interpretations of a commit id, especially when computing generation numbers. The commit-graph will not be read or written when replace-objects or grafts are present.
+コミット グラフト(grafts;接ぎ木)と置換オブジェクト(replace objects)は、コミット履歴の形状を変更することができます。 置換オブジェクトは、 <code>--no-replace-objects</code> を使用してリアルタイム(on the fly)で 有効/無効 にすることもできます。 これにより、特に世代番号を計算するときに、コミット ID の可能な両方の解釈を保存することが難しくなります。 コミットグラフは、置換オブジェクト(replace-objects)またはグラフト(grafts;接ぎ木)が存在する場合、読み書きされません。
 </p>
 </li>
 <li>
@@ -909,8 +909,12 @@ Commit grafts and replace objects can change the shape of the commit history. Th
 <h3 id="_file_layout">File Layout</h3>
 <div class="paragraph"><p>コミットグラフチェーンは複数のファイルを使用し、固定の命名規則を使用してこれらのファイルを整理します。 各コミットグラフファイルには、 <code>$OBJDIR/info/commit-graphs/graph-</code>{hash}.graph という名前があります。ここで、{hash} は、そのファイルのフッターに格納されている16進数値のハッシュです(これは、そのハッシュの前のファイルの内容のハッシュです)。 コミットグラフファイルのチェーンの場合、<code>$OBJDIR/info/commit-graphs/commit-graph-chain</code> にあるプレーンテキスト ファイルには、ファイルのハッシュが「最低」(lowest)から「最高」(highest)の順に含まれています。</p></div>
 <div class="paragraph"><p>例えば、 <code>commit-graph-chain</code> ファイルが以下の行達を含んでいるのならば</p></div>
-<div class="paragraph"><p>```
-```</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>{hash0}
+{hash1}
+{hash2}</code></pre>
+</div></div>
 <div class="paragraph"><p>コミットグラフ チェイン は以下の図のようになります:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -934,8 +938,7 @@ Commit grafts and replace objects can change the shape of the commit history. Th
  |                       |
  +-----------------------+</code></pre>
 </div></div>
-<div class="paragraph"><p>Let X0 be the number of commits in <code>graph-</code>{hash0}.graph, X1 be the number of commits in <code>graph-</code>{hash1}.graph, and X2 be the number of commits in <code>graph-</code>{hash2}.graph. If a commit appears in position i in <code>graph-</code>{hash2}.graph, then we interpret this as being the commit in position (X0 + X1 + i), and that will be used as its "graph position". The commits in <code>graph-</code>{hash2}.graph use these positions to refer to their parents, which may be in <code>graph-</code>{hash1}.graph or <code>graph-</code>{hash0}.graph. We can navigate to an arbitrary commit in position j by checking its containment in the intervals [0, X0), [X0, X0 + X1), [X0 + X1, X0 + X1<br />
-X2).</p></div>
+<div class="paragraph"><p>X0 を <code>graph-</code>{hash0}.graph のコミット数、 X1 を <code>graph-</code>{hash1}.graph のコミット数、 X2 を <code>graph-</code>{hash2}.graph のコミット数とします。 あるコミットが <code>graph-</code>{hash2}.graph の i 番目の位置にある場合、私達はこれをコミット位置 (X0 + X1 + i) であると解釈し、それを「グラフの位置」(graph position)として使用します。 <code>graph-</code>{hash2}.graph のコミットは、これらの位置を使用して、 <code>graph-</code>{hash1}.graph または <code>graph-</code>{hash0}.graph にある親を参照します。 半開間隔 [<code>0,</code> <code>X0</code>)<code>,</code> [<code>X0,</code> <code>X0</code> <code>+</code> <code>X1</code>)<code>,</code> [<code>X0</code> <code>+</code> <code>X1,</code> <code>X0</code> <code>+</code> <code>X1</code> <code>+</code> <code>X2</code>) の区間に含まれることを確認することにより、位置 j の任意のコミットに移動できます(訳注: 半開区間 [<code>a,</code> <code>b</code>) は <code>a</code> ≦ <code>x</code> &lt; <code>b</code> を表す)。</p></div>
 <div class="paragraph"><p>各コミットグラフファイル(ベースの <code>graph-</code>{hash0}.graph を除く)には、下位層のすべてのファイルのハッシュを指定するデータが含まれています。 上記の例では、<code>graph-</code>{hash1}.graph には {hash0} が含まれ、 <code>graph-</code>{hash2}.graph には {hash0} と {hash1} が含まれます。</p></div>
 </div>
 <div class="sect2">
@@ -971,8 +974,11 @@ X2).</p></div>
  +-----------------------+</code></pre>
 </div></div>
 <div class="paragraph"><p>この処理中に、書き込みコミットが結合、ソートされ、内容が一時ファイルに書き込まれますが、すべて <code>commit-graph-chain.lock</code> ロックファイルが保持されます。 ファイルがフラッシュされると、計算された {hash3} に従って名前を <code>graph-</code>{hash3} に変更します。 最後に、新しいチェーンデータを <code>commit-graph-chain.lock</code> に書き込みます:</p></div>
-<div class="paragraph"><p>```
-```</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>{hash3}
+{hash0}</code></pre>
+</div></div>
 <div class="paragraph"><p>そして、ロックファイルをクローズします。</p></div>
 </div>
 <div class="sect2">
@@ -1094,7 +1100,7 @@ X2).</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-15 12:50:11 JST
+ 2025-09-21 21:26:05 JST
 </div>
 </div>
 </body>

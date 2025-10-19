@@ -57,7 +57,7 @@ Git は、以下のような多くの理由でコミットグラフをたどり�
 
   * A と B がそれぞれコミット時間 X と Y でコミットされており、X < Y の場合、A は「おそらく」 B に到達できません。
 
-修正コミット日付がない場合(Git の古いバージョンや世代混合のグラフチェーンなど)、現在、このヒューリスティックは、計算がクロックスキューのためにトポロジー関係に違反することが許可されている場合に常に使用されます (デフォルトの順序での「git log」など)。ただし、トポロジーの順序が必要な場合は使用されません (マージベース計算、「git log --graph」など)。
+修正コミット日付がない場合(Git の古いバージョンや混合生成グラフチェーン(mixed generation graph chains)など)、 このヒューリスティックは、 計算がクロック・スキューのためにトポロジー関係に違反することが許可されている場合に現在使用されていますが(デフォルトの順序での「git log」など)、 トポロジカルな順序が必要な場合は使用されません (マージベース計算、 `git log --graph` など)。
 
 実際には、いくつかのコミットが最近作成され、コミットグラフに保存されていないことが予想されます。 これらのコミットを「無限」(infinite)の世代番号を持つものとして扱い、既知の世代番号を持つコミットに到達するまでウォークします。
 
@@ -80,7 +80,7 @@ Git は、以下のような多くの理由でコミットグラフをたどり�
 
 - ファイル形式には、オブジェクトIDハッシュ関数のパラメーターが含まれているため、今後ハッシュアルゴリズムを変更しても、形式を変更する必要はありません。
 
-- Commit grafts and replace objects can change the shape of the commit history. The latter can also be enabled/disabled on the fly using `--no-replace-objects`. This leads to difficulty storing both possible interpretations of a commit id, especially when computing generation numbers. The commit-graph will not be read or written when replace-objects or grafts are present.
+- コミット グラフト(grafts;接ぎ木)と置換オブジェクト(replace objects)は、コミット履歴の形状を変更することができます。 置換オブジェクトは、 `--no-replace-objects` を使用してリアルタイム(on the fly)で 有効/無効 にすることもできます。 これにより、特に世代番号を計算するときに、コミット ID の可能な両方の解釈を保存することが難しくなります。 コミットグラフは、置換オブジェクト(replace-objects)またはグラフト(grafts;接ぎ木)が存在する場合、読み書きされません。
 
 - 浅いクローン(shallow clones)は、親を削除することでコミットのグラフト(grafts;接ぎ木)を作成します。 これにより、コミットグラフは、これらのコミットの世代番号が 1 であると考えるようになります。これらのコミットが浅くされていない場合(unshallow)、それらの世代番号は無効になります。 浅いクローンはコミット履歴を非常に小さなコミットのセットに制限することを目的としているため、コミットグラフ機能はこれらのクローンにはあまり役に立ちません。 浅いコミットが存在する場合、コミットグラフは読み書きされません。
 
@@ -95,11 +95,11 @@ Git は、以下のような多くの理由でコミットグラフをたどり�
 
 例えば、 `commit-graph-chain` ファイルが以下の行達を含んでいるのならば
 
-```
-	{hash0}
-	{hash1}
-	{hash2}
-```
+----
+{hash0}
+{hash1}
+{hash2}
+----
 
 コミットグラフ チェイン は以下の図のようになります:
 
@@ -125,8 +125,8 @@ Git は、以下のような多くの理由でコミットグラフをたどり�
  +-----------------------+
 ----
 
-Let X0 be the number of commits in `graph-{hash0}.graph`, X1 be the number of commits in `graph-{hash1}.graph`, and X2 be the number of commits in `graph-{hash2}.graph`. If a commit appears in position i in `graph-{hash2}.graph`, then we interpret this as being the commit in position (X0 + X1 + i), and that will be used as its "graph position". The commits in `graph-{hash2}.graph` use these positions to refer to their parents, which may be in `graph-{hash1}.graph` or `graph-{hash0}.graph`. We can navigate to an arbitrary commit in position j by checking its containment in the intervals [0, X0), [X0, X0 + X1), [X0 + X1, X0 + X1 +
-X2).
+X0 を `graph-{hash0}.graph` のコミット数、 X1 を `graph-{hash1}.graph` のコミット数、 X2 を `graph-{hash2}.graph` のコミット数とします。 あるコミットが `graph-{hash2}.graph` の i 番目の位置にある場合、私達はこれをコミット位置 (X0 + X1 + i) であると解釈し、それを「グラフの位置」(graph position)として使用します。 `graph-{hash2}.graph` のコミットは、これらの位置を使用して、 `graph-{hash1}.graph` または `graph-{hash0}.graph` にある親を参照します。 半開間隔 `[0, X0), [X0, X0 + X1), [X0 + X1, X0 + X1 + X2)` の区間に含まれることを確認することにより、位置 j の任意のコミットに移動できます(訳注: 半開区間 `[a, b)` は `a ≦ x < b` を表す)。
+
 
 各コミットグラフファイル(ベースの `graph-{hash0}.graph` を除く)には、下位層のすべてのファイルのハッシュを指定するデータが含まれています。 上記の例では、`graph-{hash1}.graph` には `{hash0}` が含まれ、 `graph-{hash2}.graph` には `{hash0}` と `{hash1}` が含まれます。
 
@@ -166,10 +166,10 @@ X2).
 
 この処理中に、書き込みコミットが結合、ソートされ、内容が一時ファイルに書き込まれますが、すべて `commit-graph-chain.lock` ロックファイルが保持されます。 ファイルがフラッシュされると、計算された `{hash3}` に従って名前を `graph-{hash3}` に変更します。 最後に、新しいチェーンデータを `commit-graph-chain.lock` に書き込みます:
 
-```
-	{hash3}
-	{hash0}
-```
+----
+{hash3}
+{hash0}
+----
 
 そして、ロックファイルをクローズします。
 

@@ -6,7 +6,7 @@ Background
 
 インデックスは、Gitで最も重要なデータ構造の1つです。 これは、パスとそのオブジェクト名のリストを記録することによって仮想の作業ツリーの状態を表し、コミットされる次のツリーオブジェクトを書き出すための足場領域(staging area)として機能します。 状態は、作業ツリー内のファイルと必ずしも一致する必要はなく、多くの場合一致しないという意味で「仮想」です。
 
-There are cases where Git needs to examine the differences between the virtual working tree state in the index and the files in the working tree. The most obvious case is when the user asks `git diff` (or its low level implementation, `git diff-files`) or `git-ls-files --modified`. In addition, Git internally checks if the files in the working tree are different from what are recorded in the index to avoid stomping on local changes in them during patch application, switching branches, and merging.
+Git が、インデックス内の仮想的な作業ツリーの状態と、 実際の作業ツリー内のファイルとの違いを調べる必要がある場合があります。 最も明白な場合は、 ユーザーが `git diff` (またはその低レベルの実装である `git diff-files`)や `git ls-files --modified` を実行したときです。 さらに、 Git は内部的にも、 パッチの適用やブランチの切り替えやマージの際に、 作業ツリー内のファイルがインデックスに記録された内容と異なっていないかを確認し、 ローカルの変更を上書きしないようにしています。
 
 作業ツリー内のファイルとインデックスエントリ間のこの比較を高速化するために、インデックスエントリは、最後に更新されたときに `lstat(2)` システムコールを介してファイルシステムから取得した情報を記録します。 それらが異なるかどうかを確認するとき、Gitは最初にファイルに対して `lstat(2)` 実行し、結果をこの情報と比較します(これは元々は `ce_match_stat()` 関数によって行われてましたが、現在のコードでは `ce_match_stat_basic()` 関数で行います)。 これらの「キャッシュされた統計情報」(cached stat information)フィールドのいくつかが一致しない場合、Gitは、ファイルの内容を見なくてもファイルが変更されたことを通知できます。
 
@@ -69,7 +69,7 @@ Runtime penalty
 Avoiding runtime penalty
 ------------------------
 
-In order to avoid the above runtime penalty, post 1.4.2 Git used to have a code that made sure the index file got a timestamp newer than the youngest files in the index when there were many young files with the same timestamp as the resulting index file otherwise would have by waiting before finishing writing the index file out.
+上記の実行時のペナルティを避けるために、 Git はバージョン 1.4.2 以降、 インデックスファイルの書き出しを完了する前に待機することで、 インデックス内の最も新しいファイルよりも新しいタイムスタンプをインデックスファイルに付けるようにするコードを持っていました。 これは、 同一タイムスタンプを持つ若いファイルが多数ある場合に、 インデックスファイルがそれらと同一のタイムスタンプになってしまうのを防ぐためです。
 
 実際には、インデックス内の多くのパスがすべて非常にクリーンであるという状況は非常にまれであると私は思いました。 多数のパスの最近のタイムスタンプを記録できる唯一のコードパスは以下のとおりです:
 
@@ -79,6 +79,6 @@ In order to avoid the above runtime penalty, post 1.4.2 Git used to have a code 
 
 注意: `git checkout` を使用してブランチを切り替えると、現在のブランチと新しいブランチの間で同じである既存の作業ツリーファイルのキャッシュされた統計情報が保持されます。これらはすべて、結果のインデックスファイルよりも古く、racily cleanになることはありません。 実際にチェックアウトされたファイルだけが、racily cleanになることができます。
 
-In a large project where raciness avoidance cost really matters, however, the initial computation of all object names in the index takes more than one second, and the index file is written out after all that happens. Therefore the timestamp of the index file will be more than one second later than the youngest file in the working tree. This means that in these cases there actually will not be any racily clean entry in the resulting index.
+ただし、racy回避コスト(raciness avoidance cost)が非常に重要な大規模なプロジェクトでは、インデックス内のすべてのオブジェクト名の初期計算に1秒以上かかり、その後インデックスファイルが書き出されます。 したがって、インデックスファイルのタイムスタンプは、作業ツリーの最も若いファイルより1秒以上遅くなります。 これは、これらの場合、結果のインデックスに実際には racily clean なエントリがないことを意味します。
 
 この議論に基づいて、現在のコードは、実際にはもう存在しない実行時のペナルティを回避するために「回避策」を使用していません。 これは、2006年8月15日にcommit0fc82cffで実行されました。
