@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 PROJ=${HOME}/work/git-docs-ja
-BRANCH=docs-ja-4
+BRANCH=docs-ja-5
 cd ${PROJ}/Documentation-sedout
 for dst_dir in technical RelNotes config howto includes mergetools
 do

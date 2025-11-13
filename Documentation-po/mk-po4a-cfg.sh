@@ -3,7 +3,7 @@
 SRC_FILE=$1
 BASE_FILE=${SRC_FILE#../Documentation-sedout/}
 DST_FILE=../Documentation-ja/${BASE_FILE}
-BASE_BODY=${BASE_FILE%.txt}
+BASE_BODY=${BASE_FILE%.adoc}
 echo "# generate by $0" `date`
 echo "[po4a_langs] ja"
 echo "[type: asciidoc] ${SRC_FILE} \$lang:${DST_FILE}"

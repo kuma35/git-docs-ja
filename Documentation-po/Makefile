@@ -45,8 +45,8 @@ endif
 
 SRC_DIR = ../Documentation
 SEDOUT_DIR = ../Documentation-sedout
-SEDOUT_EXT = .txt
-ASCIIDOC_EXT = .txt
+SEDOUT_EXT = .adoc
+ASCIIDOC_EXT = .adoc
 # PO_DIR = . ( current directory )
 PO_EXT = .po
 POT_DIR = pot
@@ -77,21 +77,23 @@ DST_INSTALL_TEXT = ../docs/$(BRANCH)/INSTALL.txt
 # $(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
 
 # cmds_txt and mergetools_txt from Documentation/Makefile there are templates. not need translation.
-cmds_txt = cmds-ancillaryinterrogators.txt \
-	cmds-ancillarymanipulators.txt \
-	cmds-mainporcelain.txt \
-	cmds-plumbinginterrogators.txt \
-	cmds-plumbingmanipulators.txt \
-	cmds-synchingrepositories.txt \
-	cmds-synchelpers.txt \
-	cmds-guide.txt \
-	cmds-purehelpers.txt \
-	cmds-foreignscminterface.txt
+cmds_txt = cmds-ancillaryinterrogators.adoc \
+	cmds-ancillarymanipulators.adoc \
+	cmds-mainporcelain.adoc \
+	cmds-plumbinginterrogators.adoc \
+	cmds-plumbingmanipulators.adoc \
+	cmds-synchingrepositories.adoc \
+	cmds-synchelpers.adoc \
+	cmds-guide.adoc \
+	cmds-developerinterfaces.adoc \
+	cmds-userinterfaces.adoc \
+	cmds-purehelpers.adoc \
+	cmds-foreignscminterface.adoc
 
 # $(warning cmds_txt= $(wildcard $(SRC_DIR)/cmds-*$(ASCIIDOC_EXT)))
 # $(error "cmds_txt")
 
-mergetools_txt = mergetools-diff.txt mergetools-merge.txt
+mergetools_txt = mergetools-diff.adoc mergetools-merge.adoc
 
 EXCLUDE_TXT = $(cmds_txt) $(mergetools_txt)
 
@@ -168,9 +170,10 @@ $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
 $(DST_DIR)/technical/api-index.sh : $(SRC_DIR)/technical/api-index.sh
 	cp $< $@
 
-# Documentation/asciidoc.conf 修正を反映させる
-$(DST_DIR)/asciidoc.conf : $(SRC_DIR)/asciidoc.conf
-	cp $< $@
+# 2025/11/13 ascidoc.conf.in から 生成されるようになった。様子見
+# Documentation/asciidoc.conf 修正を反映させる 
+# $(DST_DIR)/asciidoc.conf : $(SRC_DIR)/asciidoc.conf
+# 	cp $< $@
 
 ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/api-index.sh $(DST_DIR)/asciidoc.conf
 
@@ -180,6 +183,7 @@ ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/ap
 clean:
 	find $(DST_DIR) -type f | xargs rm -f
 	find $(DST_DIR) -empty | xargs rmdir
-	rsync -av --include "cmds-*.txt" --include "mergetools-*.txt" --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
+	# rsync -av --include "cmds-*.txt" --include "mergetools-*.txt" --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
+	rsync -av --include "cmds-*.adoc" --include "mergetools-*.adoc" --exclude "*.adoc" $(SRC_DIR)/ $(DST_DIR)
 
 .PHONEY: ja clean help
