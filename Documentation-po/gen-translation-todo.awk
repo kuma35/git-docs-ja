@@ -19,7 +19,7 @@ $1 !~ /[0-9]+\+[0-9]+f\+[0-9]+u/ {
     if (BREAK_COUNT < 10) {  # 10 po files(0...9)
 	# nothing
     } else {
-	print "* TODO # save point. git push for github page."
+	print "# save point. git push for github page."
 	BREAK_COUNT = 0
     }
 }
