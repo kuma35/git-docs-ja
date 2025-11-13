@@ -170,6 +170,13 @@ test_expect_success 'clone bundle with different fsckObjects configurations' '
 
 	test_must_fail git -c transfer.fsckObjects=true \
 		clone bundle-fsck/bad.bundle bundle-transfer-fsck 2>err &&
+	test_grep "missingEmail" err &&
+
+	git -c fetch.fsckObjects=true -c fetch.fsck.missingEmail=ignore \
+		clone bundle-fsck/bad.bundle bundle-fsck-ignore &&
+
+	test_must_fail git -c fetch.fsckObjects=true -c fetch.fsck.missingEmail=error \
+		clone bundle-fsck/bad.bundle bundle-fsck-error 2>err &&
 	test_grep "missingEmail" err
 '
 
@@ -202,6 +209,18 @@ test_expect_success 'git bundle v3 rejects unknown capabilities' '
 	EOF
 	test_must_fail git bundle verify new 2>output &&
 	test_grep "unknown capability .unknown=silly." output
+'
+
+test_expect_success 'cloning bundle suppresses default branch name advice' '
+	test_when_finished "rm -rf bundle-repo clone-repo" &&
+
+	git init bundle-repo &&
+	git -C bundle-repo commit --allow-empty -m init &&
+	git -C bundle-repo bundle create repo.bundle --all &&
+	GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME= \
+		git clone --single-branch bundle-repo/repo.bundle clone-repo 2>err &&
+
+	test_grep ! "hint: " err
 '
 
 test_done

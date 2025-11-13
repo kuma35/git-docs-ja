@@ -59,7 +59,7 @@ static struct passwd *xgetpwuid_self(int *is_bogus)
 
 static void copy_gecos(const struct passwd *w, struct strbuf *name)
 {
-	char *src;
+	const char *src;
 
 	/* Traditionally GECOS field had office phone numbers etc, separated
 	 * with commas.  Also & stands for capitalized form of the login name.
@@ -272,7 +272,7 @@ static void strbuf_addstr_without_crud(struct strbuf *sb, const char *src)
  * can still be NULL if the input line only has the name/email part
  * (e.g. reading from a reflog entry).
  */
-int split_ident_line(struct ident_split *split, const char *line, int len)
+int split_ident_line(struct ident_split *split, const char *line, size_t len)
 {
 	const char *cp;
 	size_t span;
@@ -412,6 +412,10 @@ void apply_mailmap_to_header(struct strbuf *buf, const char **header,
 				found_header = 1;
 				buf_offset += endp - line;
 				buf_offset += rewrite_ident_line(person, endp - person, buf, mailmap);
+				/* Recompute endp after potential buffer reallocation */
+				endp = buf->buf + buf_offset;
+				if (*endp == '\n')
+					buf_offset++;
 				break;
 			}
 

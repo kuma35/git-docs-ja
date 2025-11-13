@@ -308,7 +308,10 @@ test_expect_success 'no bitmaps created if .keep files present' '
 	keep=${pack%.pack}.keep &&
 	test_when_finished "rm -f \"\$keep\"" &&
 	>"$keep" &&
-	git -C bare.git repack -ad 2>stderr &&
+
+	# Disable --name-hash-version test due to stderr comparison.
+	GIT_TEST_NAME_HASH_VERSION=1 \
+		git -C bare.git repack -ad 2>stderr &&
 	test_must_be_empty stderr &&
 	find bare.git/objects/pack/ -type f -name "*.bitmap" >actual &&
 	test_must_be_empty actual
@@ -319,7 +322,10 @@ test_expect_success 'auto-bitmaps do not complain if unavailable' '
 	blob=$(test-tool genrandom big $((1024*1024)) |
 	       git -C bare.git hash-object -w --stdin) &&
 	git -C bare.git update-ref refs/tags/big $blob &&
-	git -C bare.git repack -ad 2>stderr &&
+
+	# Disable --name-hash-version test due to stderr comparison.
+	GIT_TEST_NAME_HASH_VERSION=1 \
+		git -C bare.git repack -ad 2>stderr &&
 	test_must_be_empty stderr &&
 	find bare.git/objects/pack -type f -name "*.bitmap" >actual &&
 	test_must_be_empty actual
@@ -776,6 +782,12 @@ test_expect_success 'repack -ad cleans up old .tmp-* packs' '
 	test_must_be_empty tmpfiles
 '
 
+test_expect_success '--name-hash-version option passes through to pack-objects' '
+	GIT_TRACE2_EVENT="$(pwd)/hash-trace.txt" \
+		git repack -a --name-hash-version=2 &&
+	test_subcommand_flex git pack-objects --name-hash-version=2 <hash-trace.txt
+'
+
 test_expect_success 'setup for update-server-info' '
 	git init update-server-info &&
 	test_commit -C update-server-info message
@@ -824,6 +836,69 @@ test_expect_success '-n overrides repack.updateServerInfo=true' '
 	test_server_info_cleanup &&
 	git -C update-server-info -c repack.updateServerInfo=true repack -n &&
 	test_server_info_missing
+'
+
+test_expect_success 'pending objects are repacked appropriately' '
+	test_when_finished rm -rf pending &&
+	git init pending &&
+
+	(
+		cd pending &&
+
+		# Commit file, a/b/c and never change them.
+		mkdir -p a/b &&
+		echo singleton >file &&
+		echo stuff >a/b/c &&
+		echo more >a/d &&
+		git add file a &&
+		git commit -m "single blobs" &&
+
+		# Files a/d and a/e will not be singletons.
+		echo d >a/d &&
+		echo e >a/e &&
+		git add a &&
+		git commit -m "more blobs" &&
+
+		# This use of a sparse index helps to force
+		# test that the cache-tree is walked, too.
+		git sparse-checkout set --sparse-index a x &&
+
+		# Create staged changes:
+		# * a/e now has multiple versions.
+		# * a/i now has only one version.
+		echo f >a/d &&
+		echo h >a/e &&
+		echo i >a/i &&
+		git add a &&
+
+		# Stage and unstage a change to make use of
+		# resolve-undo cache and how that impacts fsck.
+		mkdir x &&
+		echo y >x/y &&
+		git add x &&
+		xy=$(git rev-parse :x/y) &&
+		git rm --cached x/y &&
+
+		# The blob for x/y must persist through repacks,
+		# but fsck currently ignores the REUC extension
+		# for finding links to the blob.
+		cat >expect <<-EOF &&
+		dangling blob $xy
+		EOF
+
+		# Bring the loose objects into a packfile to avoid
+		# leftovers in next test. Without this, the loose
+		# objects persist and the test succeeds for other
+		# reasons.
+		git repack -adf &&
+		git fsck >out &&
+		test_cmp expect out &&
+
+		# Test path walk version with pack.useSparse.
+		git -c pack.useSparse=true repack -adf --path-walk &&
+		git fsck >out &&
+		test_cmp expect out
+	)
 '
 
 test_done

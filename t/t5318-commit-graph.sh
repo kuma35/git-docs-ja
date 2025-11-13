@@ -837,7 +837,7 @@ check_corrupt_chunk () {
 	test_cmp expect.out out
 }
 
-test_expect_success 'reader notices too-small oid fanout chunk' '
+test_expect_success PERL_TEST_HELPERS 'reader notices too-small oid fanout chunk' '
 	# make it big enough that the graph file is plausible,
 	# otherwise we hit an earlier check
 	check_corrupt_chunk OIDF clear $(printf "000000%02x" $(test_seq 250)) &&
@@ -848,7 +848,7 @@ test_expect_success 'reader notices too-small oid fanout chunk' '
 	test_cmp expect.err err
 '
 
-test_expect_success 'reader notices fanout/lookup table mismatch' '
+test_expect_success PERL_TEST_HELPERS 'reader notices fanout/lookup table mismatch' '
 	check_corrupt_chunk OIDF 1020 "FFFFFFFF" &&
 	cat >expect.err <<-\EOF &&
 	error: commit-graph OID lookup chunk is the wrong size
@@ -857,7 +857,7 @@ test_expect_success 'reader notices fanout/lookup table mismatch' '
 	test_cmp expect.err err
 '
 
-test_expect_success 'reader notices out-of-bounds fanout' '
+test_expect_success PERL_TEST_HELPERS 'reader notices out-of-bounds fanout' '
 	# Rather than try to corrupt a specific hash, we will just
 	# wreck them all. But we cannot just set them all to 0xFFFFFFFF or
 	# similar, as they are used for hi/lo starts in a binary search (so if
@@ -873,7 +873,7 @@ test_expect_success 'reader notices out-of-bounds fanout' '
 	test_cmp expect.err err
 '
 
-test_expect_success 'reader notices too-small commit data chunk' '
+test_expect_success PERL_TEST_HELPERS 'reader notices too-small commit data chunk' '
 	check_corrupt_chunk CDAT clear 00000000 &&
 	cat >expect.err <<-\EOF &&
 	error: commit-graph commit data chunk is wrong size
@@ -882,7 +882,7 @@ test_expect_success 'reader notices too-small commit data chunk' '
 	test_cmp expect.err err
 '
 
-test_expect_success 'reader notices out-of-bounds extra edge' '
+test_expect_success PERL_TEST_HELPERS 'reader notices out-of-bounds extra edge' '
 	check_corrupt_chunk EDGE clear &&
 	cat >expect.err <<-\EOF &&
 	error: commit-graph extra-edges pointer out of bounds
@@ -890,7 +890,7 @@ test_expect_success 'reader notices out-of-bounds extra edge' '
 	test_cmp expect.err err
 '
 
-test_expect_success 'reader notices too-small generations chunk' '
+test_expect_success PERL_TEST_HELPERS 'reader notices too-small generations chunk' '
 	check_corrupt_chunk GDA2 clear 00000000 &&
 	cat >expect.err <<-\EOF &&
 	error: commit-graph generations chunk is wrong size
@@ -943,6 +943,50 @@ test_expect_success 'stale commit cannot be parsed when traversing graph' '
 		# ... but fail when we are paranoid.
 		test_must_fail env GIT_COMMIT_GRAPH_PARANOIA=true git rev-parse HEAD~2 2>error &&
 		grep "error: commit $oid exists in commit-graph but not in the object database" error
+	)
+'
+
+test_expect_success 'config commitGraph.changedPaths acts like --changed-paths' '
+	git init config-changed-paths &&
+	(
+		cd config-changed-paths &&
+
+		# commitGraph.changedPaths is not set and it should not write Bloom filters
+		test_commit first &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --reachable --progress 2>error &&
+		test_grep ! "Bloom filters" error &&
+
+		# Set commitGraph.changedPaths to true and it should write Bloom filters
+		test_commit second &&
+		git config commitGraph.changedPaths true &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --reachable --progress 2>error &&
+		test_grep "Bloom filters" error &&
+
+		# Add one more config commitGraph.changedPaths as false to disable the previous true config value
+		# It should still write Bloom filters due to existing filters
+		test_commit third &&
+		git config --add commitGraph.changedPaths false &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --reachable --progress 2>error &&
+		test_grep "Bloom filters" error &&
+
+		# commitGraph.changedPaths is still false and command line options should take precedence
+		test_commit fourth &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --no-changed-paths --reachable --progress 2>error &&
+		test_grep ! "Bloom filters" error &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --reachable --progress 2>error &&
+		test_grep ! "Bloom filters" error &&
+
+		# commitGraph.changedPaths is all cleared and then set to false again, command line options should take precedence
+		test_commit fifth &&
+		git config --unset-all commitGraph.changedPaths &&
+		git config commitGraph.changedPaths false &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --changed-paths --reachable --progress 2>error &&
+		test_grep "Bloom filters" error &&
+
+		# commitGraph.changedPaths is still false and it should write Bloom filters due to existing filters
+		test_commit sixth &&
+		GIT_PROGRESS_DELAY=0 git commit-graph write --reachable --progress 2>error &&
+		test_grep "Bloom filters" error
 	)
 '
 

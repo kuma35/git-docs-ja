@@ -37,6 +37,9 @@ struct repo_settings {
 	int pack_use_bitmap_boundary_traversal;
 	int pack_use_multi_pack_reuse;
 
+	int shared_repository;
+	int shared_repository_initialized;
+
 	/*
 	 * Does this repository have core.useReplaceRefs=true (on by
 	 * default)? This provides a repository-scoped version of this
@@ -53,23 +56,47 @@ struct repo_settings {
 	enum untracked_cache_setting core_untracked_cache;
 
 	int pack_use_sparse;
+	int pack_use_path_walk;
 	enum fetch_negotiation_setting fetch_negotiation_algorithm;
 
 	int core_multi_pack_index;
 	int warn_ambiguous_refs; /* lazily loaded via accessor */
+
+	size_t delta_base_cache_limit;
+	size_t packed_git_window_size;
+	size_t packed_git_limit;
+	unsigned long big_file_threshold;
+
+	char *hooks_path;
 };
 #define REPO_SETTINGS_INIT { \
+	.shared_repository = -1, \
 	.index_version = -1, \
 	.core_untracked_cache = UNTRACKED_CACHE_KEEP, \
 	.fetch_negotiation_algorithm = FETCH_NEGOTIATION_CONSECUTIVE, \
 	.warn_ambiguous_refs = -1, \
+	.delta_base_cache_limit = DEFAULT_DELTA_BASE_CACHE_LIMIT, \
+	.packed_git_window_size = DEFAULT_PACKED_GIT_WINDOW_SIZE, \
+	.packed_git_limit = DEFAULT_PACKED_GIT_LIMIT, \
 }
 
 void prepare_repo_settings(struct repository *r);
+void repo_settings_clear(struct repository *r);
 
 /* Read the value for "core.logAllRefUpdates". */
 enum log_refs_config repo_settings_get_log_all_ref_updates(struct repository *repo);
 /* Read the value for "core.warnAmbiguousRefs". */
 int repo_settings_get_warn_ambiguous_refs(struct repository *repo);
+/* Read the value for "core.hooksPath". */
+const char *repo_settings_get_hooks_path(struct repository *repo);
+
+/* Read and set the value for "core.bigFileThreshold". */
+unsigned long repo_settings_get_big_file_threshold(struct repository *repo);
+void repo_settings_set_big_file_threshold(struct repository *repo, unsigned long value);
+
+/* Read, set or reset the value for "core.sharedRepository". */
+int repo_settings_get_shared_repository(struct repository *repo);
+void repo_settings_set_shared_repository(struct repository *repo, int value);
+void repo_settings_reset_shared_repository(struct repository *repo);
 
 #endif /* REPO_SETTINGS_H */

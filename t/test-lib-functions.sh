@@ -88,15 +88,15 @@ test_decode_color () {
 }
 
 lf_to_nul () {
-	perl -pe 'y/\012/\000/'
+	tr '\012' '\000'
 }
 
 nul_to_q () {
-	perl -pe 'y/\000/Q/'
+	tr '\000' 'Q'
 }
 
 q_to_nul () {
-	perl -pe 'y/Q/\000/'
+	tr 'Q' '\000'
 }
 
 q_to_cr () {
@@ -773,6 +773,8 @@ mkdir -p "$TRASH_DIRECTORY/prereq-test-dir-'"$1"'" &&
 	rm -rf "$TRASH_DIRECTORY/prereq-test-dir-$1"
 	if test "$eval_ret" = 0; then
 		say >&3 "prerequisite $1 ok"
+	elif test "$eval_ret" = 125; then
+		:;
 	else
 		say >&3 "prerequisite $1 not satisfied"
 	fi
@@ -811,6 +813,9 @@ test_have_prereq () {
 				if test_run_lazy_prereq_ "$prerequisite" "$script"
 				then
 					test_set_prereq $prerequisite
+				elif test $? = 125
+				then
+					BUG "Do not use $prerequisite"
 				fi
 				lazily_tested_prereq="$lazily_tested_prereq$prerequisite "
 			esac
@@ -927,7 +932,7 @@ test_expect_success () {
 		test -n "$test_skip_test_preamble" ||
 		say >&3 "expecting success of $TEST_NUMBER.$test_count '$1': $test_body"
 		if test_run_ "$test_body" &&
-		   check_test_results_san_file_empty_
+		   ! check_test_results_san_file_has_entries_
 		then
 			test_ok_ "$1"
 		else
@@ -1268,6 +1273,16 @@ test_cmp () {
 	eval "$GIT_TEST_CMP" '"$@"'
 }
 
+# test_cmp_sorted runs test_cmp on sorted versions of the two
+# input files. Uses "$1.sorted" and "$2.sorted" as temp files.
+
+test_cmp_sorted () {
+	sort <"$1" >"$1.sorted" &&
+	sort <"$2" >"$2.sorted" &&
+	test_cmp "$1.sorted" "$2.sorted" &&
+	rm "$1.sorted" "$2.sorted"
+}
+
 # Check that the given config key has the expected value.
 #
 #    test_cmp_config [-C <dir>] <expected-value>
@@ -1436,9 +1451,21 @@ test_cmp_fspath () {
 #     test_seq 1 5 -- outputs 1 2 3 4 5 one line at a time
 #
 # or with one argument (end), in which case it starts counting
-# from 1.
+# from 1. In addition to the start/end arguments, you can pass an optional
+# printf format. For example:
+#
+#     test_seq -f "line %d" 1 5
+#
+# would print 5 lines, "line 1" through "line 5".
 
 test_seq () {
+	local fmt="%d"
+	case "$1" in
+	-f)
+		fmt="$2"
+		shift 2
+		;;
+	esac
 	case $# in
 	1)	set 1 "$@" ;;
 	2)	;;
@@ -1447,7 +1474,7 @@ test_seq () {
 	test_seq_counter__=$1
 	while test "$test_seq_counter__" -le "$2"
 	do
-		echo "$test_seq_counter__"
+		printf "$fmt\n" "$test_seq_counter__"
 		test_seq_counter__=$(( $test_seq_counter__ + 1 ))
 	done
 }
@@ -1630,17 +1657,7 @@ test_match_signal () {
 
 # Read up to "$1" bytes (or to EOF) from stdin and write them to stdout.
 test_copy_bytes () {
-	perl -e '
-		my $len = $ARGV[1];
-		while ($len > 0) {
-			my $s;
-			my $nread = sysread(STDIN, $s, $len);
-			die "cannot read: $!" unless defined($nread);
-			last unless $nread;
-			print $s;
-			$len -= $nread;
-		}
-	' - "$1"
+	dd ibs=1 count="$1" 2>/dev/null
 }
 
 # run "$@" inside a non-git directory
@@ -1690,12 +1707,17 @@ test_set_hash () {
 
 # Detect the hash algorithm in use.
 test_detect_hash () {
-	case "$GIT_TEST_DEFAULT_HASH" in
-	"sha256")
+	case "${GIT_TEST_DEFAULT_HASH:-$GIT_TEST_BUILTIN_HASH}" in
+	*:*)
+	    test_hash_algo="${GIT_TEST_DEFAULT_HASH%%:*}"
+	    test_compat_hash_algo="${GIT_TEST_DEFAULT_HASH##*:}"
+	    test_repo_compat_hash_algo="$test_compat_hash_algo"
+	    ;;
+	sha256)
 	    test_hash_algo=sha256
 	    test_compat_hash_algo=sha1
 	    ;;
-	*)
+	sha1)
 	    test_hash_algo=sha1
 	    test_compat_hash_algo=sha256
 	    ;;
@@ -1761,6 +1783,9 @@ test_oid () {
 		shift;;
 	--hash=compat)
 		algo="$test_compat_hash_algo" &&
+		shift;;
+	--hash=builtin)
+		algo="$GIT_TEST_BUILTIN_HASH" &&
 		shift;;
 	--hash=*)
 		algo="${1#--hash=}" &&
@@ -1886,6 +1911,32 @@ test_subcommand () {
 	fi
 }
 
+# Check that the given subcommand was run with the given set of
+# arguments in order (but with possible extra arguments).
+#
+#	test_subcommand_flex [!] <command> <args>... < <trace>
+#
+# If the first parameter passed is !, this instead checks that
+# the given command was not called.
+#
+test_subcommand_flex () {
+	local negate=
+	if test "$1" = "!"
+	then
+		negate=t
+		shift
+	fi
+
+	local expr="$(printf '"%s".*' "$@")"
+
+	if test -n "$negate"
+	then
+		! grep "\[$expr\]"
+	else
+		grep "\[$expr\]"
+	fi
+}
+
 # Check that the given command was invoked as part of the
 # trace2-format trace on stdin.
 #
@@ -1953,7 +2004,7 @@ test_remote_https_urls() {
 # Print the destination of symlink(s) provided as arguments. Basically
 # the same as the readlink command, but it's not available everywhere.
 test_readlink () {
-	perl -le 'print readlink($_) for @ARGV' "$@"
+	test-tool path-utils readlink "$@"
 }
 
 # Set mtime to a fixed "magic" timestamp in mid February 2009, before we
@@ -2006,4 +2057,12 @@ test_trailing_hash () {
 	tail -c $(test_oid rawsz) "$file" |
 		test-tool hexdump |
 		sed "s/ //g"
+}
+
+# Trim and replace each character with ascii code below 32 or above
+# 127 (included) using a dot '.' character.
+# Octal intervals \001-\040 and \177-\377
+# correspond to decimal intervals 1-32 and 127-255
+test_redact_non_printables () {
+    tr -d "\n\r" | tr "[\001-\040][\177-\377]" "."
 }

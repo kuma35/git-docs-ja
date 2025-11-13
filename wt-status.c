@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "advice.h"
@@ -147,7 +148,7 @@ void wt_status_prepare(struct repository *r, struct wt_status *s)
 	memcpy(s->color_palette, default_wt_status_colors,
 	       sizeof(default_wt_status_colors));
 	s->show_untracked_files = SHOW_NORMAL_UNTRACKED_FILES;
-	s->use_color = -1;
+	s->use_color = GIT_COLOR_UNKNOWN;
 	s->relative_paths = 1;
 	s->branch = refs_resolve_refdup(get_main_ref_store(the_repository),
 					"HEAD", 0, NULL, NULL);
@@ -971,7 +972,8 @@ static void wt_longstatus_print_changed(struct wt_status *s)
 	wt_longstatus_print_trailer(s);
 }
 
-static int stash_count_refs(struct object_id *ooid UNUSED,
+static int stash_count_refs(const char *refname UNUSED,
+			    struct object_id *ooid UNUSED,
 			    struct object_id *noid UNUSED,
 			    const char *email UNUSED,
 			    timestamp_t timestamp UNUSED, int tz UNUSED,
@@ -1163,7 +1165,7 @@ static void wt_longstatus_print_verbose(struct wt_status *s)
 	 * before.
 	 */
 	if (s->fp != stdout) {
-		rev.diffopt.use_color = 0;
+		rev.diffopt.use_color = GIT_COLOR_NEVER;
 		wt_status_add_cut_line(s);
 	}
 	if (s->verbose > 1 && s->committable) {
@@ -1288,7 +1290,8 @@ static void show_am_in_progress(struct wt_status *s,
 static char *read_line_from_git_path(const char *filename)
 {
 	struct strbuf buf = STRBUF_INIT;
-	FILE *fp = fopen_or_warn(git_path("%s", filename), "r");
+	FILE *fp = fopen_or_warn(repo_git_path_append(the_repository, &buf,
+						      "%s", filename), "r");
 
 	if (!fp) {
 		strbuf_release(&buf);
@@ -1349,8 +1352,8 @@ static int split_commit_in_progress(struct wt_status *s)
  */
 static void abbrev_oid_in_line(struct strbuf *line)
 {
-	struct strbuf **split;
-	int i;
+	struct string_list split = STRING_LIST_INIT_DUP;
+	struct object_id oid;
 
 	if (starts_with(line->buf, "exec ") ||
 	    starts_with(line->buf, "x ") ||
@@ -1358,51 +1361,46 @@ static void abbrev_oid_in_line(struct strbuf *line)
 	    starts_with(line->buf, "l "))
 		return;
 
-	split = strbuf_split_max(line, ' ', 3);
-	if (split[0] && split[1]) {
-		struct object_id oid;
-
-		/*
-		 * strbuf_split_max left a space. Trim it and re-add
-		 * it after abbreviation.
-		 */
-		strbuf_trim(split[1]);
-		if (!repo_get_oid(the_repository, split[1]->buf, &oid)) {
-			strbuf_reset(split[1]);
-			strbuf_add_unique_abbrev(split[1], &oid,
-						 DEFAULT_ABBREV);
-			strbuf_addch(split[1], ' ');
-			strbuf_reset(line);
-			for (i = 0; split[i]; i++)
-				strbuf_addbuf(line, split[i]);
-		}
+	if ((2 <= string_list_split(&split, line->buf, " ", 2)) &&
+	    !repo_get_oid(the_repository, split.items[1].string, &oid)) {
+		strbuf_reset(line);
+		strbuf_addf(line, "%s ", split.items[0].string);
+		strbuf_add_unique_abbrev(line, &oid, DEFAULT_ABBREV);
+		for (size_t i = 2; i < split.nr; i++)
+			strbuf_addf(line, " %s", split.items[i].string);
 	}
-	strbuf_list_free(split);
+	string_list_clear(&split, 0);
 }
 
 static int read_rebase_todolist(const char *fname, struct string_list *lines)
 {
-	struct strbuf line = STRBUF_INIT;
-	FILE *f = fopen(git_path("%s", fname), "r");
+	struct strbuf buf = STRBUF_INIT;
+	FILE *f = fopen(repo_git_path_append(the_repository, &buf, "%s", fname), "r");
+	int ret;
 
 	if (!f) {
-		if (errno == ENOENT)
-			return -1;
+		if (errno == ENOENT) {
+			ret = -1;
+			goto out;
+		}
 		die_errno("Could not open file %s for reading",
-			  git_path("%s", fname));
+			  repo_git_path_replace(the_repository, &buf, "%s", fname));
 	}
-	while (!strbuf_getline_lf(&line, f)) {
-		if (starts_with(line.buf, comment_line_str))
+	while (!strbuf_getline_lf(&buf, f)) {
+		if (starts_with(buf.buf, comment_line_str))
 			continue;
-		strbuf_trim(&line);
-		if (!line.len)
+		strbuf_trim(&buf);
+		if (!buf.len)
 			continue;
-		abbrev_oid_in_line(&line);
-		string_list_append(lines, line.buf);
+		abbrev_oid_in_line(&buf);
+		string_list_append(lines, buf.buf);
 	}
 	fclose(f);
-	strbuf_release(&line);
-	return 0;
+
+	ret = 0;
+out:
+	strbuf_release(&buf);
+	return ret;
 }
 
 static void show_rebase_information(struct wt_status *s,
@@ -1433,9 +1431,12 @@ static void show_rebase_information(struct wt_status *s,
 				i < have_done.nr;
 				i++)
 				status_printf_ln(s, color, "   %s", have_done.items[i].string);
-			if (have_done.nr > nr_lines_to_show && s->hints)
+			if (have_done.nr > nr_lines_to_show && s->hints) {
+				char *path = repo_git_path(the_repository, "rebase-merge/done");
 				status_printf_ln(s, color,
-					_("  (see more in file %s)"), git_path("rebase-merge/done"));
+					_("  (see more in file %s)"), path);
+				free(path);
+			}
 		}
 
 		if (yet_to_do.nr == 0)
@@ -1653,7 +1654,8 @@ struct grab_1st_switch_cbdata {
 	struct object_id noid;
 };
 
-static int grab_1st_switch(struct object_id *ooid UNUSED,
+static int grab_1st_switch(const char *refname UNUSED,
+			   struct object_id *ooid UNUSED,
 			   struct object_id *noid,
 			   const char *email UNUSED,
 			   timestamp_t timestamp UNUSED, int tz UNUSED,
@@ -1813,10 +1815,10 @@ void wt_status_get_state(struct repository *r,
 	if (!sequencer_get_last_command(r, &action)) {
 		if (action == REPLAY_PICK && !state->cherry_pick_in_progress) {
 			state->cherry_pick_in_progress = 1;
-			oidcpy(&state->cherry_pick_head_oid, null_oid());
+			oidcpy(&state->cherry_pick_head_oid, null_oid(the_hash_algo));
 		} else if (action == REPLAY_REVERT && !state->revert_in_progress) {
 			state->revert_in_progress = 1;
-			oidcpy(&state->revert_head_oid, null_oid());
+			oidcpy(&state->revert_head_oid, null_oid(the_hash_algo));
 		}
 	}
 	if (get_detached_from)
@@ -2040,13 +2042,13 @@ static void wt_shortstatus_status(struct string_list_item *it,
 static void wt_shortstatus_other(struct string_list_item *it,
 				 struct wt_status *s, const char *sign)
 {
+	color_fprintf(s->fp, color(WT_STATUS_UNTRACKED, s), "%s", sign);
 	if (s->null_termination) {
-		fprintf(s->fp, "%s %s%c", sign, it->string, 0);
+		fprintf(s->fp, " %s%c", it->string, 0);
 	} else {
 		struct strbuf onebuf = STRBUF_INIT;
 		const char *one;
 		one = quote_path(it->string, s->prefix, &onebuf, QUOTE_PATH_QUOTE_SP);
-		color_fprintf(s->fp, color(WT_STATUS_UNTRACKED, s), "%s", sign);
 		fprintf(s->fp, " %s\n", one);
 		strbuf_release(&onebuf);
 	}
@@ -2153,7 +2155,7 @@ static void wt_shortstatus_print(struct wt_status *s)
 
 static void wt_porcelain_print(struct wt_status *s)
 {
-	s->use_color = 0;
+	s->use_color = GIT_COLOR_NEVER;
 	s->relative_paths = 0;
 	s->prefix = NULL;
 	s->no_gettext = 1;

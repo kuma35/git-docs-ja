@@ -101,7 +101,7 @@ void select_pseudo_merges(struct bitmap_writer *writer);
 
 /*
  * Represents a serialized view of a file containing pseudo-merge(s)
- * (see Documentation/technical/bitmap-format.txt for a specification
+ * (see Documentation/technical/bitmap-format.adoc for a specification
  * of the format).
  */
 struct pseudo_merge_map {
@@ -210,7 +210,7 @@ int cascade_pseudo_merges(const struct pseudo_merge_map *pm,
 
 /*
  * Returns a pseudo-merge which contains the exact set of commits
- * listed in the "parents" bitamp, or NULL if none could be found.
+ * listed in the "parents" bitmap, or NULL if none could be found.
  */
 struct pseudo_merge *pseudo_merge_for_parents(const struct pseudo_merge_map *pm,
 					      struct bitmap *parents);

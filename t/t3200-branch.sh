@@ -410,6 +410,20 @@ test_expect_success 'bare main worktree has HEAD at branch deleted by secondary 
 	git -C secondary branch -D main
 '
 
+test_expect_success 'secondary worktrees recognize core.bare=true in main config.worktree' '
+	test_when_finished "rm -rf bare_repo non_bare_repo secondary_worktree" &&
+	git init -b main non_bare_repo &&
+	test_commit -C non_bare_repo x &&
+
+	git clone --bare non_bare_repo bare_repo &&
+	git -C bare_repo config extensions.worktreeConfig true &&
+	git -C bare_repo config unset core.bare &&
+	git -C bare_repo config --worktree core.bare true &&
+
+	git -C bare_repo worktree add ../secondary_worktree &&
+	git -C secondary_worktree checkout main
+'
+
 test_expect_success 'git branch --list -v with --abbrev' '
 	test_when_finished "git branch -D t" &&
 	git branch t &&
@@ -1696,7 +1710,7 @@ test_expect_success 'errors if given a bad branch name' '
 	cat <<-\EOF >expect &&
 	fatal: '\''foo..bar'\'' is not a valid branch name
 	hint: See `man git check-ref-format`
-	hint: Disable this message with "git config advice.refSyntax false"
+	hint: Disable this message with "git config set advice.refSyntax false"
 	EOF
 	test_must_fail git branch foo..bar >actual 2>&1 &&
 	test_cmp expect actual

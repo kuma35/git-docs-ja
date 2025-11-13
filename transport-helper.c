@@ -162,7 +162,7 @@ static struct child_process *get_helper(struct transport *transport)
 
 	data->helper = helper;
 	data->no_disconnect_req = 0;
-	refspec_init(&data->rs, REFSPEC_FETCH);
+	refspec_init_fetch(&data->rs);
 
 	/*
 	 * Open the output as FILE* so strbuf_getline_*() family of
@@ -313,9 +313,9 @@ static int string_list_set_helper_option(struct helper_data *data,
 					 struct string_list *list)
 {
 	struct strbuf buf = STRBUF_INIT;
-	int i, ret = 0;
+	int ret = 0;
 
-	for (i = 0; i < list->nr; i++) {
+	for (size_t i = 0; i < list->nr; i++) {
 		strbuf_addf(&buf, "option %s ", name);
 		quote_c_style(list->items[i].string, &buf, NULL, 0);
 		strbuf_addch(&buf, '\n');
@@ -333,7 +333,7 @@ static int set_helper_option(struct transport *transport,
 {
 	struct helper_data *data = transport->data;
 	struct strbuf buf = STRBUF_INIT;
-	int i, ret, is_bool = 0;
+	int ret, is_bool = 0;
 
 	get_helper(transport);
 
@@ -344,12 +344,12 @@ static int set_helper_option(struct transport *transport,
 		return string_list_set_helper_option(data, name,
 						     (struct string_list *)value);
 
-	for (i = 0; i < ARRAY_SIZE(unsupported_options); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(unsupported_options); i++) {
 		if (!strcmp(name, unsupported_options[i]))
 			return 1;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(boolean_options); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(boolean_options); i++) {
 		if (!strcmp(name, boolean_options[i])) {
 			is_bool = 1;
 			break;
@@ -450,7 +450,7 @@ static int fetch_with_fetch(struct transport *transport,
 	}
 	strbuf_release(&buf);
 
-	reprepare_packed_git(the_repository);
+	odb_reprepare(the_repository->objects);
 	return 0;
 }
 
@@ -481,7 +481,6 @@ static int get_exporter(struct transport *transport,
 {
 	struct helper_data *data = transport->data;
 	struct child_process *helper = get_helper(transport);
-	int i;
 
 	child_process_init(fastexport);
 
@@ -497,7 +496,7 @@ static int get_exporter(struct transport *transport,
 	if (data->import_marks)
 		strvec_pushf(&fastexport->args, "--import-marks=%s", data->import_marks);
 
-	for (i = 0; i < revlist_args->nr; i++)
+	for (size_t i = 0; i < revlist_args->nr; i++)
 		strvec_push(&fastexport->args, revlist_args->items[i].string);
 
 	fastexport->git_cmd = 1;
@@ -1438,7 +1437,7 @@ static int udt_do_read(struct unidirectional_transfer *t)
 		transfer_debug("%s EOF (with %i bytes in buffer)",
 			t->src_name, (int)t->bufuse);
 		t->state = SSTATE_FLUSHING;
-	} else if (bytes > 0) {
+	} else {
 		t->bufuse += bytes;
 		transfer_debug("Read %i bytes from %s (buffer now at %i)",
 			(int)bytes, t->src_name, (int)t->bufuse);

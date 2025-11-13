@@ -56,6 +56,7 @@ ifndef V
 	QUIET_MKDIR_P_PARENT  = @echo '   ' MKDIR -p $(@D);
 
 ## Used in "Makefile"
+	QUIET_CARGO    = @echo '   ' CARGO $@;
 	QUIET_CC       = @echo '   ' CC $@;
 	QUIET_AR       = @echo '   ' AR $@;
 	QUIET_LINK     = @echo '   ' LINK $@;
@@ -88,6 +89,8 @@ ifndef V
 
 	QUIET_LINT_GITLINK	= @echo '   ' LINT GITLINK $<;
 	QUIET_LINT_MANSEC	= @echo '   ' LINT MAN SEC $<;
+	QUIET_LINT_DELIMSEC	= @echo '   ' LINT DEL SEC $<;
+	QUIET_LINT_DOCSTYLE	= @echo '   ' LINT DOCSTYLE $<;
 	QUIET_LINT_MANEND	= @echo '   ' LINT MAN END $<;
 
 	export V
@@ -115,4 +118,15 @@ endef
 ## the directory is not shown the second time.
 define libpath_template
 -L$(1) $(if $(filter-out -L,$(CC_LD_DYNPATH)),$(CC_LD_DYNPATH)$(1))
+endef
+
+# Populate build information into a file via GIT-VERSION-GEN. Requires the
+# absolute path to the root source directory as well as input and output files
+# as arguments, in that order.
+define version_gen
+GIT_BUILT_FROM_COMMIT="$(GIT_BUILT_FROM_COMMIT)" \
+GIT_DATE="$(GIT_DATE)" \
+GIT_USER_AGENT="$(GIT_USER_AGENT)" \
+GIT_VERSION="$(GIT_VERSION_OVERRIDE)" \
+$(SHELL_PATH) "$(1)/GIT-VERSION-GEN" "$(1)" "$(2)" "$(3)"
 endef

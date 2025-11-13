@@ -1,7 +1,10 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "builtin.h"
 #include "config.h"
 #include "entry.h"
+#include "environment.h"
 #include "gettext.h"
 #include "parallel-checkout.h"
 #include "parse-options.h"
@@ -126,11 +129,11 @@ int cmd_checkout__worker(int argc,
 		OPT_END()
 	};
 
-	if (argc == 2 && !strcmp(argv[1], "-h"))
-		usage_with_options(checkout_worker_usage,
-				   checkout_worker_options);
+	show_usage_with_options_if_asked(argc, argv,
+					 checkout_worker_usage,
+					 checkout_worker_options);
 
-	git_config(git_default_config, NULL);
+	repo_config(the_repository, git_default_config, NULL);
 	argc = parse_options(argc, argv, prefix, checkout_worker_options,
 			     checkout_worker_usage, 0);
 	if (argc > 0)

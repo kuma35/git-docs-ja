@@ -7,7 +7,7 @@ struct string_list;
  * To add a new advice, you need to:
  * Define a new advice_type.
  * Add a new entry to advice_setting array.
- * Add the new config variable to Documentation/config/advice.txt.
+ * Add the new config variable to Documentation/config/advice.adoc.
  * Call advise_if_enabled to print your advice.
  */
 enum advice_type {
@@ -18,8 +18,10 @@ enum advice_type {
 	ADVICE_AM_WORK_DIR,
 	ADVICE_CHECKOUT_AMBIGUOUS_REMOTE_BRANCH_NAME,
 	ADVICE_COMMIT_BEFORE_MERGE,
+	ADVICE_DEFAULT_BRANCH_NAME, /* To be retired sometime after Git 3.0 */
 	ADVICE_DETACHED_HEAD,
 	ADVICE_DIVERGING,
+	ADVICE_FETCH_SET_HEAD_WARN,
 	ADVICE_FETCH_SHOW_FORCED_UPDATES,
 	ADVICE_FORCE_DELETE_BRANCH,
 	ADVICE_GRAFT_FILE_DEPRECATED,

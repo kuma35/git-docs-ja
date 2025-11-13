@@ -18,7 +18,8 @@ elif test true = "$GITLAB_CI"
 then
 	begin_group () {
 		need_to_end_group=t
-		printf "\e[0Ksection_start:$(date +%s):$(echo "$1" | tr ' ' _)[collapsed=true]\r\e[0K$1\n"
+		printf '\e[0Ksection_start:%s:%s[collapsed=true]\r\e[0K%s\n' \
+			"$(date +%s)" "$(echo "$1" | tr ' ' _)" "$1"
 		trap "end_group '$1'" EXIT
 		set -x
 	}
@@ -27,7 +28,8 @@ then
 		test -n "$need_to_end_group" || return 0
 		set +x
 		need_to_end_group=
-		printf "\e[0Ksection_end:$(date +%s):$(echo "$1" | tr ' ' _)\r\e[0K\n"
+		printf '\e[0Ksection_end:%s:%s\r\e[0K\n' \
+			"$(date +%s)" "$(echo "$1" | tr ' ' _)"
 		trap - EXIT
 	}
 else
@@ -55,8 +57,7 @@ group () {
 	return $res
 }
 
-begin_group "CI setup"
-trap "end_group 'CI setup'" EXIT
+begin_group "CI setup via $(basename $0)"
 
 # Set 'exit on error' for all CI scripts to let the caller know that
 # something went wrong.
@@ -180,9 +181,9 @@ handle_failed_tests () {
 }
 
 create_failed_test_artifacts () {
-	mkdir -p t/failed-test-artifacts
+	mkdir -p "${TEST_OUTPUT_DIRECTORY:-t}"/failed-test-artifacts
 
-	for test_exit in t/test-results/*.exit
+	for test_exit in "${TEST_OUTPUT_DIRECTORY:-t}"/test-results/*.exit
 	do
 		test 0 != "$(cat "$test_exit")" || continue
 
@@ -191,11 +192,11 @@ create_failed_test_artifacts () {
 		printf "\\e[33m\\e[1m=== Failed test: ${test_name} ===\\e[m\\n"
 		echo "The full logs are in the 'print test failures' step below."
 		echo "See also the 'failed-tests-*' artifacts attached to this run."
-		cat "t/test-results/$test_name.markup"
+		cat "${TEST_OUTPUT_DIRECTORY:-t}/test-results/$test_name.markup"
 
-		trash_dir="t/trash directory.$test_name"
-		cp "t/test-results/$test_name.out" t/failed-test-artifacts/
-		tar czf t/failed-test-artifacts/"$test_name".trash.tar.gz "$trash_dir"
+		trash_dir="${TEST_OUTPUT_DIRECTORY:-t}/trash directory.$test_name"
+		cp "${TEST_OUTPUT_DIRECTORY:-t}/test-results/$test_name.out" "${TEST_OUTPUT_DIRECTORY:-t}"/failed-test-artifacts/
+		tar czf "${TEST_OUTPUT_DIRECTORY:-t}/failed-test-artifacts/$test_name.trash.tar.gz" "$trash_dir"
 	done
 }
 
@@ -205,26 +206,7 @@ export TERM=${TERM:-dumb}
 # Clear MAKEFLAGS that may come from the outside world.
 export MAKEFLAGS=
 
-if test -n "$SYSTEM_COLLECTIONURI" || test -n "$SYSTEM_TASKDEFINITIONSURI"
-then
-	CI_TYPE=azure-pipelines
-	# We are running in Azure Pipelines
-	CI_BRANCH="$BUILD_SOURCEBRANCH"
-	CI_COMMIT="$BUILD_SOURCEVERSION"
-	CI_JOB_ID="$BUILD_BUILDID"
-	CI_JOB_NUMBER="$BUILD_BUILDNUMBER"
-	CI_OS_NAME="$(echo "$AGENT_OS" | tr A-Z a-z)"
-	test darwin != "$CI_OS_NAME" || CI_OS_NAME=osx
-	CI_REPO_SLUG="$(expr "$BUILD_REPOSITORY_URI" : '.*/\([^/]*/[^/]*\)$')"
-	CC="${CC:-gcc}"
-
-	# use a subdirectory of the cache dir (because the file share is shared
-	# among *all* phases)
-	cache_dir="$HOME/test-cache/$SYSTEM_PHASENAME"
-
-	GIT_TEST_OPTS="--write-junit-xml"
-	JOBS=10
-elif test true = "$GITHUB_ACTIONS"
+if test true = "$GITHUB_ACTIONS"
 then
 	CI_TYPE=github-actions
 	CI_BRANCH="$GITHUB_REF"
@@ -236,7 +218,7 @@ then
 	CC="${CC_PACKAGE:-${CC:-gcc}}"
 	DONT_SKIP_TAGS=t
 	handle_failed_tests () {
-		echo "FAILED_TEST_ARTIFACTS=t/failed-test-artifacts" >>$GITHUB_ENV
+		echo "FAILED_TEST_ARTIFACTS=${TEST_OUTPUT_DIRECTORY:-t}/failed-test-artifacts" >>$GITHUB_ENV
 		create_failed_test_artifacts
 		return 1
 	}
@@ -245,6 +227,8 @@ then
 
 	GIT_TEST_OPTS="--github-workflow-markup"
 	JOBS=10
+
+	distro=$(echo "$CI_JOB_IMAGE" | tr : -)
 elif test true = "$GITLAB_CI"
 then
 	CI_TYPE=gitlab-ci
@@ -266,7 +250,7 @@ then
 		CI_OS_NAME=osx
 		JOBS=$(nproc)
 		;;
-	*,alpine:*|*,fedora:*|*,ubuntu:*)
+	*,alpine:*|*,fedora:*|*,ubuntu:*|*,i386/ubuntu:*)
 		CI_OS_NAME=linux
 		JOBS=$(nproc)
 		;;
@@ -328,11 +312,6 @@ export SKIP_DASHED_BUILT_INS=YesPlease
 
 case "$distro" in
 ubuntu-*)
-	if test "$jobname" = "linux-gcc-default"
-	then
-		break
-	fi
-
 	# Python 2 is end of life, and Ubuntu 23.04 and newer don't actually
 	# have it anymore. We thus only test with Python 2 on older LTS
 	# releases.
@@ -344,14 +323,7 @@ ubuntu-*)
 	fi
 	MAKEFLAGS="$MAKEFLAGS PYTHON_PATH=/usr/bin/$PYTHON_PACKAGE"
 
-	case "$distro" in
-	ubuntu-16.04)
-		# Apache is too old for HTTP/2.
-		;;
-	*)
-		export GIT_TEST_HTTPD=true
-		;;
-	esac
+	export GIT_TEST_HTTPD=true
 
 	# The Linux build installs the defined dependency versions below.
 	# The OS X build installs much more recent versions, whichever
@@ -376,11 +348,11 @@ case "$jobname" in
 linux32)
 	CC=gcc
 	;;
-linux-musl)
-	CC=gcc
-	MAKEFLAGS="$MAKEFLAGS PYTHON_PATH=/usr/bin/python3 USE_LIBPCRE2=Yes"
-	MAKEFLAGS="$MAKEFLAGS NO_REGEX=Yes ICONV_OMITS_BOM=Yes"
-	MAKEFLAGS="$MAKEFLAGS GIT_TEST_UTF8_LOCALE=C.UTF-8"
+linux-meson)
+	MESONFLAGS="$MESONFLAGS -Dcredential_helpers=libsecret,netrc"
+	;;
+linux-musl-meson)
+	MESONFLAGS="$MESONFLAGS -Dtest_utf8_locale=C.UTF-8"
 	;;
 linux-leaks|linux-reftable-leaks)
 	export SANITIZE=leak
@@ -390,9 +362,12 @@ linux-asan-ubsan)
 	export NO_SVN_TESTS=LetsSaveSomeTime
 	MAKEFLAGS="$MAKEFLAGS NO_PYTHON=YepBecauseP4FlakesTooOften"
 	;;
+osx-meson)
+	MESONFLAGS="$MESONFLAGS -Dcredential_helpers=osxkeychain"
+	;;
 esac
 
 MAKEFLAGS="$MAKEFLAGS CC=${CC:-cc}"
 
-end_group "CI setup"
+end_group "CI setup via $(basename $0)"
 set -x

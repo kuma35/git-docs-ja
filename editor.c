@@ -50,7 +50,7 @@ const char *git_sequence_editor(void)
 	const char *editor = getenv("GIT_SEQUENCE_EDITOR");
 
 	if (!editor)
-		git_config_get_string_tmp("sequence.editor", &editor);
+		repo_config_get_string_tmp(the_repository, "sequence.editor", &editor);
 	if (!editor)
 		editor = git_editor();
 
@@ -142,10 +142,8 @@ int strbuf_edit_interactively(struct repository *r,
 	struct strbuf sb = STRBUF_INIT;
 	int fd, res = 0;
 
-	if (!is_absolute_path(path)) {
-		strbuf_repo_git_path(&sb, r, "%s", path);
-		path = sb.buf;
-	}
+	if (!is_absolute_path(path))
+		path = repo_git_path_append(r, &sb, "%s", path);
 
 	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	if (fd < 0)

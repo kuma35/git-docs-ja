@@ -1,10 +1,10 @@
 /*
-Copyright 2020 Google LLC
-
-Use of this source code is governed by a BSD-style
-license that can be found in the LICENSE file or at
-https://developers.google.com/open-source/licenses/bsd
-*/
+ * Copyright 2020 Google LLC
+ *
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file or at
+ * https://developers.google.com/open-source/licenses/bsd
+ */
 
 #include "writer.h"
 
@@ -57,8 +57,10 @@ static int padded_write(struct reftable_writer *w, uint8_t *data, size_t len,
 			return -1;
 
 		n = w->write(w->write_arg, zeroed, w->pending_padding);
-		if (n < 0)
+		if (n < 0) {
+			reftable_free(zeroed);
 			return n;
+		}
 
 		w->pending_padding = 0;
 		reftable_free(zeroed);
@@ -79,7 +81,7 @@ static void options_set_defaults(struct reftable_write_options *opts)
 	}
 
 	if (opts->hash_id == 0) {
-		opts->hash_id = GIT_SHA1_FORMAT_ID;
+		opts->hash_id = REFTABLE_HASH_SHA1;
 	}
 	if (opts->block_size == 0) {
 		opts->block_size = DEFAULT_BLOCK_SIZE;
@@ -88,7 +90,7 @@ static void options_set_defaults(struct reftable_write_options *opts)
 
 static int writer_version(struct reftable_writer *w)
 {
-	return (w->opts.hash_id == 0 || w->opts.hash_id == GIT_SHA1_FORMAT_ID) ?
+	return (w->opts.hash_id == 0 || w->opts.hash_id == REFTABLE_HASH_SHA1) ?
 			     1 :
 			     2;
 }
@@ -99,12 +101,26 @@ static int writer_write_header(struct reftable_writer *w, uint8_t *dest)
 
 	dest[4] = writer_version(w);
 
-	put_be24(dest + 5, w->opts.block_size);
-	put_be64(dest + 8, w->min_update_index);
-	put_be64(dest + 16, w->max_update_index);
+	reftable_put_be24(dest + 5, w->opts.block_size);
+	reftable_put_be64(dest + 8, w->min_update_index);
+	reftable_put_be64(dest + 16, w->max_update_index);
 	if (writer_version(w) == 2) {
-		put_be32(dest + 24, w->opts.hash_id);
+		uint32_t hash_id;
+
+		switch (w->opts.hash_id) {
+		case REFTABLE_HASH_SHA1:
+			hash_id = REFTABLE_FORMAT_ID_SHA1;
+			break;
+		case REFTABLE_HASH_SHA256:
+			hash_id = REFTABLE_FORMAT_ID_SHA256;
+			break;
+		default:
+			return -1;
+		}
+
+		reftable_put_be32(dest + 24, hash_id);
 	}
+
 	return header_size(writer_version(w));
 }
 
@@ -144,7 +160,7 @@ int reftable_writer_new(struct reftable_writer **out,
 		opts = *_opts;
 	options_set_defaults(&opts);
 	if (opts.block_size >= (1 << 24))
-		BUG("configured block size exceeds 16MB");
+		return REFTABLE_API_ERROR;
 
 	reftable_buf_init(&wp->block_writer_data.last_key);
 	reftable_buf_init(&wp->last_key);
@@ -158,18 +174,31 @@ int reftable_writer_new(struct reftable_writer **out,
 	wp->write_arg = writer_arg;
 	wp->opts = opts;
 	wp->flush = flush_func;
-	writer_reinit_block_writer(wp, BLOCK_TYPE_REF);
+	writer_reinit_block_writer(wp, REFTABLE_BLOCK_TYPE_REF);
 
 	*out = wp;
 
 	return 0;
 }
 
-void reftable_writer_set_limits(struct reftable_writer *w, uint64_t min,
+int reftable_writer_set_limits(struct reftable_writer *w, uint64_t min,
 				uint64_t max)
 {
+	/*
+	  * Set the min/max update index limits for the reftable writer.
+	  * This must be called before adding any records, since:
+	  * - The 'next' field gets set after writing the first block.
+	  * - The 'last_key' field updates with each new record (but resets
+	  *   after sections).
+	  * Returns REFTABLE_API_ERROR if called after writing has begun.
+	 */
+	if (w->next || w->last_key.len)
+		return REFTABLE_API_ERROR;
+
 	w->min_update_index = min;
 	w->max_update_index = max;
+
+	return 0;
 }
 
 static void writer_release(struct reftable_writer *w)
@@ -229,8 +258,10 @@ static int writer_index_hash(struct reftable_writer *w, struct reftable_buf *has
 
 		reftable_buf_reset(&key->hash);
 		err = reftable_buf_add(&key->hash, hash->buf, hash->len);
-		if (err < 0)
+		if (err < 0) {
+			reftable_free(key);
 			return err;
+		}
 		tree_insert(&w->obj_index_tree, key,
 			    &obj_index_tree_node_compare);
 	} else {
@@ -240,7 +271,8 @@ static int writer_index_hash(struct reftable_writer *w, struct reftable_buf *has
 	if (key->offset_len > 0 && key->offsets[key->offset_len - 1] == off)
 		return 0;
 
-	REFTABLE_ALLOC_GROW(key->offsets, key->offset_len + 1, key->offset_cap);
+	REFTABLE_ALLOC_GROW_OR_NULL(key->offsets, key->offset_len + 1,
+				    key->offset_cap);
 	if (!key->offsets)
 		return REFTABLE_OUT_OF_MEMORY_ERROR;
 	key->offsets[key->offset_len++] = off;
@@ -274,19 +306,19 @@ static int writer_add_record(struct reftable_writer *w,
 	}
 
 	if (block_writer_type(w->block_writer) != reftable_record_type(rec))
-		BUG("record of type %d added to writer of type %d",
-		    reftable_record_type(rec), block_writer_type(w->block_writer));
+		return REFTABLE_API_ERROR;
 
 	/*
 	 * Try to add the record to the writer. If this succeeds then we're
 	 * done. Otherwise the block writer may have hit the block size limit
 	 * and needs to be flushed.
 	 */
-	if (!block_writer_add(w->block_writer, rec)) {
-		err = 0;
+	err = block_writer_add(w->block_writer, rec);
+	if (err == 0)
 		goto done;
-	}
 
+	if (err != REFTABLE_ENTRY_TOO_BIG_ERROR)
+		goto done;
 	/*
 	 * The current block is full, so we need to flush and reinitialize the
 	 * writer to start writing the next block.
@@ -301,16 +333,10 @@ static int writer_add_record(struct reftable_writer *w,
 	/*
 	 * Try to add the record to the writer again. If this still fails then
 	 * the record does not fit into the block size.
-	 *
-	 * TODO: it would be great to have `block_writer_add()` return proper
-	 *       error codes so that we don't have to second-guess the failure
-	 *       mode here.
 	 */
 	err = block_writer_add(w->block_writer, rec);
-	if (err) {
-		err = REFTABLE_ENTRY_TOO_BIG_ERROR;
+	if (err)
 		goto done;
-	}
 
 done:
 	return err;
@@ -320,7 +346,7 @@ int reftable_writer_add_ref(struct reftable_writer *w,
 			    struct reftable_ref_record *ref)
 {
 	struct reftable_record rec = {
-		.type = BLOCK_TYPE_REF,
+		.type = REFTABLE_BLOCK_TYPE_REF,
 		.u = {
 			.ref = *ref
 		},
@@ -369,14 +395,16 @@ out:
 }
 
 int reftable_writer_add_refs(struct reftable_writer *w,
-			     struct reftable_ref_record *refs, int n)
+			     struct reftable_ref_record *refs, size_t n)
 {
 	int err = 0;
-	int i = 0;
-	QSORT(refs, n, reftable_ref_record_compare_name);
-	for (i = 0; err == 0 && i < n; i++) {
+
+	if (n)
+		qsort(refs, n, sizeof(*refs), reftable_ref_record_compare_name);
+
+	for (size_t i = 0; err == 0 && i < n; i++)
 		err = reftable_writer_add_ref(w, &refs[i]);
-	}
+
 	return err;
 }
 
@@ -384,13 +412,13 @@ static int reftable_writer_add_log_verbatim(struct reftable_writer *w,
 					    struct reftable_log_record *log)
 {
 	struct reftable_record rec = {
-		.type = BLOCK_TYPE_LOG,
+		.type = REFTABLE_BLOCK_TYPE_LOG,
 		.u = {
 			.log = *log,
 		},
 	};
 	if (w->block_writer &&
-	    block_writer_type(w->block_writer) == BLOCK_TYPE_REF) {
+	    block_writer_type(w->block_writer) == REFTABLE_BLOCK_TYPE_REF) {
 		int err = writer_finish_public_section(w);
 		if (err < 0)
 			return err;
@@ -410,6 +438,18 @@ int reftable_writer_add_log(struct reftable_writer *w,
 
 	if (log->value_type == REFTABLE_LOG_DELETION)
 		return reftable_writer_add_log_verbatim(w, log);
+
+	/*
+	 * Verify only the upper limit of the update_index. Each reflog entry
+	 * is tied to a specific update_index. Entries in the reflog can be
+	 * replaced by adding a new entry with the same update_index,
+	 * effectively canceling the old one.
+	 *
+	 * Consequently, reflog updates may include update_index values lower
+	 * than the writer's min_update_index.
+	 */
+	if (log->update_index > w->max_update_index)
+		return REFTABLE_API_ERROR;
 
 	if (!log->refname)
 		return REFTABLE_API_ERROR;
@@ -448,15 +488,16 @@ done:
 }
 
 int reftable_writer_add_logs(struct reftable_writer *w,
-			     struct reftable_log_record *logs, int n)
+			     struct reftable_log_record *logs, size_t n)
 {
 	int err = 0;
-	int i = 0;
-	QSORT(logs, n, reftable_log_record_compare_key);
 
-	for (i = 0; err == 0 && i < n; i++) {
+	if (n)
+		qsort(logs, n, sizeof(*logs), reftable_log_record_compare_key);
+
+	for (size_t i = 0; err == 0 && i < n; i++)
 		err = reftable_writer_add_log(w, &logs[i]);
-	}
+
 	return err;
 }
 
@@ -498,7 +539,7 @@ static int writer_finish_section(struct reftable_writer *w)
 
 		max_level++;
 		index_start = w->next;
-		err = writer_reinit_block_writer(w, BLOCK_TYPE_INDEX);
+		err = writer_reinit_block_writer(w, REFTABLE_BLOCK_TYPE_INDEX);
 		if (err < 0)
 			return err;
 
@@ -510,7 +551,7 @@ static int writer_finish_section(struct reftable_writer *w)
 		w->index_cap = 0;
 		for (i = 0; i < idx_len; i++) {
 			struct reftable_record rec = {
-				.type = BLOCK_TYPE_INDEX,
+				.type = REFTABLE_BLOCK_TYPE_INDEX,
 				.u = {
 					.idx = idx[i],
 				},
@@ -550,7 +591,7 @@ static int writer_finish_section(struct reftable_writer *w)
 
 struct common_prefix_arg {
 	struct reftable_buf *last;
-	int max;
+	size_t max;
 };
 
 static void update_common(void *void_arg, void *key)
@@ -558,10 +599,9 @@ static void update_common(void *void_arg, void *key)
 	struct common_prefix_arg *arg = void_arg;
 	struct obj_index_tree_node *entry = key;
 	if (arg->last) {
-		int n = common_prefix_size(&entry->hash, arg->last);
-		if (n > arg->max) {
+		size_t n = common_prefix_size(&entry->hash, arg->last);
+		if (n > arg->max)
 			arg->max = n;
-		}
 	}
 	arg->last = &entry->hash;
 }
@@ -576,7 +616,7 @@ static void write_object_record(void *void_arg, void *key)
 	struct write_record_arg *arg = void_arg;
 	struct obj_index_tree_node *entry = key;
 	struct reftable_record
-		rec = { .type = BLOCK_TYPE_OBJ,
+		rec = { .type = REFTABLE_BLOCK_TYPE_OBJ,
 			.u.obj = {
 				.hash_prefix = (uint8_t *)entry->hash.buf,
 				.hash_prefix_len = arg->w->stats.object_id_len,
@@ -586,20 +626,39 @@ static void write_object_record(void *void_arg, void *key)
 	if (arg->err < 0)
 		goto done;
 
+	/*
+	 * Try to add the record to the writer. If this succeeds then we're
+	 * done. Otherwise the block writer may have hit the block size limit
+	 * and needs to be flushed.
+	 */
 	arg->err = block_writer_add(arg->w->block_writer, &rec);
 	if (arg->err == 0)
 		goto done;
 
+	if (arg->err != REFTABLE_ENTRY_TOO_BIG_ERROR)
+		goto done;
+
+	/*
+	 * The current block is full, so we need to flush and reinitialize the
+	 * writer to start writing the next block.
+	 */
 	arg->err = writer_flush_block(arg->w);
 	if (arg->err < 0)
 		goto done;
 
-	arg->err = writer_reinit_block_writer(arg->w, BLOCK_TYPE_OBJ);
+	arg->err = writer_reinit_block_writer(arg->w, REFTABLE_BLOCK_TYPE_OBJ);
 	if (arg->err < 0)
 		goto done;
 
+	/*
+	 * If this still fails then we may need to reset record's offset
+	 * length to reduce the data size to be written.
+	 */
 	arg->err = block_writer_add(arg->w->block_writer, &rec);
 	if (arg->err == 0)
+		goto done;
+
+	if (arg->err != REFTABLE_ENTRY_TOO_BIG_ERROR)
 		goto done;
 
 	rec.u.obj.offset_len = 0;
@@ -611,7 +670,7 @@ static void write_object_record(void *void_arg, void *key)
 done:;
 }
 
-static void object_record_free(void *void_arg UNUSED, void *key)
+static void object_record_free(void *void_arg REFTABLE_UNUSED, void *key)
 {
 	struct obj_index_tree_node *entry = key;
 
@@ -632,7 +691,7 @@ static int writer_dump_object_index(struct reftable_writer *w)
 		infix_walk(w->obj_index_tree, &update_common, &common);
 	w->stats.object_id_len = common.max + 1;
 
-	err = writer_reinit_block_writer(w, BLOCK_TYPE_OBJ);
+	err = writer_reinit_block_writer(w, REFTABLE_BLOCK_TYPE_OBJ);
 	if (err < 0)
 		return err;
 
@@ -656,7 +715,7 @@ static int writer_finish_public_section(struct reftable_writer *w)
 	err = writer_finish_section(w);
 	if (err < 0)
 		return err;
-	if (typ == BLOCK_TYPE_REF && !w->opts.skip_index_objects &&
+	if (typ == REFTABLE_BLOCK_TYPE_REF && !w->opts.skip_index_objects &&
 	    w->stats.ref_stats.index_blocks > 0) {
 		err = writer_dump_object_index(w);
 		if (err < 0)
@@ -692,19 +751,19 @@ int reftable_writer_close(struct reftable_writer *w)
 	}
 
 	p += writer_write_header(w, footer);
-	put_be64(p, w->stats.ref_stats.index_offset);
+	reftable_put_be64(p, w->stats.ref_stats.index_offset);
 	p += 8;
-	put_be64(p, (w->stats.obj_stats.offset) << 5 | w->stats.object_id_len);
+	reftable_put_be64(p, (w->stats.obj_stats.offset) << 5 | w->stats.object_id_len);
 	p += 8;
-	put_be64(p, w->stats.obj_stats.index_offset);
-	p += 8;
-
-	put_be64(p, w->stats.log_stats.offset);
-	p += 8;
-	put_be64(p, w->stats.log_stats.index_offset);
+	reftable_put_be64(p, w->stats.obj_stats.index_offset);
 	p += 8;
 
-	put_be32(p, crc32(0, footer, p - footer));
+	reftable_put_be64(p, w->stats.log_stats.offset);
+	p += 8;
+	reftable_put_be64(p, w->stats.log_stats.index_offset);
+	p += 8;
+
+	reftable_put_be32(p, crc32(0, footer, p - footer));
 	p += 4;
 
 	err = w->flush(w->write_arg);
@@ -761,7 +820,7 @@ static int writer_flush_nonempty_block(struct reftable_writer *w)
 	 * By default, all records except for log records are padded to the
 	 * block size.
 	 */
-	if (!w->opts.unpadded && typ != BLOCK_TYPE_LOG)
+	if (!w->opts.unpadded && typ != REFTABLE_BLOCK_TYPE_LOG)
 		padding = w->opts.block_size - raw_bytes;
 
 	bstats = writer_reftable_block_stats(w, typ);
@@ -794,7 +853,7 @@ static int writer_flush_nonempty_block(struct reftable_writer *w)
 	 * Note that this also applies when flushing index blocks, in which
 	 * case we will end up with a multi-level index.
 	 */
-	REFTABLE_ALLOC_GROW(w->index, w->index_len + 1, w->index_cap);
+	REFTABLE_ALLOC_GROW_OR_NULL(w->index, w->index_len + 1, w->index_cap);
 	if (!w->index)
 		return REFTABLE_OUT_OF_MEMORY_ERROR;
 

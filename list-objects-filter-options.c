@@ -350,7 +350,7 @@ void partial_clone_register(
 
 		/* Add promisor config for the remote */
 		cfg_name = xstrfmt("remote.%s.promisor", remote);
-		git_config_set(cfg_name, "true");
+		repo_config_set(the_repository, cfg_name, "true");
 		free(cfg_name);
 	}
 
@@ -360,8 +360,8 @@ void partial_clone_register(
 	 */
 	filter_name = xstrfmt("remote.%s.partialclonefilter", remote);
 	/* NEEDSWORK: 'expand' result leaking??? */
-	git_config_set(filter_name,
-		       expand_list_objects_filter_spec(filter_options));
+	repo_config_set(the_repository, filter_name,
+			expand_list_objects_filter_spec(filter_options));
 	free(filter_name);
 
 	/* Make sure the config info are reset */
@@ -394,8 +394,6 @@ void list_objects_filter_copy(
 	struct list_objects_filter_options *dest,
 	const struct list_objects_filter_options *src)
 {
-	int i;
-
 	/* Copy everything. We will overwrite the pointers shortly. */
 	memcpy(dest, src, sizeof(struct list_objects_filter_options));
 
@@ -404,7 +402,7 @@ void list_objects_filter_copy(
 	dest->sparse_oid_name = xstrdup_or_null(src->sparse_oid_name);
 
 	ALLOC_ARRAY(dest->sub, dest->sub_alloc);
-	for (i = 0; i < src->sub_nr; i++)
+	for (size_t i = 0; i < src->sub_nr; i++)
 		list_objects_filter_copy(&dest->sub[i], &src->sub[i]);
 }
 

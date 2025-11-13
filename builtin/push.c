@@ -1,7 +1,9 @@
 /*
  * "git push"
  */
+
 #define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
 #include "advice.h"
 #include "branch.h"
@@ -25,7 +27,7 @@ static const char * const push_usage[] = {
 	NULL,
 };
 
-static int push_use_color = -1;
+static enum git_colorbool push_use_color = GIT_COLOR_UNKNOWN;
 static char push_colors[][COLOR_MAXLEN] = {
 	GIT_COLOR_RESET,
 	GIT_COLOR_RED,	/* ERROR */
@@ -76,7 +78,7 @@ static void refspec_append_mapped(struct refspec *refspec, const char *ref,
 			.src = matched->name,
 		};
 
-		if (!query_refspecs(&remote->push, &query) && query.dst) {
+		if (!refspec_find_match(&remote->push, &query) && query.dst) {
 			refspec_appendf(refspec, "%s%s:%s",
 					query.force ? "+" : "",
 					query.src, query.dst);
@@ -417,7 +419,7 @@ static int do_push(int flags,
 		   const struct string_list *push_options,
 		   struct remote *remote)
 {
-	int i, errs;
+	int errs;
 	struct strvec *url;
 	struct refspec *push_refspec = &rs;
 
@@ -432,7 +434,7 @@ static int do_push(int flags,
 	}
 	errs = 0;
 	url = push_url_of_remote(remote);
-	for (i = 0; i < url->nr; i++) {
+	for (size_t i = 0; i < url->nr; i++) {
 		struct transport *transport =
 			transport_get(remote, url->v[i]);
 		if (flags & TRANSPORT_PUSH_OPTIONS)
@@ -596,7 +598,7 @@ int cmd_push(int argc,
 	};
 
 	packet_trace_identity("push");
-	git_config(git_push_config, &flags);
+	repo_config(the_repository, git_push_config, &flags);
 	argc = parse_options(argc, argv, prefix, options, push_usage, 0);
 	push_options = (push_options_cmdline.nr
 		? &push_options_cmdline

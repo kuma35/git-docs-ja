@@ -3,7 +3,10 @@
  *
  * Copyright (C) Linus Torvalds, 2005
  */
+
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "builtin.h"
 #include "config.h"
 #include "diff.h"
@@ -26,10 +29,9 @@ int cmd_diff_files(int argc,
 	int result;
 	unsigned options = 0;
 
-	if (argc == 2 && !strcmp(argv[1], "-h"))
-		usage(diff_files_usage);
+	show_usage_if_asked(argc, argv, diff_files_usage);
 
-	git_config(git_diff_basic_config, NULL); /* no "diff" UI options */
+	repo_config(the_repository, git_diff_basic_config, NULL); /* no "diff" UI options */
 
 	prepare_repo_settings(the_repository);
 	the_repository->settings.command_requires_full_index = 0;

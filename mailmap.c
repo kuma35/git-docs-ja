@@ -5,7 +5,7 @@
 #include "string-list.h"
 #include "mailmap.h"
 #include "object-name.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "setup.h"
 
 char *git_mailmap_file;
@@ -195,7 +195,7 @@ int read_mailmap_blob(struct string_list *map, const char *name)
 	if (repo_get_oid(the_repository, name, &oid) < 0)
 		return 0;
 
-	buf = repo_read_object_file(the_repository, &oid, &type, &size);
+	buf = odb_read_object(the_repository->objects, &oid, &type, &size);
 	if (!buf)
 		return error("unable to read mailmap object at %s", name);
 	if (type != OBJ_BLOB) {
@@ -242,10 +242,9 @@ void clear_mailmap(struct string_list *map)
 static struct string_list_item *lookup_prefix(struct string_list *map,
 					      const char *string, size_t len)
 {
-	int i = string_list_find_insert_index(map, string, 1);
-	if (i < 0) {
-		/* exact match */
-		i = -1 - i;
+	bool exact_match;
+	size_t i = string_list_find_insert_index(map, string, &exact_match);
+	if (exact_match) {
 		if (!string[len])
 			return &map->items[i];
 		/*
@@ -266,7 +265,7 @@ static struct string_list_item *lookup_prefix(struct string_list *map,
 	 * overlong key would be inserted, which must come after the
 	 * real location of the key if one exists.
 	 */
-	while (0 <= --i && i < map->nr) {
+	while (i-- && i < map->nr) {
 		int cmp = strncasecmp(map->items[i].string, string, len);
 		if (cmp < 0)
 			/*

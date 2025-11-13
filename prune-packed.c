@@ -2,7 +2,7 @@
 
 #include "git-compat-util.h"
 #include "gettext.h"
-#include "object-store-ll.h"
+#include "object-file.h"
 #include "packfile.h"
 #include "progress.h"
 #include "prune-packed.h"
@@ -24,7 +24,7 @@ static int prune_object(const struct object_id *oid, const char *path,
 {
 	int *opts = data;
 
-	if (!has_object_pack(oid))
+	if (!has_object_pack(the_repository, oid))
 		return 0;
 
 	if (*opts & PRUNE_PACKED_DRY_RUN)
@@ -37,9 +37,10 @@ static int prune_object(const struct object_id *oid, const char *path,
 void prune_packed_objects(int opts)
 {
 	if (opts & PRUNE_PACKED_VERBOSE)
-		progress = start_delayed_progress(_("Removing duplicate objects"), 256);
+		progress = start_delayed_progress(the_repository,
+						  _("Removing duplicate objects"), 256);
 
-	for_each_loose_file_in_objdir(repo_get_object_directory(the_repository),
+	for_each_loose_file_in_source(the_repository->objects->sources,
 				      prune_object, NULL, prune_subdir, &opts);
 
 	/* Ensure we show 100% before finishing progress */

@@ -39,11 +39,11 @@ test_stderr () {
 }
 
 broken_c_unquote () {
-	"$PERL_PATH" -pe 's/^"//; s/\\//; s/"$//; tr/\n/\0/' "$@"
+	sed -e 's/^"//' -e 's/\\//' -e 's/"$//' "$1" | tr '\n' '\0'
 }
 
 broken_c_unquote_verbose () {
-	"$PERL_PATH" -pe 's/	"/	/; s/\\//; s/"$//; tr/:\t\n/\0/' "$@"
+	sed -e 's/	"/	/' -e 's/\\//' -e 's/"$//' "$1" | tr ':\t\n' '\000'
 }
 
 stderr_contains () {
@@ -843,6 +843,17 @@ test_expect_success 'directories and ** matches' '
 	data/file
 	data/data1/file1
 	data/data2/file2
+	EOF
+	test_cmp expect actual
+'
+
+test_expect_success '** not confused by matching leading prefix' '
+	cat >.gitignore <<-\EOF &&
+	foo**/bar
+	EOF
+	git check-ignore foobar foo/bar >actual &&
+	cat >expect <<-\EOF &&
+	foo/bar
 	EOF
 	test_cmp expect actual
 '

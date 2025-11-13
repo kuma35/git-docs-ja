@@ -113,6 +113,18 @@ test_expect_success 'check-mailmap --stdin simple address: no mapping' '
 	test_cmp expect actual
 '
 
+test_expect_success 'check-mailmap name and address: mapping' '
+	test_when_finished "rm .mailmap" &&
+	cat >.mailmap <<-EOF &&
+	Bug Reports <bugs-new@company.xx> Bugs <bugs@company.xx>
+	EOF
+	cat >expect <<-EOF &&
+	<bugs@company.xx>
+	EOF
+	git check-mailmap "bugs@company.xx" >actual &&
+	test_cmp expect actual
+'
+
 test_expect_success 'No mailmap' '
 	cat >expect <<-EOF &&
 	$GIT_AUTHOR_NAME (1):
@@ -1118,6 +1130,39 @@ test_expect_success 'git cat-file --batch-command returns correct size with --us
 	echo "info HEAD" >in &&
 	git cat-file --batch-command <in >actual &&
 	git cat-file --use-mailmap --batch-command <in >>actual &&
+	test_cmp expect actual
+'
+
+test_expect_success 'git cat-file --mailmap works with different author and committer' '
+	test_when_finished "rm .mailmap" &&
+	cat >.mailmap <<-\EOF &&
+	Mailmapped User <mailmapped-user@gitlab.com> C O Mitter <committer@example.com>
+	EOF
+	git commit --allow-empty -m "different author/committer" \
+		--author="Different Author <different@example.com>" &&
+	cat >expect <<-\EOF &&
+	author Different Author <different@example.com>
+	committer Mailmapped User <mailmapped-user@gitlab.com>
+	EOF
+	git cat-file --mailmap commit HEAD >log &&
+	sed -n -e "/^author /s/>.*/>/p" -e "/^committer /s/>.*/>/p" log >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success 'git cat-file --mailmap maps both author and committer when both need mapping' '
+	test_when_finished "rm .mailmap" &&
+	cat >.mailmap <<-\EOF &&
+	Mapped Author <mapped-author@example.com> <different@example.com>
+	Mapped Committer <mapped-committer@example.com> C O Mitter <committer@example.com>
+	EOF
+	git commit --allow-empty -m "both author and committer mapped" \
+		--author="Different Author <different@example.com>" &&
+	cat >expect <<-\EOF &&
+	author Mapped Author <mapped-author@example.com>
+	committer Mapped Committer <mapped-committer@example.com>
+	EOF
+	git cat-file --mailmap commit HEAD >log &&
+	sed -n -e "/^author /s/>.*/>/p" -e "/^committer /s/>.*/>/p" log >actual &&
 	test_cmp expect actual
 '
 

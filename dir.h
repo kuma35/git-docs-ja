@@ -43,7 +43,6 @@ struct repository;
  *
  */
 
-struct repository;
 
 struct dir_entry {
 	unsigned int len;
@@ -467,6 +466,9 @@ void add_patterns_from_file(struct dir_struct *, const char *fname);
 int add_patterns_from_blob_to_list(struct object_id *oid,
 				   const char *base, int baselen,
 				   struct pattern_list *pl);
+int add_patterns_from_buffer(char *buf, size_t size,
+			     const char *base, int baselen,
+			     struct pattern_list *pl);
 void parse_path_pattern(const char **string, int *patternlen, unsigned *flags, int *nowildcardlen);
 void add_pattern(const char *string, const char *base,
 		 int baselen, struct pattern_list *pl, int srcpos);
@@ -533,6 +535,20 @@ int get_sparse_checkout_patterns(struct pattern_list *pl);
  * before returning.
  */
 int remove_dir_recursively(struct strbuf *path, int flag);
+
+/*
+ * This function pointer type is called on each file discovered in
+ * for_each_file_in_dir. The iteration stops if this method returns
+ * non-zero.
+ */
+typedef int (*file_iterator)(const char *path, const void *data);
+
+struct strbuf;
+/*
+ * Given a directory path, recursively visit each file within, including
+ * within subdirectories.
+ */
+int for_each_file_in_dir(struct strbuf *path, file_iterator fn, const void *data);
 
 /*
  * Tries to remove the path, along with leading empty directories so long as
@@ -674,4 +690,27 @@ static inline int starts_with_dot_dot_slash_native(const char *const path)
 	return path_match_flags(path, what | PATH_MATCH_NATIVE);
 }
 
+/**
+ * starts_with_dot_slash: convenience wrapper for
+ * patch_match_flags() with PATH_MATCH_STARTS_WITH_DOT_SLASH and
+ * PATH_MATCH_XPLATFORM.
+ */
+static inline int starts_with_dot_slash(const char *const path)
+{
+	const enum path_match_flags what = PATH_MATCH_STARTS_WITH_DOT_SLASH;
+
+	return path_match_flags(path, what | PATH_MATCH_XPLATFORM);
+}
+
+/**
+ * starts_with_dot_dot_slash: convenience wrapper for
+ * patch_match_flags() with PATH_MATCH_STARTS_WITH_DOT_DOT_SLASH and
+ * PATH_MATCH_XPLATFORM.
+ */
+static inline int starts_with_dot_dot_slash(const char *const path)
+{
+	const enum path_match_flags what = PATH_MATCH_STARTS_WITH_DOT_DOT_SLASH;
+
+	return path_match_flags(path, what | PATH_MATCH_XPLATFORM);
+}
 #endif

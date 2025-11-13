@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "config.h"
@@ -42,7 +43,7 @@ static int fsmonitor_hook_version(void)
 {
 	int hook_version;
 
-	if (git_config_get_int("core.fsmonitorhookversion", &hook_version))
+	if (repo_config_get_int(the_repository, "core.fsmonitorhookversion", &hook_version))
 		return -1;
 
 	if (hook_version == HOOK_INTERFACE_VERSION1 ||

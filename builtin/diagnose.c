@@ -1,8 +1,10 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
 #include "abspath.h"
 #include "gettext.h"
-#include "object-file.h"
 #include "parse-options.h"
+#include "path.h"
 #include "diagnose.h"
 
 static const char * const diagnose_usage[] = {
@@ -48,7 +50,7 @@ int cmd_diagnose(int argc,
 	strbuf_addftime(&zip_path, option_suffix, localtime_r(&now, &tm), 0, 0);
 	strbuf_addstr(&zip_path, ".zip");
 
-	switch (safe_create_leading_directories(zip_path.buf)) {
+	switch (safe_create_leading_directories(the_repository, zip_path.buf)) {
 	case SCLD_OK:
 	case SCLD_EXISTS:
 		break;
@@ -58,7 +60,7 @@ int cmd_diagnose(int argc,
 	}
 
 	/* Prepare diagnostics */
-	if (create_diagnostics_archive(&zip_path, mode))
+	if (create_diagnostics_archive(the_repository, &zip_path, mode))
 		die_errno(_("unable to create diagnostics archive %s"),
 			  zip_path.buf);
 

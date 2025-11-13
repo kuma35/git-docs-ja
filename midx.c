@@ -1,11 +1,10 @@
-#define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "config.h"
 #include "dir.h"
 #include "hex.h"
 #include "packfile.h"
-#include "object-file.h"
 #include "hash-lookup.h"
 #include "midx.h"
 #include "progress.h"
@@ -14,10 +13,12 @@
 #include "pack-bitmap.h"
 #include "pack-revindex.h"
 
+#define MIDX_PACK_ERROR ((void *)(intptr_t)-1)
+
 int midx_checksum_valid(struct multi_pack_index *m);
-void clear_midx_files_ext(const char *object_dir, const char *ext,
+void clear_midx_files_ext(struct odb_source *source, const char *ext,
 			  const char *keep_hash);
-void clear_incremental_midx_files_ext(const char *object_dir, const char *ext,
+void clear_incremental_midx_files_ext(struct odb_source *source, const char *ext,
 				      char **keep_hashes,
 				      uint32_t hashes_nr);
 int cmp_idx_or_pack_name(const char *idx_or_pack_name,
@@ -25,20 +26,20 @@ int cmp_idx_or_pack_name(const char *idx_or_pack_name,
 
 const unsigned char *get_midx_checksum(struct multi_pack_index *m)
 {
-	return m->data + m->data_len - the_hash_algo->rawsz;
+	return m->data + m->data_len - m->source->odb->repo->hash_algo->rawsz;
 }
 
-void get_midx_filename(struct strbuf *out, const char *object_dir)
+void get_midx_filename(struct odb_source *source, struct strbuf *out)
 {
-	get_midx_filename_ext(out, object_dir, NULL, NULL);
+	get_midx_filename_ext(source, out, NULL, NULL);
 }
 
-void get_midx_filename_ext(struct strbuf *out, const char *object_dir,
+void get_midx_filename_ext(struct odb_source *source, struct strbuf *out,
 			   const unsigned char *hash, const char *ext)
 {
-	strbuf_addf(out, "%s/pack/multi-pack-index", object_dir);
+	strbuf_addf(out, "%s/pack/multi-pack-index", source->path);
 	if (ext)
-		strbuf_addf(out, "-%s.%s", hash_to_hex(hash), ext);
+		strbuf_addf(out, "-%s.%s", hash_to_hex_algop(hash, source->odb->repo->hash_algo), ext);
 }
 
 static int midx_read_oid_fanout(const unsigned char *chunk_start,
@@ -92,12 +93,16 @@ static int midx_read_object_offsets(const unsigned char *chunk_start,
 	return 0;
 }
 
-#define MIDX_MIN_SIZE (MIDX_HEADER_SIZE + the_hash_algo->rawsz)
-
-static struct multi_pack_index *load_multi_pack_index_one(const char *object_dir,
-							  const char *midx_name,
-							  int local)
+struct multi_pack_index *get_multi_pack_index(struct odb_source *source)
 {
+	packfile_store_prepare(source->odb->packfiles);
+	return source->midx;
+}
+
+static struct multi_pack_index *load_multi_pack_index_one(struct odb_source *source,
+							  const char *midx_name)
+{
+	struct repository *r = source->odb->repo;
 	struct multi_pack_index *m = NULL;
 	int fd;
 	struct stat st;
@@ -119,7 +124,7 @@ static struct multi_pack_index *load_multi_pack_index_one(const char *object_dir
 
 	midx_size = xsize_t(st.st_size);
 
-	if (midx_size < MIDX_MIN_SIZE) {
+	if (midx_size < (MIDX_HEADER_SIZE + r->hash_algo->rawsz)) {
 		error(_("multi-pack-index file %s is too small"), midx_name);
 		goto cleanup_fail;
 	}
@@ -127,10 +132,10 @@ static struct multi_pack_index *load_multi_pack_index_one(const char *object_dir
 	midx_map = xmmap(NULL, midx_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	close(fd);
 
-	FLEX_ALLOC_STR(m, object_dir, object_dir);
+	CALLOC_ARRAY(m, 1);
 	m->data = midx_map;
 	m->data_len = midx_size;
-	m->local = local;
+	m->source = source;
 
 	m->signature = get_be32(m->data);
 	if (m->signature != MIDX_SIGNATURE)
@@ -143,12 +148,12 @@ static struct multi_pack_index *load_multi_pack_index_one(const char *object_dir
 		      m->version);
 
 	hash_version = m->data[MIDX_BYTE_HASH_VERSION];
-	if (hash_version != oid_version(the_hash_algo)) {
+	if (hash_version != oid_version(r->hash_algo)) {
 		error(_("multi-pack-index hash version %u does not match version %u"),
-		      hash_version, oid_version(the_hash_algo));
+		      hash_version, oid_version(r->hash_algo));
 		goto cleanup_fail;
 	}
-	m->hash_len = the_hash_algo->rawsz;
+	m->hash_len = r->hash_algo->rawsz;
 
 	m->num_chunks = m->data[MIDX_BYTE_NUM_CHUNKS];
 
@@ -205,8 +210,8 @@ static struct multi_pack_index *load_multi_pack_index_one(const char *object_dir
 			      m->pack_names[i]);
 	}
 
-	trace2_data_intmax("midx", the_repository, "load/num_packs", m->num_packs);
-	trace2_data_intmax("midx", the_repository, "load/num_objects", m->num_objects);
+	trace2_data_intmax("midx", r, "load/num_packs", m->num_packs);
+	trace2_data_intmax("midx", r, "load/num_objects", m->num_objects);
 
 	free_chunkfile(cf);
 	return m;
@@ -221,26 +226,28 @@ cleanup_fail:
 	return NULL;
 }
 
-void get_midx_chain_dirname(struct strbuf *buf, const char *object_dir)
+void get_midx_chain_dirname(struct odb_source *source, struct strbuf *buf)
 {
-	strbuf_addf(buf, "%s/pack/multi-pack-index.d", object_dir);
+	strbuf_addf(buf, "%s/pack/multi-pack-index.d", source->path);
 }
 
-void get_midx_chain_filename(struct strbuf *buf, const char *object_dir)
+void get_midx_chain_filename(struct odb_source *source, struct strbuf *buf)
 {
-	get_midx_chain_dirname(buf, object_dir);
+	get_midx_chain_dirname(source, buf);
 	strbuf_addstr(buf, "/multi-pack-index-chain");
 }
 
-void get_split_midx_filename_ext(struct strbuf *buf, const char *object_dir,
+void get_split_midx_filename_ext(struct odb_source *source, struct strbuf *buf,
 				 const unsigned char *hash, const char *ext)
 {
-	get_midx_chain_dirname(buf, object_dir);
-	strbuf_addf(buf, "/multi-pack-index-%s.%s", hash_to_hex(hash), ext);
+	get_midx_chain_dirname(source, buf);
+	strbuf_addf(buf, "/multi-pack-index-%s.%s",
+		    hash_to_hex_algop(hash, source->odb->repo->hash_algo), ext);
 }
 
-static int open_multi_pack_index_chain(const char *chain_file,
-				       int *fd, struct stat *st)
+static int open_multi_pack_index_chain(const struct git_hash_algo *hash_algo,
+				       const char *chain_file, int *fd,
+				       struct stat *st)
 {
 	*fd = git_open(chain_file);
 	if (*fd < 0)
@@ -249,7 +256,7 @@ static int open_multi_pack_index_chain(const char *chain_file,
 		close(*fd);
 		return 0;
 	}
-	if (st->st_size < the_hash_algo->hexsz) {
+	if (st->st_size < hash_algo->hexsz) {
 		close(*fd);
 		if (!st->st_size) {
 			/* treat empty files the same as missing */
@@ -291,18 +298,18 @@ static int add_midx_to_chain(struct multi_pack_index *midx,
 	return 1;
 }
 
-static struct multi_pack_index *load_midx_chain_fd_st(const char *object_dir,
-						      int local,
+static struct multi_pack_index *load_midx_chain_fd_st(struct odb_source *source,
 						      int fd, struct stat *st,
 						      int *incomplete_chain)
 {
+	const struct git_hash_algo *hash_algo = source->odb->repo->hash_algo;
 	struct multi_pack_index *midx_chain = NULL;
 	struct strbuf buf = STRBUF_INIT;
 	int valid = 1;
 	uint32_t i, count;
 	FILE *fp = xfdopen(fd, "r");
 
-	count = st->st_size / (the_hash_algo->hexsz + 1);
+	count = st->st_size / (hash_algo->hexsz + 1);
 
 	for (i = 0; i < count; i++) {
 		struct multi_pack_index *m;
@@ -311,7 +318,7 @@ static struct multi_pack_index *load_midx_chain_fd_st(const char *object_dir,
 		if (strbuf_getline_lf(&buf, fp) == EOF)
 			break;
 
-		if (get_oid_hex(buf.buf, &layer)) {
+		if (get_oid_hex_algop(buf.buf, &layer, hash_algo)) {
 			warning(_("invalid multi-pack-index chain: line '%s' "
 				  "not a hash"),
 				buf.buf);
@@ -322,9 +329,9 @@ static struct multi_pack_index *load_midx_chain_fd_st(const char *object_dir,
 		valid = 0;
 
 		strbuf_reset(&buf);
-		get_split_midx_filename_ext(&buf, object_dir, layer.hash,
-					    MIDX_EXT_MIDX);
-		m = load_multi_pack_index_one(object_dir, buf.buf, local);
+		get_split_midx_filename_ext(source, &buf,
+					    layer.hash, MIDX_EXT_MIDX);
+		m = load_multi_pack_index_one(source, buf.buf);
 
 		if (m) {
 			if (add_midx_to_chain(m, midx_chain)) {
@@ -347,37 +354,34 @@ static struct multi_pack_index *load_midx_chain_fd_st(const char *object_dir,
 	return midx_chain;
 }
 
-static struct multi_pack_index *load_multi_pack_index_chain(const char *object_dir,
-							    int local)
+static struct multi_pack_index *load_multi_pack_index_chain(struct odb_source *source)
 {
 	struct strbuf chain_file = STRBUF_INIT;
 	struct stat st;
 	int fd;
 	struct multi_pack_index *m = NULL;
 
-	get_midx_chain_filename(&chain_file, object_dir);
-	if (open_multi_pack_index_chain(chain_file.buf, &fd, &st)) {
+	get_midx_chain_filename(source, &chain_file);
+	if (open_multi_pack_index_chain(source->odb->repo->hash_algo, chain_file.buf, &fd, &st)) {
 		int incomplete;
 		/* ownership of fd is taken over by load function */
-		m = load_midx_chain_fd_st(object_dir, local, fd, &st,
-					  &incomplete);
+		m = load_midx_chain_fd_st(source, fd, &st, &incomplete);
 	}
 
 	strbuf_release(&chain_file);
 	return m;
 }
 
-struct multi_pack_index *load_multi_pack_index(const char *object_dir,
-					       int local)
+struct multi_pack_index *load_multi_pack_index(struct odb_source *source)
 {
 	struct strbuf midx_name = STRBUF_INIT;
 	struct multi_pack_index *m;
 
-	get_midx_filename(&midx_name, object_dir);
+	get_midx_filename(source, &midx_name);
 
-	m = load_multi_pack_index_one(object_dir, midx_name.buf, local);
+	m = load_multi_pack_index_one(source, midx_name.buf);
 	if (!m)
-		m = load_multi_pack_index_chain(object_dir, local);
+		m = load_multi_pack_index_chain(source);
 
 	strbuf_release(&midx_name);
 
@@ -391,13 +395,12 @@ void close_midx(struct multi_pack_index *m)
 	if (!m)
 		return;
 
-	close_midx(m->next);
 	close_midx(m->base_midx);
 
 	munmap((unsigned char *)m->data, m->data_len);
 
 	for (i = 0; i < m->num_packs; i++) {
-		if (m->packs[i])
+		if (m->packs[i] && m->packs[i] != MIDX_PACK_ERROR)
 			m->packs[i]->multi_pack_index = 0;
 	}
 	FREE_AND_NULL(m->packs);
@@ -441,41 +444,32 @@ static uint32_t midx_for_pack(struct multi_pack_index **_m,
 	return pack_int_id - m->num_packs_in_base;
 }
 
-int prepare_midx_pack(struct repository *r, struct multi_pack_index *m,
+int prepare_midx_pack(struct multi_pack_index *m,
 		      uint32_t pack_int_id)
 {
+	struct repository *r = m->source->odb->repo;
 	struct strbuf pack_name = STRBUF_INIT;
-	struct strbuf key = STRBUF_INIT;
 	struct packed_git *p;
 
 	pack_int_id = midx_for_pack(&m, pack_int_id);
 
+	if (m->packs[pack_int_id] == MIDX_PACK_ERROR)
+		return 1;
 	if (m->packs[pack_int_id])
 		return 0;
 
-	strbuf_addf(&pack_name, "%s/pack/%s", m->object_dir,
+	strbuf_addf(&pack_name, "%s/pack/%s", m->source->path,
 		    m->pack_names[pack_int_id]);
-
-	/* pack_map holds the ".pack" name, but we have the .idx */
-	strbuf_addbuf(&key, &pack_name);
-	strbuf_strip_suffix(&key, ".idx");
-	strbuf_addstr(&key, ".pack");
-	p = hashmap_get_entry_from_hash(&r->objects->pack_map,
-					strhash(key.buf), key.buf,
-					struct packed_git, packmap_ent);
-	if (!p) {
-		p = add_packed_git(pack_name.buf, pack_name.len, m->local);
-		if (p) {
-			install_packed_git(r, p);
-			list_add_tail(&p->mru, &r->objects->packed_git_mru);
-		}
-	}
-
+	p = packfile_store_load_pack(r->objects->packfiles,
+				     pack_name.buf, m->source->local);
+	if (p)
+		list_add_tail(&p->mru, &r->objects->packfiles->mru);
 	strbuf_release(&pack_name);
-	strbuf_release(&key);
 
-	if (!p)
+	if (!p) {
+		m->packs[pack_int_id] = MIDX_PACK_ERROR;
 		return 1;
+	}
 
 	p->multi_pack_index = 1;
 	m->packs[pack_int_id] = p;
@@ -487,12 +481,14 @@ struct packed_git *nth_midxed_pack(struct multi_pack_index *m,
 				   uint32_t pack_int_id)
 {
 	uint32_t local_pack_int_id = midx_for_pack(&m, pack_int_id);
+	if (m->packs[local_pack_int_id] == MIDX_PACK_ERROR)
+		return NULL;
 	return m->packs[local_pack_int_id];
 }
 
 #define MIDX_CHUNK_BITMAPPED_PACKS_WIDTH (2 * sizeof(uint32_t))
 
-int nth_bitmapped_pack(struct repository *r, struct multi_pack_index *m,
+int nth_bitmapped_pack(struct multi_pack_index *m,
 		       struct bitmapped_pack *bp, uint32_t pack_int_id)
 {
 	uint32_t local_pack_int_id = midx_for_pack(&m, pack_int_id);
@@ -500,7 +496,7 @@ int nth_bitmapped_pack(struct repository *r, struct multi_pack_index *m,
 	if (!m->chunk_bitmapped_packs)
 		return error(_("MIDX does not contain the BTMP chunk"));
 
-	if (prepare_midx_pack(r, m, pack_int_id))
+	if (prepare_midx_pack(m, pack_int_id))
 		return error(_("could not load bitmapped pack %"PRIu32), pack_int_id);
 
 	bp->p = m->packs[local_pack_int_id];
@@ -519,7 +515,8 @@ int bsearch_one_midx(const struct object_id *oid, struct multi_pack_index *m,
 		     uint32_t *result)
 {
 	int ret = bsearch_hash(oid->hash, m->chunk_oid_fanout,
-			       m->chunk_oid_lookup, the_hash_algo->rawsz,
+			       m->chunk_oid_lookup,
+			       m->source->odb->repo->hash_algo->rawsz,
 			       result);
 	if (result)
 		*result += m->num_objects_in_base;
@@ -550,7 +547,7 @@ struct object_id *nth_midxed_object_oid(struct object_id *oid,
 	n = midx_for_object(&m, n);
 
 	oidread(oid, m->chunk_oid_lookup + st_mult(m->hash_len, n),
-		the_repository->hash_algo);
+		m->source->odb->repo->hash_algo);
 	return oid;
 }
 
@@ -585,10 +582,9 @@ uint32_t nth_midxed_pack_int_id(struct multi_pack_index *m, uint32_t pos)
 					       (off_t)pos * MIDX_CHUNK_OFFSET_WIDTH);
 }
 
-int fill_midx_entry(struct repository *r,
+int fill_midx_entry(struct multi_pack_index *m,
 		    const struct object_id *oid,
-		    struct pack_entry *e,
-		    struct multi_pack_index *m)
+		    struct pack_entry *e)
 {
 	uint32_t pos;
 	uint32_t pack_int_id;
@@ -600,7 +596,7 @@ int fill_midx_entry(struct repository *r,
 	midx_for_object(&m, pos);
 	pack_int_id = nth_midxed_pack_int_id(m, pos);
 
-	if (prepare_midx_pack(r, m, pack_int_id))
+	if (prepare_midx_pack(m, pack_int_id))
 		return 0;
 	p = m->packs[pack_int_id - m->num_packs_in_base];
 
@@ -708,37 +704,26 @@ int midx_preferred_pack(struct multi_pack_index *m, uint32_t *pack_int_id)
 	return 0;
 }
 
-int prepare_multi_pack_index_one(struct repository *r, const char *object_dir, int local)
+int prepare_multi_pack_index_one(struct odb_source *source)
 {
-	struct multi_pack_index *m;
-	struct multi_pack_index *m_search;
+	struct repository *r = source->odb->repo;
 
 	prepare_repo_settings(r);
 	if (!r->settings.core_multi_pack_index)
 		return 0;
 
-	for (m_search = r->objects->multi_pack_index; m_search; m_search = m_search->next)
-		if (!strcmp(object_dir, m_search->object_dir))
-			return 1;
-
-	m = load_multi_pack_index(object_dir, local);
-
-	if (m) {
-		struct multi_pack_index *mp = r->objects->multi_pack_index;
-		if (mp) {
-			m->next = mp->next;
-			mp->next = m;
-		} else
-			r->objects->multi_pack_index = m;
+	if (source->midx)
 		return 1;
-	}
 
-	return 0;
+	source->midx = load_multi_pack_index(source);
+
+	return !!source->midx;
 }
 
 int midx_checksum_valid(struct multi_pack_index *m)
 {
-	return hashfile_checksum_valid(m->data, m->data_len);
+	return hashfile_checksum_valid(m->source->odb->repo->hash_algo,
+				       m->data, m->data_len);
 }
 
 struct clear_midx_data {
@@ -764,7 +749,7 @@ static void clear_midx_file_ext(const char *full_path, size_t full_path_len UNUS
 		die_errno(_("failed to remove %s"), full_path);
 }
 
-void clear_midx_files_ext(const char *object_dir, const char *ext,
+void clear_midx_files_ext(struct odb_source *source, const char *ext,
 			  const char *keep_hash)
 {
 	struct clear_midx_data data;
@@ -778,7 +763,7 @@ void clear_midx_files_ext(const char *object_dir, const char *ext,
 	}
 	data.ext = ext;
 
-	for_each_file_in_pack_dir(object_dir,
+	for_each_file_in_pack_dir(source->path,
 				  clear_midx_file_ext,
 				  &data);
 
@@ -787,7 +772,7 @@ void clear_midx_files_ext(const char *object_dir, const char *ext,
 	free(data.keep);
 }
 
-void clear_incremental_midx_files_ext(const char *object_dir, const char *ext,
+void clear_incremental_midx_files_ext(struct odb_source *source, const char *ext,
 				      char **keep_hashes,
 				      uint32_t hashes_nr)
 {
@@ -803,7 +788,7 @@ void clear_incremental_midx_files_ext(const char *object_dir, const char *ext,
 	data.keep_nr = hashes_nr;
 	data.ext = ext;
 
-	for_each_file_in_pack_subdir(object_dir, "multi-pack-index.d",
+	for_each_file_in_pack_subdir(source->path, "multi-pack-index.d",
 				     clear_midx_file_ext, &data);
 
 	for (i = 0; i < hashes_nr; i++)
@@ -815,18 +800,23 @@ void clear_midx_file(struct repository *r)
 {
 	struct strbuf midx = STRBUF_INIT;
 
-	get_midx_filename(&midx, r->objects->odb->path);
+	get_midx_filename(r->objects->sources, &midx);
 
-	if (r->objects && r->objects->multi_pack_index) {
-		close_midx(r->objects->multi_pack_index);
-		r->objects->multi_pack_index = NULL;
+	if (r->objects) {
+		struct odb_source *source;
+
+		for (source = r->objects->sources; source; source = source->next) {
+			if (source->midx)
+				close_midx(source->midx);
+			source->midx = NULL;
+		}
 	}
 
 	if (remove_path(midx.buf))
 		die(_("failed to clear multi-pack-index at %s"), midx.buf);
 
-	clear_midx_files_ext(r->objects->odb->path, MIDX_EXT_BITMAP, NULL);
-	clear_midx_files_ext(r->objects->odb->path, MIDX_EXT_REV, NULL);
+	clear_midx_files_ext(r->objects->sources, MIDX_EXT_BITMAP, NULL);
+	clear_midx_files_ext(r->objects->sources, MIDX_EXT_REV, NULL);
 
 	strbuf_release(&midx);
 }
@@ -870,12 +860,13 @@ static int compare_pair_pos_vs_id(const void *_a, const void *_b)
 			display_progress(progress, _n); \
 	} while (0)
 
-int verify_midx_file(struct repository *r, const char *object_dir, unsigned flags)
+int verify_midx_file(struct odb_source *source, unsigned flags)
 {
+	struct repository *r = source->odb->repo;
 	struct pair_pos_vs_id *pairs = NULL;
 	uint32_t i;
 	struct progress *progress = NULL;
-	struct multi_pack_index *m = load_multi_pack_index(object_dir, 1);
+	struct multi_pack_index *m = load_multi_pack_index(source);
 	struct multi_pack_index *curr;
 	verify_midx_error = 0;
 
@@ -884,7 +875,7 @@ int verify_midx_file(struct repository *r, const char *object_dir, unsigned flag
 		struct stat sb;
 		struct strbuf filename = STRBUF_INIT;
 
-		get_midx_filename(&filename, object_dir);
+		get_midx_filename(source, &filename);
 
 		if (!stat(filename.buf, &sb)) {
 			error(_("multi-pack-index file exists, but failed to parse"));
@@ -898,10 +889,11 @@ int verify_midx_file(struct repository *r, const char *object_dir, unsigned flag
 		midx_report(_("incorrect checksum"));
 
 	if (flags & MIDX_PROGRESS)
-		progress = start_delayed_progress(_("Looking for referenced packfiles"),
+		progress = start_delayed_progress(r,
+						  _("Looking for referenced packfiles"),
 						  m->num_packs + m->num_packs_in_base);
 	for (i = 0; i < m->num_packs + m->num_packs_in_base; i++) {
-		if (prepare_midx_pack(r, m, i))
+		if (prepare_midx_pack(m, i))
 			midx_report("failed to load pack in position %d", i);
 
 		display_progress(progress, i + 1);
@@ -918,7 +910,8 @@ int verify_midx_file(struct repository *r, const char *object_dir, unsigned flag
 	}
 
 	if (flags & MIDX_PROGRESS)
-		progress = start_sparse_progress(_("Verifying OID order in multi-pack-index"),
+		progress = start_sparse_progress(r,
+						 _("Verifying OID order in multi-pack-index"),
 						 m->num_objects - 1);
 
 	for (curr = m; curr; curr = curr->base_midx) {
@@ -950,14 +943,17 @@ int verify_midx_file(struct repository *r, const char *object_dir, unsigned flag
 	}
 
 	if (flags & MIDX_PROGRESS)
-		progress = start_sparse_progress(_("Sorting objects by packfile"),
+		progress = start_sparse_progress(r,
+						 _("Sorting objects by packfile"),
 						 m->num_objects);
 	display_progress(progress, 0); /* TODO: Measure QSORT() progress */
 	QSORT(pairs, m->num_objects, compare_pair_pos_vs_id);
 	stop_progress(&progress);
 
 	if (flags & MIDX_PROGRESS)
-		progress = start_sparse_progress(_("Verifying object offsets"), m->num_objects);
+		progress = start_sparse_progress(r,
+						 _("Verifying object offsets"),
+						 m->num_objects);
 	for (i = 0; i < m->num_objects + m->num_objects_in_base; i++) {
 		struct object_id oid;
 		struct pack_entry e;
@@ -974,7 +970,7 @@ int verify_midx_file(struct repository *r, const char *object_dir, unsigned flag
 
 		nth_midxed_object_oid(&oid, m, pairs[i].pos);
 
-		if (!fill_midx_entry(r, &oid, &e, m)) {
+		if (!fill_midx_entry(m, &oid, &e)) {
 			midx_report(_("failed to load pack entry for oid[%d] = %s"),
 				    pairs[i].pos, oid_to_hex(&oid));
 			continue;

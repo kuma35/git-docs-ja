@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "config.h"
@@ -19,7 +20,7 @@
 #include "commit-slab.h"
 #include "commit-reach.h"
 #include "object-name.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "path.h"
 #include "dir.h"
 
@@ -154,9 +155,9 @@ static void show_list(const char *debug, int counted, int nr,
 		unsigned commit_flags = commit->object.flags;
 		enum object_type type;
 		unsigned long size;
-		char *buf = repo_read_object_file(the_repository,
-						  &commit->object.oid, &type,
-						  &size);
+		char *buf = odb_read_object(the_repository->objects,
+					    &commit->object.oid, &type,
+					    &size);
 		const char *subject_start;
 		int subject_len;
 
@@ -673,9 +674,6 @@ static void bisect_rev_setup(struct repository *r, struct rev_info *revs,
 			     const char *bad_format, const char *good_format,
 			     int read_paths)
 {
-	struct setup_revision_opt opt = {
-		.free_removed_argv_elements = 1,
-	};
 	int i;
 
 	repo_init_revisions(r, revs, prefix);
@@ -692,7 +690,7 @@ static void bisect_rev_setup(struct repository *r, struct rev_info *revs,
 	if (read_paths)
 		read_bisect_paths(rev_argv);
 
-	setup_revisions(rev_argv->nr, rev_argv->v, revs, &opt);
+	setup_revisions_from_strvec(rev_argv, revs, NULL);
 }
 
 static void bisect_common(struct rev_info *revs)
@@ -779,10 +777,10 @@ static struct commit *get_commit_reference(struct repository *r,
 }
 
 static struct commit **get_bad_and_good_commits(struct repository *r,
-						int *rev_nr)
+						size_t *rev_nr)
 {
 	struct commit **rev;
-	int i, n = 0;
+	size_t i, n = 0;
 
 	ALLOC_ARRAY(rev, 1 + good_revs.nr);
 	rev[n++] = get_commit_reference(r, current_bad_oid);
@@ -854,7 +852,7 @@ static void handle_skipped_merge_base(const struct object_id *mb)
  * for early success, this will be converted back to 0 in
  * check_good_are_ancestors_of_bad().
  */
-static enum bisect_error check_merge_bases(int rev_nr, struct commit **rev, int no_checkout)
+static enum bisect_error check_merge_bases(size_t rev_nr, struct commit **rev, int no_checkout)
 {
 	enum bisect_error res = BISECT_OK;
 	struct commit_list *result = NULL;
@@ -886,7 +884,7 @@ static enum bisect_error check_merge_bases(int rev_nr, struct commit **rev, int 
 	return res;
 }
 
-static int check_ancestors(struct repository *r, int rev_nr,
+static int check_ancestors(struct repository *r, size_t rev_nr,
 			   struct commit **rev, const char *prefix)
 {
 	struct strvec rev_argv = STRVEC_INIT;
@@ -921,14 +919,15 @@ static enum bisect_error check_good_are_ancestors_of_bad(struct repository *r,
 {
 	char *filename;
 	struct stat st;
-	int fd, rev_nr;
+	int fd;
+	size_t rev_nr;
 	enum bisect_error res = BISECT_OK;
 	struct commit **rev;
 
 	if (!current_bad_oid)
 		return error(_("a %s revision is needed"), term_bad);
 
-	filename = git_pathdup("BISECT_ANCESTORS_OK");
+	filename = repo_git_path(the_repository, "BISECT_ANCESTORS_OK");
 
 	/* Check if file BISECT_ANCESTORS_OK exists. */
 	if (!stat(filename, &st) && S_ISREG(st.st_mode))

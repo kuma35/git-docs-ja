@@ -14,7 +14,7 @@
 #include "list-objects.h"
 #include "packfile.h"
 #include "worktree.h"
-#include "object-store-ll.h"
+#include "object-file.h"
 #include "pack-bitmap.h"
 #include "pack-mtimes.h"
 #include "config.h"
@@ -45,7 +45,7 @@ static void add_one_file(const char *path, struct rev_info *revs)
 	}
 	strbuf_trim(&buf);
 	if (!get_oid_hex(buf.buf, &oid)) {
-		object = parse_object_or_die(&oid, buf.buf);
+		object = parse_object_or_die(the_repository, &oid, buf.buf);
 		add_pending_object(revs, object, "");
 	}
 	strbuf_release(&buf);
@@ -65,8 +65,10 @@ static void add_rebase_files(struct rev_info *revs)
 	struct worktree **worktrees = get_worktrees();
 
 	for (struct worktree **wt = worktrees; *wt; wt++) {
+		char *wt_gitdir = get_worktree_git_dir(*wt);
+
 		strbuf_reset(&buf);
-		strbuf_addstr(&buf, get_worktree_git_dir(*wt));
+		strbuf_addstr(&buf, wt_gitdir);
 		strbuf_complete(&buf, '/');
 		len = buf.len;
 		for (size_t i = 0; i < ARRAY_SIZE(path); i++) {
@@ -74,6 +76,8 @@ static void add_rebase_files(struct rev_info *revs)
 			strbuf_addstr(&buf, path[i]);
 			add_one_file(buf.buf, revs);
 		}
+
+		free(wt_gitdir);
 	}
 	strbuf_release(&buf);
 	free_worktrees(worktrees);
@@ -90,7 +94,7 @@ static int add_one_ref(const char *path, const char *referent UNUSED, const stru
 		return 0;
 	}
 
-	object = parse_object_or_die(oid, path);
+	object = parse_object_or_die(the_repository, oid, path);
 	add_pending_object(revs, object, "");
 
 	return 0;
@@ -166,7 +170,7 @@ static void load_gc_recent_objects(struct recent_data *data)
 
 	data->extra_recent_oids_loaded = 1;
 
-	if (git_config_get_string_multi("gc.recentobjectshook", &programs))
+	if (repo_config_get_string_multi(the_repository, "gc.recentobjectshook", &programs))
 		return;
 
 	for (i = 0; i < programs->nr; i++) {
@@ -207,14 +211,14 @@ static void add_recent_object(const struct object_id *oid,
 	 * later processing, and the revision machinery expects
 	 * commits and tags to have been parsed.
 	 */
-	type = oid_object_info(the_repository, oid, NULL);
+	type = odb_read_object_info(the_repository->objects, oid, NULL);
 	if (type < 0)
 		die("unable to get object info for %s", oid_to_hex(oid));
 
 	switch (type) {
 	case OBJ_TAG:
 	case OBJ_COMMIT:
-		obj = parse_object_or_die(oid, NULL);
+		obj = parse_object_or_die(the_repository, oid, NULL);
 		break;
 	case OBJ_TREE:
 		obj = (struct object *)lookup_tree(the_repository, oid);
@@ -239,7 +243,7 @@ static int want_recent_object(struct recent_data *data,
 			      const struct object_id *oid)
 {
 	if (data->ignore_in_core_kept_packs &&
-	    has_object_kept_pack(oid, IN_CORE_KEEP_PACKS))
+	    has_object_kept_pack(data->revs->repo, oid, IN_CORE_KEEP_PACKS))
 		return 0;
 	return 1;
 }
@@ -315,7 +319,7 @@ int add_unseen_recent_objects_to_traversal(struct rev_info *revs,
 	oidset_init(&data.extra_recent_oids, 0);
 	data.extra_recent_oids_loaded = 0;
 
-	r = for_each_loose_object(add_recent_loose, &data,
+	r = for_each_loose_object(the_repository->objects, add_recent_loose, &data,
 				  FOR_EACH_OBJECT_LOCAL_ONLY);
 	if (r)
 		goto done;
@@ -324,7 +328,7 @@ int add_unseen_recent_objects_to_traversal(struct rev_info *revs,
 	if (ignore_in_core_kept_packs)
 		flags |= FOR_EACH_OBJECT_SKIP_IN_CORE_KEPT_PACKS;
 
-	r = for_each_packed_object(add_recent_packed, &data, flags);
+	r = for_each_packed_object(revs->repo, add_recent_packed, &data, flags);
 
 done:
 	oidset_clear(&data.extra_recent_oids);
@@ -337,7 +341,8 @@ static int mark_object_seen(const struct object_id *oid,
 			     int exclude UNUSED,
 			     uint32_t name_hash UNUSED,
 			     struct packed_git *found_pack UNUSED,
-			     off_t found_offset UNUSED)
+			     off_t found_offset UNUSED,
+			     void *payload UNUSED)
 {
 	struct object *obj = lookup_object_by_type(the_repository, oid, type);
 	if (!obj)

@@ -1,4 +1,4 @@
-#define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "add-interactive.h"
@@ -20,14 +20,14 @@
 #include "prompt.h"
 #include "tree.h"
 
-static void init_color(struct repository *r, struct add_i_state *s,
+static void init_color(struct repository *r, enum git_colorbool use_color,
 		       const char *section_and_slot, char *dst,
 		       const char *default_color)
 {
 	char *key = xstrfmt("color.%s", section_and_slot);
 	const char *value;
 
-	if (!s->use_color)
+	if (!want_color(use_color))
 		dst[0] = '\0';
 	else if (repo_config_get_value(r, key, &value) ||
 		 color_parse(value, dst))
@@ -36,51 +36,94 @@ static void init_color(struct repository *r, struct add_i_state *s,
 	free(key);
 }
 
-void init_add_i_state(struct add_i_state *s, struct repository *r)
+static enum git_colorbool check_color_config(struct repository *r, const char *var)
 {
 	const char *value;
+	enum git_colorbool ret;
 
-	s->r = r;
-
-	if (repo_config_get_value(r, "color.interactive", &value))
-		s->use_color = -1;
+	if (repo_config_get_value(r, var, &value))
+		ret = GIT_COLOR_UNKNOWN;
 	else
-		s->use_color =
-			git_config_colorbool("color.interactive", value);
-	s->use_color = want_color(s->use_color);
+		ret = git_config_colorbool(var, value);
 
-	init_color(r, s, "interactive.header", s->header_color, GIT_COLOR_BOLD);
-	init_color(r, s, "interactive.help", s->help_color, GIT_COLOR_BOLD_RED);
-	init_color(r, s, "interactive.prompt", s->prompt_color,
-		   GIT_COLOR_BOLD_BLUE);
-	init_color(r, s, "interactive.error", s->error_color,
-		   GIT_COLOR_BOLD_RED);
+	/*
+	 * Do not rely on want_color() to fall back to color.ui for us. It uses
+	 * the value parsed by git_color_config(), which may not have been
+	 * called by the main command.
+	 */
+	if (ret == GIT_COLOR_UNKNOWN &&
+	    !repo_config_get_value(r, "color.ui", &value))
+		ret = git_config_colorbool("color.ui", value);
 
-	init_color(r, s, "diff.frag", s->fraginfo_color,
-		   diff_get_color(s->use_color, DIFF_FRAGINFO));
-	init_color(r, s, "diff.context", s->context_color, "fall back");
+	return ret;
+}
+
+void init_add_i_state(struct add_i_state *s, struct repository *r,
+		      struct add_p_opt *add_p_opt)
+{
+	s->r = r;
+	s->context = -1;
+	s->interhunkcontext = -1;
+
+	s->use_color_interactive = check_color_config(r, "color.interactive");
+
+	init_color(r, s->use_color_interactive, "interactive.header",
+		   s->header_color, GIT_COLOR_BOLD);
+	init_color(r, s->use_color_interactive, "interactive.help",
+		   s->help_color, GIT_COLOR_BOLD_RED);
+	init_color(r, s->use_color_interactive, "interactive.prompt",
+		   s->prompt_color, GIT_COLOR_BOLD_BLUE);
+	init_color(r, s->use_color_interactive, "interactive.error",
+		   s->error_color, GIT_COLOR_BOLD_RED);
+	strlcpy(s->reset_color_interactive,
+		want_color(s->use_color_interactive) ? GIT_COLOR_RESET : "", COLOR_MAXLEN);
+
+	s->use_color_diff = check_color_config(r, "color.diff");
+
+	init_color(r, s->use_color_diff, "diff.frag", s->fraginfo_color,
+		   diff_get_color(s->use_color_diff, DIFF_FRAGINFO));
+	init_color(r, s->use_color_diff, "diff.context", s->context_color,
+		   "fall back");
 	if (!strcmp(s->context_color, "fall back"))
-		init_color(r, s, "diff.plain", s->context_color,
-			   diff_get_color(s->use_color, DIFF_CONTEXT));
-	init_color(r, s, "diff.old", s->file_old_color,
-		diff_get_color(s->use_color, DIFF_FILE_OLD));
-	init_color(r, s, "diff.new", s->file_new_color,
-		diff_get_color(s->use_color, DIFF_FILE_NEW));
-
-	strlcpy(s->reset_color,
-		s->use_color ? GIT_COLOR_RESET : "", COLOR_MAXLEN);
+		init_color(r, s->use_color_diff, "diff.plain",
+			   s->context_color,
+			   diff_get_color(s->use_color_diff, DIFF_CONTEXT));
+	init_color(r, s->use_color_diff, "diff.old", s->file_old_color,
+		   diff_get_color(s->use_color_diff, DIFF_FILE_OLD));
+	init_color(r, s->use_color_diff, "diff.new", s->file_new_color,
+		   diff_get_color(s->use_color_diff, DIFF_FILE_NEW));
+	strlcpy(s->reset_color_diff,
+		want_color(s->use_color_diff) ? GIT_COLOR_RESET : "", COLOR_MAXLEN);
 
 	FREE_AND_NULL(s->interactive_diff_filter);
-	git_config_get_string("interactive.difffilter",
-			      &s->interactive_diff_filter);
+	repo_config_get_string(r, "interactive.difffilter",
+			       &s->interactive_diff_filter);
 
 	FREE_AND_NULL(s->interactive_diff_algorithm);
-	git_config_get_string("diff.algorithm",
-			      &s->interactive_diff_algorithm);
+	repo_config_get_string(r, "diff.algorithm",
+			       &s->interactive_diff_algorithm);
 
-	git_config_get_bool("interactive.singlekey", &s->use_single_key);
+	if (!repo_config_get_int(r, "diff.context", &s->context))
+		if (s->context < 0)
+			die(_("%s cannot be negative"), "diff.context");
+	if (!repo_config_get_int(r, "diff.interHunkContext", &s->interhunkcontext))
+		if (s->interhunkcontext < 0)
+			die(_("%s cannot be negative"), "diff.interHunkContext");
+
+	repo_config_get_bool(r, "interactive.singlekey", &s->use_single_key);
 	if (s->use_single_key)
 		setbuf(stdin, NULL);
+
+	if (add_p_opt->context != -1) {
+		if (add_p_opt->context < 0)
+			die(_("%s cannot be negative"), "--unified");
+		s->context = add_p_opt->context;
+	}
+	if (add_p_opt->interhunkcontext != -1) {
+		if (add_p_opt->interhunkcontext < 0)
+			die(_("%s cannot be negative"), "--inter-hunk-context");
+		s->interhunkcontext = add_p_opt->interhunkcontext;
+	}
 }
 
 void clear_add_i_state(struct add_i_state *s)
@@ -88,7 +131,8 @@ void clear_add_i_state(struct add_i_state *s)
 	FREE_AND_NULL(s->interactive_diff_filter);
 	FREE_AND_NULL(s->interactive_diff_algorithm);
 	memset(s, 0, sizeof(*s));
-	s->use_color = -1;
+	s->use_color_interactive = GIT_COLOR_UNKNOWN;
+	s->use_color_diff = GIT_COLOR_UNKNOWN;
 }
 
 /*
@@ -200,7 +244,8 @@ static void find_unique_prefixes(struct prefix_item_list *list)
 
 static ssize_t find_unique(const char *string, struct prefix_item_list *list)
 {
-	int index = string_list_find_insert_index(&list->sorted, string, 1);
+	bool exact_match;
+	size_t index = string_list_find_insert_index(&list->sorted, string, &exact_match);
 	struct string_list_item *item;
 
 	if (list->items.nr != list->sorted.nr)
@@ -208,8 +253,8 @@ static ssize_t find_unique(const char *string, struct prefix_item_list *list)
 		    " vs %"PRIuMAX")",
 		    (uintmax_t)list->items.nr, (uintmax_t)list->sorted.nr);
 
-	if (index < 0)
-		item = list->sorted.items[-1 - index].util;
+	if (exact_match)
+		item = list->sorted.items[index].util;
 	else if (index > 0 &&
 		 starts_with(list->sorted.items[index - 1].string, string))
 		return -1;
@@ -534,7 +579,7 @@ static int get_modified_files(struct repository *r,
 			      size_t *binary_count)
 {
 	struct object_id head_oid;
-	int is_initial = !refs_resolve_ref_unsafe(get_main_ref_store(the_repository),
+	int is_initial = !refs_resolve_ref_unsafe(get_main_ref_store(r),
 						  "HEAD", RESOLVE_REF_READING,
 						  &head_oid, NULL);
 	struct collection_status s = { 0 };
@@ -559,7 +604,7 @@ static int get_modified_files(struct repository *r,
 		s.skip_unseen = filter && i;
 
 		opt.def = is_initial ?
-			empty_tree_oid_hex(the_repository->hash_algo) : oid_to_hex(&head_oid);
+			empty_tree_oid_hex(r->hash_algo) : oid_to_hex(&head_oid);
 
 		repo_init_revisions(r, &rev, NULL);
 		setup_revisions(0, NULL, &rev, &opt);
@@ -764,7 +809,7 @@ static int run_revert(struct add_i_state *s, const struct pathspec *ps,
 	size_t count, i, j;
 
 	struct object_id oid;
-	int is_initial = !refs_resolve_ref_unsafe(get_main_ref_store(the_repository),
+	int is_initial = !refs_resolve_ref_unsafe(get_main_ref_store(s->r),
 						  "HEAD", RESOLVE_REF_READING,
 						  &oid,
 						  NULL);
@@ -969,6 +1014,10 @@ static int run_patch(struct add_i_state *s, const struct pathspec *ps,
 	opts->prompt = N_("Patch update");
 	count = list_and_choose(s, files, opts);
 	if (count > 0) {
+		struct add_p_opt add_p_opt = {
+			.context = s->context,
+			.interhunkcontext = s->interhunkcontext,
+		};
 		struct strvec args = STRVEC_INIT;
 		struct pathspec ps_selected = { 0 };
 
@@ -979,7 +1028,7 @@ static int run_patch(struct add_i_state *s, const struct pathspec *ps,
 		parse_pathspec(&ps_selected,
 			       PATHSPEC_ALL_MAGIC & ~PATHSPEC_LITERAL,
 			       PATHSPEC_LITERAL_PATH, "", args.v);
-		res = run_add_p(s->r, ADD_P_ADD, NULL, &ps_selected);
+		res = run_add_p(s->r, ADD_P_ADD, &add_p_opt, NULL, &ps_selected);
 		strvec_clear(&args);
 		clear_pathspec(&ps_selected);
 	}
@@ -995,7 +1044,7 @@ static int run_diff(struct add_i_state *s, const struct pathspec *ps,
 	ssize_t count, i;
 
 	struct object_id oid;
-	int is_initial = !refs_resolve_ref_unsafe(get_main_ref_store(the_repository),
+	int is_initial = !refs_resolve_ref_unsafe(get_main_ref_store(s->r),
 						  "HEAD", RESOLVE_REF_READING,
 						  &oid,
 						  NULL);
@@ -1014,10 +1063,13 @@ static int run_diff(struct add_i_state *s, const struct pathspec *ps,
 	if (count > 0) {
 		struct child_process cmd = CHILD_PROCESS_INIT;
 
-		strvec_pushl(&cmd.args, "git", "diff", "-p", "--cached",
-			     oid_to_hex(!is_initial ? &oid :
-					s->r->hash_algo->empty_tree),
-			     "--", NULL);
+		strvec_pushl(&cmd.args, "git", "diff", "-p", "--cached", NULL);
+		if (s->context != -1)
+			strvec_pushf(&cmd.args, "--unified=%i", s->context);
+		if (s->interhunkcontext != -1)
+			strvec_pushf(&cmd.args, "--inter-hunk-context=%i", s->interhunkcontext);
+		strvec_pushl(&cmd.args, oid_to_hex(!is_initial ? &oid :
+			     s->r->hash_algo->empty_tree), "--", NULL);
 		for (i = 0; i < files->items.nr; i++)
 			if (files->selected[i])
 				strvec_push(&cmd.args,
@@ -1110,7 +1162,8 @@ static void command_prompt_help(struct add_i_state *s)
 			 _("(empty) select nothing"));
 }
 
-int run_add_i(struct repository *r, const struct pathspec *ps)
+int run_add_i(struct repository *r, const struct pathspec *ps,
+	      struct add_p_opt *add_p_opt)
 {
 	struct add_i_state s = { NULL };
 	struct print_command_item_data data = { "[", "]" };
@@ -1153,15 +1206,15 @@ int run_add_i(struct repository *r, const struct pathspec *ps)
 			->util = util;
 	}
 
-	init_add_i_state(&s, r);
+	init_add_i_state(&s, r, add_p_opt);
 
 	/*
 	 * When color was asked for, use the prompt color for
 	 * highlighting, otherwise use square brackets.
 	 */
-	if (s.use_color) {
+	if (want_color(s.use_color_interactive)) {
 		data.color = s.prompt_color;
-		data.reset = s.reset_color;
+		data.reset = s.reset_color_interactive;
 	}
 	print_file_item_data.color = data.color;
 	print_file_item_data.reset = data.reset;

@@ -1,8 +1,11 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "builtin.h"
 #include "abspath.h"
 #include "config.h"
 #include "dir.h"
+#include "environment.h"
 #include "gettext.h"
 #include "parse-options.h"
 #include "fsmonitor-ll.h"
@@ -1545,7 +1548,7 @@ int cmd_fsmonitor__daemon(int argc,
 		OPT_END()
 	};
 
-	git_config(fsmonitor_config, NULL);
+	repo_config(the_repository, fsmonitor_config, NULL);
 
 	argc = parse_options(argc, argv, prefix, options,
 			     builtin_fsmonitor__daemon_usage, 0);
@@ -1596,8 +1599,8 @@ int cmd_fsmonitor__daemon(int argc, const char **argv, const char *prefix UNUSED
 		OPT_END()
 	};
 
-	if (argc == 2 && !strcmp(argv[1], "-h"))
-		usage_with_options(builtin_fsmonitor__daemon_usage, options);
+	show_usage_with_options_if_asked(argc, argv,
+					 builtin_fsmonitor__daemon_usage, options);
 
 	die(_("fsmonitor--daemon not supported on this platform"));
 }

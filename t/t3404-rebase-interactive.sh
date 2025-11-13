@@ -791,6 +791,20 @@ test_expect_success 'reword' '
 	grep "C changed" actual
 '
 
+test_expect_success 'reword fast-forwarded empty commit' '
+	git commit --allow-empty -m "empty commit" --only &&
+	(
+		set_fake_editor &&
+		FAKE_COMMIT_AMEND=edited FAKE_LINES="reword 1" \
+			git rebase -i HEAD^
+	) &&
+	test_commit_message HEAD <<-\EOF
+	empty commit
+
+	edited
+	EOF
+'
+
 test_expect_success 'no uncommitted changes when rewording and the todo list is reloaded' '
 	git checkout E &&
 	test_when_finished "git checkout @{-1}" &&
@@ -1162,7 +1176,7 @@ test_expect_success 'rebase -i respects core.commentchar' '
 	test B = $(git cat-file commit HEAD^ | sed -ne \$p)
 '
 
-test_expect_success 'rebase -i respects core.commentchar=auto' '
+test_expect_success !WITH_BREAKING_CHANGES 'rebase -i respects core.commentchar=auto' '
 	test_config core.commentchar auto &&
 	write_script copy-edit-script.sh <<-\EOF &&
 	cp "$1" edit-script
@@ -1170,8 +1184,23 @@ test_expect_success 'rebase -i respects core.commentchar=auto' '
 	test_when_finished "git rebase --abort || :" &&
 	(
 		test_set_editor "$(pwd)/copy-edit-script.sh" &&
-		git rebase -i HEAD^
+		git rebase -i HEAD^ 2>err
 	) &&
+	sed -n "s/^hint: *\$//p; s/^hint: //p; s/^warning: //p" err >actual &&
+	cat >expect <<-EOF &&
+	Support for ${SQ}core.commentChar=auto${SQ} is deprecated and will be removed in Git 3.0
+
+	To use the default comment string (#) please run
+
+	    git config unset core.commentChar
+
+	To set a custom comment string please run
+
+	    git config set core.commentChar <comment string>
+
+	where ${SQ}<comment string>${SQ} is the string you wish to use.
+	EOF
+	test_cmp expect actual &&
 	test -z "$(grep -ve "^#" -e "^\$" -e "^pick" edit-script)"
 '
 
@@ -1454,7 +1483,7 @@ test_expect_success 'rebase -i respects rebase.missingCommitsCheck = warn' '
 	cat >expect <<-EOF &&
 	Warning: some commits may have been dropped accidentally.
 	Dropped commits (newer to older):
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary)
+	 - $(git log --format="%h # %s" -1 primary)
 	To avoid this message, use "drop" to explicitly remove a commit.
 	EOF
 	test_config rebase.missingCommitsCheck warn &&
@@ -1472,8 +1501,8 @@ test_expect_success 'rebase -i respects rebase.missingCommitsCheck = error' '
 	cat >expect <<-EOF &&
 	Warning: some commits may have been dropped accidentally.
 	Dropped commits (newer to older):
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary)
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary~2)
+	 - $(git log --format="%h # %s" -1 primary)
+	 - $(git log --format="%h # %s" -1 primary~2)
 	To avoid this message, use "drop" to explicitly remove a commit.
 
 	Use '\''git config rebase.missingCommitsCheck'\'' to change the level of warnings.
@@ -1516,11 +1545,11 @@ test_expect_success 'rebase --edit-todo respects rebase.missingCommitsCheck = ig
 test_expect_success 'rebase --edit-todo respects rebase.missingCommitsCheck = warn' '
 	cat >expect <<-EOF &&
 	error: invalid command '\''pickled'\''
-	error: invalid line 1: pickled $(git rev-list --pretty=oneline --abbrev-commit -1 primary~4)
+	error: invalid line 1: pickled $(git log --format="%h # %s" -1 primary~4)
 	Warning: some commits may have been dropped accidentally.
 	Dropped commits (newer to older):
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary)
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary~4)
+	 - $(git log --format="%h # %s" -1 primary)
+	 - $(git log --format="%h # %s" -1 primary~4)
 	To avoid this message, use "drop" to explicitly remove a commit.
 	EOF
 	head -n5 expect >expect.2 &&
@@ -1551,11 +1580,11 @@ test_expect_success 'rebase --edit-todo respects rebase.missingCommitsCheck = wa
 test_expect_success 'rebase --edit-todo respects rebase.missingCommitsCheck = error' '
 	cat >expect <<-EOF &&
 	error: invalid command '\''pickled'\''
-	error: invalid line 1: pickled $(git rev-list --pretty=oneline --abbrev-commit -1 primary~4)
+	error: invalid line 1: pickled $(git log --format="%h # %s" -1 primary~4)
 	Warning: some commits may have been dropped accidentally.
 	Dropped commits (newer to older):
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary)
-	 - $(git rev-list --pretty=oneline --abbrev-commit -1 primary~4)
+	 - $(git log --format="%h # %s" -1 primary)
+	 - $(git log --format="%h # %s" -1 primary~4)
 	To avoid this message, use "drop" to explicitly remove a commit.
 
 	Use '\''git config rebase.missingCommitsCheck'\'' to change the level of warnings.
@@ -1628,11 +1657,11 @@ test_expect_success 'respects rebase.abbreviateCommands with fixup, squash and e
 	test_commit "fixup! first" file2.txt "first line again" first_fixup &&
 	test_commit "squash! second" file1.txt "another line here" second_squash &&
 	cat >expected <<-EOF &&
-	p $(git rev-list --abbrev-commit -1 first) first
-	f $(git rev-list --abbrev-commit -1 first_fixup) fixup! first
+	p $(git rev-list --abbrev-commit -1 first) # first
+	f $(git rev-list --abbrev-commit -1 first_fixup) # fixup! first
 	x git show HEAD
-	p $(git rev-list --abbrev-commit -1 second) second
-	s $(git rev-list --abbrev-commit -1 second_squash) squash! second
+	p $(git rev-list --abbrev-commit -1 second) # second
+	s $(git rev-list --abbrev-commit -1 second_squash) # squash! second
 	x git show HEAD
 	EOF
 	git checkout abbrevcmd &&
@@ -1651,7 +1680,7 @@ test_expect_success 'static check of bad command' '
 		set_fake_editor &&
 		test_must_fail env FAKE_LINES="1 2 3 bad 4 5" \
 		git rebase -i --root 2>actual &&
-		test_grep "pickled $(git rev-list --oneline -1 primary~1)" \
+		test_grep "pickled $(git log --format="%h # %s" -1 primary~1)" \
 				actual &&
 		test_grep "You can fix this with .git rebase --edit-todo.." \
 				actual &&
@@ -1851,15 +1880,15 @@ test_expect_success '--update-refs adds label and update-ref commands' '
 		set_cat_todo_editor &&
 
 		cat >expect <<-EOF &&
-		pick $(git log -1 --format=%h J) J
-		fixup $(git log -1 --format=%h update-refs) fixup! J # empty
+		pick $(git log -1 --format=%h J) # J
+		fixup $(git log -1 --format=%h update-refs) # fixup! J # empty
 		update-ref refs/heads/second
 		update-ref refs/heads/first
-		pick $(git log -1 --format=%h K) K
-		pick $(git log -1 --format=%h L) L
-		fixup $(git log -1 --format=%h is-not-reordered) fixup! L # empty
+		pick $(git log -1 --format=%h K) # K
+		pick $(git log -1 --format=%h L) # L
+		fixup $(git log -1 --format=%h is-not-reordered) # fixup! L # empty
 		update-ref refs/heads/third
-		pick $(git log -1 --format=%h M) M
+		pick $(git log -1 --format=%h M) # M
 		update-ref refs/heads/no-conflict-branch
 		update-ref refs/heads/is-not-reordered
 		update-ref refs/heads/shared-tip
@@ -1891,19 +1920,19 @@ test_expect_success '--update-refs adds commands with --rebase-merges' '
 		cat >expect <<-EOF &&
 		label onto
 		reset onto
-		pick $(git log -1 --format=%h branch2~1) F
-		pick $(git log -1 --format=%h branch2) I
+		pick $(git log -1 --format=%h branch2~1) # F
+		pick $(git log -1 --format=%h branch2) # I
 		update-ref refs/heads/branch2
 		label branch2
 		reset onto
-		pick $(git log -1 --format=%h refs/heads/second) J
+		pick $(git log -1 --format=%h refs/heads/second) # J
 		update-ref refs/heads/second
 		update-ref refs/heads/first
-		pick $(git log -1 --format=%h refs/heads/third~1) K
-		pick $(git log -1 --format=%h refs/heads/third) L
-		fixup $(git log -1 --format=%h update-refs-with-merge) fixup! L # empty
+		pick $(git log -1 --format=%h refs/heads/third~1) # K
+		pick $(git log -1 --format=%h refs/heads/third) # L
+		fixup $(git log -1 --format=%h update-refs-with-merge) # fixup! L # empty
 		update-ref refs/heads/third
-		pick $(git log -1 --format=%h HEAD~2) M
+		pick $(git log -1 --format=%h HEAD~2) # M
 		update-ref refs/heads/no-conflict-branch
 		merge -C $(git log -1 --format=%h HEAD~1) branch2 # merge
 		update-ref refs/heads/merge-branch
@@ -2249,6 +2278,7 @@ test_expect_success 'non-merge commands reject merge commits' '
 	edit $oid
 	fixup $oid
 	squash $oid
+	drop $oid # acceptable, no advice
 	EOF
 	(
 		set_replace_editor todo &&
@@ -2258,20 +2288,20 @@ test_expect_success 'non-merge commands reject merge commits' '
 	error: ${SQ}pick${SQ} does not accept merge commits
 	hint: ${SQ}pick${SQ} does not take a merge commit. If you wanted to
 	hint: replay the merge, use ${SQ}merge -C${SQ} on the commit.
-	hint: Disable this message with "git config advice.rebaseTodoError false"
+	hint: Disable this message with "git config set advice.rebaseTodoError false"
 	error: invalid line 1: pick $oid
 	error: ${SQ}reword${SQ} does not accept merge commits
 	hint: ${SQ}reword${SQ} does not take a merge commit. If you wanted to
 	hint: replay the merge and reword the commit message, use
 	hint: ${SQ}merge -c${SQ} on the commit
-	hint: Disable this message with "git config advice.rebaseTodoError false"
+	hint: Disable this message with "git config set advice.rebaseTodoError false"
 	error: invalid line 2: reword $oid
 	error: ${SQ}edit${SQ} does not accept merge commits
 	hint: ${SQ}edit${SQ} does not take a merge commit. If you wanted to
 	hint: replay the merge, use ${SQ}merge -C${SQ} on the commit, and then
 	hint: ${SQ}break${SQ} to give the control back to you so that you can
 	hint: do ${SQ}git commit --amend && git rebase --continue${SQ}.
-	hint: Disable this message with "git config advice.rebaseTodoError false"
+	hint: Disable this message with "git config set advice.rebaseTodoError false"
 	error: invalid line 3: edit $oid
 	error: cannot squash merge commit into another commit
 	error: invalid line 4: fixup $oid

@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "abspath.h"
@@ -26,11 +27,10 @@
 #include "parse-options.h"
 #include "object-file.h"
 #include "object-name.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "commit-reach.h"
 #include "read-cache-ll.h"
 #include "setup.h"
-#include "trace2.h"
 
 static int config_update_recurse_submodules = RECURSE_SUBMODULES_OFF;
 static int initialized_fetch_ref_tips;
@@ -123,7 +123,7 @@ int update_path_in_gitmodules(const char *oldpath, const char *newpath)
 	if (is_gitmodules_unmerged(the_repository->index))
 		die(_("Cannot change unmerged .gitmodules, resolve merge conflicts first"));
 
-	submodule = submodule_from_path(the_repository, null_oid(), oldpath);
+	submodule = submodule_from_path(the_repository, null_oid(the_hash_algo), oldpath);
 	if (!submodule || !submodule->name) {
 		warning(_("Could not find section in .gitmodules where path=%s"), oldpath);
 		return -1;
@@ -152,7 +152,7 @@ int remove_path_from_gitmodules(const char *path)
 	if (is_gitmodules_unmerged(the_repository->index))
 		die(_("Cannot change unmerged .gitmodules, resolve merge conflicts first"));
 
-	submodule = submodule_from_path(the_repository, null_oid(), path);
+	submodule = submodule_from_path(the_repository, null_oid(the_hash_algo), path);
 	if (!submodule || !submodule->name) {
 		warning(_("Could not find section in .gitmodules where path=%s"), path);
 		return -1;
@@ -175,35 +175,11 @@ void stage_updated_gitmodules(struct index_state *istate)
 		die(_("staging updated .gitmodules failed"));
 }
 
-static struct string_list added_submodule_odb_paths = STRING_LIST_INIT_DUP;
-
-void add_submodule_odb_by_path(const char *path)
-{
-	string_list_insert(&added_submodule_odb_paths, path);
-}
-
-int register_all_submodule_odb_as_alternates(void)
-{
-	int i;
-	int ret = added_submodule_odb_paths.nr;
-
-	for (i = 0; i < added_submodule_odb_paths.nr; i++)
-		add_to_alternates_memory(added_submodule_odb_paths.items[i].string);
-	if (ret) {
-		string_list_clear(&added_submodule_odb_paths, 0);
-		trace2_data_intmax("submodule", the_repository,
-				   "register_all_submodule_odb_as_alternates/registered", ret);
-		if (git_env_bool("GIT_TEST_FATAL_REGISTER_SUBMODULE_ODB", 0))
-			BUG("register_all_submodule_odb_as_alternates() called");
-	}
-	return ret;
-}
-
 void set_diffopt_flags_from_submodule_config(struct diff_options *diffopt,
 					     const char *path)
 {
 	const struct submodule *submodule = submodule_from_path(the_repository,
-								null_oid(),
+								null_oid(the_hash_algo),
 								path);
 	if (submodule) {
 		const char *ignore;
@@ -311,7 +287,7 @@ int is_tree_submodule_active(struct repository *repo,
 
 int is_submodule_active(struct repository *repo, const char *path)
 {
-	return is_tree_submodule_active(repo, null_oid(), path);
+	return is_tree_submodule_active(repo, null_oid(the_hash_algo), path);
 }
 
 int is_submodule_populated_gently(const char *path, int *return_error_code)
@@ -535,7 +511,8 @@ static struct repository *open_submodule(const char *path)
 	struct strbuf sb = STRBUF_INIT;
 	struct repository *out = xmalloc(sizeof(*out));
 
-	if (submodule_to_gitdir(&sb, path) || repo_init(out, sb.buf, NULL)) {
+	if (submodule_to_gitdir(the_repository, &sb, path) ||
+	    repo_init(out, sb.buf, NULL)) {
 		strbuf_release(&sb);
 		free(out);
 		return NULL;
@@ -776,7 +753,7 @@ const struct submodule *submodule_from_ce(const struct cache_entry *ce)
 	if (!should_update_submodules())
 		return NULL;
 
-	return submodule_from_path(the_repository, null_oid(), ce->name);
+	return submodule_from_path(the_repository, null_oid(the_hash_algo), ce->name);
 }
 
 
@@ -923,7 +900,7 @@ static void collect_changed_submodules(struct repository *r,
 	save_warning = warn_on_object_refname_ambiguity;
 	warn_on_object_refname_ambiguity = 0;
 	repo_init_revisions(r, &rev, NULL);
-	setup_revisions(argv->nr, argv->v, &rev, &s_r_opt);
+	setup_revisions_from_strvec(argv, &rev, &s_r_opt);
 	warn_on_object_refname_ambiguity = save_warning;
 	if (prepare_revision_walk(&rev))
 		die(_("revision walk setup failed"));
@@ -991,7 +968,7 @@ static int check_has_commit(const struct object_id *oid, void *data)
 		return 0;
 	}
 
-	type = oid_object_info(&subrepo, oid, NULL);
+	type = odb_read_object_info(subrepo.objects, oid, NULL);
 
 	switch (type) {
 	case OBJ_COMMIT:
@@ -1060,7 +1037,7 @@ static int submodule_needs_pushing(struct repository *r,
 				   const char *path,
 				   struct oid_array *commits)
 {
-	if (!submodule_has_commits(r, path, null_oid(), commits))
+	if (!submodule_has_commits(r, path, null_oid(the_hash_algo), commits))
 		/*
 		 * NOTE: We do consider it safe to return "no" here. The
 		 * correct answer would be "We do not know" instead of
@@ -1124,7 +1101,7 @@ int find_unpushed_submodules(struct repository *r,
 		const struct submodule *submodule;
 		const char *path = NULL;
 
-		submodule = submodule_from_name(r, null_oid(), name->string);
+		submodule = submodule_from_name(r, null_oid(the_hash_algo), name->string);
 		if (submodule)
 			path = submodule->path;
 		else
@@ -1314,7 +1291,7 @@ static int repo_has_absorbed_submodules(struct repository *r)
 	int ret;
 	struct strbuf buf = STRBUF_INIT;
 
-	strbuf_repo_git_path(&buf, r, "modules/");
+	repo_git_path_append(r, &buf, "modules/");
 	ret = file_exists(buf.buf) && !is_empty_dir(buf.buf);
 	strbuf_release(&buf);
 	return ret;
@@ -1349,7 +1326,7 @@ static void calculate_changed_submodule_paths(struct repository *r,
 		const struct submodule *submodule;
 		const char *path = NULL;
 
-		submodule = submodule_from_name(r, null_oid(), name->string);
+		submodule = submodule_from_name(r, null_oid(the_hash_algo), name->string);
 		if (submodule)
 			path = submodule->path;
 		else
@@ -1358,7 +1335,7 @@ static void calculate_changed_submodule_paths(struct repository *r,
 		if (!path)
 			continue;
 
-		if (submodule_has_commits(r, path, null_oid(), &cs_data->new_commits)) {
+		if (submodule_has_commits(r, path, null_oid(the_hash_algo), &cs_data->new_commits)) {
 			changed_submodule_data_clear(cs_data);
 			*name->string = '\0';
 		}
@@ -1489,14 +1466,13 @@ struct fetch_task {
  */
 static const struct submodule *get_non_gitmodules_submodule(const char *path)
 {
-	struct submodule *ret = NULL;
+	struct submodule *ret;
 	const char *name = default_name_or_path(path);
 
 	if (!name)
 		return NULL;
 
-	ret = xmalloc(sizeof(*ret));
-	memset(ret, 0, sizeof(*ret));
+	CALLOC_ARRAY(ret, 1);
 	ret->path = name;
 	ret->name = name;
 
@@ -1536,8 +1512,9 @@ static struct fetch_task *fetch_task_create(struct submodule_parallel_fetch *spf
 					    const char *path,
 					    const struct object_id *treeish_name)
 {
-	struct fetch_task *task = xmalloc(sizeof(*task));
-	memset(task, 0, sizeof(*task));
+	struct fetch_task *task;
+
+	CALLOC_ARRAY(task, 1);
 
 	if (validate_submodule_path(path) < 0)
 		exit(128);
@@ -1600,7 +1577,7 @@ get_fetch_task_from_index(struct submodule_parallel_fetch *spf,
 		if (!S_ISGITLINK(ce->ce_mode))
 			continue;
 
-		task = fetch_task_create(spf, ce->name, null_oid());
+		task = fetch_task_create(spf, ce->name, null_oid(the_hash_algo));
 		if (!task)
 			continue;
 
@@ -1775,8 +1752,7 @@ static int fetch_start_failure(struct strbuf *err UNUSED,
 static int commit_missing_in_sub(const struct object_id *oid, void *data)
 {
 	struct repository *subrepo = data;
-
-	enum object_type type = oid_object_info(subrepo, oid, NULL);
+	enum object_type type = odb_read_object_info(subrepo->objects, oid, NULL);
 
 	return type != OBJ_COMMIT;
 }
@@ -2082,7 +2058,7 @@ void submodule_unset_core_worktree(const struct submodule *sub)
 	submodule_name_to_gitdir(&config_path, the_repository, sub->name);
 	strbuf_addstr(&config_path, "/config");
 
-	if (git_config_set_in_file_gently(config_path.buf, "core.worktree", NULL, NULL))
+	if (repo_config_set_in_file_gently(the_repository, config_path.buf, "core.worktree", NULL, NULL))
 		warning(_("Could not unset core.worktree setting in submodule '%s'"),
 			  sub->path);
 
@@ -2164,7 +2140,7 @@ int submodule_move_head(const char *path, const char *super_prefix,
 	if (old_head && !is_submodule_populated_gently(path, error_code_ptr))
 		return 0;
 
-	sub = submodule_from_path(the_repository, null_oid(), path);
+	sub = submodule_from_path(the_repository, null_oid(the_hash_algo), path);
 
 	if (!sub)
 		BUG("could not get submodule information for '%s'", path);
@@ -2374,7 +2350,7 @@ static void relocate_single_git_dir_into_superproject(const char *path,
 
 	real_old_git_dir = real_pathdup(old_git_dir, 1);
 
-	sub = submodule_from_path(the_repository, null_oid(), path);
+	sub = submodule_from_path(the_repository, null_oid(the_hash_algo), path);
 	if (!sub)
 		die(_("could not lookup name for submodule '%s'"), path);
 
@@ -2382,7 +2358,7 @@ static void relocate_single_git_dir_into_superproject(const char *path,
 	if (validate_submodule_git_dir(new_gitdir.buf, sub->name) < 0)
 		die(_("refusing to move '%s' into an existing git dir"),
 		    real_old_git_dir);
-	if (safe_create_leading_directories_const(new_gitdir.buf) < 0)
+	if (safe_create_leading_directories_const(the_repository, new_gitdir.buf) < 0)
 		die(_("could not create directory '%s'"), new_gitdir.buf);
 	real_new_git_dir = real_pathdup(new_gitdir.buf, 1);
 
@@ -2460,7 +2436,7 @@ void absorb_git_dir_into_superproject(const char *path,
 		* superproject did not rewrite the git file links yet,
 		* fix it now.
 		*/
-		sub = submodule_from_path(the_repository, null_oid(), path);
+		sub = submodule_from_path(the_repository, null_oid(the_hash_algo), path);
 		if (!sub)
 			die(_("could not lookup name for submodule '%s'"), path);
 		submodule_name_to_gitdir(&sub_gitdir, the_repository, sub->name);
@@ -2571,7 +2547,8 @@ int get_superproject_working_tree(struct strbuf *buf)
  * Put the gitdir for a submodule (given relative to the main
  * repository worktree) into `buf`, or return -1 on error.
  */
-int submodule_to_gitdir(struct strbuf *buf, const char *submodule)
+int submodule_to_gitdir(struct repository *repo,
+			struct strbuf *buf, const char *submodule)
 {
 	const struct submodule *sub;
 	const char *git_dir;
@@ -2591,14 +2568,13 @@ int submodule_to_gitdir(struct strbuf *buf, const char *submodule)
 		strbuf_addstr(buf, git_dir);
 	}
 	if (!is_git_directory(buf->buf)) {
-		sub = submodule_from_path(the_repository, null_oid(),
-					  submodule);
+		sub = submodule_from_path(repo, null_oid(the_hash_algo), submodule);
 		if (!sub) {
 			ret = -1;
 			goto cleanup;
 		}
 		strbuf_reset(buf);
-		submodule_name_to_gitdir(buf, the_repository, sub->name);
+		submodule_name_to_gitdir(buf, repo, sub->name);
 	}
 
 cleanup:
@@ -2628,6 +2604,6 @@ void submodule_name_to_gitdir(struct strbuf *buf, struct repository *r,
 	 * administrators can explicitly set. Nothing has been decided,
 	 * so for now, just append the name at the end of the path.
 	 */
-	strbuf_repo_git_path(buf, r, "modules/");
+	repo_git_path_append(r, buf, "modules/");
 	strbuf_addstr(buf, submodule_name);
 }

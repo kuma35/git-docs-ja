@@ -246,7 +246,11 @@ test_expect_success 'create bundle with --since option' '
 	EOF
 	test_cmp expect actual &&
 
-	git bundle create since.bdl \
+	# If a different name hash function is used, then one fewer
+	# delta base is found and this counts a different number
+	# of objects after performing --fix-thin.
+	GIT_TEST_NAME_HASH_VERSION=1 \
+		git bundle create since.bdl \
 		--since "Thu Apr 7 15:27:00 2005 -0700" \
 		--all &&
 
@@ -504,6 +508,50 @@ test_expect_success 'unfiltered bundle with --objects' '
 	test_cmp expect actual
 '
 
+test_expect_success 'full bundle upto annotated tag' '
+	git bundle create v2.bdl \
+		v2 &&
+
+	git bundle verify v2.bdl |
+		make_user_friendly_and_stable_output >actual &&
+
+	format_and_save_expect <<-EOF &&
+	The bundle contains this ref:
+	<TAG-2> refs/tags/v2
+	The bundle records a complete history.
+	$HASH_MESSAGE
+	EOF
+	test_cmp expect actual
+'
+
+test_expect_success 'clone from full bundle upto annotated tag' '
+	git clone --mirror v2.bdl tag-clone.git &&
+	git -C tag-clone.git show-ref |
+		make_user_friendly_and_stable_output >actual &&
+	cat >expect <<-\EOF &&
+	<TAG-2> refs/tags/v2
+	EOF
+	test_cmp expect actual
+'
+
+test_expect_success 'incremental bundle between two annotated tags' '
+	git bundle create v1-v2.bdl \
+		v1..v2 &&
+
+	git bundle verify v1-v2.bdl |
+		make_user_friendly_and_stable_output >actual &&
+
+	format_and_save_expect <<-EOF &&
+	The bundle contains this ref:
+	<TAG-2> refs/tags/v2
+	The bundle requires these 2 refs:
+	<COMMIT-E> Z
+	<COMMIT-B> Z
+	$HASH_MESSAGE
+	EOF
+	test_cmp expect actual
+'
+
 for filter in "blob:none" "tree:0" "tree:1" "blob:limit=100"
 do
 	test_expect_success "filtered bundle: $filter" '
@@ -623,6 +671,59 @@ test_expect_success 'bundle progress with --no-quiet' '
 	GIT_PROGRESS_DELAY=0 \
 		git bundle create --no-quiet out.bundle --all 2>err &&
 	grep "%" err
+'
+
+test_expect_success 'create bundle with duplicate refnames' '
+	git bundle create out.bdl "main" "main" &&
+
+	git bundle list-heads out.bdl |
+		make_user_friendly_and_stable_output >actual &&
+	cat >expect <<-\EOF &&
+	<COMMIT-P> refs/heads/main
+	EOF
+	test_cmp expect actual
+'
+
+test_expect_success 'create bundle with duplicate refnames and --all' '
+	git bundle create out.bdl --all "main" "main" &&
+
+	git bundle list-heads out.bdl |
+		make_user_friendly_and_stable_output >actual &&
+	cat >expect <<-\EOF &&
+	<COMMIT-P> refs/heads/main
+	<COMMIT-N> refs/heads/release
+	<COMMIT-D> refs/heads/topic/1
+	<COMMIT-H> refs/heads/topic/2
+	<COMMIT-D> refs/pull/1/head
+	<COMMIT-G> refs/pull/2/head
+	<TAG-1> refs/tags/v1
+	<TAG-2> refs/tags/v2
+	<TAG-3> refs/tags/v3
+	<COMMIT-P> HEAD
+	EOF
+	test_cmp expect actual
+'
+
+test_expect_success 'create bundle with duplicate exlusion refnames' '
+	git bundle create out.bdl "main" "main^!" &&
+
+	git bundle list-heads out.bdl |
+		make_user_friendly_and_stable_output >actual &&
+	cat >expect <<-\EOF &&
+	<COMMIT-P> refs/heads/main
+	EOF
+	test_cmp expect actual
+'
+
+test_expect_success 'create bundle with duplicate refname short-form' '
+	git bundle create out.bdl "main" "main" "refs/heads/main" "refs/heads/main" &&
+
+	git bundle list-heads out.bdl |
+		make_user_friendly_and_stable_output >actual &&
+	cat >expect <<-\EOF &&
+	<COMMIT-P> refs/heads/main
+	EOF
+	test_cmp expect actual
 '
 
 test_expect_success 'read bundle over stdin' '

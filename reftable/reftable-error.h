@@ -1,10 +1,10 @@
 /*
-Copyright 2020 Google LLC
-
-Use of this source code is governed by a BSD-style
-license that can be found in the LICENSE file or at
-https://developers.google.com/open-source/licenses/bsd
-*/
+ * Copyright 2020 Google LLC
+ *
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file or at
+ * https://developers.google.com/open-source/licenses/bsd
+ */
 
 #ifndef REFTABLE_ERROR_H
 #define REFTABLE_ERROR_H
@@ -30,6 +30,7 @@ enum reftable_error {
 
 	/* Misuse of the API:
 	 *  - on writing a record with NULL refname.
+	 *  - on writing a record before setting the writer limits.
 	 *  - on writing a reftable_ref_record outside the table limits
 	 *  - on writing a ref or log record before the stack's
 	 * next_update_inde*x

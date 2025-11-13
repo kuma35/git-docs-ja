@@ -26,6 +26,36 @@ has_any () {
 	grep -Ff "$1" "$2"
 }
 
+# Since name-hash values are stored in the .bitmap files, add a test
+# that checks that the name-hash calculations are stable across versions.
+# Not exhaustive, but these hashing algorithms would be hard to change
+# without causing deviations here.
+test_expect_success 'name-hash value stability' '
+	cat >names <<-\EOF &&
+	first
+	second
+	third
+	a/one-long-enough-for-collisions
+	b/two-long-enough-for-collisions
+	many/parts/to/this/path/enough/to/collide/in/v2
+	enough/parts/to/this/path/enough/to/collide/in/v2
+	EOF
+
+	test-tool name-hash <names >out &&
+
+	cat >expect <<-\EOF &&
+	2582249472 1763573760 first
+	2289942528 1188134912 second
+	2300837888 1130758144 third
+	2544516325 3963087891 a/one-long-enough-for-collisions
+	2544516325 4013419539 b/two-long-enough-for-collisions
+	1420111091 1709547268 many/parts/to/this/path/enough/to/collide/in/v2
+	1420111091 1709547268 enough/parts/to/this/path/enough/to/collide/in/v2
+	EOF
+
+	test_cmp expect out
+'
+
 test_bitmap_cases () {
 	writeLookupTable=false
 	for i in "$@"
@@ -128,8 +158,9 @@ test_bitmap_cases () {
 		ls .git/objects/pack/ | grep bitmap >output &&
 		test_line_count = 1 output &&
 		# verify equivalent packs are generated with/without using bitmap index
-		packasha1=$(git pack-objects --no-use-bitmap-index --all packa </dev/null) &&
-		packbsha1=$(git pack-objects --use-bitmap-index --all packb </dev/null) &&
+		# Be careful to not use the path-walk option in either case.
+		packasha1=$(git pack-objects --no-use-bitmap-index --no-path-walk --all packa </dev/null) &&
+		packbsha1=$(git pack-objects --use-bitmap-index --no-path-walk --all packb </dev/null) &&
 		list_packed_objects packa-$packasha1.idx >packa.objects &&
 		list_packed_objects packb-$packbsha1.idx >packb.objects &&
 		test_cmp packa.objects packb.objects
@@ -358,6 +389,14 @@ test_bitmap_cases () {
 		git init --bare client.git &&
 		(
 			cd client.git &&
+
+			# This test relies on reusing a delta, but if the
+			# path-walk machinery is engaged, the base object
+			# is considered too small to use during the
+			# dynamic computation, so is not used.
+			GIT_TEST_PACK_PATH_WALK=0 &&
+			export GIT_TEST_PACK_PATH_WALK &&
+
 			git config transfer.unpackLimit 1 &&
 			git fetch .. delta-reuse-old:delta-reuse-old &&
 			git fetch .. delta-reuse-new:delta-reuse-new &&
@@ -391,7 +430,7 @@ test_bitmap_cases () {
 
 			# mark the commits which did not receive bitmaps as preferred,
 			# and generate the bitmap again
-			perl -pe "s{^}{create refs/tags/include/$. }" <before |
+			sed "s|\(.*\)|create refs/tags/include/\1 \1|" before |
 				git update-ref --stdin &&
 			git -c pack.preferBitmapTips=refs/tags/include repack -adb &&
 
@@ -419,7 +458,10 @@ test_bitmap_cases () {
 			cat >expect <<-\EOF &&
 			error: missing value for '\''pack.preferbitmaptips'\''
 			EOF
-			git repack -adb 2>actual &&
+
+			# Disable name hash version adjustment due to stderr comparison.
+			GIT_TEST_NAME_HASH_VERSION=1 \
+				git repack -adb 2>actual &&
 			test_cmp expect actual
 		)
 	'
@@ -451,6 +493,36 @@ test_bitmap_cases () {
 			GIT_TRACE2_EVENT=$(pwd)/trace2.txt git rev-list --use-bitmap-index HEAD &&
 			grep "opened bitmap" trace2.txt &&
 			grep "ignoring extra bitmap" trace2.txt
+		)
+	'
+
+	test_expect_success 'load corrupt bitmap' '
+		rm -fr repo &&
+		git init repo &&
+		test_when_finished "rm -fr repo" &&
+		(
+			cd repo &&
+			git config pack.writeBitmapLookupTable '"$writeLookupTable"' &&
+
+			test_commit base &&
+
+			git repack -adb &&
+			bitmap="$(ls .git/objects/pack/pack-*.bitmap)" &&
+			chmod +w $bitmap &&
+
+			test-tool bitmap list-commits-with-offset >offsets &&
+			xor_off=$(head -n1 offsets | awk "{print \$3}") &&
+			printf '\161' |
+				dd of=$bitmap count=1 bs=1 conv=notrunc seek=$xor_off &&
+
+			git rev-list --objects --no-object-names HEAD >expect.raw &&
+			git rev-list --objects --use-bitmap-index --no-object-names HEAD \
+				>actual.raw &&
+
+			sort expect.raw >expect &&
+			sort actual.raw >actual &&
+
+		    test_cmp expect actual
 		)
 	'
 }

@@ -38,14 +38,14 @@ jobs:
       COVERITY_LANGUAGE: cxx
       COVERITY_PLATFORM: overridden-below
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: install minimal Git for Windows SDK
         if: contains(matrix.os, 'windows')
         uses: git-for-windows/setup-git-for-windows-sdk@v1
       - run: ci/install-dependencies.sh
         if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
         env:
-          distro: ${{ matrix.os }}
+          CI_JOB_IMAGE: ${{ matrix.os }}
 
       # The Coverity site says the tool is usually updated twice yearly, so the
       # MD5 of download can be used to determine whether there's been an update.
@@ -147,9 +147,13 @@ jobs:
           key: cov-build-${{ env.COVERITY_LANGUAGE }}-${{ env.COVERITY_PLATFORM }}-${{ steps.lookup.outputs.hash }}
       - name: build with cov-build
         run: |
-          export PATH="$RUNNER_TEMP/cov-analysis/bin:$PATH" &&
+          export PATH="$PATH:$RUNNER_TEMP/cov-analysis/bin" &&
           cov-configure --gcc &&
-          cov-build --dir cov-int make
+          if ! cov-build --dir cov-int make
+          then
+            cat cov-int/build-log.txt
+            exit 1
+          fi
       - name: package the build
         run: tar -czvf cov-int.tgz cov-int
       - name: submit the build to Coverity Scan

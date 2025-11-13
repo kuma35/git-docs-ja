@@ -4,13 +4,6 @@ test_description='remerge-diff handling'
 
 . ./test-lib.sh
 
-# This test is ort-specific
-if test "${GIT_TEST_MERGE_ALGORITHM}" != ort
-then
-	skip_all="GIT_TEST_MERGE_ALGORITHM != ort"
-	test_done
-fi
-
 test_expect_success 'setup basic merges' '
 	test_write_lines 1 2 3 4 5 6 7 8 9 >numbers &&
 	git add numbers &&
@@ -349,6 +342,13 @@ test_expect_success 'remerge-diff turns off history simplification' '
 
 	git show --oneline --remerge-diff newresolution -- numbers >tmp &&
 	sed -e "s/[0-9a-f]\{7,\}/HASH/g" tmp >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success 'remerge-diff with --reverse' '
+	git log -1 --remerge-diff --oneline ab_resolution^ >expect &&
+	git log -1 --remerge-diff --oneline ab_resolution >>expect &&
+	git log -2 --remerge-diff --oneline ab_resolution --reverse >actual &&
 	test_cmp expect actual
 '
 

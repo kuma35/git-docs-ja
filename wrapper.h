@@ -66,7 +66,9 @@ void write_file_buf(const char *path, const char *buf, size_t len);
 __attribute__((format (printf, 2, 3)))
 void write_file(const char *path, const char *fmt, ...);
 
-/* Return 1 if the file is empty or does not exists, 0 otherwise. */
+/* Return 1 if the file does not exist, 0 otherwise. */
+int is_missing_file(const char *filename);
+/* Return 1 if the file is empty or does not exist, 0 otherwise. */
 int is_empty_or_missing_file(const char *filename);
 
 enum fsync_action {
@@ -127,18 +129,26 @@ int open_nofollow(const char *path, int flags);
 
 void sleep_millisec(int millisec);
 
+enum {
+	/*
+	 * Accept insecure bytes, which some CSPRNG implementations may return
+	 * in case the entropy pool has been exhausted.
+	 */
+	CSPRNG_BYTES_INSECURE = (1 << 0),
+};
+
 /*
  * Generate len bytes from the system cryptographically secure PRNG.
  * Returns 0 on success and -1 on error, setting errno.  The inability to
- * satisfy the full request is an error.
+ * satisfy the full request is an error. Accepts CSPRNG flags.
  */
-int csprng_bytes(void *buf, size_t len);
+int csprng_bytes(void *buf, size_t len, unsigned flags);
 
 /*
  * Returns a random uint32_t, uniformly distributed across all possible
- * values.
+ * values. Accepts CSPRNG flags.
  */
-uint32_t git_rand(void);
+uint32_t git_rand(unsigned flags);
 
 /* Provide log2 of the given `size_t`. */
 static inline unsigned log2u(uintmax_t sz)

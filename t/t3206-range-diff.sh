@@ -707,7 +707,7 @@ test_expect_success 'format-patch --range-diff does not compare notes by default
 	! grep "note" 0000-*
 '
 
-test_expect_success 'format-patch --notes=custom --range-diff only compares custom notes' '
+test_expect_success 'format-patch --notes=custom --range-diff --cover-letter only compares custom notes' '
 	test_when_finished "git notes remove topic unmodified || :" &&
 	git notes add -m "topic note" topic &&
 	git notes add -m "unmodified note" unmodified &&
@@ -719,6 +719,20 @@ test_expect_success 'format-patch --notes=custom --range-diff only compares cust
 		main..unmodified >actual &&
 	grep "## Notes (custom) ##" 0000-* &&
 	! grep "## Notes ##" 0000-*
+'
+
+# --range-diff on a single commit requires --no-cover-letter
+test_expect_success 'format-patch --notes=custom --range-diff on single commit only compares custom notes' '
+	test_when_finished "git notes remove HEAD unmodified || :" &&
+	git notes add -m "topic note" HEAD &&
+	test_when_finished "git notes --ref=custom remove HEAD unmodified || :" &&
+	git notes add -m "unmodified note" unmodified &&
+	git notes --ref=custom add -m "topic note (custom)" HEAD &&
+	git notes --ref=custom add -m "unmodified note (custom)" unmodified &&
+	git format-patch --notes=custom --range-diff=$prev \
+		-1 --stdout >actual &&
+	test_grep "## Notes (custom) ##" actual &&
+	test_grep ! "## Notes ##" actual
 '
 
 test_expect_success 'format-patch --range-diff with --no-notes' '
@@ -905,6 +919,22 @@ test_expect_success 'submodule changes are shown irrespective of diff.submodule'
 	test_cmp expect actual &&
 	test_config diff.submodule diff &&
 	git range-diff --creation-factor=100 topic topic-sub modified-sub >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success '--diff-merges' '
+	renamed_oid=$(git rev-parse --short renamed-file) &&
+	tree=$(git merge-tree unmodified renamed-file) &&
+	clean=$(git commit-tree -m merge -p unmodified -p renamed-file $tree) &&
+	clean_oid=$(git rev-parse --short $clean) &&
+	conflict=$(git commit-tree -m merge -p unmodified -p renamed-file^ $tree) &&
+	conflict_oid=$(git rev-parse --short $conflict) &&
+
+	git range-diff --diff-merges=1 $clean...$conflict >actual &&
+	cat >expect <<-EOF &&
+	1:  $renamed_oid < -:  ------- s/12/B/
+	2:  $clean_oid = 1:  $conflict_oid merge
+	EOF
 	test_cmp expect actual
 '
 

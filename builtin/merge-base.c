@@ -2,13 +2,14 @@
 #include "builtin.h"
 #include "config.h"
 #include "commit.h"
+#include "environment.h"
 #include "gettext.h"
 #include "hex.h"
 #include "object-name.h"
 #include "parse-options.h"
 #include "commit-reach.h"
 
-static int show_merge_base(struct commit **rev, int rev_nr, int show_all)
+static int show_merge_base(struct commit **rev, size_t rev_nr, int show_all)
 {
 	struct commit_list *result = NULL, *r;
 
@@ -149,7 +150,7 @@ int cmd_merge_base(int argc,
 		   struct repository *repo UNUSED)
 {
 	struct commit **rev;
-	int rev_nr = 0;
+	size_t rev_nr = 0;
 	int show_all = 0;
 	int cmdmode = 0;
 	int ret;
@@ -167,7 +168,7 @@ int cmd_merge_base(int argc,
 		OPT_END()
 	};
 
-	git_config(git_default_config, NULL);
+	repo_config(the_repository, git_default_config, NULL);
 	argc = parse_options(argc, argv, prefix, options, merge_base_usage, 0);
 
 	if (cmdmode == 'a') {

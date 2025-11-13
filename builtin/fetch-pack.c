@@ -1,4 +1,6 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "builtin.h"
 #include "gettext.h"
 #include "hex.h"
@@ -72,6 +74,8 @@ int cmd_fetch_pack(int argc,
 	memset(&args, 0, sizeof(args));
 	list_objects_filter_init(&args.filter_options);
 	args.uploadpack = "git-upload-pack";
+
+	show_usage_if_asked(argc, argv, fetch_pack_usage);
 
 	for (i = 1; i < argc && *argv[i] == '-'; i++) {
 		const char *arg = argv[i];
@@ -270,8 +274,10 @@ int cmd_fetch_pack(int argc,
 	}
 	close(fd[0]);
 	close(fd[1]);
-	if (finish_connect(conn))
-		return 1;
+	if (finish_connect(conn)) {
+		ret = 1;
+		goto cleanup;
+	}
 
 	ret = !fetched_refs;
 
@@ -287,6 +293,7 @@ int cmd_fetch_pack(int argc,
 		printf("%s %s\n",
 		       oid_to_hex(&ref->old_oid), ref->name);
 
+cleanup:
 	for (size_t i = 0; i < nr_sought; i++)
 		free_one_ref(sought_to_free[i]);
 	free(sought_to_free);

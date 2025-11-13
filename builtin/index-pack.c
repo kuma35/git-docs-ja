@@ -1,4 +1,6 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "builtin.h"
 #include "config.h"
 #include "delta.h"
@@ -19,7 +21,7 @@
 #include "packfile.h"
 #include "pack-revindex.h"
 #include "object-file.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "oid-array.h"
 #include "oidset.h"
 #include "path.h"
@@ -149,17 +151,17 @@ static unsigned int input_offset, input_len;
 static off_t consumed_bytes;
 static off_t max_input_size;
 static unsigned deepest_delta;
-static git_hash_ctx input_ctx;
+static struct git_hash_ctx input_ctx;
 static uint32_t input_crc32;
 static int input_fd, output_fd;
 static const char *curr_pack;
 
 /*
- * local_links is guarded by read_mutex, and record_local_links is read-only in
- * a thread.
+ * outgoing_links is guarded by read_mutex, and record_outgoing_links is
+ * read-only in a thread.
  */
-static struct oidset local_links = OIDSET_INIT;
-static int record_local_links;
+static struct oidset outgoing_links = OIDSET_INIT;
+static int record_outgoing_links;
 
 static struct thread_local_data *thread_data;
 static int nr_dispatched;
@@ -258,7 +260,8 @@ static unsigned check_object(struct object *obj)
 
 	if (!(obj->flags & FLAG_CHECKED)) {
 		unsigned long size;
-		int type = oid_object_info(the_repository, &obj->oid, &size);
+		int type = odb_read_object_info(the_repository->objects,
+						&obj->oid, &size);
 		if (type <= 0)
 			die(_("did not receive expected object %s"),
 			      oid_to_hex(&obj->oid));
@@ -277,13 +280,14 @@ static unsigned check_objects(void)
 {
 	unsigned i, max, foreign_nr = 0;
 
-	max = get_max_object_index();
+	max = get_max_object_index(the_repository);
 
 	if (verbose)
-		progress = start_delayed_progress(_("Checking objects"), max);
+		progress = start_delayed_progress(the_repository,
+						  _("Checking objects"), max);
 
 	for (i = 0; i < max; i++) {
-		foreign_nr += check_object(get_indexed_object(i));
+		foreign_nr += check_object(get_indexed_object(the_repository, i));
 		display_progress(progress, i + 1);
 	}
 
@@ -298,7 +302,7 @@ static void flush(void)
 	if (input_offset) {
 		if (output_fd >= 0)
 			write_or_die(output_fd, input_buffer, input_offset);
-		the_hash_algo->update_fn(&input_ctx, input_buffer, input_offset);
+		git_hash_update(&input_ctx, input_buffer, input_offset);
 		memmove(input_buffer, input_buffer + input_offset, input_len);
 		input_offset = 0;
 	}
@@ -359,7 +363,7 @@ static const char *open_pack_file(const char *pack_name)
 		input_fd = 0;
 		if (!pack_name) {
 			struct strbuf tmp_file = STRBUF_INIT;
-			output_fd = odb_mkstemp(&tmp_file,
+			output_fd = odb_mkstemp(the_repository->objects, &tmp_file,
 						"pack/tmp_pack_XXXXXX");
 			pack_name = strbuf_detach(&tmp_file, NULL);
 		} else {
@@ -377,16 +381,18 @@ static const char *open_pack_file(const char *pack_name)
 
 static void parse_pack_header(void)
 {
-	struct pack_header *hdr = fill(sizeof(struct pack_header));
+	unsigned char *hdr = fill(sizeof(struct pack_header));
 
 	/* Header consistency check */
-	if (hdr->hdr_signature != htonl(PACK_SIGNATURE))
+	if (get_be32(hdr) != PACK_SIGNATURE)
 		die(_("pack signature mismatch"));
-	if (!pack_version_ok(hdr->hdr_version))
+	hdr += 4;
+	if (!pack_version_ok_native(get_be32(hdr)))
 		die(_("pack version %"PRIu32" unsupported"),
-			ntohl(hdr->hdr_version));
+		    get_be32(hdr));
+	hdr += 4;
 
-	nr_objects = ntohl(hdr->hdr_entries);
+	nr_objects = get_be32(hdr);
 	use(sizeof(struct pack_header));
 }
 
@@ -470,17 +476,18 @@ static void *unpack_entry_data(off_t offset, unsigned long size,
 	int status;
 	git_zstream stream;
 	void *buf;
-	git_hash_ctx c;
+	struct git_hash_ctx c;
 	char hdr[32];
 	int hdrlen;
 
 	if (!is_delta_type(type)) {
 		hdrlen = format_object_header(hdr, sizeof(hdr), type, size);
 		the_hash_algo->init_fn(&c);
-		the_hash_algo->update_fn(&c, hdr, hdrlen);
+		git_hash_update(&c, hdr, hdrlen);
 	} else
 		oid = NULL;
-	if (type == OBJ_BLOB && size > big_file_threshold)
+	if (type == OBJ_BLOB &&
+	    size > repo_settings_get_big_file_threshold(the_repository))
 		buf = fixed_buf;
 	else
 		buf = xmallocz(size);
@@ -497,7 +504,7 @@ static void *unpack_entry_data(off_t offset, unsigned long size,
 		status = git_inflate(&stream, 0);
 		use(input_len - stream.avail_in);
 		if (oid)
-			the_hash_algo->update_fn(&c, last_out, stream.next_out - last_out);
+			git_hash_update(&c, last_out, stream.next_out - last_out);
 		if (buf == fixed_buf) {
 			stream.next_out = buf;
 			stream.avail_out = sizeof(fixed_buf);
@@ -507,7 +514,7 @@ static void *unpack_entry_data(off_t offset, unsigned long size,
 		bad_object(offset, _("inflate returned %d"), status);
 	git_inflate_end(&stream);
 	if (oid)
-		the_hash_algo->final_oid_fn(oid, &c);
+		git_hash_final_oid(oid, &c);
 	return buf == fixed_buf ? NULL : buf;
 }
 
@@ -794,7 +801,8 @@ static int check_collison(struct object_entry *entry)
 	enum object_type type;
 	unsigned long size;
 
-	if (entry->size <= big_file_threshold || entry->type != OBJ_BLOB)
+	if (entry->size <= repo_settings_get_big_file_threshold(the_repository) ||
+	    entry->type != OBJ_BLOB)
 		return -1;
 
 	memset(&data, 0, sizeof(data));
@@ -812,18 +820,41 @@ static int check_collison(struct object_entry *entry)
 	return 0;
 }
 
-static void record_if_local_object(const struct object_id *oid)
+static void record_outgoing_link(const struct object_id *oid)
 {
-	struct object_info info = OBJECT_INFO_INIT;
-	if (oid_object_info_extended(the_repository, oid, &info, 0))
-		/* Missing; assume it is a promisor object */
-		return;
-	if (info.whence == OI_PACKED && info.u.packed.pack->pack_promisor)
-		return;
-	oidset_insert(&local_links, oid);
+	oidset_insert(&outgoing_links, oid);
 }
 
-static void do_record_local_links(struct object *obj)
+static void maybe_record_name_entry(const struct name_entry *entry)
+{
+	/*
+	 * Checking only trees here results in a significantly faster packfile
+	 * indexing, but the drawback is that if the packfile to be indexed
+	 * references a local blob only directly (that is, never through a
+	 * local tree), that local blob is in danger of being garbage
+	 * collected. Such a situation may arise if we push local commits,
+	 * including one with a change to a blob in the root tree, and then the
+	 * server incorporates them into its main branch through a "rebase" or
+	 * "squash" merge strategy, and then we fetch the new main branch from
+	 * the server.
+	 *
+	 * This situation has not been observed yet - we have only noticed
+	 * missing commits, not missing trees or blobs. (In fact, if it were
+	 * believed that only missing commits are problematic, one could argue
+	 * that we should also exclude trees during the outgoing link check;
+	 * but it is safer to include them.)
+	 *
+	 * Due to the rarity of the situation (it has not been observed to
+	 * happen in real life), and because the "penalty" in such a situation
+	 * is merely to refetch the missing blob when it's needed (and this
+	 * happens only once - when refetched, the blob goes into a promisor
+	 * pack, so it won't be GC-ed, the tradeoff seems worth it.
+	*/
+	if (S_ISDIR(entry->mode))
+		record_outgoing_link(&entry->oid);
+}
+
+static void do_record_outgoing_links(struct object *obj)
 {
 	if (obj->type == OBJ_TREE) {
 		struct tree *tree = (struct tree *)obj;
@@ -837,16 +868,17 @@ static void do_record_local_links(struct object *obj)
 			 */
 			return;
 		while (tree_entry_gently(&desc, &entry))
-			record_if_local_object(&entry.oid);
+			maybe_record_name_entry(&entry);
 	} else if (obj->type == OBJ_COMMIT) {
 		struct commit *commit = (struct commit *) obj;
 		struct commit_list *parents = commit->parents;
 
+		record_outgoing_link(get_commit_tree_oid(commit));
 		for (; parents; parents = parents->next)
-			record_if_local_object(&parents->item->object.oid);
+			record_outgoing_link(&parents->item->object.oid);
 	} else if (obj->type == OBJ_TAG) {
 		struct tag *tag = (struct tag *) obj;
-		record_if_local_object(get_tagged_oid(tag));
+		record_outgoing_link(get_tagged_oid(tag));
 	}
 }
 
@@ -861,9 +893,8 @@ static void sha1_object(const void *data, struct object_entry *obj_entry,
 
 	if (startup_info->have_repository) {
 		read_lock();
-		collision_test_needed =
-			repo_has_object_file_with_flags(the_repository, oid,
-							OBJECT_INFO_QUICK);
+		collision_test_needed = odb_has_object(the_repository->objects, oid,
+						       HAS_OBJECT_FETCH_PROMISOR);
 		read_unlock();
 	}
 
@@ -878,13 +909,13 @@ static void sha1_object(const void *data, struct object_entry *obj_entry,
 		enum object_type has_type;
 		unsigned long has_size;
 		read_lock();
-		has_type = oid_object_info(the_repository, oid, &has_size);
+		has_type = odb_read_object_info(the_repository->objects, oid, &has_size);
 		if (has_type < 0)
 			die(_("cannot read existing object info %s"), oid_to_hex(oid));
 		if (has_type != type || has_size != size)
 			die(_("SHA1 COLLISION FOUND WITH %s !"), oid_to_hex(oid));
-		has_data = repo_read_object_file(the_repository, oid,
-						 &has_type, &has_size);
+		has_data = odb_read_object(the_repository->objects, oid,
+					   &has_type, &has_size);
 		read_unlock();
 		if (!data)
 			data = new_data = get_data_from_pack(obj_entry);
@@ -896,7 +927,7 @@ static void sha1_object(const void *data, struct object_entry *obj_entry,
 		free(has_data);
 	}
 
-	if (strict || do_fsck_object || record_local_links) {
+	if (strict || do_fsck_object || record_outgoing_links) {
 		read_lock();
 		if (type == OBJ_BLOB) {
 			struct blob *blob = lookup_blob(the_repository, oid);
@@ -928,8 +959,8 @@ static void sha1_object(const void *data, struct object_entry *obj_entry,
 				die(_("fsck error in packed object"));
 			if (strict && fsck_walk(obj, NULL, &fsck_options))
 				die(_("Not all child objects of %s are reachable"), oid_to_hex(&obj->oid));
-			if (record_local_links)
-				do_record_local_links(obj);
+			if (record_outgoing_links)
+				do_record_outgoing_links(obj);
 
 			if (obj->type == OBJ_TREE) {
 				struct tree *item = (struct tree *) obj;
@@ -1078,8 +1109,8 @@ static void *threaded_second_pass(void *data)
 		set_thread_data(data);
 	for (;;) {
 		struct base_data *parent = NULL;
-		struct object_entry *child_obj;
-		struct base_data *child;
+		struct object_entry *child_obj = NULL;
+		struct base_data *child = NULL;
 
 		counter_lock();
 		display_progress(progress, nr_resolved_deltas);
@@ -1106,15 +1137,18 @@ static void *threaded_second_pass(void *data)
 			parent = list_first_entry(&work_head, struct base_data,
 						  list);
 
-			if (parent->ref_first <= parent->ref_last) {
+			while (parent->ref_first <= parent->ref_last) {
 				int offset = ref_deltas[parent->ref_first++].obj_no;
 				child_obj = objects + offset;
-				if (child_obj->real_type != OBJ_REF_DELTA)
-					die("REF_DELTA at offset %"PRIuMAX" already resolved (duplicate base %s?)",
-					    (uintmax_t) child_obj->idx.offset,
-					    oid_to_hex(&parent->obj->idx.oid));
+				if (child_obj->real_type != OBJ_REF_DELTA) {
+					child_obj = NULL;
+					continue;
+				}
 				child_obj->real_type = parent->obj->real_type;
-			} else {
+				break;
+			}
+
+			if (!child_obj && parent->ofs_first <= parent->ofs_last) {
 				child_obj = objects +
 					ofs_deltas[parent->ofs_first++].obj_no;
 				assert(child_obj->real_type == OBJ_OFS_DELTA);
@@ -1147,29 +1181,32 @@ static void *threaded_second_pass(void *data)
 		}
 		work_unlock();
 
-		if (parent) {
-			child = resolve_delta(child_obj, parent);
-			if (!child->children_remaining)
-				FREE_AND_NULL(child->data);
-		} else {
-			child = make_base(child_obj, NULL);
-			if (child->children_remaining) {
-				/*
-				 * Since this child has its own delta children,
-				 * we will need this data in the future.
-				 * Inflate now so that future iterations will
-				 * have access to this object's data while
-				 * outside the work mutex.
-				 */
-				child->data = get_data_from_pack(child_obj);
-				child->size = child_obj->size;
+		if (child_obj) {
+			if (parent) {
+				child = resolve_delta(child_obj, parent);
+				if (!child->children_remaining)
+					FREE_AND_NULL(child->data);
+			} else{
+				child = make_base(child_obj, NULL);
+				if (child->children_remaining) {
+					/*
+					 * Since this child has its own delta children,
+					 * we will need this data in the future.
+					 * Inflate now so that future iterations will
+					 * have access to this object's data while
+					 * outside the work mutex.
+					 */
+					child->data = get_data_from_pack(child_obj);
+					child->size = child_obj->size;
+				}
 			}
 		}
 
 		work_lock();
 		if (parent)
 			parent->retain_data--;
-		if (child->data) {
+
+		if (child && child->data) {
 			/*
 			 * This child has its own children, so add it to
 			 * work_head.
@@ -1178,7 +1215,7 @@ static void *threaded_second_pass(void *data)
 			base_cache_used += child->size;
 			prune_base_data(NULL);
 			free_base_data(child);
-		} else {
+		} else if (child) {
 			/*
 			 * This child does not have its own children. It may be
 			 * the last descendant of its ancestors; free those
@@ -1219,10 +1256,11 @@ static void parse_pack_objects(unsigned char *hash)
 	struct ofs_delta_entry *ofs_delta = ofs_deltas;
 	struct object_id ref_delta_oid;
 	struct stat st;
-	git_hash_ctx tmp_ctx;
+	struct git_hash_ctx tmp_ctx;
 
 	if (verbose)
 		progress = start_progress(
+				the_repository,
 				progress_title ? progress_title :
 				from_stdin ? _("Receiving objects") : _("Indexing objects"),
 				nr_objects);
@@ -1257,8 +1295,8 @@ static void parse_pack_objects(unsigned char *hash)
 	/* Check pack integrity */
 	flush();
 	the_hash_algo->init_fn(&tmp_ctx);
-	the_hash_algo->clone_fn(&tmp_ctx, &input_ctx);
-	the_hash_algo->final_fn(hash, &tmp_ctx);
+	git_hash_clone(&tmp_ctx, &input_ctx);
+	git_hash_final(hash, &tmp_ctx);
 	if (!hasheq(fill(the_hash_algo->rawsz), hash, the_repository->hash_algo))
 		die(_("pack is corrupted (SHA1 mismatch)"));
 	use(the_hash_algo->rawsz);
@@ -1291,7 +1329,7 @@ static void parse_pack_objects(unsigned char *hash)
  *   recursively checking if the resulting object is used as a base
  *   for some more deltas.
  */
-static void resolve_deltas(void)
+static void resolve_deltas(struct pack_idx_option *opts)
 {
 	int i;
 
@@ -1303,14 +1341,14 @@ static void resolve_deltas(void)
 	QSORT(ref_deltas, nr_ref_deltas, compare_ref_delta_entry);
 
 	if (verbose || show_resolving_progress)
-		progress = start_progress(_("Resolving deltas"),
+		progress = start_progress(the_repository,
+					  _("Resolving deltas"),
 					  nr_ref_deltas + nr_ofs_deltas);
 
 	nr_dispatched = 0;
-	base_cache_limit = delta_base_cache_limit * nr_threads;
+	base_cache_limit = opts->delta_base_cache_limit * nr_threads;
 	if (nr_threads > 1 || getenv("GIT_FORCE_THREADS")) {
 		init_thread();
-		work_lock();
 		for (i = 0; i < nr_threads; i++) {
 			int ret = pthread_create(&thread_data[i].thread, NULL,
 						 threaded_second_pass, thread_data + i);
@@ -1318,7 +1356,6 @@ static void resolve_deltas(void)
 				die(_("unable to create thread: %s"),
 				    strerror(ret));
 		}
-		work_unlock();
 		for (i = 0; i < nr_threads; i++)
 			pthread_join(thread_data[i].thread, NULL);
 		cleanup_thread();
@@ -1353,7 +1390,7 @@ static void conclude_pack(int fix_thin_pack, const char *curr_pack, unsigned cha
 		REALLOC_ARRAY(objects, nr_objects + nr_unresolved + 1);
 		memset(objects + nr_objects + 1, 0,
 		       nr_unresolved * sizeof(*objects));
-		f = hashfd(output_fd, curr_pack);
+		f = hashfd(the_repository->hash_algo, output_fd, curr_pack);
 		fix_unresolved_deltas(f);
 		strbuf_addf(&msg, Q_("completed with %d local object",
 				     "completed with %d local objects",
@@ -1363,7 +1400,7 @@ static void conclude_pack(int fix_thin_pack, const char *curr_pack, unsigned cha
 		strbuf_release(&msg);
 		finalize_hashfile(f, tail_hash, FSYNC_COMPONENT_PACK, 0);
 		hashcpy(read_hash, pack_hash, the_repository->hash_algo);
-		fixup_pack_header_footer(output_fd, pack_hash,
+		fixup_pack_header_footer(the_hash_algo, output_fd, pack_hash,
 					 curr_pack, nr_objects,
 					 read_hash, consumed_bytes-the_hash_algo->rawsz);
 		if (!hasheq(read_hash, tail_hash, the_repository->hash_algo))
@@ -1465,9 +1502,9 @@ static void fix_unresolved_deltas(struct hashfile *f)
 		struct oid_array to_fetch = OID_ARRAY_INIT;
 		for (i = 0; i < nr_ref_deltas; i++) {
 			struct ref_delta_entry *d = sorted_by_pos[i];
-			if (!oid_object_info_extended(the_repository, &d->oid,
-						      NULL,
-						      OBJECT_INFO_FOR_PREFETCH))
+			if (!odb_read_object_info_extended(the_repository->objects,
+							   &d->oid, NULL,
+							   OBJECT_INFO_FOR_PREFETCH))
 				continue;
 			oid_array_append(&to_fetch, &d->oid);
 		}
@@ -1484,8 +1521,8 @@ static void fix_unresolved_deltas(struct hashfile *f)
 
 		if (objects[d->obj_no].real_type != OBJ_REF_DELTA)
 			continue;
-		data = repo_read_object_file(the_repository, &d->oid, &type,
-					     &size);
+		data = odb_read_object(the_repository->objects, &d->oid,
+				       &type, &size);
 		if (!data)
 			continue;
 
@@ -1532,9 +1569,9 @@ static void write_special_file(const char *suffix, const char *msg,
 	if (pack_name)
 		filename = derive_filename(pack_name, "pack", suffix, &name_buf);
 	else
-		filename = odb_pack_name(&name_buf, hash, suffix);
+		filename = odb_pack_name(the_repository, &name_buf, hash, suffix);
 
-	fd = odb_pack_keep(filename);
+	fd = safe_create_file_with_leading_directories(the_repository, filename);
 	if (fd < 0) {
 		if (errno != EEXIST)
 			die_errno(_("cannot write %s file '%s'"),
@@ -1560,8 +1597,8 @@ static void rename_tmp_packfile(const char **final_name,
 {
 	if (!*final_name || strcmp(*final_name, curr_name)) {
 		if (!*final_name)
-			*final_name = odb_pack_name(name, hash, ext);
-		if (finalize_object_file(curr_name, *final_name))
+			*final_name = odb_pack_name(the_repository, name, hash, ext);
+		if (finalize_object_file(the_repository, curr_name, *final_name))
 			die(_("unable to rename temporary '*.%s' file to '%s'"),
 			    ext, *final_name);
 	} else if (make_read_only_if_same) {
@@ -1603,12 +1640,9 @@ static void final(const char *final_pack_name, const char *curr_pack_name,
 	rename_tmp_packfile(&final_index_name, curr_index_name, &index_name,
 			    hash, "idx", 1);
 
-	if (do_fsck_object) {
-		struct packed_git *p;
-		p = add_packed_git(final_index_name, strlen(final_index_name), 0);
-		if (p)
-			install_packed_git(the_repository, p);
-	}
+	if (do_fsck_object)
+		packfile_store_load_pack(the_repository->objects->packfiles,
+					 final_index_name, 0);
 
 	if (!from_stdin) {
 		printf("%s\n", hash_to_hex(hash));
@@ -1655,6 +1689,10 @@ static int git_index_pack_config(const char *k, const char *v,
 			opts->flags |= WRITE_REV;
 		else
 			opts->flags &= ~WRITE_REV;
+	}
+	if (!strcmp(k, "core.deltabasecachelimit")) {
+		opts->delta_base_cache_limit = git_config_ulong(k, v, ctx->kvi);
+		return 0;
 	}
 	return git_default_config(k, v, ctx, cb);
 }
@@ -1703,7 +1741,8 @@ static void read_v2_anomalous_offsets(struct packed_git *p,
 
 static void read_idx_option(struct pack_idx_option *opts, const char *pack_name)
 {
-	struct packed_git *p = add_packed_git(pack_name, strlen(pack_name), 1);
+	struct packed_git *p = add_packed_git(the_repository, pack_name,
+					      strlen(pack_name), 1);
 
 	if (!p)
 		die(_("Cannot open existing pack file '%s'"), pack_name);
@@ -1779,28 +1818,43 @@ static void repack_local_links(void)
 	struct strbuf line = STRBUF_INIT;
 	struct oidset_iter iter;
 	struct object_id *oid;
-	char *base_name;
+	char *base_name = NULL;
 
-	if (!oidset_size(&local_links))
+	if (!oidset_size(&outgoing_links))
 		return;
 
-	base_name = mkpathdup("%s/pack/pack", repo_get_object_directory(the_repository));
-
-	strvec_push(&cmd.args, "pack-objects");
-	strvec_push(&cmd.args, "--exclude-promisor-objects-best-effort");
-	strvec_push(&cmd.args, base_name);
-	cmd.git_cmd = 1;
-	cmd.in = -1;
-	cmd.out = -1;
-	if (start_command(&cmd))
-		die(_("could not start pack-objects to repack local links"));
-
-	oidset_iter_init(&local_links, &iter);
+	oidset_iter_init(&outgoing_links, &iter);
 	while ((oid = oidset_iter_next(&iter))) {
+		struct object_info info = OBJECT_INFO_INIT;
+		if (odb_read_object_info_extended(the_repository->objects, oid, &info, 0))
+			/* Missing; assume it is a promisor object */
+			continue;
+		if (info.whence == OI_PACKED && info.u.packed.pack->pack_promisor)
+			continue;
+
+		if (!cmd.args.nr) {
+			base_name = mkpathdup(
+				"%s/pack/pack",
+				repo_get_object_directory(the_repository));
+			strvec_push(&cmd.args, "pack-objects");
+			strvec_push(&cmd.args,
+				    "--exclude-promisor-objects-best-effort");
+			strvec_push(&cmd.args, base_name);
+			cmd.git_cmd = 1;
+			cmd.in = -1;
+			cmd.out = -1;
+			if (start_command(&cmd))
+				die(_("could not start pack-objects to repack local links"));
+		}
+
 		if (write_in_full(cmd.in, oid_to_hex(oid), the_hash_algo->hexsz) < 0 ||
 		    write_in_full(cmd.in, "\n", 1) < 0)
 			die(_("failed to feed local object to pack-objects"));
 	}
+
+	if (!cmd.args.nr)
+		return;
+
 	close(cmd.in);
 
 	out = xfdopen(cmd.out, "r");
@@ -1852,15 +1906,14 @@ int cmd_index_pack(int argc,
 	 */
 	fetch_if_missing = 0;
 
-	if (argc == 2 && !strcmp(argv[1], "-h"))
-		usage(index_pack_usage);
+	show_usage_if_asked(argc, argv, index_pack_usage);
 
 	disable_replace_refs();
 	fsck_options.walk = mark_link;
 
 	reset_pack_idx_option(&opts);
 	opts.flags |= WRITE_REV;
-	git_config(git_index_pack_config, &opts);
+	repo_config(the_repository, git_index_pack_config, &opts);
 	if (prefix && chdir(prefix))
 		die(_("Cannot come back to cwd"));
 
@@ -1899,7 +1952,7 @@ int cmd_index_pack(int argc,
 			} else if (skip_to_optional_arg(arg, "--keep", &keep_msg)) {
 				; /* nothing to do */
 			} else if (skip_to_optional_arg(arg, "--promisor", &promisor_msg)) {
-				record_local_links = 1;
+				record_outgoing_links = 1;
 			} else if (starts_with(arg, "--threads=")) {
 				char *end;
 				nr_threads = strtoul(arg+10, &end, 0);
@@ -1909,19 +1962,11 @@ int cmd_index_pack(int argc,
 					warning(_("no threads support, ignoring %s"), arg);
 					nr_threads = 1;
 				}
-			} else if (starts_with(arg, "--pack_header=")) {
-				struct pack_header *hdr;
-				char *c;
-
-				hdr = (struct pack_header *)input_buffer;
-				hdr->hdr_signature = htonl(PACK_SIGNATURE);
-				hdr->hdr_version = htonl(strtoul(arg + 14, &c, 10));
-				if (*c != ',')
-					die(_("bad %s"), arg);
-				hdr->hdr_entries = htonl(strtoul(c + 1, &c, 10));
-				if (*c)
-					die(_("bad %s"), arg);
-				input_len = sizeof(*hdr);
+			} else if (skip_prefix(arg, "--pack_header=", &arg)) {
+				if (parse_pack_header_option(arg,
+							     input_buffer,
+							     &input_len) < 0)
+					die(_("bad --pack_header: %s"), arg);
 			} else if (!strcmp(arg, "-v")) {
 				verbose = 1;
 			} else if (!strcmp(arg, "--progress-title")) {
@@ -1986,7 +2031,7 @@ int cmd_index_pack(int argc,
 	 * choice but to guess the object hash.
 	 */
 	if (!the_repository->hash_algo)
-		repo_set_hash_algo(the_repository, GIT_HASH_SHA1);
+		repo_set_hash_algo(the_repository, GIT_HASH_DEFAULT);
 
 	opts.flags &= ~(WRITE_REV | WRITE_REV_VERIFY);
 	if (rev_index) {
@@ -2035,7 +2080,7 @@ int cmd_index_pack(int argc,
 	parse_pack_objects(pack_hash);
 	if (report_end_of_input)
 		write_in_full(2, "\0", 1);
-	resolve_deltas();
+	resolve_deltas(&opts);
 	conclude_pack(fix_thin_pack, curr_pack, pack_hash);
 	free(ofs_deltas);
 	free(ref_deltas);
@@ -2048,11 +2093,12 @@ int cmd_index_pack(int argc,
 	ALLOC_ARRAY(idx_objects, nr_objects);
 	for (i = 0; i < nr_objects; i++)
 		idx_objects[i] = &objects[i].idx;
-	curr_index = write_idx_file(index_name, idx_objects, nr_objects, &opts, pack_hash);
+	curr_index = write_idx_file(the_repository, index_name, idx_objects,
+				    nr_objects, &opts, pack_hash);
 	if (rev_index)
-		curr_rev_index = write_rev_file(rev_index_name, idx_objects,
-						nr_objects, pack_hash,
-						opts.flags);
+		curr_rev_index = write_rev_file(the_repository, rev_index_name,
+						idx_objects, nr_objects,
+						pack_hash, opts.flags);
 	free(idx_objects);
 
 	if (!verify)

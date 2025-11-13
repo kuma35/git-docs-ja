@@ -8,7 +8,7 @@
 #include "git-compat-util.h"
 #include "diff.h"
 #include "diffcore.h"
-#include "object-store-ll.h"
+#include "object-file.h"
 #include "hashmap.h"
 #include "mem-pool.h"
 #include "oid-array.h"
@@ -33,7 +33,7 @@ static struct diff_rename_dst *locate_rename_dst(struct diff_filepair *p)
 {
 	/* Lookup by p->ONE->path */
 	int idx = break_idx ? strintmap_get(break_idx, p->one->path) : -1;
-	return (idx == -1) ? NULL : &rename_dst[idx];
+	return (idx == -1 || idx == rename_dst_nr) ? NULL : &rename_dst[idx];
 }
 
 /*
@@ -688,7 +688,6 @@ static void cleanup_dir_rename_info(struct dir_rename_info *info,
 	struct hashmap_iter iter;
 	struct strmap_entry *entry;
 	struct string_list to_remove = STRING_LIST_INIT_NODUP;
-	int i;
 
 	if (!info->setup)
 		return;
@@ -734,7 +733,7 @@ static void cleanup_dir_rename_info(struct dir_rename_info *info,
 		if (strintmap_contains(counts, UNKNOWN_DIR))
 			strintmap_remove(counts, UNKNOWN_DIR);
 	}
-	for (i = 0; i < to_remove.nr; ++i)
+	for (size_t i = 0; i < to_remove.nr; ++i)
 		strmap_remove(info->dir_rename_count,
 			      to_remove.items[i].string, 1);
 	string_list_clear(&to_remove, 0);
@@ -1407,7 +1406,7 @@ void diffcore_rename_extended(struct diff_options *options,
 
 	trace2_region_enter("diff", "setup", options->repo);
 	info.setup = 0;
-	assert(!dir_rename_count || strmap_empty(dir_rename_count));
+	ASSERT(!dir_rename_count || strmap_empty(dir_rename_count));
 	want_copies = (detect_rename == DIFF_DETECT_COPY);
 	if (dirs_removed && (break_idx || want_copies))
 		BUG("dirs_removed incompatible with break/copy detection");
@@ -1568,6 +1567,7 @@ void diffcore_rename_extended(struct diff_options *options,
 	trace2_region_enter("diff", "inexact renames", options->repo);
 	if (options->show_rename_progress) {
 		progress = start_delayed_progress(
+				the_repository,
 				_("Performing inexact rename detection"),
 				(uint64_t)num_destinations * (uint64_t)num_sources);
 	}
@@ -1669,9 +1669,10 @@ void diffcore_rename_extended(struct diff_options *options,
 			if (DIFF_PAIR_BROKEN(p)) {
 				/* broken delete */
 				struct diff_rename_dst *dst = locate_rename_dst(p);
-				if (!dst)
-					BUG("tracking failed somehow; failed to find associated dst for broken pair");
-				if (dst->is_rename)
+				if (options->single_follow && dst &&
+				    strcmp(dst->p->two->path, p->two->path))
+					dst = NULL;
+				if (dst && dst->is_rename)
 					/* counterpart is now rename/copy */
 					pair_to_free = p;
 			}

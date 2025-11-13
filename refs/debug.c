@@ -1,7 +1,6 @@
 #include "git-compat-util.h"
 #include "hex.h"
 #include "refs-internal.h"
-#include "string-list.h"
 #include "trace.h"
 
 static struct trace_key trace_refs = TRACE_KEY_INIT(REFS);
@@ -48,6 +47,14 @@ static int debug_create_on_disk(struct ref_store *refs, int flags, struct strbuf
 	return res;
 }
 
+static int debug_remove_on_disk(struct ref_store *refs, struct strbuf *err)
+{
+	struct debug_ref_store *drefs = (struct debug_ref_store *)refs;
+	int res = drefs->refs->be->remove_on_disk(drefs->refs, err);
+	trace_printf_key(&trace_refs, "remove_on_disk: %d\n", res);
+	return res;
+}
+
 static int debug_transaction_prepare(struct ref_store *refs,
 				     struct ref_transaction *transaction,
 				     struct strbuf *err)
@@ -83,9 +90,8 @@ static void print_update(int i, const char *refname,
 
 static void print_transaction(struct ref_transaction *transaction)
 {
-	int i;
 	trace_printf_key(&trace_refs, "transaction {\n");
-	for (i = 0; i < transaction->nr; i++) {
+	for (size_t i = 0; i < transaction->nr; i++) {
 		struct ref_update *u = transaction->updates[i];
 		print_update(i, u->refname, &u->old_oid, &u->new_oid, u->flags,
 			     u->type, u->msg);
@@ -170,6 +176,17 @@ static int debug_ref_iterator_advance(struct ref_iterator *ref_iterator)
 	return res;
 }
 
+static int debug_ref_iterator_seek(struct ref_iterator *ref_iterator,
+				   const char *refname, unsigned int flags)
+{
+	struct debug_ref_iterator *diter =
+		(struct debug_ref_iterator *)ref_iterator;
+	int res = diter->iter->vtable->seek(diter->iter, refname, flags);
+	trace_printf_key(&trace_refs, "iterator_seek: %s flags: %d: %d\n",
+			 refname ? refname : "", flags, res);
+	return res;
+}
+
 static int debug_ref_iterator_peel(struct ref_iterator *ref_iterator,
 				   struct object_id *peeled)
 {
@@ -180,19 +197,19 @@ static int debug_ref_iterator_peel(struct ref_iterator *ref_iterator,
 	return res;
 }
 
-static int debug_ref_iterator_abort(struct ref_iterator *ref_iterator)
+static void debug_ref_iterator_release(struct ref_iterator *ref_iterator)
 {
 	struct debug_ref_iterator *diter =
 		(struct debug_ref_iterator *)ref_iterator;
-	int res = diter->iter->vtable->abort(diter->iter);
-	trace_printf_key(&trace_refs, "iterator_abort: %d\n", res);
-	return res;
+	diter->iter->vtable->release(diter->iter);
+	trace_printf_key(&trace_refs, "iterator_abort\n");
 }
 
 static struct ref_iterator_vtable debug_ref_iterator_vtable = {
 	.advance = debug_ref_iterator_advance,
+	.seek = debug_ref_iterator_seek,
 	.peel = debug_ref_iterator_peel,
-	.abort = debug_ref_iterator_abort,
+	.release = debug_ref_iterator_release,
 };
 
 static struct ref_iterator *
@@ -218,7 +235,7 @@ static int debug_read_raw_ref(struct ref_store *ref_store, const char *refname,
 	struct debug_ref_store *drefs = (struct debug_ref_store *)ref_store;
 	int res = 0;
 
-	oidcpy(oid, null_oid());
+	oidcpy(oid, null_oid(ref_store->repo->hash_algo));
 	res = drefs->refs->be->read_raw_ref(drefs->refs, refname, oid, referent,
 					    type, failure_errno);
 
@@ -267,7 +284,8 @@ struct debug_reflog {
 	void *cb_data;
 };
 
-static int debug_print_reflog_ent(struct object_id *old_oid,
+static int debug_print_reflog_ent(const char *refname,
+				  struct object_id *old_oid,
 				  struct object_id *new_oid,
 				  const char *committer, timestamp_t timestamp,
 				  int tz, const char *msg, void *cb_data)
@@ -282,7 +300,7 @@ static int debug_print_reflog_ent(struct object_id *old_oid,
 	if (new_oid)
 		oid_to_hex_r(n, new_oid);
 
-	ret = dbg->fn(old_oid, new_oid, committer, timestamp, tz, msg,
+	ret = dbg->fn(refname, old_oid, new_oid, committer, timestamp, tz, msg,
 		      dbg->cb_data);
 	trace_printf_key(&trace_refs,
 			 "reflog_ent %s (ret %d): %s -> %s, %s %ld \"%.*s\"\n",
@@ -422,6 +440,7 @@ struct ref_storage_be refs_be_debug = {
 	.init = NULL,
 	.release = debug_release,
 	.create_on_disk = debug_create_on_disk,
+	.remove_on_disk = debug_remove_on_disk,
 
 	/*
 	 * None of these should be NULL. If the "files" backend (in

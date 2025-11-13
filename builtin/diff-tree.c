@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
 #include "config.h"
 #include "diff.h"
@@ -121,10 +122,9 @@ int cmd_diff_tree(int argc,
 	int read_stdin = 0;
 	int merge_base = 0;
 
-	if (argc == 2 && !strcmp(argv[1], "-h"))
-		usage(diff_tree_usage);
+	show_usage_if_asked(argc, argv, diff_tree_usage);
 
-	git_config(git_diff_basic_config, NULL); /* no "diff" UI options */
+	repo_config(the_repository, git_diff_basic_config, NULL); /* no "diff" UI options */
 
 	prepare_repo_settings(the_repository);
 	the_repository->settings.command_requires_full_index = 0;

@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "add-interactive.h"
@@ -299,7 +300,7 @@ static void err(struct add_p_state *s, const char *fmt, ...)
 	va_start(args, fmt);
 	fputs(s->s.error_color, stdout);
 	vprintf(fmt, args);
-	puts(s->s.reset_color);
+	puts(s->s.reset_color_interactive);
 	va_end(args);
 }
 
@@ -413,7 +414,6 @@ static int normalize_marker(const char *p)
 static int parse_diff(struct add_p_state *s, const struct pathspec *ps)
 {
 	struct strvec args = STRVEC_INIT;
-	const char *diff_algorithm = s->s.interactive_diff_algorithm;
 	struct strbuf *plain = &s->plain, *colored = NULL;
 	struct child_process cp = CHILD_PROCESS_INIT;
 	char *p, *pend, *colored_p = NULL, *colored_pend = NULL, marker = '\0';
@@ -423,8 +423,12 @@ static int parse_diff(struct add_p_state *s, const struct pathspec *ps)
 	int res;
 
 	strvec_pushv(&args, s->mode->diff_cmd);
-	if (diff_algorithm)
-		strvec_pushf(&args, "--diff-algorithm=%s", diff_algorithm);
+	if (s->s.context != -1)
+		strvec_pushf(&args, "--unified=%i", s->s.context);
+	if (s->s.interhunkcontext != -1)
+		strvec_pushf(&args, "--inter-hunk-context=%i", s->s.interhunkcontext);
+	if (s->s.interactive_diff_algorithm)
+		strvec_pushf(&args, "--diff-algorithm=%s", s->s.interactive_diff_algorithm);
 	if (s->revision) {
 		struct object_id oid;
 		strvec_push(&args,
@@ -453,7 +457,7 @@ static int parse_diff(struct add_p_state *s, const struct pathspec *ps)
 	}
 	strbuf_complete_line(plain);
 
-	if (want_color_fd(1, -1)) {
+	if (want_color_fd(1, s->s.use_color_diff)) {
 		struct child_process colored_cp = CHILD_PROCESS_INIT;
 		const char *diff_filter = s->s.interactive_diff_filter;
 
@@ -710,7 +714,7 @@ static void render_hunk(struct add_p_state *s, struct hunk *hunk,
 		if (len)
 			strbuf_add(out, p, len);
 		else if (colored)
-			strbuf_addf(out, "%s\n", s->s.reset_color);
+			strbuf_addf(out, "%s\n", s->s.reset_color_diff);
 		else
 			strbuf_addch(out, '\n');
 	}
@@ -952,6 +956,7 @@ static int split_hunk(struct add_p_state *s, struct file_diff *file_diff,
 			* sizeof(*hunk));
 	hunk = file_diff->hunk + hunk_index;
 	hunk->splittable_into = 1;
+	hunk->use = UNDECIDED_HUNK;
 	memset(hunk + 1, 0, (splittable_into - 1) * sizeof(*hunk));
 
 	header = &hunk->header;
@@ -1053,7 +1058,7 @@ next_hunk_line:
 
 		hunk++;
 		hunk->splittable_into = 1;
-		hunk->use = hunk[-1].use;
+		hunk->use = UNDECIDED_HUNK;
 		header = &hunk->header;
 
 		header->old_count = header->new_count = context_line_count;
@@ -1103,7 +1108,7 @@ static void recolor_hunk(struct add_p_state *s, struct hunk *hunk)
 			      s->s.file_new_color :
 			      s->s.context_color);
 		strbuf_add(&s->colored, plain + current, eol - current);
-		strbuf_addstr(&s->colored, s->s.reset_color);
+		strbuf_addstr(&s->colored, s->s.reset_color_diff);
 		if (next > eol)
 			strbuf_add(&s->colored, plain + eol, next - eol);
 		current = next;
@@ -1180,19 +1185,29 @@ static ssize_t recount_edited_hunk(struct add_p_state *s, struct hunk *hunk,
 {
 	struct hunk_header *header = &hunk->header;
 	size_t i;
+	char ch, marker = ' ';
 
+	hunk->splittable_into = 0;
 	header->old_count = header->new_count = 0;
 	for (i = hunk->start; i < hunk->end; ) {
-		switch(normalize_marker(&s->plain.buf[i])) {
+		ch = normalize_marker(&s->plain.buf[i]);
+		switch (ch) {
 		case '-':
 			header->old_count++;
+			if (marker == ' ')
+				hunk->splittable_into++;
+			marker = ch;
 			break;
 		case '+':
 			header->new_count++;
+			if (marker == ' ')
+				hunk->splittable_into++;
+			marker = ch;
 			break;
 		case ' ':
 			header->old_count++;
 			header->new_count++;
+			marker = ch;
 			break;
 		}
 
@@ -1393,16 +1408,38 @@ static size_t display_hunks(struct add_p_state *s,
 }
 
 static const char help_patch_remainder[] =
-N_("j - leave this hunk undecided, see next undecided hunk\n"
-   "J - leave this hunk undecided, see next hunk\n"
-   "k - leave this hunk undecided, see previous undecided hunk\n"
-   "K - leave this hunk undecided, see previous hunk\n"
+N_("j - go to the next undecided hunk, roll over at the bottom\n"
+   "J - go to the next hunk, roll over at the bottom\n"
+   "k - go to the previous undecided hunk, roll over at the top\n"
+   "K - go to the previous hunk, roll over at the top\n"
    "g - select a hunk to go to\n"
    "/ - search for a hunk matching the given regex\n"
    "s - split the current hunk into smaller hunks\n"
    "e - manually edit the current hunk\n"
-   "p - print the current hunk, 'P' to use the pager\n"
+   "p - print the current hunk\n"
+   "P - print the current hunk using the pager\n"
    "? - print help\n");
+
+static size_t dec_mod(size_t a, size_t m)
+{
+	return a > 0 ? a - 1 : m - 1;
+}
+
+static size_t inc_mod(size_t a, size_t m)
+{
+	return a < m - 1 ? a + 1 : 0;
+}
+
+static bool get_first_undecided(const struct file_diff *file_diff, size_t *idx)
+{
+	for (size_t i = 0; i < file_diff->hunk_nr; i++) {
+		if (file_diff->hunk[i].use == UNDECIDED_HUNK) {
+			*idx = i;
+			return true;
+		}
+	}
+	return false;
+}
 
 static int patch_update_file(struct add_p_state *s,
 			     struct file_diff *file_diff)
@@ -1414,15 +1451,6 @@ static int patch_update_file(struct add_p_state *s,
 	struct child_process cp = CHILD_PROCESS_INIT;
 	int colored = !!s->colored.len, quit = 0, use_pager = 0;
 	enum prompt_mode_type prompt_mode_type;
-	enum {
-		ALLOW_GOTO_PREVIOUS_HUNK = 1 << 0,
-		ALLOW_GOTO_PREVIOUS_UNDECIDED_HUNK = 1 << 1,
-		ALLOW_GOTO_NEXT_HUNK = 1 << 2,
-		ALLOW_GOTO_NEXT_UNDECIDED_HUNK = 1 << 3,
-		ALLOW_SEARCH_AND_GOTO = 1 << 4,
-		ALLOW_SPLIT = 1 << 5,
-		ALLOW_EDIT = 1 << 6
-	} permitted = 0;
 
 	/* Empty added files have no hunks */
 	if (!file_diff->hunk_nr && !file_diff->added)
@@ -1432,6 +1460,16 @@ static int patch_update_file(struct add_p_state *s,
 	render_diff_header(s, file_diff, colored, &s->buf);
 	fputs(s->buf.buf, stdout);
 	for (;;) {
+		enum {
+			ALLOW_GOTO_PREVIOUS_HUNK = 1 << 0,
+			ALLOW_GOTO_PREVIOUS_UNDECIDED_HUNK = 1 << 1,
+			ALLOW_GOTO_NEXT_HUNK = 1 << 2,
+			ALLOW_GOTO_NEXT_UNDECIDED_HUNK = 1 << 3,
+			ALLOW_SEARCH_AND_GOTO = 1 << 4,
+			ALLOW_SPLIT = 1 << 5,
+			ALLOW_EDIT = 1 << 6
+		} permitted = 0;
+
 		if (hunk_index >= file_diff->hunk_nr)
 			hunk_index = 0;
 		hunk = file_diff->hunk_nr
@@ -1441,13 +1479,17 @@ static int patch_update_file(struct add_p_state *s,
 		undecided_next = -1;
 
 		if (file_diff->hunk_nr) {
-			for (i = hunk_index - 1; i >= 0; i--)
+			for (i = dec_mod(hunk_index, file_diff->hunk_nr);
+			     i != hunk_index;
+			     i = dec_mod(i, file_diff->hunk_nr))
 				if (file_diff->hunk[i].use == UNDECIDED_HUNK) {
 					undecided_previous = i;
 					break;
 				}
 
-			for (i = hunk_index + 1; i < file_diff->hunk_nr; i++)
+			for (i = inc_mod(hunk_index, file_diff->hunk_nr);
+			     i != hunk_index;
+			     i = inc_mod(i, file_diff->hunk_nr))
 				if (file_diff->hunk[i].use == UNDECIDED_HUNK) {
 					undecided_next = i;
 					break;
@@ -1463,7 +1505,7 @@ static int patch_update_file(struct add_p_state *s,
 		if (file_diff->hunk_nr) {
 			if (rendered_hunk_index != hunk_index) {
 				if (use_pager) {
-					setup_pager();
+					setup_pager(the_repository);
 					sigchain_push(SIGPIPE, SIG_IGN);
 				}
 				render_hunk(s, hunk, 0, colored, &s->buf);
@@ -1481,7 +1523,7 @@ static int patch_update_file(struct add_p_state *s,
 				permitted |= ALLOW_GOTO_PREVIOUS_UNDECIDED_HUNK;
 				strbuf_addstr(&s->buf, ",k");
 			}
-			if (hunk_index) {
+			if (file_diff->hunk_nr > 1) {
 				permitted |= ALLOW_GOTO_PREVIOUS_HUNK;
 				strbuf_addstr(&s->buf, ",K");
 			}
@@ -1489,7 +1531,7 @@ static int patch_update_file(struct add_p_state *s,
 				permitted |= ALLOW_GOTO_NEXT_UNDECIDED_HUNK;
 				strbuf_addstr(&s->buf, ",j");
 			}
-			if (hunk_index + 1 < file_diff->hunk_nr) {
+			if (file_diff->hunk_nr > 1) {
 				permitted |= ALLOW_GOTO_NEXT_HUNK;
 				strbuf_addstr(&s->buf, ",J");
 			}
@@ -1506,7 +1548,7 @@ static int patch_update_file(struct add_p_state *s,
 				permitted |= ALLOW_EDIT;
 				strbuf_addstr(&s->buf, ",e");
 			}
-			strbuf_addstr(&s->buf, ",p");
+			strbuf_addstr(&s->buf, ",p,P");
 		}
 		if (file_diff->deleted)
 			prompt_mode_type = PROMPT_DELETION;
@@ -1524,11 +1566,13 @@ static int patch_update_file(struct add_p_state *s,
 						: 1));
 		printf(_(s->mode->prompt_mode[prompt_mode_type]),
 		       s->buf.buf);
-		if (*s->s.reset_color)
-			fputs(s->s.reset_color, stdout);
+		if (*s->s.reset_color_interactive)
+			fputs(s->s.reset_color_interactive, stdout);
 		fflush(stdout);
-		if (read_single_character(s) == EOF)
+		if (read_single_character(s) == EOF) {
+			quit = 1;
 			break;
+		}
 
 		if (!s->answer.len)
 			continue;
@@ -1554,43 +1598,47 @@ soft_increment:
 					if (hunk->use == UNDECIDED_HUNK)
 						hunk->use = USE_HUNK;
 				}
+				if (!get_first_undecided(file_diff, &hunk_index))
+					hunk_index = 0;
 			} else if (hunk->use == UNDECIDED_HUNK) {
 				hunk->use = USE_HUNK;
 			}
-		} else if (ch == 'd' || ch == 'q') {
+		} else if (ch == 'd') {
 			if (file_diff->hunk_nr) {
 				for (; hunk_index < file_diff->hunk_nr; hunk_index++) {
 					hunk = file_diff->hunk + hunk_index;
 					if (hunk->use == UNDECIDED_HUNK)
 						hunk->use = SKIP_HUNK;
 				}
+				if (!get_first_undecided(file_diff, &hunk_index))
+					hunk_index = 0;
 			} else if (hunk->use == UNDECIDED_HUNK) {
 				hunk->use = SKIP_HUNK;
 			}
-			if (ch == 'q') {
-				quit = 1;
-				break;
-			}
+		} else if (ch == 'q') {
+			quit = 1;
+			break;
 		} else if (s->answer.buf[0] == 'K') {
 			if (permitted & ALLOW_GOTO_PREVIOUS_HUNK)
-				hunk_index--;
+				hunk_index = dec_mod(hunk_index,
+						     file_diff->hunk_nr);
 			else
-				err(s, _("No previous hunk"));
+				err(s, _("No other hunk"));
 		} else if (s->answer.buf[0] == 'J') {
 			if (permitted & ALLOW_GOTO_NEXT_HUNK)
 				hunk_index++;
 			else
-				err(s, _("No next hunk"));
+				err(s, _("No other hunk"));
 		} else if (s->answer.buf[0] == 'k') {
 			if (permitted & ALLOW_GOTO_PREVIOUS_UNDECIDED_HUNK)
 				hunk_index = undecided_previous;
 			else
-				err(s, _("No previous hunk"));
+				err(s, _("No other undecided hunk"));
 		} else if (s->answer.buf[0] == 'j') {
 			if (permitted & ALLOW_GOTO_NEXT_UNDECIDED_HUNK)
 				hunk_index = undecided_next;
 			else
-				err(s, _("No next hunk"));
+				err(s, _("No other undecided hunk"));
 		} else if (s->answer.buf[0] == 'g') {
 			char *pend;
 			unsigned long response;
@@ -1759,14 +1807,15 @@ soft_increment:
 }
 
 int run_add_p(struct repository *r, enum add_p_mode mode,
-	      const char *revision, const struct pathspec *ps)
+	      struct add_p_opt *o, const char *revision,
+	      const struct pathspec *ps)
 {
 	struct add_p_state s = {
 		{ r }, STRBUF_INIT, STRBUF_INIT, STRBUF_INIT, STRBUF_INIT
 	};
 	size_t i, binary_count = 0;
 
-	init_add_i_state(&s.s, r);
+	init_add_i_state(&s.s, r, o);
 
 	if (mode == ADD_P_STASH)
 		s.mode = &patch_mode_stash;

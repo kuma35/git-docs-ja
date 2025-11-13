@@ -42,8 +42,8 @@ test_expect_success '"add" using - shorthand' '
 
 test_expect_success '"add" refuses to checkout locked branch' '
 	test_must_fail git worktree add zere main &&
-	! test -d zere &&
-	! test -d .git/worktrees/zere
+	test_path_is_missing zere &&
+	test_path_is_missing .git/worktrees/zere
 '
 
 test_expect_success 'checking out paths not complaining about linked checkouts' '
@@ -70,14 +70,14 @@ test_expect_success '"add" worktree' '
 test_expect_success '"add" worktree with lock' '
 	git worktree add --detach --lock here-with-lock main &&
 	test_when_finished "git worktree unlock here-with-lock || :" &&
-	test -f .git/worktrees/here-with-lock/locked
+	test_path_is_file .git/worktrees/here-with-lock/locked
 '
 
 test_expect_success '"add" worktree with lock and reason' '
 	lock_reason="why not" &&
 	git worktree add --detach --lock --reason "$lock_reason" here-with-lock-reason main &&
 	test_when_finished "git worktree unlock here-with-lock-reason || :" &&
-	test -f .git/worktrees/here-with-lock-reason/locked &&
+	test_path_is_file .git/worktrees/here-with-lock-reason/locked &&
 	echo "$lock_reason" >expect &&
 	test_cmp expect .git/worktrees/here-with-lock-reason/locked
 '
@@ -412,14 +412,14 @@ test_expect_success '"add --orphan" with empty repository' '
 test_expect_success '"add" worktree with orphan branch and lock' '
 	git worktree add --lock --orphan -b orphanbr orphan-with-lock &&
 	test_when_finished "git worktree unlock orphan-with-lock || :" &&
-	test -f .git/worktrees/orphan-with-lock/locked
+	test_path_is_file .git/worktrees/orphan-with-lock/locked
 '
 
 test_expect_success '"add" worktree with orphan branch, lock, and reason' '
 	lock_reason="why not" &&
 	git worktree add --detach --lock --reason "$lock_reason" orphan-with-lock-reason main &&
 	test_when_finished "git worktree unlock orphan-with-lock-reason || :" &&
-	test -f .git/worktrees/orphan-with-lock-reason/locked &&
+	test_path_is_file .git/worktrees/orphan-with-lock-reason/locked &&
 	echo "$lock_reason" >expect &&
 	test_cmp expect .git/worktrees/orphan-with-lock-reason/locked
 '
@@ -474,7 +474,7 @@ test_expect_success 'local clone --shared from linked checkout' '
 
 test_expect_success '"add" worktree with --no-checkout' '
 	git worktree add --no-checkout -b swamp swamp &&
-	! test -e swamp/init.t &&
+	test_path_is_missing swamp/init.t &&
 	git -C swamp reset --hard &&
 	test_cmp init.t swamp/init.t
 '
@@ -497,7 +497,7 @@ test_expect_success 'put a worktree under rebase' '
 
 test_expect_success 'add a worktree, checking out a rebased branch' '
 	test_must_fail git worktree add new-rebase under-rebase &&
-	! test -d new-rebase
+	test_path_is_missing new-rebase
 '
 
 test_expect_success 'checking out a rebased branch from another worktree' '
@@ -535,7 +535,7 @@ test_expect_success 'checkout a branch under bisect' '
 		git worktree list >actual &&
 		grep "under-bisect.*detached HEAD" actual &&
 		test_must_fail git worktree add new-bisect under-bisect &&
-		! test -d new-bisect
+		test_path_is_missing new-bisect
 	)
 '
 
@@ -1165,7 +1165,7 @@ test_expect_success '"add" not tripped up by magic worktree matching"' '
 
 test_expect_success FUNNYNAMES 'sanitize generated worktree name' '
 	git worktree add --detach ".  weird*..?.lock.lock" &&
-	test -d .git/worktrees/---weird-.-
+	test_path_is_dir .git/worktrees/---weird-.-
 '
 
 test_expect_success '"add" should not fail because of another bad worktree' '
@@ -1204,6 +1204,52 @@ test_expect_success '"add" with initialized submodule, with submodule.recurse un
 
 test_expect_success '"add" with initialized submodule, with submodule.recurse set' '
 	git -C project-clone -c submodule.recurse worktree add ../project-5
+'
+
+test_expect_success 'can create worktrees with relative paths' '
+	test_when_finished "git worktree remove relative" &&
+	test_config worktree.useRelativePaths false &&
+	git worktree add --relative-paths ./relative &&
+	echo "gitdir: ../.git/worktrees/relative" >expect &&
+	test_cmp expect relative/.git &&
+	echo "../../../relative/.git" >expect &&
+	test_cmp expect .git/worktrees/relative/gitdir
+'
+
+test_expect_success 'can create worktrees with absolute paths' '
+	test_config worktree.useRelativePaths true &&
+	git worktree add ./relative &&
+	echo "gitdir: ../.git/worktrees/relative" >expect &&
+	test_cmp expect relative/.git &&
+	git worktree add --no-relative-paths ./absolute &&
+	echo "gitdir: $(pwd)/.git/worktrees/absolute" >expect &&
+	test_cmp expect absolute/.git &&
+	echo "$(pwd)/absolute/.git" >expect &&
+	test_cmp expect .git/worktrees/absolute/gitdir
+'
+
+test_expect_success 'move repo without breaking relative internal links' '
+	test_when_finished rm -rf repo moved &&
+	git init repo &&
+	(
+		cd repo &&
+		test_commit initial &&
+		git worktree add --relative-paths wt1 &&
+		cd .. &&
+		mv repo moved &&
+		cd moved/wt1 &&
+		git worktree list >out 2>err &&
+		test_must_be_empty err
+	)
+'
+
+test_expect_success 'relative worktree sets extension config' '
+	test_when_finished "rm -rf repo" &&
+	git init repo &&
+	git -C repo commit --allow-empty -m base &&
+	git -C repo worktree add --relative-paths ./foo &&
+	test_cmp_config -C repo 1 core.repositoryformatversion &&
+	test_cmp_config -C repo true extensions.relativeworktrees
 '
 
 test_done

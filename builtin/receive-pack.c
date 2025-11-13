@@ -1,4 +1,6 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "builtin.h"
 #include "abspath.h"
 
@@ -29,8 +31,9 @@
 #include "tmp-objdir.h"
 #include "oidset.h"
 #include "packfile.h"
+#include "object-file.h"
 #include "object-name.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "path.h"
 #include "protocol.h"
 #include "commit-reach.h"
@@ -78,6 +81,7 @@ static int prefer_ofs_delta = 1;
 static int auto_update_server_info;
 static int auto_gc = 1;
 static int reject_thin;
+static int skip_connectivity_check;
 static int stateless_rpc;
 static const char *service_dir;
 static const char *head_name;
@@ -172,7 +176,7 @@ static int receive_pack_config(const char *var, const char *value,
 		char *path;
 
 		if (git_config_pathname(&path, var, value))
-			return 1;
+			return -1;
 		strbuf_addf(&fsck_msg_types, "%cskiplist=%s",
 			fsck_msg_types.len ? ',' : '=', path);
 		free(path);
@@ -355,13 +359,14 @@ static void write_head_info(void)
 
 	refs_for_each_fullref_in(get_main_ref_store(the_repository), "",
 				 exclude_patterns, show_ref_cb, &seen);
-	for_each_alternate_ref(show_one_alternate_ref, &seen);
+	odb_for_each_alternate_ref(the_repository->objects,
+				   show_one_alternate_ref, &seen);
 
 	oidset_clear(&seen);
 	strvec_clear(&excludes_vector);
 
 	if (!sent_capabilities)
-		show_ref("capabilities^{}", null_oid());
+		show_ref("capabilities^{}", null_oid(the_hash_algo));
 
 	advertise_shallow_grafts(1);
 
@@ -564,14 +569,14 @@ static void hmac_hash(unsigned char *out,
 	unsigned char k_ipad[GIT_MAX_BLKSZ];
 	unsigned char k_opad[GIT_MAX_BLKSZ];
 	int i;
-	git_hash_ctx ctx;
+	struct git_hash_ctx ctx;
 
 	/* RFC 2104 2. (1) */
 	memset(key, '\0', GIT_MAX_BLKSZ);
 	if (the_hash_algo->blksz < key_len) {
 		the_hash_algo->init_fn(&ctx);
-		the_hash_algo->update_fn(&ctx, key_in, key_len);
-		the_hash_algo->final_fn(key, &ctx);
+		git_hash_update(&ctx, key_in, key_len);
+		git_hash_final(key, &ctx);
 	} else {
 		memcpy(key, key_in, key_len);
 	}
@@ -584,15 +589,15 @@ static void hmac_hash(unsigned char *out,
 
 	/* RFC 2104 2. (3) & (4) */
 	the_hash_algo->init_fn(&ctx);
-	the_hash_algo->update_fn(&ctx, k_ipad, sizeof(k_ipad));
-	the_hash_algo->update_fn(&ctx, text, text_len);
-	the_hash_algo->final_fn(out, &ctx);
+	git_hash_update(&ctx, k_ipad, sizeof(k_ipad));
+	git_hash_update(&ctx, text, text_len);
+	git_hash_final(out, &ctx);
 
 	/* RFC 2104 2. (6) & (7) */
 	the_hash_algo->init_fn(&ctx);
-	the_hash_algo->update_fn(&ctx, k_opad, sizeof(k_opad));
-	the_hash_algo->update_fn(&ctx, out, the_hash_algo->rawsz);
-	the_hash_algo->final_fn(out, &ctx);
+	git_hash_update(&ctx, k_opad, sizeof(k_opad));
+	git_hash_update(&ctx, out, the_hash_algo->rawsz);
+	git_hash_final(out, &ctx);
 }
 
 static char *prepare_push_cert_nonce(const char *path, timestamp_t stamp)
@@ -755,8 +760,8 @@ static void prepare_push_cert_sha1(struct child_process *proc)
 		int bogs /* beginning_of_gpg_sig */;
 
 		already_done = 1;
-		if (write_object_file(push_cert.buf, push_cert.len, OBJ_BLOB,
-				      &push_cert_oid))
+		if (odb_write_object(the_repository->objects, push_cert.buf,
+				     push_cert.len, OBJ_BLOB, &push_cert_oid))
 			oidclr(&push_cert_oid, the_repository->hash_algo);
 
 		memset(&sigcheck, '\0', sizeof(sigcheck));
@@ -1433,7 +1438,8 @@ static const char *push_to_checkout(unsigned char *hash,
 
 static const char *update_worktree(unsigned char *sha1, const struct worktree *worktree)
 {
-	const char *retval, *git_dir;
+	const char *retval;
+	char *git_dir;
 	struct strvec env = STRVEC_INIT;
 	int invoked_hook;
 
@@ -1451,6 +1457,7 @@ static const char *update_worktree(unsigned char *sha1, const struct worktree *w
 		retval = push_to_deploy(sha1, &env, worktree->path);
 
 	strvec_clear(&env);
+	free(git_dir);
 	return retval;
 }
 
@@ -1501,7 +1508,9 @@ static const char *update(struct command *cmd, struct shallow_info *si)
 		}
 	}
 
-	if (!is_null_oid(new_oid) && !repo_has_object_file(the_repository, new_oid)) {
+	if (!is_null_oid(new_oid) &&
+	    !odb_has_object(the_repository->objects, new_oid,
+			    HAS_OBJECT_RECHECK_PACKED | HAS_OBJECT_FETCH_PROMISOR)) {
 		error("unpack should have generated %s, "
 		      "but I can't find it!", oid_to_hex(new_oid));
 		ret = "bad pack";
@@ -1838,36 +1847,102 @@ static void BUG_if_skipped_connectivity_check(struct command *commands,
 	BUG_if_bug("connectivity check skipped???");
 }
 
+static void ref_transaction_rejection_handler(const char *refname,
+					      const struct object_id *old_oid UNUSED,
+					      const struct object_id *new_oid UNUSED,
+					      const char *old_target UNUSED,
+					      const char *new_target UNUSED,
+					      enum ref_transaction_error err,
+					      void *cb_data)
+{
+	struct strmap *failed_refs = cb_data;
+
+	strmap_put(failed_refs, refname, (char *)ref_transaction_error_msg(err));
+}
+
 static void execute_commands_non_atomic(struct command *commands,
 					struct shallow_info *si)
 {
 	struct command *cmd;
 	struct strbuf err = STRBUF_INIT;
+	const char *reported_error = NULL;
+	struct strmap failed_refs = STRMAP_INIT;
 
-	for (cmd = commands; cmd; cmd = cmd->next) {
-		if (!should_process_cmd(cmd) || cmd->run_proc_receive)
-			continue;
+	/*
+	 * Reference updates, where D/F conflicts shouldn't arise due to
+	 * one reference being deleted, while the other being created
+	 * are treated as conflicts in batched updates. This is because
+	 * we don't do conflict resolution inside a transaction. To
+	 * mitigate this, delete references in a separate batch.
+	 *
+	 * NEEDSWORK: Add conflict resolution between deletion and creation
+	 * of reference updates within a transaction. With that, we can
+	 * combine the two phases.
+	 */
+	enum processing_phase {
+		PHASE_DELETIONS,
+		PHASE_OTHERS
+	};
 
-		transaction = ref_store_transaction_begin(get_main_ref_store(the_repository),
-							  0, &err);
-		if (!transaction) {
-			rp_error("%s", err.buf);
-			strbuf_reset(&err);
-			cmd->error_string = "transaction failed to start";
-			continue;
+	for (enum processing_phase phase = PHASE_DELETIONS; phase <= PHASE_OTHERS; phase++) {
+		for (cmd = commands; cmd; cmd = cmd->next) {
+			if (!should_process_cmd(cmd) || cmd->run_proc_receive)
+				continue;
+
+			if (phase == PHASE_DELETIONS && !is_null_oid(&cmd->new_oid))
+				continue;
+			else if (phase == PHASE_OTHERS && is_null_oid(&cmd->new_oid))
+				continue;
+
+			/*
+			 * Lazily create a transaction only when we know there are
+			 * updates to be added.
+			 */
+			if (!transaction) {
+				transaction = ref_store_transaction_begin(get_main_ref_store(the_repository),
+									  REF_TRANSACTION_ALLOW_FAILURE, &err);
+				if (!transaction) {
+					rp_error("%s", err.buf);
+					strbuf_reset(&err);
+					reported_error = "transaction failed to start";
+					goto failure;
+				}
+			}
+
+			cmd->error_string = update(cmd, si);
 		}
 
-		cmd->error_string = update(cmd, si);
+		/* No transaction, so nothing to commit */
+		if (!transaction)
+			goto cleanup;
 
-		if (!cmd->error_string
-		    && ref_transaction_commit(transaction, &err)) {
+		if (ref_transaction_commit(transaction, &err)) {
 			rp_error("%s", err.buf);
-			strbuf_reset(&err);
-			cmd->error_string = "failed to update ref";
+			reported_error = "failed to update refs";
+			goto failure;
 		}
+
+		ref_transaction_for_each_rejected_update(transaction,
+							 ref_transaction_rejection_handler,
+							 &failed_refs);
+
+		if (strmap_empty(&failed_refs))
+			goto cleanup;
+
+	failure:
+		for (cmd = commands; cmd; cmd = cmd->next) {
+			if (reported_error)
+				cmd->error_string = reported_error;
+			else if (strmap_contains(&failed_refs, cmd->ref_name))
+				cmd->error_string = strmap_get(&failed_refs, cmd->ref_name);
+		}
+
+	cleanup:
 		ref_transaction_free(transaction);
+		transaction = NULL;
+		strmap_clear(&failed_refs, 0);
+		strbuf_release(&err);
 	}
-	strbuf_release(&err);
 }
 
 static void execute_commands_atomic(struct command *commands,
@@ -1931,27 +2006,29 @@ static void execute_commands(struct command *commands,
 		return;
 	}
 
-	if (use_sideband) {
-		memset(&muxer, 0, sizeof(muxer));
-		muxer.proc = copy_to_sideband;
-		muxer.in = -1;
-		if (!start_async(&muxer))
-			err_fd = muxer.in;
-		/* ...else, continue without relaying sideband */
+	if (!skip_connectivity_check) {
+		if (use_sideband) {
+			memset(&muxer, 0, sizeof(muxer));
+			muxer.proc = copy_to_sideband;
+			muxer.in = -1;
+			if (!start_async(&muxer))
+				err_fd = muxer.in;
+			/* ...else, continue without relaying sideband */
+		}
+
+		data.cmds = commands;
+		data.si = si;
+		opt.err_fd = err_fd;
+		opt.progress = err_fd && !quiet;
+		opt.env = tmp_objdir_env(tmp_objdir);
+		opt.exclude_hidden_refs_section = "receive";
+
+		if (check_connected(iterate_receive_command_list, &data, &opt))
+			set_connectivity_errors(commands, si);
+
+		if (use_sideband)
+			finish_async(&muxer);
 	}
-
-	data.cmds = commands;
-	data.si = si;
-	opt.err_fd = err_fd;
-	opt.progress = err_fd && !quiet;
-	opt.env = tmp_objdir_env(tmp_objdir);
-	opt.exclude_hidden_refs_section = "receive";
-
-	if (check_connected(iterate_receive_command_list, &data, &opt))
-		set_connectivity_errors(commands, si);
-
-	if (use_sideband)
-		finish_async(&muxer);
 
 	reject_updates_to_hidden(commands);
 
@@ -2126,7 +2203,7 @@ static struct command *read_head_info(struct packet_reader *reader,
 				use_push_options = 1;
 			hash = parse_feature_value(feature_list, "object-format", &len, NULL);
 			if (!hash) {
-				hash = hash_algos[GIT_HASH_SHA1].name;
+				hash = hash_algos[GIT_HASH_SHA1_LEGACY].name;
 				len = strlen(hash);
 			}
 			if (xstrncmpz(the_hash_algo->name, hash, len))
@@ -2237,7 +2314,7 @@ static const char *unpack(int err_fd, struct shallow_info *si)
 		strvec_push(&child.args, alt_shallow_file);
 	}
 
-	tmp_objdir = tmp_objdir_create("incoming");
+	tmp_objdir = tmp_objdir_create(the_repository, "incoming");
 	if (!tmp_objdir) {
 		if (err_fd > 0)
 			close(err_fd);
@@ -2302,7 +2379,7 @@ static const char *unpack(int err_fd, struct shallow_info *si)
 		if (status)
 			return "index-pack fork failed";
 
-		lockfile = index_pack_lockfile(child.out, NULL);
+		lockfile = index_pack_lockfile(the_repository, child.out, NULL);
 		if (lockfile) {
 			pack_lockfile = register_tempfile(lockfile);
 			free(lockfile);
@@ -2312,7 +2389,7 @@ static const char *unpack(int err_fd, struct shallow_info *si)
 		status = finish_command(&child);
 		if (status)
 			return "index-pack abnormal exit";
-		reprepare_packed_git(the_repository);
+		odb_reprepare(the_repository->objects);
 	}
 	return NULL;
 }
@@ -2512,6 +2589,7 @@ int cmd_receive_pack(int argc,
 
 	struct option options[] = {
 		OPT__QUIET(&quiet, N_("quiet")),
+		OPT_HIDDEN_BOOL(0, "skip-connectivity-check", &skip_connectivity_check, NULL),
 		OPT_HIDDEN_BOOL(0, "stateless-rpc", &stateless_rpc, NULL),
 		OPT_HIDDEN_BOOL(0, "http-backend-info-refs", &advertise_refs, NULL),
 		OPT_ALIAS(0, "advertise-refs", "http-backend-info-refs"),
@@ -2535,7 +2613,7 @@ int cmd_receive_pack(int argc,
 	if (!enter_repo(service_dir, 0))
 		die("'%s' does not appear to be a git repository", service_dir);
 
-	git_config(receive_pack_config, NULL);
+	repo_config(the_repository, receive_pack_config, NULL);
 	if (cert_nonce_seed)
 		push_cert_nonce = prepare_push_cert_nonce(service_dir, time(NULL));
 
@@ -2626,7 +2704,7 @@ int cmd_receive_pack(int argc,
 			}
 		}
 		if (auto_update_server_info)
-			update_server_info(0);
+			update_server_info(the_repository, 0);
 		clear_shallow_info(&si);
 	}
 	if (use_sideband)

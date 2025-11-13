@@ -19,6 +19,7 @@
 #include "branch.h"
 #include "url.h"
 #include "submodule.h"
+#include "strbuf.h"
 #include "string-list.h"
 #include "oid-array.h"
 #include "sigchain.h"
@@ -29,7 +30,7 @@
 #include "color.h"
 #include "bundle-uri.h"
 
-static int transport_use_color = -1;
+static enum git_colorbool transport_use_color = GIT_COLOR_UNKNOWN;
 static char transport_colors[][COLOR_MAXLEN] = {
 	GIT_COLOR_RESET,
 	GIT_COLOR_RED		/* REJECTED */
@@ -47,21 +48,20 @@ static int transport_color_config(void)
 		"color.transport.rejected"
 	}, *key = "color.transport";
 	char *value;
-	int i;
 	static int initialized;
 
 	if (initialized)
 		return 0;
 	initialized = 1;
 
-	if (!git_config_get_string(key, &value))
+	if (!repo_config_get_string(the_repository, key, &value))
 		transport_use_color = git_config_colorbool(key, value);
 
 	if (!want_color_stderr(transport_use_color))
 		return 0;
 
-	for (i = 0; i < ARRAY_SIZE(keys); i++)
-		if (!git_config_get_string(keys[i], &value)) {
+	for (size_t i = 0; i < ARRAY_SIZE(keys); i++)
+		if (!repo_config_get_string(the_repository, keys[i], &value)) {
 			if (!value)
 				return config_error_nonbool(keys[i]);
 			if (color_parse(value, transport_colors[i]) < 0)
@@ -153,14 +153,13 @@ static struct ref *get_refs_from_bundle(struct transport *transport,
 {
 	struct bundle_transport_data *data = transport->data;
 	struct ref *result = NULL;
-	int i;
 
 	if (for_push)
 		return NULL;
 
 	get_refs_from_bundle_inner(transport);
 
-	for (i = 0; i < data->header.references.nr; i++) {
+	for (size_t i = 0; i < data->header.references.nr; i++) {
 		struct string_list_item *e = data->header.references.items + i;
 		const char *name = e->string;
 		struct ref *ref = alloc_ref(name);
@@ -172,12 +171,29 @@ static struct ref *get_refs_from_bundle(struct transport *transport,
 	return result;
 }
 
+static int fetch_fsck_config_cb(const char *var, const char *value,
+				const struct config_context *ctx UNUSED, void *cb)
+{
+	struct strbuf *msg_types = cb;
+	int ret;
+
+	ret = fetch_pack_fsck_config(var, value, msg_types);
+	if (ret > 0)
+		return 0;
+
+	return ret;
+}
+
 static int fetch_refs_from_bundle(struct transport *transport,
 				  int nr_heads UNUSED,
 				  struct ref **to_fetch UNUSED)
 {
+	struct unbundle_opts opts = {
+		.flags = fetch_pack_fsck_objects() ? VERIFY_BUNDLE_FSCK : 0,
+	};
 	struct bundle_transport_data *data = transport->data;
 	struct strvec extra_index_pack_args = STRVEC_INIT;
+	struct strbuf msg_types = STRBUF_INIT;
 	int ret;
 
 	if (transport->progress)
@@ -185,12 +201,17 @@ static int fetch_refs_from_bundle(struct transport *transport,
 
 	if (!data->get_refs_from_bundle_called)
 		get_refs_from_bundle_inner(transport);
+
+	repo_config(the_repository, fetch_fsck_config_cb, &msg_types);
+	opts.fsck_msg_types = msg_types.buf;
+
 	ret = unbundle(the_repository, &data->header, data->fd,
-		       &extra_index_pack_args,
-		       fetch_pack_fsck_objects() ? VERIFY_BUNDLE_FSCK : 0);
+		       &extra_index_pack_args, &opts);
+	data->fd = -1; /* `unbundle()` closes the file descriptor */
 	transport->hash_algo = data->header.hash_algo;
 
 	strvec_clear(&extra_index_pack_args);
+	strbuf_release(&msg_types);
 	return ret;
 }
 
@@ -912,8 +933,15 @@ static int git_transport_push(struct transport *transport, struct ref *remote_re
 		break;
 	case protocol_v1:
 	case protocol_v0:
-		ret = send_pack(&args, data->fd, data->conn, remote_refs,
+		ret = send_pack(the_repository, &args, data->fd, data->conn, remote_refs,
 				&data->extra_have);
+		/*
+		 * Ignore the specific error code to maintain consistent behavior
+		 * with the "push_refs()" function across different transports,
+		 * such as "push_refs_with_push()" for HTTP protocol.
+		 */
+		if (ret == ERROR_SEND_PACK_BAD_REF_STATUS)
+			ret = 0;
 		break;
 	case protocol_unknown_version:
 		BUG("unknown protocol version");
@@ -921,15 +949,7 @@ static int git_transport_push(struct transport *transport, struct ref *remote_re
 
 	close(data->fd[1]);
 	close(data->fd[0]);
-	/*
-	 * Atomic push may abort the connection early and close the pipe,
-	 * which may cause an error for `finish_connect()`. Ignore this error
-	 * for atomic git-push.
-	 */
-	if (ret || args.atomic)
-		finish_connect(data->conn);
-	else
-		ret = finish_connect(data->conn);
+	ret |= finish_connect(data->conn);
 	data->conn = NULL;
 	data->finished_handshake = 0;
 
@@ -1022,7 +1042,7 @@ static const struct string_list *protocol_allow_list(void)
 	if (enabled < 0) {
 		const char *v = getenv("GIT_ALLOW_PROTOCOL");
 		if (v) {
-			string_list_split(&allowed, v, ':', -1);
+			string_list_split(&allowed, v, ":", -1);
 			string_list_sort(&allowed);
 			enabled = 1;
 		} else {
@@ -1058,7 +1078,7 @@ static enum protocol_allow_config get_protocol_config(const char *type)
 	char *value;
 
 	/* first check the per-protocol config */
-	if (!git_config_get_string(key, &value)) {
+	if (!repo_config_get_string(the_repository, key, &value)) {
 		enum protocol_allow_config ret =
 			parse_protocol_config(key, value);
 		free(key);
@@ -1068,7 +1088,7 @@ static enum protocol_allow_config get_protocol_config(const char *type)
 	free(key);
 
 	/* if defined, fallback to user-defined default for unknown protocols */
-	if (!git_config_get_string("protocol.allow", &value)) {
+	if (!repo_config_get_string(the_repository, "protocol.allow", &value)) {
 		enum protocol_allow_config ret =
 			parse_protocol_config("protocol.allow", value);
 		free(value);
@@ -1223,7 +1243,7 @@ struct transport *transport_get(struct remote *remote, const char *url)
 			ret->smart_options->receivepack = remote->receivepack;
 	}
 
-	ret->hash_algo = &hash_algos[GIT_HASH_SHA1];
+	ret->hash_algo = &hash_algos[GIT_HASH_SHA1_LEGACY];
 
 	return ret;
 }
@@ -1281,11 +1301,9 @@ void transport_set_verbosity(struct transport *transport, int verbosity,
 
 static void die_with_unpushed_submodules(struct string_list *needs_pushing)
 {
-	int i;
-
 	fprintf(stderr, _("The following submodule paths contain changes that can\n"
 			"not be found on any remote:\n"));
-	for (i = 0; i < needs_pushing->nr; i++)
+	for (size_t i = 0; i < needs_pushing->nr; i++)
 		fprintf(stderr, "  %s\n", needs_pushing->items[i].string);
 	fprintf(stderr, _("\nPlease try\n\n"
 			  "	git push --recurse-submodules=on-demand\n\n"
@@ -1584,7 +1602,7 @@ int transport_get_remote_bundle_uri(struct transport *transport)
 	 * Don't request bundle-uri from the server unless configured to
 	 * do so by the transfer.bundleURI=true config option.
 	 */
-	if (git_config_get_bool("transfer.bundleuri", &value) || !value)
+	if (repo_config_get_bool(the_repository, "transfer.bundleuri", &value) || !value)
 		return 0;
 
 	if (!transport->bundles->baseURI)
@@ -1601,9 +1619,8 @@ int transport_get_remote_bundle_uri(struct transport *transport)
 void transport_unlock_pack(struct transport *transport, unsigned int flags)
 {
 	int in_signal_handler = !!(flags & TRANSPORT_UNLOCK_PACK_IN_SIGNAL_HANDLER);
-	int i;
 
-	for (i = 0; i < transport->pack_lockfiles.nr; i++)
+	for (size_t i = 0; i < transport->pack_lockfiles.nr; i++)
 		if (in_signal_handler)
 			unlink(transport->pack_lockfiles.items[i].string);
 		else

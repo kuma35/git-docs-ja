@@ -1,3 +1,5 @@
+#define DISABLE_SIGN_COMPARE_WARNINGS
+
 #include "git-compat-util.h"
 #include "gettext.h"
 #include "hex-ll.h"
@@ -6,55 +8,55 @@
 #include "utf8.h"
 #include "date.h"
 
-int starts_with(const char *str, const char *prefix)
+bool starts_with(const char *str, const char *prefix)
 {
 	for (; ; str++, prefix++)
 		if (!*prefix)
-			return 1;
+			return true;
 		else if (*str != *prefix)
-			return 0;
+			return false;
 }
 
-int istarts_with(const char *str, const char *prefix)
+bool istarts_with(const char *str, const char *prefix)
 {
 	for (; ; str++, prefix++)
 		if (!*prefix)
-			return 1;
+			return true;
 		else if (tolower(*str) != tolower(*prefix))
-			return 0;
+			return false;
 }
 
-int starts_with_mem(const char *str, size_t len, const char *prefix)
+bool starts_with_mem(const char *str, size_t len, const char *prefix)
 {
 	const char *end = str + len;
 	for (; ; str++, prefix++) {
 		if (!*prefix)
-			return 1;
+			return true;
 		else if (str == end || *str != *prefix)
-			return 0;
+			return false;
 	}
 }
 
-int skip_to_optional_arg_default(const char *str, const char *prefix,
+bool skip_to_optional_arg_default(const char *str, const char *prefix,
 				 const char **arg, const char *def)
 {
 	const char *p;
 
 	if (!skip_prefix(str, prefix, &p))
-		return 0;
+		return false;
 
 	if (!*p) {
 		if (arg)
 			*arg = def;
-		return 1;
+		return true;
 	}
 
 	if (*p != '=')
-		return 0;
+		return false;
 
 	if (arg)
 		*arg = p + 1;
-	return 1;
+	return true;
 }
 
 /*
@@ -495,7 +497,9 @@ void strbuf_add_percentencode(struct strbuf *dst, const char *src, int flags)
 		unsigned char ch = src[i];
 		if (ch <= 0x1F || ch >= 0x7F ||
 		    (ch == '/' && (flags & STRBUF_ENCODE_SLASH)) ||
-		    strchr(URL_UNSAFE_CHARS, ch))
+		    ((flags & STRBUF_ENCODE_HOST_AND_PORT) ?
+		     !isalnum(ch) && !strchr("-.:[]", ch) :
+		     !!strchr(URL_UNSAFE_CHARS, ch)))
 			strbuf_addf(dst, "%%%02X", (unsigned char)ch);
 		else
 			strbuf_addch(dst, ch);

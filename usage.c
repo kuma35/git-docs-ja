@@ -3,11 +3,13 @@
  *
  * Copyright (C) Linus Torvalds, 2005
  */
+
 #include "git-compat-util.h"
 #include "gettext.h"
 #include "trace2.h"
+#include "strbuf.h"
 
-static void vreportf(const char *prefix, const char *err, va_list params)
+static void vfreportf(FILE *f, const char *prefix, const char *err, va_list params)
 {
 	char msg[4096];
 	char *p, *pend = msg + sizeof(msg);
@@ -31,8 +33,13 @@ static void vreportf(const char *prefix, const char *err, va_list params)
 	}
 
 	*(p++) = '\n'; /* we no longer need a NUL */
-	fflush(stderr);
-	write_in_full(2, msg, p - msg);
+	fflush(f);
+	write_in_full(fileno(f), msg, p - msg);
+}
+
+static void vreportf(const char *prefix, const char *err, va_list params)
+{
+	vfreportf(stderr, prefix, err, params);
 }
 
 static NORETURN void usage_builtin(const char *err, va_list params)
@@ -61,6 +68,8 @@ static NORETURN void usage_builtin(const char *err, va_list params)
 
 static void die_message_builtin(const char *err, va_list params)
 {
+	if (!err)
+		return;
 	trace2_cmd_error_va(err, params);
 	vreportf(_("fatal: "), err, params);
 }
@@ -172,6 +181,23 @@ void NORETURN usage(const char *err)
 	usagef("%s", err);
 }
 
+static void show_usage_if_asked_helper(const char *err, ...)
+{
+	va_list params;
+
+	va_start(params, err);
+	vfreportf(stdout, _("usage: "), err, params);
+	va_end(params);
+	exit(129);
+}
+
+void show_usage_if_asked(int ac, const char **av, const char *err)
+{
+	if (ac == 2 && (!strcmp(av[1], "-h") ||
+			!strcmp(av[1], "--help-all")))
+		show_usage_if_asked_helper(err);
+}
+
 void NORETURN die(const char *err, ...)
 {
 	va_list params;
@@ -189,7 +215,7 @@ void NORETURN die(const char *err, ...)
 static const char *fmt_with_err(char *buf, int n, const char *fmt)
 {
 	char str_error[256], *err;
-	int i, j;
+	size_t i, j;
 
 	err = strerror(errno);
 	for (i = j = 0; err[i] && j < sizeof(str_error) - 1; ) {
@@ -349,4 +375,34 @@ void bug_fl(const char *file, int line, const char *fmt, ...)
 	va_start(ap, fmt);
 	trace2_cmd_error_va(fmt, ap);
 	va_end(ap);
+}
+
+
+NORETURN void you_still_use_that(const char *command_name, const char *hint)
+{
+	struct strbuf percent_encoded = STRBUF_INIT;
+	strbuf_add_percentencode(&percent_encoded,
+				 command_name,
+				 STRBUF_ENCODE_SLASH);
+
+	fprintf(stderr,
+		_("'%s' is nominated for removal.\n"), command_name);
+
+	if (hint)
+		fputs(hint, stderr);
+
+	fprintf(stderr,
+		_("If you still use this command, here's what you can do:\n"
+		  "\n"
+		  "- read https://git-scm.com/docs/BreakingChanges.html\n"
+		  "- check if anyone has discussed this on the mailing\n"
+		  "  list and if they came up with something that can\n"
+		  "  help you: https://lore.kernel.org/git/?q=%s\n"
+		  "- send an email to <git@vger.kernel.org> to let us\n"
+		  "  know that you still use this command and were unable\n"
+		  "  to determine a suitable replacement\n"
+		  "\n"),
+		percent_encoded.buf);
+	strbuf_release(&percent_encoded);
+	die(_("refusing to run without --i-still-use-this"));
 }

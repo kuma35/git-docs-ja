@@ -7,23 +7,59 @@ export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
 
 . ./test-lib.sh
 
+print_all_reflog_entries () {
+	repo=$1 &&
+	test-tool -C "$repo" ref-store main for-each-reflog >reflogs &&
+	while read reflog
+	do
+		echo "REFLOG: $reflog" &&
+		test-tool -C "$repo" ref-store main for-each-reflog-ent "$reflog" ||
+		return 1
+	done <reflogs
+}
+
+# Migrate the provided repository from one format to the other and
+# verify that the references and logs are migrated over correctly.
+# Usage: test_migration <repo> <format> [<skip_reflog_verify> [<options...>]]
+#   <repo> is the relative path to the repo to be migrated.
+#   <format> is the ref format to be migrated to.
+#   <skip_reflog_verify> (default: false) whether to skip reflog verification.
+#   <options...> are other options be passed directly to 'git refs migrate'.
 test_migration () {
-	git -C "$1" for-each-ref --include-root-refs \
+	repo=$1 &&
+	format=$2 &&
+	shift 2 &&
+	skip_reflog_verify=false &&
+	if test $# -ge 1
+	then
+		skip_reflog_verify=$1
+		shift
+	fi &&
+	git -C "$repo" for-each-ref --include-root-refs \
 		--format='%(refname) %(objectname) %(symref)' >expect &&
-	git -C "$1" refs migrate --ref-format="$2" &&
-	git -C "$1" for-each-ref --include-root-refs \
+	if ! $skip_reflog_verify
+	then
+		print_all_reflog_entries "$repo" >expect_logs
+	fi &&
+
+	git -C "$repo" refs migrate --ref-format="$format" "$@" &&
+
+	git -C "$repo" for-each-ref --include-root-refs \
 		--format='%(refname) %(objectname) %(symref)' >actual &&
 	test_cmp expect actual &&
+	if ! $skip_reflog_verify
+	then
+		print_all_reflog_entries "$repo" >actual_logs &&
+		test_cmp expect_logs actual_logs
+	fi &&
 
-	git -C "$1" rev-parse --show-ref-format >actual &&
-	echo "$2" >expect &&
+	git -C "$repo" rev-parse --show-ref-format >actual &&
+	echo "$format" >expect &&
 	test_cmp expect actual
 }
 
 test_expect_success 'setup' '
-	rm -rf .git &&
-	# The migration does not yet support reflogs.
-	git config --global core.logAllRefUpdates false
+	rm -rf .git
 '
 
 test_expect_success "superfluous arguments" '
@@ -78,19 +114,6 @@ do
 			test_cmp expect err
 		'
 
-		test_expect_success "$from_format -> $to_format: migration with reflog fails" '
-			test_when_finished "rm -rf repo" &&
-			git init --ref-format=$from_format repo &&
-			test_config -C repo core.logAllRefUpdates true &&
-			test_commit -C repo logged &&
-			test_must_fail git -C repo refs migrate \
-				--ref-format=$to_format 2>err &&
-			cat >expect <<-EOF &&
-			error: migrating reflogs is not supported yet
-			EOF
-			test_cmp expect err
-		'
-
 		test_expect_success "$from_format -> $to_format: migration with worktree fails" '
 			test_when_finished "rm -rf repo" &&
 			git init --ref-format=$from_format repo &&
@@ -141,7 +164,7 @@ do
 			test_commit -C repo initial &&
 			test-tool -C repo ref-store main update-ref "" refs/heads/broken \
 				"$(test_oid 001)" "$ZERO_OID" REF_SKIP_CREATE_REFLOG,REF_SKIP_OID_VERIFICATION &&
-			test_migration repo "$to_format" &&
+			test_migration repo "$to_format" true &&
 			test_oid 001 >expect &&
 			git -C repo rev-parse refs/heads/broken >actual &&
 			test_cmp expect actual
@@ -195,8 +218,71 @@ do
 			git -C repo rev-parse --show-ref-format >actual &&
 			test_cmp expect actual
 		'
+
+		test_expect_success "$from_format -> $to_format: reflogs of symrefs with target deleted" '
+			test_when_finished "rm -rf repo" &&
+			git init --ref-format=$from_format repo &&
+			test_commit -C repo initial &&
+			git -C repo branch branch-1 HEAD &&
+			git -C repo symbolic-ref refs/heads/symref refs/heads/branch-1 &&
+			cat >input <<-EOF &&
+			delete refs/heads/branch-1
+			EOF
+			git -C repo update-ref --stdin <input &&
+			test_migration repo "$to_format"
+		'
+
+		test_expect_success "$from_format -> $to_format: reflogs order is retained" '
+			test_when_finished "rm -rf repo" &&
+			git init --ref-format=$from_format repo &&
+			test_commit --date "100005000 +0700" --no-tag -C repo initial &&
+			test_commit --date "100003000 +0700" --no-tag -C repo second &&
+			test_migration repo "$to_format"
+		'
+
+		test_expect_success "$from_format -> $to_format: stash is retained" '
+			test_when_finished "rm -rf repo" &&
+			git init --ref-format=$from_format repo &&
+			(
+				cd repo &&
+				test_commit initial A &&
+				echo foo >A &&
+				git stash push &&
+				echo bar >A &&
+				git stash push &&
+				git stash list >expect.reflog &&
+				test_migration . "$to_format" &&
+				git stash list >actual.reflog &&
+				test_cmp expect.reflog actual.reflog
+			)
+		'
+
+		test_expect_success "$from_format -> $to_format: skip reflog with --skip-reflog" '
+			test_when_finished "rm -rf repo" &&
+			git init --ref-format=$from_format repo &&
+			test_commit -C repo initial &&
+			# we see that the repository contains reflogs.
+			git -C repo reflog --all >reflogs &&
+			test_line_count = 2 reflogs &&
+			test_migration repo "$to_format" true --no-reflog &&
+			# there should be no reflogs post migration.
+			git -C repo reflog --all >reflogs &&
+			test_must_be_empty reflogs
+		'
 	done
 done
+
+test_expect_success 'multiple reftable blocks with multiple entries' '
+	test_when_finished "rm -rf repo" &&
+	git init --ref-format=files repo &&
+	test_commit -C repo first &&
+	printf "create refs/heads/ref-%d HEAD\n" $(test_seq 5000) >stdin &&
+	git -C repo update-ref --stdin <stdin &&
+	test_commit -C repo second &&
+	printf "update refs/heads/ref-%d HEAD\n" $(test_seq 3000) >stdin &&
+	git -C repo update-ref --stdin <stdin &&
+	test_migration repo reftable true
+'
 
 test_expect_success 'migrating from files format deletes backend files' '
 	test_when_finished "rm -rf repo" &&

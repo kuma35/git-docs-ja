@@ -16,8 +16,7 @@ const char *find_hook(struct repository *r, const char *name)
 
 	int found_hook;
 
-	strbuf_reset(&path);
-	strbuf_repo_git_path(&path, r, "hooks/%s", name);
+	repo_git_path_replace(r, &path, "hooks/%s", name);
 	found_hook = access(path.buf, X_OK) >= 0;
 #ifdef STRIP_EXTENSION
 	if (!found_hook) {
@@ -39,7 +38,7 @@ const char *find_hook(struct repository *r, const char *name)
 				advise(_("The '%s' hook was ignored because "
 					 "it's not set as executable.\n"
 					 "You can disable this warning with "
-					 "`git config advice.ignoredHook false`."),
+					 "`git config set advice.ignoredHook false`."),
 				       path.buf);
 			}
 		}

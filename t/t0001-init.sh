@@ -433,6 +433,12 @@ test_expect_success SYMLINKS 're-init to move gitdir symlink' '
 sep_git_dir_worktree ()  {
 	test_when_finished "rm -rf mainwt linkwt seprepo" &&
 	git init mainwt &&
+	if test "relative" = $2
+	then
+		test_config -C mainwt worktree.useRelativePaths true
+	else
+		test_config -C mainwt worktree.useRelativePaths false
+	fi
 	test_commit -C mainwt gumby &&
 	git -C mainwt worktree add --detach ../linkwt &&
 	git -C "$1" init --separate-git-dir ../seprepo &&
@@ -441,12 +447,20 @@ sep_git_dir_worktree ()  {
 	test_cmp expect actual
 }
 
-test_expect_success 're-init to move gitdir with linked worktrees' '
-	sep_git_dir_worktree mainwt
+test_expect_success 're-init to move gitdir with linked worktrees (absolute)' '
+	sep_git_dir_worktree mainwt absolute
 '
 
-test_expect_success 're-init to move gitdir within linked worktree' '
-	sep_git_dir_worktree linkwt
+test_expect_success 're-init to move gitdir within linked worktree (absolute)' '
+	sep_git_dir_worktree linkwt absolute
+'
+
+test_expect_success 're-init to move gitdir with linked worktrees (relative)' '
+	sep_git_dir_worktree mainwt relative
+'
+
+test_expect_success 're-init to move gitdir within linked worktree (relative)' '
+	sep_git_dir_worktree linkwt relative
 '
 
 test_expect_success MINGW '.git hidden' '
@@ -572,6 +586,18 @@ test_expect_success 'GIT_DEFAULT_HASH overrides init.defaultObjectFormat' '
 	echo sha256 >expected
 '
 
+for hash in sha1 sha256
+do
+	test_expect_success "reinit repository with GIT_DEFAULT_HASH=$hash does not change format" '
+		test_when_finished "rm -rf repo" &&
+		git init repo &&
+		git -C repo rev-parse --show-object-format >expect &&
+		GIT_DEFAULT_HASH=$hash git init repo &&
+		git -C repo rev-parse --show-object-format >actual &&
+		test_cmp expect actual
+	'
+done
+
 test_expect_success 'extensions.objectFormat is not allowed with repo version 0' '
 	test_when_finished "rm -rf explicit-v0" &&
 	git init --object-format=sha256 explicit-v0 &&
@@ -632,6 +658,17 @@ test_expect_success 'init warns about invalid init.defaultRefFormat' '
 	test_cmp expected actual
 '
 
+test_expect_success 'default ref format' '
+	test_when_finished "rm -rf refformat" &&
+	(
+		sane_unset GIT_DEFAULT_REF_FORMAT &&
+		git init refformat
+	) &&
+	git version --build-options | sed -ne "s/^default-ref-format: //p" >expect &&
+	git -C refformat rev-parse --show-ref-format >actual &&
+	test_cmp expect actual
+'
+
 backends="files reftable"
 for format in $backends
 do
@@ -683,6 +720,15 @@ do
 		git -C refformat rev-parse --show-ref-format >actual &&
 		test_cmp expect actual
 	'
+
+	test_expect_success "reinit repository with GIT_DEFAULT_REF_FORMAT=$format does not change format" '
+		test_when_finished "rm -rf refformat" &&
+		git init refformat &&
+		git -C refformat rev-parse --show-ref-format >expect &&
+		GIT_DEFAULT_REF_FORMAT=$format git init refformat &&
+		git -C refformat rev-parse --show-ref-format >actual &&
+		test_cmp expect actual
+	'
 done
 
 test_expect_success "--ref-format= overrides GIT_DEFAULT_REF_FORMAT" '
@@ -699,6 +745,40 @@ test_expect_success "GIT_DEFAULT_REF_FORMAT= overrides init.defaultRefFormat" '
 
 	GIT_DEFAULT_REF_FORMAT=reftable git init refformat &&
 	echo reftable >expect &&
+	git -C refformat rev-parse --show-ref-format >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success "init with feature.experimental=true" '
+	test_when_finished "rm -rf refformat" &&
+	test_config_global feature.experimental true &&
+	(
+		sane_unset GIT_DEFAULT_REF_FORMAT &&
+		git init refformat
+	) &&
+	echo reftable >expect &&
+	git -C refformat rev-parse --show-ref-format >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success "init.defaultRefFormat overrides feature.experimental=true" '
+	test_when_finished "rm -rf refformat" &&
+	test_config_global feature.experimental true &&
+	test_config_global init.defaultRefFormat files &&
+	(
+		sane_unset GIT_DEFAULT_REF_FORMAT &&
+		git init refformat
+	) &&
+	echo files >expect &&
+	git -C refformat rev-parse --show-ref-format >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success "GIT_DEFAULT_REF_FORMAT= overrides feature.experimental=true" '
+	test_when_finished "rm -rf refformat" &&
+	test_config_global feature.experimental true &&
+	GIT_DEFAULT_REF_FORMAT=files git init refformat &&
+	echo files >expect &&
 	git -C refformat rev-parse --show-ref-format >actual &&
 	test_cmp expect actual
 '
@@ -795,6 +875,30 @@ test_expect_success 'advice on unconfigured init.defaultBranch' '
 	test_grep "<YELLOW>hint: " decoded
 '
 
+test_expect_success 'advice on unconfigured init.defaultBranch disabled' '
+	test_when_finished "rm -rf no-advice" &&
+
+	GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME= \
+		git -c advice.defaultBranchName=false init no-advice 2>err &&
+	test_grep ! "hint: " err
+'
+
+test_expect_success 'default branch name' '
+	if test_have_prereq WITH_BREAKING_CHANGES
+	then
+		expect=main
+	else
+		expect=master
+	fi &&
+	echo "refs/heads/$expect" >expect &&
+	(
+		sane_unset GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME &&
+		git init default-initial-branch-name
+	) &&
+	git -C default-initial-branch-name symbolic-ref HEAD >actual &&
+	test_cmp expect actual
+'
+
 test_expect_success 'overridden default main branch name (env)' '
 	test_config_global init.defaultBranch nmb &&
 	GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME=env git init main-branch-env &&
@@ -832,15 +936,6 @@ test_expect_success 'init with includeIf.onbranch condition' '
 test_expect_success 'init with includeIf.onbranch condition with existing directory' '
 	test_when_finished "rm -rf repo" &&
 	mkdir repo &&
-	git -c includeIf.onbranch:nonexistent.path=/does/not/exist init repo &&
-	echo $GIT_DEFAULT_REF_FORMAT >expect &&
-	git -C repo rev-parse --show-ref-format >actual &&
-	test_cmp expect actual
-'
-
-test_expect_success 're-init with includeIf.onbranch condition' '
-	test_when_finished "rm -rf repo" &&
-	git init repo &&
 	git -c includeIf.onbranch:nonexistent.path=/does/not/exist init repo &&
 	echo $GIT_DEFAULT_REF_FORMAT >expect &&
 	git -C repo rev-parse --show-ref-format >actual &&

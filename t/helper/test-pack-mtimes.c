@@ -3,7 +3,7 @@
 #include "test-tool.h"
 #include "hex.h"
 #include "strbuf.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "packfile.h"
 #include "pack-mtimes.h"
 #include "setup.h"
@@ -24,7 +24,7 @@ static void dump_mtimes(struct packed_git *p)
 	}
 }
 
-static const char *pack_mtimes_usage = "\n"
+static const char *const pack_mtimes_usage = "\n"
 "  test-tool pack-mtimes <pack-name.mtimes>";
 
 int cmd__pack_mtimes(int argc, const char **argv)
@@ -37,7 +37,7 @@ int cmd__pack_mtimes(int argc, const char **argv)
 	if (argc != 2)
 		usage(pack_mtimes_usage);
 
-	for (p = get_all_packs(the_repository); p; p = p->next) {
+	repo_for_each_pack(the_repository, p) {
 		strbuf_addstr(&buf, basename(p->pack_name));
 		strbuf_strip_suffix(&buf, ".pack");
 		strbuf_addstr(&buf, ".mtimes");

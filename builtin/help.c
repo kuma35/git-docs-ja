@@ -1,10 +1,12 @@
-
 /*
  * Builtin help command
  */
+
 #define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
 #include "config.h"
+#include "environment.h"
 #include "exec-cmd.h"
 #include "gettext.h"
 #include "pager.h"
@@ -129,7 +131,6 @@ static void list_config_help(enum show_config_type type)
 	struct string_list keys = STRING_LIST_INIT_DUP;
 	struct string_list keys_uniq = STRING_LIST_INIT_DUP;
 	struct string_list_item *item;
-	int i;
 
 	for (p = config_name_list; *p; p++) {
 		const char *var = *p;
@@ -156,7 +157,7 @@ static void list_config_help(enum show_config_type type)
 			    e->prefix, e->placeholder);
 
 	string_list_sort(&keys);
-	for (i = 0; i < keys.nr; i++) {
+	for (size_t i = 0; i < keys.nr; i++) {
 		const char *var = keys.items[i].string;
 		const char *wildcard, *tag, *cut;
 		const char *dot = NULL;
@@ -210,7 +211,7 @@ static enum help_format parse_help_format(const char *format)
 	if (!strcmp(format, "web") || !strcmp(format, "html"))
 		return HELP_FORMAT_WEB;
 	/*
-	 * Please update _git_config() in git-completion.bash when you
+	 * Please update _repo_config() in git-completion.bash when you
 	 * add new help formats.
 	 */
 	die(_("unrecognized help format '%s'"), format);
@@ -658,7 +659,7 @@ int cmd_help(int argc,
 	case HELP_ACTION_ALL:
 		opt_mode_usage(argc, "--all", help_format);
 		if (verbose) {
-			setup_pager();
+			setup_pager(the_repository);
 			list_all_cmds_help(show_external_commands,
 					   show_aliases);
 			return 0;
@@ -692,7 +693,7 @@ int cmd_help(int argc,
 		return 0;
 	case HELP_ACTION_CONFIG:
 		opt_mode_usage(argc, "--config", help_format);
-		setup_pager();
+		setup_pager(the_repository);
 		list_config_help(SHOW_CONFIG_HUMAN);
 		printf("\n%s\n", _("'git help config' for more information"));
 		return 0;
@@ -706,7 +707,7 @@ int cmd_help(int argc,
 	}
 
 	setup_git_directory_gently(&nongit);
-	git_config(git_help_config, NULL);
+	repo_config(the_repository, git_help_config, NULL);
 
 	if (parsed_help_format != HELP_FORMAT_NONE)
 		help_format = parsed_help_format;

@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "config.h"
@@ -17,7 +18,7 @@
 #include "url.h"
 #include "strvec.h"
 #include "packfile.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "protocol.h"
 #include "date.h"
 #include "write-or-die.h"
@@ -182,7 +183,7 @@ static void send_strbuf(struct strbuf *hdr,
 static void send_local_file(struct strbuf *hdr, const char *the_type,
 				const char *name)
 {
-	char *p = git_pathdup("%s", name);
+	char *p = repo_git_path(the_repository, "%s", name);
 	size_t buf_alloc = 8192;
 	char *buf = xmalloc(buf_alloc);
 	int fd;
@@ -245,13 +246,13 @@ static void http_config(void)
 	int i, value = 0;
 	struct strbuf var = STRBUF_INIT;
 
-	git_config_get_bool("http.getanyfile", &getanyfile);
-	git_config_get_ulong("http.maxrequestbuffer", &max_request_buffer);
+	repo_config_get_bool(the_repository, "http.getanyfile", &getanyfile);
+	repo_config_get_ulong(the_repository, "http.maxrequestbuffer", &max_request_buffer);
 
 	for (i = 0; i < ARRAY_SIZE(rpc_service); i++) {
 		struct rpc_service *svc = &rpc_service[i];
 		strbuf_addf(&var, "http.%s", svc->config_name);
-		if (!git_config_get_bool(var.buf, &value))
+		if (!repo_config_get_bool(the_repository, var.buf, &value))
 			svc->enabled = value;
 		strbuf_reset(&var);
 	}
@@ -607,13 +608,13 @@ static void get_info_packs(struct strbuf *hdr, char *arg UNUSED)
 	size_t cnt = 0;
 
 	select_getanyfile(hdr);
-	for (p = get_all_packs(the_repository); p; p = p->next) {
+	repo_for_each_pack(the_repository, p) {
 		if (p->pack_local)
 			cnt++;
 	}
 
 	strbuf_grow(&buf, cnt * 53 + 2);
-	for (p = get_all_packs(the_repository); p; p = p->next) {
+	repo_for_each_pack(the_repository, p) {
 		if (p->pack_local)
 			strbuf_addf(&buf, "P %s\n", p->pack_name + objdirlen + 6);
 	}

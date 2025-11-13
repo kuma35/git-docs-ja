@@ -3,8 +3,9 @@
 #include "git-compat-util.h"
 #include "date.h"
 #include "dir.h"
+#include "environment.h"
 #include "hex.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "path.h"
 #include "repository.h"
 #include "object.h"
@@ -1066,6 +1067,24 @@ int fsck_tag_standalone(const struct object_id *oid, const char *buffer,
 	else
 		ret = fsck_ident(&buffer, oid, OBJ_TAG, options);
 
+	if (buffer < buffer_end && (skip_prefix(buffer, "gpgsig ", &buffer) || skip_prefix(buffer, "gpgsig-sha256 ", &buffer))) {
+		eol = memchr(buffer, '\n', buffer_end - buffer);
+		if (!eol) {
+			ret = report(options, oid, OBJ_TAG, FSCK_MSG_BAD_GPGSIG, "invalid format - unexpected end after 'gpgsig' or 'gpgsig-sha256' line");
+			goto done;
+		}
+		buffer = eol + 1;
+
+		while (buffer < buffer_end && starts_with(buffer, " ")) {
+			eol = memchr(buffer, '\n', buffer_end - buffer);
+			if (!eol) {
+				ret = report(options, oid, OBJ_TAG, FSCK_MSG_BAD_HEADER_CONTINUATION, "invalid format - unexpected end in 'gpgsig' or 'gpgsig-sha256' continuation line");
+				goto done;
+			}
+			buffer = eol + 1;
+		}
+	}
+
 	if (buffer < buffer_end && !starts_with(buffer, "\n")) {
 		/*
 		 * The verify_headers() check will allow
@@ -1293,9 +1312,9 @@ static int fsck_blobs(struct oidset *blobs_found, struct oidset *blobs_done,
 		if (oidset_contains(blobs_done, oid))
 			continue;
 
-		buf = repo_read_object_file(the_repository, oid, &type, &size);
+		buf = odb_read_object(the_repository->objects, oid, &type, &size);
 		if (!buf) {
-			if (is_promisor_object(oid))
+			if (is_promisor_object(the_repository, oid))
 				continue;
 			ret |= report(options,
 				      oid, OBJ_BLOB, msg_missing,
@@ -1353,7 +1372,7 @@ int git_fsck_config(const char *var, const char *value,
 		struct strbuf sb = STRBUF_INIT;
 
 		if (git_config_pathname(&path, var, value))
-			return 1;
+			return -1;
 		strbuf_addf(&sb, "skiplist=%s", path);
 		free(path);
 		fsck_set_msg_types(options, sb.buf);

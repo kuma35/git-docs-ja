@@ -3,12 +3,15 @@
  *
  * Copyright (C) Eric Biederman, 2005
  */
+
 #define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
 
 #include "attr.h"
 #include "config.h"
 #include "editor.h"
+#include "environment.h"
 #include "ident.h"
 #include "pager.h"
 #include "refs.h"
@@ -40,7 +43,7 @@ static char *sequence_editor(int ident_flag UNUSED)
 
 static char *pager(int ident_flag UNUSED)
 {
-	const char *pgm = git_pager(1);
+	const char *pgm = git_pager(the_repository, 1);
 
 	if (!pgm)
 		pgm = "cat";
@@ -178,10 +181,9 @@ static void list_vars(void)
 		if ((val = ptr->read(0))) {
 			if (ptr->multivalued && *val) {
 				struct string_list list = STRING_LIST_INIT_DUP;
-				int i;
 
-				string_list_split(&list, val, '\n', -1);
-				for (i = 0; i < list.nr; i++)
+				string_list_split(&list, val, "\n", -1);
+				for (size_t i = 0; i < list.nr; i++)
 					printf("%s=%s\n", ptr->name, list.items[i].string);
 				string_list_clear(&list, 0);
 			} else {
@@ -220,15 +222,16 @@ int cmd_var(int argc,
 	const struct git_var *git_var;
 	char *val;
 
+	show_usage_if_asked(argc, argv, var_usage);
 	if (argc != 2)
 		usage(var_usage);
 
 	if (strcmp(argv[1], "-l") == 0) {
-		git_config(show_config, NULL);
+		repo_config(the_repository, show_config, NULL);
 		list_vars();
 		return 0;
 	}
-	git_config(git_default_config, NULL);
+	repo_config(the_repository, git_default_config, NULL);
 
 	git_var = get_git_var(argv[1]);
 	if (!git_var)

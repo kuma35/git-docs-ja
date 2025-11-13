@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "gettext.h"
@@ -7,9 +8,8 @@
 #include "tree.h"
 #include "tree-walk.h"
 #include "cache-tree.h"
-#include "bulk-checkin.h"
 #include "object-file.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "read-cache-ll.h"
 #include "replace-object.h"
 #include "repository.h"
@@ -237,7 +237,9 @@ int cache_tree_fully_valid(struct cache_tree *it)
 	int i;
 	if (!it)
 		return 0;
-	if (it->entry_count < 0 || !repo_has_object_file(the_repository, &it->oid))
+	if (it->entry_count < 0 ||
+	    odb_has_object(the_repository->objects, &it->oid,
+			   HAS_OBJECT_RECHECK_PACKED | HAS_OBJECT_FETCH_PROMISOR))
 		return 0;
 	for (i = 0; i < it->subtree_nr; i++) {
 		if (!cache_tree_fully_valid(it->down[i]->cache_tree))
@@ -288,7 +290,9 @@ static int update_one(struct cache_tree *it,
 		}
 	}
 
-	if (0 <= it->entry_count && repo_has_object_file(the_repository, &it->oid))
+	if (0 <= it->entry_count &&
+	    odb_has_object(the_repository->objects, &it->oid,
+			   HAS_OBJECT_RECHECK_PACKED | HAS_OBJECT_FETCH_PROMISOR))
 		return it->entry_count;
 
 	/*
@@ -394,7 +398,9 @@ static int update_one(struct cache_tree *it,
 		ce_missing_ok = mode == S_IFGITLINK || missing_ok ||
 			!must_check_existence(ce);
 		if (is_null_oid(oid) ||
-		    (!ce_missing_ok && !repo_has_object_file(the_repository, oid))) {
+		    (!ce_missing_ok &&
+		     !odb_has_object(the_repository->objects, oid,
+				     HAS_OBJECT_RECHECK_PACKED | HAS_OBJECT_FETCH_PROMISOR))) {
 			strbuf_release(&buffer);
 			if (expected_missing)
 				return -1;
@@ -442,16 +448,15 @@ static int update_one(struct cache_tree *it,
 		struct object_id oid;
 		hash_object_file(the_hash_algo, buffer.buf, buffer.len,
 				 OBJ_TREE, &oid);
-		if (repo_has_object_file_with_flags(the_repository, &oid, OBJECT_INFO_SKIP_FETCH_OBJECT))
+		if (odb_has_object(the_repository->objects, &oid, HAS_OBJECT_RECHECK_PACKED))
 			oidcpy(&it->oid, &oid);
 		else
 			to_invalidate = 1;
 	} else if (dryrun) {
 		hash_object_file(the_hash_algo, buffer.buf, buffer.len,
 				 OBJ_TREE, &it->oid);
-	} else if (write_object_file_flags(buffer.buf, buffer.len, OBJ_TREE,
-					   &it->oid, NULL, flags & WRITE_TREE_SILENT
-					   ? HASH_SILENT : 0)) {
+	} else if (odb_write_object_ext(the_repository->objects, buffer.buf, buffer.len, OBJ_TREE,
+					&it->oid, NULL, flags & WRITE_TREE_SILENT ? WRITE_OBJECT_SILENT : 0)) {
 		strbuf_release(&buffer);
 		return -1;
 	}
@@ -468,6 +473,7 @@ static int update_one(struct cache_tree *it,
 
 int cache_tree_update(struct index_state *istate, int flags)
 {
+	struct odb_transaction *transaction;
 	int skip, i;
 
 	i = verify_cache(istate, flags);
@@ -483,10 +489,10 @@ int cache_tree_update(struct index_state *istate, int flags)
 
 	trace_performance_enter();
 	trace2_region_enter("cache_tree", "update", the_repository);
-	begin_odb_transaction();
+	transaction = odb_transaction_begin(the_repository->objects);
 	i = update_one(istate->cache_tree, istate->cache, istate->cache_nr,
 		       "", 0, &skip, flags);
-	end_odb_transaction();
+	odb_transaction_commit(transaction);
 	trace2_region_leave("cache_tree", "update", the_repository);
 	trace_performance_leave("cache_tree_update");
 	if (i < 0)

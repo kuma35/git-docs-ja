@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "commit-reach.h"
@@ -8,7 +9,7 @@
 #include "environment.h"
 #include "hex.h"
 #include "object-name.h"
-#include "object-store-ll.h"
+#include "object-file.h"
 #include "repository.h"
 #include "tmp-objdir.h"
 #include "commit.h"
@@ -56,7 +57,7 @@ static const char *color_decorate_slots[] = {
 	[DECORATION_GRAFTED]	= "grafted",
 };
 
-static const char *decorate_get_color(int decorate_use_color, enum decoration_type ix)
+static const char *decorate_get_color(enum git_colorbool decorate_use_color, enum decoration_type ix)
 {
 	if (want_color(decorate_use_color))
 		return decoration_colors[ix];
@@ -175,7 +176,7 @@ static int add_ref_decoration(const char *refname, const char *referent UNUSED, 
 		return 0;
 	}
 
-	objtype = oid_object_info(the_repository, oid, NULL);
+	objtype = odb_read_object_info(the_repository->objects, oid, NULL);
 	if (objtype < 0)
 		return 0;
 	obj = lookup_object_by_type(the_repository, oid, objtype);
@@ -340,7 +341,7 @@ static void show_name(struct strbuf *sb, const struct name_decoration *decoratio
  */
 void format_decorations(struct strbuf *sb,
 			const struct commit *commit,
-			int use_color,
+			enum git_colorbool use_color,
 			const struct decoration_options *opts)
 {
 	const struct name_decoration *decoration;
@@ -498,7 +499,7 @@ void log_write_email_headers(struct rev_info *opt, struct commit *commit,
 {
 	struct strbuf headers = STRBUF_INIT;
 	const char *name = oid_to_hex(opt->zero_commit ?
-				      null_oid() : &commit->object.oid);
+				      null_oid(the_hash_algo) : &commit->object.oid);
 
 	*need_8bit_cte_p = 0; /* unknown */
 
@@ -716,7 +717,9 @@ static void show_diff_of_diff(struct rev_info *opt)
 		struct range_diff_options range_diff_opts = {
 			.creation_factor = opt->creation_factor,
 			.dual_color = 1,
-			.diffopt = &opts
+			.max_memory = RANGE_DIFF_MAX_MEMORY_DEFAULT,
+			.diffopt = &opts,
+			.log_arg = &opt->rdiff_log_arg
 		};
 
 		memcpy(&dq, &diff_queued_diff, sizeof(diff_queued_diff));
@@ -1041,7 +1044,7 @@ static int do_remerge_diff(struct rev_info *opt,
 	 * into the alternative object store list as the primary.
 	 */
 	if (opt->remerge_diff && !opt->remerge_objdir) {
-		opt->remerge_objdir = tmp_objdir_create("remerge-diff");
+		opt->remerge_objdir = tmp_objdir_create(the_repository, "remerge-diff");
 		if (!opt->remerge_objdir)
 			return error(_("unable to create temporary object directory"));
 		tmp_objdir_replace_primary_odb(opt->remerge_objdir, 1);

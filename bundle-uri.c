@@ -1,4 +1,5 @@
 #define USE_THE_REPOSITORY_VARIABLE
+#define DISABLE_SIGN_COMPARE_WARNINGS
 
 #include "git-compat-util.h"
 #include "bundle-uri.h"
@@ -13,7 +14,7 @@
 #include "fetch-pack.h"
 #include "remote.h"
 #include "trace2.h"
-#include "object-store-ll.h"
+#include "odb.h"
 
 static struct {
 	enum bundle_list_heuristic heuristic;
@@ -121,7 +122,7 @@ void print_bundle_list(FILE *fp, struct bundle_list *list)
 		int i;
 		for (i = 0; i < BUNDLE_HEURISTIC__COUNT; i++) {
 			if (heuristics[i].heuristic == list->heuristic) {
-				printf("\theuristic = %s\n",
+				fprintf(fp, "\theuristic = %s\n",
 				       heuristics[list->heuristic].name);
 				break;
 			}
@@ -277,7 +278,8 @@ static char *find_temp_filename(void)
 	 * Find a temporary filename that is available. This is briefly
 	 * racy, but unlikely to collide.
 	 */
-	fd = odb_mkstemp(&name, "bundles/tmp_uri_XXXXXX");
+	fd = odb_mkstemp(the_repository->objects, &name,
+			 "bundles/tmp_uri_XXXXXX");
 	if (fd < 0) {
 		warning(_("failed to create temporary file"));
 		return NULL;
@@ -295,6 +297,28 @@ static int download_https_uri_to_file(const char *file, const char *uri)
 	FILE *child_in = NULL, *child_out = NULL;
 	struct strbuf line = STRBUF_INIT;
 	int found_get = 0;
+
+	/*
+	 * The protocol we speak with git-remote-https(1) uses a space to
+	 * separate between URI and file, so the URI itself must not contain a
+	 * space. If it did, an adversary could change the location where the
+	 * downloaded file is being written to.
+	 *
+	 * Similarly, we use newlines to separate commands from one another.
+	 * Consequently, neither the URI nor the file must contain a newline or
+	 * otherwise an adversary could inject arbitrary commands.
+	 *
+	 * TODO: Restricting newlines in the target paths may break valid
+	 *       usecases, even if those are a bit more on the esoteric side.
+	 *       If this ever becomes a problem we should probably think about
+	 *       alternatives. One alternative could be to use NUL-delimited
+	 *       requests in git-remote-http(1). Another alternative could be
+	 *       to use URL quoting.
+	 */
+	if (strpbrk(uri, " \n"))
+		return error("bundle-uri: URI is malformed: '%s'", file);
+	if (strchr(file, '\n'))
+		return error("bundle-uri: filename is malformed: '%s'", file);
 
 	strvec_pushl(&cp.args, "git-remote-https", uri, NULL);
 	cp.err = -1;
@@ -367,6 +391,10 @@ static int unbundle_from_file(struct repository *r, const char *file)
 	struct string_list_item *refname;
 	struct strbuf bundle_ref = STRBUF_INIT;
 	size_t bundle_prefix_len;
+	struct unbundle_opts opts = {
+		.flags = VERIFY_BUNDLE_QUIET |
+			 (fetch_pack_fsck_objects() ? VERIFY_BUNDLE_FSCK : 0),
+	};
 
 	bundle_fd = read_bundle_header(file, &header);
 	if (bundle_fd < 0) {
@@ -379,8 +407,7 @@ static int unbundle_from_file(struct repository *r, const char *file)
 	 * a reachable ref pointing to the new tips, which will reach
 	 * the prerequisite commits.
 	 */
-	result = unbundle(r, &header, bundle_fd, NULL,
-			  VERIFY_BUNDLE_QUIET | (fetch_pack_fsck_objects() ? VERIFY_BUNDLE_FSCK : 0));
+	result = unbundle(r, &header, bundle_fd, NULL, &opts);
 	if (result) {
 		result = 1;
 		goto cleanup;
@@ -399,7 +426,7 @@ static int unbundle_from_file(struct repository *r, const char *file)
 		const char *branch_name;
 		int has_old;
 
-		if (!skip_prefix(refname->string, "refs/heads/", &branch_name))
+		if (!skip_prefix(refname->string, "refs/", &branch_name))
 			continue;
 
 		strbuf_setlen(&bundle_ref, bundle_prefix_len);
@@ -528,11 +555,13 @@ static int fetch_bundles_by_token(struct repository *r,
 	 */
 	if (!repo_config_get_value(r,
 				   "fetch.bundlecreationtoken",
-				   &creationTokenStr) &&
-	    sscanf(creationTokenStr, "%"PRIu64, &maxCreationToken) == 1 &&
-	    bundles.items[0]->creationToken <= maxCreationToken) {
-		free(bundles.items);
-		return 0;
+				   &creationTokenStr)) {
+		if (sscanf(creationTokenStr, "%"PRIu64, &maxCreationToken) != 1)
+			maxCreationToken = 0;
+		if (bundles.items[0]->creationToken <= maxCreationToken) {
+			free(bundles.items);
+			return 0;
+		}
 	}
 
 	/*

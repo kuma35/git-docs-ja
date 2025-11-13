@@ -5,6 +5,7 @@
 * This file is licensed under the GPL v2.
 *
 */
+
 #define USE_THE_REPOSITORY_VARIABLE
 
 #include "builtin.h"
@@ -12,7 +13,7 @@
 #include "hex.h"
 
 #include "packfile.h"
-#include "object-store-ll.h"
+#include "odb.h"
 #include "strbuf.h"
 
 #define BLKSIZE 512
@@ -389,7 +390,6 @@ static int cmp_remaining_objects(const void *a, const void *b)
 static void sort_pack_list(struct pack_list **pl)
 {
 	struct pack_list **ary, *p;
-	int i;
 	size_t n = pack_list_size(*pl);
 
 	if (n < 2)
@@ -403,7 +403,7 @@ static void sort_pack_list(struct pack_list **pl)
 	QSORT(ary, n, cmp_remaining_objects);
 
 	/* link them back again */
-	for (i = 0; i < n - 1; i++)
+	for (size_t i = 0; i < n - 1; i++)
 		ary[i]->next = ary[i + 1];
 	ary[n - 1]->next = NULL;
 	*pl = ary[0];
@@ -566,27 +566,23 @@ static struct pack_list * add_pack(struct packed_git *p)
 
 static struct pack_list * add_pack_file(const char *filename)
 {
-	struct packed_git *p = get_all_packs(the_repository);
+	struct packed_git *p;
 
 	if (strlen(filename) < 40)
 		die("Bad pack filename: %s", filename);
 
-	while (p) {
+	repo_for_each_pack(the_repository, p)
 		if (strstr(p->pack_name, filename))
 			return add_pack(p);
-		p = p->next;
-	}
 	die("Filename %s not found in packed_git", filename);
 }
 
 static void load_all(void)
 {
-	struct packed_git *p = get_all_packs(the_repository);
+	struct packed_git *p;
 
-	while (p) {
+	repo_for_each_pack(the_repository, p)
 		add_pack(p);
-		p = p->next;
-	}
 }
 
 int cmd_pack_redundant(int argc, const char **argv, const char *prefix UNUSED, struct repository *repo UNUSED) {
@@ -595,8 +591,7 @@ int cmd_pack_redundant(int argc, const char **argv, const char *prefix UNUSED, s
 	struct strbuf idx_name = STRBUF_INIT;
 	char buf[GIT_MAX_HEXSZ + 2]; /* hex hash + \n + \0 */
 
-	if (argc == 2 && !strcmp(argv[1], "-h"))
-		usage(pack_redundant_usage);
+	show_usage_if_asked(argc, argv, pack_redundant_usage);
 
 	for (i = 1; i < argc; i++) {
 		const char *arg = argv[i];
@@ -626,14 +621,8 @@ int cmd_pack_redundant(int argc, const char **argv, const char *prefix UNUSED, s
 			break;
 	}
 
-	if (!i_still_use_this) {
-		fputs(_("'git pack-redundant' is nominated for removal.\n"
-			"If you still use this command, please add an extra\n"
-			"option, '--i-still-use-this', on the command line\n"
-			"and let us know you still use it by sending an e-mail\n"
-			"to <git@vger.kernel.org>.  Thanks.\n"), stderr);
-		die(_("refusing to run without --i-still-use-this"));
-	}
+	if (!i_still_use_this)
+		you_still_use_that("git pack-redundant", NULL);
 
 	if (load_all_packs)
 		load_all();
@@ -690,7 +679,7 @@ int cmd_pack_redundant(int argc, const char **argv, const char *prefix UNUSED, s
 	pl = red = pack_list_difference(local_packs, min);
 	while (pl) {
 		printf("%s\n%s\n",
-		       odb_pack_name(&idx_name, pl->pack->hash, "idx"),
+		       odb_pack_name(pl->pack->repo, &idx_name, pl->pack->hash, "idx"),
 		       pl->pack->pack_name);
 		pl = pl->next;
 	}

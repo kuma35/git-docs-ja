@@ -50,15 +50,15 @@ void probe_utf8_pathname_composition(void)
 	int output_fd;
 	if (precomposed_unicode != -1)
 		return; /* We found it defined in the global config, respect it */
-	git_path_buf(&path, "%s", auml_nfc);
+	repo_git_path_replace(the_repository, &path, "%s", auml_nfc);
 	output_fd = open(path.buf, O_CREAT|O_EXCL|O_RDWR, 0600);
 	if (output_fd >= 0) {
 		close(output_fd);
-		git_path_buf(&path, "%s", auml_nfd);
+		repo_git_path_replace(the_repository, &path, "%s", auml_nfd);
 		precomposed_unicode = access(path.buf, R_OK) ? 0 : 1;
-		git_config_set("core.precomposeunicode",
-			       precomposed_unicode ? "true" : "false");
-		git_path_buf(&path, "%s", auml_nfc);
+		repo_config_set(the_repository, "core.precomposeunicode",
+				precomposed_unicode ? "true" : "false");
+		repo_git_path_replace(the_repository, &path, "%s", auml_nfc);
 		if (unlink(path.buf))
 			die_errno(_("failed to unlink '%s'"), path.buf);
 	}
@@ -75,7 +75,7 @@ const char *precompose_string_if_needed(const char *in)
 		iconv_t ic_prec;
 		char *out;
 		if (precomposed_unicode < 0)
-			git_config_get_bool("core.precomposeunicode", &precomposed_unicode);
+			repo_config_get_bool(the_repository, "core.precomposeunicode", &precomposed_unicode);
 		if (precomposed_unicode != 1)
 			return in;
 		ic_prec = iconv_open(repo_encoding, path_encoding);

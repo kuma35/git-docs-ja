@@ -53,12 +53,10 @@ static enum {
  */
 static int ref_match(const struct strvec *prefixes, const char *refname)
 {
-	int i;
-
 	if (!prefixes->nr)
 		return 1; /* no restriction */
 
-	for (i = 0; i < prefixes->nr; i++) {
+	for (size_t i = 0; i < prefixes->nr; i++) {
 		const char *prefix = prefixes->v[i];
 
 		if (starts_with(refname, prefix))
@@ -161,7 +159,7 @@ int ls_refs(struct repository *r, struct packet_reader *request)
 	strbuf_init(&data.buf, 0);
 	strvec_init(&data.hidden_refs);
 
-	git_config(ls_refs_config, &data);
+	repo_config(the_repository, ls_refs_config, &data);
 
 	while (packet_reader_read(request) == PACKET_READ_NORMAL) {
 		const char *arg = request->line;

@@ -9,6 +9,7 @@
 
 struct option;
 struct transport_ls_refs_options;
+struct repository;
 
 /**
  * The API gives access to the configuration related to remotes. It handles
@@ -21,8 +22,10 @@ struct transport_ls_refs_options;
 enum {
 	REMOTE_UNCONFIGURED = 0,
 	REMOTE_CONFIG,
+#ifndef WITH_BREAKING_CHANGES
 	REMOTE_REMOTES,
 	REMOTE_BRANCHES
+#endif /* WITH_BREAKING_CHANGES */
 };
 
 struct rewrite {
@@ -58,6 +61,13 @@ struct remote_state {
 
 void remote_state_clear(struct remote_state *remote_state);
 struct remote_state *remote_state_new(void);
+
+	enum follow_remote_head_settings {
+		FOLLOW_REMOTE_NEVER = -1,
+		FOLLOW_REMOTE_CREATE = 0,
+		FOLLOW_REMOTE_WARN = 1,
+		FOLLOW_REMOTE_ALWAYS = 2,
+	};
 
 struct remote {
 	struct hashmap_entry ent;
@@ -107,6 +117,9 @@ struct remote {
 	char *http_proxy_authmethod;
 
 	struct string_list server_options;
+
+	enum follow_remote_head_settings follow_remote_head;
+	const char *no_warn_branch;
 };
 
 /**
@@ -209,6 +222,11 @@ struct ref *alloc_ref(const char *name);
 struct ref *copy_ref(const struct ref *ref);
 struct ref *copy_ref_list(const struct ref *ref);
 int count_refspec_match(const char *, struct ref *refs, struct ref **matched_ref);
+/*
+ * Put a ref in the tail and prepare tail for adding another one.
+ * *tail is the pointer to the tail of the list of refs.
+ */
+void tail_link_ref(struct ref *ref, struct ref ***tail);
 
 int check_ref_type(const struct ref *ref, int flags);
 
@@ -250,21 +268,6 @@ int resolve_remote_symref(struct ref *ref, struct ref *list);
  * pointer to the head of the resulting list.
  */
 struct ref *ref_remove_duplicates(struct ref *ref_map);
-
-/*
- * Check whether a name matches any negative refspec in rs. Returns 1 if the
- * name matches at least one negative refspec, and 0 otherwise.
- */
-int omit_name_by_refspec(const char *name, struct refspec *rs);
-
-/*
- * Remove all entries in the input list which match any negative refspec in
- * the refspec list.
- */
-struct ref *apply_negative_refspecs(struct ref *ref_map, struct refspec *rs);
-
-int query_refspecs(struct refspec *rs, struct refspec_item *query);
-char *apply_refspecs(struct refspec *rs, const char *name);
 
 int check_push_refs(struct ref *src, struct refspec *rs);
 int match_push_refs(struct ref *src, struct ref **dst,
@@ -313,8 +316,8 @@ struct branch {
 
 	char *pushremote_name;
 
-	/* An array of the "merge" lines in the configuration. */
-	const char **merge_name;
+	/* True if set_merge() has been called to finalize the merge array */
+	int set_merge;
 
 	/**
 	 * An array of the struct refspecs used for the merge lines. That is,
@@ -335,6 +338,9 @@ struct branch *branch_get(const char *name);
 const char *remote_for_branch(struct branch *branch, int *explicit);
 const char *pushremote_for_branch(struct branch *branch, int *explicit);
 char *remote_ref_for_branch(struct branch *branch, int for_push);
+
+const char *repo_default_remote(struct repository *repo);
+const char *repo_remote_from_url(struct repository *repo, const char *url);
 
 /* returns true if the given branch has merge configuration given. */
 int branch_has_merge_config(struct branch *branch);
@@ -385,15 +391,18 @@ int format_tracking_info(struct branch *branch, struct strbuf *sb,
 			 int show_divergence_advice);
 
 struct ref *get_local_heads(void);
+
 /*
  * Find refs from a list which are likely to be pointed to by the given HEAD
- * ref. If 'all' is false, returns the most likely ref; otherwise, returns a
- * list of all candidate refs. If no match is found (or 'head' is NULL),
- * returns NULL. All returns are newly allocated and should be freed.
+ * ref. If REMOTE_GUESS_HEAD_ALL is set, return a list of all candidate refs;
+ * otherwise, return the most likely ref. If no match is found (or 'head' is
+ * NULL), returns NULL. All returns are newly allocated and should be freed.
  */
+#define REMOTE_GUESS_HEAD_ALL	(1 << 0)
+#define REMOTE_GUESS_HEAD_QUIET (1 << 1)
 struct ref *guess_remote_head(const struct ref *head,
 			      const struct ref *refs,
-			      int all);
+			      unsigned flags);
 
 /* Return refs which no longer exist on remote */
 struct ref *get_stale_heads(struct refspec *rs, struct ref *fetch_map);
@@ -450,5 +459,7 @@ void apply_push_cas(struct push_cas_option *, struct remote *, struct ref *);
  */
 char *relative_url(const char *remote_url, const char *url,
 		   const char *up_path);
+
+int valid_remote_name(const char *name);
 
 #endif
