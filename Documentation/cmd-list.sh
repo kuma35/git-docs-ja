@@ -3,11 +3,11 @@
 set -e
 
 format_one () {
-	source_dir="$1"
+	document_dir="$1"
 	command="$2"
 	attributes="$3"
 
-	path="$source_dir/Documentation/$command.adoc"
+	path="$document_dir/$command.adoc"
 	if ! test -f "$path"
 	then
 		echo >&2 "No such file $path"
@@ -74,7 +74,8 @@ format_one () {
 
 source_dir="$1"
 build_dir="$2"
-shift 2
+document_dir="$3"
+shift 3
 
 for out
 do
@@ -91,7 +92,7 @@ do
 
 		case "$command_category" in
 		"$category")
-			format_one "$source_dir" "$command" " $attributes ";;
+			format_one "$document_dir" "$command" " $attributes ";;
 		esac
 	done <"$source_dir/command-list.txt" >"$build_dir/$out+"
 
