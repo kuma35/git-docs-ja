@@ -1,0 +1,885 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2025-11-12 05:27+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Title =
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:2
+#, no-wrap
+msgid "Large Object Promisors"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:7
+msgid ""
+"Since Git has been created, users have been complaining about issues with "
+"storing large files in Git. Some solutions have been created to help, but "
+"they haven't helped much with some issues."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:11
+msgid ""
+"Git currently supports multiple promisor remotes, which could help with some "
+"of these remaining issues, but it's very hard to use them to help, because a "
+"number of important features are missing."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:14
+msgid ""
+"The goal of the effort described in this document is to add these important "
+"features."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:19
+msgid ""
+"We will call a \"Large Object Promisor\", or \"LOP\" in short, a promisor "
+"remote which is used to store only large blobs and which is separate from "
+"the main remote that should store the other Git objects and the rest of the "
+"repos."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:23
+msgid ""
+"By extension, we will also call \"Large Object Promisor\", or LOP, the "
+"effort described in this document to add a set of features to make it easier "
+"to handle large blobs/files in Git by using LOPs."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:27
+msgid ""
+"This effort aims to especially improve things on the server side, and "
+"especially for large blobs that are already compressed in a binary format."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:34
+msgid ""
+"This effort aims to provide an alternative to Git LFS (https://git-lfs.com/) "
+"and similar tools like git-annex (https://git-annex.branchable.com/) for "
+"handling large files, even though a complete alternative would very likely "
+"require other efforts especially on the client side, where it would likely "
+"help to implement a new object representation for large blobs as discussed "
+"in:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:36
+msgid "https://lore.kernel.org/git/xmqqbkdometi.fsf@gitster.g/"
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:38
+#, no-wrap
+msgid "Non goals"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:42
+msgid ""
+"We will not discuss those client side improvements here, as they would "
+"require changes in different parts of Git than this effort."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:47
+msgid ""
+"So we don't pretend to fully replace Git LFS with only this effort, but we "
+"nevertheless believe that it can significantly improve the current situation "
+"on the server side, and that other separate efforts could also improve the "
+"situation on the client side."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:51
+msgid ""
+"In the same way, we are not going to discuss all the possible ways to "
+"implement a LOP or their underlying object storage, or to optimize how LOP "
+"works."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:60
+msgid ""
+"Our opinion is that the simplest solution for now is for LOPs to use object "
+"storage through a remote helper (see section II.2 below for more details) to "
+"store their objects. So we consider that this is the default "
+"implementation. If there are improvements on top of this, that's great, but "
+"our opinion is that such improvements are not necessary for LOPs to already "
+"be useful. Such improvements are likely a different technical topic, and can "
+"be taken care of separately anyway."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:67
+msgid ""
+"So in particular we are not going to discuss pluggable ODBs or other object "
+"database backends that could chunk large blobs, dedup the chunks and store "
+"them efficiently. Sure, that would be a nice improvement to store large "
+"blobs on the server side, but we believe it can just be a separate effort as "
+"it's also not technically very related to this effort."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:73
+msgid ""
+"We are also not going to discuss data transfer improvements between LOPs and "
+"clients or servers. Sure, there might be some easy and very effective "
+"optimizations there (as we know that objects on LOPs are very likely "
+"incompressible and not deltifying well), but this can be dealt with "
+"separately in a separate effort."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:79
+msgid ""
+"In other words, the goal of this document is not to talk about all the "
+"possible ways to optimize how Git could handle large blobs, but to describe "
+"how a LOP based solution can already work well and alleviate a number of "
+"current issues in the context of Git clients and servers sharing Git "
+"objects."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:83
+msgid ""
+"Even if LOPs are used not very efficiently, they can still be useful and "
+"worth using in some cases, as we will see in more details later in this "
+"document:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:87
+msgid ""
+"they can make it simpler for clients to use promisor remotes and therefore "
+"avoid fetching a lot of large blobs they might not need locally,"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:92
+msgid ""
+"they can make it significantly cheaper or easier for servers to host a "
+"significant part of the current repository content, and even more to host "
+"content with larger blobs or more large blobs than currently."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:94
+#, no-wrap
+msgid "I Issues with the current situation"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:99
+msgid ""
+"Some statistics made on GitLab repos have shown that more than 75% of the "
+"disk space is used by blobs that are larger than 1MB and often in a binary "
+"format."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:103
+msgid ""
+"So even if users could use Git LFS or similar tools to store a lot of large "
+"blobs out of their repos, it's a fact that in practice they don't do it as "
+"much as they probably should."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:107
+msgid ""
+"On the server side ideally, the server should be able to decide for itself "
+"how it stores things. It should not depend on users deciding to use tools "
+"like Git LFS on some blobs or not."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:120
+msgid ""
+"It's much more expensive to store large blobs that don't delta compress well "
+"on regular fast seeking drives (like SSDs) than on object storage (like "
+"Amazon S3 or GCP Buckets). Using fast drives for regular Git repos makes "
+"sense though, as serving regular Git content (blobs containing text or code) "
+"needs drives where seeking is fast, but the content is relatively small. On "
+"the other hand, object storage for Git LFS blobs makes sense as seeking "
+"speed is not as important when dealing with large files, while costs are "
+"more important. So the fact that users don't use Git LFS or similar tools "
+"for a significant number of large blobs has likely some bad consequences on "
+"the cost of repo storage for most Git hosting platforms."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:128
+msgid ""
+"Having large blobs handled in the same way as other blobs and Git objects in "
+"Git repos instead of on object storage also has a cost in increased memory "
+"and CPU usage, and therefore decreased performance, when creating "
+"packfiles. (This is because Git tries to use delta compression or zlib "
+"compression which is unlikely to work well on already compressed binary "
+"content.) So it's not just a storage cost increase."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:133
+msgid ""
+"When a large blob has been committed into a repo, it might not be possible "
+"to remove this blob from the repo without rewriting history, even if the "
+"user then decides to use Git LFS or a similar tool to handle it."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:136
+msgid ""
+"In fact Git LFS and similar tools are not very flexible in letting users "
+"change their minds about the blobs they should handle or not."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:140
+msgid ""
+"Even when users are using Git LFS or similar tools, they are often "
+"complaining that these tools require significant effort to set up, learn and "
+"use correctly."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:142
+#, no-wrap
+msgid "II Main features of the \"Large Object Promisors\" solution"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:147
+msgid ""
+"The main features below should give a rough overview of how the solution may "
+"work. Details about needed elements can be found in following sections."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:152
+msgid ""
+"Even if each feature below is very useful for the full solution, it is very "
+"likely to be also useful on its own in some cases where the full solution is "
+"not required. However, we'll focus primarily on the big picture here."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:158
+msgid ""
+"Also each feature doesn't need to be implemented entirely in Git "
+"itself. Some could be scripts, hooks or helpers that are not part of the Git "
+"repo. It would be helpful if those could be shared and improved on "
+"collaboratively though. So we want to encourage sharing them."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:160
+msgid "Large blobs are stored on LOPs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:214
+msgid ""
+"LOPs can be implemented using object storage, like an Amazon S3 or GCP "
+"Bucket or MinIO (which is open source under the GNU AGPLv3 license) to "
+"actually store the large blobs, and can be accessed through a Git remote "
+"helper (see linkgit:gitremote-helpers[7]) which makes the underlying object "
+"storage appear like a remote to Git."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:216
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:329
+#, no-wrap
+msgid "Note"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:220
+msgid ""
+"A LOP can be a promisor remote accessed using a remote helper by both some "
+"clients and the main remote."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:222
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:262
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:335
+#, no-wrap
+msgid "Rationale"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:226
+msgid ""
+"This looks like the simplest way to create LOPs that can cheaply handle many "
+"large blobs."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:228
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:271
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:340
+#, no-wrap
+msgid "Implementation"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:233
+msgid ""
+"Remote helpers are quite easy to write as shell scripts, but it might be "
+"more efficient and maintainable to write them using other languages like Go."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:235
+msgid "Some already exist under open source licenses, for example:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:237
+msgid "https://github.com/awslabs/git-remote-s3"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:238
+msgid "https://gitlab.com/eric.p.ju/git-remote-gs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:242
+msgid ""
+"Other ways to implement LOPs are certainly possible, but the goal of this "
+"document is not to discuss how to best implement a LOP or its underlying "
+"object storage (see the \"0) Non goals\" section above)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:244
+msgid "LOP object storage can be Git LFS storage"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:260
+msgid ""
+"On the server side, a main remote should have a way to offload to a LOP all "
+"its blobs with a size over a configurable threshold."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:269
+msgid ""
+"This makes it easy to set things up and to clean things up. For example, an "
+"admin could use this to manually convert a repo not using LOPs to a repo "
+"using a LOP. On a repo already using a LOP but where some users would "
+"sometimes push large blobs, a cron job could use this to regularly make sure "
+"the large blobs are moved to the LOP."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:277
+msgid ""
+"Using something based on `git repack --filter=...` to separate the blobs we "
+"want to offload from the other Git objects could be a good idea. The missing "
+"part is to connect to the LOP, check if the blobs we want to offload are "
+"already there and if not send them."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:279
+msgid "A main remote should try to remain clean from large blobs"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:327
+msgid ""
+"When a client clones from a main repo, there should be a protocol "
+"negotiation so that the server can advertise one or more LOPs and so that "
+"the client and the server can discuss if the client could directly use a LOP "
+"the server is advertising. If the client and the server can agree on that, "
+"then the client would be able to get the large blobs directly from the LOP "
+"and the server would not need to fetch those blobs from the LOP to be able "
+"to serve the client."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:333
+msgid ""
+"For fetches instead of clones, a protocol negotiation might not always "
+"happen, see the \"What about fetches?\" FAQ entry below for details."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:338
+msgid "Security, configurability and efficiency of setting things up."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:345
+msgid ""
+"A \"promisor-remote\" protocol v2 capability looks like a good way to "
+"implement this. The way the client and server use this capability could be "
+"controlled by configuration variables."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:350
+msgid ""
+"Information that the server could send to the client through that protocol "
+"could be things like: LOP name, LOP URL, filter-spec (for example "
+"`blob:limit=<size>`) or just size limit that should be used as a filter when "
+"cloning, token to be used with the LOP, etc."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:352
+msgid "A client can offload to a LOP"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:418
+msgid ""
+"That could perhaps be useful in some cases, but for now it's more likely "
+"that in most cases a single LOP will be advertised by the server and should "
+"be used by the client."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:423
+msgid ""
+"A case where it could be useful for a server to advertise multiple LOPs is "
+"if a LOP is better for some users while a different LOP is better for other "
+"users. For example some clients might have a better connection to a LOP than "
+"others."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:429
+msgid ""
+"In those cases it's the responsibility of the server to have some "
+"documentation to help clients. It could say for example something like "
+"\"Users in this part of the world might want to pick only LOP A as it is "
+"likely to be better connected to them, while users in other parts of the "
+"world should pick only LOP B for the same reason.\""
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:431
+#, no-wrap
+msgid "When should we trust or not trust the LOPs advertised by the server?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:438
+msgid ""
+"In some contexts, like in corporate setup where the server and all the "
+"clients are parts of an internal network in a company where admins have all "
+"the rights on every system, it's OK, and perhaps even a good thing, if the "
+"clients fully trust the server, as it can help ensure that all the clients "
+"are on the same page."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:447
+msgid ""
+"There are also contexts in which clients trust a code hosting platform "
+"serving them some repos, but might not fully trust other users managing or "
+"contributing to some of these repos. For example, the code hosting platform "
+"could have hooks in place to check that any object it receives doesn't "
+"contain malware or otherwise bad content. In this case it might be OK for "
+"the client to use a main remote and its LOP if they are both hosted by the "
+"code hosting platform, but not if the LOP is hosted elsewhere (where the "
+"content is not checked)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:449
+msgid "In other contexts, a client should just not trust a server."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:452
+msgid ""
+"So there should be different ways to configure how the client should behave "
+"when a server advertises a LOP to it at clone time."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:456
+msgid ""
+"As the basic elements that a server can advertise about a LOP are a LOP name "
+"and a LOP URL, the client should base its decision about accepting a LOP on "
+"these elements."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:460
+msgid ""
+"One simple way to be very strict in the LOP it accepts is for example for "
+"the client to check that the LOP is already configured on the client with "
+"the same name and URL as what the server advertises."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:466
+msgid ""
+"In general default and \"safe\" settings should require that the LOP are "
+"configured on the client separately from the \"promisor-remote\" protocol "
+"and that the client accepts a LOP only when information about it from the "
+"protocol matches what has been already configured separately."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:468
+#, no-wrap
+msgid "What about LOP names?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:473
+msgid ""
+"In some contexts, for example if the clients sometimes fetch from each "
+"other, it can be a good idea for all the clients to use the same names for "
+"all the remotes they use, including LOPs."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:476
+msgid ""
+"In other contexts, each client might want to be able to give the name it "
+"wants to each remote, including each LOP, it interacts with."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:479
+msgid ""
+"So there should be different ways to configure how the client accepts or not "
+"the LOP name the server advertises."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:484
+msgid ""
+"If a default or \"safe\" setting is used, then as such a setting should "
+"require that the LOP be configured separately, then the name would be "
+"configured separately and there is no risk that the server could dictate a "
+"name to a client."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:486
+#, no-wrap
+msgid "Could the main remote be bogged down by old or paranoid clients?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:492
+msgid ""
+"Yes, it could happen if there are too many clients that are either unwilling "
+"to trust the main remote or that just don't implement the "
+"\"promisor-remote\" protocol because they are too old or not fully "
+"compatible with the 'git' client."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:498
+msgid ""
+"When serving such a client, the main remote has no other choice than to "
+"first fetch from its LOP, to then be able to provide to the client "
+"everything it requested. So the main remote, even if it has cleanup "
+"mechanisms (see section II.4 above), would be burdened at least temporarily "
+"with the large blobs it had to fetch from its LOP."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:507
+msgid ""
+"Not behaving like this would be breaking backward compatibility, and could "
+"be seen as segregating clients. For example, it might be possible to "
+"implement a special mode that allows the server to just reject clients that "
+"don't implement the \"promisor-remote\" protocol or aren't willing to trust "
+"the main remote. This mode might be useful in a special context like a "
+"corporate environment. There is no plan to implement such a mode though, and "
+"this should be discussed separately later anyway."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:513
+msgid ""
+"A better way to proceed is probably for the main remote to show a message "
+"telling clients that don't implement the protocol or are unwilling to accept "
+"the advertised LOP(s) that they would get faster clone and fetches by "
+"upgrading client software or properly setting them up to accept LOP(s)."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:520
+msgid ""
+"Waiting for clients to upgrade, monitoring these upgrades and limiting the "
+"use of LOPs to repos that are not very frequently accessed might be other "
+"good ways to make sure that some benefits are still reaped from LOPs. Over "
+"time, as more and more clients upgrade and benefit from LOPs, using them in "
+"more and more frequently accessed repos will become worth it."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:524
+msgid ""
+"Corporate environments, where it might be easier to make sure that all the "
+"clients are up-to-date and properly configured, could hopefully benefit more "
+"and earlier from using LOPs."
+msgstr ""
+
+#. type: Title ~
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:526
+#, no-wrap
+msgid "What about fetches?"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:534
+msgid ""
+"There are different kinds of fetches. A regular fetch happens when some refs "
+"have been updated on the server and the client wants the ref updates and "
+"possibly the new objects added with them. A \"backfill\" or \"lazy\" fetch, "
+"on the contrary, happens when the client needs to use some objects it "
+"already knows about but doesn't have because they are on a promisor remote."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:536
+#, no-wrap
+msgid "Regular fetch"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:545
+msgid ""
+"In a regular fetch, the client will contact the main remote and a protocol "
+"negotiation will happen between them. It's a good thing that a protocol "
+"negotiation happens every time, as the configuration on the client or the "
+"main remote could have changed since the previous protocol negotiation. In "
+"this case, the new protocol negotiation should ensure that the new fetch "
+"will happen in a way that satisfies the new configuration of both the client "
+"and the server."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:552
+msgid ""
+"In most cases though, the configurations on the client and the main remote "
+"will not have changed between 2 fetches or between the initial clone and a "
+"subsequent fetch. This means that the result of a new protocol negotiation "
+"will be the same as the previous result, so the new fetch will happen in the "
+"same way as the previous clone or fetch, using, or not using, the same "
+"LOP(s) as last time."
+msgstr ""
+
+#. type: Title ^
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:554
+#, no-wrap
+msgid "\"Backfill\" or \"lazy\" fetch"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:562
+msgid ""
+"When there is a backfill fetch, the client doesn't necessarily contact the "
+"main remote first. It will try to fetch from its promisor remotes in the "
+"order they appear in the config file, except that a remote configured using "
+"the `extensions.partialClone` config variable will be tried last. See "
+"link:partial-clone.html#using-many-promisor-remotes[the partial clone "
+"documentation]."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:565
+msgid ""
+"This is not new with this effort. In fact this is how multiple remotes have "
+"already been working for around 5 years."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:569
+msgid ""
+"When using LOPs, having the main remote configured using "
+"`extensions.partialClone`, so it's tried last, makes sense, as missing "
+"objects should only be large blobs that are on LOPs."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:573
+msgid ""
+"This means that a protocol negotiation will likely not happen as the missing "
+"objects will be fetched from the LOPs, and then there will be nothing left "
+"to fetch from the main remote."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:578
+msgid ""
+"To secure that, it could be a good idea for LOPs to require a token from the "
+"client when it fetches from them. The client could get the token when "
+"performing a protocol negotiation with the main remote (see section II.6 "
+"above)."
+msgstr ""
+
+#. type: Title -
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:580
+#, no-wrap
+msgid "V Future improvements"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:587
+msgid ""
+"It is expected that at the beginning using LOPs will be mostly worth it "
+"either in a corporate context where the Git version that clients use can "
+"easily be controlled, or on repos that are infrequently accessed. (See the "
+"\"Could the main remote be bogged down by old or paranoid clients?\" section "
+"in the FAQ above.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:591
+msgid ""
+"Over time, as more and more clients upgrade to a version that implements the "
+"\"promisor-remote\" protocol v2 capability described above in section II.6), "
+"it will be worth it to use LOPs more widely."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:595
+msgid ""
+"A lot of improvements may also help using LOPs more widely. Some of these "
+"improvements are part of the scope of this document like the following:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:601
+msgid ""
+"Implementing a \"remote-object-info\" command in the `git cat-file --batch` "
+"protocol and its variants to allow main remotes to respond to requests about "
+"large blobs without fetching them. (Eric Ju has started working on this "
+"based on previous work by Calvin Wan.)"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:604
+msgid ""
+"Creating better cleanup and offload mechanisms for main remotes and clients "
+"to prevent accumulation of large blobs."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:609
+msgid ""
+"Developing more sophisticated protocol negotiation capabilities between "
+"clients and servers for handling LOPs, for example adding a filter-spec "
+"(e.g., blob:limit=<size>) or size limit for filtering when cloning, or "
+"adding a token for LOP authentication."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:612
+msgid ""
+"Improving security measures for LOP access, particularly around token "
+"handling and authentication."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:618
+msgid ""
+"Developing standardized ways to configure and manage multiple LOPs across "
+"different environments. Especially in the case where different LOPs serve "
+"the same content to clients in different geographical locations, there is a "
+"need for replication or synchronization between LOPs."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:622
+msgid ""
+"Some improvements, including some that have been mentioned in the \"0)  Non "
+"Goals\" section of this document, are out of the scope of this document:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:625
+msgid "Implementing a new object representation for large blobs on the client side."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:629
+msgid ""
+"Developing pluggable ODBs or other object database backends that could chunk "
+"large blobs, dedup the chunks and store them efficiently."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:632
+msgid ""
+"Optimizing data transfer between LOPs and clients/servers, particularly for "
+"incompressible and non-deltifying content."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:637
+msgid ""
+"Creating improved client side tools for managing large objects more "
+"effectively, for example tools for migrating from Git LFS or git-annex, or "
+"tools to find which objects could be offloaded and how much disk space could "
+"be reclaimed by offloading them."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:641
+msgid ""
+"Some improvements could be seen as part of the scope of this document, but "
+"might already have their own separate projects from the Git project, like:"
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:644
+msgid ""
+"Improving existing remote helpers to access object storage or developing new "
+"ones."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:647
+msgid "Improving existing object storage solutions or developing new ones."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:651
+msgid ""
+"Even though all the above improvements may help, this document and the LOP "
+"effort should try to focus, at least first, on a relatively small number of "
+"improvements mostly those that are in its current scope."
+msgstr ""
+
+#. type: Plain text
+#: ../Documentation-sedout/technical/large-object-promisors.adoc:656
+msgid ""
+"For example introducing pluggable ODBs and a new object database backend is "
+"likely a multi-year effort on its own that can happen separately in "
+"parallel. It has different technical requirements, touches other part of the "
+"Git code base and should have its own design document(s)."
+msgstr ""
