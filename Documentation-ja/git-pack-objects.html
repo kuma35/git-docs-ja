@@ -750,12 +750,13 @@ git-pack-objects(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git <code>pack-objects</code></em> [<code>-q</code> | <code>--progress</code> | <code>--all-progress</code>] [<code>--all-progress-implied</code>]
-        [<code>--no-reuse-delta</code>] [<code>--delta-base-offset</code>] [<code>--non-empty</code>]
-        [<code>--local</code>] [<code>--incremental</code>] [<code>--window=</code><em>&lt;n&gt;</em>] [<code>--depth=</code><em>&lt;n&gt;</em>]
-        [<code>--revs</code> [<code>--unpacked</code> | <code>--all</code>]] [<code>--keep-pack=</code><em>&lt;pack-name&gt;</em>]
-        [<code>--cruft</code>] [<code>--cruft-expiration=</code><em>&lt;time&gt;</em>]
-        [<code>--stdout</code> [<code>--filter=</code><em>&lt;filter-spec&gt;</em>] | <em>&lt;base-name&gt;</em>]
-        [<code>--shallow</code>] [<code>--keep-true-parents</code>] [<code>--</code>[<code>no-</code>]<code>sparse</code>] &lt; <em>&lt;object-list&gt;</em></pre>
+                   [<code>--no-reuse-delta</code>] [<code>--delta-base-offset</code>] [<code>--non-empty</code>]
+                   [<code>--local</code>] [<code>--incremental</code>] [<code>--window=</code><em>&lt;n&gt;</em>] [<code>--depth=</code><em>&lt;n&gt;</em>]
+                   [<code>--revs</code> [<code>--unpacked</code> | <code>--all</code>]] [<code>--keep-pack=</code><em>&lt;pack-name&gt;</em>]
+                   [<code>--cruft</code>] [<code>--cruft-expiration=</code><em>&lt;time&gt;</em>]
+                   [<code>--stdout</code> [<code>--filter=</code><em>&lt;filter-spec&gt;</em>] | <em>&lt;base-name&gt;</em>]
+                   [<code>--shallow</code>] [<code>--keep-true-parents</code>] [<code>--</code>[<code>no-</code>]<code>sparse</code>]
+                   [<code>--name-hash-version=</code><em>&lt;n&gt;</em>] [<code>--path-walk</code>] &lt; <em>&lt;object-list&gt;</em></pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -823,12 +824,13 @@ base-name
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--stdin-packs</code>
+<code>--stdin-packs</code>[<code>=</code><em>&lt;mode&gt;</em>]
 </dt>
 <dd>
 <p>
         オブジェクト名やリビジョン引数ではなく、標準入力からパックファイル(例: <code>pack-1234abcd.pack</code>)のベース名を読み取ります。 結果のパックには、除外されたパック( <code>^</code> で始まる)にリストされているオブジェクトを除く、含まれているパック(<code>^</code> で始まらないもの)にリストされているすべてのオブジェクトが含まれます。
 </p>
+<div class="paragraph"><p>When <code>mode</code> is "follow", objects from packs not listed on stdin receive special treatment. Objects within unlisted packs will be included if those objects are (1) reachable from the included packs, and (2) not found in any excluded packs. This mode is useful, for example, to resurrect once-unreachable objects found in cruft packs to generate packs which are closed under reachability up to the boundary set by the excluded packs.</p></div>
 <div class="paragraph"><p>互換性のある <code>--unpacked</code> を除いて、 <code>--revs</code> または、 <code>--revs</code> を含むオプション(<code>--all</code> など)とは互換性がありません。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -974,7 +976,10 @@ base-name
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>sparse</code>
+<code>--sparse</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-sparse</code>
 </dt>
 <dd>
 <p>
@@ -1071,7 +1076,7 @@ base-name
 </dt>
 <dd>
 <p>
-        <code>--unpacked=</code> オプションで指定されたパック内の参照から到達不能なオブジェクトは、 *.keep ファイルでマークされたパック内にない到達可能オブジェクトに加えて、結果のパックに追加されます。 これは <code>--revs</code> の指定を含んでいます。
+        <code>--unpacked=</code> オプションで指定されたパック内の参照から到達不能なオブジェクトは、 <code>*.keep</code> ファイルでマークされたパック内にない到達可能オブジェクトに加えて、結果のパックに追加されます。 これは <code>--revs</code> の指定を含んでいます。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1097,6 +1102,25 @@ base-name
 <p>
         「islands」に基づいてデルタのマッチを制限します。 以下の DELTA ISLANDS を参照してください。
 </p>
+</dd>
+<dt class="hdlist1">
+<code>--name-hash-version=</code><em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        While performing delta compression, Git groups objects that may be similar based on heuristics using the path to that object. While grouping objects by an exact path match is good for paths with many versions, there are benefits for finding delta pairs across different full paths. Git collects objects by type and then by a "name hash" of the path and then by size, hoping to group objects that will compress well together.
+</p>
+<div class="paragraph"><p>The default name hash version is <code>1</code>, which prioritizes hash locality by considering the final bytes of the path as providing the maximum magnitude to the hash function. This version excels at distinguishing short paths and finding renames across directories. However, the hash function depends primarily on the final 16 bytes of the path. If there are many paths in the repo that have the same final 16 bytes and differ only by parent directory, then this name-hash may lead to too many collisions and cause poor results. At the moment, this version is required when writing reachability bitmap files with <code>--write-bitmap-index</code>.</p></div>
+<div class="paragraph"><p>The name hash version <code>2</code> has similar locality features as version <code>1</code>, except it considers each path component separately and overlays the hashes with a shift. This still prioritizes the final bytes of the path, but also "salts" the lower bits of the hash using the parent directory names. This method allows for some of the locality benefits of version <code>1</code> while breaking most of the collisions from a similarly-named file appearing in many different directories. At the moment, this version is not allowed when writing reachability bitmap files with <code>--write-bitmap-index</code> and it will be automatically changed to version <code>1</code>.</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--path-walk</code>
+</dt>
+<dd>
+<p>
+        Perform compression by first organizing objects by path, then a second pass that compresses across paths as normal. This has the potential to improve delta compression especially in the presence of filenames that cause collisions in Git&#8217;s default name-hash algorithm.
+</p>
+<div class="paragraph"><p>Incompatible with <code>--delta-islands</code>, <code>--shallow</code>, or <code>--filter</code>. The <code>--use-bitmap-index</code> option will be ignored in the presence of <code>--path-walk.</code></p></div>
 </dd>
 </dl></div>
 </div>
@@ -1157,7 +1181,7 @@ island = refs/virtual/([0-9]+)/(pull)/</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-04-07 08:27:26 JST
+ 2025-11-13 13:43:59 JST
 </div>
 </div>
 </body>

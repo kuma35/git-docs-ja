@@ -1,0 +1,378 @@
+[[def_alternate_object_database]]alternate object database::
+	代役(alternate)メカニズムを介して、 <<def_repository,リポジトリ>> は <<def_object_database,オブジェクトデータベース>> の一部を "alternate" (代役) 呼ばれる別のオブジェクトデータベースから継承できます。
+
+[[def_bare_repository]]bare repository::
+	ベアリポジトリは通常、適切な名前の<<def_directory,ディレクトリ>>で、接尾辞は `.git` で、リビジョン管理下にあるファイルのローカルでチェックアウトされたコピーはありません。つまり、通常は非表示の `.git` サブディレクトリに存在するすべてのGit管理ファイルと制御ファイルは、代わりに `repository.git` ディレクトリに直接存在し、他のファイルは存在せず、チェックアウトされません。通常、公開リポジトリの発行者は、ベアリポジトリを利用可能にします。
+
+[[def_blob_object]]blob object(ブロブオブジェクト)::
+	型の無い<<def_object,オブジェクト>>。例:ファイルの中身。
+
+[[def_branch]]branch::
+	「ブランチ」は開発ラインです。ブランチの最新の<<def_commit,コミット>>は、そのブランチの先端(the tip of that branch)と呼ばれます。ブランチの先端はブランチ<<def_head,ヘッド(head)>>によって <<def_ref,参照>> され、ブランチで追加の開発が行われると前進します。単一のGit <<def_repository,リポジトリ>>は任意の数のブランチを追跡できますが、あなたの<<def_working_tree,作業ツリー>>はそのうちの1つ(「current branch」(現在のブランチ)または「checked out branch」(チェックアウトされたブランチ))に関連付けられ、 <<def_HEAD,HEAD>> はそのブランチを指します。
+
+[[def_cache]]cache::
+	廃止。 <<def_index,index>> を使ってください。
+
+[[def_chain]]chain(チェーン,チェイン)::
+	オブジェクトのリスト。リスト内の各 <<def_object,オブジェクト>> には、その後ろへの参照が含まれます(たとえば、 <<def_commit,コミット>> の後ろはその <<def_parent,親>> の1つである可能性があります)。
+
+[[def_changeset]]changeset::
+	"<<def_commit,コミット>>" の BitKeeper/cvsps での言い方です。 Git は変更(change)ではなく状態(state)を保存するため、Gitでコミットを「changeset」と呼ぶのはナンセンスです。
+
+[[def_checkout]]checkout::
+	<<def_working_tree,作業ツリー>>の全部または一部を<<def_object_database,オブジェクトデータベース>>の<<def_tree_object,ツリーオブジェクト>>または<<def_blob_object,ブロブ>>で更新し、作業ツリー全体が新しい<<def_branch,ブランチ>>を指している場合は、<<def_index,インデックス>>と<<def_HEAD,HEAD>>を更新する操作。
+
+[[def_cherry-picking]]cherry-picking(チェリーピック,チェリーピッキング)::
+	<<def_SCM,SCM>> の専門用語では、 "cherry pick" (つまみ食い)とは、一連の変更(通常はコミット)から変更のサブセットを選択し、それらを別のコードベースの上に新しい一連の変更として記録することを意味します。 Git では、 これは `git cherry-pick` コマンドを使用して、 既存の<<def_commit,コミット>>によって導入された変更を抽出し、 それを現在の<<def_branch,ブランチ>>の先端に新しいコミットとして記録することによって行われます。
+
+[[def_clean]]clean::
+	現在の<<def_head,ヘッド>>が参照する<<def_revision,リビジョン>>と<<def_working_tree,作業ツリー>>が完全に一致(correspond)しているのであれば、その<<def_working_tree,作業ツリー>>はクリーンです。「<<def_dirty,dirty>>」も参照下さい。
+
+[[def_commit]]commit::
+	名詞として: Gitの履歴における一つのポイント。プロジェクトの履歴全体は、相互に関連する一連のコミットとして表されます。「コミット」という言葉は、他のリビジョン管理システムが「リビジョン」または「バージョン」という言葉を使用するのと同じ場所で、Gitによってよく使用されます。 <<def_commit_object,コミットオブジェクト>> の省略形としても使用されます。
++
+動詞として(コミットする): <<def_index,インデックス>>の現在の状態を表す新しいコミットを作成し、その新しいコミットをポイントするように<<def_HEAD,HEAD>>を進めることにより、プロジェクトの状態の新しいスナップショットをGit履歴に保存する操作。
+
+[[def_commit_graph_general]]commit graph concept, representations and usage(コミットグラフの概念、表現、使用法)::
+	オブジェクト・データベース内のコミットによって形成される<<def_DAG,DAG>>構造の同義語で、 ブランチの先端によって参照され、 リンクされたコミットの<<def_chain,チェーン>>を使用しています。 コミット・グラフとしてはDAG構造が最も使い物になります。 グラフは他の方法でも表現でき、 例えば、 <<def_commit_graph_file,コミットグラフ・ファイル>>があります。
+
+[[def_commit_graph_file]]commit-graph file::
+	"commit-graph" という(通常はハイフンでつながれたファイル名の)ファイルは、 コミット・グラフ・ウォークを高速化する <<def_commit_graph_general,commit chart>> の補足表現です。 "commit-graph" ファイルは、 .git/objects/info ディレクトリまたは代替オブジェクト・データベースの info ディレクトリに保存されます。
+
+[[def_commit_object]]commit object::
+	<<def_parent,親>>、コミッター、作者、日付、保存されたリビジョンの最上位<<def_directory,ディレクトリ>>に対応する<<def_tree_object,ツリーオブジェクト>>など、特定の<<def_revision,リビジョン>>に関する情報を含む<<def_object,オブジェクト>>。
+
+[[def_commit-ish]]commit-ish (also committish)(コミットっぽい;コミット風)::
+	<<def_commit_object,コミット・オブジェクト>>、 またはコミット・オブジェクトに対して再帰的に<<def_dereference,逆参照>>できる<<def_object,オブジェクト>>。 <<def_commit_object,コミットオブジェクト>>や、<<def_commit_object,コミットオブジェクト>>を指す<<def_tag_object,タグオブジェクト>>や、<<def_commit_object,コミットオブジェクト>>を指す<<def_tag_object,タグオブジェクト>>を指す<<def_tag_object,タグオブジェクト>>などは全てcommit-ish(commit-ishes)です。
+
+[[def_core_git]]core Git::
+	Gitの基本的なデータ構造とユーティリティ。これは、限定的なソースコード管理ツールのみです。
+
+[[def_DAG]]DAG::
+	有向非巡回グラフ(Directed acyclic graph)。 <<def_commit_object,コミットオブジェクト>> は、(有向の)親を持ち、コミットオブジェクトのグラフが非巡回(同じ <<def_object,オブジェクト>> で開始・終了する <<def_chain,チェイン>> はありません)であるため有向非巡回グラフを形成します。
+
+[[def_dangling_object]]dangling object::
+	(ぶらぶら揺れるオブジェクト)他の<<def_unreachable_object,到達不能オブジェクト>>からでも到達できない<<def_unreachable_object,到達不能オブジェクト>>。 danglingオブジェクトには、<<def_repository,リポジトリ>>内の任意のrefまたは<<def_object,オブジェクト>>からの参照はありません。
+
+[[def_dereference]]dereference::
+	<<def_symref,シンボリック ref(symbolic ref)>> の参照: シンボリック ref が指す <<def_ref,参照>> にアクセスするアクション。 再帰逆参照(recursive dereferencing)では、 非シンボリック参照が見つかるまで、 結果の ref に対して従前のプロセスを繰り返します。
++
+<<def_tag_object,タグ・オブジェクト>> の参照: タグが指す <<def_object,オブジェクト>> にアクセスするアクション。 タグは、 結果が指定された <<def_object_type,オブジェクト・タイプ>> (該当する場合) または「タグ」以外のオブジェクト・タイプになるまで、 結果オブジェクトに対する操作を繰り返すことによって再帰的に逆参照(dereference)されます。 タグのコンテキストにおける「再帰逆参照」(recursive dereference)の同義語は、「<<def_peel,peel>>」です。
++
+<<def_commit_object,コミット・オブジェクト>> の参照: コミットのツリー・オブジェクトにアクセスするアクション。 コミットを再帰的に逆参照(dereference)することはできません。
++
+特に指定がない限り、 Git コマンドまたは Git プロトコルのコンテキストで使用される「逆参照」(dereferencing)は暗黙的に再帰的です。
+
+[[def_detached_HEAD]]detached HEAD::
+	通常、<<def_HEAD,HEAD>>は<<def_branch,ブランチ>>の名前を格納し、HEADが示す履歴を操作するコマンドは、HEADが指すブランチの先端につながる履歴を操作します。 ただし、Gitでは、必ずしも特定のブランチの先端ではない任意の<<def_commit,コミット>>を<<def_checkout,チェックアウト>>することもできます。このような状態のHEADを「detached」(切り離されている、デタッチされている)と呼びます。
++
+注意: 現在のブランチの履歴を操作するコマンド(たとえば、その上に新しい履歴を構築するための `git commit`)は、HEADがデタッチされている間も機能することに注意してください。それらは、ブランチに影響を与えることなく、更新された履歴の先端を指すようにHEADを更新します。現在のブランチに関する情報を更新または照会するコマンド(たとえば、現在のブランチが統合するリモートトラッキングブランチを設定する `git branch --set-upstream-to`)は、この状態で問い合わせる(実際の)現在のブランチがないため、明らかに機能しません。
+
+[[def_directory]]directory::
+	あなたが "ls" で得られる一覧の事 :-)
+
+[[def_dirty]]dirty::
+	<<def_working_tree,作業ツリー>>で、現在の<<def_branch,ブランチ>>に対して<<def_commit,コミット>>されてない変更が含まれている場合、「<<def_working_tree,作業ツリー>>はダーティーである」と言われます。
+
+[[def_evil_merge]]evil merge::
+	邪悪なマージとは、どの <<def_parent,親>> にも表示されない変更を導入する <<def_merge,マージ>> です。
+
+[[def_fast_forward]]fast-forward::
+	fast-forward(早送り)は、とある<<def_revision,リビジョン>>に、その子孫である別の<<def_branch,ブランチ>>の変更をマージする特殊なタイプの<<def_merge,マージ>>です。このような場合、新しい<<def_merge,マージ>><<def_commit,コミット>>を行うのではなく、マージするブランチと同じリビジョンを指すようにブランチを更新するだけです。これは、リモート<<def_repository,リポジトリ>>の<<def_remote_tracking_branch,リモート追跡ブランチ>>で頻繁に発生します。
+
+[[def_fetch]]fetch::
+	<<def_branch,ブランチ>>をフェッチするということは、リモート<<def_repository,リポジトリ>>からブランチの<<def_head_ref,head ref>>を取得して、ローカルの<<def_object_database,オブジェクトデータベース>>に欠落しているオブジェクトを見つけ、そして欠落したオブジェクトを取得することを意味します。 linkgit:git-fetch[1] も参照してください。
+
+[[def_file_system]]file system::
+	リーナス・トーバルズは当初、Gitをユーザー空間ファイルシステム、つまりファイルとディレクトリを保持するインフラストラクチャとして設計しました。これにより、Gitの効率と速度が保証されました。
+
+[[def_git_archive]]Git archive::
+	<<def_repository,リポジトリ>> の同義語(arch people 向け)。
+
+[[def_gitfile]]gitfile::
+	実際のリポジトリであるディレクトリを指す、 作業ツリーのルート(root)にあるプレーン・ファイル `.git` 。 適切な使用方法については、 linkgit:git-worktree[1] または linkgit:git-submodule[1] を参照してください。 構文については、linkgit:gitrepository-layout[5] を参照してください。
+
+[[def_grafts]]grafts::
+	graftsは、コミットの偽の祖先情報を記録することで、他の点では異なる2つの開発ラインを結合できます。こうすることで、ある<<def_commit,コミット>>が持つ<<def_parent,親>>の組を、コミット作成時に記録されたものとは異なるものとして Git に見せかけることができるのです。これは `.git/info/grafts` ファイルを介して構成されます。
++
+注意: graftsメカニズムは時代遅れであり、リポジトリ間でオブジェクトを転送する際に問題が発生する可能性があることに注意してください。 同じことを行うためのより柔軟で堅牢なシステムについては、 linkgit:git-replace[1] を参照してください。
+
+[[def_hash]]hash::
+	Gitの文脈では <<def_object_name,オブジェクト名>> と同義語。
+
+[[def_head]]head::
+	<<def_branch,ブランチ>> の先端にある <<def_commit,コミット>> への、 <<def_ref,名付けられた参照>> です。パックされた参照を使用する場合を除いて、headは `$GIT_DIR/refs/heads/` ディレクトリのファイルに保存されます。 (linkgit: git-pack-refs[1] を参照してください。)
+
+[[def_HEAD]]HEAD::
+	現在の<<def_branch,ブランチ>>。 より詳細に言うと、あなたの<<def_working_tree,作業ツリー>>は通常、HEADによって参照されるツリーの状態から派生します。HEADは、リポジトリ内の<<def_head,head>>達のうちの一つへの参照です。ただし、<<def_detached_HEAD,detached HEAD>>の場合は、任意のコミットを直接参照しています。
+
+[[def_head_ref]]head ref::
+	<<def_head,head>> の同義語。
+
+[[def_hook]]hook::
+	いくつかのGitコマンドの通常の実行中に、開発者が機能を追加したりチェックしたりできるようにするオプションのスクリプトを呼び出します。通常、フックを使用すると、コマンドを事前に確認して中止することができ、そしてまた、操作の完了後に事後通知を行うことができます。フックスクリプトは `$GIT_DIR/hooks/` ディレクトリにあり、ファイル名から `.sample` サフィックスを削除するだけで有効になります。以前のバージョンのGitでは、それらを実行可能にする必要がありました。
+
+[[def_index]]index::
+	状態情報を含むファイルのコレクションで、その内容はオブジェクトとして保存されます。インデックスは、あなたの<<def_working_tree,作業ツリー>>の保存バージョンです。正直なところ、これには、<<def_merge,マージ>>のときに使用される、作業ツリーの2番目および3番目のバージョンを含めることもできます。
+
+[[def_index_entry]]index entry::
+	<<def_index,インデックス>>に保存されている特定のファイルに関する情報。<<def_merge,マージ>>が開始されたが、まだ終了していない場合(つまり、インデックスにそのファイルの複数のバージョンが含まれている場合)、インデックスエントリをマージ解除(unmerge)できます。
+
+[[def_master]]master::
+	デフォルトの開発 <<def_branch,ブランチ>> 。 Git <<def_repository,リポジトリ>> を作成するたびに、「master」という名前のブランチが作成され、アクティブなブランチになります。 ほとんどのローカル開発に含まれていますが、これは純粋に慣例によるものであり、必須ではありません。
+
+[[def_merge]]merge::
+	動詞として: 別の<<def_branch,ブランチ>>(あるいは外部の<<def_repository,リポジトリ>>から)の内容を現在のブランチに取り込むこと。マージされたブランチが別のリポジトリからのものである場合、これは最初にリモートブランチを<<def_fetch,フェッチ>>し、次に結果を現在のブランチにマージすることによって行われます。このフェッチ操作とマージ操作の組み合わせは、<<def_pull,プル(pull)>>と呼ばれます。マージは、ブランチが分岐してから行われた変更を識別し、それらすべての変更を一緒に適用する自動プロセスによって実行されます。変更が競合する場合は、マージを完了するために手動による介入が必要になる場合があります。
++
+名詞として: <<def_fast_forward,fast-forward>>でない限り、マージ成功の結果として、マージされた<<def_branch,ブランチ>>の先端を<<def_parent,親>>に持つ新しい<<def_commit,コミット>>が作成されます。このコミットは「マージコミット」と呼ばれます。または単に「マージ」と呼ばれることもあります。
+
+[[def_object]]object(オブジェクト)::
+	Gitの保管ユニット(unit of storage)。その内容による <<def_SHA1,SHA-1>> によって一意に識別されます。したがって、オブジェクトを変更することはできません。
+
+[[def_object_database]]object database::
+	「オブジェクト」の組を格納し、個々の<<def_object,オブジェクト>>はその<<def_object_name,オブジェクト名>>によって識別されます。オブジェクトは通常、 `$GIT_DIR/objects/` にあります。
+
+[[def_object_identifier]]object identifier (oid)::
+	<<def_object_name,object name>> (オブジェクト名)の同義語
+
+[[def_object_name]]object name(オブジェクト名)::
+	<<def_object,オブジェクト>>の一意の識別子。オブジェクト名は通常、40文字の16進文字列で表されます。一般に <<def_SHA1,SHA-1>> とも呼ばれます。
+
+[[def_object_type]]object type(オブジェクトタイプ)::
+	<<def_object,オブジェクト>>のタイプを表すもので、 "<<def_commit_object,commit>>" または "<<def_tree_object,tree>>" または "<<def_tag_object,tag>>" または "<<def_blob_object,blob>>" のいずれかです。
+
+[[def_octopus]]octopus::
+	3つ以上(more than two)のブランチをマージします
+
+[[def_orphan]]orphan::
+	まだ存在しない <<def_branch,ブランチ>> (つまり、<<def_unborn,unborn>> ブランチ)を得るアクション。 このような操作の後、 最初に作成されたコミットは親のないコミットになり、 新しい履歴(new history)の開始点となります。
+
+[[def_origin]]origin::
+	デフォルトの上流(upstream)<<def_repository,リポジトリ>>。ほとんどのプロジェクトには、追跡する上流プロジェクトが少なくとも1つあります。デフォルトでは、「origin」がその目的で使用されます。新しい上流更新分は、 origin/name-of-upstream-branch という名前の <<def_remote_tracking_branch,リモート追跡ブランチ>>にフェッチされます。これは、 `git branch-r` を使用して確認できます。
+
+[[def_overlay]]overlay::
+	`cp -R` が宛先ディレクトリの内容を更新するのと同様に、ファイルを更新して作業ディレクトリに追加するのみで削除を行いません。これは、<<def_index,インデックス>>または<<def_tree-ish,ツリー風の何か(tree-ish)>>からファイルをチェックアウトするときの<<def_checkout,checkout>>のデフォルトモードです。対照的に、オーバーレイなしモード(no-overlay mode)では、 `rsync --delete` と同様に、ソース側に存在しない追跡ファイルは削除されます。
+
+[[def_pack]]pack::
+	1つのファイルに圧縮されたオブジェクトの組(スペースを節約するため、またはそれらを効率的に送信するため)。
+
+[[def_pack_index]]pack index::
+	パックの内容に効率的にアクセスするのに役立つ、<<def_pack,パック>>内のオブジェクトの識別子とその他の情報のリスト。
+
+[[def_pathspec]]pathspec::
+	(パススペック):Gitコマンドでパスを制限するために使用されるパターン。
++
+pathspec は、「git ls-files」や「git ls-tree」や「git add」や「git grep」や「git diff」や「git checkout」や、ツリーまたは作業ツリー(working tree)のサブセットへの操作の為にスコープを制限する他の多くのコマンドの、コマンドラインで使用されます。 パスが現在のディレクトリまたはトップレベルのどちらを基準にしているかについては、 各コマンドのドキュメントを参照してください。 pathspec の構文は以下のとおりです:
++
+--
+
+* どのパスもそれ自体と一致します
+* 最後がスラッシュであるpathspecは、ディレクトリプレフィックスを表します。そのpathspecのスコープは、そのサブツリーに制限されています。
+* pathspecの残りの部分は、pathnameの残りの部分のためのパターンです。 ディレクトリ・プレフィックスに関連するパスは、 fnmatch(3) を使用してそのパターンと照合されます。特に、 `*` と `?` はディレクトリ区切り文字とマッチさせる事ができます。
+
+--
++
+たとえば、 `Documentation/*.jpg` は、 `Documentation/chapter_1/figure_1.jpg` を含む、Documentationサブ・ツリー内のすべての `.jpg` ファイルとマッチします。
++
+コロン(`:`)で始まるpathspecには特別な意味があります。短い形式では、先頭のコロン(`:`)の後に0個以上の「魔法記号」(magic signature)(オプションで別のコロン(`:`)で終了)が続き、残りはパスと照合するパターンです。「魔法記号」は、英数字、グロブ、正規表現の特殊文字でもコロンでもないASCII記号で構成されます。パターンが「魔法記号」シンボルセットに属さず、コロンではない文字で始まる場合、「魔法記号」を終了するオプションのコロンは省略できます。
++
+長い形式では、先頭のコロン(`:`)の後に開き括弧(`(`) 、0個以上の「魔法単語」(magic words)のコンマ区切りリスト、および閉じ括弧(`)`) が続き、残りは次のパターンです。パスと一致します。
++
+コロンのみのpathspecは、「pathspecが無い」ことを意味します。 この形式は、他のpathspecと組み合わせないでください。
++
+--
+top;;
+	魔法単語 `top` (魔法記号: `/`)は、サブディレクトリ内からコマンドを実行している場合でも、作業ツリーのルートからパターンを一致させます。
+
+literal;;
+	`*` または `?` などのパターンのワイルドカードはリテラル文字として扱われます。
+
+icase;;
+	(英文字の)大文字小文字区別せずにマッチ
+
+glob;;
+	Gitはパターンを、 FNM_PATHNAMEフラグを指定した fnmatch(3) に消費されるのに適したシェルグロブとして扱います。パターン内のワイルドカードは、パス名内の / と一致しません。 たとえば、「Documentation/{asterisk}.html」は「Documentation/git.html」と一致しますが、「Documentation/ppc/ppc.html」または「tools/perf/Documentation/perf.html」とは一致しません。
++
+フルパス名と一致するパターンの2つの連続するアスタリスク `**` は、特別な意味を持つ場合があります:
+
+ - A leading "`**`" followed by a slash means match in all directories. For example, "`**/foo`" matches file or directory "`foo`" anywhere. "`**/foo/bar`" matches file or directory "`bar`" anywhere that is directly under directory "`foo`".
+
+ - 末尾の `/**` は、内部のすべてに一致します(matches everything inside)。たとえば、 `abc/**` は、 `.gitignore` ファイルの場所を基準にして、ディレクトリ "abc" 内のすべてのファイルと無限の深さで一致します。
+
+ - スラッシュの後に2つの連続するアスタリスクが続く場合、スラッシュは0個以上のディレクトリに一致します。 たとえば、 `a/**/b` は `a/b` 、 `a/x/b` 、`a/x/y/b` などと一致します。
+
+ - 他の連続するアスタリスクは無効と見なされます。
++
+グロブ魔法はリテラル魔法と互換性がありません。
+
+attr;;
+`attr:` の後には、スペースで区切られた「属性要件」(attribute requirements)のリストがあります。パスが一致すると見なされるには、これらすべてを満たす必要があります。これは、通常の非魔法pathspecパターンマッチングに追加されます。 linkgit:gitattributes[5] 参照。
++
+パスの各属性要件は、以下のいずれかの形式を取ります:
+
+- `ATTR` では、属性 `ATTR` を設定する必要があります。
+
+- `-ATTR` では、属性 `ATTR` が設定されていない必要があります。
+
+- `ATTR = VALUE` では、属性 `ATTR` を文字列 `VALUE` に設定する必要があります。
+
+- `!ATTR` では、属性 `ATTR` が指定されていない必要があります。
++
+注意: ツリーオブジェクトと照合する場合、属性は、指定されたツリーオブジェクトからではなく、作業ツリーから取得されることに注意してください。
+
+exclude;;
+	あるパスが除外しないpathspecのいずれかとマッチしたら、 すべての除外pathspec(魔法記号: `!` またはその同義語 `^`)がスルーされます。 そのパスにマッチする場合、 そのパスは無視されます。 除外しないpathspecが無い場合、 その除外(exclusion)は、 pathspec指定無しで呼び出されたかのように、 結果セットに適用されます。
+--
+
+[[def_parent]]parent(親)::
+	<<def_commit_object,コミットオブジェクト>>には、開発ラインで論理的に前にあったもののリスト、つまり親が含まれています(あるいは、前・親が無い場合は空です)。
+
+[[def_peel]]peel::
+	<<def_dereference,逆参照(dereferencing)>> を <<def_tag_object,tag object>> に対して再帰的に実行するアクション。
+
+[[def_pickaxe]]pickaxe::
+	<<def_pickaxe,pickaxe>>(ピカクス;十字鋤;鶴嘴;つるはし)という用語は、特定のテキスト文字列を追加または削除する変更を選択するのに役立つdiffcoreルーチンのオプションを指します。 `--pickaxe-all` オプションを使用すると、特定のテキスト行などを導入または削除した完全な<<def_changeset,チェンジセット>>を表示するために使用できます。 linkgit:git-diff[1] を参照してください。
+
+[[def_plumbing]]plumbing(配管)::
+	<<def_core_git,core Git>> のキュートな呼び方。
+
+[[def_porcelain]]porcelain(磁器)::
+	<<def_core_git,core Git>>に依存するプログラムとプログラムスイートのキュートな名前で、コアGitへの高レベルのアクセスを示します。磁器(porcelain)は、<<def_plumbing,配管(plumbing)>>よりも多くの<<def_SCM,SCM>>インターフェースを公開します。
+
+[[def_per_worktree_ref]]per-worktree ref::
+	グローバルではなく、 <<def_worktree,worktree>>ごとのref。これは現在、<<def_HEAD,HEAD>>と `refs/bisect/` で始まるすべてのrefのみですが、今後、他の普通でないrefが含まれる可能性があります。
+
+[[def_pseudoref]]pseudoref::
+	通常の ref とは異なるセマンティクスを持つ ref。 これらの ref は通常の Git コマンドで読み取ることはできますが、 linkgit:git-update-ref[1] のようなコマンドで書き込むことはできません。
++
+以下の擬似ref(pseudorefs)は Git に認識されます:
+
+ - `FETCH_HEAD` は linkgit:git-fetch[1] または linkgit:git-pull[1] で記述されます。 複数のオブジェクト ID を参照する場合があります。 各オブジェクト ID には、フェッチ元とそのフェッチ状況を示すメタデータの注釈が付けられます(annotated)。
+
+ - `MERGE_HEAD` は、 マージの競合を解決するときに linkgit:git-merge[1] によって書き込まれます。 これには、 マージされるすべてのコミット ID が含まれます。
+
+[[def_pull]]pull::
+	<<def_branch,ブランチ>>をプルするとは、それを<<def_fetch,フェッチ>>し<<def_merge,マージ>>することを意味します。 linkgit:git-pull[1] も参照してください。
+
+[[def_push]]push::
+	<<def_branch,ブランチ>>をプッシュするとは、リモート<<def_repository,リポジトリ>>からブランチの<<def_head_ref,ヘッド参照>>を取得し、それがブランチのローカルヘッド参照の祖先であるかどうかを確認し、そしてその場合ローカルヘッド参照から<<def_reachable,到達可能>>であり、かつ、リモートリポジトリに欠落しているすべてのオブジェクトを、リモート<<def_object_database,オブジェクトデータベース>>に持っていき、リモートヘッド参照を更新します。リモート<<def_head,ヘッド>>がローカルヘッドの祖先でない場合、プッシュは失敗します。
+
+[[def_reachable]]reachable(到達可能)::
+	特定の<<def_commit,コミット>>のすべての祖先は、その特定のコミットから到達可能(reachable)であると言われます。より一般的には、<<def_tag,タグ>>付けしたものだったり、親またはツリーへの<<def_commit_object,コミットオブジェクト>>だったり、<<def_tree_object,ツリー>>に含まれるツリーやブロブだったり、をたどる<<def_chain,チェーン>>によって、ある<<def_object,オブジェクト>>から別の<<def_object,オブジェクト>>に到達できる場合に到達が可能です。
+
+[[def_reachability_bitmap]]reachability bitmaps::
+	到達可能性ビットマップは、 パックファイル内またはマルチパック・インデックス(MIDX)内の選択されたコミットの組の <<def_reachable,到達可能性>> に関する情報を格納し、 オブジェクトの検索を高速化します。 そのビットマップは ".bitmap" ファイルに保存されます。 リポジトリでは、最大 1 つのビットマップ・ファイルを使用できます。 ビットマップ・ファイルは、 1 つのパック、 またはリポジトリのマルチパック・インデックス(存在する場合)のいずれかに属することができます。
+
+[[def_rebase]]rebase::
+	一連の変更を<<def_branch,ブランチ>>から別のベースに再適用し、そのブランチの<<def_head,ヘッド>>を再適用した結果にリセットします。
+
+[[def_ref]]ref::
+	<<def_object_name,オブジェクト名>>または別の ref を指す名前(後者は <<def_symref,シンボリック ref>> と呼ばれます)。 Git コマンドの引数として使用する場合、 ref を省略することがあります。 詳細については、linkgit:gitrevisions[7] を参照してください。 refs は <<def_repository,repository>> に保存されます。
++
+ref 名前空間は階層的です。 参照名は `refs/` で始まるか、 階層のルート(root)に配置する必要があります。 後者の場合、 名前は以下の規則に従う必要があります:
++
+ - 名前は大文字(upper-case characters)またはアンダースコア(underscores)のみで構成されます。
+
+ - 名前は `_HEAD` で終わるか、 または `HEAD` と全く同じです。
++
+階層のルート(root)には、 これらのルールに一致しない不規則な refs がいくつかあります。 以下のリストそれら全てを網羅しており、 これが将来拡張されることはないと思います:
++
+ - `AUTO_MERGE`
+
+ - `BISECT_EXPECTED_REV`
+
+ - `NOTES_MERGE_PARTIAL`
+
+ - `NOTES_MERGE_REF`
+
+ - `MERGE_AUTOSTASH`
++
+異なるサブ階層は異なる目的に使用されます。 たとえば、 `refs/heads/` 階層はローカル・ブランチを表すために使用され、`refs/tags/` 階層はローカル・タグを表すために使用されます…
+
+[[def_reflog]]reflog::
+	reflogは、refのローカルの「履歴」を示します。 つまり、このリポジトリの最後の3番目のリビジョンが何であったか、およびこのリポジトリの昨日の午後9時14分時点での「現在の状態」が何であったかを知ることができます。詳細については linkgit:git-reflog[1] を参照してください。
+
+[[def_refspec]]refspec::
+	「refspec」は、<<def_fetch,フェッチ>>や<<def_push,プッシュ>>によって使用され、リモート<<def_ref,ref>>とローカルrefの間のマッピングを記述します。 詳細については、 linkgit:git-fetch[1] または linkgit:git-push[1] を参照してください。
+
+[[def_remote]]remote repository::
+	同じプロジェクトを追跡するために使用されるが、別の場所にある<<def_repository,リポジトリ>>。リモートと通信するには、<<def_fetch,フェッチ>>または<<def_push,プッシュ>>を参照してください。
+
+[[def_remote_tracking_branch]]remote-tracking branch::
+	別の<<def_repository,リポジトリ>>からの変更を追跡するために使用される<<def_ref,ref>>。 これは通常、 `refs/remotes/foo/bar` のように見え(「foo」という名前のリモートで「bar」という名前のブランチを追跡することを示します)、構成されたフェッチ<<def_refspec,refspec>>の右側(right-hand-side)に一致します。リモート追跡ブランチには、直接の変更を含めたり、ローカルコミットを行ったりしないでください。
+
+[[def_repository]]repository::
+	<<def_ref,refs>>のコレクションと、refから<<def_reachable,到達可能>>なすべてのオブジェクトを含む<<def_object_database,オブジェクト・データベース>>。1つまたは複数の<<def_porcelain,磁器>>コマンドからのメタ・データが付随している可能性があります。リポジトリは、<<def_alternate_object_database,代替メカニズム>>を介してオブジェクト・データベースを他のリポジトリと共有できます。
+
+[[def_resolve]]resolve::
+	失敗した自動 <<def_merge,マージ>> が残したものを手動で修正する操作。
+
+[[def_revision]]revision::
+	<<def_commit,コミット>> (名詞) の同義語
+
+[[def_rewind]]rewind(巻き戻し)::
+	開発の一部を破棄する、つまり、 <<def_head,head>> を以前の <<def_revision,リビジョン>> に割り当てる。
+
+[[def_SCM]]SCM::
+	Source code management (tool).
+
+[[def_SHA1]]SHA-1::
+	セキュアハッシュアルゴリズム1(Secure Hash Algorithm 1);暗号化ハッシュ関数。 Git界隈では<<def_object_name,オブジェクト名>>の同義語として使用されます。
+
+[[def_shallow_clone]]shallow clone::
+	ほとんどの場合 <<def_shallow_repository,shallowリポジトリ>> の同義語ですが、この言い方は、 `git clone --depth=...` コマンドを実行して作成されたこと明言したものです。
+
+[[def_shallow_repository]]shallow repository::
+	浅いリポジトリ(shallow repository)には不完全な履歴があり、そのコミットの一部では親が削除されて(cauterized away)います(言い換えると、Gitは、コミットオブジェクトに記録があっても、これらのコミットには親がないふりをするように指示されます)。これは、上流で記録された実際の履歴がはるかに大きい場合でも、プロジェクトの最近の履歴のみに関心がある場合に役立つことがあります。浅いリポジトリは、 linkgit:git-clone[1] に `--depth` オプションを指定することで作成され、その履歴は後で linkgit:git-fetch[1] で深めることができます。
+
+[[def_stash]]stash entry::
+	<<def_dirty,ダーティ>> な作業ディレクトリの内容とインデックスを、将来の再利用のために一時的に保存するのに使用される <<def_object,オブジェクト>> 。
+
+[[def_submodule]]submodule::
+	とあるリポジトリの内部で、それとは別個のプロジェクトの履歴を保持する <<def_repository,リポジトリ>> (ここで、その、とあるリポジトリを <<def_superproject,スーパープロジェクト>> と呼びます)。
+
+[[def_superproject]]superproject::
+	作業ツリー内の他のプロジェクトのリポジトリを <<def_submodule,サブモジュール>> として参照する <<def_repository,リポジトリ>> 。 スーパープロジェクトは、含まれているサブモジュールのコミットオブジェクトの名前を知っています(ただし、そのコピーは保持していません)。
+
+[[def_symref]]symref::
+	シンボリック参照(symbolic reference): <<def_SHA1,SHA-1>> ID自体を含む代わりに「ref: refs/some/thing」の形式であり、参照されると、この参照を再帰的に<<def_dereference,逆参照(dereferences)>>します。 <<def_HEAD,HEAD>> はsymrefの代表的な例です。シンボリックrefは linkgit:git-symbolic-ref[1] コマンドで操作されます。
+
+[[def_tag]]tag::
+	任意のタイプのオブジェクトを指す `refs/tags/` 名前空間の下の<<def_ref,ref>>(通常、タグは <<def_tag_object,タグ>> または <<def_commit_object,コミットオブジェクト>> のいずれかを指します)。<<def_head,head>>とは対照的に、タグは `commit` コマンドによって更新されません。Gitタグは、Lispタグとは何の関係もありません(Git界隈では、それは<<def_object_type,オブジェクトタイプ>>と呼ばれます)。タグは通常、コミットの祖先<<def_chain,チェーン>>の特定のポイントをマークするために使用されます。
+
+[[def_tag_object]]tag object::
+	別のオブジェクトを指す<<def_ref,ref>>を含む<<def_object,オブジェクト>>。これには、<<def_commit_object,コミットオブジェクト>>のようにメッセージを含めることができます。またPGP署名を含めることもでき、その場合、「署名付きタグオブジェクト」(signed tag object)と呼ばれます。
+
+[[def_topic_branch]]topic branch::
+	開発者が概念的な開発ラインを識別するために使用する通常のGit<<def_branch,ブランチ>>。(従来のSCMに比べて)ブランチは非常に簡単で処理コストが掛からないため、それぞれが非常に明確に定義された概念または小さな増分であるが関連する変更を含む、いくつかの小さなブランチを持つことが望ましい場合がよくあります。
+
+[[def_trailer]]trailer::
+	Key-value メタデータ。 トレーラーは、 コミット・メッセージの最後にオプションで表示されます。 他のコミュニティでは「フッター」とか「タグ」と呼ばれる場合があります。 linkgit:git-interpret-trailers[1] を参照してください。
+
+[[def_tree]]tree::
+	<<def_working_tree,作業ツリー>>、または、<<def_tree_object,ツリーオブジェクト>>とそれに依存する<<def_blob_object,ブロブ>>やツリーオブジェクト(つまり、作業ツリーの保存された表現)、のいずれか。
+
+[[def_tree_object]]tree object::
+	ファイル名とモードのリスト、および関連するブロブやツリーオブジェクトへのrefを含む<<def_object,オブジェクト>>。<<def_tree,ツリー>>と<<def_directory,ディレクトリ>>は同じ意味です。
+
+[[def_tree-ish]]tree-ish (also treeish)::
+	ツリーっぽい何か。ツリーオブジェクトに再帰的に<<def_dereference,逆参照(dereferenced)>>できる <<def_tree_object,ツリーオブジェクト>> または <<def_object,オブジェクト>> です。 <<def_commit_object,コミットオブジェクト>> を逆参照すると、その <<def_revision,リビジョン>> の最上位 <<def_directory,ディレクトリ>> に対応するツリーオブジェクトが生成されます。※これら(右記)は全てツリーっぽい(tree-ish)何かです: <<<def_commit-ish,コミットっぽい何か>>、 ツリー・オブジェクト、 ツリーオブジェクトを指す<<def_tag_object,タグ・オブジェクト>>、 タグ・オブジェクトを指すタグ・オブジェクト。 
+
+[[def_unborn]]unborn::
+	<<def_HEAD,HEAD>> は、 まだ存在しておらず、 まだコミットされていない <<def_branch,ブランチ>> を指すことができ、 そのようなブランチは未誕生ブランチ(unborn branch)と呼ばれます。 ユーザーが未誕生のブランチに出会える最も一般的な方法は、 他の場所からクローンを作成せずに、 リポジトリを新たに作成することです。 HEAD は、まだ生成されていない `main` (構成によっては `master`) ブランチを指します。 また、一部の操作では、<<def_orphan,orphan>> オプションを使用して、未誕生のブランチを取得することができます。
+
+
+[[def_unmerged_index]]unmerged index::
+	マージされていない<<def_index_entry,インデックスエントリ>>を含む<<def_index,インデックス>>。
+
+[[def_unreachable_object]]unreachable object::
+	<<def_branch,ブランチ>> または <<def_tag,タグ>> またはその他の参照から <<def_reachable,到達可能>> ではない(辿れない、ポイントされてない) <<def_object,オブジェクト>> 。
+
+[[def_upstream_branch]]upstream branch::
+	当該のブランチからマージされる(または当該のブランチがリベースされる)デフォルトの<<def_branch,ブランチ>>。これは、 `branch.<name>.remote` や `branch.<name>.merge` を介して構成されます。Aの上流ブランチが `origin/B` の場合、「Aは `origin/B` を追跡しています」と言うことがあります。
+
+[[def_working_tree]]working tree(作業ツリー)::
+	実際にチェックアウトされたファイル群のツリー。 作業ツリーには通常、 <<def_HEAD,HEAD>> コミットのツリーの内容に加えて、任意の、まだコミットされていないローカルの変更が含まれています。
+
+[[def_worktree]]worktree(ワークツリー)::
+	リポジトリには、ゼロ(ベア・リポジトリ)または1つ以上の worktree を当てはめる(attach)ことができます。 1 つの「worktree」は「作業ツリー」(working tree)とリポジトリ・メタデータで構成され、 そのほとんどは単一のリポジトリの他の worktree 間で共有され、一部は worktree ごとに個別に維持されます(例: インデックスやHEADやMERGE_HEADなどの疑似ref(pseudorefs)、worktreeごとの ref や worktree ごとの構成ファイル)。

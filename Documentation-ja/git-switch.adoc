@@ -1,0 +1,195 @@
+git-switch(1)
+=============
+
+NAME
+----
+git-switch - ブランチを切り替える
+
+SYNOPSIS
+--------
+[synopsis]
+git switch [<options>] [--no-guess] <branch> git switch [<options>] --detach [<start-point>] git switch [<options>] (-c|-C) <new-branch> [<start-point>] git switch [<options>] --orphan <new-branch>
+
+DESCRIPTION
+-----------
+指定のブランチに切り替えます。作業ツリーとインデックスは、ブランチに一致するように更新されます。新規コミットは、全てこのブランチの先端に追加されることになります。
+
+オプションで、同じ名前のリモートブランチから自動的に `-c` や `-C` を使用して新しいブランチを作成するか(`--guess` 参照)、あるいは切り替え時に `--detach` を使用して任意のブランチから作業ツリーをデタッチできます。
+
+ブランチを切り替えるには、クリーンなインデックスと作業ツリーは必要ありません(つまり、「HEAD」との違いはありません)。ただし、操作によってローカル変更が失われる場合、 `--discard-changes` または `--merge` で特に指示されない限り、操作は中止されます。
+
+OPTIONS
+-------
+_<branch>_::
+	切り替え先のブランチ
+
+_<new-branch>_::
+	新ブランチの名前
+
+_<start-point>_::
+	The starting point for the new branch. Specifying a _<start-point>_ allows you to create a branch based on some other point in history than where `HEAD` currently points. (Or, in the case of `--detach`, allows you to inspect and detach from some other point.)
++
+You can use the `@{-<N>}` syntax to refer to the _<N>_-th last branch/commit switched to using `git switch` or `git checkout` operation. You may also specify `-` which is synonymous to `@{-1}`. This is often used to switch quickly between two branches, or to undo a branch switch by mistake.
++
+As a special case, you may use `<rev-a>...<rev-b>` as a shortcut for the merge base of _<rev-a>_ and _<rev-b>_ if there is exactly one merge base. You can leave out at most one of _<rev-a>_ and _<rev-b>_, in which case it defaults to `HEAD`.
+
+`-c <new-branch>`::
+`--create <new-branch>`::
+	Create a new branch named _<new-branch>_ starting at _<start-point>_ before switching to the branch. This is the transactional equivalent of
++
+------------
+$ git branch <new-branch>
+$ git switch <new-branch>
+------------
++
+that is to say, the branch is not reset/created unless `git switch` is successful (e.g., when the branch is in use in another worktree, not just the current branch stays the same, but the branch is not reset to the start-point, either).
+
+`-C <new-branch>`::
+`--force-create <new-branch>`::
+	Similar to `--create` except that if _<new-branch>_ already exists, it will be reset to _<start-point>_. This is a convenient shortcut for:
++
+------------
+$ git branch -f _<new-branch>_
+$ git switch _<new-branch>_
+------------
+
+`-d`::
+`--detach`::
+	検査と破棄可能な実験のためのコミットに切り替えます。詳細については、 linkgit:git-checkout[1] の「DETACHED HEAD」セクションを参照してください。
+
+`--guess`::
+`--no-guess`::
+	If _<branch>_ is not found but there does exist a tracking branch in exactly one remote (call it _<remote>_) with a matching name, treat as equivalent to
++
+------------
+$ git switch -c <branch> --track <remote>/<branch>
+------------
++
+If the branch exists in multiple remotes and one of them is named by the `checkout.defaultRemote` configuration variable, we'll use that one for the purposes of disambiguation, even if the _<branch>_ isn't unique across all remotes. Set it to e.g. `checkout.defaultRemote=origin` to always checkout remote branches from there if _<branch>_ is ambiguous but exists on the 'origin' remote. See also `checkout.defaultRemote` in linkgit:git-config[1].
++
+`--guess` がデフォルトの動作です。無効にするには、 `--no-guess` を使用します。
++
+デフォルトの動作は、 `checkout.guess` 構成変数で設定できます。
+
+`-f`::
+`--force`::
+	`--discard-changes` のエイリアス。
+
+`--discard-changes`::
+	インデックスまたは作業ツリーが `HEAD` と異なっていても続行します。インデックスと作業ツリーの両方が、切り替え先(switching target)に一致するように復元されます。 `--recurse-submodules` が指定されている場合、サブモジュールの内容も切り替え先に一致するように復元されます。これは、ローカルの変更を破棄するために使用されます。
+
+`-m`::
+`--merge`::
+	現在のブランチと切り替え先のブランチの間で異なる1つ以上のファイルにローカルの変更がある場合、コマンドは、変更をコンテキストに保持するためにブランチの切り替えを拒否します。 ただし、このオプションを使用すると、現在のブランチ、作業ツリーの内容、および新しいブランチの間の3方向のマージが実行され、新しいブランチに移動します。
++
+マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになり、競合を解決し、解決されたパスを `git add` (またはマージによってパスが削除される場合は `git rm`)でマークする必要があります。
+
+`--conflict=<style>`::
+	The same as `--merge` option above, but changes the way the conflicting hunks are presented, overriding the `merge.conflictStyle` configuration variable. Possible values are `merge` (default), `diff3`, and `zdiff3`.
+
+`-q`::
+`--quiet`::
+	静かにします。フィードバックメッセージを抑制します。
+
+`--progress`::
+`--no-progress`::
+	`--quiet` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。このフラグは、 `--quiet` に関係なく、端末に接続されていない場合でも進行状況のレポートを有効にします。
+
+`-t`::
+`--track[ (direct|inherit)]`::
+	新しいブランチを作成するときは、 "upstream" 構成をセットアップします。 `-c` が暗黙に指定されたものと見なします。詳細については、 linkgit:git-branch[1] の `--track` を参照してください。
++
+`-c` オプションが指定されていない場合、新しいブランチの名前は、対応するリモート用に構成されたrefspecのローカル部分を調べ、次に、最初の部分を「*」まで削除することにより、リモート追跡ブランチから取得されます。これは、 `origin/hack` (または `remotes/origin/hack` あるいは `refs/remotes/origin/hack`)から分岐するときに、ローカルブランチとして `hack` を使用するように指示します。指定された名前にスラッシュ(/)がない場合、または上記の推測の結果が空の名前になる場合、推測は中止されます。このような場合は、 `-c` を使用して明示的に名前を付けることができます。
+
+`--no-track`::
+	`branch.autoSetupMerge` 構成変数がtrueであっても、 "upstream" 構成をセットアップしない。
+
+`--orphan <new-branch>`::
+	Create a new unborn branch, named _<new-branch>_. All tracked files are removed.
+
+`--ignore-other-worktrees`::
+	`git switch` は、必要なrefが別のワークツリーによってすでにチェックアウトされている場合に拒否します。このオプションを使用すると、とにかくrefをチェックアウトできます。つまり、refは複数のワークツリーで保持できます。
+
+`--recurse-submodules`::
+`--no-recurse-submodules`::
+	`--recurse-submodules` を使用すると、スーパープロジェクト(親プロジェクト)に記録されたコミットに従って、すべてのアクティブなサブモジュールのコンテンツが更新されます。何も使用されていない(または `--no-recurse-submodules`)場合、サブモジュールの作業ツリーは更新されません。 linkgit:git-submodule[1] と同様に、これはサブモジュールの `HEAD` を切り離します(detach)。
+
+EXAMPLES
+--------
+
+以下のコマンドは "master" ブランチに切り替えます:
+
+------------
+$ git switch master
+------------
+
+間違ったブランチで作業した後、正しいブランチへの切り替えは以下を使用して行われます:
+
+------------
+$ git switch mytopic
+------------
+
+ただし、「間違った」ブランチと正しい「mytopic」ブランチは、ローカルで変更したファイルが異なる場合があります。その場合、上記のswitchは以下のように失敗します:
+
+------------
+$ git switch mytopic
+error: You have local changes to 'frotz'; not switching branches.
+------------
+
+コマンドに `-m` フラグを指定すると、3方向のマージを試行します:
+
+------------
+$ git switch -m mytopic
+Auto-merging frotz
+------------
+
+この3者間マージの後、ローカルの変更はインデックスファイルに登録されないため、 `git diff` は、新しいブランチの先端以降に行った変更を示します。
+
+mytopicに切り替える前に前のブランチ(つまり、 "master" ブランチ)に戻すには:
+
+------------
+$ git switch -
+------------
+
+You can grow a new branch from any commit. For example, switch to "`HEAD~3`" and create branch "`fixup`":
+
+------------
+$ git switch -c fixup HEAD~3
+Switched to a new branch 'fixup'
+------------
+
+同じ名前のリモートブランチから新しいブランチを開始する場合:
+
+------------
+$ git switch new-topic
+Branch `new-topic` set up to track remote branch `new-topic` from `origin`
+Switched to a new branch `new-topic`
+------------
+
+新しいブランチを作成せずに、一時的な検査または実験のためにコミット `HEAD~3` をチェックアウトするには:
+
+------------
+$ git switch --detach HEAD~3
+HEAD is now at 9fc9555312 Merge branch 'cc/shared-index-permbits'
+------------
+
+一時的な検査または実験のために行ったことに維持する価値があることが判明した場合は、(切り替えることなく)、いつでも新しい名前を作成できます:
+
+------------
+$ git switch -c good-surprises
+------------
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.adoc[]
+
+include::config/checkout.adoc[]
+
+SEE ALSO
+--------
+linkgit:git-checkout[1], linkgit:git-branch[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

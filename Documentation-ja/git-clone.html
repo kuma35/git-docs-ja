@@ -753,10 +753,10 @@ git-clone(1) Manual Page
           [<code>-l</code>] [<code>-s</code>] [<code>--no-hardlinks</code>] [<code>-q</code>] [<code>-n</code>] [<code>--bare</code>] [<code>--mirror</code>]
           [<code>-o</code> <em>&lt;name&gt;</em>] [<code>-b</code> <em>&lt;name&gt;</em>] [<code>-u</code> <em>&lt;upload-pack&gt;</em>] [<code>--reference</code> <em>&lt;repository&gt;</em>]
           [<code>--dissociate</code>] [<code>--separate-git-dir</code> <em>&lt;git-dir&gt;</em>]
-          [<code>--depth</code> <em>&lt;depth&gt;</em>] [<code>--</code>[<code>no-</code>]<code>single-branch</code>] [<code>--no-tags</code>]
+          [<code>--depth</code> <em>&lt;depth&gt;</em>] [<code>--</code>[<code>no-</code>]<code>single-branch</code>] [<code>--</code>[<code>no-</code>]<code>tags</code>]
           [<code>--recurse-submodules</code>[<code>=</code><em>&lt;pathspec&gt;</em>]] [<code>--</code>[<code>no-</code>]<code>shallow-submodules</code>]
           [<code>--</code>[<code>no-</code>]<code>remote-submodules</code>] [<code>--jobs</code> <em>&lt;n&gt;</em>] [<code>--sparse</code>] [<code>--</code>[<code>no-</code>]<code>reject-shallow</code>]
-          [<code>--filter=</code><em>&lt;filter-spec&gt;</em>] [<code>--also-filter-submodules</code>]] [<code>--</code>] <em>&lt;repository&gt;</em>
+          [<code>--filter=</code><em>&lt;filter-spec&gt;</em> [<code>--also-filter-submodules</code>]] [<code>--</code>] <em>&lt;repository&gt;</em>
           [<em>&lt;directory&gt;</em>]</pre>
 <div class="attribution">
 </div></div>
@@ -786,6 +786,7 @@ git-clone(1) Manual Page
 </p>
 <div class="paragraph"><p>リポジトリがローカル・パス(例: <code>/path/to/repo</code>)として指定されている場合、これがデフォルトであり、 <code>--local</code> は基本的に何も操作しません(no-op)。 リポジトリがURLとして指定されている場合、このフラグは無視されます(ローカル最適化は使用されません)。 <code>--no-local</code> を指定すると、 <code>/path/to/repo</code> が指定されたときはデフォルトが上書きされ、代わりに通常のGit転送が使用されます。</p></div>
 <div class="paragraph"><p>リポジトリの <code>$GIT_DIR/objects</code> にシンボリック・リンクがある場合、 または <code>$GIT_DIR/objects</code> がシンボリック・リンクである場合、 クローンは失敗します。 これは、 シンボリック・リンクの参照を解除(デリファレンス)することにより、 ファイルが意図せずコピーされるのを防ぐためのセキュリティ対策です。</p></div>
+<div class="paragraph"><p>This option does not work with repositories owned by other users for security reasons, and <code>--no-local</code> must be specified for the clone to succeed.</p></div>
 <div class="paragraph"><p><strong>注意</strong>: この操作は、 <em>&lt;src&gt;</em> を変更しながら <code>cp</code> <code>-r</code> <em>&lt;src&gt;</em> <em>&lt;dst&gt;</em> を実行するのと同様に、
 ソースリポジトリへの同時変更と競合する可能性が
 あります。</p></div>
@@ -963,6 +964,14 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--revision=</code><em>&lt;rev&gt;</em>
+</dt>
+<dd>
+<p>
+        Create a new repository, and fetch the history leading to the given revision <em>&lt;rev&gt;</em> (and nothing else), without making any remote-tracking branch, and without making any local branch, and detach <code>HEAD</code> to <em>&lt;rev&gt;</em>. The argument can be a ref name (e.g. <code>refs/heads/main</code> or <code>refs/tags/v1.0</code>) that peels down to a commit, or a hexadecimal object name. This option is incompatible with <code>--branch</code> and <code>--mirror</code>.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>-u</code> <em>&lt;upload-pack&gt;</em>
 </dt>
 <dt class="hdlist1">
@@ -1018,7 +1027,10 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>single-branch</code>
+<code>--single-branch</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-single-branch</code>
 </dt>
 <dd>
 <p>
@@ -1026,12 +1038,16 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>--tags</code>
+</dt>
+<dt class="hdlist1">
 <code>--no-tags</code>
 </dt>
 <dd>
 <p>
-        タグのクローンを作成せず、構成に <code>remote.</code><em>&lt;remote&gt;</em><code>.tagOpt=--no-tags</code> を設定して、今後の <code>git</code> <code>pull</code> および <code>git</code> <code>fetch</code> 操作がタグに従わないようにします。 指定後も明示的なタグフェッチは引き続き機能します(<a href="git-fetch.html">git-fetch(1)</a> 参照)。
+        Control whether or not tags will be cloned. When <code>--no-tags</code> is given, the option will be become permanent by setting the <code>remote.</code><em>&lt;remote&gt;</em><code>.tagOpt=--no-tags</code> configuration. This ensures that future <code>git</code> <code>pull</code> and <code>git</code> <code>fetch</code> won&#8217;t follow any tags. Subsequent explicit tag fetches will still work (see <a href="git-fetch.html">git-fetch(1)</a>).
 </p>
+<div class="paragraph"><p>By default, tags are cloned and passing <code>--tags</code> is thus typically a no-op, unless it cancels out a previous <code>--no-tags</code>.</p></div>
 <div class="paragraph"><p><code>--single-branch</code> と組み合わせて使用すると、単一のクローンされたブランチ以外の参照なしでブランチをクローンおよび維持できます。 検索インデックス作成のために、一部のリポジトリのデフォルトブランチの最小限のクローンを維持するので便利です。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1044,7 +1060,10 @@ git-clone(1) Manual Page
 <div class="paragraph"><p>サブモジュールは、デフォルト設定を使用して初期化およびクローン化されます。 これは、クローンが終了した直後に <code>git</code> <code>submodule</code> <code>update</code> <code>--init</code> <code>--recursive</code> <em>&lt;pathspec&gt;</em> を実行するのと同じです。 クローンされたリポジトリに ワークツリー/チェックアウト がない場合(つまり、 <code>--no-checkout</code>/<code>-n</code> または <code>--bare</code> または <code>--mirror</code> のいずれかが指定されている場合)、このオプションは無視されます。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>shallow-submodules</code>
+<code>--shallow-submodules</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-shallow-submodules</code>
 </dt>
 <dd>
 <p>
@@ -1052,7 +1071,10 @@ git-clone(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>remote-submodules</code>
+<code>--remote-submodules</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-remote-submodules</code>
 </dt>
 <dd>
 <p>
@@ -1119,7 +1141,7 @@ git-clone(1) Manual Page
 </dt>
 <dd>
 <p>
-        リモートからフェッチする前に、指定された <em>&lt;uri&gt;</em> からバンドルをフェッチし、データをローカル・リポジトリで非バンドル化(unbundle)します。 バンドル内のrefは、 非表示の <code>refs/bundle/</code>* 名前空間に保存されます。 このオプションは、 <code>--depth</code> や`--shallow-since` や <code>--shallow-exclude</code> と互換性がありません。
+        リモートからフェッチする前に、指定された <em>&lt;uri&gt;</em> からバンドルをフェッチし、データをローカル・リポジトリで非バンドル化(unbundle)します。 バンドル内のrefは、 非表示の <code>refs/bundle/*</code> 名前空間に保存されます。 このオプションは、 <code>--depth</code> や`--shallow-since` や <code>--shallow-exclude</code> と互換性がありません。
 </p>
 </dd>
 </dl></div>
@@ -1281,6 +1303,15 @@ $ cd my-linux</code></pre>
 <pre><code>$ git clone --bare -l /home/proj/.git /pub/scm/proj.git</code></pre>
 </div></div>
 </li>
+<li>
+<p>
+Clone a local repository from a different user:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git clone --no-local /home/otheruser/proj.git /pub/scm/proj.git</code></pre>
+</div></div>
+</li>
 </ul></div>
 </div>
 </div>
@@ -1361,7 +1392,7 @@ $ cd my-linux</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-06-14 06:16:40 JST
+ 2025-11-13 13:43:50 JST
 </div>
 </div>
 </body>

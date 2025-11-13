@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Multi-Pack-Index (MIDX) Design Notes</h1>
-<span id="revdate">2025-09-21</span>
+<span id="revdate">2025-11-13</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -849,7 +849,7 @@ MIDX チェーンで初期に作られた部分を書き直す能力(つまり�
 </p>
 <div class="paragraph"><p>上記と同様に、 インクリメンタルMIDX形式を拡張して到達可能性ビットマップをサポートする上で、 根本的な制限は存在しません。 以下の設計ではこの点を特に考慮しており、 到達可能性ビットマップのサポートは将来のパッチ・シリーズで追加される予定です。 現在の実装では、上記と同じ理由で省略されています。</p></div>
 <div class="paragraph"><p>簡潔に言うと、 インクリメンタルMIDX機能で到達可能性ビットマップをサポートするために、 疑似パック順序の概念をインクリメンタルMIDXチェーンの各レイヤーに拡張し、 連結された疑似パック順序を形成します。 この連結はチェーン自体の順序と同じ順で行われます(言い換えると、 チェーン {$H1, $H2, $H3} の連結された疑似パック順序は、 $H1 の疑似パック順序に続き、 $H2の疑似パック順序、 そして$H3の疑似パック順序、 となります)。</p></div>
-<div class="paragraph"><p>レイアウトは、 インクリメンタルMIDXチェーンの各レイヤーが *.bitmap へ書き込みできるように拡張されます。 各レイヤーのビットマップに含まれるオブジェクトは、 そのチェーンの前のレイヤーにあるオブジェクトの数だけオフセットされます。</p></div>
+<div class="paragraph"><p>レイアウトは、 インクリメンタルMIDXチェーンの各レイヤーが <code>*.bitmap</code> へ書き込みできるように拡張されます。 各レイヤーのビットマップに含まれるオブジェクトは、 そのチェーンの前のレイヤーにあるオブジェクトの数だけオフセットされます。</p></div>
 </li>
 </ul></div>
 </div>
@@ -884,17 +884,51 @@ $H3</code></pre>
 </div></div>
 <div class="paragraph"><p>(C 言語での実装では、 これは多くの場合 <code>i</code> <code>+</code> <code>m-</code>&gt;<code>num_objects_in_base</code> として実装されます)。</p></div>
 </div>
+<div class="sect2">
+<h3 id="_pseudo_pack_order_for_incremental_midxs">Pseudo-pack order for incremental MIDXs</h3>
+<div class="paragraph"><p>The original implementation of multi-pack reachability bitmaps defined the pseudo-pack order in <a href="../gitformat-pack.html">gitformat-pack(5)</a> (see the section titled "multi-pack-index reverse indexes") roughly as follows:</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>In short, a MIDX&#8217;s pseudo-pack is the de-duplicated concatenation of objects in packs stored by the MIDX, laid out in pack order, and the packs arranged in MIDX order (with the preferred pack coming first).</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>In the incremental MIDX design, we extend this definition to include objects from multiple layers of the MIDX chain. The pseudo-pack order for incremental MIDXs is determined by concatenating the pseudo-pack ordering for each layer of the MIDX chain in order. Formally two objects <code>o1</code> and <code>o2</code> are compared as follows:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+If <code>o1</code> appears in an earlier layer of the MIDX chain than <code>o2</code>, then
+  <code>o1</code> sorts ahead of <code>o2</code>.
+</p>
+</li>
+<li>
+<p>
+Otherwise, if <code>o1</code> and <code>o2</code> appear in the same MIDX layer, and that MIDX layer has no base, then if one of <code>pack</code>(<code>o1</code>) and <code>pack</code>(<code>o2</code>) is preferred and the other is not, then the preferred one sorts ahead of the non-preferred one. If there is a base layer (i.e. the MIDX layer is not the first layer in the chain), then if <code>pack</code>(<code>o1</code>) appears earlier in that MIDX layer&#8217;s pack order, then <code>o1</code> sorts ahead of <code>o2</code>. Likewise if <code>pack</code>(<code>o2</code>) appears earlier, then the opposite is true.
+</p>
+</li>
+<li>
+<p>
+Otherwise, <code>o1</code> and <code>o2</code> appear in the same pack, and thus in the same MIDX layer. Sort <code>o1</code> and <code>o2</code> by their offset within their containing packfile.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Note that the preferred pack is a property of the MIDX chain, not the individual layers themselves. Fundamentally we could introduce a per-layer preferred pack, but this is less relevant now that we can perform multi-pack reuse across the set of packs in a MIDX.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_reachability_bitmaps_and_incremental_midxs">Reachability bitmaps and incremental MIDXs</h3>
+<div class="paragraph"><p>Each layer of an incremental MIDX chain may have its objects (and the objects from any previous layer in the same MIDX chain) represented in its own <code>*.bitmap</code> file.</p></div>
+<div class="paragraph"><p>The structure of a <code>*.bitmap</code> file belonging to an incremental MIDX chain is identical to that of a non-incremental MIDX bitmap, or a classic single-pack bitmap. Since objects are added to the end of the incremental MIDX&#8217;s pseudo-pack order (see above), it is possible to extend a bitmap when appending to the end of a MIDX chain.</p></div>
+<div class="paragraph"><p>(Note: it is possible likewise to compress a contiguous sequence of MIDX incremental layers, and their <code>*.bitmap</code> files into a single layer and <code>*.bitmap</code>, but this is not yet implemented.)</p></div>
+<div class="paragraph"><p>The object positions used are global within the pseudo-pack order, so subsequent layers will have, for example, <code>m-</code>&gt;<code>num_objects_in_base</code> number of <code>0</code> bits in each of their four type bitmaps. This follows from the fact that we only write type bitmap entries for objects present in the layer immediately corresponding to the bitmap).</p></div>
+<div class="paragraph"><p>Note also that only the bitmap pertaining to the most recent layer in an incremental MIDX chain is used to store reachability information about the interesting and uninteresting objects in a reachability query. Earlier bitmap layers are only used to look up commit and pseudo-merge bitmaps from that layer, as well as the type-level bitmaps for objects in that layer.</p></div>
+<div class="paragraph"><p>To simplify the implementation, type-level bitmaps are iterated simultaneously, and their results are OR&#8217;d together to avoid recursively calling internal bitmap functions.</p></div>
+</div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_future_work">Future Work</h2>
 <div class="sectionbody">
 <div class="ulist"><ul>
-<li>
-<p>
-multi-pack-indexを使用すると、(非常に大きなリポジトリなど、)特に再パックにコストがかかる場合、または(需要の高いビルドマシンなどで、)予期しないメンテナンス時間が許容できない場合に、多くのパックファイルを使用できます。 ただし、multi-pack-indexは毎回完全に書き直す必要があります。 フォーマットをインクリメンタルに拡張できるため、書き込みが高速になります。 大きな 「base」MIDXファイル を指す小さな 「tip」マルチパックインデックス を保存することで、オブジェクトのルックアップに必要なバイナリ検索の数を減らしながら、書き込みを高速に保つことができます。
-</p>
-</li>
 <li>
 <p>
 multi-pack-indexが拡張されて「安定したオブジェクトの順序」(関数 Order(hash）= multi-pack-indexが更新されても、特定のハッシュに対して定数である整数)を格納する場合、MIDXとは独立して更新されるMIDXビットマップは以下のようになります。
@@ -924,7 +958,7 @@ multi-pack-indexが拡張されて「安定したオブジェクトの順序」(
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-10-16 15:58:49 JST
+ 2025-11-13 13:44:18 JST
 </div>
 </div>
 </body>

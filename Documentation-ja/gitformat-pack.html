@@ -768,6 +768,7 @@ $GIT_DIR/objects/pack/multi-pack-index</code></pre>
 <h2 id="_checksums_and_object_ids">Checksums and object IDs</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>従来のSHA-1を使用するリポジトリでは、以下で説明するパックチェックサム、インデックスチェックサム、およびオブジェクトID(オブジェクト名)はすべてSHA-1を使用して計算されます。 同様に、SHA-256リポジトリでは、これらの値はSHA-256を使用して計算されます。</p></div>
+<div class="paragraph"><p>CRC32 checksums are always computed over the entire packed object, including the header (n-byte type and length); the base object name or offset, if any; and the entire compressed object. The CRC32 algorithm used is that of zlib.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -880,9 +881,15 @@ OBJ_REF_DELTA (7)
 <div class="paragraph"><p>タイプ5は、将来の拡張用に予約されています。 タイプ0は無効です。</p></div>
 </div>
 <div class="sect2">
+<h3 id="_object_encoding">Object encoding</h3>
+<div class="paragraph"><p>Unlike loose objects, packed objects do not have a prefix containing the type, size, and a NUL byte. These are not necessary because they can be determined by the n-byte type and length that prefixes the data and so they are omitted from the compressed and deltified data.</p></div>
+<div class="paragraph"><p>The computation of the object ID still uses this prefix by reconstructing it from the type and length as needed.</p></div>
+</div>
+<div class="sect2">
 <h3 id="_size_encoding">Size encoding</h3>
 <div class="paragraph"><p>このドキュメントでは、負でない整数で、「サイズエンコーディング」(size encoding)を使用します。つまりそれは、 各バイトから、下位7ビットを使用して結果の整数を形成します。 最上位ビットが1である限り、この処理は続行されます。 MSB 0 のバイトは、最後の7ビットを提供します。これら7ビットのチャンクは連結されます。 後の値の方が上位です。</p></div>
 <div class="paragraph"><p>このサイズエンコーディング(size encoding)を、このドキュメントでも使用されている「オフセットエンコーディング」(offset encoding)と混同しないでください。</p></div>
+<div class="paragraph"><p>When encoding the size of an undeltified object in a pack, the size is that of the uncompressed raw object. For deltified objects, it is the size of the uncompressed delta. The base object name or offset is not included in the size computation.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_deltified_representation_デルタ化表現">Deltified representation(デルタ化表現)</h3>
@@ -1068,7 +1075,7 @@ offset encoding
 </dt>
 <dd>
 <p>
-    最後の1つを除くすべてにMSBが設定されたnバイト。 オフセットは、各バイトの下位7ビットを連結して作成された数値であり、n &gt;= 2 の場合、結果に <code>2^7</code> <code>+</code> <code>2^14</code> <code>+</code> <code>...</code> <code>+</code> <code>2^</code>(<code>7</code>*(<code>n-1</code>)) を加算します。
+    最後の1つを除くすべてにMSBが設定されたnバイト。 オフセットは、各バイトの下位7ビットを連結して作成された数値であり、n &gt;= 2 の場合、結果に <code>2^7</code> <code>+</code> <code>2^14</code> <code>+</code> <code>...</code> <code>+</code> <code>2^</code>(<code>7*</code>(<code>n-1</code>)) を加算します。
 </p>
 </dd>
 </dl></div>
@@ -1081,7 +1088,7 @@ offset encoding
 <div class="ulist"><ul>
 <li>
 <p>
-4-byte マジックナンバー \377tOc (訳注: 0xFF, 0x74, 0x4F, 0x63)は、 unreasonable fanout[0] 値です。
+4-byte マジックナンバー <code>\377tOc</code> (訳注: 0xFF, 0x74, 0x4F, 0x63)は、 unreasonable fanout[0] 値です。
 </p>
 </li>
 <li>
@@ -1634,7 +1641,7 @@ cellspacing="0" cellpadding="4">
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-07-26 02:21:58 JST
+ 2025-11-13 13:44:10 JST
 </div>
 </div>
 </body>

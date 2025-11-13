@@ -820,7 +820,7 @@ http と stateless-rpc を念頭に置いて設計されています。明確な
 <div class="sect1">
 <h2 id="_initial_client_request">Initial Client Request</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>一般に、クライアントは、 使用されている転送(transport)のそれぞれのサイドチャネルを介して <code>version=2</code> を送信することにより、 プロトコルv2を話すように要求できます。これにより、必然的に <code>GIT_PROTOCOL</code> が設定されます。 詳細については <a href="gitprotocol-pack.html">gitprotocol-pack(5)</a> や <a href="gitprotocol-http.html">gitprotocol-http(5)</a> と、 <code>git.txt</code> の <code>GIT_PROTOCOL</code> 定義を参照してください。 すべての場合において、 サーバーからの応答は機能広告(capability advertisement)です。</p></div>
+<div class="paragraph"><p>In general a client can request to speak protocol v2 by sending <code>version=2</code> through the respective side-channel for the transport being used which inevitably sets <code>GIT_PROTOCOL</code>. More information can be found in <a href="gitprotocol-pack.html">gitprotocol-pack(5)</a> and <a href="gitprotocol-http.html">gitprotocol-http(5)</a>, as well as the <code>GIT_PROTOCOL</code> definition in <a href="git.html">git(1)</a>. In all cases the response from the server is the capability advertisement.</p></div>
 <div class="sect2">
 <h3 id="_git_transport">Git Transport</h3>
 <div class="paragraph"><p>git:// 転送(transport)を使用する場合、 追加のパラメーターとして "version=2" を送信することにより、 プロトコルv2の使用を要求できます:</p></div>
@@ -853,7 +853,7 @@ S: &lt;capability-advertisement&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>その後の要求は、サービス <code>$GIT_URL/git-upload-pack</code> に対して直接行われます。(これはgit-receive-packでも同じように機能します)。</p></div>
 <div class="paragraph"><p><code>--http-backend-info-refs</code> オプションを使用して <a href="git-upload-pack.html">git-upload-pack(1)</a> を実行します。</p></div>
-<div class="paragraph"><p>サーバーは、 <code>GIT_PROTOCOL</code> 変数を介してこのヘッダーの内容を渡すように構成する必要がある場合があります。 <code>git-http-backend.txt</code> の説明を参照してください。</p></div>
+<div class="paragraph"><p>The server may need to be configured to pass this header&#8217;s contents via the <code>GIT_PROTOCOL</code> variable. See the discussion in <a href="git-http-backend.html">git-http-backend(1)</a>.</p></div>
 </div>
 </div>
 </div>
@@ -912,7 +912,7 @@ command-args = *command-specific-arg</code></pre>
 <div class="paragraph"><p>プロトコルバージョン2は、デフォルトではステートレスです。 つまり、クライアントがサーバーで状態を維持する必要があることを指示する機能を要求しない限り、すべてのコマンドは1ラウンドだけ持続し、サーバー側の観点からステートレスである必要があります。クライアントは、正しく機能するためにサーバー側に状態管理を要求してはいけません(MUST NOT)。これにより、サーバー側では状態管理について心配することなく、単純なラウンドロビン負荷分散が可能になります。</p></div>
 <div class="sect2">
 <h3 id="_agent">agent</h3>
-<div class="paragraph"><p>サーバーは、値 <code>X</code> (<code>agent=X</code> 形式)を使用して <code>agent</code> 機能を広告し、 サーバーがバージョン <code>X</code> を実行していることをクライアントに通知できます。 クライアントは、 サーバーへの要求に値 <code>Y</code> (<code>agent=Y</code> 形式)を持つ <code>agent</code> 機能を含めることにより、 オプションで独自のエージェント文字列を送信できます(ただし、 サーバーが agent 機能を広告しなかった場合は、 クライアントから送信してはいけません(MUST NOT))。 <code>X</code> および <code>Y</code> 文字列には、 空白を除く任意の印刷可能なASCII文字(つまり、 バイト範囲32 &lt; x &lt;127)を含めることができ、 通常は「パッケージ/バージョン」(例: 「git/1.8.3.1」形式です)です。 エージェント文字列は、 統計およびデバッグの目的で純粋に情報を提供するものであり、 特定の機能の有無をプログラムで想定するために使用してはいけません(MUST NOT)。</p></div>
+<div class="paragraph"><p>The server can advertise the <code>agent</code> capability with a value <code>X</code> (in the form <code>agent=X</code>) to notify the client that the server is running version <code>X</code>. The client may optionally send its own agent string by including the <code>agent</code> capability with a value <code>Y</code> (in the form <code>agent=Y</code>) in its request to the server (but it MUST NOT do so if the server did not advertise the agent capability). The <code>X</code> and <code>Y</code> strings may contain any printable ASCII characters except space (i.e., the byte range 33 &#8656; x &#8656; 126), and are typically of the form "package/version-os" (e.g., "git/1.8.3.1-Linux") where <code>os</code> is the operating system name (e.g., "Linux"). <code>X</code> and <code>Y</code> can be configured using the GIT_USER_AGENT environment variable and it takes priority. The <code>os</code> is retrieved using the <em>sysname</em> field of the <code>uname</code>(<code>2</code>) system call or its equivalent. The agent strings are purely informative for statistics and debugging purposes, and MUST NOT be used to programmatically assume the presence or absence of particular features.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_ls_refs">ls-refs</h3>
@@ -1425,7 +1425,7 @@ oid &lt;oid&gt;
 <div class="sect3">
 <h4 id="_protocol_for_bundle_uri">PROTOCOL for bundle-uri</h4>
 <div class="paragraph"><p><code>bundle-uri</code> 要求は引数無しで、上記の通り、現時点では機能値(capability value)を広告しません。いずれも将来追加される可能性はあります。</p></div>
-<div class="paragraph"><p>クライアントが <code>command=bundle-uri</code> 要求を発行すると、その応答は値 <em>&lt;key&gt;</em><code>=</code><em>&lt;value&gt;</em> を持つパケット行として提供される、キーと値のペアのリストです。 各 <em>&lt;key&gt;</em> は、バンドルのリストを作成するための <code>bundle.</code>* 名前空間の設定キーとして解釈される必要があります。これらのキーは <code>bundle.</code><em>&lt;id&gt;</em>. サブセクションによってグループ化されており、指定された <em>&lt;id&gt;</em> に対応する各キーは、その <em>&lt;id&gt;</em> によって定義されたバンドルに属性を提供します。これらのキーの具体的な詳細と、Git クライアントがそれらの値をどのように解釈するかについては、<a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
+<div class="paragraph"><p>クライアントが <code>command=bundle-uri</code> 要求を発行すると、その応答は値 <em>&lt;key&gt;</em><code>=</code><em>&lt;value&gt;</em> を持つパケット行として提供される、キーと値のペアのリストです。 各 <em>&lt;key&gt;</em> は、バンドルのリストを作成するための <code>bundle.*</code> 名前空間の設定キーとして解釈される必要があります。これらのキーは <code>bundle.</code><em>&lt;id&gt;</em>. サブセクションによってグループ化されており、指定された <em>&lt;id&gt;</em> に対応する各キーは、その <em>&lt;id&gt;</em> によって定義されたバンドルに属性を提供します。これらのキーの具体的な詳細と、Git クライアントがそれらの値をどのように解釈するかについては、<a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
 <div class="paragraph"><p>クライアントは上記の形式に従って行をパースしなければいけません(MUST)、形式に従わない行は破棄されるべきです(SHOULD)。そののような場合、ユーザーに警告が表示されることがあります。</p></div>
 </div>
 <div class="sect3">
@@ -1439,7 +1439,7 @@ URI CONTENTS
 広告された URI の内容は、以下の 2 つのタイプのいずれかでなければなりません。
 </p>
 <div class="paragraph"><p>広告された URI には、 <code>git</code> <code>bundle</code> <code>verify</code> が受け入れる事ができるバンドル・ファイルが含まれている場合があります。つまり、それらには、クライアントが使用するための 1 つ以上の参照先端(reference tips)が含まれていなければなりません(MUST)。標準の <code>-</code> プレフィックスを使用して(いずれかの)前提条件を示さなければなりません(MUST)。また、該当する場合は <code>object-format</code>(オブジェクト形式)を示さなければなりません。</p></div>
-<div class="paragraph"><p>広告された URI には、 <code>git</code> <code>config</code> <code>--list</code> が受け入れられるプレーンテキスト・ファイルが含まれる場合もあります(<code>--file</code> オプションを使用)。このリストのキーと値のペアは、 <code>bundle.</code>* 名前空間内にあります (<a href="git-config.html">git-config(1)</a> 参照)。</p></div>
+<div class="paragraph"><p>広告された URI には、 <code>git</code> <code>config</code> <code>--list</code> が受け入れられるプレーンテキスト・ファイルが含まれる場合もあります(<code>--file</code> オプションを使用)。このリストのキーと値のペアは、 <code>bundle.*</code> 名前空間内にあります (<a href="git-config.html">git-config(1)</a> 参照)。</p></div>
 </dd>
 <dt class="hdlist1">
 bundle-uri CLIENT ERROR RECOVERY
@@ -1500,7 +1500,7 @@ WHEN ADVERTISED BUNDLE(S) REQUIRE FURTHER NEGOTIATION(宣伝されているバ�
 </div>
 <div class="sect3">
 <h4 id="_bundle_uri_protocol_features">bundle-uri PROTOCOL FEATURES</h4>
-<div class="paragraph"><p>クライアントは、 サーバーから提供された <em>&lt;key&gt;</em><code>=</code><em>&lt;value&gt;</em> ペア達からバンドル・リストを構築します。 これらのペア達は、 <a href="git-config.html">git-config(1)</a> に記載されている <code>bundle.</code>* 名前空間の一部です。 このセクションでは、 これらのキーのいくつかについて説明し、 この情報に応じてクライアントが実行するアクションについて説明します。</p></div>
+<div class="paragraph"><p>クライアントは、 サーバーから提供された <em>&lt;key&gt;</em><code>=</code><em>&lt;value&gt;</em> ペア達からバンドル・リストを構築します。 これらのペア達は、 <a href="git-config.html">git-config(1)</a> に記載されている <code>bundle.*</code> 名前空間の一部です。 このセクションでは、 これらのキーのいくつかについて説明し、 この情報に応じてクライアントが実行するアクションについて説明します。</p></div>
 <div class="paragraph"><p>特に、 <code>bundle.version</code> キーは整数値を指定します。 現時点で受け入れられる唯一の値は <code>1</code> ですが、クライアントがここで予期しない値を見た場合、クライアントはバンドルリストを無視しなければなりません(MUST)。</p></div>
 <div class="paragraph"><p><code>bundle.version</code> が了解されている限り、他のすべての未知のキーはクライアントによって無視されても構いません(MAY)。サーバーは古いクライアントとの互換性を保証しますが、より新しいクライアントは追加のキーを使用してダウンロードを最小限に抑えることができる場合があります。</p></div>
 <div class="paragraph"><p>pre-URI Key-Value の後方互換性のない追加は 新しい <code>bundle.version</code> 値、または <code>bundle-uri</code> 機能広告自体、 および/または 将来の新しい <code>bundle-uri</code> リクエスト引数によって保護されます。</p></div>
@@ -1526,6 +1526,57 @@ WHEN ADVERTISED BUNDLE(S) REQUIRE FURTHER NEGOTIATION(宣伝されているバ�
 </ul></div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_promisor_remote_lt_pr_info_gt">promisor-remote=&lt;pr-info&gt;</h3>
+<div class="paragraph"><p>The server may advertise some promisor remotes it is using or knows about to a client which may want to use them as its promisor remotes, instead of this repository. In this case &lt;pr-info&gt; should be of the form:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>pr-info = pr-fields | pr-info ";" pr-fields</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>pr-fields = pr-field | pr-fields "," pr-field</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>pr-field = field-name "=" field-value</code></pre>
+</div></div>
+<div class="paragraph"><p>where all the <code>field-name</code> and <code>field-value</code> in a given <code>pr-fields</code> are field names and values related to a single promisor remote. A given <code>field-name</code> MUST NOT appear more than once in given <code>pr-fields</code>.</p></div>
+<div class="paragraph"><p>The server MUST advertise at least the "name" and "url" field names along with the associated field values, which are the name of a valid remote and its URL, in each <code>pr-fields</code>. The "name" and "url" fields MUST appear first in each pr-fields, in that order.</p></div>
+<div class="paragraph"><p>After these mandatory fields, the server MAY advertise the following optional fields in any order:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>partialCloneFilter</code>
+</dt>
+<dd>
+<p>
+The filter specification used by the remote. Clients can use this to determine if the remote&#8217;s filtering strategy is compatible with their needs (e.g., checking if both use "blob:none"). It corresponds to the "remote.&lt;name&gt;.partialCloneFilter" config setting.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>token</code>
+</dt>
+<dd>
+<p>
+An authentication token that clients can use when connecting to the remote. It corresponds to the "remote.&lt;name&gt;.token" config setting.
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>No other fields are defined by the protocol at this time. Field names are case-sensitive and MUST be transmitted exactly as specified above. Clients MUST ignore fields they don&#8217;t recognize to allow for future protocol extensions.</p></div>
+<div class="paragraph"><p>For now, the client can only use information transmitted through these fields to decide if it accepts the advertised promisor remote. In the future that information might be used for other purposes though.</p></div>
+<div class="paragraph"><p>Field values MUST be urlencoded.</p></div>
+<div class="paragraph"><p>If the client decides to use one or more promisor remotes the server advertised, it can reply with "promisor-remote=&lt;pr-names&gt;" where &lt;pr-names&gt; should be of the form:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>pr-names = pr-name | pr-names ";" pr-name</code></pre>
+</div></div>
+<div class="paragraph"><p>where <code>pr-name</code> is the urlencoded name of a promisor remote the server advertised and the client accepts.</p></div>
+<div class="paragraph"><p>Note that, everywhere in this document, the <em>;</em> and <em>,</em> characters MUST be encoded if they appear in <code>pr-name</code> or <code>field-value</code>.</p></div>
+<div class="paragraph"><p>If the server doesn&#8217;t know any promisor remote that could be good for a client to use, or prefers a client not to use any promisor remote it uses or knows about, it shouldn&#8217;t advertise the "promisor-remote" capability at all.</p></div>
+<div class="paragraph"><p>In this case, or if the client doesn&#8217;t want to use any promisor remote the server advertised, the client shouldn&#8217;t advertise the "promisor-remote" capability at all in its reply.</p></div>
+<div class="paragraph"><p>On the server side, the "promisor.advertise" and "promisor.sendFields" configuration options can be used to control what it advertises. On the client side, the "promisor.acceptFromServer" configuration option can be used to control what it accepts. See the documentation of these configuration options for more information.</p></div>
+<div class="paragraph"><p>Note that in the future it would be nice if the "promisor-remote" protocol capability could be used by the server, when responding to <code>git</code> <code>fetch</code> or <code>git</code> <code>clone</code>, to advertise better-connected remotes that the client can use as promisor remotes, instead of this repository, so that the client can lazily fetch objects from these other better-connected remotes. This would require the server to omit in its response the objects available on the better-connected remotes that the client has accepted. This hasn&#8217;t been implemented yet though. So for now this "promisor-remote" capability is useful only when the server advertises some promisor remotes it already uses to borrow objects from.</p></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1539,7 +1590,7 @@ WHEN ADVERTISED BUNDLE(S) REQUIRE FURTHER NEGOTIATION(宣伝されているバ�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-08-12 18:30:20 JST
+ 2025-11-13 13:44:11 JST
 </div>
 </div>
 </body>

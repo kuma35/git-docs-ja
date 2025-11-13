@@ -1,0 +1,83 @@
+GIT URLS[[URLS]]
+----------------
+
+一般に URLには、トランスポート・プロトコルや、リモート・サーバーのアドレスや、 リポジトリーへのパスに関する情報が含まれています。トランスポート・プロトコルによっては、一部の情報が欠落している場合があります。
+
+Gitは、 ssh プロトコルと git プロトコルと http プロトコルと https プロトコルをサポートします(さらに ftp と ftps を fetch に使用できますが、 これらは非効率的で非推奨です。 使用しないでください)。
+
+ネイティブ・トランスポート(つまり、 `git://` URL)は認証を行わないため、セキュリティで保護されていないネットワークでは注意して使用する必要があります。
+
+以下の構文を使用できます:
+
+- `ssh://[<user>@]<host>[:<port>]/<path-to-git-repo>`
+- `git://<host>[:<port>]/<path-to-git-repo>`
+- `http[s]://<host>[:<port>]/<path-to-git-repo>`
+- `ftp[s]://<host>[:<port>]/<path-to-git-repo>`
+
+代替scp風の構文を、 sshプロトコルで使用することもできます:
+
+- `[<user>@]<host>:/<path-to-git-repo>`
+
+この構文は、最初のコロン(:)の前にスラッシュがない場合にのみ認識されます。これは、コロンを含むローカル・パスを区別するのに役立ちます。たとえば、ローカル・パス `foo:bar` を、絶対パスまたは `./foo:bar` として指定して、 ssh url として誤って解釈されないようにすることができます。
+
+sshおよびgitプロトコルは、さらに `~<username>` 拡張をサポートします:
+
+- `ssh://[<user>@]<host>[:<port>]/~<user>/<path-to-git-repo>`
+- `git://<host>[:<port>]/~<user>/<path-to-git-repo>`
+- `[<user>@]<host>:~<user>/<path-to-git-repo>`
+
+ローカル・リポジトリーは、 Git によってネイティブにサポートされているため、 以下の構文を使用できます:
+
+- `/path/to/repo.git/`
+- `file:///path/to/repo.git/`
+
+ifndef::git-clone[]
+これら2つの構文はほとんど同等ですが、 clone 時には前者が `--local` オプションを意味します。 詳細は linkgit:git-clone[1] を参照してください。
+endif::git-clone[]
+
+ifdef::git-clone[]
+これらの2つの構文は、前者が `--local` オプションの機能を含むことを除いて、ほとんど同等です。
+endif::git-clone[]
+
+`git clone` と `git fetch` と `git pull` は、 `git push` と違って適切なバンドルファイルを受け入れます。 linkgit:git-bundle[1] を参照してください。
+
+Gitが特定のトランスポート・プロトコルを処理する方法を知らない場合、Gitは `remote-<transport>` リモート・ヘルパー(存在する場合)を使用しようとします。リモート・ヘルパーを明示的に要求するには、以下の構文を使用できます:
+
+- `<transport>::<address>`
+
+ここで、 `<address>` は、パス、またはサーバーとパス、または呼び出されている特定のリモート・ヘルパーによって認識される任意のURLのような文字列です。詳細については、 linkgit:gitremote-helpers[7] を参照してください。
+
+同じ名前のリモートリポジトリが多数あり、それらに異なる形式を使用する場合(あなたの使用するURLが機能するURLに書き換えられるように)、以下の形式の構成セクションを作成できます:
+
+[verse]
+--
+	[url "__<actual-url-base>__"]
+		insteadOf = _<other-url-base>_
+--
+
+例えば、以下のようになります:
+
+------------
+	[url "git://git.host.xz/"]
+		insteadOf = host.xz:/path/to/
+		insteadOf = work:
+------------
+
+`work:repo.git` や `host.xz:/path/to/repo.git` のようなURLは、任意のコンテキストで、 `git://git.host.xz/repo.git` に書き換えられます。
+
+プッシュ専用のURLを書き換えたい場合は、以下の形式の構成セクションを作成できます:
+
+[verse]
+--
+	[url "__<actual-url-base>__"]
+		pushInsteadOf = _<other-url-base>_
+--
+
+例えば、以下のようになります:
+
+------------
+	[url "ssh://example.org/"]
+		pushInsteadOf = git://example.org/
+------------
+
+`git://example.org/path/to/repo.git` のようなURLは、プッシュの場合は `ssh://example.org/path/to/repo.git` に書き換えられますが、プルは引き続き元のURLのままです。

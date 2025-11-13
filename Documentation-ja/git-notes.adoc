@@ -1,0 +1,236 @@
+git-notes(1)
+============
+
+NAME
+----
+git-notes - オブジェクト・ノートを追加または調べます
+
+SYNOPSIS
+--------
+[synopsis]
+git notes [list [<object>]] git notes add [-f] [--allow-empty] [--[no-]separator | --separator=<paragraph-break>] [--[no-]stripspace] [-F <file> | -m <msg> | (-c | -C) <object>] [-e] [<object>] git notes copy [-f] ( --stdin | <from-object> [<to-object>] ) git notes append [--allow-empty] [--[no-]separator | --separator=<paragraph-break>] [--[no-]stripspace] [-F <file> | -m <msg> | (-c | -C) <object>] [-e] [<object>] git notes edit [--allow-empty] [<object>] [--[no-]stripspace] git notes show [<object>] git notes merge [-v | -q] [-s <strategy> ] <notes-ref> git notes merge --commit [-v | -q] git notes merge --abort [-v | -q] git notes remove [--ignore-missing] [--stdin] [<object>...] git notes prune [-n] [-v] git notes get-ref
+
+
+DESCRIPTION
+-----------
+オブジェクト自体に触れることなく、オブジェクトに添付のノートを追加、削除、または読み取ります。
+
+デフォルトでは、ノートは `refs/notes/commits` に保存され、そこから読み取られますが、このデフォルトはオーバーライドできます。 以下の「OPTIONS」セクション、「CONFIGURATION」セクション、「ENVIRONMENT」のセクションを参照してください。 このrefが存在しない場合、ノートを保存するために最初に必要になったときに黙って作成されます。
+
+A typical use of notes is to supplement a commit message without changing the commit itself. Notes can be shown by `git log` along with the original commit message. To distinguish these notes from the message stored in the commit object, the notes are indented like the message, after an unindented line saying "Notes (_<refname>_):" (or "Notes:" for `refs/notes/commits`).
+
+`--notes` オプションを使用して、 `git format-patch` で作成されたパッチにノートを追加することもできます。 このようなノートは、3つのダッシュの区切り行の後にパッチの解説として追加されます。
+
+To change which notes are shown by `git log`, see the `notes.displayRef` discussion in <<CONFIGURATION,CONFIGURATION>>.
+
+See the `notes.rewrite.<command>` configuration for a way to carry notes across commands that rewrite commits.
+
+
+SUBCOMMANDS
+-----------
+
+`list`::
+	List the notes object for a given object. If no object is given, show a list of all note objects and the objects they annotate (in the format "`<note-object> <annotated-object>`"). This is the default subcommand if no subcommand is given.
+
+`add`::
+	Add notes for a given object (defaults to `HEAD`). Abort if the object already has notes (use `-f` to overwrite existing notes). However, if you're using `add` interactively (using an editor to supply the notes contents), then - instead of aborting - the existing notes will be opened in the editor (like the `edit` subcommand). If you specify multiple `-m` and `-F`, a blank line will be inserted between the messages. Use the `--separator` option to insert other delimiters. You can use `-e` to edit and fine-tune the message(s) supplied from `-m` and `-F` options interactively (using an editor) before adding the note.
+
+`copy`::
+	Copy the notes for the first object onto the second object (defaults to `HEAD`). Abort if the second object already has notes, or if the first object has none (use `-f` to overwrite existing notes to the second object). This subcommand is equivalent to: `git notes add [-f] -C $(git notes list <from-object>) <to-object>`
++
+`--stdin` モードでは、以下の形式で行を取得します
++
+----------
+<from-object> SP <to-object> [ SP <rest> ] LF
+----------
++
+on standard input, and copy the notes from each _<from-object>_ to its corresponding _<to-object>_. (The optional _<rest>_ is ignored so that the command can read the input given to the `post-rewrite` hook.)
++
+`--stdin` cannot be combined with object names given on the command line.
+
+`append`::
+	Append new message(s) given by `-m` or `-F` options to an existing note, or add them as a new note if one does not exist, for the object (defaults to `HEAD`). When appending to an existing note, a blank line is added before each new message as an inter-paragraph separator. The separator can be customized with the `--separator` option. Edit the notes to be appended given by `-m` and `-F` options with `-e` interactively (using an editor) before appending the note.
+
+`edit`::
+	Edit the notes for a given object (defaults to `HEAD`).
+
+`show`::
+	Show the notes for a given object (defaults to `HEAD`).
+
+`merge`::
+	指定のノートrefを現在のノートrefにマージします。 これにより、マージベース(存在する場合)以降に指定されたnote参照(「remote」と呼ばれる）によって行われた変更が現在のノートref(「local」と呼ばれる)にマージされます。
++
+If conflicts arise and a strategy for automatically resolving conflicting notes (see the "NOTES MERGE STRATEGIES" section) is not given, the `manual` resolver is used. This resolver checks out the conflicting notes in a special worktree (`.git/NOTES_MERGE_WORKTREE`), and instructs the user to manually resolve the conflicts there. When done, the user can either finalize the merge with `git notes merge --commit`, or abort the merge with `git notes merge --abort`.
+
+`remove`::
+	Remove the notes for given objects (defaults to `HEAD`). When giving zero or one object from the command line, this is equivalent to specifying an empty note message to the `edit` subcommand.
++
+In `--stdin` mode, also remove the object names given on standard input. In other words, `--stdin` can be combined with object names from the command line.
+
+`prune`::
+	存在しない(non-existing)/到達できない(unreachable) オブジェクトのすべてのノートを削除します。
+
+`get-ref`::
+	現在のノート ref を出力します。これにより、現在のノートrefを(スクリプトなどから)簡単に取得する方法が提供されます。
+
+OPTIONS
+-------
+`-f`::
+`--force`::
+	すでにノートがあるオブジェクトにノートを追加する場合は、(中止するのではなく、)既存のノートを上書きします。
+
+`-m <msg>`::
+`--message=<msg>`::
+	Use the given note message (instead of prompting). If multiple `-m` options are given, their values are concatenated as separate paragraphs.
+
+`-F <file>`::
+`--file=<file>`::
+	Take the note message from the given file. Use `-` to read the note message from the standard input.
+
+`-C <object>`::
+`--reuse-message=<object>`::
+	Take the given blob object (for example, another note) as the note message. (Use `git notes copy <object>` instead to copy notes between objects.) Implies `--no-stripspace` since the default behavior is to copy the message verbatim.
+
+`-c <object>`::
+`--reedit-message=<object>`::
+	Like `-C`, but with `-c` the editor is invoked, so that the user can further edit the note message.
+
+`--allow-empty`::
+	空のノートオブジェクトを保存できるようにします。 デフォルトの動作では、空のノートは自動的に削除されます。
+
+`--separator=<paragraph-break>`::
+`--separator`::
+`--no-separator`::
+	カスタムの段落間区切りとして使用する文字列を指定します (必要に応じて末尾に改行(newline)が追加されます)。 `--no-separator` の場合、 段落間に区切りは追加されません。 これのデフォルトは1行の空行です。
+
+`--stripspace`::
+`--no-stripspace`::
+	Clean up whitespace. Specifically (see linkgit:git-stripspace[1]):
++
+--
+- remove trailing whitespace from all lines
+- collapse multiple consecutive empty lines into one empty line
+- remove empty lines from the beginning and end of the input
+- add a missing `\n` to the last line if necessary.
+--
++
+`--stripspace` is the default except for `-C`/`--reuse-message`. However, keep in mind that this depends on the order of similar options. For example, for `-C <object> -m<message>`, `--stripspace` will be used because the default for `-m` overrides the previous `-C`. This is a known limitation that may be fixed in the future.
+
+`--ref=<ref>`::
+	Manipulate the notes tree in _<ref>_. This overrides `GIT_NOTES_REF` and the `core.notesRef` configuration. The ref specifies the full refname when it begins with `refs/notes/`; when it begins with `notes/`, `refs/` and otherwise `refs/notes/` is prefixed to form a full name of the ref.
+
+`--ignore-missing`::
+	ノートが添付されていないオブジェクトからノートの削除を要求することをエラーと見なさないでください。
+
+`--stdin`::
+	Only valid for `remove` and `copy`. See the respective subcommands.
+
+`-n`::
+`--dry-run`::
+	何も削除しないでください。 ノートが削除されるオブジェクト名を報告するだけです。
+
+`-s <strategy>`::
+`--strategy=<strategy>`::
+	When merging notes, resolve notes conflicts using the given strategy. The following strategies are recognized: `manual` (default), `ours`, `theirs`, `union` and `cat_sort_uniq`. This option overrides the `notes.mergeStrategy` configuration setting. See the "NOTES MERGE STRATEGIES" section below for more information on each notes merge strategy.
+
+`--commit`::
+	Finalize an in-progress `git notes merge`. Use this option when you have resolved the conflicts that `git notes merge` stored in `.git/NOTES_MERGE_WORKTREE`. This amends the partial merge commit created by `git notes merge` (stored in `.git/NOTES_MERGE_PARTIAL`) by adding the notes in `.git/NOTES_MERGE_WORKTREE`. The notes ref stored in the `.git/NOTES_MERGE_REF` symref is updated to the resulting commit.
+
+`--abort`::
+	Abort/reset an in-progress `git notes merge`, i.e. a notes merge with conflicts. This simply removes all files related to the notes merge.
+
+`-q`::
+`--quiet`::
+	ノートをマージするときは、黙って作業します。
+
+`-v`::
+`--verbose`::
+	ノートをマージするときは、よりおしゃべりになります。ノートを刈り込む(prune)ときは、ノートが削除されたすべてのオブジェクト名を報告してください。
+
+
+DISCUSSION
+----------
+
+コミットノートは、オブジェクトに関する追加情報(通常はコミットのメッセージを補足する情報)を含むブロブです。 これらのブロブは、ノートrefから取得されます。 ノートrefは通常、パスが記述されたオブジェクトのオブジェクト名である「ファイル」を含むブランチであり、パフォーマンス上の理由からいくつかのディレクトリ区切り文字が含まれています。 footnote:[ 許可されるパス名の形式は `bf/fe/30/.../680d5a...` です。2桁の16進数のディレクトリ名のシーケンスそれぞれの後に、残りのオブジェクトIDを含むファイル名が続きます。 ]
+
+ノートを変更するたびに、指定したノート参照に新しいコミットが作成されます。 したがって、たとえば `git log -p notes/commits` を実行することで、ノートの履歴を調べることができます。 現在のところ、コミットメッセージには更新のきっかけとなった操作が記録されているだけで、コミットの作者は通常のルールに従って決定されます(linkgit:git-commit[1] 参照)。 これらの詳細は、将来的に変更される可能性があります。
+
+ノートrefがツリーオブジェクトを直接指すことも許可されています。その場合、ノートの履歴は `git log -p -g <refname>` で読み取ることができます。
+
+
+NOTES MERGE STRATEGIES
+----------------------
+
+The default notes merge strategy is `manual`, which checks out conflicting notes in a special work tree for resolving notes conflicts (`.git/NOTES_MERGE_WORKTREE`), and instructs the user to resolve the conflicts in that work tree. When done, the user can either finalize the merge with `git notes merge --commit`, or abort the merge with `git notes merge --abort`.
+
+Users may select an automated merge strategy from among the following using either `-s`/`--strategy` option or configuring `notes.mergeStrategy` accordingly:
+
+`ours` automatically resolves conflicting notes in favor of the local version (i.e. the current notes ref).
+
+`theirs` automatically resolves notes conflicts in favor of the remote version (i.e. the given notes ref being merged into the current notes ref).
+
+`union` automatically resolves notes conflicts by concatenating the local and remote versions.
+
+`cat_sort_uniq` is similar to `union`, but in addition to concatenating the local and remote versions, this strategy also sorts the resulting lines, and removes duplicate lines from the result. This is equivalent to applying the "cat | sort | uniq" shell pipeline to the local and remote versions. This strategy is useful if the notes follow a line-based format where one wants to avoid duplicated lines in the merge result. Note that if either the local or remote version contain duplicate lines prior to the merge, these will also be removed by this notes merge strategy.
+
+
+EXAMPLES
+--------
+
+あなたはノートを使用して、コミットが書き込まれた時点では利用できなかった情報を含む注釈を追加できます。
+
+------------
+$ git notes add -m 'Tested-by: Johannes Sixt <j6t@kdbg.org>' 72a144e2
+$ git show -s 72a144e
+[...]
+    Signed-off-by: Junio C Hamano <gitster@pobox.com>
+
+Notes:
+    Tested-by: Johannes Sixt <j6t@kdbg.org>
+------------
+
+In principle, a note is a regular Git blob, and any kind of (non-)format is accepted. You can binary-safely create notes from arbitrary files using `git hash-object`:
+
+------------
+$ cc *.c
+$ blob=$(git hash-object -w a.out)
+$ git notes --ref=built add --allow-empty -C "$blob" HEAD
+------------
+
+(You cannot simply use `git notes --ref=built add -F a.out HEAD` because that is not binary-safe.) Of course, it doesn't make much sense to display non-text-format notes with `git log`, so if you use such notes, you'll probably need to write some special-purpose tools to do something useful with them.
+
+
+[[CONFIGURATION]]
+CONFIGURATION
+-------------
+
+`core.notesRef`::
+	`refs/notes/commits` の代わりに読み取りおよび操作するノートref。省略されていないref名である必要があります。この設定は、環境およびコマンドラインから上書きできます。
+
+include::includes/cmd-config-section-rest.adoc[]
+
+include::config/notes.adoc[]
+
+
+ENVIRONMENT
+-----------
+
+`GIT_NOTES_REF`::
+	`refs/notes/commits` の代わりに、どのrefからノートを操作するか。 これは `core.notesRef` 設定を上書きします。
+
+`GIT_NOTES_DISPLAY_REF`::
+	コロンで区切られた ref または glob のリスト。コミットメッセージを表示する際に、デフォルトの `core.notesRef` または `GIT_NOTES_REF` に加えて、どの ref からノートを読み込むかを指定します。 これは `notes.displayRef` の設定よりも優先されます。
++
+存在しないrefに対して警告が発行されますが、どのrefとも一致しないグロブ(glob)は黙って無視されます。
+
+`GIT_NOTES_REWRITE_MODE`::
+	書き換え中にノートをコピーするときに、ターゲットコミットにすでにノートがある場合の対処方法。 `overwrite` 、`concatenate` 、 `cat_sort_uniq` 、`ignore` のいずれかである必要があります。 これは `core.rewriteMode` 設定を上書きします。
+
+`GIT_NOTES_REWRITE_REF`::
+	コミットを書き換える場合、元のコミットから書き換えられたコミットにコピーするためのノート。refまたはグロブ(glob)のコロンで区切られたリストである必要があります。
++
+環境で設定されていない場合、コピーするノートのリストは、 `notes.rewrite.<command>` および `notes.rewriteRef` の設定によって異なります。
+
+GIT
+---
+Part of the linkgit:git[1] suite

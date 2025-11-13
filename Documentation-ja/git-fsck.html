@@ -752,7 +752,7 @@ git-fsck(1) Manual Page
 <pre class="content"><em>git <code>fsck</code></em> [<code>--tags</code>] [<code>--root</code>] [<code>--unreachable</code>] [<code>--cache</code>] [<code>--no-reflogs</code>]
          [<code>--</code>[<code>no-</code>]<code>full</code>] [<code>--strict</code>] [<code>--verbose</code>] [<code>--lost-found</code>]
          [<code>--</code>[<code>no-</code>]<code>dangling</code>] [<code>--</code>[<code>no-</code>]<code>progress</code>] [<code>--connectivity-only</code>]
-         [<code>--</code>[<code>no-</code>]<code>name-objects</code>] [<em>&lt;object&gt;</em><span>&#8230;]</span></pre>
+         [<code>--</code>[<code>no-</code>]<code>name-objects</code>] [<code>--</code>[<code>no-</code>]<code>references</code>] [<em>&lt;object&gt;</em><span>&#8230;]</span></pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -785,7 +785,10 @@ git-fsck(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>dangling</code>
+<code>--dangling</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-dangling</code>
 </dt>
 <dd>
 <p>
@@ -874,11 +877,25 @@ git-fsck(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>progress</code>
+<code>--progress</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-progress</code>
 </dt>
 <dd>
 <p>
         <code>--no-progress</code> または <code>--verbose</code> が指定されていない限り、進行状況ステータスは、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 <code>--progress</code> は、標準エラーストリームが端末に送信されていない場合でも、進行状況出力を強制します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--references</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-references</code>
+</dt>
+<dd>
+<p>
+        Control whether to check the references database consistency via <em>git refs verify</em>. See <a href="git-refs.html">git-refs(1)</a> for details. The default is to check the references database.
 </p>
 </dd>
 </dl></div>
@@ -897,7 +914,7 @@ fsck.&lt;msg-id&gt;
         fsck中に、gitは、現在のバージョンのgitでは生成されず、 <code>transfer.fsckObjects</code> が設定されている場合はネットワーク経由で送信されない、レガシーデータの問題を検出する場合があります。この機能は、そのようなデータを含むレガシーリポジトリの操作をサポートすることを目的としています。
 </p>
 <div class="paragraph"><p><code>fsck.</code><em>&lt;msg-id&gt;</em> 設定は、 <a href="git-fsck.html">git-fsck(1)</a> によって取得されますが、代わりに、そのようなデータセット <code>receive.fsck.</code><em>&lt;msg-id&gt;</em> のプッシュを受け入れるか、または、クローンまたはフェッチのセットである <code>fetch.fsck.</code><em>&lt;msg-id&gt;</em> を使用します。</p></div>
-<div class="paragraph"><p>この文書の残りの部分では、 話を簡潔にするために <code>fsck.</code>* 変数で説明していますが、 これは、 対応する <code>receive.fsck.</code>* 変数や <code>fetch.fsck.</code>* 変数にも全く同じことが当てはまります。</p></div>
+<div class="paragraph"><p>この文書の残りの部分では、 話を簡潔にするために <code>fsck.*</code> 変数で説明していますが、 これは、 対応する <code>receive.fsck.*</code> 変数や <code>fetch.fsck.*</code> 変数にも全く同じことが当てはまります。</p></div>
 <div class="paragraph"><p><code>color.ui</code> や <code>core.editor</code> のような変数とは異なり、 <code>receive.fsck.</code><em>&lt;msg-id&gt;</em> や <code>fetch.fsck.</code><em>&lt;msg-id&gt;</em> 変数は、設定されていない場合、 <code>fsck.</code><em>&lt;msg-id&gt;</em> 構成にフォールバックしません。 さまざまな状況で同一のfsck設定を均一に構成するには、これら 3 つすべてを同一の値に設定する必要があります。</p></div>
 <div class="paragraph"><p><code>fsck.</code><em>&lt;msg-id&gt;</em> が設定されている場合、 <code>fsck.</code><em>&lt;msg-id&gt;</em> の値を <code>error</code> 、 <code>warn</code> 、<code>ignore</code> のいずれか一つとすることにより、エラーを警告に切り替える事もでき、その逆も可能です。そして <em>&lt;msg-id&gt;</em> の部分はメッセージIDです。便利なように、fsckはエラー/警告メッセージの前にメッセージIDを付けます。たとえば「missingEmail: invalid author/committer line - missing email」は、 <code>fsck.missingEmail</code> <code>=</code> <code>ignore</code> を設定するとその問題が非表示になることを意味します。</p></div>
 <div class="paragraph"><p>一般に、これらの問題のあるオブジェクトが共有する破損の種類をリストして無視するのではなく、 <code>fsck.skipList</code> に問題のある既存のオブジェクトを列挙することをお勧めします。前者を実行すると、同じ破損の新しいインスタンスが見過ごされる可能性があります。</p></div>
@@ -1004,6 +1021,22 @@ hash mismatch &lt;object&gt;
 </p>
 </dd>
 <dt class="hdlist1">
+<code>badGpgsig</code>
+</dt>
+<dd>
+<p>
+        (ERROR) A tag contains a bad (truncated) signature (e.g., <code>gpgsig</code>) header.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>badHeaderContinuation</code>
+</dt>
+<dd>
+<p>
+        (ERROR) A continuation header (such as for <code>gpgsig</code>) is unexpectedly truncated.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>badName</code>
 </dt>
 <dd>
@@ -1017,6 +1050,22 @@ hash mismatch &lt;object&gt;
 <dd>
 <p>
         (ERROR) オブジェクトは不正な sha1 です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>badPackedRefEntry</code>
+</dt>
+<dd>
+<p>
+        (ERROR) The "packed-refs" file contains an invalid entry.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>badPackedRefHeader</code>
+</dt>
+<dd>
+<p>
+        (ERROR) The "packed-refs" file contains an invalid header.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1057,6 +1106,14 @@ hash mismatch &lt;object&gt;
 <dd>
 <p>
         (ERROR) symref の参照先名(referent name)が無効です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>badReftableTableName</code>
+</dt>
+<dd>
+<p>
+        (WARN) A reftable table has an invalid name.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1113,6 +1170,14 @@ hash mismatch &lt;object&gt;
 <dd>
 <p>
         (WARN) パスに空の名前が含まれています。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>emptyPackedRefsFile</code>
+</dt>
+<dd>
+<p>
+        (INFO) "packed-refs" file is empty. Report to the <a href="mailto:git@vger.kernel.org">git@vger.kernel.org</a> mailing list if you see this error. As only very early versions of Git would create such an empty "packed_refs" file, we might tighten this rule in the future.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1217,14 +1282,6 @@ hash mismatch &lt;object&gt;
 <dd>
 <p>
         (INFO) <code>.gitmodules</code> ブロブをパースできませんでした。
-</p>
-</dd>
-<dt class="hdlist1">
-<code>gitmodulesLarge</code>
-</dt>
-<dd>
-<p>
-        (ERROR) <code>.gitmodules</code> ブロブが大きすぎてパースできません。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1436,6 +1493,22 @@ hash mismatch &lt;object&gt;
 </p>
 </dd>
 <dt class="hdlist1">
+<code>packedRefEntryNotTerminated</code>
+</dt>
+<dd>
+<p>
+        (ERROR) The "packed-refs" file contains an entry that is not terminated by a newline.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>packedRefUnsorted</code>
+</dt>
+<dd>
+<p>
+        (ERROR) The "packed-refs" file is not sorted.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>refMissingNewline</code>
 </dt>
 <dd>
@@ -1552,7 +1625,7 @@ GIT_ALTERNATE_OBJECT_DIRECTORIES
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-02-20 03:50:48 JST
+ 2025-11-13 13:43:54 JST
 </div>
 </div>
 </body>

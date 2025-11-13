@@ -1,0 +1,199 @@
+git-remote(1)
+=============
+
+NAME
+----
+git-remote - 追跡中のリポジトリの組を管理します
+
+
+SYNOPSIS
+--------
+[synopsis]
+	'git remote' [-v | --verbose]
+	'git remote add' [-t <branch>] [-m <master>] [-f] [--[no-]tags] [--mirror=(fetch|push)] <name> <URL>
+	'git remote rename' [--[no-]progress] <old> <new>
+	'git remote remove' <name>
+	'git remote set-head' <name> (-a | --auto | -d | --delete | <branch>)
+	'git remote set-branches' [--add] <name> <branch>...
+	'git remote get-url' [--push] [--all] <name>
+	'git remote set-url' [--push] <name> <newurl> [<oldurl>]
+	'git remote set-url --add' [--push] <name> <newurl>
+	'git remote set-url --delete' [--push] <name> <URL>
+	'git remote' [-v | --verbose] 'show' [-n] <name>...
+	'git remote prune' [-n | --dry-run] <name>...
+	'git remote' [-v | --verbose] 'update' [-p | --prune] [(<group> | <remote>)...]
+
+DESCRIPTION
+-----------
+
+ブランチを追跡するリポジトリの組(「remotes」)を管理します。
+
+
+OPTIONS
+-------
+
+`-v`::
+`--verbose`::
+	もう少しおしゃべりにして、名前の後にリモートURLを表示します。 プロミサー・リモートの場合は、構成されているフィルター達(`blob:none` など)も表示します。 注意: これは、`remote` とサブコマンドの間に配置する必要があります。
+
+
+COMMANDS
+--------
+
+引数なしだと、既存のリモートのリストを表示します。 「リモート」に操作を実行するために、いくつかのサブコマンドを使用できます。
+
+`add`::
+
+<URL>のリポジトリに<name>という名前の「リモート」を追加します。 次に、コマンド `git fetch <name>` を使用して、リモート追跡ブランチ <name>/<branch> を作成および更新できます。
++
+`-f` オプションと使用すると、「リモート」情報が設定された直後に `git fetch <name>` が実行されます。
++
+`--tags` オプションと使用すると、 `git fetch <name>` はリモートリポジトリからすべてのタグをインポートします。
++
+`--no-tags` オプションと使用すると、 `git fetch <name> ` はリモートリポジトリからタグをインポートしません。
++
+デフォルトでは、フェッチされたブランチのタグのみがインポートされます(linkgit:git-fetch[1] 参照)。
++
+`-t <branch>` オプションと使用すると、「リモート」のデフォルトのグロブrefspecが `refs/remotes/<name>/` 名前空間の下のすべてのブランチを追跡する代わりに、 `<branch>` のみを追跡するrefspecが作成されます。 複数の `-t <branch>` を指定して、すべてのブランチを取得せずに複数のブランチを追跡できます。
++
+`-m <master>` オプションと使用すると、シンボリックref `refs/remotes/<name>/HEAD` がリモートの `<master>` ブランチを指すように設定されます。 set-head コマンドも参照してください。
++
+フェッチミラーが `--mirror=fetch` で作成される場合、refは `refs/remotes/` 名前空間に保存されませんが、リモートの `refs/` 内のすべてがローカルリポジトリ内の `refs/` に直接ミラーリングされます。フェッチはローカルコミットを上書きするため、このオプションはベアリポジトリでのみ意味があります。
++
+プッシュミラーが `--mirror=push` で作成されると、 `git push` は常に `--mirror` が渡されたかのように動作します。
+
+`rename`::
+
+<old>という名前の「リモート」の名前を<new>に変更します。 「リモート」のすべてのリモート追跡ブランチと構成設定が更新されます。
++
+<old>と<new>が同一で、<old>が `$GIT_DIR/remotes` または `$GIT_DIR/branchs` の下のファイルである場合、「リモート」は構成ファイル形式に変換されます。
+
+`remove`::
+`rm`::
+
+<name>という名前の「リモート」を削除します。 「リモート」のすべてのリモート追跡ブランチと構成設定が削除されます。
+
+`set-head`::
+
+名前付き「リモート」のデフォルトブランチ(つまり、シンボリックref `refs/remotes/<name>/HEAD` のターゲット)を設定または削除します。 リモートのデフォルトブランチを持つ必要はありませんが、特定のブランチの代わりにリモートの名前を指定できます。 たとえば、`origin` のデフォルトブランチが `master` に設定されている場合、通常は `origin/master` を指定する場所であればどこでも `origin` を指定できます。
++
+`-d` または `--delete` と使用すると、シンボリックref `refs/remotes/<name>/HEAD` が削除されます。
++
+`-a` または `--auto` と使用すると、リモートはその `HEAD` を決定するために照会され、シンボリックref `refs/remotes/<name>/HEAD` が同じブランチに設定されます。 たとえば、リモートの `HEAD` が `next` を指している場合、 `git remote set-head origin -a` はシンボリックref `refs/remotes/origin/HEAD` を `refs/remotes/origin/next` に設定します。 これは、 `refs/remotes/origin/next` がすでに存在する場合にのみ機能します。 そうでない場合は、最初にフェッチする必要があります。
++
+`<branch>` を使用して、シンボリックref `refs/remotes/<name>/HEAD` を明示的に設定します。 たとえば、 `git remote set-head origin master` はシンボリックref `refs/remotes/origin/HEAD` を `refs/remotes/origin/master` に設定します。 これは、 `refs/remotes/origin/master` がすでに存在する場合にのみ機能します。 そうでない場合は、最初にフェッチする必要があります。
++
+
+`set-branches`::
+
+指定された「リモート」によって追跡されるブランチのリストを変更します。 これは、「リモート」の初期セットアップ後に、使用可能なリモートブランチのサブセットを追跡するために使用できます。
++
+名前付きブランチは、 `git remote add` コマンドラインで `-t` オプションを指定した場合と同じように解釈されます。
++
+`--add` と使用すると、現在追跡されているブランチのリストを置き換える代わりに、そのリストに追加します。
+
+`get-url`::
+
+「リモート」のURLを取得します。 `insteadOf` と `pushInsteadOf` の設定はここで展開されます。デフォルトでは、最初のURLのみがリストされます。
++
+`--push` と使用すると、URLをフェッチするのではなく、プッシュURLが照会されます。
++
+`--all` と使用すると、リモート(remote)のすべてのURLが一覧表示されます。
+
+`set-url`::
+
+「リモート」のURLを変更します。 正規表現 <oldurl> (<oldurl> が指定されていない場合は最初のURL)に一致するリモート<name>の最初のURLを<newurl>に設定します。 <oldurl>がどのURLとも一致しない場合、エラーが発生し、何も変更されません。
++
+`--push` と使用すると、フェッチURLの代わりにプッシュURLが操作されます。
++
+`--add` と使用すると、既存のURLを変更する代わりに、新しいURLが追加されます。
++
+`--delete` と使用すると、既存のURLを変更する代わりに、リモート<name>の 正規表現<URL> に一致するすべてのURLが削除されます。プッシュされていないURLをすべて削除しようとするとエラーになります。
++
+注意: プッシュURLとフェッチURLは、設定を変えても、同じ場所を参照する必要があることに注意してください。 プッシュURLにプッシュしたものは、フェッチURLからすぐにフェッチした場合に表示されるものになります。 ある場所(上流など)からフェッチして別の場所(パブリッシング・リポジトリーなど)にプッシュしようとしている場合は、2つの別々の「リモート」を使用します。
+
+
+`show`::
+
+リモートの<name>に関する情報を提供します。
++
+`-n` オプションと使用すると、リモートヘッドは最初に `git ls-remote <name>` でクエリされません。 代わりに、キャッシュされた情報が使用されます。
+
+`prune`::
+
+<name>に関連付けられている古い参照を削除します。 デフォルトでは、<name>の下の古いリモート追跡ブランチは削除されますが、グローバル構成とリモートの構成によっては、そこにプッシュされていないローカルタグを削除することもあります。 新しい参照がフェッチされないことを除いて、 `git fetch --prune <name>` と同等です。
++
+さまざまな構成に応じて刈り込みする内容については、 linkgit:git-fetch[1] の「PRUNING」セクションを参照してください。
++
+`--dry-run` オプションと使用して、どのブランチが刈り込まれるかを報告しますが、実際にはそれらを刈り込みしません。
+
+`update`::
+
+`remotes.<group>` で定義されているように、リポジトリ内のリモートまたはリモートグループの更新を取得します。 コマンドラインでgroupもremoteも指定されていない場合は、構成パラメーター remotes.default が使用されます。 remotes.defaultが定義されていない場合、構成パラメーター `remote.<name>.skipDefaultUpdate` がtrueに設定されていないすべてのリモートが更新されます。 (linkgit:git-config[1] 参照)。
++
+`--prune` オプションと使用して、更新されたすべてのリモートに対して刈り込みを実行します。
+
+
+DISCUSSION
+----------
+
+「リモート」構成は、 `remote.origin.url` および `remote.origin.fetch` 構成変数を使用して実現されます。 (linkgit:git-config[1] 参照)。
+
+EXIT STATUS
+-----------
+
+成功ならば、終了ステータスは `0` です。
+
+add や rename や remove などのサブコマンドが問題のリモートを見つけることができない場合、終了ステータスは `2` です。 リモートがすでに存在する場合、終了ステータスは `3` です。
+
+その他のエラーの場合、終了ステータスはその他ゼロ以外の値になるでしょう。
+
+EXAMPLES
+--------
+
+* 新しいリモートを追加し、フェッチして、そこからブランチをチェックアウトします
++
+------------
+$ git remote
+origin
+$ git branch -r
+  origin/HEAD -> origin/master
+  origin/master
+$ git remote add staging git://git.kernel.org/.../gregkh/staging.git
+$ git remote
+origin
+staging
+$ git fetch staging
+...
+From git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging
+ * [new branch]      master     -> staging/master
+ * [new branch]      staging-linus -> staging/staging-linus
+ * [new branch]      staging-next -> staging/staging-next
+$ git branch -r
+  origin/HEAD -> origin/master
+  origin/master
+  staging/master
+  staging/staging-linus
+  staging/staging-next
+$ git switch -c staging staging/master
+...
+------------
+
+* `git clone` を模倣しますが、選択したブランチのみを追跡します
++
+------------
+$ mkdir project.git
+$ cd project.git
+$ git init
+$ git remote add -f -t master -m master origin git://example.com/git.git/
+$ git merge origin
+------------
+
+
+SEE ALSO
+--------
+linkgit:git-fetch[1] linkgit:git-branch[1] linkgit:git-config[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

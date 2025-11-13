@@ -1,0 +1,295 @@
+git-interpret-trailers(1)
+=========================
+
+NAME
+----
+git-interpret-trailers - コミットメッセージの構造化情報を追加またはパースします
+
+SYNOPSIS
+--------
+[synopsis]
+'git interpret-trailers' [--in-place] [--trim-empty]
+			[(--trailer (<key>|<key-alias>)[(=|:)<value>])...]
+			[--parse] [<file>...]
+
+DESCRIPTION
+-----------
+コミット メッセージの自由形式部分の最後の、 RFC 822 電子メール・ヘッダーに似た「トレーラー」(trailer)行の追加またはパースを行います。 たとえば、 以下コミットメッセージ:
+
+------------------------------------------------
+subject
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+Signed-off-by: Alice <alice@example.com>
+Signed-off-by: Bob <bob@example.com>
+------------------------------------------------
+
+ここで、「Signed-off-by」で始まる最後の 2 行はトレーラーです。
+
+このコマンドは、<file> 引数から、 または <file> が指定されていない場合は標準入力からコミット・メッセージを読み取ります。 `--parse` が指定されている場合、 出力は入力からパースされたトレーラーで構成され、 コマンドライン・オプションや校正変数によって影響を受けることはありません。
+
+それ以外の場合、 このコマンドは `trailer.*` 構成変数を適用します(これにより新しいトレーラーが追加されたり、 位置が変更されたりする可能性があります)。 また、 構成変数を上書きできるコマンドライン引数(たとえば、 新しいトレーラーを追加する可能性のある `--trailer=...` など)も各入力ファイルに適用されます。 結果は標準出力に出力されます。
+
+このコマンドでは linkgit:git-format-patch[1] の出力を操作することもできます。 これは、 素のコミット・メッセージよりも複雑です。 つまり、 このような出力には、 (上記のとおりの)コミット・メッセージと `---` 区切り線とパッチ部分が含まれます。 これらの入力の場合 `--no-divider` が指定されない限り、 区切り線以下とパッチ部分はこのコマンドによって変更されず、 そのまま出力されます。
+
+いくつかの設定変数は `--trailer` 引数が各入力に適用される方法と、 入力内の既存のトレーラーが変更される方法を制御します。 また、 いくつかのトレーラを自動的に追加することもできます。
+
+デフォルトでは、 `--trailer` で指定された `<key>=<value>` または `<key>:<value>` 引数は、既存の最後のトレーラーのペア(<key>, <value>)が指定のペア異なる場合(または、既存のに無い場合)にのみ、指定したモノが既存のトレーラーの後に追加されます。 <key> と <value> の部分は、先頭と末尾の空白がトリミングされ、以下のように出力に表示されます:
+
+------------------------------------------------
+key: value
+------------------------------------------------
+
+これは、 トリミングされた <key> と <value> が ": "(1つのコロンに続く1つの空白が続)で区切られることを意味します。
+
+利便性のために、 <key-alias> を設定することで、 コマンドラインでの `--trailer` の入力を短縮できます。 これは `trailer.<key-alias>.key` 構成変数を使用して設定できます。 <keyAlias> は完全な <key> 文字列のプレフィックスである必要があり、 大文字小文字の区別は関係ありません。 たとえば、 あなたの構成が以下のようになっている場合
+
+------------------------------------------------
+trailer.sign.key "Signed-off-by: "
+------------------------------------------------
+
+コマンドラインで `--trailer="Signed-off-by: foo"` の代わりに `--trailer="sign: foo"` とだけを指定すれば済みます。
+
+デフォルトでは、 すべての既存のトレーラーの末尾の後ろに新しいトレーラーが出力されます。 既存のトレーラーがない場合は、 新しいトレーラーが入力の末尾の後ろに出力表示されます。 その新しいトレーラーの前にまだ空行がない場合は、 空行が追加されます。
+
+入力から、 (i) すべてのトレーラーを含むか、 または (ii) 1つ以上の Git 生成またはユーザー構成のトレーラーを含む25％以上のトレーラーで構成される、 1行以上のグループから、 既存のトレーラーを探し出して抽出します。 そのグループの前には、 1行以上の空行(または空白のみの行)が必要です。 そのグループは、 入力の末尾にあるか、 あるいは `---` で始まる行より前の最後の非空白行達である必要があります(その後にスペースまたは行の終わりが続きます)。
+
+トレーラーを読み取る場合、 <key> の前または内部に空白(whitespace)を含めることはできませんが、 <key> とセパレーターの間には、 任意の数の通常の空白(space)文字達とタブ文字達を使用できます。 <value> の前または内部または後ろに空白達(whitespaces)を入れることができます。 RFC 822 の「folding」(折り畳み)のように、 <value> は複数の行に分割され、 後続の各行の先頭は1つ以上の空白(whitespace)で始まります。
+
+------------------------------------------------
+key: This is a very long value, with spaces and
+  newlines in it.
+------------------------------------------------
+
+注意: トレーラーはRFC822ヘッダー規則の多くに従うことを意図してませんし、 従わないことに注意してください。 たとえば、 それらはエンコーディング規則に従いません。
+
+OPTIONS
+-------
+`--in-place`::
+	その場でファイルを編集します。
+
+`--trim-empty`::
+	トレーラーの <value> 部分に空白(whitespace)のみが含まれている場合、 出力からトレーラー全体が削除されます。 これは、 新しいトレーラーだけでなく、 既存のトレーラーにも適用されます。
+
+`--trailer <key>[(=|:)<value>]`::
+	入力のトレーラーとして適用する必要があるペア(<key>, <value>)を指定します。 詳しくはこのコマンドの説明を参照してください。
+
+`--where <placement>`::
+`--no-where`::
+	すべての新しいトレーラーが追加される場所を指定します。 `--where` で指定する設定は、 `trailer.where` や、 適用可能な `trailer.<keyAlias>.where` 構成変数を上書きし、 次に `--where` または `--no-where` が現れるまでのすべての `--trailer` オプションに適用されます。 `--no-where` に遭遇すると、 それまでに使用された `--where` の効果がクリアされ、 関連する構成変数が上書きされなくなります。 <placement> として可能な値は `after` または `before` または `end` または `start` です。
+
+`--if-exists <action>`::
+`--no-if-exists`::
+	Specify what action will be performed when there is already at least one trailer with the same <key> in the input. A setting provided with '--if-exists' overrides the `trailer.ifExists` and any applicable `trailer.<keyAlias>.ifExists` configuration variables and applies to all '--trailer' options until the next occurrence of '--if-exists' or '--no-if-exists'. Upon encountering '--no-if-exists', clear the effect of any previous use of '--if-exists', such that the relevant configuration variables are no longer overridden. Possible actions are `addIfDifferent`, `addIfDifferentNeighbor`, `add`, `replace` and `doNothing`.
+
+`--if-missing <action>`::
+`--no-if-missing`::
+	Specify what action will be performed when there is no other trailer with the same <key> in the input. A setting provided with '--if-missing' overrides the `trailer.ifMissing` and any applicable `trailer.<keyAlias>.ifMissing` configuration variables and applies to all '--trailer' options until the next occurrence of '--if-missing' or '--no-if-missing'. Upon encountering '--no-if-missing', clear the effect of any previous use of '--if-missing', such that the relevant configuration variables are no longer overridden. Possible actions are `doNothing` or `add`.
+
+`--only-trailers`::
+	トレーラーのみを出力し、入力の他の部分は出力しません。
+
+`--only-input`::
+	入力に存在するトレーラーのみを出力します。 コマンドラインや `trailer.*` 構成変数を適用してトレーラーを追加することはありません。
+
+`--unfold`::
+	トレーラーの値が複数行にわたる(いわゆる「折り畳まれている」)場合、 その値が1行になるよう再フォーマットします。
+
+`--parse`::
+	`--only-trailers --only-input --unfold` の便利なエイリアスです。 これにより、 コマンドライン・オプションや構成変数によって影響を与えることなく、 入力から来るトレーラーのみを見ることが簡単になり、 `--unfold` で出力を機械に優しい形式することもできます。
+
+`--no-divider`::
+	`---` をコミットメッセージの終わりとして扱わないでください。(電子メールや `git format-patch`の出力が含まれておらず、)入力にコミットメッセージ自体だけが含まれていることがわかっている場合にこれを使用します。
+
+CONFIGURATION VARIABLES
+-----------------------
+
+include::includes/cmd-config-section-all.adoc[]
+
+include::config/trailer.adoc[]
+
+EXAMPLES
+--------
+
+* 「Signed-off-by」キーを使用して「sign」トレーラーを構成してから、 これら2つのトレーラーをコミット・メッセージ・ファイルへ追加します:
++
+------------
+$ git config trailer.sign.key "Signed-off-by"
+$ cat msg.txt
+subject
+
+body text
+$ git interpret-trailers --trailer 'sign: Alice <alice@example.com>' --trailer 'sign: Bob <bob@example.com>' <msg.txt
+subject
+
+body text
+
+Signed-off-by: Alice <alice@example.com>
+Signed-off-by: Bob <bob@example.com>
+------------
+
+* `--in-place` オプションを使用して、 コミット・メッセージ・ファイルをその場で編集します:
++
+------------
+$ cat msg.txt
+subject
+
+body text
+
+Signed-off-by: Bob <bob@example.com>
+$ git interpret-trailers --trailer 'Acked-by: Alice <alice@example.com>' --in-place msg.txt
+$ cat msg.txt
+subject
+
+body text
+
+Signed-off-by: Bob <bob@example.com>
+Acked-by: Alice <alice@example.com>
+------------
+
+* 最後のコミットをパッチとして抽出し、それに「Cc」トレーラーと「Reviewed-by」トレーラーを追加します:
++
+------------
+$ git format-patch -1
+0001-foo.patch
+$ git interpret-trailers --trailer 'Cc: Alice <alice@example.com>' --trailer 'Reviewed-by: Bob <bob@example.com>' 0001-foo.patch >0001-bar.patch
+------------
+
+* 「Signed-off-by: 」がまだない場合にのみ、作者情報を含む「Signed-off-by: 」を自動的に追加するコマンドを伴って「sign」トレーラーを構成し、それがどのように機能するかを示します:
++
+------------
+$ cat msg1.txt
+subject
+
+body text
+$ git config trailer.sign.key "Signed-off-by: "
+$ git config trailer.sign.ifmissing add
+$ git config trailer.sign.ifexists doNothing
+$ git config trailer.sign.cmd 'echo "$(git config user.name) <$(git config user.email)>"'
+$ git interpret-trailers --trailer sign <msg1.txt
+subject
+
+body text
+
+Signed-off-by: Bob <bob@example.com>
+$ cat msg2.txt
+subject
+
+body text
+
+Signed-off-by: Alice <alice@example.com>
+$ git interpret-trailers --trailer sign <msg2.txt
+subject
+
+body text
+
+Signed-off-by: Alice <alice@example.com>
+------------
+
+* trailer.fix.key に 区切り文字 `#` を含み、その後ろにスペースを含まないキーを使用して「fix」トレーラーを構成し、それがどのように機能するかを示します:
++
+------------
+$ git config trailer.separators ":#"
+$ git config trailer.fix.key "Fix #"
+$ echo "subject" | git interpret-trailers --trailer fix=42
+subject
+
+Fix #42
+------------
+
+* cmdを使用して「ヘルプ」トレーラーを構成します。スクリプト `glog-find-author` を使用して、gitリポジトリのgitログから指定された作成者IDを検索し、その動作を示します。
++
+------------
+$ cat ~/bin/glog-find-author
+#!/bin/sh
+test -n "$1" && git log --author="$1" --pretty="%an <%ae>" -1 || true
+$ cat msg.txt
+subject
+
+body text
+$ git config trailer.help.key "Helped-by: "
+$ git config trailer.help.ifExists "addIfDifferentNeighbor"
+$ git config trailer.help.cmd "~/bin/glog-find-author"
+$ git interpret-trailers --trailer="help:Junio" --trailer="help:Couder" <msg.txt
+subject
+
+body text
+
+Helped-by: Junio C Hamano <gitster@pobox.com>
+Helped-by: Christian Couder <christian.couder@gmail.com>
+------------
+
+* cmdを使用して `ref` トレーラーを構成し、スクリプト `glog-grep` を使用して、gitリポジトリのgitログから最後の関連するコミットをgrepし、それがどのように機能するかを示します。
++
+------------
+$ cat ~/bin/glog-grep
+#!/bin/sh
+test -n "$1" && git log --grep "$1" --pretty=reference -1 || true
+$ cat msg.txt
+subject
+
+body text
+$ git config trailer.ref.key "Reference-to: "
+$ git config trailer.ref.ifExists "replace"
+$ git config trailer.ref.cmd "~/bin/glog-grep"
+$ git interpret-trailers --trailer="ref:Add copyright notices." <msg.txt
+subject
+
+body text
+
+Reference-to: 8bc9a0c769 (Add copyright notices., 2005-04-07)
+------------
+
+* 関連するコミットの件名を出力し、それがどのように機能するかを示すコマンドを使用して、「see」トレーラーを構成します:
++
+------------
+$ cat msg.txt
+subject
+
+body text
+
+see: HEAD~2
+$ cat ~/bin/glog-ref
+#!/bin/sh
+git log -1 --oneline --format="%h (%s)" --abbrev-commit --abbrev=14
+$ git config trailer.see.key "See-also: "
+$ git config trailer.see.ifExists "replace"
+$ git config trailer.see.ifMissing "doNothing"
+$ git config trailer.see.cmd "glog-ref"
+$ git interpret-trailers --trailer=see <msg.txt
+subject
+
+body text
+
+See-also: fe3187489d69c4 (subject of related commit)
+------------
+
+* 空の値を持ついくつかのトレーラーを使用してコミットテンプレートを構成し(sedを使用してトレーラーの後に末尾のスペースを出力および保持します)、次に、「git interpret-trailers」を使用するcommit-msgフックを構成して、値が空のトレーラーを削除し、「git-version」トレーラーを追加します:
++
+------------
+$ cat temp.txt
+***subject***
+
+***message***
+
+Fixes: Z
+Cc: Z
+Reviewed-by: Z
+Signed-off-by: Z
+$ sed -e 's/ Z$/ /' temp.txt > commit_template.txt
+$ git config commit.template commit_template.txt
+$ cat .git/hooks/commit-msg
+#!/bin/sh
+git interpret-trailers --trim-empty --trailer "git-version: \$(git describe)" "\$1" > "\$1.new"
+mv "\$1.new" "\$1"
+$ chmod +x .git/hooks/commit-msg
+------------
+
+SEE ALSO
+--------
+linkgit:git-commit[1], linkgit:git-format-patch[1], linkgit:git-config[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

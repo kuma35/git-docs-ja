@@ -1,0 +1,153 @@
+git-restore(1)
+==============
+
+NAME
+----
+git-restore - 作業ツリーファイルを復元します
+
+SYNOPSIS
+--------
+[synopsis]
+git restore [<options>] [--source=<tree>] [--staged] [--worktree] [--] <pathspec>... git restore [<options>] [--source=<tree>] [--staged] [--worktree] --pathspec-from-file=<file> [--pathspec-file-nul] git restore (-p|--patch) [<options>] [--source=<tree>] [--staged] [--worktree] [--] [<pathspec>...]
+
+DESCRIPTION
+-----------
+作業ツリー内の指定のパスを、 復元元(restore source)からのコンテンツで復元(restore)します。 パスが追跡されているが復元元に存在しない場合、 復元元に合わせて削除されます。
+
+このコマンドを使用して、 `--staged` を使用してインデックスのコンテンツを復元したり、 `--staged--worktree` を使用して作業ツリーとインデックスの両方を復元したりすることもできます。
+
+デフォルトでは、 `--staged` が指定されている場合、コンテンツは `HEAD` から復元され、そうでない場合はインデックスから復元されます。別のコミットから復元するには、 `--source` を使用します。
+
+3つのコマンドの違いについては、 linkgit:git[1] の "Reset, restore and revert" を参照してください。
+
+OPTIONS
+-------
+`-s <tree>`::
+`--source=<tree>`::
+	指定のツリーのコンテンツを使用して、作業ツリーファイルを復元します。ソースツリーに関連付けられているコミット、ブランチ、またはタグに名前を付けてソースツリーを指定するのが一般的です。
++
+このオプションを指定しない場合で、 `--staged` が指定されている場合は `HEAD` から、それ以外の場合はインデックスから内容が復元されます。
++
+As a special case, you may use `"<rev-A>...<rev-B>"` as a shortcut for the merge base of _<rev-A>_ and _<rev-B>_ if there is exactly one merge base. You can leave out at most one of _<rev-A>__ and _<rev-B>_, in which case it defaults to `HEAD`.
+
+`-p`::
+`--patch`::
+	Interactively select hunks in the difference between the restore source and the restore location. See the "Interactive Mode" section of linkgit:git-add[1] to learn how to operate the `--patch` mode.
+
+include::diff-context-options.adoc[]
+
+`-W`::
+`--worktree`::
+`-S`::
+`--staged`::
+	復元場所を指定します。どちらのオプションも指定されていない場合、デフォルトで作業ツリーが復元されます。 `--staged` を指定すると、インデックスのみが復元されます。両方を指定すると、両方が復元されます。
+
+`-q`::
+`--quiet`::
+	静かにします。フィードバックメッセージを抑制します。 `--no-progress` を含んでいます。
+
+`--progress`::
+`--no-progress`::
+	`--quiet` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。このフラグは、 `--quiet` に関係なく、端末に接続されていない場合でも進行状況のレポートを有効にします。
+
+`--ours`::
+`--theirs`::
+	When restoring files in the working tree from the index, use stage #2 (`ours`) or #3 (`theirs`) for unmerged paths. This option cannot be used when checking out paths from a tree-ish (i.e. with the `--source` option).
++
+Note that during `git rebase` and `git pull --rebase`, `ours` and `theirs` may appear swapped. See the explanation of the same options in linkgit:git-checkout[1] for details.
+
+`-m`::
+`--merge`::
+	作業ツリー上のファイルをインデックスから復元する場合は、マージされていないパスで競合するマージを再作成します。 このオプションは、ツリーっぽい何か(tree-ish)からパスをチェックアウトする際(つまり `--source` オプションを使用する場合)には使用できません。
+
+`--conflict=<style>`::
+	The same as `--merge` option above, but changes the way the conflicting hunks are presented, overriding the `merge.conflictStyle` configuration variable. Possible values are `merge` (default), `diff3`, and `zdiff3`.
+
+`--ignore-unmerged`::
+	作業ツリー上のファイルをインデックスから復元するときに、マージされていないエントリがあり、 `--ours` 、`--theirs` 、 `--merge` または `--conflict` のいずれも指定されていない場合は、操作を中止しないでください。作業ツリー上のマージされていないパスはそのままになります。
+
+`--ignore-skip-worktree-bits`::
+	In sparse checkout mode, the default is to only update entries matched by _<pathspec>_ and sparse patterns in `$GIT_DIR/info/sparse-checkout`. This option ignores the sparse patterns and unconditionally restores any files in _<pathspec>_.
+
+`--recurse-submodules`::
+`--no-recurse-submodules`::
+	If _<pathspec>_ names an active submodule and the restore location includes the working tree, the submodule will only be updated if this option is given, in which case its working tree will be restored to the commit recorded in the superproject, and any local modifications overwritten. If nothing (or `--no-recurse-submodules`) is used, submodules working trees will not be updated. Just like linkgit:git-checkout[1], this will detach `HEAD` of the submodule.
+
+`--overlay`::
+`--no-overlay`::
+	In overlay mode, never remove files when restoring. In no-overlay mode, remove tracked files that do not appear in the _<tree>_ of `--source=<tree>`, to make them match _<tree>_ exactly. The default is no-overlay mode.
+
+`--pathspec-from-file=<file>`::
+	Pathspec is passed in _<file>_ instead of commandline args. If _<file>_ is exactly `-` then standard input is used. Pathspec elements are separated by _LF_ or _CR_/_LF_. Pathspec elements can be quoted as explained for the configuration variable `core.quotePath` (see linkgit:git-config[1]). See also `--pathspec-file-nul` and global `--literal-pathspecs`.
+
+`--pathspec-file-nul`::
+	Only meaningful with `--pathspec-from-file`. Pathspec elements are separated with _NUL_ character and all other characters are taken literally (including newlines and quotes).
+
+`--`::
+	これより後ろの引数をオプションとして解釈しないでください。
+
+`<pathspec>...`::
+	操作の影響を受けるパスを制限します。
++
+詳細については、 linkgit:gitglossary[7] の「pathspec」エントリを参照してください。
+
+EXAMPLES
+--------
+
+The following sequence switches to the `master` branch, reverts the `Makefile` to two revisions back, deletes `hello.c` by mistake, and gets it back from the index.
+
+------------
+$ git switch master
+$ git restore --source master~2 Makefile  <1>
+$ rm -f hello.c
+$ git restore hello.c                     <2>
+------------
+
+<1> 別のコミットからファイルを取り出します
+<2> restore `hello.c` from the index
+
+あなたが、インデックス内のバージョンと一致するように「すべての」Cソースファイルを復元する場合は、以下のように書くことができます。
+
+------------
+$ git restore '*.c'
+------------
+
+注意: `*.c` を囲む引用符に注意してください。 ファイル `hello.c` は、作業ツリーに存在しなくても復元されます。 `*.c` を囲む引用符は、 ファイル・グロブをインデックス内のエントリを照合するために使用するためです(シェルで作業ツリー内をグロブするためではありません)。
+
+現在のディレクトリ内のすべてのファイルを復元するには
+
+------------
+$ git restore .
+------------
+
+または、`top` pathspec魔法を使用してすべての作業ツリーファイルを復元します(linkgit:gitglossary[7] 参照)。
+
+------------
+$ git restore :/
+------------
+
+`HEAD` のバージョンと一致するようにインデックス内のファイルを復元するには(これは linkgit:git-reset[1] を使用するのと同じです)
+
+------------
+$ git restore --staged hello.c
+------------
+
+または、インデックスと作業ツリーの両方を復元できます(これは、 linkgit:git-checkout[1] を使用する場合と同一です)。
+
+------------
+$ git restore --source=HEAD --staged --worktree hello.c
+------------
+
+または、より実用的で読みにくい短い形式:
+
+------------
+$ git restore -s@ -SW hello.c
+------------
+
+SEE ALSO
+--------
+linkgit:git-checkout[1], linkgit:git-reset[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -749,14 +749,16 @@ git-reflog(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git <code>reflog</code></em> [<code>show</code>] [<em>&lt;log-options&gt;</em>] [<em>&lt;ref&gt;</em>]
-<em>git <code>reflog</code> <code>list</code></em>
-<em>git <code>reflog</code> <code>expire</code></em> [<code>--expire=</code><em>&lt;time&gt;</em>] [<code>--expire-unreachable=</code><em>&lt;time&gt;</em>]
-        [<code>--rewrite</code>] [<code>--updateref</code>] [<code>--stale-fix</code>]
-        [<code>--dry-run</code> | <code>-n</code>] [<code>--verbose</code>] [<code>--all</code> [<code>--single-worktree</code>] | <em>&lt;refs&gt;</em><span>&#8230;]</span>
-<em>git <code>reflog</code> <code>delete</code></em> [<code>--rewrite</code>] [<code>--updateref</code>]
+<pre class="content"><code>git</code> <code>reflog</code> [<code>show</code>] [<em>&lt;log-options&gt;</em>] [<em>&lt;ref&gt;</em>]
+<code>git</code> <code>reflog</code> <code>list</code>
+<code>git</code> <code>reflog</code> <code>exists</code> <em>&lt;ref&gt;</em>
+<code>git</code> <code>reflog</code> <code>write</code> <em>&lt;ref&gt;</em> <em>&lt;old-oid&gt;</em> <em>&lt;new-oid&gt;</em> <em>&lt;message&gt;</em>
+<code>git</code> <code>reflog</code> <code>delete</code> [<code>--rewrite</code>] [<code>--updateref</code>]
         [<code>--dry-run</code> | <code>-n</code>] [<code>--verbose</code>] <em>&lt;ref&gt;</em><code>@</code>{<em>&lt;specifier&gt;</em>}<span>&#8230;</span>
-<em>git <code>reflog</code> <code>exists</code></em> <em>&lt;ref&gt;</em></pre>
+<code>git</code> <code>reflog</code> <code>drop</code> [<code>--all</code> [<code>--single-worktree</code>] | <em>&lt;refs&gt;</em><span>&#8230;]</span>
+<code>git</code> <code>reflog</code> <code>expire</code> [<code>--expire=</code><em>&lt;time&gt;</em>] [<code>--expire-unreachable=</code><em>&lt;time&gt;</em>]
+        [<code>--rewrite</code>] [<code>--updateref</code>] [<code>--stale-fix</code>]
+        [<code>--dry-run</code> | <code>-n</code>] [<code>--verbose</code>] [<code>--all</code> [<code>--single-worktree</code>] | <em>&lt;refs&gt;</em><span>&#8230;]</span></pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -769,9 +771,11 @@ git-reflog(1) Manual Page
 <div class="paragraph"><p>このコマンドは、さまざまなサブコマンドと、サブコマンドに応じて異なるオプションを取ります:</p></div>
 <div class="paragraph"><p>「show」サブコマンド(サブコマンドの指定がない場合のデフォルトでもあります)は、コマンドライン(またはデフォルトでは「HEAD」)で指定される参照のログを表示します。 reflogは最近のすべてのアクションをカバーし、さらに <code>HEAD</code> reflogはブランチの切り替えを記録します。 <code>git</code> <code>reflog</code> <code>show</code> は <code>git</code> <code>log</code> <code>-g</code> <code>--abbrev-commit</code> <code>--pretty=oneline</code> のエイリアスです。詳細については <a href="git-log.html">git-log(1)</a> を参照してください。</p></div>
 <div class="paragraph"><p>「list」サブコマンドは、 対応する reflog を持つすべての ref を一覧表示します。</p></div>
-<div class="paragraph"><p>「expire」サブコマンドは、古いreflogエントリを刈り取ります。「expire」時間より古いエントリ、または「expire-unreachable」時間より古く、現在の先端から到達できないエントリがreflogから削除されます。これは通常、エンドユーザーが直接使用することはありません。代わりに、 <a href="git-gc.html">git-gc(1)</a> を参照してください。</p></div>
-<div class="paragraph"><p>「delete」サブコマンドは、reflogから単一のエントリを削除します。 その引数は「正確な」エントリである必要があります(例: <code>git</code> <code>reflog</code> <code>delete</code> <code>master@</code>{2} )。 このサブコマンドは、通常、エンドユーザーが直接使用することもありません。</p></div>
 <div class="paragraph"><p>「exists」サブコマンドは、refにreflogがあるかどうかをチェックします。reflogが存在する場合はゼロのステータスで終了し、存在しない場合はゼロ以外のステータスで終了します。</p></div>
+<div class="paragraph"><p>The "write" subcommand writes a single entry to the reflog of a given reference. This new entry is appended to the reflog and will thus become the most recent entry. The reference name must be fully qualified. Both the old and new object IDs must not be abbreviated and must point to existing objects. The reflog message gets normalized.</p></div>
+<div class="paragraph"><p>The "delete" subcommand deletes single entries from the reflog, but not the reflog itself. Its argument must be an <em>exact</em> entry (e.g. "<code>git</code> <code>reflog</code> <code>delete</code> <code>master@</code>{2}"). This subcommand is also typically not used directly by end users.</p></div>
+<div class="paragraph"><p>The "drop" subcommand completely removes the reflog for the specified references. This is in contrast to "expire" and "delete", both of which can be used to delete reflog entries, but not the reflog itself.</p></div>
+<div class="paragraph"><p>「expire」サブコマンドは、古いreflogエントリを刈り取ります。「expire」時間より古いエントリ、または「expire-unreachable」時間より古く、現在の先端から到達できないエントリがreflogから削除されます。これは通常、エンドユーザーが直接使用することはありません。代わりに、 <a href="git-gc.html">git-gc(1)</a> を参照してください。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -780,6 +784,31 @@ git-reflog(1) Manual Page
 <div class="sect2">
 <h3 id="_showサブコマンド用オプション">showサブコマンド用オプション</h3>
 <div class="paragraph"><p><code>git</code> <code>reflog</code> <code>show</code> は、 <code>git</code> <code>log</code> で受け入れられるすべてのオプションを受け入れます。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_deleteサブコマンド用オプション">deleteサブコマンド用オプション</h3>
+<div class="paragraph"><p><code>git</code> <code>reflog</code> <code>delete</code> は、オプション <code>--updateref</code> と <code>--rewrite</code> と <code>-n</code> と <code>--dry-run</code> と <code>--verbose</code> を受け入れます。これらは、 <code>expire</code> で使用される場合と同じ意味です。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_options_for_code_drop_code">Options for <code>drop</code></h3>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--all</code>
+</dt>
+<dd>
+<p>
+        Drop the reflogs of all references from all worktrees.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--single-worktree</code>
+</dt>
+<dd>
+<p>
+        By default when <code>--all</code> is specified, reflogs from all working trees are dropped. This option limits the processing to reflogs from the current working tree only.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_expireサブコマンド用オプション">expireサブコマンド用オプション</h3>
@@ -862,10 +891,6 @@ git-reflog(1) Manual Page
 </dd>
 </dl></div>
 </div>
-<div class="sect2">
-<h3 id="_deleteサブコマンド用オプション">deleteサブコマンド用オプション</h3>
-<div class="paragraph"><p><code>git</code> <code>reflog</code> <code>delete</code> は、オプション <code>--updateref</code> と <code>--rewrite</code> と <code>-n</code> と <code>--dry-run</code> と <code>--verbose</code> を受け入れます。これらは、 <code>expire</code> で使用される場合と同じ意味です。</p></div>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -879,7 +904,7 @@ git-reflog(1) Manual Page
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-06-10 10:58:39 JST
+ 2025-11-13 13:44:01 JST
 </div>
 </div>
 </body>

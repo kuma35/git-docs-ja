@@ -750,12 +750,12 @@ scalar(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><code>scalar</code> <code>clone</code> [<code>--single-branch</code>] [<code>--branch</code> <em>&lt;main-branch&gt;</em>] [<code>--full-clone</code>]
-        [<code>--</code>[<code>no-</code>]<code>src</code>] <em>&lt;url&gt;</em> [<em>&lt;enlistment&gt;</em>]
+        [<code>--</code>[<code>no-</code>]<code>src</code>] [<code>--</code>[<code>no-</code>]<code>tags</code>] [<code>--</code>[<code>no-</code>]<code>maintenance</code>] <em>&lt;url&gt;</em> [<em>&lt;enlistment&gt;</em>]
 <code>scalar</code> <code>list</code>
-<code>scalar</code> <code>register</code> [<em>&lt;enlistment&gt;</em>]
+<code>scalar</code> <code>register</code> [<code>--</code>[<code>no-</code>]<code>maintenance</code>] [<em>&lt;enlistment&gt;</em>]
 <code>scalar</code> <code>unregister</code> [<em>&lt;enlistment&gt;</em>]
 <code>scalar</code> <code>run</code> ( <code>all</code> | <code>config</code> | <code>commit-graph</code> | <code>fetch</code> | <code>loose-objects</code> | <code>pack-files</code> ) [<em>&lt;enlistment&gt;</em>]
-<code>scalar</code> <code>reconfigure</code> [ <code>--all</code> | <em>&lt;enlistment&gt;</em> ]
+<code>scalar</code> <code>reconfigure</code> [<code>--maintenance=</code>(<code>enable</code>|<code>disable</code>|<code>keep</code>)] [ <code>--all</code> | <em>&lt;enlistment&gt;</em> ]
 <code>scalar</code> <code>diagnose</code> [<em>&lt;enlistment&gt;</em>]
 <code>scalar</code> <code>delete</code> <em>&lt;enlistment&gt;</em></pre>
 <div class="attribution">
@@ -816,7 +816,10 @@ scalar(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>single-branch</code>
+<code>--single-branch</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-single-branch</code>
 </dt>
 <dd>
 <p>
@@ -825,7 +828,10 @@ scalar(1) Manual Page
 <div class="paragraph"><p>結果のリポジトリへの更なるフェッチは、 最初のクローン作成時に、このオプションが使われたブランチのリモート追跡ブランチのみが更新されます。 <code>--single-branch</code> クローンが作成されたときに、 リモートの HEAD がどのブランチも指していなかった場合、 リモート追跡ブランチは作成されません。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>src</code>
+<code>--src</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-src</code>
 </dt>
 <dd>
 <p>
@@ -833,7 +839,10 @@ scalar(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>tags</code>
+<code>--tags</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-tags</code>
 </dt>
 <dd>
 <p>
@@ -841,11 +850,25 @@ scalar(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>full-clone</code>
+<code>--full-clone</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-full-clone</code>
 </dt>
 <dd>
 <p>
         デフォルトでスパース・チェックアウトは初期化(initialized)されます。 この動作は、 <code>--full-clone</code> でオフにすることができます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--maintenance</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-maintenance</code>
+</dt>
+<dd>
+<p>
+        By default, <code>scalar</code> <code>clone</code> configures the enlistment to use Git&#8217;s background maintenance feature. Use the <code>--no-maintenance</code> to skip this configuration.
 </p>
 </dd>
 </dl></div>
@@ -874,6 +897,17 @@ list
         enlistment のリポジトリを登録済みリポジトリ(registered repositories)のリストに追加し、 バックグラウンド・メンテナンスを開始します。 <em>&lt;enlistment&gt;</em> が指定されていない場合、 現在の作業ディレクトリに関連付けられた enlistment が登録(registere)されます。
 </p>
 <div class="paragraph"><p>注意: このサブコマンドが <code>src/</code> と呼ばれるワークツリーで呼び出されると、 その親ディレクトリは Scalar enlistment と見なされます。 ワークツリーが <code>src/</code> と呼ばれ「無い」場合、それ自体が Scalar enlistment であると見なされます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--maintenance</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-maintenance</code>
+</dt>
+<dd>
+<p>
+        By default, <code>scalar</code> <code>register</code> configures the enlistment to use Git&#8217;s background maintenance feature. Use the <code>--no-maintenance</code> to skip this configuration. This does not disable any maintenance that may already be enabled in other ways.
+</p>
 </dd>
 </dl></div>
 </div>
@@ -908,7 +942,24 @@ list
 <div class="sect2">
 <h3 id="_reconfigure">Reconfigure</h3>
 <div class="paragraph"><p>Scalar のアップグレード後、または Scalar enlistment の構成が何らかの形で破損または誤って変更された場合、 このサブコマンドを使用して enlistment を再構成できます。</p></div>
-<div class="paragraph"><p><code>--all</code> オプションを使用すると、 現在 Scalar に登録されているすべての enlistment が再構成されます。 Scalar アップグレード後毎にこのオプションを使用します。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--all</code>
+</dt>
+<dd>
+<p>
+        When <code>--all</code> is specified, reconfigure all enlistments currently registered with Scalar by the <code>scalar.repo</code> config key. Use this option after each upgrade to get the latest features.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--maintenance=</code>(<code>enable</code>|<code>disable</code>|<code>keep</code>)
+</dt>
+<dd>
+<p>
+        By default, Scalar configures the enlistment to use Git&#8217;s background maintenance feature; this is the same as using the &#8216;enable` value for this option. Use the <code>disable</code> value to remove each considered enlistment from background maintenance. Use `keep&#8217; to leave the background maintenance configuration untouched for these repositories.
+</p>
+</dd>
+</dl></div>
 </div>
 <div class="sect2">
 <h3 id="_diagnose">Diagnose</h3>
@@ -956,7 +1007,7 @@ list
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-09-07 14:32:36 JST
+ 2025-11-13 13:44:15 JST
 </div>
 </div>
 </body>

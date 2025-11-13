@@ -1,0 +1,208 @@
+parse-options API
+=================
+
+parse-options API(オプション解析API)は、Gitのオプションを解析(parse)および揉み揉み(massage)し、一貫した外観で使用法のヘルプを提供するために使用されます。
+
+Basics
+------
+
+引数ベクタ `argv[]` には通常、 必須または選択肢である、 「非オプション引数」(例えばファイル名やブランチ名)と、 「オプション群」と、 「サブコマンド群」が含まれます。 オプションは、 ダッシュ(`-`)で始まり、 コマンドの動作を変更できる選択肢の引数です。
+
+* オプションには、基本的に3つのタイプがあります。「ブール値」(boolean)オプションと、 「(必須の)引数」を含むオプションと、「オプションの引数」を含むオプション((つまり、調整可能なブールオプション)です。
+
+* オプションには、基本的には2つの形式があります。「短いオプション」(Short options)は、1つのダッシュ(`-`(\x2d))と1つの英数字で構成されます。「長いオプション」(Long options)は、2つのダッシュ(`--`(\x2d\x2d))で始まるいくつかの英数字が続きます。
+
+* オプションでは大文字と小文字が区別されます。長いオプションは小文字のみで定義してください。
+
+parse-options APIでは、以下のことが可能です:
+
+* 引数付きのオプションには「串刺し形式」(stuck form)と「ばらばら形式」(separate form)があります。 `-oArg` が串刺し形式(stuck)で、 `-o Arg` がばらばら形式(separate)です。 `--option=Arg` は串刺し形式(stuck)で、 `--option Arg` はばらばら形式(separate)です。
+
+* 省略形が明確である限り、長いオプションは「省略形」(abbreviated)にすることができます。
+
+* 短いオプションがおまとめされている事があります。例えば `-a -b` は `-ab` と指定できます。
+
+* ブール値の長いオプションは、「no-」を前に付けることで「否定」(または「未設定」(unset))にできます。例えば `--abbrev`の代わりに `--no-abbrev` とします。 逆に、 `no-` で始まるオプションは、削除することでその「否定」にできます。また、ブール値以外の長いオプションは、`no-` を前に付けることで設定を解除(unset)できます(たとえば、文字列をNULLに設定し、整数を0に設定します)。
+
+* オプションと非オプションの引数は、 `--` オプションを使用して明確に分離できます。 `-a -b --option -- --this-is-a-file` は、 `--this-is-a-file` をオプションとして処理してはいけないことを示します。
+
+サブコマンドはいくつかの点で特別です:
+
+* サブコマンドは長い形式のみで、かつ二重ダッシュのプレフィックスがなく、かつ否定形式がなく、かつ説明がなく、かつ引数を取らず、かつ省略できません。
+
+* 引数の中にはサブコマンドが 1 つだけ存在する必要があります。 コマンドにデフォルトの動作モードがある場合、 (デフォルトの動作モードの時は)引数の中のサブコマンドはゼロ個でなければなりません。
+
+* サブコマンドに続くすべての引数は、 サブコマンドの引数と見なされます。 逆に、 サブコマンド用の引数は、 サブコマンドの前にない場合があります。
+
+それゆえ、 options 配列に少なくとも 1 つのサブコマンドが含まれていて、 `parse_options()` が最初のダッシュなし引数に遭遇した場合 、以下のいずれかになります:
+
+* そのダッシュ無し引数が既知のサブコマンドである場合は処理を止めてリターンし、 そのサブコマンドに関連付けられた関数ポインタに `value` を設定し、 サブコマンドの名前を argv[0] に格納し、 残りの引数を未処理のままにします
+
+* または、 `PARSE_OPT_SUBCOMMAND_OPTIONAL` フラグを指定して呼び出され、 かつ、 そのダッシュのない引数がどのサブコマンドとも一致しない場合は、 そこで処理を止めてリターンし、 `value` を変更せず、残りの引数を未処理のままにします
+
+* または、 エラーと使用法を表示し、 中止(abort)します。
+
+Steps to parse options
+----------------------
+
+. `#include "parse-options.h"`
+
+. 代替の使用法文字列を含むNULL終端の配列 `static const char * const builtin_foo_usage[]` を定義します。
+
+. 以下の「Data Structure」セクションで説明するように、 `builtin_foo_options` 配列を定義します。
+
+. `cmd_foo(int argc, const char **argv, const char *prefix)` の中で以下を呼び出します。
+
+	argc = parse_options(argc, argv, prefix, builtin_foo_options, builtin_foo_usage, flags);
++
+`parse_options()` は、 `argv[]` から処理処理済オプションを除外し、オプション以外の引数を `argv[]` に残します。これにより、 `argc` は適切に更新されます。
++
+あなたは parse_options() の5番目のパラメーター(builtin_foo_usage)としてusage配列の代わりにNULLを渡すこともできます。これにより、使用法情報とオプションリストを含むヘルプ画面が表示されなくなります。これは、必要な場合のみ行う必要があります。例えば、全体のパーサーの前に実行する必要があるオプションのサブセットに対してのみ限定されたパーサーを実装するする時です。これにより、全体の側のヘルプメッセージが表示されます。
++
+flagsは以下のビット論理和です:
+
+`PARSE_OPT_KEEP_DASHDASH`::
+	通常、オプションを非オプション引数から分離する `--` を保持します。
+
+`PARSE_OPT_STOP_AT_NON_OPTION`::
+	通常は引数ベクタ全体がもみもみされ、並べ替えられます。このフラグを使用すると、オプション以外の最初の引数で処理が停止します。
+
+`PARSE_OPT_KEEP_ARGV0`::
+	プログラム名を含む最初の引数を保持します。デフォルトでは argv[] から削除されます。
+
+`PARSE_OPT_KEEP_UNKNOWN_OPT`::
+	エラーを発生させるのではなく、不明な引数を保持(keep)します。 これは、ユーザーが期待するように、引数のすべての組み合わせで機能するわけではありません。 例えば、`--unknown --known` の最初の引数(`--unknown`)が値をとる場合(私達はそれを知ることはできないので)、2番目の引数(`--known`)は誤って既知のオプションとして解釈されます。同様に、 `PARSE_OPT_STOP_AT_NON_OPTION` が設定されている場合、 ` --unknown value` の2番目の引数(value)は、不明なオプションに属する値ではなく、パーサーの早期に非オプションとして誤って解釈されます。そのため、両方のオプションが設定されている場合、 parse_options() はエラーになります。 注意: このフラグがなくても、 非オプション引数(non-option arguments)は常に保持されることに注意してください。
+
+`PARSE_OPT_NO_INTERNAL_HELP`::
+	デフォルトでは、 parse_options() は、ヘルプ画面を表示することにより、内部で `-h` と `--help` と `--help-all` を処理します。 このオプションはそれをオフにし、これらのオプションのカスタムハンドラーを追加したり、単にそれらを不明(unknown)のままにすることができます。
+
+`PARSE_OPT_SUBCOMMAND_OPTIONAL`::
+	サブコマンドが指定されていない場合でもエラーになりません。
+
+注意: `PARSE_OPT_STOP_AT_NON_OPTION` はサブコマンドと互換性がないことに注意してください。 一方、 `PARSE_OPT_KEEP_DASHDASH` と `PARSE_OPT_KEEP_UNKNOWN_OPT` は、 `PARSE_OPT_SUBCOMMAND_OPTIONAL` と組み合わせた場合にのみサブコマンドで使用できます。
+
+Data Structure
+--------------
+
+主なデータ構造は、 option 構造体の配列、たとえば `static struct option builtin_add_options[]` です。オプションを簡単に定義するためのマクロがいくつかあります:
+
+`OPT__ABBREV(&int_var)`::
+	`--abbrev[=<n>]` を追加。
+
+`OPT__COLOR(&int_var, description)`::
+	`--color[=<when>]` と `--no-color` を追加。
+
+`OPT__DRY_RUN(&int_var, description)`::
+	`-n` と `--dry-run` を追加。
+
+`OPT__FORCE(&int_var, description)`::
+	`-f` と `--force` を追加。
+
+`OPT__QUIET(&int_var, description)`::
+	`-q` と `--quiet` を追加。.
+
+`OPT__VERBOSE(&int_var, description)`::
+	`-v` と `--verbose` を追加。
+
+`OPT_GROUP(description)`::
+	オプショングループを開始します。 `description` は、グループを説明する短い文字列または空の文字列です。説明は大文字で始めて下さい。
+
+`OPT_BOOL(short, long, &int_var, description)`::
+	ブール値オプション(boolean option)を導入します。 `int_var` は `--option` で1に設定され、 `--no-option` で0に設定されます。
+
+`OPT_COUNTUP(short, long, &int_var, description)`::
+	カウントアップオプションを導入します。 `--option` を使用するたびに、 `int_var` がゼロから開始してインクリメントされます。 `--no-option` はそれをゼロにリセットします(初期値が負数の場合でも、それをゼロにセットします)。 `--option` または `--no-option` がまったく検出されなかったかどうかを判断するには、 `int_var` を負の値に初期化し、 parse_options() 後も負の値である場合は、 `--option` も `--no-option` 見当たらなかったということになります。
+
+`OPT_BIT(short, long, &int_var, description, mask)`::
+	ブール値オプション(boolean option)を導入します。使用する場合、 `int_var` は `mask` とビット論理和(or)を取ります。
+
+`OPT_NEGBIT(short, long, &int_var, description, mask)`::
+	ブール値オプション(boolean option)を導入します。使用する場合、 `int_var` は `mask` の反転とビット論理積(and)を取ります。
+
+`OPT_SET_INT(short, long, &int_var, description, integer)`::
+	整数オプションを導入します。 `int_var`は `--option` で整数に設定され、 `--no-option` でゼロにリセットされます。
+
+`OPT_STRING(short, long, &str_var, arg_str, description)`::
+	文字列引数を持つオプションを導入します。 文字列引数は `str_var` に入れられます。
+
+`OPT_STRING_LIST(short, long, &struct string_list, arg_str, description)`::
+	文字列引数を持つオプションを導入します。文字列引数は、要素として `string_list` に格納されます。 `--no-option` を使用すると、先行する値のリストがクリアされます。
+
+`OPT_INTEGER(short, long, &int_var, description)`::
+	Introduce an option with integer argument. The argument must be a integer and may include a suffix of 'k', 'm' or 'g' to scale the provided value by 1024, 1024^2 or 1024^3 respectively. The scaled value is put into `int_var`.
+
+`OPT_UNSIGNED(short, long, &unsigned_long_var, description)`::
+	Introduce an option with an unsigned integer argument. The argument must be a non-negative integer and may include a suffix of 'k', 'm' or 'g' to scale the provided value by 1024, 1024^2 or 1024^3 respectively. The scaled value is put into `unsigned_long_var`.
+
+`OPT_EXPIRY_DATE(short, long, &timestamp_t_var, description)`::
+	有効期限引数付きのオプションを導入します。 `parse_expiry_date()` を参照してください。タイムスタンプは `timestamp_t_var` に入れられます。
+
+`OPT_CALLBACK(short, long, &var, arg_str, description, func_ptr)`::
+	引数付きのオプションを導入します。 引数は `func_ptr` で指定された関数に入力され、結果は `var` に入れられます。より詳細な説明については、以下の「Option Callbacks」を参照してください。
+
+`OPT_FILENAME(short, long, &var, description)`::
+	ファイル名引数を持つオプションを導入します。`parse_options()` の prefix 引数を、ファイル名とともに `prefix_filename()` に渡すことでファイル名の前に付けフルパスにします。
+
+`OPT_NUMBER_CALLBACK(&var, description, func_ptr)`::
+	`-123` などの数値オプションを認識し、 `func_ptr` で指定された関数の引数であるかのように整数を入力します。結果は `var` に入れられます。 そのようなオプション定義は1つだけ可能です。否定することはできず、引数も取りません。 たまたま数字である短いオプションあった場合、これよりも優先されます。
+
+`OPT_COLOR_FLAG(short, long, &int_var, description)`::
+	「always」、「never」、または「auto」の3つの値のいずれかを持つことができるオプションの引数を取るオプションを導入します。引数が指定されていない場合、デフォルトで「always」になります。 `--no-` 形式は `--long=never` のように機能します。引数を取ることはできません。「always」の場合は `int_var` を1に設定します。 「never」の場合は `int_var` を0に設定します。 「auto」の場合、stdoutがttyまたはページャーの場合は `int_var` を1に設定し、それ以外の場合は0に設定します。
+
+`OPT_NOOP_NOARG(short, long)`::
+	効果がなく、引数をとらないオプションを導入します。これを使用して、まだ認識されるが無視される非推奨のオプションを隠します。
+
+`OPT_PASSTHRU(short, long, &char_var, arg_str, description, flags)`::
+	char* 文字列に再構築されるオプションを導入します。これはNULLに初期化する必要があります。これは、コマンドラインオプションを別のコマンドに渡す必要がある場合に役立ちます。以前の値は上書きされるため、これは、コマンドラインで最後に指定された値が優先されるタイプのオプションにのみ使用する必要があります。
+
+`OPT_PASSTHRU_ARGV(short, long, &strvec_var, arg_str, description, flags)`::
+	コマンドライン上のすべての実体がstrvecに再構築されるオプションを導入します。これは、複数回指定できるコマンドラインオプションを別のコマンドに渡す必要がある場合に便利です。
+
+`OPT_CMDMODE(short, long, &int_var, description, enum_val)`::
+	「操作モード」オプションを定義します。同じ `int_var` を共有する「操作モード」オプションの同じグループ内の1つだけをユーザーが指定できます。オプションを使用すると、 `enum_val` は `int_var` に設定されますが、他の操作モードオプションがすでに同じ `int_var` に値を設定している場合は、エラーが報告されます。 新しいコマンドでは、代わりにサブコマンドを使用することを検討してください。
+
+`OPT_SUBCOMMAND(long, &fn_ptr, subcommand_fn)`::
+	サブコマンドを定義します。 このサブコマンドを使用する場合は、 fn_ptr に subcommand_fn を入れます。
+
+配列の最後の要素は `OPT_END()` でなければなりません。
+
+特に明記されていない限り、引数を以下のように解釈(interpret)します:
+
+* `short` はshortオプションのキャラクタです(たとえば、` -e` の場合は 'e' 、省略するには 0 (zero) を使用します)
+
+* `long` はlongオプションの文字列です(たとえば、 ` --example` の場合は "example" 、省略するには NULL を使用します)
+
+* `int_var` は整数変数です
+
+* `str_var` は文字列変数です( `char *` )
+
+* `arg_str` は、引数として表示される文字列です(たとえば、 "branch" は `<branch>` になります)。 NULL に設定すると、3つのドット( `...` )が表示されます。
+
+* `description` は、オプションの効果を説明する短い文字列です。小文字で始まり、最後のピリオド(`.`)を省略します。
+
+Option Callbacks
+----------------
+
+関数は以下の形式で定義する必要があります:
+
+	int func(const struct option *opt, const char *arg, int unset)
+
+コールバックメカニズムは以下のとおりです:
+
+* `func` 内で、 `opt` によって与えられる構造体の唯一の興味深いメンバーは voidポインタ `opt->value` です。 `*opt->value` は、`OPT_CALLBACK()` を使用した場合、 `var` に保存される値になります。 たとえば、 `*(unsigned long *)opt->value = 42;` を実行して、42を unsigned long 変数に入れます。
+
+* 戻り値 0 は成功を示し、ゼロ以外の戻り値は `usage_with_options()`を呼び出し、そして die します。
+
+* ユーザーがオプションを「否定」した場合、 arg は NULL であり、 unset は 1 です。
+
+Sophisticated option parsing
+----------------------------
+
+たとえば、オプションの引数がある、または引数がまったくないオプションのコールバックが必要な場合、または上記のマクロで処理されない他の特殊なケースが必要な場合は、option 構造体のメンバーを手動で指定する必要があります。
+
+それはこの文書ではカバーされていませんが、 parse-options.h 自体に十分に文書化されています。
+
+Examples
+--------
+
+`test-parse-options.c` を参照して下さい。 実例は、 `builtin/add.c` 、 `builtin/clone.c` 、 `builtin/commit.c` 、 `builtin/fetch.c` 、 `builtin/fsck.c` 、 `builtin/rm.c` を参照して下さい。

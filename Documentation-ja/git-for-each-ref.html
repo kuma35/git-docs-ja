@@ -749,13 +749,13 @@ git-for-each-ref(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git <code>for-each-ref</code></em> [<code>--count=</code><em>&lt;count&gt;</em>] [<code>--shell</code>|<code>--perl</code>|<code>--python</code>|<code>--tcl</code>]
+<pre class="content"><code>git</code> <code>for-each-ref</code> [<code>--count=</code><em>&lt;count&gt;</em>] [<code>--shell</code>|<code>--perl</code>|<code>--python</code>|<code>--tcl</code>]
                    [(<code>--sort=</code><em>&lt;key&gt;</em>)<span>&#8230;]</span> [<code>--format=</code><em>&lt;format&gt;</em>]
-                   [<code>--include-root-refs</code>] [ <code>--stdin</code> | <em>&lt;pattern&gt;</em><code>&#8230;</code> ]
-                   [<code>--points-at=</code><em>&lt;object&gt;</em>]
+                   [<code>--include-root-refs</code>] [<code>--points-at=</code><em>&lt;object&gt;</em>]
                    [<code>--merged</code>[<code>=</code><em>&lt;object&gt;</em>]] [<code>--no-merged</code>[<code>=</code><em>&lt;object&gt;</em>]]
                    [<code>--contains</code>[<code>=</code><em>&lt;object&gt;</em>]] [<code>--no-contains</code>[<code>=</code><em>&lt;object&gt;</em>]]
-                   [<code>--exclude=</code><em>&lt;pattern&gt;</em> <span>&#8230;]</span></pre>
+                   [(<code>--exclude=</code><em>&lt;pattern&gt;</em>)<span>&#8230;]</span> [<code>--start-after=</code><em>&lt;marker&gt;</em>]
+                   [ <code>--stdin</code> | (<em>&lt;pattern&gt;</em><code>&#8230;</code>)]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -763,7 +763,7 @@ git-for-each-ref(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><em>&lt;pattern&gt;</em> に一致するすべてのrefを繰り返し、指定された <em>&lt;key&gt;</em> の組に従って並べ替えた後、指定の <em>&lt;format&gt;</em> に従って表示します。 <em>&lt;count&gt;</em> が指定されている場合は、その数のrefを表示した後で停止します。 <em>&lt;format&gt;</em> のプレースホルダで差し込みされる値は、オプションで、指定のホストプログラム言語の文字列リテラルとなるようクォートでき、そのホストプログラム言語で直接評価できます。</p></div>
+<div class="paragraph"><p>Iterate over all refs that match <em>&lt;pattern&gt;</em> and show them according to the given <em>&lt;format&gt;</em>, after sorting them according to the given set of <em>&lt;key&gt;</em>. If <em>&lt;count&gt;</em> is given, stop after showing that many refs. The interpolated values in <em>&lt;format&gt;</em> can optionally be quoted as string literals in the specified host language allowing their direct evaluation in that language.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -771,11 +771,11 @@ git-for-each-ref(1) Manual Page
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-&lt;pattern&gt;&#8230;
+<em>&lt;pattern&gt;</em>...
 </dt>
 <dd>
 <p>
-        1つ以上のパターンが指定されている場合、少なくとも1つのパターンに一致する参照のみが表示されます。fnmatch(3) を使用するか、文字通り(lietrally)に書くかです。文字通りに書いた場合場合、完全に一致するか、最初からスラッシュ(<code>/</code>)まで一致するかです。
+        If one or more <em>&lt;pattern&gt;</em> parameters are given, only refs are shown that match against at least one pattern, either using <code>fnmatch</code>(3) or literally, in the latter case matching completely or from the beginning up to a slash.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -783,7 +783,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        <code>--stdin</code> が指定されている場合、 パターンのリストは引数リストからではなく標準入力から読み取られます。
+        The list of patterns is read from standard input instead of from the argument list.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -791,7 +791,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        デフォルトでは、コマンドは <em>&lt;pattern&gt;</em> に一致するすべてのrefを表示します。このオプションは、指定の数のrefを表示した後に停止します。
+        Stop after showing <em>&lt;count&gt;</em> refs.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -799,24 +799,26 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        並べ替えるフィールド名。 プレフィックス <code>-</code> を使用すると、 値の降順で並べ替えます。 並べ替えるフィールド名を指定しない場合 <code>refname</code> が使用されます。 <code>--sort=</code><em>&lt;key&gt;</em> オプションは複数回使用できます。 その場合、最後のキーが主キー(primary key)になります。
+        Sort on the field name <em>&lt;key&gt;</em>. Prefix <code>-</code> to sort in descending order of the value. When unspecified, <code>refname</code> is used. You may use the <code>--sort=</code><em>&lt;key&gt;</em> option multiple times, in which case the last key becomes the primary key.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--format=</code><em>&lt;format&gt;</em>
+<code>--format</code>[<code>=</code><em>&lt;format&gt;</em>]
 </dt>
 <dd>
 <p>
-        表示されている ref とそれが指すオブジェクトを %(フィールド名) によって差し込みする書式文字列。 更に、 リテラル文字列の %% は % とレンダリングされ、 %xx は16進数 xx の値のキャラクター・コードをレンダリングします。 たとえば %00 は \0 (NUL)、 %09 は \t (TAB)、 %0a は \n (LF)を差し込みます。
+        A string that interpolates %(<code>fieldname</code>) from a ref being shown and the object it points at. In addition, the string literal %% renders as % and %xx - where <code>xx</code> are hex digits - renders as the character with hex code <code>xx</code>. For example, %00 interpolates to <code>\0</code> (<em>NUL</em>), %09 to <code>\t</code> (<em>TAB</em>), and %0a to <code>\n</code> (<em>LF</em>).
 </p>
-<div class="paragraph"><p>指定無しの場合、 <em>&lt;format&gt;</em> のデフォルトは %(<code>objectname</code>) <code>SPC</code> %(<code>objecttype</code>) <code>TAB</code> %(<code>refname</code>) です。</p></div>
 </dd>
+</dl></div>
+<div class="paragraph"><p>When unspecified, <em>&lt;format&gt;</em> defaults to %(<code>objectname</code>) <code>SPC</code> %(<code>objecttype</code>) <code>TAB</code> %(<code>refname</code>).</p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <code>--color</code>[<code>=</code><em>&lt;when&gt;</em>]
 </dt>
 <dd>
 <p>
-        <code>--format</code> オプションで指定された色を尊重します。 <em>&lt;when&gt;</em> フィールドは <code>always</code> または <code>never</code> または <code>auto</code> のいずれかでなければなりません(<em>&lt;when&gt;</em> がない場合は、 <code>always</code> が指定されたかのように動作します)。
+        Respect any colors specified in the <code>--format</code> option. The <em>&lt;when_</em> field must be one of <code>always</code>, <code>never</code>, or <code>auto</code> (if <em>&lt;when&gt;</em> is absent, behave as if <code>always</code> was given).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -833,7 +835,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定した場合、 %(<code>fieldname</code>) プレースホルダーを置き換える文字列は、指定のホストプログラム言語に適した文字列リテラルとしてクォートします。これは、直接「評価」(eval)できるスクリプトレットを作成することを目的としています。
+        If given, strings that substitute %(<code>fieldname</code>) placeholders are quoted as string literals suitable for the specified host language. This is meant to produce a scriptlet that can directly be "eval"ed.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -841,7 +843,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定のオブジェクトを指すrefのみをリストします。
+        Only list refs which points at the given object.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -849,7 +851,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定のコミット(指定されていない場合はHEAD)から先端に到達できるrefのみをリストします。
+        Only list refs whose tips are reachable from the specified commit (<code>HEAD</code> if not specified).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -857,7 +859,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定のコミット(指定されていない場合はHEAD)から先端に到達できないrefのみをリストします。
+        Only list refs whose tips are not reachable from <em>&lt;object&gt;</em>(<code>HEAD</code> if not specified).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -865,7 +867,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定のコミット(指定されていない場合はHEAD)を含むrefのみをリストします。
+        Only list refs which contain <em>&lt;object&gt;</em>(<code>HEAD</code> if not specified).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -873,7 +875,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        指定のコミット(指定されていない場合はHEAD)を含まないrefのみをリストします。
+        Only list refs which don&#8217;t contain <em>&lt;object&gt;</em> (<code>HEAD</code> if not specified).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -881,7 +883,7 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        refの並べ替え(sort)とフィルタリングでは英大文字小文字を区別しません。
+        Sorting and filtering refs are case insensitive.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -889,15 +891,15 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        フォーマットが空の文字列に展開されるフォーマット済み ref の後に改行を出力しないでください。
+        Do not print a newline after formatted refs where the format expands to the empty string.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--exclude=</code><em>&lt;pattern&gt;</em>
+<code>--exclude=</code><em>&lt;excluded-pattern&gt;</em>
 </dt>
 <dd>
 <p>
-        1つ以上のパターンが与えられている場合、 除外されたパターンとマッチしない refs のみが表示されます。 マッチングは、 上記 の <em>&lt;pattern&gt;</em> と同じルールを使用して行われます。
+        If one or more <code>--exclude</code> options are given, only refs which do not match any <em>&lt;excluded-pattern&gt;</em> parameters are shown. Matching is done using the same rules as <em>&lt;pattern&gt;</em> above.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -905,7 +907,15 @@ git-for-each-ref(1) Manual Page
 </dt>
 <dd>
 <p>
-        通常の ref 以外の ルート ref (head と 疑似 refs)をリストします。
+        List root refs (<code>HEAD</code> and pseudorefs) apart from regular refs.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--start-after=</code><em>&lt;marker&gt;</em>
+</dt>
+<dd>
+<p>
+    Allows paginating the output by skipping references up to and including the specified marker. When paging, it should be noted that references may be deleted, modified or added between invocations. Output will only yield those references which follow the marker lexicographically. Output begins from the first reference that would come after the marker alphabetically. Cannot be used with <code>--sort=</code><em>&lt;key&gt;</em> or <code>--stdin</code> options, or the <em>&lt;pattern&gt;</em> argument(s) to limit the refs.
 </p>
 </dd>
 </dl></div>
@@ -918,16 +928,16 @@ git-for-each-ref(1) Manual Page
 <div class="paragraph"><p>すべてのオブジェクトで、以下の名前を使用できます:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-refname
+<code>refname</code>
 </dt>
 <dd>
 <p>
-        refの名前( $GIT_DIR/ の後の部分)。refのあいまいでない短い名前の場合は、 <code>:short</code> を追加します。オプション core.warnAmbiguousRefs は、厳密な省略形モードを選択するために使用されます。 <code>lstrip=</code><em>&lt;N&gt;</em> (<code>rstrip=</code><em>&lt;N&gt;</em>) が追加された場合、refnameの前(後ろ)からスラッシュ(<code>/</code>)で区切られたパスの部分を`&lt;N&gt;` 個削除します(例: %(<code>refname:lstrip=2</code>) は <code>refs/tags/foo</code> を <code>foo</code> に変換し、 %(<code>refname:rstrip=2</code>) は <code>refs/tags/foo</code> を <code>refs</code> に変換します。 <em>&lt;N&gt;</em> が負の数の場合、指定された端から必要な数のパスコンポーネントを削除して、 <code>-</code><em>&lt;N&gt;</em> パス部分を残します(たとえば、 %(<code>refname:lstrip=-2</code>) は <code>refs/tags/foo</code> を <code>tags/foo</code> に変換し、 %(<code>refname:rstrip=-1</code>) は <code>refs/tags/foo</code> を <code>refs</code> に変換します)。refに十分な数のパス部品がない場合、正の &lt;N&gt; でストリッピングすると結果は空の文字列になり、負の&lt;N&gt;でストリッピングすると完全なrefnameになります。どちらもエラーではありません。
+        The name of the ref (the part after <code>$GIT_DIR/</code>). For a non-ambiguous short name of the ref append <code>:short</code>. The option <code>core.warnAmbiguousRefs</code> is used to select the strict abbreviation mode. If <code>lstrip=</code><em>&lt;n&gt;</em> (<code>rstrip=</code><em>&lt;n&gt;</em>) is appended, strip <em>&lt;n&gt;</em> slash-separated path components from the front (back) of the refname (e.g. %(<code>refname:lstrip=2</code>) turns <code>refs/tags/foo</code> into <code>foo</code> and %(<code>refname:rstrip=2</code>) turns <code>refs/tags/foo</code> into <code>refs</code>). If <em>&lt;n&gt;</em> is a negative number, strip as many path components as necessary from the specified end to leave <code>-</code><em>&lt;n&gt;</em> path components (e.g. %(<code>refname:lstrip=-2</code>) turns <code>refs/tags/foo</code> into <code>tags/foo</code> and %(<code>refname:rstrip=-1</code>) turns <code>refs/tags/foo</code> into <code>refs</code>). When the ref does not have enough components, the result becomes an empty string if stripping with positive <em>&lt;n&gt;</em>, or it becomes the full refname if stripping with negative <em>&lt;N&gt;</em>. Neither is an error.
 </p>
 <div class="paragraph"><p><code>strip</code> は <code>lstrip</code> の同義語として使用できます。</p></div>
 </dd>
 <dt class="hdlist1">
-objecttype
+<code>objecttype</code>
 </dt>
 <dd>
 <p>
@@ -935,23 +945,23 @@ objecttype
 </p>
 </dd>
 <dt class="hdlist1">
-objectsize
+<code>objectsize</code>
 </dt>
 <dd>
 <p>
-        オブジェクトのサイズ(<code>git</code> <code>cat-file</code> <code>-s</code> がレポートするものと同じです)。 <code>:disk</code> を追加して、オブジェクトがディスク上で占めるサイズをバイト単位で取得できます。以下の「CAVEATS」(注意事項)セクションのディスク上のサイズに関する注記を参照してください。
+        The size of the object (the same as <em>git cat-file -s</em> reports). Append <code>:disk</code> to get the size, in bytes, that the object takes up on disk. See the note about on-disk sizes in the <em>CAVEATS</em> section below.
 </p>
 </dd>
 <dt class="hdlist1">
-objectname
+<code>objectname</code>
 </dt>
 <dd>
 <p>
-        オブジェクト名(別名SHA-1)。オブジェクト名のあいまいでない省略形については、 <code>:short</code> を追加してください。目的の長さのオブジェクト名の省略形については、 <code>:short=</code><em>&lt;length&gt;</em> を追加します。ここで、最小の長さは MINIMUM_ABBREV です。一意のオブジェクト名を確保するために、指定の長さを超える場合があります。
+        The object name (aka SHA-1). For a non-ambiguous abbreviation of the object name append <code>:short</code>. For an abbreviation of the object name with desired length append <code>:short=</code><em>&lt;length&gt;</em>, where the minimum length is <code>MINIMUM_ABBREV</code>. The length may be exceeded to ensure unique object names.
 </p>
 </dd>
 <dt class="hdlist1">
-deltabase
+<code>deltabase</code>
 </dt>
 <dd>
 <p>
@@ -959,7 +969,7 @@ deltabase
 </p>
 </dd>
 <dt class="hdlist1">
-upstream
+<code>upstream</code>
 </dt>
 <dd>
 <p>
@@ -969,7 +979,7 @@ upstream
 <div class="paragraph"><p>refに追跡情報が関連付けられていない場合、効果はありません。 <code>nobracket</code> 以外のすべてのオプションは相互に排他的ですが、一緒に使用する場合は最後のオプションが選択されます。</p></div>
 </dd>
 <dt class="hdlist1">
-push
+<code>push</code>
 </dt>
 <dd>
 <p>
@@ -977,15 +987,15 @@ push
 </p>
 </dd>
 <dt class="hdlist1">
-HEAD
+<code>HEAD</code>
 </dt>
 <dd>
 <p>
-        HEADが現在のref (チェックアウトされたブランチ)と一致する場合は * 、それ以外の場合は ' ' 。
+        <code>*</code> if <code>HEAD</code> matches current ref (the checked out branch), ' ' otherwise.
 </p>
 </dd>
 <dt class="hdlist1">
-color
+<code>color</code>
 </dt>
 <dd>
 <p>
@@ -993,23 +1003,23 @@ color
 </p>
 </dd>
 <dt class="hdlist1">
-align
+<code>align</code>
 </dt>
 <dd>
 <p>
-        コンテンツを %(align:&#8230;) から %(end) の間で左揃え、中央揃え、または右揃えにします。 <code>align:</code> の後には、 <code>width=</code><em>&lt;width&gt;</em> と <code>position=</code><em>&lt;position&gt;</em> がコンマ(<code>,</code>)で区切られた任意の順序で続きます。ここで、 <em>&lt;position&gt;</em> は left または right または middle のいずれかで、<em>&lt;position&gt;</em> の デフォルトは left で <em>&lt;width&gt;</em> のデフォルトは配置されたコンテンツの全長です。 簡潔にするために、 <code>width=</code> および/または <code>position=</code> プレフィックスを省略して、代わりに裸の &lt;width&gt; および &lt;position&gt; を使用することができます。 たとえば、 %(<code>align:</code><em>&lt;width&gt;</em><code>,</code><em>&lt;position&gt;</em>) です。 コンテンツの長さがwidthよりも大きい場合、位置合わせは実行されません。 <code>--quote</code> とともに使用すると、 %(align:&#8230;) から %(end) の間のすべてがクォートされまれますが、ネストされている場合は、最上位レベルのみがクォートされます。
+        Left-, middle-, or right-align the content between %(<code>align:</code><code>...</code>) and %(<code>end</code>). The "<code>align:</code>" is followed by <code>width=</code><em>&lt;width&gt;</em> and <code>position=</code><em>&lt;position&gt;</em> in any order separated by a comma, where the <em>&lt;position&gt;</em> is either <code>left</code>, <code>right</code> or <code>middle</code>, default being <code>left</code> and <em>&lt;width&gt;</em> is the total length of the content with alignment. For brevity, the "width=" and/or "position=" prefixes may be omitted, and bare <em>&lt;width&gt;</em> and <em>&lt;position&gt;</em> used instead. For instance, %(<code>align:</code><em>&lt;width&gt;</em><code>,</code><em>&lt;position&gt;</em>). If the contents length is more than the width then no alignment is performed. If used with <code>--quote</code> everything in between %(<code>align:</code><code>...</code>) and %(<code>end</code>) is quoted, but if nested then only the topmost level performs quoting.
 </p>
 </dd>
 <dt class="hdlist1">
-if
+<code>if</code>
 </dt>
 <dd>
 <p>
-        %(if) … %(then) … %(end) または %(if) … %(then) … %(else) … %(end) として使用されます。 %(if) の後に値または文字列リテラルを持つアトムがある場合は、 %(then) の後のすべてが出力されます。そうでない場合、 %(else) アトムが使用されている場合は、 %(else) の後のすべてが出力されます。 %(then) の前の文字列を評価するときはスペースを無視します。これは、 * または ` ` のいずれかを出力する %(HEAD) アトムを使用し、 HEAD ref にのみ if 条件を適用する場合に役立ちます。 <code>:equals=</code><em>&lt;string&gt;</em> または <code>:notequals=</code><em>&lt;string&gt;</em> を追加して、 %(if:&#8230;) アトムと %(then) アトムの間の値を指定された文字列と比較します。(訳注:つまり、 %(if) から %(then) の間がconditionである)
+        Used as %(<code>if</code>)<code>...</code>%(<code>then</code>)<code>...</code>%(<code>end</code>) or %(<code>if</code>)<code>...</code>%(<code>then</code>)<code>...</code>%(<code>else</code>)<code>...</code>%(<code>end</code>). If there is an atom with value or string literal after the %(<code>if</code>) then everything after the %(<code>then</code>) is printed, else if the %(<code>else</code>) atom is used, then everything after %(else) is printed. We ignore space when evaluating the string before %(<code>then</code>), this is useful when we use the %(<code>HEAD</code>) atom which prints either "<code>*</code>" or " " and we want to apply the <em>if</em> condition only on the <code>HEAD</code> ref. Append "<code>:equals=</code><em>&lt;string&gt;</em>" or "<code>:notequals=</code><em>&lt;string&gt;</em>" to compare the value between the %(<code>if:</code><code>...</code>) and %(<code>then</code>) atoms with the given string.
 </p>
 </dd>
 <dt class="hdlist1">
-symref
+<code>symref</code>
 </dt>
 <dd>
 <p>
@@ -1017,7 +1027,7 @@ symref
 </p>
 </dd>
 <dt class="hdlist1">
-signature
+<code>signature</code>
 </dt>
 <dd>
 <p>
@@ -1025,15 +1035,81 @@ signature
 </p>
 </dd>
 <dt class="hdlist1">
-signature:grade
+<code>signature:grade</code>
 </dt>
 <dd>
 <p>
-        良好(good)な(有効な)署名には「G」、 不良(bad)な署名には「B」、 有効性が不明(unknown)な良好な署名には「U」、有効期限が切れた(eXpired)良好な署名には「X」、 期限切れのキーによって作成された正常な署名には「Y」、 取り消されたキーによって作成された正常な署名には「R」、 (キーが見つからないなど)署名をチェックできない場合は「E」、 署名がない場合(no signature)は「N」です。
+        Show
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>G</code>
+</dt>
+<dd>
+<p>
+for a good (valid) signature
 </p>
 </dd>
 <dt class="hdlist1">
-signature:signer
+<code>B</code>
+</dt>
+<dd>
+<p>
+for a bad signature
+</p>
+</dd>
+<dt class="hdlist1">
+<code>U</code>
+</dt>
+<dd>
+<p>
+for a good signature with unknown validity
+</p>
+</dd>
+<dt class="hdlist1">
+<code>X</code>
+</dt>
+<dd>
+<p>
+for a good signature that has expired
+</p>
+</dd>
+<dt class="hdlist1">
+<code>Y</code>
+</dt>
+<dd>
+<p>
+for a good signature made by an expired key
+</p>
+</dd>
+<dt class="hdlist1">
+<code>R</code>
+</dt>
+<dd>
+<p>
+for a good signature made by a revoked key
+</p>
+</dd>
+<dt class="hdlist1">
+<code>E</code>
+</dt>
+<dd>
+<p>
+if the signature cannot be checked (e.g. missing key)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>N</code>
+</dt>
+<dd>
+<p>
+for no signature.
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+<code>signature:signer</code>
 </dt>
 <dd>
 <p>
@@ -1041,7 +1117,7 @@ signature:signer
 </p>
 </dd>
 <dt class="hdlist1">
-signature:key
+<code>signature:key</code>
 </dt>
 <dd>
 <p>
@@ -1049,7 +1125,7 @@ signature:key
 </p>
 </dd>
 <dt class="hdlist1">
-signature:fingerprint
+<code>signature:fingerprint</code>
 </dt>
 <dd>
 <p>
@@ -1057,7 +1133,7 @@ signature:fingerprint
 </p>
 </dd>
 <dt class="hdlist1">
-signature:primarykeyfingerprint
+<code>signature:primarykeyfingerprint</code>
 </dt>
 <dd>
 <p>
@@ -1065,7 +1141,7 @@ signature:primarykeyfingerprint
 </p>
 </dd>
 <dt class="hdlist1">
-signature:trustlevel
+<code>signature:trustlevel</code>
 </dt>
 <dd>
 <p>
@@ -1073,7 +1149,7 @@ signature:trustlevel
 </p>
 </dd>
 <dt class="hdlist1">
-worktreepath
+<code>worktreepath</code>
 </dt>
 <dd>
 <p>
@@ -1081,19 +1157,19 @@ worktreepath
 </p>
 </dd>
 <dt class="hdlist1">
-ahead-behind:&lt;committish&gt;
+<code>ahead-behind:</code><em>&lt;commit-ish&gt;</em>
 </dt>
 <dd>
 <p>
-        空白で区切られた2つの整数が、 書式内で指定された <em>&lt;committish&gt;</em> と出力refを比較したときの、 それぞれ前方と後方のコミット数をあらわします。
+        Two integers, separated by a space, demonstrating the number of commits ahead and behind, respectively, when comparing the output ref to the <em>&lt;committish&gt;</em> specified in the format.
 </p>
 </dd>
 <dt class="hdlist1">
-is-base:&lt;committish&gt;
+<code>is-base:</code><em>&lt;commit-ish&gt;</em>
 </dt>
 <dd>
 <p>
-        指定の <em>&lt;committish&gt;</em> を生成したブランチの開始点として最も可能性の高い ref であると選択した1行には (<em>&lt;committish&gt;</em>) と表記されます。 この選択は、ヒューリスティックを使用して行われます: つまり、 <em>&lt;committish&gt;</em> の最初の親の履歴の中でコミットの数を最小化する ref を選択します。
+        In at most one row, (<em>&lt;commit-ish&gt;</em>) will appear to indicate the ref that is most likely the ref used as a starting point for the branch that produced <em>&lt;commit-ish&gt;</em>. This choice is made using a heuristic: choose the ref that minimizes the number of commits in the first-parent history of <em>&lt;commit-ish&gt;</em> and not in the first-parent history of the ref.
 </p>
 <div class="paragraph"><p>たとえば、 いくつかの ref の最初の親の履歴について以下の図を考えてみましょう:</p></div>
 <div class="listingblock">
@@ -1117,10 +1193,10 @@ refs/heads/B:(D)
 refs/heads/C:</code></pre>
 </div></div>
 <div class="paragraph"><p>これは、 <code>D</code> の最初の親の履歴は、 <code>B</code> と <code>C</code> の共通の祖先でフィルターされた ref 達の最初の親の履歴との間で直近の交差を持っていて、 <code>B</code> と <code>C</code> が同列の場合はソートされた順序で最も先の ref によって解決とするためです。</p></div>
-<div class="paragraph"><p>注意: このトークンは、 <em>&lt;committish&gt;</em> の最初の親の履歴がフィルターされたref達の最初の親の歴史と交差していない場合には表示されないことに注意してください。</p></div>
+<div class="paragraph"><p>Note that this token will not appear if the first-parent history of <em>&lt;commit-ish&gt;</em> does not intersect the first-parent histories of the filtered refs.</p></div>
 </dd>
 <dt class="hdlist1">
-describe[:options]
+<code>describe</code>[<code>:</code><em>&lt;option&gt;</em><code>,.</code>..]
 </dt>
 <dd>
 <p>
@@ -1130,7 +1206,7 @@ describe[:options]
 <div class="content">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-tags=&lt;bool-value&gt;
+<code>tags=</code><em>&lt;bool-value&gt;</em>
 </dt>
 <dd>
 <p>
@@ -1138,27 +1214,27 @@ tags=&lt;bool-value&gt;
 </p>
 </dd>
 <dt class="hdlist1">
-abbrev=&lt;number&gt;
+<code>abbrev=</code><em>&lt;number&gt;</em>
 </dt>
 <dd>
 <p>
-        少なくとも &lt;number&gt; 桁の16進数を使用します。 詳細については、 <a href="git-describe.html">git-describe(1)</a> の対応するオプションを参照してください。
+        Use at least <em>&lt;number&gt;</em> hexadecimal digits; see the corresponding option in <a href="git-describe.html">git-describe(1)</a> for details.
 </p>
 </dd>
 <dt class="hdlist1">
-match=&lt;pattern&gt;
+<code>match=</code><em>&lt;pattern&gt;</em>
 </dt>
 <dd>
 <p>
-        <code>refs/tags/</code> プレフィックスを除く、 指定の <code>glob</code>(<code>7</code>) パターンにマッチするタグのみを考慮します。 詳細については、 <a href="git-describe.html">git-describe(1)</a> の対応するオプションを参照してください。
+        Only consider tags matching the <code>glob</code>(7) <em>&lt;pattern&gt;</em>, excluding the <code>refs/tags/</code> prefix; see the corresponding option in <a href="git-describe.html">git-describe(1)</a> for details.
 </p>
 </dd>
 <dt class="hdlist1">
-exclude=&lt;pattern&gt;
+<code>exclude=</code><em>&lt;pattern&gt;</em>
 </dt>
 <dd>
 <p>
-        <code>refs/tags/</code> プレフィックスを除く、 指定の glob(7) パターンにマッチするタグを考慮しないでください。 詳細については、 <a href="git-describe.html">git-describe(1)</a> の対応するオプションを参照してください。
+        Do not consider tags matching the <code>glob</code>(7) <em>&lt;pattern&gt;</em>, excluding the <code>refs/tags/</code> prefix; see the corresponding option in <a href="git-describe.html">git-describe(1)</a> for details.
 </p>
 </dd>
 </dl></div>
@@ -1167,12 +1243,12 @@ exclude=&lt;pattern&gt;
 </dl></div>
 <div class="paragraph"><p>上記に加えて、commitとtagオブジェクトの場合、ヘッダーフィールド名(<code>tree</code> と <code>parent</code> と <code>object</code> と <code>type</code> と <code>tag</code>)を使用して、ヘッダーフィールドの値を指定できます。 フィールド <code>tree</code> と <code>parent</code> は、 <code>objectname</code> と同じように、修飾子 <code>:short</code> や <code>:short=</code><em>&lt;length&gt;</em> とともに使用することもできます。</p></div>
 <div class="paragraph"><p>commitオブジェクトとtagオブジェクトの場合、特別な <code>creatordate</code> フィールドと <code>creator</code> フィールドは、オブジェクトタイプに応じて、 <code>committer</code> または <code>tagger</code> フィールドの適切な日付またはname-email-dateタプルに対応します。これらは、注釈付きタグと軽量タグの組み合わせでの作業を目的としています。</p></div>
-<div class="paragraph"><p>タグ・オブジェクトの場合、 アスタリスク(*)が付いた「フィールド名」は、 タグ・オブジェクト自体ではなく、 皮むきしたオブジェクト(peeled object)の「フィールド名」値に拡張されます。</p></div>
+<div class="paragraph"><p>タグ・オブジェクトの場合、 アスタリスク(<code>*</code>)が付いた「フィールド名」は、 タグ・オブジェクト自体ではなく、 皮むきしたオブジェクト(peeled object)の「フィールド名」値に拡張されます。</p></div>
 <div class="paragraph"><p>名前と電子メールアドレスと日付(name-email-date)のタプルを値として持つフィールド(<code>author</code> と <code>committer</code> と <code>tagger</code>)は、<code>name</code> や <code>email</code> や <code>date</code> を接尾辞として付けることで、 指定の要素を抽出できます。 電子メールアドレス・フィールド(<code>authoremail</code> と <code>committeremail</code> と <code>taggeremail</code>)では、 <code>:trim</code> を追加すると山括弧(&lt;, &gt;)無しの電子メールアドレスを取得でき、 <code>:localpart</code> を追加すると、 電子メールアドレスをトリミングして <code>@</code> 記号より前の部分を取得できます。 これらの他に、 <code>:mailmap</code> オプションと、 対応する <code>:mailmap,trim</code> と <code>:mailmap,localpart</code> を(順序は関係なく)使用して、 <code>.mailmap</code> ファイルに従って、 または mailmap.file や mailmap.blob 構成変数(<a href="gitmailmap.html">gitmailmap(5)</a> 参照)で設定されたファイルに従って、 名前と電子メールアドレスを取得できます。</p></div>
 <div class="paragraph"><p>オブジェクトの生データは <code>raw</code> です。</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-raw:size
+<code>raw:size</code>
 </dt>
 <dd>
 <p>
@@ -1184,7 +1260,7 @@ raw:size
 <div class="paragraph"><p>コミットまたはタグオブジェクト内のメッセージは <code>contents</code> であり、そこから <code>contents:</code><em>&lt;part&gt;</em> を使用して以下によりさまざまな部分を抽出できます:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-contents:size
+<code>contents:size</code>
 </dt>
 <dd>
 <p>
@@ -1192,7 +1268,7 @@ contents:size
 </p>
 </dd>
 <dt class="hdlist1">
-contents:subject
+<code>contents:subject</code>
 </dt>
 <dd>
 <p>
@@ -1200,7 +1276,7 @@ contents:subject
 </p>
 </dd>
 <dt class="hdlist1">
-contents:body
+<code>contents:body</code>
 </dt>
 <dd>
 <p>
@@ -1208,7 +1284,7 @@ contents:body
 </p>
 </dd>
 <dt class="hdlist1">
-contents:signature
+<code>contents:signature</code>
 </dt>
 <dd>
 <p>
@@ -1216,20 +1292,20 @@ contents:signature
 </p>
 </dd>
 <dt class="hdlist1">
-contents:lines=N
+<code>contents:lines=</code><em>&lt;n&gt;</em>
 </dt>
 <dd>
 <p>
-        メッセージの最初の N行。
+        The first <em>&lt;n&gt;</em> lines of the message.
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p>加えて、 <a href="git-interpret-trailers.html">git-interpret-trailers(1)</a> によって解釈されるトレーラーは、 <code>trailers</code>[<code>:options</code>] として(または履歴エイリアス <code>contents:trailers</code>[<code>:options</code>] を使用して)取得されます。有効な [:option] 値については、 <a href="git-log.html">git-log(1)</a> の <code>trailers</code> セクションを参照してください。</p></div>
+<div class="paragraph"><p>Additionally, the trailers as interpreted by <a href="git-interpret-trailers.html">git-interpret-trailers(1)</a> are obtained as <code>trailers</code>[<code>:</code><em>&lt;option&gt;</em><code>,.</code>..] (or by using the historical alias <code>contents:trailers</code>[<code>:</code><em>&lt;option&gt;</em><code>,.</code>..]). For valid <em>&lt;option&gt;</em> values see <code>trailers</code> section of <a href="git-log.html">git-log(1)</a>.</p></div>
 <div class="paragraph"><p>並べ替えの目的のため、数値のフィールドは数値順で並べ替えられます(<code>objectsize</code> 、<code>authordate</code> 、 <code>committerdate</code> 、<code>creatordate</code> 、 <code>taggerdate</code>)。他のすべてのフィールドは、バイト値の順序で並べ替えられます。</p></div>
 <div class="paragraph"><p>バージョンで並べ替えるオプションもあります。これは、フィールド名 <code>version:refname</code> またはそのエイリアス <code>v:refname</code> を使用して行うことができます。</p></div>
 <div class="paragraph"><p>いずれの場合も、refによって参照されるオブジェクトに適用できないフィールドを参照するフィールド名はエラーを引き起こしません。代わりに空文字列を返します。</p></div>
 <div class="paragraph"><p>日付タイプフィールドの特殊なケースとして、 <code>:</code> の後に日付フォーマット名を追加して日付のフォーマットを指定できます(<a href="git-rev-list.html">git-rev-list(1)</a> の <code>--date</code> オプションのが取る値を参照してください)。 この書式が <code>--sort</code> キーで提供される場合、 参照は、 元のタイムスタンプの数値ではなく、 書式化文字列のバイト値に従ってソートされます。</p></div>
-<div class="paragraph"><p>%(align) や %(if) などの一部のアトムには、常に対応する %(end) が必要です。 %(align) や %(if) などの一部のアトムを「開始アトム」(opening atoms)と呼び、 %($open) と表記することもあります。</p></div>
+<div class="paragraph"><p>Some atoms like %(<code>align</code>) and %(<code>if</code>) always require a matching %(<code>end</code>). We call them "opening atoms" and sometimes denote them as %(<code>$open</code>).</p></div>
 <div class="paragraph"><p>スクリプト言語固有のクォートが有効な場合、トップレベルの開始アトムとそれに対応する %(end) の間のすべてが、トップレベル開始アトムのセマンティクスに従って評価され、そのトップレベルからの結果のみがクォートされます。</p></div>
 </div>
 </div>
@@ -1242,7 +1318,7 @@ contents:lines=N
 <pre><code>#!/bin/sh
 
 git for-each-ref --count=3 --sort='-*authordate' \
---format='From: %(*authorname) %(*authoremail)
+`--format='From: %(*authorname) %(*authoremail)
 Subject: %(*subject)
 Date: %(*authordate)
 Ref: %(*refname)
@@ -1250,7 +1326,7 @@ Ref: %(*refname)
 %(*body)
 ' 'refs/tags'</code></pre>
 </div></div>
-<div class="paragraph"><p>出力でのshell evalの使用を示す簡単な例で、<code>--shell</code> の使用を示しています。 すべてのheadのプレフィックスを一覧表示します:</p></div>
+<div class="paragraph"><p>A simple example showing the use of shell eval on the output, demonstrating the use of <code>--shell</code>. List the prefixes of all heads:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>#!/bin/sh
@@ -1313,12 +1389,12 @@ eval=`git for-each-ref --shell --format="$fmt" \
         refs/tags`
 eval "$eval"</code></pre>
 </div></div>
-<div class="paragraph"><p>%(if) … %(then) … %(else) … %(end) の使用法を示す例。 これにより、現在のブランチの前にアスタリスクが付けられます。</p></div>
+<div class="paragraph"><p>An example to show the usage of %(<code>if</code>)<code>...</code>%(<code>then</code>)<code>...</code>%(<code>else</code>)<code>...</code>%(<code>end</code>). This prefixes the current branch with a star.</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>git for-each-ref --format="%(if)%(HEAD)%(then)* %(else)  %(end)%(refname:short)" refs/heads/</code></pre>
 </div></div>
-<div class="paragraph"><p>%(if) … %(then) … %(end) の使用法を示す例。 存在する場合、これは作者名を出力します。</p></div>
+<div class="paragraph"><p>An example to show the usage of %(<code>if</code>)<code>...</code>%(<code>then</code>)<code>...</code>%(<code>end</code>). This prints the authorname, if present.</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>git for-each-ref --format="%(refname)%(if)%(authorname)%(then) Authored by: %(authorname)%(end)"</code></pre>
@@ -1356,7 +1432,7 @@ eval "$eval"</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-02-14 04:40:29 JST
+ 2025-11-13 13:43:53 JST
 </div>
 </div>
 </body>

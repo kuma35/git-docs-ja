@@ -1,0 +1,51 @@
+git-patch-id(1)
+===============
+
+NAME
+----
+git-patch-id - パッチの一意のIDを計算します
+
+SYNOPSIS
+--------
+[synopsis]
+git patch-id [--stable | --unstable | --verbatim]
+
+DESCRIPTION
+-----------
+標準入力からパッチを読み取り、そのパッチIDを計算します。
+
+「パッチID」は、パッチに関連付けられたファイル差分のSHA-1の合計に過ぎず、行番号は無視されます。そのため、「適度に安定」していますが、同時に適度に一意です。つまり、同じ「パッチID」を持つ2つのパッチは、ほぼ同じものであることが保証されています。
+
+このコマンドの主な利用シーンは、 重複している可能性のあるコミットを探すことです。
+
+When dealing with `git diff-tree` output, it takes advantage of the fact that the patch is prefixed with the object name of the commit, and outputs two 40-byte hexadecimal strings. The first string is the patch ID, and the second string is the commit ID. This can be used to make a mapping from patch ID to commit ID.
+
+OPTIONS
+-------
+
+`--verbatim`::
+	与えられた入力のパッチIDを計算します。 空白(whitespace)は削除しません。
++
+This is the default if `patchid.verbatim` is `true`.
+
+`--stable`::
+	パッチIDとして「安定した」ハッシュの合計を使用します。 このオプションを使用すると:
++
+--
+- Reordering file diffs that make up a patch does not affect the ID. In particular, two patches produced by comparing the same two trees with two different settings for `-O<orderfile>` result in the same patch ID signature, thereby allowing the computed result to be used as a key to index some meta-information about the change between the two trees;
+
+- Result is different from the value produced by git 1.9 and older or produced when an "unstable" hash (see `--unstable` below) is configured - even when used on a diff output taken without any use of `-O<orderfile>`, thereby making existing databases storing such "unstable" or historical patch-ids unusable.
+
+- パッチ内の空白(whitespace)はすべて無視され、 ID には影響しません。
+--
++
+This is the default if `patchid.stable` is set to `true`.
+
+`--unstable`::
+	パッチIDとして「不安定な」ハッシュを使用します。このオプションを使用すると、生成される結果は git1.9 以前でかつ空白(whitespace)を無視して作成されたパッチID値と互換性があります。git 1.9 以前で作成されたパッチIDを保存している既存のデータベースを使用しているユーザー(並べ替えられたパッチを処理しないユーザー)は、このオプションを使用することをお勧めします。
++
+※これがデフォルトです。
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -313,7 +313,7 @@ index 65898fa..b002dc6 100644
 @node Understanding history; History diagrams, Understanding history; What is a branch?, Understanding history; commits; parents; and reachability, Understanding History; Commits
 @subsection Understanding history: History diagrams
 
-以下のような図を使用して、Gitの履歴を表す場合があります。コミットは「o」として表示され、コミット間の繋がりは、 @samp{-} および @samp{/} および \ で描かれた線で示されます。時間は左から右に進みます:
+以下のような図を使用して、Gitの履歴を表す場合があります。コミットは「o」として表示され、コミット間の繋がりは、 @samp{-} および @samp{/} および @samp{\} で描かれた線で示されます。時間は左から右に進みます:
 
 @example
          o--o--o <-- Branch A
@@ -1546,7 +1546,7 @@ $ git pull origin master
 $ git pull
 @end example
 
-このコマンドは、リモートブランチからリモート追跡ブランチ @samp{origin/}* に変更をフェッチし、そのデフォルトブランチを現在のブランチにマージします。
+このコマンドは、リモートブランチからリモート追跡ブランチ @samp{origin/*} に変更をフェッチし、そのデフォルトブランチを現在のブランチにマージします。
 
 より一般的には、リモート追跡ブランチから作成されたブランチは、デフォルトでそのリモート追跡ブランチからプルされます。これらのデフォルトを制御する方法を学ぶためには、 @uref{git-config.html,git-config(1)} の @samp{branch.}@emph{<name>}@samp{.remote} や @samp{branch.}@emph{<name>}@samp{.merge} オプションの説明と、 @uref{git-checkout.html,git-checkout(1)} の @samp{--track} オプションの説明を参照してください。
 
@@ -3409,7 +3409,7 @@ $ git switch --detach e83c5163
 
 初期のGitは、(UNIXの伝統でである)非常に単純なプログラムの集まりであり、スクリプトで使用して、出力を別のプログラムにパイプしていました。 新しいものをテストするのが簡単だったので、これは初期開発に適していました。ただし、最近、これらのパーツの多くが組み込みになり、コアの一部が「解放」( "libified" )されました。つまり、パフォーマンス、移植性、およびコードの重複を避けるために libgit.a に配置されました。
 
-今や、 あなたはインデックスが何であるかを知り(そして、それに対応するデータ構造は @samp{read-cache-ll.h} にある)、 その最初のメンバーである @samp{struct} @samp{object} から共通の構造を継承するオブジェクトタイプ(blobs と trees と commits と tags)が幾つかあることを知りました(したがって、 たとえば (@samp{struct} @samp{object} *)@samp{commit} とキャストして、 &commit->@samp{object} と全く同様の事を行う事ができます。 つまり、 オブジェクト名とフラグを取得を取得できるのです)。
+今や、 あなたはインデックスが何であるかを知り(そして、それに対応するデータ構造は @samp{read-cache-ll.h} にある)、 その最初のメンバーである @samp{struct} @samp{object} から共通の構造を継承するオブジェクトタイプ(blobs と trees と commits と tags)が幾つかあることを知りました(したがって、 たとえば (@samp{struct} @samp{object} @samp{*})@samp{commit} とキャストして、 &commit->@samp{object} と全く同様の事を行う事ができます。 つまり、 オブジェクト名とフラグを取得を取得できるのです)。
 
 ここで、この情報を吸収するために一服するとしましょう。
 
@@ -3450,7 +3450,7 @@ $ git-rev-list --pretty $(git-rev-parse --default HEAD "$@@") | \
 @samp{Makefile} の @samp{BUILTIN_OBJECTS} エントリ。
 @end itemize
 
-しばしば1つのソースファイルに複数のビルトインが含まれている場合があります。たとえば、 @samp{cmd_whatchanged}() と @samp{cmd_log}() はどちらも、かなりのコードを共有しているため、 @samp{builtin/log.c} にあります。その場合、それらが存在する @samp{.c} ファイルのように名前が付けられていないコマンドは、 @samp{Makefile} の @samp{BUILT_INS} にリストされている必要があります。
+Sometimes, more than one builtin is contained in one source file. For example, @samp{cmd_show}() and @samp{cmd_log}() both reside in @samp{builtin/log.c}, since they share quite a bit of code. In that case, the commands which are @emph{not} named like the @samp{.c} file in which they live have to be listed in @samp{BUILT_INS} in the @samp{Makefile}.
 
 `git log`は、元のスクリプトよりもC言語版の方が複雑に見えますが、これにより、柔軟性とパフォーマンスが大幅に向上します。
 
@@ -3474,7 +3474,7 @@ $ git-rev-list --pretty $(git-rev-parse --default HEAD "$@@") | \
 したがって、 @samp{builtin/cat-file.c} を調べ、 @samp{cmd_cat_file}() を検索して、それが何をするかを調べます。
 
 @example
-        git_config(git_default_config);
+        repo_config(the_repository, git_default_config);
         if (argc != 3)
                 usage("git cat-file [-t|-s|-e|-p|<type>] <sha1>");
         if (get_sha1(argv[2], sha1))
@@ -3491,7 +3491,7 @@ $ git-rev-list --pretty $(git-rev-parse --default HEAD "$@@") | \
 `get_sha1()`は成功で0を返します。これは一部の新しいGitハッカーを驚かせるかもしれませんが、UNIXには、さまざまなエラーの場合にさまざまな負の数を返し、成功した場合は0を返すという長い伝統があります。
 
 @item
-@samp{get_sha1}() の関数シグネチャの変数 @samp{sha1} は @samp{unsigned} @samp{char} * ですが、実際には @samp{unsigned} @samp{char}[@samp{20}] へのポインタであることが期待されています。この変数には、指定されたコミットの160ビットのSHA-1が含まれます。SHA-1が @samp{unsigned} @samp{char} * として渡される場合は常に、 @samp{char} * として渡される16進文字のASCII表現とは対照的に、バイナリ表現であることに注意してください。
+@samp{get_sha1}() の関数シグネチャの変数 @samp{sha1} は @samp{unsigned} @samp{char} @samp{*} ですが、実際には @samp{unsigned} @samp{char}[@samp{20}] へのポインタであることが期待されています。この変数には、指定されたコミットの160ビットのSHA-1が含まれます。SHA-1が @samp{unsigned} @samp{char} @samp{*} として渡される場合は常に、 @samp{char} @samp{*} として渡される16進文字のASCII表現とは対照的に、バイナリ表現であることに注意してください。
 @end itemize
 
 コード全体でこれらの両方が表示されます。
@@ -3500,10 +3500,10 @@ $ git-rev-list --pretty $(git-rev-parse --default HEAD "$@@") | \
 
 @example
         case 0:
-                buf = read_object_with_reference(sha1, argv[1], &size, NULL);
+                buf = odb_read_object_peeled(r->objects, sha1, argv[1], &size, NULL);
 @end example
 
-これはブロブ(実際にはブロブだけでなくあらゆるタイプのオブジェクト)を読み取る方法です。 関数 @samp{read_object_with_reference}() が実際にどのように機能するかを知るには、(Gitのリポジトリで @samp{git} @samp{grep} @samp{read_object_with} | @samp{grep} ":[@samp{a-z}]" などして)そのソースコードを探して拝んでください。
+This is how you read a blob (actually, not only a blob, but any type of object). To know how the function @samp{odb_read_object_peeled}() actually works, find the source code for it (something like @samp{git} @samp{grep} @samp{read_object_with} | @samp{grep} ":[@samp{a-z}]" in the Git repository), and read the source.
 
 結果の使用方法を確認するには、 @samp{cmd_cat_file}() を読んでください:
 
@@ -3722,10 +3722,10 @@ pathspec は、「git ls-files」や「git ls-tree」や「git add」や「git g
 最後がスラッシュであるpathspecは、ディレクトリプレフィックスを表します。そのpathspecのスコープは、そのサブツリーに制限されています。
 
 @item
-pathspecの残りの部分は、pathnameの残りの部分のためのパターンです。 ディレクトリ・プレフィックスに関連するパスは、 fnmatch(3) を使用してそのパターンと照合されます。特に、 * と ? はディレクトリ区切り文字とマッチさせる事ができます。
+pathspecの残りの部分は、pathnameの残りの部分のためのパターンです。 ディレクトリ・プレフィックスに関連するパスは、 fnmatch(3) を使用してそのパターンと照合されます。特に、 @samp{*} と ? はディレクトリ区切り文字とマッチさせる事ができます。
 @end itemize
 
-たとえば、 @samp{Documentation/}*.jpg は、 @samp{Documentation/chapter_1/figure_1.jpg} を含む、Documentationサブ・ツリー内のすべての @samp{.jpg} ファイルとマッチします。
+たとえば、 @samp{Documentation/*.jpg} は、 @samp{Documentation/chapter_1/figure_1.jpg} を含む、Documentationサブ・ツリー内のすべての @samp{.jpg} ファイルとマッチします。
 
 コロン(@samp{:})で始まるpathspecには特別な意味があります。短い形式では、先頭のコロン(@samp{:})の後に0個以上の「魔法記号」(magic signature)(オプションで別のコロン(@samp{:})で終了)が続き、残りはパスと照合するパターンです。「魔法記号」は、英数字、グロブ、正規表現の特殊文字でもコロンでもないASCII記号で構成されます。パターンが「魔法記号」シンボルセットに属さず、コロンではない文字で始まる場合、「魔法記号」を終了するオプションのコロンは省略できます。
 
@@ -3739,7 +3739,7 @@ pathspecの残りの部分は、pathnameの残りの部分のためのパター�
 魔法単語 @samp{top} (魔法記号: @samp{/})は、サブディレクトリ内からコマンドを実行している場合でも、作業ツリーのルートからパターンを一致させます。
 
 @item  literal 
-* または ? などのパターンのワイルドカードはリテラル文字として扱われます。
+@samp{*} または ? などのパターンのワイルドカードはリテラル文字として扱われます。
 
 @item  icase 
 (英文字の)大文字小文字区別せずにマッチ
@@ -3747,18 +3747,18 @@ pathspecの残りの部分は、pathnameの残りの部分のためのパター�
 @item  glob 
 Gitはパターンを、 FNM_PATHNAMEフラグを指定した fnmatch(3) に消費されるのに適したシェルグロブとして扱います。パターン内のワイルドカードは、パス名内の / と一致しません。 たとえば、「Documentation/*.html」は「Documentation/git.html」と一致しますが、「Documentation/ppc/ppc.html」または「tools/perf/Documentation/perf.html」とは一致しません。
 
-フルパス名と一致するパターンの2つの連続するアスタリスク ** は、特別な意味を持つ場合があります:
+フルパス名と一致するパターンの2つの連続するアスタリスク @samp{**} は、特別な意味を持つ場合があります:
 
 @itemize 
 
 @item
-先頭の ** の後にスラッシュが続く場合は、すべてのディレクトリで一致することを意味します。たとえば、 **/foo は、パターン @samp{foo} と同じように、ファイルまたはディレクトリ @samp{foo} のどこにでも一致します。 **/foo/bar は、ディレクトリ @samp{foo} の直下にあるファイルまたはディレクトリ @samp{bar} と一致します。
+A leading "@samp{**}" followed by a slash means match in all directories. For example, "@samp{**/foo}" matches file or directory "@samp{foo}" anywhere. "@samp{**/foo/bar}" matches file or directory "@samp{bar}" anywhere that is directly under directory "@samp{foo}".
 
 @item
-末尾の @samp{/}** は、内部のすべてに一致します(matches everything inside)。たとえば、 @samp{abc/}** は、 @samp{.gitignore} ファイルの場所を基準にして、ディレクトリ "abc" 内のすべてのファイルと無限の深さで一致します。
+末尾の @samp{/**} は、内部のすべてに一致します(matches everything inside)。たとえば、 @samp{abc/**} は、 @samp{.gitignore} ファイルの場所を基準にして、ディレクトリ "abc" 内のすべてのファイルと無限の深さで一致します。
 
 @item
-スラッシュの後に2つの連続するアスタリスクが続く場合、スラッシュは0個以上のディレクトリに一致します。 たとえば、 @samp{a/}**/b は @samp{a/b} 、 @samp{a/x/b} 、@samp{a/x/y/b} などと一致します。
+スラッシュの後に2つの連続するアスタリスクが続く場合、スラッシュは0個以上のディレクトリに一致します。 たとえば、 @samp{a/**/b} は @samp{a/b} 、 @samp{a/x/b} 、@samp{a/x/y/b} などと一致します。
 
 @item
 他の連続するアスタリスクは無効と見なされます。

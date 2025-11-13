@@ -1,0 +1,95 @@
+git-difftool(1)
+===============
+
+NAME
+----
+git-difftool - 一般的なdiffツールを使用して変更を表示します
+
+SYNOPSIS
+--------
+[synopsis]
+'git difftool' [<options>] [<commit> [<commit>]] [--] [<path>...]
+
+DESCRIPTION
+-----------
+`git difftool` は、一般的なdiffツールを使用してリビジョン間でファイルを比較および編集できるようにするGitコマンドです。 `git difftool` は `git diff` のフロントエンドであり、同じオプションと引数を受け入れます。 linkgit:git-diff[1] を参照してください。
+
+OPTIONS
+-------
+`-d`::
+`--dir-diff`::
+	変更したファイルを一時的な場所にコピーし、それらに対してディレクトリdiffを実行します。 このモードは、diffツールを起動する前にプロンプトを表示することはありません。
+
+`-y`::
+`--no-prompt`::
+	diffツールを起動する前にプロンプトを表示しないでください。
+
+`--prompt`::
+	diffツールを呼び出す前にプロンプトを表示します。 これがデフォルトの振る舞いです。 オプションは、構成設定を上書きするために提供されています。
+
+`--rotate-to=<file>`::
+	指定のパスの diff の表示から開始します。 これ以前のパスは最後の後ろに回されます(訳注: `git difftool` で a,b,c,d,e の場合、 `--rotate-to=c` とすると、 c,d,e,a,b,c の順になる)
+
+`--skip-to=<file>`::
+	その前のすべてのパスをスキップして、指定されたパスのdiffの表示から開始します(訳注: a,b,c,d,e の場合、 `--skip-to=c` は c,d,e)
+
+`-t <tool>`::
+`--tool=<tool>`::
+	<tool> で指定されたdiffツールを使用します。 有効な値には emergeやkompareやmeldやvimdiffも含まれています。有効な<tool>設定のリストについては、 `git difftool --tool-help` を実行してください。
++
+diffツールが指定されていない場合、 `git difftool` は構成変数 `diff.tool` を使用します。 構成変数 `diff.tool` が設定されていない場合、 `git difftool` は適切なデフォルトを選択します。
++
+あなたは構成変数 `difftool.<tool>.path` を設定することにより、ツール(<tool>)へのフルパスを明示的に指定できます。 たとえば、 `difftool.kdiff3.path` を設定することにより、kdiff3への絶対パスを構成できます。 それ以外の場合、 `git difftool` は、ツールがPATH上にあると想定します。
++
+既知のdiffツールの1つを実行する代わりに、構成変数 `difftool.<tool>.cmd` で、呼び出すコマンドラインを指定することにより、 `git difftool` をカスタマイズして代替プログラムを実行できます。
++
+このツールを使用して(`-t` または `--tool` オプションまたは `diff.tool` 構成変数を介して、) `git difftool` を呼び出すと、構成されたコマンドラインが次の変数を使用して呼び出されます: `$LOCAL` は、diff pre-imageの内容を含む一時ファイルの名前に設定され、 `$REMOTE` は、diff post-imageの内容を含む一時ファイルの名前に設定されます。 `$MERGED` は、比較されるファイルの名前です。 `$BASE` は、カスタムマージツールコマンドとの互換性のために提供されており、 `$MERGED` と同じ値です。
+
+`--tool-help`::
+	`--tool` で使用できるdiffツールのリストを出力します。
+
+`--symlinks`::
+`--no-symlinks`::
+	`git difftool` のデフォルトの動作は、 `--dir-diff` モードで実行したときに、作業ツリーへのシンボリックリンクを作成することです。つまり、比較の右側は、作業ツリーのファイルの内容そのものです。
++
+`--no-symlinks` を指定すると、代わりにコピーを作成するように `git difftool` に指示します。 `--no-symlinks` はWindowsのデフォルトです。
+
+`-x <command>`::
+`--extcmd=<command>`::
+	diff を表示するためのカスタムコマンドを指定します。 `git-difftool` は、構成されたデフォルトを無視し、このオプションが指定されている場合は `<command> $LOCAL $REMOTE` を実行します。 さらに、 `$BASE` が環境に設定されます。
+
+`-g`::
+`--gui`::
+`--no-gui`::
+	`git-difftool` が `-g` または `--gui` オプションで呼び出されると、デフォルトのdiffツールが `diff.tool` ではなく設定された `diff.guitool` 変数から読み取られます。 これは 設定変数 `difftool.guiDefault` を使用して自動的に選択可能です。 `--no-gui` オプションを使用して、この設定を上書きできます。 `diff.guitool` が設定されていない場合、ツールが見つかるまで、 `merge.guitool` 、 `diff.tool` 、 `merge.tool` の順でフォールバックします。
+
+`--trust-exit-code`::
+`--no-trust-exit-code`::
+	diff ツールによって報告されたエラーは、 デフォルトでは無視されます。 `--trust-exit-code` を使用すると、 呼び出された diff ツールがゼロ以外の終了コードを返したときに `git-difftool` を終了させます。
++
+`git-difftool` は、 `--trust-exit-code` が使用されている場合、呼び出されたツールの終了コードを転送します。
+
+サポートされているオプションの完全なリストについては、 linkgit:git-diff[1] を参照してください。
+
+CONFIGURATION
+-------------
+同等のdifftoolが定義されていない場合、 `git difftool` は `git mergetool` 構成変数にフォールバックします。
+
+include::includes/cmd-config-section-rest.adoc[]
+
+include::config/difftool.adoc[]
+
+SEE ALSO
+--------
+linkgit:git-diff[1]::
+	 コミット、コミット、作業ツリー等の間の変更を表示する
+
+linkgit:git-mergetool[1]::
+	マージ競合解決ツールを実行して、マージ競合を解決します
+
+linkgit:git-config[1]::
+	 リポジトリまたはグローバルオプションの取得と設定
+
+GIT
+---
+Part of the linkgit:git[1] suite

@@ -5,7 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 10.2.1" />
-<title>Remembering renames</title>
+<title></title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
 
@@ -728,28 +728,65 @@ install: function(toclevels) {
 }
 
 }
-asciidoc.install(1);
+asciidoc.install();
 /*]]>*/
 </script>
 </head>
 <body class="article">
 <div id="header">
-<h1>Remembering renames</h1>
-<span id="revdate">2025-06-14</span>
-<div id="toc">
-  <div id="toctitle">Outline:</div>
-  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
-</div>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_はじめに">はじめに</h2>
-<div class="sectionbody">
 <div class="paragraph"><p>リベースとチェリーピックには一連のマージが含まれ、その結果は新しいひとり親コミット(single-parent commits)として記録されます。 これらのマージの1番目の親の側は「上流」(upstream)側を表し、多くの場合、2 番目の親の側よりもはるかに大きな変更セットが含まれます。 従来、一連のマージの最初の親側の名前変更は、マージごとに繰り返し再検出されていました。 このファイルは、すべてのマージが自動でクリーン(つまり、競合がなく、ユーザー入力または編集のために中断(interrupt)されない)であると仮定して、最適化として、履歴の上流側で名前変更を記憶することが、リベースおよびチェリーピック中に安全かつ効果的である理由を説明します。</p></div>
-</div>
-</div>
+<div class="paragraph"><p>Outline:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Assumptions
+</p>
+</li>
+<li>
+<p>
+How rebasing and cherry-picking work
+</p>
+</li>
+<li>
+<p>
+Why the renames on MERGE_SIDE1 in any given pick are <strong>always</strong> a superset of the renames on MERGE_SIDE1 for the next pick.
+</p>
+</li>
+<li>
+<p>
+Why any rename on MERGE_SIDE1 in any given pick is <em>almost</em> always also a rename on MERGE_SIDE1 for the next pick
+</p>
+</li>
+<li>
+<p>
+A detailed description of the counter-examples to #4.
+</p>
+</li>
+<li>
+<p>
+Why the special cases in #5 are still fully reasonable to use to pair up files for three-way content merging in the merge machinery, and why they do not affect the correctness of the merge.
+</p>
+</li>
+<li>
+<p>
+Interaction with skipping of "irrelevant" renames
+</p>
+</li>
+<li>
+<p>
+Additional items that need to be cached
+</p>
+</li>
+<li>
+<p>
+How directory rename detection interacts with the above and why this optimization is still safe even if merge.directoryRenames is set to "true".
+</p>
+</li>
+</ol></div>
 <div class="sect1">
-<h2 id="_0_仮定">0. 仮定</h2>
+<h2 id="_1_assumptions">1. Assumptions</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>1つ目と2つ目の仮定はこのドキュメント全体に渡る仮定です:</p></div>
 <div class="ulist"><ul>
@@ -764,7 +801,7 @@ asciidoc.install(1);
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>3つ目の仮定は、セクション 2 〜 5 が対象で、議論をシンプルにするための仮定です。これについては セクション 8 で説明します:</p></div>
+<div class="paragraph"><p>and a third that will hold in sections 3-6 for simplicity, that I&#8217;ll later address in section 9:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -775,47 +812,43 @@ asciidoc.install(1);
 <div class="paragraph"><p>それぞれの仮定とそれを含める理由について、詳しく説明します:</p></div>
 <div class="paragraph"><p>最初の仮定は、この文書の目的をより明確にするためのものです。 最適化の実装は実際、これには依存しません。 ただし、rebase と cherry-pick の両方が実装された方法を反映しているため、この仮定はすべての場合に当てはまります。 そしてまた、 cherry-pick と rebase の実装は、下位互換性の理由により簡単には変更できません(たとえば、 <code>git</code> <code>checkout</code> のドキュメントの <code>--ours</code> フラグと <code>--theirs</code> フラグに関する議論、特に rebase での動作に関するコメントを参照してください)。 ただし、最適化により、1番目の親のチェック(checking first-parent-ness)が回避されます。 最適化を有効にする代わりの条件をチェックするため、 cherry-pick と rebase が使用する親の順序が変更された場合でも引き続き機能します。 しかし、この仮定を行うことで、このドキュメントがより明確になり、すべての例を 2 回繰り返す必要がなくなります。</p></div>
 <div class="paragraph"><p>2番目の仮定に違反した場合、最適化は単純にオフになるため、その後を考慮する必要はありません。 2番目の仮定は、「ユーザーが競合を解決したり、ファイルをさらに編集または微調整したりするために中断(interrupt)されることはない」とも言えます。 実際のリベースとチェリーピックはしばしば中断(interrupt)されますが(ユーザーが停止と編集を要求した対話的なリベースであるか、ユーザーが解決する必要がある競合があったため)、名前変更のキャッシュはディスクに保存されないので、ユーザーが操作を解決するためにリベースまたはチェリーピックが停止(stop)すると直ちに破棄されます。</p></div>
-<div class="paragraph"><p>3番目の仮定により、セクション 2〜5 がより単純になり、この最適化が安全で効果的である理由の基礎を人々が理解できるようになります。その後、セクション 8 で詳細に取り組むことができます。 ディレクトリの名前変更が発生したときに、merge.directoryRenames のデフォルトが <code>conflict</code> に設定されていることは、ユーザーが競合を解決するために操作が停止(stop)し、キャッシュが破棄されることを意味することにも注意してください。つまり、最適化は適用されません。 したがって、ディレクトリの名前変更に具体的に対処する必要がある唯一の理由は、一部のユーザーが merge.directoryRenames を <code>true</code> に設定して、マージが自動的に続行できるようにするためです。 この構成設定でも最適化は安全ですが、その理由を示すためにさらにいくつかのケースについて説明する必要があります。 この議論についてはセクション 8 にて行います。</p></div>
+<div class="paragraph"><p>The third assumption makes sections 3-6 simpler, and allows people to understand the basics of why this optimization is safe and effective, and then I can go back and address the specifics in section 9. It is probably also worth noting that if directory renames do occur, then the default of merge.directoryRenames being set to "conflict" means that the operation will stop for users to resolve the conflicts and the cache will be thrown away, and thus that there won&#8217;t be an optimization to apply. So, the only reason we need to address directory renames specifically, is that some users will have set merge.directoryRenames to "true" to allow the merges to continue to proceed automatically. The optimization is still safe with this config setting, but we have to discuss a few more cases to show why; this discussion is deferred until section 9.</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_1_リベースとチェリーピッキングの仕組み">1. リベースとチェリーピッキングの仕組み</h2>
+<h2 id="_2_how_rebasing_and_cherry_picking_work">2. How rebasing and cherry-picking work</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>以下の図について考えてみましょう(git-rebase マニュアルページより):</p></div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre><code>      A---B---C topic
-     /
-D---E---F---G main</code></pre>
+<pre><code>                     A---B---C topic
+                    /
+               D---E---F---G main</code></pre>
 </div></div>
 <div class="paragraph"><p>topic を main にリベースまたはチェリーピッキングした後、以下のようになります:</p></div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre><code>              A'--B'--C' topic
-             /
-D---E---F---G main</code></pre>
+<pre><code>                             A'--B'--C' topic
+                            /
+               D---E---F---G main</code></pre>
 </div></div>
 <div class="paragraph"><p>コミット A' と B' と C' がどのように作成されるかというと、一連のマージによって行われます。この場合、リベースまたはチェリーピックは、特殊なマージ操作にて 3 つの A-B-C コミットのそれぞれを順番に使用します。 ここで、マージ操作の 3 つのコミットに、 MERGE_BASE と、MERGE_SIDE1 と MERGE_SIDE2 というラベルを付けることにしましょう。 この図では、その 3 つのマージのそれぞれに対する 3 つのコミットは以下のようになります:</p></div>
-<div class="paragraph"><p>To create A':</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E
-MERGE_SIDE1:  G
-MERGE_SIDE2:  A</code></pre>
-</div></div>
-<div class="paragraph"><p>To create B':</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A
-MERGE_SIDE1:  A'
-MERGE_SIDE2:  B</code></pre>
-</div></div>
-<div class="paragraph"><p>To create C':</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   B
-MERGE_SIDE1:  B'
-MERGE_SIDE2:  C</code></pre>
+<pre><code>To create A':
+   MERGE_BASE:   E
+   MERGE_SIDE1:  G
+   MERGE_SIDE2:  A
+
+To create B':
+   MERGE_BASE:   A
+   MERGE_SIDE1:  A'
+   MERGE_SIDE2:  B
+
+To create C':
+   MERGE_BASE:   B
+   MERGE_SIDE1:  B'
+   MERGE_SIDE2:  C</code></pre>
 </div></div>
 <div class="paragraph"><p>ときどき、これらの 3 方向のマージが行われることに驚かれることがあります。 これらの 3 方向のマージを理解するには、これらを少し異なる観点から見ることが役に立ちます。 たとえば、 C' の作成は、以下のいずれかとして観る事ができます:</p></div>
 <div class="ulist"><ul>
@@ -834,7 +867,7 @@ BとB&#8217;の間の変更をCに適用(apply)します
 </div>
 </div>
 <div class="sect1">
-<h2 id="_2_与えられたピックでの_merge_side1_の名前変更が_常に_次のピックの_merge_side1_での名前変更のスーパーセットである理由">2. 与えられたピックでの MERGE_SIDE1 の名前変更が、「常に」次のピックの MERGE_SIDE1 での名前変更のスーパーセットである理由。</h2>
+<h2 id="_3_why_the_renames_on_merge_side1_in_any_given_pick_are_always_a_superset_of_the_renames_on_merge_side1_for_the_next_pick">3. Why the renames on MERGE_SIDE1 in any given pick are always a superset of the renames on MERGE_SIDE1 for the next pick.</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>マージ機構は、MERGE_BASE と MERGE_SIDE1 と MERGE_SIDE2 から供給されるファイル名を使用します。 以下の 3 つの条件のいずれかでのみ、コンテンツを別のファイル名に移動(move)します:</p></div>
 <div class="ulist"><ul>
@@ -855,53 +888,49 @@ MERGE_SIDE2 がファイルの名前変更したとき。
 </li>
 </ul></div>
 <div class="paragraph"><p>まず、cherry-pick または rebase シーケンスの 1 番目と 2 番目のピックに含まれるコミットを思い出してください:</p></div>
-<div class="paragraph"><p>To create A':</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E
-MERGE_SIDE1:  G
-MERGE_SIDE2:  A</code></pre>
-</div></div>
-<div class="paragraph"><p>To create B':</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A
-MERGE_SIDE1:  A'
-MERGE_SIDE2:  B</code></pre>
+<pre><code>To create A':
+   MERGE_BASE:   E
+   MERGE_SIDE1:  G
+   MERGE_SIDE2:  A
+
+To create B':
+   MERGE_BASE:   A
+   MERGE_SIDE1:  A'
+   MERGE_SIDE2:  B</code></pre>
 </div></div>
 <div class="paragraph"><p>そして、特に、 E と G の間の名前変更は、 A と A' の間の名前変更のスーパーセットであることを示す必要があります。</p></div>
 <div class="paragraph"><p>A' は最初のマージで作成されます。 A' は、上記 3 つの理由のいずれかのみで名前変更されます。 最初のケースである競合では、キャッシュが削除され、この最適化が有効にならない状況が発生するため、このケースを考慮する必要はありません。 3 番目のケースである MERGE_SIDE2 の名前変更 (つまり、G から A へ) は、A' に表れますが、A にも表れます&#8201;&#8212;&#8201;したがって、 A と A' を比較すると、そのパスは名前変更として表示されません。 名前の変更が A' に表れる唯一の方法は、MERGE_SIDE1 による名前変更です。 それゆえ、A と A' の間のすべての名前変更は、E と G の間の名前変更のサブセットです。 同様に、E と G の間のすべての名前変更は、A と A' の間の名前変更のスーパーセットです。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_3_与えられたピックで_merge_side1_の名前を変更すると_次のピックでも常に_merge_side1_の名前が変更される理由">3. 与えられたピックで MERGE_SIDE1 の名前を変更すると、次のピックでも常に MERGE_SIDE1 の名前が変更される理由。</h2>
+<h2 id="_4_why_any_rename_on_merge_side1_in_any_given_pick_is_em_almost_em_always_also_a_rename_on_merge_side1_for_the_next_pick">4. Why any rename on MERGE_SIDE1 in any given pick is <em>almost</em> always also a rename on MERGE_SIDE1 for the next pick.</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>最初の 2 つのピックをもう一度見てみましょう:</p></div>
-<div class="paragraph"><p>To create A':</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E
-MERGE_SIDE1:  G
-MERGE_SIDE2:  A</code></pre>
-</div></div>
-<div class="paragraph"><p>To create B':</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A
-MERGE_SIDE1:  A'
-MERGE_SIDE2:  B</code></pre>
+<pre><code>To create A':
+   MERGE_BASE:   E
+   MERGE_SIDE1:  G
+   MERGE_SIDE2:  A
+
+To create B':
+   MERGE_BASE:   A
+   MERGE_SIDE1:  A'
+   MERGE_SIDE2:  B</code></pre>
 </div></div>
 <div class="paragraph"><p>次に、最初のピックでの MERGE_SIDE1 からの任意の名前変更、つまり E から G への任意の名前変更を見てみましょう。デモンストレーションのために、ファイル名「oldfile」と「newfile」を使用してみることにします。 その最初のピックは次のように機能します。 つまり、名前の変更が検出されると、マージ機構は以下の 3 方向のコンテンツ マージを実行します:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>E:oldfile
-G:newfile
-A:oldfile</code></pre>
+<pre><code>    E:oldfile
+    G:newfile
+    A:oldfile</code></pre>
 </div></div>
 <div class="paragraph"><p>そして新しい結果を生成します:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>A':newfile</code></pre>
+<pre><code>    A':newfile</code></pre>
 </div></div>
 <div class="paragraph"><p>上記で、E→A が oldfile の名前変更しなかったと仮定したことに注意してください。 そのMERGE_SIDEが名前を変更した場合は、名前変更/名前変更(1to2) の競合が発生している可能性が高く、リベースまたはチェリーピック操作が停止(halt)し、名前変更のメモリ内キャッシュが削除(drop)されるため、これ以降を考慮する必要はありません。 E→A がファイルの名前を変更するだけでなく、 newfile に名前を変更するという特別なケースでは、名前変更による競合はなく、マージは成功します。 この特殊なケースでは、2 回目のマージで MERGE_BASE 内の A:newfile が検出されるため、名前変更はキャッシュに有効ではありません (t6429 の新しいテストケースの「rename same file identically」(同一ファイルを全く同じに名前変更する)という説明も参照してください)。 したがって、 rename/rename(1to1) は、キャッシュから名前変更を刈り込み、それらの名前変更に関連付けられた現在および主要なディレクトリの dir_rename_counts を減らすことによって、特別に処理する必要があります。 または、これらは非常にまれであるため、名前の変更/名前の変更(1to1)が発生したときに名前の記憶の最適化を無効にして、簡単な方法を取ることができます。</p></div>
 <div class="paragraph"><p>さて、前の段落では、 E→A で oldfile の名前を変更する特殊なケースについて説明しましたけれども、引き続き A で oldfile の名前が変更されていないと仮定して議論を続行すします。</p></div>
@@ -928,15 +957,15 @@ A:newfile はなくります (もしあった場合、名前変更/追加 の競
 </div>
 </div>
 <div class="sect1">
-<h2 id="_4_3_に対する反例の詳細な説明">4. #3 に対する反例の詳細な説明。</h2>
+<h2 id="_5_a_detailed_description_of_the_counter_examples_to_4">5. A detailed description of the counter-examples to #4.</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>セクション 3 で、rename/rename(1to1) (つまり、両サイドが同一の方法でファイルの名前を変更すること) が 1 つの反例であることを既に述べました。 しかし、もっと興味深いのは、なぜ A:oldfile と A':newfile が名前変更として「ほぼ」常に検出可能であると述べたときに、「ほぼ」という言葉を使用する必要があったのかということです。</p></div>
-<div class="paragraph"><p>セクション 3 で述べた以前のポイントを繰り返しましょう:</p></div>
+<div class="paragraph"><p>We already noted in section 4 that rename/rename(1to1) (i.e. both sides renaming a file the same way) was one counter-example. The more interesting bit, though, is why did we need to use the "almost" qualifier when stating that A:oldfile and A':newfile are "almost" always detectable as renames?</p></div>
+<div class="paragraph"><p>Let&#8217;s repeat an earlier point that section 4 made:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>A':newfile は、E:oldfile と G:newfile の間の変更を
-A:oldfile に適用することによって作成されました。
-E:oldfile と G:newfile の間の変更は、 E:oldfile のサイズの 50% 未満でした。</code></pre>
+<pre><code>  A':newfile は、E:oldfile と G:newfile の間の変更を
+  A:oldfile に適用することによって作成されました。
+  E:oldfile と G:newfile の間の変更は、 E:oldfile のサイズの 50% 未満でした。</code></pre>
 </div></div>
 <div class="paragraph"><p>E:oldfile のサイズの 50% 未満であった変更が、 A:oldfile のサイズの 50% 未満であるならば、 A:oldfile と A':newfile では名前変更として検出されます。 ただし、 E:oldfile と A:oldfile の間で劇的なサイズの縮小がある場合 (ただし、E:oldfile、G:newfile、および A:oldfile の間の変更は依然として何らかの形できれいにマージされるとして)、従来の名前変更検出では A:oldfile と A':newfile の間の名前変更が検出されません。</p></div>
 <div class="paragraph"><p>これが発生する可能性のある例を以下に示します:</p></div>
@@ -957,26 +986,24 @@ A:oldfileは、ファイルの最初の3行を保持し、残りをすべて削�
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>そうすると:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-&#8658; A':newfileには13行あり、そのうちの3行は A:oldfile の行と一致します。
-</p>
-</li>
-</ul></div>
-<div class="paragraph"><p>E:oldfile → G:newfile は名前変更として検出されますが、 A:oldfile と A':newfile は検出されません。</p></div>
+<div class="paragraph"><p>then</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>  =&gt; A':newfile would have 13 lines, 3 of which matches those in A:oldfile.
+  E:oldfile -&gt; G:newfile would be detected as a rename, but A:oldfile and
+  A':newfile would not be.</code></pre>
+</div></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_5_4_の特殊なケースが_マージ機構での3方向コンテンツマージのためにファイルをペアリングするために使用するのに依然として完全に合理的である理由と_それらがマージの正確さに影響を与えない理由">5. #4 の特殊なケースが、マージ機構での3方向コンテンツマージのためにファイルをペアリングするために使用するのに依然として完全に合理的である理由と、それらがマージの正確さに影響を与えない理由。</h2>
+<h2 id="_6_why_the_special_cases_in_5_are_still_fully_reasonable_to_use_to_pair_up_files_for_three_way_content_merging_in_the_merge_machinery_and_why_they_do_not_affect_the_correctness_of_the_merge">6. Why the special cases in #5 are still fully reasonable to use to pair up files for three-way content merging in the merge machinery, and why they do not affect the correctness of the merge.</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>rename/rename(1to1) の場合、 A:newfile と A':newfile は 「同一」ファイル名を使用するため、名前変更しません。 ただし、同一ファイル名のファイルは、3方向コンテンツマージ用の組にする(pair up)のに明らかに問題ありません(マージ機構は破壊検出(break detection)を採用していないため)。 したがって、この興味深い反例のケースは、rename/rename(1to1) ケースではなく、A が oldfile の名前変更しなかったケースです。 これは、セクション 3 と 4 でほとんどの時間を議論に費やしたケースです。 このセクションの残りの部分では、そのケースについても説明します。</p></div>
+<div class="paragraph"><p>In the rename/rename(1to1) case, A:newfile and A':newfile are not renames since they use the <strong>same</strong> filename. However, files with the same filename are obviously fine to pair up for three-way content merging (the merge machinery has never employed break detection). The interesting counter-example case is thus not the rename/rename(1to1) case, but the case where A did not rename oldfile. That was the case that we spent most of the time discussing in sections 4 and 5. The remainder of this section will be devoted to that case as well.</p></div>
 <div class="paragraph"><p>では、 A:oldfile と A':newfile が名前変更として検出されない場合でも、マージ機構で3方向のコンテンツをマージするためにそれらを組(pair)にすることが合理的なのはなぜでしょうか? これには複数の理由があります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-セクション 3 と 4 で述べたように、 A:oldfile と A':newfile の差分は、E:oldfile と G:newfile の差分と「正確に」同じです。 後者のペアは名前変更として検出されたため、A:oldfile と A':newfile を名前変更として扱うことにユーザーが驚くことはないようです。
+As noted in sections 4 and 5, the diff between A:oldfile and A':newfile is <strong>exactly</strong> the same as the diff between E:oldfile and G:newfile. The latter pair were detected as renames, so it seems unlikely to surprise users for us to treat A:oldfile and A':newfile as renames.
 </p>
 </li>
 <li>
@@ -1027,23 +1054,26 @@ A:oldfile と A':newfile は、「既に」 3方向のコンテンツマージ�
 </div>
 </div>
 <div class="sect1">
-<h2 id="_6_無関係_irrelevant_な名前のスキップとの相互作用">6. 「無関係」(irrelevant)な名前のスキップとの相互作用</h2>
+<h2 id="_7_interaction_with_skipping_of_irrelevant_renames">7. Interaction with skipping of "irrelevant" renames</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>以前の最適化では、「無関係」(irrelevant)と見なされるパスの名前変更検出をスキップしていました。 たとえば、以下のコミットを参照してください:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-32a56dfb99 ("merge-ort: precompute subset of sources for which we need rename detection", 2021-03-11)(訳注:名前変更の検出が必要なソースのサブセットを事前計算する)
+32a56dfb99 ("merge-ort: precompute subset of sources for which we
+                need rename detection", 2021-03-11)
 </p>
 </li>
 <li>
 <p>
-2fd9eda462 ("merge-ort: precompute whether directory rename detection is needed", 2021-03-11)(訳注:ディレクトリ名変更の検出が必要かどうかを事前計算する)
+2fd9eda462 ("merge-ort: precompute whether directory rename
+                detection is needed", 2021-03-11)
 </p>
 </li>
 <li>
 <p>
-9bd342137e ("diffcore-rename: determine which relevant_sources are no longer relevant", 2021-03-13)(訳注:関連性がなくなった related_sources を特定する)
+9bd342137e ("diffcore-rename: determine which relevant_sources are
+                no longer relevant", 2021-03-13)
 </p>
 </li>
 </ul></div>
@@ -1052,31 +1082,17 @@ A:oldfile と A':newfile は、「既に」 3方向のコンテンツマージ�
 </div>
 </div>
 <div class="sect1">
-<h2 id="_7_キャッシュする必要があるその他のアイテム">7. キャッシュする必要があるその他のアイテム</h2>
+<h2 id="_8_additional_items_that_need_to_be_cached">8. Additional items that need to be cached</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>私達は、名前変更だけでなく、それ以上のものをキャッシュしなければならないことがわかりました。 私達は以下もキャッシュします:</p></div>
-<div class="olist upperalpha"><ol class="upperalpha">
-<li>
-<p>
-非名前変更(non-renames)(つまり ペアでない削除(unpaired deletes))
-</p>
-</li>
-<li>
-<p>
-ディレクトリ内の名前変更の数
-</p>
-</li>
-<li>
-<p>
-RELEVANT_LOCATION としてマークされていたが、 RELEVANT_NO_MORE にダウングレードされたソース
-</p>
-</li>
-<li>
-<p>
-マージに含まれるトップレベルのツリー
-</p>
-</li>
-</ol></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>  A) non-renames (i.e. unpaired deletes)
+  B) counts of renames within directories
+  C) sources that were marked as RELEVANT_LOCATION, but which were
+     downgraded to RELEVANT_NO_MORE
+  D) the toplevel trees involved in the merge</code></pre>
+</div></div>
 <div class="paragraph"><p>これらはすべて以下のとおり struct rename_info に格納されます</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1100,82 +1116,78 @@ merge_trees
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>(A) の理由は、セクション 6 で説明した最適化をスキップする無関係な名前変更に由来します。 無関係な名前変更がスキップされるという事実は、検出された可能性のある名前変更のサブセットのみを取得することを意味し、後続のコミットでは、残りの名前変更のサブセットに対して上流側で名前変更検出を実行する必要がある場合があります(その後のコミットに関連する名前変更を取得するため)。 対になっていない削除は名前変更の検出にも関与するため、移植(transplant)するすべてのコミットでそれらのパスが上流側で対になっていないままであることを繰り返し確認したくありません。</p></div>
-<div class="paragraph"><p>(B) の理由は、diffcore_rename_extended() が、ディレクトリの名前変更の検出に必要なディレクトリごとの名前変更の数を生成するものであり、 diffcore_rename_extended() を再度実行しない場合は、以前の実行での dir_rename_counts を含む出力が必要です。</p></div>
-<div class="paragraph"><p>&#169; の理由は、merge-ort のツリー トラバーサルがこれらのパスが関連性があると再び判断する(RELEVANT_LOCATION としてマークする)ためですが、それらが RELEVANT_NO_MORE にダウングレードされたという事実は、ディレクトリの名前変更の検出に必要な情報が dir_rename_counts に既に含まれていることを意味します。 (後続のコミットで RELEVANT_CONTENT になるパスは、cached_irrelevant から削除されます。)</p></div>
-<div class="paragraph"><p>(D) の理由は、名前変更の記憶の最適化を使用できるかどうかをどのように判断するかです。 特に、一連のマージが以下のようになっていることを思い出してください:</p></div>
+<div class="paragraph"><p>The reason for (<code>A</code>) comes from the irrelevant renames skipping optimization discussed in section 7. The fact that irrelevant renames are skipped means we only get a subset of the potential renames detected and subsequent commits may need to run rename detection on the upstream side on a subset of the remaining renames (to get the renames that are relevant for that later commit). Since unpaired deletes are involved in rename detection too, we don&#8217;t want to repeatedly check that those paths remain unpaired on the upstream side with every commit we are transplanting.</p></div>
+<div class="paragraph"><p>The reason for (<code>B</code>) is that diffcore_rename_extended() is what generates the counts of renames by directory which is needed in directory rename detection, and if we don&#8217;t run diffcore_rename_extended() again then we need to have the output from it, including dir_rename_counts, from the previous run.</p></div>
+<div class="paragraph"><p>The reason for (<code>C</code>) is that merge-ort&#8217;s tree traversal will again think those paths are relevant (marking them as RELEVANT_LOCATION), but the fact that they were downgraded to RELEVANT_NO_MORE means that dir_rename_counts already has the information we need for directory rename detection. (A path which becomes RELEVANT_CONTENT in a subsequent commit will be removed from cached_irrelevant.)</p></div>
+<div class="paragraph"><p>The reason for (<code>D</code>) is that is how we determine whether the remember renames optimization can be used. In particular, remembering that our sequence of merges looks like:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>Merge 1:
-MERGE_BASE:   E
-MERGE_SIDE1:  G
-MERGE_SIDE2:  A
-=&gt; Creates    A'</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>Merge 2:
-MERGE_BASE:   A
-MERGE_SIDE1:  A'
-MERGE_SIDE2:  B
-=&gt; Creates    B'</code></pre>
+<pre><code>   Merge 1:
+   MERGE_BASE:   E
+   MERGE_SIDE1:  G
+   MERGE_SIDE2:  A
+   =&gt; Creates    A'
+
+   Merge 2:
+   MERGE_BASE:   A
+   MERGE_SIDE1:  A'
+   MERGE_SIDE2:  B
+   =&gt; Creates    B'</code></pre>
 </div></div>
 <div class="paragraph"><p>この最適化を可能にするのは、ツリー A と A' が Merge 1 と Merge 2 の両方に表示され、A が A' の親であるという事実です。 そのため、次にマージするように求められたものと比較するために、ツリーを保存します。</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_8_ディレクトリ名変更の検出が上記とどのように相互作用するか_また_merge_directoryrenames_が_true_に設定されている場合でも_この最適化が依然として安全である理由">8. ディレクトリ名変更の検出が上記とどのように相互作用するか、また、 merge.directoryRenames が「true」に設定されている場合でも、この最適化が依然として安全である理由。</h2>
+<h2 id="_9_how_directory_rename_detection_interacts_with_the_above_and_why_this_optimization_is_still_safe_even_if_merge_directoryrenames_is_set_to_true">9. How directory rename detection interacts with the above and why this optimization is still safe even if merge.directoryRenames is set to "true".</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>仮定セクションで述べたように:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>"""
-…ディレクトリの名前変更が発生したときに、merge.directoryRenames のデフォルトが
-`conflict` に設定されていることは、ユーザーが競合を解決するために操作が停止(stop)し、
-キャッシュが破棄されることを意味することにも注意してください。
-つまり、最適化は適用されません。
-したがって、ディレクトリの名前変更に具体的に対処する必要がある唯一の理由は、
-一部のユーザーが merge.directoryRenames を `true` に設定して、
-マージが自動的に続行できるようにするためです。
-"""</code></pre>
+<pre><code>    """
+    …ディレクトリの名前変更が発生したときに、merge.directoryRenames のデフォルトが
+    `conflict` に設定されていることは、ユーザーが競合を解決するために操作が停止(stop)し、
+    キャッシュが破棄されることを意味することにも注意してください。
+    つまり、最適化は適用されません。
+    したがって、ディレクトリの名前変更に具体的に対処する必要がある唯一の理由は、
+    一部のユーザーが merge.directoryRenames を `true` に設定して、
+    マージが自動的に続行できるようにするためです。
+    """</code></pre>
 </div></div>
 <div class="paragraph"><p>特定のピックが次のピックにどのように影響するかを調べる必要があることを思い出してください。 それでは、セクション 1 の図の最初の 2 つのピックをもう一度見てみましょう:</p></div>
-<div class="paragraph"><p>最初のピックは、以下 3 方向のマージを行います</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E
-MERGE_SIDE1:  G
-MERGE_SIDE2:  A
-=&gt; creates A'</code></pre>
-</div></div>
-<div class="paragraph"><p>2 番目のピックは、以下の 3 方向マージを行います</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A
-MERGE_SIDE1:  A'
-MERGE_SIDE2:  B
-=&gt; creates B'</code></pre>
+<pre><code>  First pick does this three-way merge:
+    MERGE_BASE:   E
+    MERGE_SIDE1:  G
+    MERGE_SIDE2:  A
+    =&gt; creates A'
+
+  Second pick does this three-way merge:
+    MERGE_BASE:   A
+    MERGE_SIDE1:  A'
+    MERGE_SIDE2:  B
+    =&gt; creates B'</code></pre>
 </div></div>
 <div class="paragraph"><p>現在、ディレクトリの名前変更検出が存在するため、履歴の一方がディレクトリを名前変更し、もう一方が古いディレクトリに新しいファイルを追加した場合、マージ(merge.directoryRenames=true を使用)によってファイルを新しいディレクトリに移動できます。 古いディレクトリに新しいファイルを追加するには、質的に異なる 2 つの方法があります。 新しいファイルを作成するか、ファイル名を名前変更してそのディレクトリにします。 また、ディレクトリの名前変更は履歴のどちらの側でも実行できるため、考慮すべき 4 つのケースがあります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-MERGE_SIDE1は old dir を名前変更し、 MERGE_SIDE2は新しいファイルを old dir に追加します
+MERGE_SIDE1 renames old dir, MERGE_SIDE2 adds new file to   old dir
 </p>
 </li>
 <li>
 <p>
-MERGE_SIDE1は old dir を名前変更し、 MERGE_SIDE2はファイルの名前を old dir に名前変更します
+MERGE_SIDE1 renames old dir, MERGE_SIDE2 renames  file into old dir
 </p>
 </li>
 <li>
 <p>
-MERGE_SIDE1は新しいファイルを old dir に追加し、MERGE_SIDE2は old dir を名前変更します
+MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old dir
 </p>
 </li>
 <li>
 <p>
-MERGE_SIDE1はファイルの名前を old dir に名前変更し、MERGE_SIDE2は old dir を名前変更します
+MERGE_SIDE1 renames  file into old dir, MERGE_SIDE2 renames old dir
 </p>
 </li>
 </ul></div>
@@ -1193,7 +1205,8 @@ MERGE_SIDE1はファイルの名前を old dir に名前変更し、MERGE_SIDE2�
 </li>
 <li>
 <p>
-{oldname <code>=</code>&gt; {newname <code>=</code>&gt; <code>count</code>}} の入れ子になったマップである dir_rename_counts も、実行と実行の間に渡ってキャッシュされます。 これは基本的に、ディレクトリの名前変更検出もキャッシュされることを意味しますが、名前変更をキャッシュする履歴側のみです (このドキュメントに関する限り、MERGE_SIDE1。 「0.仮定」のセクションを参照してください)。 これらのカウントに関する 2 つの興味深いサブノートがあります:
+dir_rename_counts, the nested map of
+{oldname &#8658; {newname &#8658; count}}, is cached between runs as well. This basically means that directory rename detection is also cached, though only on the side of history that we cache renames for (MERGE_SIDE1 as far as this document is concerned; see the assumptions section). Two interesting sub-notes about these counts:
 </p>
 <div class="ulist"><ul>
 <li>
@@ -1221,112 +1234,93 @@ rename/rename(1to1) エントリをキャッシュから刈り込み(prune)す�
 </ul></div>
 <div class="paragraph"><p>さて、これらの注意事項を整理して、4 つのケースを順番に見ていきます:</p></div>
 <div class="paragraph"><p>ケース 1: MERGE_SIDE1 は old dir の名前変更し、 MERGE_SIDE2 は old dir に新しいファイルを追加します</p></div>
-<div class="paragraph"><p>このケースは以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E,   Has olddir/
-MERGE_SIDE1:  G,   Renames olddir/ -&gt; newdir/
-MERGE_SIDE2:  A,   Adds olddir/newfile
-=&gt; creates    A',  With newdir/newfile</code></pre>
+<pre><code>  This case looks like this:
+
+    MERGE_BASE:   E,   Has olddir/
+    MERGE_SIDE1:  G,   Renames olddir/ -&gt; newdir/
+    MERGE_SIDE2:  A,   Adds olddir/newfile
+    =&gt; creates    A',  With newdir/newfile
+
+    MERGE_BASE:   A,   Has olddir/newfile
+    MERGE_SIDE1:  A',  Has newdir/newfile
+    MERGE_SIDE2:  B,   Modifies olddir/newfile
+    =&gt; expected   B',  with threeway-merged newdir/newfile from above
+
+  In this case, with the optimization, note that after the first commit:
+    * MERGE_SIDE1 remembers olddir/ -&gt; newdir/
+    * MERGE_SIDE1 has cached olddir/newfile -&gt; newdir/newfile
+  Given the cached rename noted above, the second merge can proceed as
+  expected without needing to perform rename detection from A -&gt; A'.</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A,   Has olddir/newfile
-MERGE_SIDE1:  A',  Has newdir/newfile
-MERGE_SIDE2:  B,   Modifies olddir/newfile
-=&gt; expected   B',  with threeway-merged newdir/newfile from above</code></pre>
-</div></div>
-<div class="paragraph"><p>最適化されるこの場合、最初のコミット後に以下の点に注意してください:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-MERGE_SIDE1 は olddir/ → newdir/ を記憶します
-</p>
-</li>
-<li>
-<p>
-MERGE_SIDE1 は olddir/newfile → newdir/newfile をキャッシュしました
-</p>
-</li>
-</ul></div>
-<div class="paragraph"><p>上記のキャッシュされた名前変更を考えると、2番目のマージは、 A → A' からの名前変更検出を実行する必要なく、期待どおりに続行できます。</p></div>
 <div class="paragraph"><p>Case 2: MERGE_SIDE1 は old dir を名前変更し、 MERGE_SIDE2 はファイルの名前を old dir に名前変更します</p></div>
-<div class="paragraph"><p>このケースは以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E    oldfile, olddir/
-MERGE_SIDE1:  G    oldfile, olddir/ -&gt; newdir/
-MERGE_SIDE2:  A    oldfile -&gt; olddir/newfile
-=&gt; creates    A',  With newdir/newfile representing original oldfile</code></pre>
+<pre><code>  This case looks like this:
+
+    MERGE_BASE:   E    oldfile, olddir/
+    MERGE_SIDE1:  G    oldfile, olddir/ -&gt; newdir/
+    MERGE_SIDE2:  A    oldfile -&gt; olddir/newfile
+    =&gt; creates    A',  With newdir/newfile representing original oldfile
+
+    MERGE_BASE:   A    olddir/newfile
+    MERGE_SIDE1:  A'   newdir/newfile
+    MERGE_SIDE2:  B    modify olddir/newfile
+    =&gt; expected   B',  with threeway-merged newdir/newfile from above
+
+  In this case, with the optimization, note that after the first commit:
+    * MERGE_SIDE1 remembers olddir/ -&gt; newdir/
+    * MERGE_SIDE1 has cached olddir/newfile -&gt; newdir/newfile
+                  (NOT oldfile -&gt; newdir/newfile; compare to case with
+                   (p-&gt;status == 'R' &amp;&amp; new_path) in possibly_cache_new_pair())
+
+  Given the cached rename noted above, the second merge can proceed as
+  expected without needing to perform rename detection from A -&gt; A'.</code></pre>
 </div></div>
+<div class="paragraph"><p>Case 3: MERGE_SIDE1 adds new file to   old dir, MERGE_SIDE2 renames old dir</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   A    olddir/newfile
-MERGE_SIDE1:  A'   newdir/newfile
-MERGE_SIDE2:  B    modify olddir/newfile
-=&gt; expected   B',  with threeway-merged newdir/newfile from above</code></pre>
+<pre><code>  This case looks like this:
+
+    MERGE_BASE:   E,   Has olddir/
+    MERGE_SIDE1:  G,   Adds olddir/newfile
+    MERGE_SIDE2:  A,   Renames olddir/ -&gt; newdir/
+    =&gt; creates    A',  With newdir/newfile
+
+    MERGE_BASE:   A,   Has newdir/, but no notion of newdir/newfile
+    MERGE_SIDE1:  A',  Has newdir/newfile
+    MERGE_SIDE2:  B,   Has newdir/, but no notion of newdir/newfile
+    =&gt; expected   B',  with newdir/newfile from A'
+
+  In this case, with the optimization, note that after the first commit there
+  were no renames on MERGE_SIDE1, and any renames on MERGE_SIDE2 are tossed.
+  But the second merge didn't need any renames so this is fine.</code></pre>
 </div></div>
-<div class="paragraph"><p>最適化されるこの場合、最初のコミット後に以下の点に注意してください:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-MERGE_SIDE1 は olddir/ → newdir/ を記憶します
-</p>
-</li>
-<li>
-<p>
-MERGE_SIDE1 は olddir/newfile → newdir/newfile をキャッシュします(oldfile → newdir/newfile ではありません。 possible_cache_new_pair() 内の (p&#8594;status == <em>R</em> &amp;&amp; new_path) の場合と比較してください)
-</p>
-</li>
-</ul></div>
-<div class="paragraph"><p>上記のキャッシュされた名前変更を考えると、2番目のマージは、 A → A' からの名前変更検出を実行する必要なく、期待どおりに続行できます。</p></div>
-<div class="paragraph"><p>ケース 3: MERGE_SIDE1は新しいファイルを「古いディレクトリ」に追加し、MERGE_SIDE2は「古いディレクトリ」を名前変更します</p></div>
-<div class="paragraph"><p>このケースは以下のようになります:</p></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   E,   Has olddir/
-MERGE_SIDE1:  G,   Adds olddir/newfile
-MERGE_SIDE2:  A,   Renames olddir/ -&gt; newdir/
-=&gt; creates    A',  With newdir/newfile</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A,   Has newdir/, but no notion of newdir/newfile
-MERGE_SIDE1:  A',  Has newdir/newfile
-MERGE_SIDE2:  B,   Has newdir/, but no notion of newdir/newfile
-=&gt; expected   B',  with newdir/newfile from A'</code></pre>
-</div></div>
-<div class="paragraph"><p>この場合、最適化により、最初のコミット後に MERGE_SIDE1 の名前変更がなく、MERGE_SIDE2 の名前変更が破棄されることに注意してください。 しかし、2 回目のマージでは名前変更する必要がなかったので、これで問題ありません。</p></div>
 <div class="paragraph"><p>ケース 4: MERGE_SIDE1 はファイルの名前を old dir に名前変更し、MERGE_SIDE2 は old dir を名前変更します</p></div>
-<div class="paragraph"><p>このケースは以下のようになります:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>MERGE_BASE:   E,   Has olddir/
-MERGE_SIDE1:  G,   Renames oldfile -&gt; olddir/newfile
-MERGE_SIDE2:  A,   Renames olddir/ -&gt; newdir/
-=&gt; creates    A',  With newdir/newfile representing original oldfile</code></pre>
+<pre><code>  This case looks like this:
+
+    MERGE_BASE:   E,   Has olddir/
+    MERGE_SIDE1:  G,   Renames oldfile -&gt; olddir/newfile
+    MERGE_SIDE2:  A,   Renames olddir/ -&gt; newdir/
+    =&gt; creates    A',  With newdir/newfile representing original oldfile
+
+    MERGE_BASE:   A,   Has oldfile
+    MERGE_SIDE1:  A',  Has newdir/newfile
+    MERGE_SIDE2:  B,   Modifies oldfile
+    =&gt; expected   B',  with threeway-merged newdir/newfile from above
+
+  In this case, with the optimization, note that after the first commit:
+    * MERGE_SIDE1 remembers oldfile -&gt; newdir/newfile
+                  (NOT oldfile -&gt; olddir/newfile; compare to case of second
+                   block under p-&gt;status == 'R' in possibly_cache_new_pair())
+    * MERGE_SIDE2 renames are tossed because only MERGE_SIDE1 is remembered
+
+  Given the cached rename noted above, the second merge can proceed as
+  expected without needing to perform rename detection from A -&gt; A'.</code></pre>
 </div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>MERGE_BASE:   A,   Has oldfile
-MERGE_SIDE1:  A',  Has newdir/newfile
-MERGE_SIDE2:  B,   Modifies oldfile
-=&gt; expected   B',  with threeway-merged newdir/newfile from above</code></pre>
-</div></div>
-<div class="paragraph"><p>最適化されるこの場合、最初のコミット後に以下の点に注意してください:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-MERGE_SIDE1 は oldfile → newdir/newfile を記憶します(oldfile → olddir/newfile ではありません。 possible_cache_new_pair() 内の p&#8594;status == <em>R</em> の下の 2番目のブロックの場合と比較してください)
-</p>
-</li>
-<li>
-<p>
-MERGE_SIDE1 のみが記憶されているため、 MERGE_SIDE2 の名前変更は破棄されます
-</p>
-</li>
-</ul></div>
-<div class="paragraph"><p>上記のキャッシュされた名前変更を考えると、2番目のマージは、 A → A' からの名前変更検出を実行する必要なく、期待どおりに続行できます。</p></div>
 <div class="paragraph"><p>最後に、 skip-irrelevant-renames 最適化との相互作用により、名前変更されたディレクトリ内のすべてのファイルの名前変更検出しない場合があることをここで指摘しておきます。 このような場合、ディレクトリが名前変更されたかどうかはわかりません。 ある種の「このディレクトリは名前変更されていません」ステートメントをキャッシュしないように注意する必要があります。 もしそうなら、リベースされている後続のコミットはファイルを古いディレクトリに追加する可能性があり、ユーザーはそれが正しいディレクトリにあることを期待するでしょう&#8201;&#8212;&#8201;つまり「このディレクトリは名前変更されていません」という誤ったキャッシュが除外されます。</p></div>
 </div>
 </div>
@@ -1335,7 +1329,7 @@ MERGE_SIDE1 のみが記憶されているため、 MERGE_SIDE2 の名前変更�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-06-14 06:16:44 JST
+ 2025-11-13 13:44:19 JST
 </div>
 </div>
 </body>

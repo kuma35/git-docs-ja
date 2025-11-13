@@ -1,0 +1,721 @@
+git-svn(1)
+==========
+
+NAME
+----
+git-svn - SubversionリポジトリとGit間の双方向操作
+
+SYNOPSIS
+--------
+[synopsis]
+'git svn' <command> [<options>] [<arguments>]
+
+DESCRIPTION
+-----------
+`git svn` は、SubversionとGitの間のチェンジセットのための単純な水道管です。 SubversionとGitリポジトリ間の双方向の変更フローを提供します。
+
+`git svn` は、 `--stdlayout` オプションを使用して、一般的な「trunk/branches/tags」レイアウトに従って、標準のSubversionリポジトリを追跡できます。 また、 `-T`/`-t`/`-b` オプションを使用して、任意のレイアウトのブランチとタグを追跡することもできます(以下の「initコマンド」のオプションおよび「cloneコマンド」も参照してください)。
+
+(上記の方法のいずれかを使用して)Subversionリポジトリを追跡すると、Gitリポジトリは「fetch」コマンドによってSubversionから更新され、Subversionは「dcommit」コマンドによってGitから更新されます。
+
+COMMANDS
+--------
+
+`init`::
+	`git svn` の追加のメタデータディレクトリを使用して空のGitリポジトリを初期化します。 Subversion URLは、コマンドライン引数として、または `-T`/`-t`/`-b` への完全なURL引数として指定できます。 オプションで、操作するターゲットディレクトリを2番目の引数として指定できます。 通常、このコマンドは現在のディレクトリを初期化します。
+
+`-T<trunk-subdir>`;;
+`--trunk=<trunk-subdir>`;;
+`-t<tags-subdir>`;;
+`--tags=<tags-subdir>`;;
+`-b<branches-subdir>`;;
+`--branches=<branches-subdir>`;;
+`-s`;;
+`--stdlayout`;;
+	これらは、initのコマンドラインオプションです。 これらの各フラグは、相対リポジトリパス(`-tags=project/tags`)または完全なURL(`--tags=https://foo.org/project/tags`)を指すことができます。 Subversionリポジトリがタグまたはブランチを複数のパスの下に配置する場合は、複数の `--tags` および/または `--branches` オプションを指定できます。 オプション `--stdlayout` は、トランク、タグ、ブランチを相対パスとして設定する簡単な方法です。これは、Subversionのデフォルトです。 他のオプションのいずれかが同様に指定されている場合、それらが優先されます。
+`--no-metadata`;;
+	[svn-remote] 設定で `noMetadata` オプションを設定します。 このオプションはお勧めしません。このオプションを使用する前に、このマンページの「svn.noMetadata」セクションをお読みください。
+`--use-svm-props`;;
+	[svn-remote]設定で `useSvmProps` オプションを設定します。
+`--use-svnsync-props`;;
+	[svn-remote] 設定で `useSvnsyncProps` オプションを設定します。
+`--rewrite-root=<URL>`;;
+	[svn-remote]設定で `rewriteRoot` オプションを設定します。
+`--rewrite-uuid=<UUID>`;;
+	[svn-remote]設定で `rewriteUUID` オプションを設定します。
+`--username=<user>`;;
+	SVNが認証を処理する転送(http や https やプレーンsvn)の場合に、ユーザー名を指定します。 他の転送(例: `svn+ssh://`)の場合、URLにユーザー名を含める必要があります。例： `svn+ssh://foo@svn.bar.com/project`
+`--prefix=<prefix>`;;
+	これにより、トランク/ブランチ/タグ が指定されている場合に、リモートの名前の前に付加される接頭辞を指定できます。 接頭辞(prefix)には自動的に末尾のスラッシュが含まれ無いため、必要に応じて引数に必ず末尾のスラッシュを含めてください。 `--branches`/`-b` を指定する場合、接頭辞には末尾のスラッシュを含める必要があります。 SVN追跡refは `refs/remotes/$prefix/*` に配置されるため、(末尾にスラッシュを付けた)接頭辞を設定することを強くお勧めします。これは、Git独自のリモート追跡refレイアウトと互換性があります(`refs/remotes/$remote/*`)。 接頭辞の設定は、共通のリポジトリを共有する複数のプロジェクトを追跡する場合にも役立ちます。 デフォルトでは、接頭辞は `origin/` に設定されています。
++
+NOTE: Git v2.0 より前は、デフォルトの接頭辞は "" (接頭辞無し)でした。 これは、SVN追跡refが `refs/remotes/*` に配置されたことを意味します。これは、Git自体のリモート追跡refの編成方法と互換性がありません。 それでも古いデフォルトが必要な場合は、コマンドラインで `--prefix ""` を渡すことで取得できます(Perlの Getopt::Long is < v2.37 の場合、 `--prefix=""` は機能しない可能性があります)。
+
+`--ignore-refs=<regex>`;;
+	`init` または `clone` に渡されると、この正規表現は構成キー(config key)として保持されます。 `--ignore-refs` の説明については、「fetch」コマンドを参照してください。
+`--ignore-paths=<regex>`;;
+	`init` または` clone` に渡されると、この正規表現は構成キー(config key)として保持されます。 `--ignore-paths` の説明については、「fetch」コマンドを参照してください。
+`--include-paths=<regex>`;;
+	`init` または `clone` に渡されると、この正規表現は構成キー(config key)として保持されます。 `--include-paths` の説明については、「fetch」コマンドを参照してください。
+`--no-minimize-url`;;
+	(`--stdlayout` または `--branches` または `--tags` オプションを使用して、)複数のディレクトリを追跡する場合、git svnはSubversionリポジトリのルート(または許可されている最高レベル)への接続を試みます。 このデフォルトでは、プロジェクト全体がリポジトリ内で移動された場合に履歴をより適切に追跡できますが、読み取りアクセス制限が設定されているリポジトリで問題が発生する可能性があります。 `--no-minimize-url` を渡すと、git svnは、上位レベルのディレクトリに接続しようとせずに、URLをそのまま受け入れることができます。 このオプションは、1つの URL/ブランチ のみが追跡される場合はデフォルトでオフになっています(ほとんど効果ありません)。
+
+`fetch`::
+	私達が追跡しているSubversionリモートからフェッチされていないリビジョンを取得します。 $GIT_DIR/config ファイルの [svn-remote "..."] セクションの名前は、オプションのコマンドライン引数として指定できます。
++
+これにより、必要に応じてrev_mapが自動的に更新されます(詳細については、以下の「FILES」セクションの `$GIT_DIR/svn/\**/.rev_map.*` を参照してください)。
+
+`--localtime`;;
+	Gitのコミット時間をUTCではなくローカルタイムゾーンで保存します。 これにより、「git log」は(`--date=local`がなくても)、「svn log」がローカルタイムゾーンで表示されるのと同じ時間を表示します。
++
+これは、クローンを作成したSubversionリポジトリとの相互運用を妨げることはありませんが、ローカルGitリポジトリを他の誰かのローカルGitリポジトリと相互運用できるようにする場合は、このオプションを使用しないか、両方で同一のローカルタイムゾーンを使用する必要があります。
+
+`--parent`;;
+	現在のHEADのSVNの親からのみフェッチします。
+
+`--ignore-refs=<regex>`;;
+	Perlの正規表現にマッチするブランチまたはタグのrefを無視します。 `^refs/remotes/origin/(?!tags/wanted-tag|wanted-branch).*$` のような「negative look-ahead assertion」(負の先読みアサーション)は、特定のrefのみを許可するために使用できます。
++
+[verse]
+config key: svn-remote.<name>.ignore-refs
++
+ignore-refs 構成キーが設定されていて、コマンドラインオプションも指定されている場合は、両方の正規表現が使用されます。
+
+`--ignore-paths=<regex>`;;
+	これにより、SVNからのチェックアウトから一致するすべてのパスをスキップするPerl正規表現を指定できます。 `--ignore-paths` オプションは、特定のリポジトリのすべての `fetch` (`clone`, `dcommit`, `rebase` などによる自動フェッチを含む)にマッチする必要があります。
++
+[verse]
+config key: svn-remote.<name>.ignore-paths
++
+ignore-paths 構成キーが設定されていて、コマンドラインオプションも指定されている場合は、両方の正規表現が使用されます。
++
+例:
++
+--
+フェッチするたびに `doc*` ディレクトリをスキップします;;
++
+------------------------------------------------------------------------
+--ignore-paths="^doc"
+------------------------------------------------------------------------
+
+第1レベルのディレクトリの「branches」と「tags」をスキップします;;
++
+------------------------------------------------------------------------
+--ignore-paths="^[^/]+/(?:branches|tags)"
+------------------------------------------------------------------------
+--
+
+`--include-paths=<regex>`;;
+	これにより、SVNのチェックアウトからのマッチするパスのみを含めるPerl正規表現を指定できます。 `--include-paths` オプションは、特定のリポジトリのすべての `fetch`(`clone`, `dcommit`, `rebase` などによる自動フェッチを含む)に一致する必要があります。 `--ignore-paths` は `--include-paths` よりも優先されます。
++
+[verse]
+config key: svn-remote.<name>.include-paths
+
+`--log-window-size=<n>`;;
+	Subversionの履歴をスキャンするときに、リクエストごとに<n>個のログエントリを取得します。 デフォルトは100です。非常に大きなSubversionリポジトリの場合、「クローン」/「フェッチ」 が妥当な時間で完了するには、より大きな値が必要になる場合があります。 ただし、値が大きすぎると、メモリ使用量が増え、リクエストののタイムアウトが発生する可能性があります。
+
+`clone`::
+	`init` と `fetch` を実行します。 渡されたURLのベース名に基づいてディレクトリを自動的に作成します。 または2番目の引数が渡された場合はディレクトリを作成し、その中で動作します。 `--fetch-all` と `--parent` を除いて、 `init` と `fetch` コマンドが受け入れるすべての引数を受け入れます。 リポジトリのクローンが作成されると、「fetch」コマンドは作業ツリーに影響を与えることなくリビジョンを更新できるようになります。 「rebase」コマンドは、作業ツリーを最新の変更で更新できるようになります。
+
+`--preserve-empty-dirs`;;
+	Subversionからフェッチされた空のディレクトリごとに、ローカルGitリポジトリにプレースホルダーファイルを作成します。 これには、Subversionリポジトリ内のすべてのエントリを削除することによって空になるディレクトリが含まれます(ディレクトリ自体は削除されません)。 プレースホルダーファイルも追跡され、不要になったときに削除されます。
+
+`--placeholder-filename=<filename>`;;
+	`--preserve-empty-dirs` によって作成されたプレースホルダーファイルの名前を設定します。 デフォルトは `.gitignore` です。
+
+`rebase`::
+	これにより、現在のHEADのSVN親からリビジョンがフェッチされ、現在の(SVNにコミットされていない)作業がリベースされます。
++
+これは `svn update` または `git pull` と同様に機能しますが、 `git svn` でのコミットを容易にするために `git merge` ではなく `git rebase` で線形履歴を保持する点が異なります。
++
+これは、 `git svn fetch` や `git rebase` が受け入れるすべてのオプションを受け入れます。 ただし、 `--fetch-all` は現在の[svn-remote]からのみフェッチし、すべての[svn-remote]定義からフェッチするわけではありません。
++
+`git rebase` と同様です。これには、作業ツリーがクリーンであり、コミットされていない変更がないことが必要です。
++
+これにより、必要に応じてrev_mapが自動的に更新されます(詳細については、以下の「FILES」セクションの `$GIT_DIR/svn/\**/.rev_map.*` を参照してください)。
+
+`-l`;;
+`--local`;;
+	リモートでフェッチしないでください。 上流SVNから最後にフェッチされたコミットに対してのみ `git rebase` を実行します。
+
+`dcommit`::
+	現在のブランチからの各diffを直接SVNリポジトリにコミットしてから、リベースまたはリセットします(SVNとヘッドの間にdiffがあるかどうかによって異なります)。 これにより、GitのコミットごとにSVNにリビジョンが作成されます。
++
+オプションのGitブランチ名(またはGitコミットオブジェクト名)が引数として指定されている場合、サブコマンドは現在のブランチではなく、指定されたブランチで機能します。
++
+`set-tree` (下記)よりも `dcommit` の使用が推奨されます。
++
+`--no-rebase`;;
+	コミット後にリベースまたはリセットしないでください。
+`--commit-url <URL>`;;
+	このSVN URL(フルパス)にコミットします。 これは、ユーザーが後でコミット用の代替転送方法(例えば `svn+ssh://` や `https://`)へのアクセスを許可された場合に、ある転送方法(例えば、匿名読み取りの場合は `svn://` または `http://`)で作成された既存の `git svn` リポジトリを再利用できるようにすることを目的としています。
++
+[verse]
+config key: svn-remote.<name>.commiturl
+config key: svn.commiturl (overwrites all svn-remote.<name>.commiturl options)
++
+注意: commiturl構成キーのSVN URLにはSVNブランチが含まれていることに注意してください。 SVNリポジトリ全体のコミットURLを設定する場合は、代わりに `svn-remote.<name>.pushurl` を使用してください。
++
+このオプションを他の目的(それがナニカは聞かないで下さい)で使用することは、全く全然欠片もお勧めできません。
+
+`--mergeinfo=<mergeinfo>`;;
+	dcommit中に指定されたマージ情報を追加します(たとえば `--mergeinfo="/branches/foo:1-10"`)。 すべてのsvnサーバーバージョンはこの情報を(プロパティとして)保存でき、バージョン1.5以降のsvnクライアントはそれを利用できます。 複数のブランチからのマージ情報を指定するには、ブランチの間に単一の空白文字を使用します(`--mergeinfo="/branches/foo:1-10 /branches/bar:3,5-6,8"`)
++
+[verse]
+config key: svn.pushmergeinfo
++
+このオプションにより、git-svnは、可能な場合、SVNリポジトリの svn:mergeinfo プロパティに自動的にデータを入力しようとします。 現在、これは、最初の親を除くすべての親がすでにSVNにプッシュされている非早送りマージをコミットする場合にのみ実行できます。
+
+`--interactive`;;
+	パッチセットが実際にSVNに送信される必要があることを確認するようにユーザーに問い合わせます。 パッチごとに、「yes」(このパッチを受け入れる)、または「no」(このパッチを破棄する)、または「all」(すべてのパッチを受け入れる)、または「quit」と答えることができます。
++
+`git svn dcommit` は、回答が「no」または「quit」の場合、SVNに何もコミットせずに、すぐに終了します。
+
+`branch`::
+	SVNリポジトリにブランチを作成します。
+
+`-m`;;
+`--message`;;
+	コミットメッセージを指定できます。
+
+`-t`;;
+`--tag`;;
+	`git svn init` で指定された branchs_subdir の代わりに、 tags_subdir を使用してタグを作成します。
+
+`-d<path>`;;
+`--destination=<path>`;;
+
+	`init` または `clone` コマンドに複数の `--branches`(または `--tags`)オプションが指定されている場合は、SVNリポジトリに作成するブランチ(またはタグ)の場所を指定する必要があります。 <path> はブランチやタグを作成するために使用するパスを指定し、設定されたブランチやタグのrefspecsのどれかの左側のパターンに一致する必要があります。
++
+[verse]
+git config --get-all svn-remote.<name>.branches
+git config --get-all svn-remote.<name>.tags
++
+ここで、 <name> は、`init` の `-R` オプションで指定されたSVNリポジトリーの名前です(またはデフォルトでは `svn`)。
+
+`--username`;;
+	コミットを実行するSVNユーザー名を指定します。 このオプションは、 `username` 構成プロパティをオーバーライドします。
+
+`--commit-url`;;
+	指定のURLを使用して、宛先のSubversionリポジトリに接続します。 これは、ソースSVNリポジトリが読み取り専用である場合に役立ちます。 このオプションは、構成プロパティ 'commiturl' をオーバーライドします。
++
+	git config --get-all svn-remote.<name>.commiturl
++
+
+`--parents`;;
+	親フォルダを作成します。 このパラメーターは、 `svn cp` コマンドの `--parents` パラメーターと同等であり、非標準のリポジトリーレイアウトで役立ちます。
+
+`tag`::
+	SVNリポジトリにタグを作成します。 これは `branch -t` の省略形です。
+
+`log`::
+	これにより、svnユーザーが `-r`/`-revision` 番号を参照するときに、svnログメッセージを簡単に検索できるようになります。
++
+`svn log` では以下の機能がサポートされています:
++
+--
+`-r <n>[:<n>]`;;
+`--revision=<n>[:<n>]`;;
+	数値以外の、 HEAD, NEXT, BASE, PREV, 等 はサポートされていません。
+`-v`;;
+`--verbose`;;
+	`svn log` の `--verbose` 出力と完全互換性ではありませんが、かなり近いです。
+`--limit=<n>`;;
+	このオプションは `--max-count` と同一ではなく、 マージされた/除外された コミットをカウントしません
+`--incremental`;;
+	supported(訳注: 原文ママ)
+--
++
+新機能:
++
+--
+`--show-commit`;;
+	Gitコミットのsha1も表示します
+`--oneline`;;
+	私たちのバージョンの `--pretty=oneline`
+--
++
+NOTE: SVN自体はUTCでのみ時間を保存し、他には何も保存しません。 通常のsvnクライアントは、UTC時刻を現地時間(local time)に(または TZ= 環境変数に基づいて)変換します。 このコマンドの振る舞いは同一です。
++
+その他の引数はすべて `git log` に直接渡されます
+
+`blame`::
+	ファイルの各行を最後に変更したリビジョンと作成者を表示します。 このモードの出力は、デフォルトで `svn blame` の出力と書式の互換があります。 SVN blameコマンドと同様に、作業ツリー内のローカルのコミットされていない変更は無視されます。 HEADリビジョンのファイルのバージョンに注釈を付けます。 不明な引数は「git blame」に直接渡されます。
++
+`--git-format`;;
+	`git blame` と同じ形式で出力を生成しますが、Gitコミットハッシュの代わりにSVNリビジョン番号を使用します。 このモードでは、SVNにコミットされていない変更(ローカルの作業コピー編集を含む)は リビジョン0 として表示されます。
+
+`find-rev`::
+	`rN` の形式のSVNリビジョン番号を指定すると、対応するGitコミットハッシュを返します(オプションで、検索するブランチを指定するためにツリーっぽい何かの後に続けることができます)。 ツリーっぽい何かの場合は、対応するSVNリビジョン番号を返します。
++
+`-B`;;
+`--before`;;
+	SVNリビジョンが与えられた場合、完全一致は要求しません。代わりに、指定されたリビジョンでの(現在のブランチ上の)SVNリポジトリの状態に対応するコミットを探します。
++
+`-A`;;
+`--after`;;
+	SVNリビジョンが与えられた場合、完全一致を要求しません。 完全一致がない場合は、履歴内で前方に検索する最も近い一致を返します。
+
+`set-tree`::
+	あなたは、このコマンドの代わりに「dcommit」の使用を検討する必要があります。 これは指定の コミットまたはツリーオブジェクト をSVNにコミットします。 これは、インポートされたフェッチデータが最新であることに依存しています。 よって、SVNにコミットするときにパッチを適用する試みはまったく行われず、ツリーまたはコミットで指定されたファイルでファイルが上書きされるだけです。 すべてのマージは、「git svn」機能とは独立して行われたと見なされます。
+
+`create-ignore`::
+	ディレクトリ上の `svn:ignore` と `svn:global-ignores` プロパティを再帰的に検索し、 対応する `.gitignore` ファイルを作成します。 作成されたファイルはコミットのためにステージングされますが、 コミットはされません。 特定のリビジョンを参照するには `-r/--revision` を使用します。
+
+`show-ignore`::
+	ディレクトリ上の `svn:ignore` と `svn:global-ignores` プロパティを再帰的に検索して一覧表示します。 この出力は `$GIT_DIR/info/exclude` ファイルに追加するのに適しています。
+
+`mkdirs`::
+	`$GIT_DIR/svn/<refname>/unhandled.log` ファイルの情報に基づいてコアGitが追跡できない空のディレクトリを再作成しようとします。 「git svn clone」や「git svn rebase」を使用すると、空のディレクトリが自動的に再作成されるため、「mkdirs」は「git checkout」や「git reset」などのコマンドの後に使用することを目的としています。 (詳細については、 `svn-remote.<name>.automkdirs` 構成ファイルオプションを参照してください。)
+
+`commit-diff`::
+	コマンドラインで指定された2つのツリーっぽい引数のdiffをコミットします。 このコマンドは、 `git svn init` されたリポジトリ内にあることに依存していません。 このコマンドは、 (a)差分する元のツリー、(b)新しいツリーの結果、(c)ターゲットのSubversionリポジトリのURL、の3つの引数を取ります。 `git svn` 対応リポジトリ(`git svn` で `init` されているリポジトリ)から作業している場合は、最後の引数(URL)を省略できます。 これには、 `-r<revision>` オプションが必要です。
++
+コミットメッセージは、 `-m` または `-F` オプションを使用して直接提供されるか、2番目のツリーっぽい何かがそのようなオブジェクトを示す場合はタグまたはコミットから間接的に提供されるか、エディターを呼び出すことによって要求されます(下記 `--edit` オプション参照)。
+
+`-m <msg>`;;
+`--message=<msg>`;;
+	指定された `msg` をコミットメッセージとして使用します。 このオプションは、`--edit` オプションを無効にします。
+
+`-F <filename>`;;
+`--file=<filename>`;;
+	指定されたファイルからコミットメッセージを取得します。 このオプションは `--edit` オプションを無効にします。
+
+`info`::
+	`svn info` が提供するものと同様のファイルまたはディレクトリに関する情報を表示します。 現在のところ `-r`/`-revision` 引数はサポートしていません。 `--url` オプションを使用すると、「URL:」フィールドの値のみを出力します。
+
+`proplist`::
+	特定のファイルまたはディレクトリについてSubversionリポジトリに保存されているプロパティを一覧表示します。 `-r`/`-revision` を使用して、特定のSubversionリビジョンを参照します。
+
+`propget`::
+	ファイルの最初の引数として指定されたSubversionプロパティを取得します。 特定のリビジョンは `-r`/`-revision` で指定できます。
+
+`propset`::
+	最初の引数として与えられた Subversion のプロパティを、3番目の引数として与えられたファイルに対して2番目の引数として与えられた値に設定します。
++
+例:
++
+------------------------------------------------------------------------
+git svn propset svn:keywords "FreeBSD=%H" devel/py-tipper/Makefile
+------------------------------------------------------------------------
++
+これにより、ファイル `devel/py-tipper/Makefile` のプロパティ `svn:keywords` が `FreeBSD=%H` に設定されます。
+
+`show-externals`::
+	Subversionのexternalsを表示します。 `-r`/`-revision` を使用して、特定のリビジョンを指定します。
+
+`gc`::
+	`$GIT_DIR/svn/<refname>/unhandled.log` ファイルを圧縮し、 `$GIT_DIR/svn/<refname>/index` ファイル達を削除します。
+
+`reset`::
+	`fetch` の効果を元に戻し、指定されたリビジョンに戻します。 これにより、SVNリビジョンを「再フェッチ」できます。 通常、SVNリビジョンの内容は決して変更されるべきではなく、「リセット」は必要ありません。 ただし、SVN権限が変更された場合、または `--ignore-paths` オプションを変更した場合、「フェッチ」が「not found in commit」(コミットで見つかりません)(ファイルが以前に表示されなかった)または「checksum mismatch」(チェックサムの不一致)(変更を見逃した)で失敗する場合があります。 問題のあるファイルを永久に無視できない場合(`--ignore-pathsを使用`）、リポジトリを修復する唯一の方法は「reset」を使用することです。
++
+rev_map と `refs/remotes/git-svn` のみが変更されます(詳細については、下記「ファイル」セクションの「$GIT_DIR/svn/\**/.rev_map.*」を参照してください)。 `reset` の後に `fetch` を続け、次に `git reset` または `git rebase` を実行して、ローカルブランチを新しいツリーに移動します。
+
+`-r <n>`;;
+`--revision=<n>`;;
+	保持する最新のリビジョンを指定します。 それ以降のリビジョンはすべて破棄されます。
+`-p`;;
+`--parent`;;
+	指定のリビジョンも破棄し、代わりに最も近い親を保持します。
+例:;;
+「master」にローカルの変更があると仮定しますが、あなたは「r2」を再フェッチする必要があります。
++
+------------
+    r1---r2---r3 remotes/git-svn
+                \
+                 A---B master
+------------
++
+そもそも「r2」が不完全になる原因となったignore-pathsまたはSVNパーミッションの問題を修正します。 それから:
++
+[verse]
+git svn reset -r2 -p
+git svn fetch
++
+------------
+    r1---r2'--r3' remotes/git-svn
+      \
+       r2---r3---A---B master
+------------
++
+次に、「master」を「git rebase」で修正します。 「git merge」を使用してはいけません。「git merge」を使用すると、履歴が将来の「dcommit」と互換性がなくなります。
++
+[verse]
+git rebase --onto remotes/git-svn A^ master
++
+------------
+    r1---r2'--r3' remotes/git-svn
+                \
+                 A'--B' master
+------------
+
+OPTIONS
+-------
+
+`--shared[=(false|true|umask|group|all|world|everybody)]`::
+`--template=<template-directory>`::
+	`init` コマンドでのみ使用されます。 これらは `git init` に直接渡されます。
+
+`-r <arg>`::
+`--revision <arg>`::
+	   `fetch` コマンドで使用されます。
++
+これにより、部分的な(partial)/一部が取り除かれた(cauterized) 履歴のリビジョン範囲をサポートできます。 $NUMBER, $NUMBER1:$NUMBER2 (数値範囲) と $NUMBER:HEAD と $NUMBER：HEAD と BASE:$NUMBER はすべてサポートされています。
++
+これにより、フェッチの実行時に部分ミラーを作成できます。 ただし、履歴がスキップされて失われるため、通常はお勧めしません。
+
+`-`::
+`--stdin`::
+	`set-tree` コマンドでのみ使用されます。
++
+stdinからコミットのリストを読み取り、逆の順序でコミットします。 各行からは先頭のsha1のみが読み取られるため、 `git rev-list --pretty=oneline` 出力を使用できます。
+
+`--rmdir`::
+	`dcommit` と `set-tree` と `commit-diff` コマンドでのみ使用されます。
++
+ファイルが残っていない場合は、SVNツリーからディレクトリを削除します。 SVNは空のディレクトリをバージョン管理でき、ファイルが残っていない場合、デフォルトでは削除されません。 Gitは空のディレクトリをバージョン管理できません。 このフラグを有効にすると、SVNへのコミットがGitのように機能します。
++
+[verse]
+config key: svn.rmdir
+
+`-e`::
+`--edit`::
+	`dcommit` と `set-tree` と `commit-diff` コマンドでのみ使用されます。
++
+SVNにコミットする前に、コミットメッセージを編集します。 これは、コミットされているオブジェクトではデフォルトでオフになっており、ツリーオブジェクトをコミットするときには強制的にオンになります。
++
+[verse]
+config key: svn.edit
+
+`-l<num>`::
+`--find-copies-harder`::
+	`dcommit` と `set-tree` と `commit-diff` コマンドでのみ使用されます。
++
+これらは両方とも「git diff-tree」に直接渡されます。 詳細については、 linkgit:git-diff-tree[1] を参照してください。
++
+[verse]
+config key: svn.l
+config key: svn.findcopiesharder
+
+`-A<filename>`::
+`--authors-file=<filename>`::
+	構文は「git cvs import」で使用されるファイルと互換性がありますが、空の電子メールアドレスを `<>` で指定できます:
++
+------------------------------------------------------------------------
+	loginname = Joe User <user@example.com>
+------------------------------------------------------------------------
++
+このオプションが指定されていて、「git svn」が authors-file に存在しないSVNコミッター名を検出した場合、「git svn」は操作を中止(abort)します。 この後、ユーザーは適切なエントリを追加する必要があります。 authors-file を変更後、 先程の「git svn」コマンドを再実行すると、操作が続行されます。
++
+[verse]
+config key: svn.authorsfile
+
+`--authors-prog=<filename>`::
+	このオプションを指定すると、authorsファイルに存在しないSVNコミッター名ごとに、指定のファイルを最初の引数としてコミッター名を使用してプログラムを実行します。プログラムは、「Name<email>」または「Name<>」の形式の1行を返すことが期待されており、これは、authorsファイルに含まれているかのように扱われます。
++
+歴史的な理由により、相対的な `filename` は、最初に「init」および「clone」の現在のディレクトリに対して、そして、「fetch」の作業ツリーのルートに対して、相対的に検索されます。 `filename` が見つからない場合は、 `$PATH` の他のコマンドと同様に検索されます。
++
+[verse]
+config key: svn.authorsProg
+
+`-q`::
+`--quiet`::
+	`git svn` のおしゃべりを減らします。 もう一度指定すると、おしゃべりがさらに少なくなります。
+
+`-m`::
+`--merge`::
+`-s<strategy>`::
+`--strategy=<strategy>`::
+`-p`::
+`--rebase-merges`::
+	これらは、 `dcommit` と `rebase` コマンドでのみ使用されます。
++
+「git reset」を使用できない場合、「dcommit」を使用するときに「git rebase」に直接渡されます(「dcommit」コマンド参照)。
+
+`-n`::
+`--dry-run`::
+	これは、 `dcommit` と `rebase` と `branch` と `tag` コマンドで使用できます。
++
+`dcommit` の場合、どのdiffがSVNにコミットされるかを示す一連のGit引数を出力します。
++
+`rebase` の場合、現在のブランチに関連付けられている上流svnリポジトリーに関連付けられているローカルブランチと、フェッチ元のsvnリポジトリーのURLを表示します。
++
+`branch` や `tag` の場合、ブランチまたはタグを作成するときにコピーに使用されるURLを表示します。
+
+`--use-log-author`::
+	(「fetch」または「rebase」または「dcommit」操作の一部として、)svnのコミットをGitに取得する場合、ログメッセージで最初の `From:` 行または `Signed-off-by` トレーラーを探し、それを著者文字列として使用します。
++
+[verse]
+config key: svn.useLogAuthor
+
+`--add-author-from`::
+	(「set-tree」または「dcommit」操作の一部として)Gitからsvnにコミットするとき、既存のログメッセージに `From:` または `Signed-off-by` トレーラーがまだ存在しない場合は、Gitコミットの作者文字列に基づく `From:` 行を追加します。 これを使用すると `--use-log-author` はすべてのコミットに対して有効な作者文字列を取得します。
++
+[verse]
+config key: svn.addAuthorFrom
+
+ADVANCED OPTIONS
+----------------
+
+`-i<GIT_SVN_ID>`::
+`--id <GIT_SVN_ID>`::
+	これにより、(環境変数を使用する代わりに) GIT_SVN_ID が設定されます。 これにより、ユーザーは単一のURLを追跡するときにフェッチするデフォルトのrefnameをオーバーライドできます。 `log` コマンドと `dcommit` コマンドは、もはや引数としてこのスイッチを必要としなくなりました。
+
+`-R<remote-name>`::
+`--svn-remote <remote-name>`::
+	使用する [svn-remote "<remote-name>"] セクションを指定します。これにより、SVNの複数のリポジトリを追跡できます。 デフォルトは `svn` です。
+
+`--follow-parent`::
+	このオプションは、ブランチを追跡している場合にのみ関連します(リポジトリレイアウトオプション `--trunk`, `--tags`, `--branches`, `--stdlayout` のどれかを使用)。 追跡されたブランチごとに、そのリビジョンがどこからコピーされたかを調べ、ブランチの最初のGitコミットで適切な親を設定しようと試みます。 これは、リポジトリ内で移動されたディレクトリを追跡する場合に特に役立ちます。 この機能が無効になっている場合、「git svn」によって作成されたブランチはすべて線形であり、履歴を共有しません。つまり、ブランチが分岐またはマージされた場所に関する情報はありません。 ただし、長い/複雑 な履歴の追跡には長い時間がかかる可能性があるため、この機能を無効にすると、クローン作成プロセスが高速化される可能性があります。 この機能はデフォルトで有効になっています。無効にするには `--no-follow-parent` を使用します。
++
+[verse]
+config key: svn.followparent
+
+CONFIG FILE-ONLY OPTIONS
+------------------------
+
+svn.noMetadata::
+svn-remote.<name>.noMetadata::
+	これにより、すべてのコミットの最後にある `git-svn-id:` 行が削除されます。
++
+`git svn` はメタデータなしでは再度フェッチできないため、このオプションはワンショットインポートにのみ使用できます。 さらに、もし、あなたが `$GIT_DIR/svn/\**/.rev_map.*` ファイル達を失ってしまっても、 `git svn` はそれらを再構築できません。
++
+`git svn log` コマンドは、これを使用するリポジトリ上でも機能しません。 これを使用すると、 (うまくいけば)明らかな理由で `useSvmProps` オプションと競合します。
++
+このオプションは、既存のドキュメントやバグレポートやアーカイブでSVNリビジョン番号への古い参照を追跡するのが困難になるため「お勧めしません」。 最終的にSVNからGitに移行することを計画していて、SVN履歴を削除することに確信がある場合は、代わりに https://github.com/newren/git-filter-repo[git-filter-repo] を検討してください。 filter-repoを使用すると、メタデータを再フォーマットして、「svn.authorsFile」以外のユーザーの作成者情報を読みやすく書き直しやすくすることもできます。
+
+svn.useSvmProps::
+svn-remote.<name>.useSvmProps::
+	これにより、「git svn」は、メタデータ用に `SVN::Mirror` (またはsvk)を使用して作成されたミラーからリポジトリのURLとUUIDを再マップできます。
++
+SVNリビジョンにプロパティ「svm:headrev」がある場合、リビジョンは (SVKでも使用される、) SVN::Mirror によって作成された可能性があります。 プロパティには、リポジトリUUIDとリビジョンが含まれています。 元のURLをミラーリングしているように見せるために、元のID URLとUUIDを返すヘルパー関数を導入し、コミットメッセージでメタデータを生成するときに使用します。
+
+svn.useSvnsyncProps::
+svn-remote.<name>.useSvnsyncprops::
+	useSvmPropsオプションと同様です。 これは、SVN 1.4.x以降で配布されている svnsync(1) コマンドのユーザー向けです。
+
+svn-remote.<name>.rewriteRoot::
+	これにより、ユーザーは代替URL(alternate URLs)からリポジトリを作成できます。 たとえば、管理者はサーバー上で `git svn` をローカルで実行できますが(file:// 経由でアクセス)、メタデータに パブリック http:// または svn:// URL を含むリポジトリを配布して、ユーザーにパブリックURLが表示されるようにします。
+
+svn-remote.<name>.rewriteUUID::
+	useSvmPropsオプションと同様です。 これは、UUIDを手動で再マップする必要があるユーザー向けです。 これは、 useSvmProps または useSvnsyncProps のいずれかを介して元のUUIDを使用できない状況で役立つ場合があります。
+
+svn-remote.<name>.pushurl::
+
+	Gitの `remote.<name>.pushurl` と同様に、このキーは、 `url` が読み取り専用転送(transport)を介してSVNリポジトリを指している場合に使用され、代替の 読み取り/書き込み 転送を提供するように設計されています。 両方のキーが同じリポジトリを指していると想定されています。 `commiturl` とは異なり、 `pushurl` はベースパスです。 `commiturl` または `pushurl` のいずれかを使用できる場合は、 `commiturl` が優先されます。
+
+svn.brokenSymlinkWorkaround::
+	これにより、壊れたクライアントによってSVNにチェックインされた壊れたシンボリックリンクを回避するための潜在的に高価なチェックが無効になります。 シンボリックリンクではない空のブロブが多数あるSVNリポジトリを追跡する場合は、このオプションを「false」に設定します。 このオプションは、「git svn」の実行中に変更され、フェッチされた次のリビジョンで有効になる場合があります。 設定されていない場合、「git svn」はこのオプションが「true」であると見なします。
+
+svn.pathnameencoding::
+	これは、パス名を特定のエンコーディングに再コード化するようにgit svnに指示します。 Windowsユーザーおよび 非utf-8 のロケールで作業するユーザーが使用して、ASCII以外の文字でファイル名が破損しないようにすることができます。 有効なエンコーディングは、PerlのEncodeモジュールでサポートされているものです。
+
+svn-remote.<name>.automkdirs::
+	通常、「git svn clone」および「git svn rebase」コマンドは、Subversionリポジトリにある空のディレクトリを再作成しようとします。 このオプションが「false」に設定されている場合、「git svn mkdirs」コマンドが明示的に実行された場合にのみ、空のディレクトリが作成されます。 設定されていない場合、「git svn」はこのオプションが「true」であると見なします。
+
+noMetadata と rewriteRoot と rewriteUUID と useSvnsyncProps とuseSvmProps オプションはすべて、「git svn」によって生成および使用されるメタデータに影響を与えるためです。 これらは、履歴をインポートする前に構成ファイルで設定する必要があります。これらの設定は、一旦設定したら決して変更してはいけません。
+
+さらに、これらのオプションは、一緒に使用できる rewriteRoot と rewriteUUID を除いて、 `git-svn-id:` メタデータ行に影響を与えるため、svn-remoteセクションごとに使用できるのは1つだけです。
+
+
+BASIC EXAMPLES
+--------------
+
+Subversion管理プロジェクトのtrunkの追跡と貢献(タグとブランチを無視):
+
+------------------------------------------------------------------------
+# リポジトリのクローン(`git clone` と同様):
+	git svn clone http://svn.example.com/project/trunk
+# 新しく複製されたディレクトリに入る:
+	cd trunk
+# あなたはmasterブランチにいる必要があります。 `git branch ` で再確認
+	git branch
+# いくつかの作業を行い、ローカルでGitにコミットします:
+	git commit ...
+# 何かをSVNにコミットし、
+# SVNの最新の変更に対してあなたのローカルの変更をリベースします:
+	git svn rebase
+# 次に、変更(先程はGitを使用してコミットしたもの)を
+# SVNにコミットし、作業中のHEADを自動的に更新します:
+	git svn dcommit
+# svn:ignore 設定と svn:global-ignores 設定をデフォルトのGit除外ファイルに追加します:
+	git svn show-ignore >> .git/info/exclude
+------------------------------------------------------------------------
+
+Subversion で管理されているプロジェクト全体(トランク, タグ, ブランチを含む)の追跡と貢献:
+
+------------------------------------------------------------------------
+# 標準のSVNディレクトリレイアウトを使用してリポジトリのクローンを作成します(`git clone`と同様):
+	git svn clone http://svn.example.com/project --stdlayout --prefix svn/
+# または、標準でないディレクトリレイアウトを使うリポジトリの場合は:
+	git svn clone http://svn.example.com/project -T tr -b branch -t tag --prefix svn/
+# クローンしたすべてのブランチとタグを表示:
+	git branch -r
+# SVNに新しいブランチを作成
+	git svn branch waldo
+# masterをtrunk(または他のブランチ。`trunk` は
+# 適切な名前に置き換えて下さい)にリセットします:
+	git reset --hard svn/trunk
+# 一度に1つの ブランチ/タグ/trunk にのみコミットできます。
+# dcommit/rebase/show-ignore の使用法は、上記と同じである必要があります。
+------------------------------------------------------------------------
+
+最初の「git svn clone」は非常に時間がかかる可能性があります(特に大規模なSubversionリポジトリの場合)。 複数の人(または複数のマシンを持つ1人)が同じSubversionリポジトリと対話するために「git svn」を使用したい場合は、あなたがサーバー上のリポジトリに対して最初の「git svn clone」を実行し、 `git clone` で各人にそのリポジトリのクローンを作成させることができます:
+
+------------------------------------------------------------------------
+# サーバーで初期インポートを実行します
+	ssh server "cd /pub && git svn clone http://svn.example.com/project [options...]"
+# ローカルでクローンします - refs/remotes/ 空間 がサーバーと一致することを確認してください
+	mkdir project
+	cd project
+	git init
+	git remote add origin server:/pub/project
+	git config --replace-all remote.origin.fetch '+refs/remotes/*:refs/remotes/*'
+	git fetch
+# 今後、リモートGitサーバーからの フェッチ/プル を防止します
+# 今後の更新には git svn のみを使用します
+	git config --remove-section remote.origin
+# フェッチしたブランチの1つからローカルブランチを作成します
+	git checkout -b master FETCH_HEAD
+# `git svn` をローカルで初期化します(サーバーで使用されたものと同じURLと
+# `--stdlayout`/`-T`/`-b`/`-t`/`-prefix` オプションを使用してください)
+	git svn init http://svn.example.com/project [options...]
+# Subversionから最新の変更をプルする
+	git svn rebase
+------------------------------------------------------------------------
+
+REBASE VS. PULL/MERGE
+---------------------
+統合されていないコミットを「git svn」ブランチと同期するには、「git pull」または「git merge」ではなく、「git svn rebase」または「git rebase」を使用することをお勧めします。 そうすることで、統合されていないコミットの履歴がアップストリームSVNリポジトリに対して線形に保たれ、優先される「git svn dcommit」サブコマンドを使用して統合されていないコミットをSVNにプッシュバックできるようになります。
+
+当初、「git svn」は、開発者が「git svn」ブランチからプルまたはマージすることを推奨していました。 これは、作成者が複数のコミットをコミットするための `git svn set-tree A..B` 表記ではなく、単一のヘッドをコミットするために `git svn set-tree B` を好んだためです。 「git pull」または「git merge」を、 `git svn set-tree A..B` と一緒に使用すると、SVNにコミットするときに非線形履歴がフラット化され、これにより、マージコミットがSVNの以前のコミットを予期せず逆転させる可能性があります。
+
+MERGE TRACKING
+--------------
+`git svn` は、標準レイアウト(standard layout)を採用しているリポジトリのコピー履歴(ブランチとタグを含む)を追跡できますが、git内でSVNユーザーに戻って発生したマージ履歴を表すことはできません。 したがって、SVNとの互換性を容易にするために、ユーザーはGit内で履歴を可能な限り線形に保つことをお勧めします(下記「CAVEATS」セクション参照)。
+
+HANDLING OF SVN BRANCHES
+------------------------
+`git svn` がブランチをフェッチするように構成されている場合(そして `--follow-branches` が有効な場合）、1つのSVNブランチに対して複数のGitブランチが作成されることがあり、追加のブランチの名前は `branchname@nnn`(nnn はSVNリビジョン番号)形式になります。 これらの追加のブランチは、 `git svn` がSVNブランチの最初のコミットの親コミットを見つけられない場合に作成され、ブランチを他のブランチの履歴に接続します。
+
+通常、SVNブランチの最初のコミットはコピー操作で構成されます。 「git svn」はこのコミットを読み取り、ブランチが作成されたSVNリビジョンを取得します。次に、このSVNリビジョンに対応するGitコミットを見つけようとし、それをブランチの親として使用します。ただし、親として機能する適切なGitコミットがない可能性があります。 これは、他の理由の中でも特に、SVNブランチが「git svn」によってフェッチされなかったリビジョンのコピーである場合(たとえば、 `--revision`でスキップされた古いリビジョンであるため)、またはSVNで「git svn」によって追跡されないディレクトリがコピーされた場合(まったく追跡されていないブランチ、または追跡されたブランチのサブディレクトリなど)に発生します。 このような場合、「git svn」は引き続きGitブランチを作成しますが、ブランチの親として既存のGitコミットを使用する代わりに、ブランチのコピー元のディレクトリのSVN履歴を読み取り、適切なGitコミットを作成します。これは、 "Initializing parent: <branchname>" というメッセージで示されます。
+
+さらに、 `<branchname>@<SVN-Revision>` という名前の特別なブランチを作成します。ここで、<SVN-Revision> は、ブランチのコピー元のSVNリビジョン番号です。 このブランチは、ブランチの新しく作成された親コミットを指します。 SVNでブランチが削除され、後で別のバージョンから再作成された場合、 `@` が付いたこのようなブランチが複数存在します。
+
+これは、単一のSVNリビジョンに対して複数のGitコミットが作成されることを意味する場合があることに注意してください。
+
+例: 標準の トランク/タグ/ブランチ レイアウトのSVNリポジトリでは、ディレクトリ `trunk/sub` が `r.100` に作成されます。 `r.200` では、 `trunk/sub` は `branchs/` にコピーすることで分岐します。 `git svn clone -s`は、ブランチ `sub` を作成します。 また、 `r.100` から `r.199` までの新しいGitコミットを作成し、これらをブランチ `sub` の履歴として使用します。 したがって、 `r.100` から `r.199` までのリビジョンごとに2つのGitコミットがあります(1つは `trunk/` を含み、もう1つは `trunk/sub/` を含みます)。 最後に、ブランチ `sub` の新しい親コミットを指すブランチ `sub@200` を作成します(つまり、 `r.200` および `trunk/sub/` のコミット)。
+
+CAVEATS
+-------
+
+単純化とSubversionとの相互運用のために、すべての「git svn」ユーザーがSVNサーバーから直接クローンを作成し、フェッチしてdcommitし、Gitリポジトリとブランチ間で、すべての 「git clone」/「pull」/「merge」/「push」 操作を回避することをお勧めします。Gitブランチとユーザーの間でコードを交換するための推奨される方法は、「git format-patch」と「git am」、または単に「SVNリポジトリへのdcommit」です。
+
+「dcommit」を計画しているブランチで「git merge」または「git pull」を実行することはお勧めしません。Subversionユーザーはあなたが行ったマージを見ることができないからです。 さらに、SVNブランチのミラーであるGitブランチからマージまたはプルすると、「dcommit」が間違ったブランチにコミットする可能性があります。
+
+マージする場合は、以下のルールに注意してください: `git svn dcommit` は、以下で指定されたSVNコミット上でコミットを試みます
+
+------------------------------------------------------------------------
+git log --grep=^git-svn-id: --first-parent -1
+------------------------------------------------------------------------
+
+したがって、dcommitするブランチの最新のコミットがマージの「最初の」親であることを確認する「必要」があります。 特に最初の親が同じSVNブランチの古いコミットである場合は、混沌(chaos)になります。
+
+`git clone` は `refs/remotes/` 階層下のブランチや `git svn` のメタデータや設定をクローンしません。 そのため、`git svn` を使って作成・管理されたリポジトリのクローンを作成する場合は `rsync` を使用する必要があります。
+
+`commit` は内部でリベースを使用しているので、 `dcommit` の前に `git push` した Git ブランチは、リモートリポジトリの既存の ref を強制的に上書きする必要があります。 詳細は linkgit:git-push[1] ドキュメントを参照ください。
+
+すでにコミットした変更に、 linkgit:git-commit[1] の `--amend` オプションを使用しないでください。 他のユーザーのためのリモートリポジトリにすでにプッシュしたコミットを修正することは悪い習慣と考えられており、SVNを使用したdcommitはそれに類似しています。
+
+SVNリポジトリのクローンを作成するときに、リポジトリレイアウトを記述するためのオプション(`--trunk`, `--tags`, `--branches`, `--stdlayout`)が使用されてい無い場合、 `git svn clone` は完全に線形の履歴を持つGitリポジトリを作成します 、ブランチとタグは作業コピーで別々のディレクトリとして表示されます。 これは完全なリポジトリのコピーを取得する最も簡単な方法ですが、多くのブランチを持つプロジェクトの場合、トランクだけの何倍ものサイズの作業コピーになります。 したがって、標準のディレクトリ構造(trunk/branchs/tags)を使用するプロジェクトの場合、オプション `--stdlayout` を使用してクローンを作成することをお勧めします。 プロジェクトが非標準の構造を使用している場合、および/または ブランチとタグが不要な場合は、リポジトリのレイアウトオプションを指定せずに、1つのディレクトリ(通常はトランク)のみを複製するのが最も簡単です。 ブランチとタグを含む完全な履歴が必要な場合は、オプション `--trunk`/`--branches`/`--tags` を使用する必要があります。
+
+複数の `--branches` または `--tags` を使用する場合、「git svn」は名前の衝突を自動的に処理しません(たとえば、異なるパスからの2つのブランチが同じ名前である場合、またはブランチとタグが同じ名前である場合)。 このような場合は、「init」を使用してGitリポジトリを設定し、最初の「フェッチ」の前に、ブランチとタグが異なる名前空間に関連付けられるように $GIT_DIR/config ファイルを編集します。 例えば:
+
+	branches = stable/*:refs/remotes/svn/stable/*
+	branches = debug/*:refs/remotes/svn/debug/*
+
+CONFIGURATION
+-------------
+
+「git svn」は、 [svn-remote] 構成情報をリポジトリ $GIT_DIR/config ファイルに保存します。 `fetch` キーがglob引数を受け入れないことを除いて、コアGitの [remote] セクションに似ています。 ただし、代わりに `branches` キーと `tags` キーによって処理されます。 一部のSVNリポジトリは、複数のプロジェクトで奇妙に構成されているため、以下にリストされているようなグロブ拡張が許可されます:
+
+------------------------------------------------------------------------
+[svn-remote "project-a"]
+	url = http://server.org/svn
+	fetch = trunk/project-a:refs/remotes/project-a/trunk
+	branches = branches/*/project-a:refs/remotes/project-a/branches/*
+	branches = branches/release_*:refs/remotes/project-a/branches/release_*
+	branches = branches/re*se:refs/remotes/project-a/branches/*
+	tags = tags/*/project-a:refs/remotes/project-a/tags/*
+------------------------------------------------------------------------
+
+(`:` の右側の)ローカル参照の `*`(アスタリスク)ワイルドカードは、
+最も右のパスコンポーネントである必要があることに注意してください。
+ただし、リモートのワイルドカードは、独立したパスコンポーネント
+(`/` または EOLで囲まれている)である限り、どこにあってもかまいません。
+このタイプの構成は、 `init` によって自動的に作成されるわけではないため、
+テキストエディターまたは `git config` を使用して手動で入力する必要があります。
+
+また、単語ごとに1つのアスタリスク(`*`)のみが許可されていることに注意してください。 例えば:
+
+	branches = branches/re*se:refs/remotes/project-a/branches/*
+
+ただし、これは、ブランチ `release` 、`rese` 、`re123se` とマッチします
+
+	branches = branches/re*s*e:refs/remotes/project-a/branches/*
+
+これはエラーを発生させます。
+
+中括弧(`{` , `}`)内の名前のコンマ(`,`)区切りリストを使用して、ブランチまたはタグのサブセットをフェッチすることもできます。 例えば:
+
+------------------------------------------------------------------------
+[svn-remote "huge-project"]
+	url = http://server.org/svn
+	fetch = trunk/src:refs/remotes/trunk
+	branches = branches/{red,green}/src:refs/remotes/project-a/branches/*
+	tags = tags/{1.0,2.0}/src:refs/remotes/project-a/tags/*
+------------------------------------------------------------------------
+
+複数フェッチとブランチとタグキーがサポートされています:
+
+------------------------------------------------------------------------
+[svn-remote "messy-repo"]
+	url = http://server.org/svn
+	fetch = trunk/project-a:refs/remotes/project-a/trunk
+	fetch = branches/demos/june-project-a-demo:refs/remotes/project-a/demos/june-demo
+	branches = branches/server/*:refs/remotes/project-a/branches/*
+	branches = branches/demos/2011/*:refs/remotes/project-a/2011-demos/*
+	tags = tags/server/*:refs/remotes/project-a/tags/*
+------------------------------------------------------------------------
+
+このような構成でブランチを作成するには、 `-d` または `--destination` フラグを使用して使用する場所を明確にする必要があります:
+
+------------------------------------------------------------------------
+$ git svn branch -d branches/server release-2-3-0
+------------------------------------------------------------------------
+
+git-svnは、ブランチまたはタグが出現した最高のリビジョン(highest revision)を追跡することに注意してください。 フェッチ後にブランチまたはタグのサブセットが変更された場合は、 `$GIT_DIR/svn/.metadata` を手動で編集して、必要に応じて branches-maxRev および/または tags-maxRev を削除(またはリセット)する必要があります。
+
+FILES
+-----
+$GIT_DIR/svn/\**/.rev_map.*::
+	Subversionリビジョン番号とGitコミット名の間のマッピング。 noMetadataオプションが設定されていないリポジトリでは、これはすべてのコミットの最後にある `git-svn-id:` 行から再構築できます(詳細については、上記「svn.noMetadata」セクションを参照してください)。
++
+`git svn fetch` および `git svn rebase` は、rev_mapが欠落しているか最新でない場合、自動的に更新します。 `git svn reset` は自動的にそれを巻き戻します。
+
+BUGS
+----
+
+svn:executable を除くすべてのSVNプロパティを無視します。 未処理のプロパティはすべて `$GIT_DIR/svn/<refname>/unhandled.log` に記録されます
+
+名前変更とコピーされたディレクトリはGitによって検出されないため、SVNにコミットするときに追跡されません。 考えられるすべてのレアケース(corner cases)に対応する作業を行うのは非常に困難で時間がかかるため、これに対するサポートを追加する予定はありません(Gitもサポートしていません)。 名前変更とコピーされたファイルのコミットは、Gitがそれらを検出するのに十分類似している場合、完全にサポートされます。
+
+SVNでは、(推奨されていませんが)タグへの変更をコミットすることが可能です(タグは単なるディレクトリコピーであり、技術的にはブランチと同じであるため)。 SVNリポジトリのクローンを作成する場合、「git svn」は、タグへのそのようなコミットが将来発生するかどうかを知ることができません。 したがって、保守的な動作を行い、すべてのSVNタグをブランチとしてインポートし、タグ名の前に `tags/` 接頭辞を付けます。
+
+SEE ALSO
+--------
+linkgit:git-rebase[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

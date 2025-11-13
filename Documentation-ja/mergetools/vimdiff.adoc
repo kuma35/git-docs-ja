@@ -1,0 +1,177 @@
+Description
+^^^^^^^^^^^
+
+`git mergetool` で `--tool=vimdiff` を指定すると、Git は以下のように4つに分割されたウィンドウ・レイアウトで Vim を開きます:
+
+....
+------------------------------------------
+|             |           |              |
+|   LOCAL     |   BASE    |   REMOTE     |
+|             |           |              |
+------------------------------------------
+|                                        |
+|                MERGED                  |
+|                                        |
+------------------------------------------
+....
+LOCALとBASEとREMOTEは、特定のコミットで競合するファイルの内容を示す読み取り専用バッファーです(それぞれ「マージ先のコミット」と「共通の祖先コミット」と「マージ元のコミット」)。
+
+`MERGED` は、競合を解決する必要がある書き込み可能なバッファーです(他の読み取り専用バッファーを参照として使用します)。 完了したら、通常どおり Vim を保存して終了します(`:wq`)。中止する場合は、`:cq` を使用して終了します。
+
+Layout configuration
+^^^^^^^^^^^^^^^^^^^^
+
+以下の区切り文字が特別な意味を持つ文字列を受け入れる構成変数 `mergetool.vimdiff.layout` を設定することで、 Vim が使用するウィンドウ・レイアウトを変更できます:
+
+  - `+` は「open a new tab」(新しいタブを開く)ために使用されます
+  - `,` は「open a new vertical split」(上下分割で開く)ために使用されます
+  - `/` は「open a new horizontal split」(左右分割で開く)ために使用されます
+  - `@` は、競合を解決した後の最終バージョンを含むファイルを示すために使用されます。 存在しない場合、デフォルトで `MERGED` が使用されます。
+
+演算子の優先順位は以下のとおりです(丸括弧(parentheses; `(` ... `)`)を使用して変更できます):
+
+    `@` > `+` > `/` > `,`
+
+これがどのように機能するかを理解するためにいくつかの例を見てみましょう:
+
+* `layout = "(LOCAL,BASE,REMOTE)/MERGED"`
++
+--
+これは、すでに見たデフォルトのレイアウトとまったく同一です。
+
+注意: `/` は `,` よりも優先されるため、この場合は括弧は不要であることに注意してください。 つまり以下のレイアウト定義と同等です:
+
+    layout = "LOCAL,BASE,REMOTE / MERGED"
+--
+* `layout = "LOCAL,MERGED,REMOTE"`
++
+--
+これは、もし、何らかの理由で `BASE` バッファに関心がない場合です。
+
+....
+------------------------------------------
+|             |           |              |
+|             |           |              |
+|   LOCAL     |   MERGED  |   REMOTE     |
+|             |           |              |
+|             |           |              |
+------------------------------------------
+....
+--
+* `layout = "MERGED"`
++
+--
+`MERGED` バッファのみが表示されます。 ただし、他のすべてのものはまだvimにロードされており、 `buffers` コマンドでアクセスできることに注意してください。
+
+....
+------------------------------------------
+|                                        |
+|                                        |
+|                 MERGED                 |
+|                                        |
+|                                        |
+------------------------------------------
+....
+--
+* `layout = "@LOCAL,REMOTE"`
++
+--
+When `MERGED` is not present in the layout, you must "mark" one of the buffers with an arobase (`@`). That will become the buffer you need to edit and save after resolving the conflicts.
+
+....
+------------------------------------------
+|                   |                    |
+|                   |                    |
+|                   |                    |
+|     LOCAL         |    REMOTE          |
+|                   |                    |
+|                   |                    |
+|                   |                    |
+------------------------------------------
+....
+--
+* `layout = "LOCAL,BASE,REMOTE / MERGED + BASE,LOCAL + BASE,REMOTE"`
++
+--
+3つのタブが開かれます: 最初の 1 つはデフォルト・レイアウトのコピーで、残りの 2 つはそれぞれ (`BASE` と `LOCAL`) と (`BASE` と `REMOTE`) の違いのみを示します。
+
+....
+------------------------------------------
+| <TAB #1> |  TAB #2  |  TAB #3  |       |
+------------------------------------------
+|             |           |              |
+|   LOCAL     |   BASE    |   REMOTE     |
+|             |           |              |
+------------------------------------------
+|                                        |
+|                MERGED                  |
+|                                        |
+------------------------------------------
+....
+
+....
+------------------------------------------
+|  TAB #1  | <TAB #2> |  TAB #3  |       |
+------------------------------------------
+|                   |                    |
+|                   |                    |
+|                   |                    |
+|     BASE          |    LOCAL           |
+|                   |                    |
+|                   |                    |
+|                   |                    |
+------------------------------------------
+....
+
+....
+------------------------------------------
+|  TAB #1  |  TAB #2  | <TAB #3> |       |
+------------------------------------------
+|                   |                    |
+|                   |                    |
+|                   |                    |
+|     BASE          |    REMOTE          |
+|                   |                    |
+|                   |                    |
+|                   |                    |
+------------------------------------------
+....
+--
+* `layout = "LOCAL,BASE,REMOTE / MERGED + BASE,LOCAL + BASE,REMOTE +
+  (LOCAL/BASE/REMOTE),MERGED"`
++
+--
+前の例と同一ですが、最初のタブと同じ情報を持つ 4 番目のタブを別のレイアウトで追加します。
+
+....
+---------------------------------------------
+|  TAB #1  |  TAB #2  |  TAB #3  | <TAB #4> |
+---------------------------------------------
+|       LOCAL         |                     |
+|---------------------|                     |
+|       BASE          |        MERGED       |
+|---------------------|                     |
+|       REMOTE        |                     |
+---------------------------------------------
+....
+注意: 3 番目のタブ定義では、 丸括弧(parentheses; `(` ... `)` ) を使用して `,` を `/` よりも優先する必要があることに注意してください。
+--
+
+Variants
+^^^^^^^^
+
+`--tool=vimdiff` の代わりに、これらの他のバリエーションのいずれかを使用することもできます:
+
+  * `--tool=gvimdiff` は Vim の代わりに gVim を開きます。
+
+  * `--tool=nvimdiff` は Vim の代わりに Neovim を開きます。
+
+これらのバリエーションを使用する場合、カスタム・レイアウトを指定するには、構成変数 `mergetool.vimdiff.layout` の代わりに `mergetool.gvimdiff.layout` と `mergetool.nvimdiff.layout` を設定する必要があります(ただし、 そのバリエーション固有のものが設定されていない場合、 後者はフォールバックとして使用されます)。
+
+In addition, for backwards compatibility with previous Git versions, you can also append `1`, `2` or `3` to either `vimdiff` or any of the variants (ex: `vimdiff3`, `nvimdiff1`, etc...) to use a predefined layout. In other words, using `--tool=[g|n]vimdiff<x>` is the same as using `--tool=[g|n]vimdiff` and setting configuration variable `mergetool.[g|n]vimdiff.layout` to...
+
+  * `<x>=1`: `"@LOCAL, REMOTE"`
+  * `<x>=2`: `"LOCAL, MERGED, REMOTE"`
+  * `<x>=3`: `"MERGED"`
+
+Example: using `--tool=gvimdiff2` will open `gvim` with three columns (`LOCAL`, `MERGED` and `REMOTE`).

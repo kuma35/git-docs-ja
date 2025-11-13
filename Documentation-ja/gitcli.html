@@ -792,7 +792,7 @@ gitcli(7) Manual Page
 <pre><code>$ git restore *.c
 $ git restore \*.c</code></pre>
 </div></div>
-<div class="paragraph"><p>前者を使用すると、シェルでfileglobを展開でき、作業ツリー内の C言語ソースファイル(dot-C)をインデックス内のバージョンで上書きするように要求されます。後者は *.c をGitに渡し、作業ツリーにチェックアウトするパターンに一致するインデックス内のパスを要求しています。<code>git</code> <code>add</code> <code>hello.c</code>; <code>rm</code> <code>hello.c</code> を実行後、前者では作業ツリーに <code>hello.c</code> は表示されませんが、後者では表示されます。</p></div>
+<div class="paragraph"><p>前者を使用すると、シェルでfileglobを展開でき、作業ツリー内の C言語ソースファイル(dot-C)をインデックス内のバージョンで上書きするように要求されます。後者は <code>*.c</code> をGitに渡し、作業ツリーにチェックアウトするパターンに一致するインデックス内のパスを要求しています。<code>git</code> <code>add</code> <code>hello.c</code>; <code>rm</code> <code>hello.c</code> を実行後、前者では作業ツリーに <code>hello.c</code> は表示されませんが、後者では表示されます。</p></div>
 </li>
 <li>
 <p>
@@ -810,6 +810,11 @@ $ git restore \*.c</code></pre>
 <li>
 <p>
 コマンドラインオプションが引数を取る場合は、串刺し形式(stuck form) を使用します。つまり、短いオプションの場合は <code>git</code> <code>foo</code> <code>-o</code> <code>Arg</code> の代わりに <code>git</code> <code>foo</code> <code>-oArg</code> を記述し、長いオプションの場合は <code>git</code> <code>foo</code> <code>--long-opt</code> <code>Arg</code> の代わりに <code>git</code> <code>foo</code> <code>--long-opt=Arg</code> を記述します。オプションのオプション引数をとるオプションは、串刺し形式で記述する必要があります。
+</p>
+</li>
+<li>
+<p>
+Despite the above suggestion, when Arg is a path relative to the home directory of a user, e.g. <code>~/directory/file</code> or <code>~u/d/f</code>, you may want to use the separate form, e.g. <code>git</code> <code>foo</code> <code>--file</code> <code>~/mine</code>, not <code>git</code> <code>foo</code> <code>--file=~/mine</code>. The shell will expand <code>~/</code> in the former to your home directory, but most shells keep the tilde in the latter. Some of our commands know how to tilde-expand the option value even when given in the stuck form, but not all of them do.
 </p>
 </li>
 <li>
@@ -871,6 +876,11 @@ usage: git describe [&lt;options&gt;] &lt;commit-ish&gt;*
 <div class="paragraph"><p>長いオプションは、接頭辞 <code>--no-</code> を付けることで無効にできます。 たとえば、 <code>git</code> <code>branch</code> にはオプション <code>--track</code> があります。これはデフォルトで <code>on</code> です。 <code>--no-track</code> を使用して、その動作をオーバーライドできます。 <code>--color</code> と <code>--no-color</code> についても同じことが言えます。</p></div>
 </div>
 <div class="sect2">
+<h3 id="_options_trump_configuration_and_environment">Options trump configuration and environment</h3>
+<div class="paragraph"><p>When there is a configuration variable or an environment variable that tweak the behaviour of an aspect of a Git command, and also a command line option that tweaks the same, the command line option overrides what the configuration and/or environment variable say.</p></div>
+<div class="paragraph"><p>For example, the <code>user.name</code> configuration variable is used to specify the human-readable name used by the <code>git</code> <code>commit</code> command to record the author and the committer name in a newly created commit. The <code>GIT_AUTHOR_NAME</code> environment variable, if set, takes precedence when deciding what author name to record. The <code>--author=</code><em>&lt;author&gt;</em> command line option of the <code>git</code> <code>commit</code> command, when given, takes precedence over these two sources of information.</p></div>
+</div>
+<div class="sect2">
 <h3 id="_短いオプションのおまとめ">短いオプションのおまとめ</h3>
 <div class="paragraph"><p>拡張オプションパーサーをサポートするコマンドを使用すると、短いオプションをおまとめできます。これは、たとえば、 <code>git</code> <code>rm</code> <code>-rf</code> や <code>git</code> <code>clean</code> <code>-fdx</code> を使用できることを意味します。</p></div>
 </div>
@@ -895,6 +905,17 @@ $ git foo -o Arg</code></pre>
 $ git describe --abbrev=10 HEAD  # correct
 $ git describe --abbrev 10 HEAD  # NOT WHAT YOU MEANT</code></pre>
 </div></div>
+</div>
+<div class="sect2">
+<h3 id="_magic_filename_options">Magic filename options</h3>
+<div class="paragraph"><p>Options that take a filename allow a prefix <code>:</code>(<code>optional</code>). For example:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git commit -F :(optional)COMMIT_EDITMSG
+# if COMMIT_EDITMSG does not exist, the above is equivalent to
+git commit</code></pre>
+</div></div>
+<div class="paragraph"><p>Like with configuration values, if the named file is missing Git behaves as if the option was not given at all. See "Values" in <a href="git-config.html">git-config(1)</a>.</p></div>
 </div>
 </div>
 </div>
@@ -947,7 +968,7 @@ $ git describe --abbrev 10 HEAD  # NOT WHAT YOU MEANT</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-07-19 08:15:07 JST
+ 2025-11-13 13:44:08 JST
 </div>
 </div>
 </body>

@@ -1,0 +1,58 @@
+extensions.*::
+	特に明記されていない限り、 `core.repositoryFormatVersion` が `1` で無い場合、 拡張機能(extension)を指定するとエラーになります。 linkgit:gitrepository-layout[5] を参照してください。
++
+compatObjectFormat:::
+	使用する互換性ハッシュ・アルゴリズムを指定します。 受け入れ可能な値は `sha1` と `sha256` です。 指定する値は、 `extensions.objectFormat` の値とは異なる必要があります。 これにより、 objectFormat がこの compatObjectFormat と一致する git リポジトリ間のクライアント・レベルの相互運用が可能になります。 特に完全に実装されている場合、 objectFormat が compatObjectFormat と一致するリポジトリからプッシュおよびプルが行われます。 また、 objectFormat でエンコードされた oid に加えて、 compatObjectFormat でエンコードされた oid を使用してオブジェクトをローカルに指定することもできます。
++
+Note that the functionality enabled by this extension is incomplete and subject to change. It currently exists only to allow development and testing of the underlying feature and is not designed to be enabled by end users.
+
+noop:::
+	この拡張機能は git の動作をまったく変更しません。 これは、 format-1 の互換性をテストする場合にのみ役立ちます。
++
+歴史的な理由から、 この拡張機能は `core.repositoryFormatVersion` の設定に関係なく尊重されます。
+
+noop-v1:::
+	この拡張機能は git の動作をまったく変更しません。 これは、 format-1 の互換性をテストする場合にのみ役立ちます。
+
+objectFormat:::
+	使用するハッシュアルゴリズムを指定します。 許容値は `sha1` と `sha256` です。 指定しない場合、 `sha1` が想定されます。
++
+注意: この設定は、linkgit:git-init[1] または linkgit:git-clone[1] によってのみ設定する必要があることに注意してください。 初期化後に変更しようとすると機能せず、診断が難しい問題が発生します。
+
+partialClone:::
+	有効にすると、 リポジトリが部分クローン(partial clone)で作成された(または後で部分フェッチ(partial fetch)を実行した)ことと、 リモートが特定の不要なオブジェクトの送信を省略した可能性があることを示します。 このようなリモートは「プロミザー・リモート」(promisor remote)と呼ばれ、 省略されたすべてのオブジェクトを将来そこからフェッチできることが「約束」されています。
++
+このキーの値は、 プロミサー・リモートの名前です。
++
+歴史的な理由から、 この拡張機能は `core.repositoryFormatVersion` の設定に関係なく尊重されます。
+
+preciousObjects:::
+	有効な場合、 リポジトリ内のオブジェクトを削除してはいけない(MUST NOT)ことを示します(例: `git-prune` または `git repack -d` によって)。
++
+歴史的な理由から、 この拡張機能は `core.repositoryFormatVersion` の設定に関係なく尊重されます。
+
+refStorage:::
+	使用する ref 格納形式を指定します。 許容可能な値は以下のとおりです:
++
+--
+include::../ref-storage-format.adoc[]
+--
++
+注意: この設定は、linkgit:git-init[1] または linkgit:git-clone[1] によってのみ設定する必要があることに注意してください。 初期化後に変更しようとすると機能せず、診断が難しい問題が発生します。
+
+relativeWorktrees:::
+	If enabled, indicates at least one worktree has been linked with relative paths. Automatically set if a worktree has been created or repaired with either the `--relative-paths` option or with the `worktree.useRelativePaths` config set to `true`.
+
+worktreeConfig:::
+	有効にすると、 ワークツリー(worktrees)は `$GIT_COMMON_DIR/config` ファイルに加えて `$GIT_DIR/config.worktree` ファイルからも構成設定をロードします。 注意: `$GIT_COMMON_DIR` と `$GIT_DIR` はメインの作業ツリー(the main working tree)では同一ですが、 他の作業ツリーの `$GIT_DIR` は `$GIT_COMMON_DIR/worktrees/<id>/` と等しいことに注意してください。 `config.worktree` ファイル内の設定は、 他の構成ファイルの設定をオーバーライドします。
++
+この拡張機能を有効にするときは、特定の値達を共通構成ファイル(common config file)からメインの作業ツリーの `config.worktree` ファイル (存在する場合) に移動(move)するように注意する必要があります:
++
+--
+* `core.worktree` を `$GIT_COMMON_DIR/config` から `$GIT_COMMON_DIR/config.worktree` に移動(move)しなければなりません。
+* `core.bare` が true の場合、 `$GIT_COMMON_DIR/config` から `$GIT_COMMON_DIR/config.worktree` に移動(move)しなければなりません。
+--
++
+各ワークツリーのカスタマイズ可能な sparse-checkout 設定に対する要望に応じて、 `core.sparseCheckout` と `core.sparseCheckoutCone` の場所(locations)を調整することも有益な場合があります。 デフォルトでは、`git sparse-checkout` ビルトインはこの拡張機能を有効にし、これらの構成値をワークツリーごとに割り当て、 `$GIT_DIR/info/sparse-checkout` ファイルを使用して各ワークツリーごとに独立したスパース性を指定します。 詳細については、 linkgit:git-sparse-checkout[1] を参照してください。
++
+歴史的な理由から、 この拡張機能は `core.repositoryFormatVersion` の設定に関係なく尊重されます。

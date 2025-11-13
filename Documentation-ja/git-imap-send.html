@@ -749,7 +749,7 @@ git-imap-send(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git <code>imap-send</code></em> [<code>-v</code>] [<code>-q</code>] [<code>--</code>[<code>no-</code>]<code>curl</code>]</pre>
+<pre class="content"><em>git <code>imap-send</code></em> [<code>-v</code>] [<code>-q</code>] [<code>--</code>[<code>no-</code>]<code>curl</code>] [(<code>--folder</code>|<code>-f</code>) <em>&lt;folder&gt;</em>] <em>git <code>imap-send</code></em> <code>--list</code></pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -757,9 +757,12 @@ git-imap-send(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>このコマンドは、 <code>git</code> <code>format-patch</code> で生成されたmailboxをIMAPドラフトフォルダーにアップロードします。これにより、mailboxファイルを直接読み取ることができないメールクライアントを使用している場合と同じように、パッチを送信できます。このコマンドは、電子メールのフィールドが「From」、「Date」、「Subject」の順になっている一般的なmailboxでも機能します。</p></div>
+<div class="paragraph"><p>This command uploads a mailbox generated with <code>git</code> <code>format-patch</code> into an IMAP drafts folder. This allows patches to be sent as other email is when using mail clients that cannot read mailbox files directly. The command also works with any general mailbox in which emails have the fields <code>From</code>, <code>Date</code>, and <code>Subject</code> in that order.</p></div>
 <div class="paragraph"><p>一般的な使用法は以下のようになります:</p></div>
-<div class="paragraph"><p><code>git</code> <code>format-patch</code> <code>--signoff</code> <code>--stdout</code> <code>--attach</code> <code>origin</code> | <code>git</code> <code>imap-send</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch --signoff --stdout --attach origin | git imap-send</code></pre>
+</div></div>
 </div>
 </div>
 <div class="sect1">
@@ -789,6 +792,17 @@ git-imap-send(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
+<code>-f</code> <em>&lt;folder&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--folder=</code><em>&lt;folder&gt;</em>
+</dt>
+<dd>
+<p>
+        Specify the folder in which the emails have to saved. For example: <code>--folder=</code>[<code>Gmail</code>]<code>/Drafts</code> or <code>-f</code> <code>INBOX/Drafts</code>.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>--curl</code>
 </dt>
 <dd>
@@ -802,6 +816,14 @@ git-imap-send(1) Manual Page
 <dd>
 <p>
         libcurl を使用する代わりに、git独自のIMAPルーチンを使用してIMAPサーバーと通信します。Gitが NO_OPENSSL オプションを設定してビルドされた場合は無視されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--list</code>
+</dt>
+<dd>
+<p>
+        Run the IMAP LIST command to output a list of all the folders present.
 </p>
 </dd>
 </dl></div>
@@ -818,7 +840,7 @@ imap.folder
 </dt>
 <dd>
 <p>
-        メールをドロップするフォルダー。通常はドラフトフォルダーです。 例：「INBOX.Drafts」とか「INBOX/Drafts」とか「[Gmail]/Drafts」です。必須です。
+        The folder to drop the mails into, which is typically the Drafts folder. For example: <code>INBOX.Drafts</code>, <code>INBOX/Drafts</code> or [<code>Gmail</code>]<code>/Drafts</code>. The IMAP folder to interact with MUST be specified; the value of this configuration variable is used as the fallback default value when the <code>--folder</code> option is not given.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -882,10 +904,30 @@ imap.authMethod
 </dt>
 <dd>
 <p>
-        IMAP サーバーで認証するときの認証方式を指定します。 Git が NO_CURL オプションを使用してビルドされた場合、 または、 curl バージョンが 7.34.0 より古い場合、または git-imap-send を <code>--no-curl</code> オプションを指定して実行している場合、 サポートされるメソッドは <em>CRAM-MD5</em> のみです。 これが設定されていない場合、 <code>git</code> <code>imap-send</code> は基本的な IMAP プレーン・テキスト LOGIN コマンドを使用します。
+        Specify the authentication method for authenticating with the IMAP server. If Git was built with the NO_CURL option, or if your curl version is older than 7.34.0, or if you&#8217;re running git-imap-send with the <code>--no-curl</code> option, the only supported methods are <code>PLAIN</code>, <code>CRAM-MD5</code>, <code>OAUTHBEARER</code> and <code>XOAUTH2</code>. If this is not set then <code>git</code> <code>imap-send</code> uses the basic IMAP plaintext <code>LOGIN</code> command.
 </p>
 </dd>
 </dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_getting_a_list_of_available_folders">GETTING A LIST OF AVAILABLE FOLDERS</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In order to send an email to a specific folder, you need to know the correct name of intended folder in your mailbox. The names like "Junk", "Trash" etc. displayed by various email clients need not be the actual names of the folders stored in the mail server of your email provider.</p></div>
+<div class="paragraph"><p>In order to get the correct folder name to be used with <code>git</code> <code>imap-send</code>, you can run <code>git</code> <code>imap-send</code> <code>--list</code>. This will display a list of valid folder names. An example of such an output when run on a Gmail account is:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>* LIST (\HasNoChildren) "/" "INBOX"
+* LIST (\HasChildren \Noselect) "/" "[Gmail]"
+* LIST (\All \HasNoChildren) "/" "[Gmail]/All Mail"
+* LIST (\Drafts \HasNoChildren) "/" "[Gmail]/Drafts"
+* LIST (\HasNoChildren \Important) "/" "[Gmail]/Important"
+* LIST (\HasNoChildren \Sent) "/" "[Gmail]/Sent Mail"
+* LIST (\HasNoChildren \Junk) "/" "[Gmail]/Spam"
+* LIST (\Flagged \HasNoChildren) "/" "[Gmail]/Starred"
+* LIST (\HasNoChildren \Trash) "/" "[Gmail]/Trash"</code></pre>
+</div></div>
+<div class="paragraph"><p>Here, you can observe that the correct name for the "Junk" folder is [<code>Gmail</code>]<code>/Spam</code> and for the "Trash" folder is [<code>Gmail</code>]<code>/Trash</code>. Similar logic can be used to determine other folders as well.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -930,17 +972,18 @@ imap.authMethod
 <div class="listingblock">
 <div class="content">
 <pre><code>[imap]
-        folder = "[Gmail]/Drafts"
-        host = imaps://imap.gmail.com
-        user = user@gmail.com
-        port = 993</code></pre>
+    folder = "[Gmail]/Drafts"
+    host = imaps://imap.gmail.com
+    user = user@gmail.com
+    port = 993</code></pre>
 </div></div>
+<div class="paragraph"><p>Gmail does not allow using your regular password for <code>git</code> <code>imap-send</code>. If you have multi-factor authentication set up on your Gmail account, you can generate an app-specific password for use with <code>git</code> <code>imap-send</code>. Visit <a href="https://security.google.com/settings/security/apppasswords">https://security.google.com/settings/security/apppasswords</a> to create it. Alternatively, use OAuth2.0 authentication as described below.</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">"Folder doesn&#8217;t exist" というエラーが発生した場合は、代わりに <code>folder</code> <code>=</code> "[<code>Google</code> <code>Mail</code>]<code>/Drafts</code>" を使用する必要があります。</td>
+<td class="content">You might need to instead use: <code>folder</code> <code>=</code> "[<code>Google</code> <code>Mail</code>]<code>/Drafts</code>" if you get an error that the "Folder doesn&#8217;t exist". You can also run <code>git</code> <code>imap-send</code> <code>--list</code> to get a list of available folders.</td>
 </tr></table>
 </div>
 <div class="admonitionblock">
@@ -951,12 +994,34 @@ imap.authMethod
 <td class="content">Gmailアカウントが英語以外の言語に設定されている場合、 "Drafts" フォルダの名前がローカライズされます。</td>
 </tr></table>
 </div>
+<div class="paragraph"><p>If you want to use OAuth2.0 based authentication, you can specify <code>OAUTHBEARER</code> or <code>XOAUTH2</code> mechanism in your config. It is more secure than using app-specific passwords, and also does not enforce the need of having multi-factor authentication. You will have to use an OAuth2.0 access token in place of your password when using this authentication.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[imap]
+    folder = "[Gmail]/Drafts"
+    host = imaps://imap.gmail.com
+    user = user@gmail.com
+    port = 993
+    authmethod = OAUTHBEARER</code></pre>
+</div></div>
+<div class="paragraph"><p>Using Outlook&#8217;s IMAP interface:</p></div>
+<div class="paragraph"><p>Unlike Gmail, Outlook only supports OAuth2.0 based authentication. Also, it supports only <code>XOAUTH2</code> as the mechanism.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[imap]
+    folder = "Drafts"
+    host = imaps://outlook.office365.com
+    user = user@outlook.com
+    port = 993
+    authmethod = XOAUTH2</code></pre>
+</div></div>
 <div class="paragraph"><p>コミットを送信する準備ができたら、以下のコマンドを実行します:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>$ git format-patch --cover-letter -M --stdout origin/master | git imap-send</code></pre>
 </div></div>
 <div class="paragraph"><p>メールクライアントで行の折り返しを無効にしてください(GmailのWebインターフェイスは何があっても行を折り返すため、実際のIMAPクライアント(real IMAP client)を使用する必要があります)。</p></div>
+<div class="paragraph"><p>In case you are using OAuth2.0 authentication, it is easier to use credential helpers to generate tokens. Credential helpers suggested in <a href="git-send-email.html">git-send-email(1)</a> can be used for <code>git</code> <code>imap-send</code> as well.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -985,7 +1050,7 @@ Thunderbird のユーザーは下記Webページにアクセスして詳細を�
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-03-06 09:05:44 JST
+ 2025-11-13 13:43:55 JST
 </div>
 </div>
 </body>

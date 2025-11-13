@@ -1,0 +1,177 @@
+= Unit Testing
+
+現在のテスト環境では、 (エラー条件に対して期待どおりに動作し、 ユーザーのタスクやプロセスの種類を問わずデータ・フローが適切に機能することを確認する手法である)エンドツーエンド・テスト(end-to-end tests)を作成するために多くの労力を費やしており、 これらは単体テストで簡単にカバーできるものです(あるいは、 設定が難しくまれなエラー条件については単に省略しています)。 単体テストはコード・ベースの安定性を提供し、 隔離された環境でのデバッグを簡素化します。 現在の シェル/テストツール の補助セットアップではなく、 純粋なC言語で単体テストを書くことで、 テストのセットアップが簡素化され、 データの受け渡しが簡単になり(シェルの特有な処理が不要になる)、 テストごとのプロセス生成を避けることでテスト実行時間が短縮されます。
+
+我々は、 既存のテスト・スイートと共存する多数の単体テストがあれば、 Gitプロジェクトのコード品質が向上すると信じています。
+
+== Definitions
+
+このドキュメントの目的においては、 テスト・フレームワークとは、 単一の実行可能ファイル内でテスト・ケースの記述と実行をサポートするプロジェクトを指すものとします。 テスト・ハーネスとは、 複数の実行可能ファイル(それぞれが複数のテスト・ケースを含む場合がある)の実行を管理し、 その結果を集約するプロジェクトを指します。
+
+実際には、 これらの用語は厳密に定義されているわけではなく、 以下で議論する多くのプロジェクトは、 両方のカテゴリの機能を含んでいます。
+
+現時点では、 プロジェクトをそのフレームワークの機能のみに基づいて評価します。 (後述するように) 私たちは TAP 出力に依存しているため、 私たちは、 どのフレームワークでも、 後で選択するハーネスと連携できると仮定できます。
+
+
+== Summary
+
+私たちは Git プロジェクトに対してカスタム TAP フレームワークを実装することが最善の進むべき道だと考えています。 私たちは、 元々 https://lore.kernel.org/git/c902a166-98ce-afba-93f2-ea6027557176@gmail.com/[1] で提案されたフレームワークのバージョンを用いています。
+
+この決定の背後にある理論的根拠については、 下記 <<framework-selection,Framework Selection>> セクションを参照してください。
+
+
+== Choosing a test harness
+
+上流での議論では、 `prove` が多くの便利な機能を提供していることが時折指摘されていました。 例えば、 遅いテストを先にスケジュールしたり、 以前失敗したテストを再実行したりする機能などです。
+
+現時点では、 シェル・テストのテス・トハーネスとして `prove` の使用をすでにサポートしていますが、 **厳密には必須ではありません** 。 `t/Makefile` では、 シェル・テストを直接実行することも可能です(ただし、 並列実行が有効な場合は出力が混在します)。 より高度なハーネスとして `prove` を使いたい Git 開発者は、 `config.mak` に `DEFAULT_TEST_TARGET=prove` を設定することで利用できます。
+
+ユニット・テストについても同様のアプローチを採用します。 デフォルトでは、 テスト実行ファイルは `t/Makefile` から直接実行されますが、 `DEFAULT_UNIT_TEST_TARGET=prove` を設定することで `prove` を使用するように構成できます。
+
+
+[[framework-selection]]
+== Framework selection
+
+候補となるフレームワークをランク付けするために使用できるさまざまな機能があり、 それらの機能には異なる優先度があります:
+
+* **重要(critical)な機能**: 以下の機能がないフレームワークはおそらく検討対象外です
+** プロジェクトを 合法的に/簡単に 使用できますか？
+*** <<license,License>>
+*** <<vendorable-or-ubiquitous,Vendorable or ubiquitous>>
+*** <<maintainable-extensible,Maintainable / extensible>>
+*** <<major-platform-support,Major platform support>>
+** そのプロジェクトは私たちの最低限のニーズをサポートしていますか？
+*** <<tap-support,TAP support>>
+*** <<diagnostic-output,Diagnostic output>>
+*** <<runtime-skippable-tests,Runtime-skippable tests>>
+* あったら便利な機能:
+** <<parallel-execution,Parallel execution>>
+** <<mock-support,Mock support>>
+** <<signal-error-handling,Signal & error-handling>>
+* 同点決着の指標(tie-breaker stats)
+** <<project-kloc,Project KLOC>>
+** <<adoption,Adoption>>
+
+[[license]]
+=== License
+
+Git と関連するフレームワークを合法的に使用できる必要があります。 Git は **GPLv2 のみ** でライセンスされているため、 **LGPLv3、GPLv3、Apache 2.0** のプロジェクトは除外しなければなりません。
+
+[[vendorable-or-ubiquitous]]
+=== Vendorable or ubiquitous
+
+私たちは、 Git 開発者に、 ユニット・テストを実行するためだけの新しいツールをインストールさせることは避けたいと考えています。 候補となるフレームワークやテスト・ ハーネスは、 次のいずれかでなければなりません: vendorable (vendor in 可能;つまり、 そのソース・コードを Git のリポジトリに直接コピーして取り込め、 Git のコードには何の改変も必要ないものであること)、 または、 ubiquitous (何処にでも普遍的にある; ほとんどの開発者がすでにインストールしていると合理的に期待できるレベルのもの)。
+
+[[maintainable-extensible]]
+=== Maintainable / extensible
+
+既存のプロジェクトが私たちニーズに完全に合致する可能性は低いため、 選定するプロジェクトは積極的にメンテナンスされており、 変更を受け入れる姿勢がなければならない。 あるいは、 コードを我々のリポジトリにベンダリング(vendoring;訳注 vendorable なのを vendor すること)する場合、 Git 開発者が必要に応じて私たちのバージョンに変更を加えることに抵抗を感じない程度にシンプルでなければならない。
+
+下記の比較表において、 「True」は、 フレームワークがアクティブな開発者によってメンテナンスされており、 Git 開発者が変更を加えるのに十分シンプルであり、 プロジェクトが外部コントリビューションを受け入れる姿勢がある(またはベンダリング可能である)ことを意味する。 「Partial」は、 上記の条件のうち少なくとも 1 つが満たされていることを意味する。
+
+[[major-platform-support]]
+=== Major platform support
+
+少なくとも単体テスト(unit-testing)は Linux と MacOS と Windows で動作する必要があります。
+
+下記の比較表の「True」は、 3 つの主要なプラットフォームすべてで問題なく動作することを意味します。 「Partial」(部分的)とは、 1 つ以上のプラットフォームで問題が発生する可能性があるものの、 原則として引き続き使用できることを意味します。
+
+[[tap-support]]
+=== TAP support
+
+The https://testanything.org/[Test Anything Protocol] は、 テストがテスト・ハーネスと通信できるようにするテキスト・ベースのインターフェイスです。 これは、 Git の統合テスト・スイートですでに使用されています。 TAP 出力のサポートは、 将来のテスト・フレームワークにとって必須の機能です。
+
+下記の比較表で、 「True」は、 これがネイティブにサポートされていることを意味します。 「Partial」(部分的)とは、 TAP 出力がネイティブ出力の後処理によって生成される必要があることを意味します。
+
+「Partial」(部分的)サポートもないフレームワークは、 以降の評価対象になりません。
+
+[[diagnostic-output]]
+=== Diagnostic output
+
+テスト・ケースが失敗(fail)した場合、 フレームワークは、 開発者がソースコード内の該当するテスト・ケースを特定してデバッグできるように、 十分な診断出力(diagnostic)を生成しなければなりません。
+
+[[runtime-skippable-tests]]
+=== Runtime-skippable tests
+
+テスト作成者は、 実行時の状況に応じて特定のテスト・ケースをスキップしたい場合があるため、 フレームワークはこの機能をサポートする必要があります。
+
+[[parallel-execution]]
+=== Parallel execution
+
+理想的には、 多数のユニット・テスト・ケースを蓄積していくことになり、 それらはおそらく複数の実行可能ファイルに分割されるでしょう。 迅速な開発・テスト・デバッグ・サイクルを実現するためには、 これらのテストを並列に実行できるようにする必要があります。
+
+下記の比較表において、 「True」は 1 つのテスト実行可能ファイル内の個々のテスト・ケースを並列に実行できることを意味します。 実行可能ファイル単位の並列化は、 テスト・ハーネス側で対応可能であると仮定しています。
+
+[[mock-support]]
+=== Mock support
+
+ユニット・テスト作成者は、 テスト内で扱うのが不便なオブジェクト(例: ネットワーク・サービスとのやり取り)と相互作用するコードをテストしたい場合があります。 モックは、 テスト作成者がこれらのオブジェクトの偽の実装を提供できるようにすることで、 より便利なテストを可能にします。
+
+[[signal-error-handling]]
+=== Signal & error handling
+
+テスト・ケース自体にバグがある場合や、 実行中にシグナルによって中断された場合でも、 テスト・フレームワークは正常に(gracefully)失敗する必要があります。
+
+[[project-kloc]]
+=== Project KLOC
+
+プロジェクトの規模を、 https://dwheeler.com/sloccount/[sloccount] で測定したコード行数の千単位(1,000 の倍数に切り上げ)で表します。 同点の場合の決定要因として、 LOC が小さいプロジェクトを優先する可能性が高いです。
+
+[[adoption]]
+=== Adoption
+
+同点の場合の決定要因(tie-breaker)として、 より広く使われているプロジェクトを優先します。 この推定には、 GitHub/GitLab のスター数を指標として使用します。
+
+
+=== Comparison
+
+:true: [lime-background]#True#
+:false: [red-background]#False#
+:partial: [yellow-background]#Partial#
+
+:gpl: [lime-background]#GPL v2#
+:isc: [lime-background]#ISC#
+:mit: [lime-background]#MIT#
+:expat: [lime-background]#Expat#
+:lgpl: [lime-background]#LGPL v2.1#
+
+:custom-impl: https://lore.kernel.org/git/c902a166-98ce-afba-93f2-ea6027557176@gmail.com/[Custom Git impl.]
+:greatest: https://github.com/silentbicycle/greatest[Greatest]
+:criterion: https://github.com/Snaipe/Criterion[Criterion]
+:c-tap: https://github.com/rra/c-tap-harness/[C TAP]
+:check: https://libcheck.github.io/check/[Check]
+:clar: https://github.com/clar-test/clar[Clar]
+
+[format="csv", options="header", width="33%", subs="specialcharacters,attributes,quotes,macros"]
+|=====
+Framework,"<<license,License>>","<<vendorable-or-ubiquitous,Vendorable or ubiquitous>>","<<maintainable-extensible,Maintainable / extensible>>","<<major-platform-support,Major platform support>>","<<tap-support,TAP support>>","<<diagnostic-output,Diagnostic output>>","<<runtime--skippable-tests,Runtime- skippable tests>>","<<parallel-execution,Parallel execution>>","<<mock-support,Mock support>>","<<signal-error-handling,Signal & error handling>>","<<project-kloc,Project KLOC>>","<<adoption,Adoption>>"
+{custom-impl},{gpl},{true},{true},{true},{true},{true},{true},{false},{false},{false},1,0
+{greatest},{isc},{true},{partial},{true},{partial},{true},{true},{false},{false},{false},3,1400
+{criterion},{mit},{false},{partial},{true},{true},{true},{true},{true},{false},{true},19,1800
+{c-tap},{expat},{true},{partial},{partial},{true},{false},{true},{false},{false},{false},4,33
+{check},{lgpl},{false},{partial},{true},{true},{true},{false},{false},{false},{true},17,973
+{clar},{isc},{false},{partial},{true},{true},{true},{true},{false},{false},{true},1,192
+|=====
+
+=== Additional framework candidates
+
+提案されたいくつかのフレームワークが検討から除外されました:
+
+* 互換性のないライセンス:
+** https://github.com/zorgnax/libtap[libtap] (LGPL v3)
+** https://cmocka.org/[cmocka] (Apache 2.0)
+* ソース無し: https://www.kindahl.net/mytap/doc/index.html[MyTap]
+* TAP サポート無し:
+** https://nemequ.github.io/munit/[µnit]
+** https://github.com/google/cmockery[cmockery]
+** https://github.com/lpabon/cmockery2[cmockery2]
+** https://github.com/ThrowTheSwitch/Unity[Unity]
+** https://github.com/siu/minunit[minunit]
+** https://cunit.sourceforge.net/[CUnit]
+
+
+== Milestones
+
+* ライブラリのようなコードな便利なテストを追加
+* https://lore.kernel.org/git/20230502211454.1673000-1-calvinwan@google.com/[stdlib work] を統合する
+* 通常の「make test」ターゲットと並行して実行します

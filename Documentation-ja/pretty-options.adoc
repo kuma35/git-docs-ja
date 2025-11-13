@@ -1,0 +1,60 @@
+`--pretty[=<format>]`::
+`--format=<format>`::
+
+	Pretty-print the contents of the commit logs in a given format, where '<format>' can be one of `oneline`, `short`, `medium`, `full`, `fuller`, `reference`, `email`, `raw`, `format:<string>` and `tformat:<string>`. When _<format>_ is none of the above, and has `%<placeholder>` in it, it acts as if `--pretty=tformat:<format>` were given.
++
+See the "PRETTY FORMATS" section for some additional details for each format. When `=<format>` part is omitted, it defaults to `medium`.
++
+NOTE: you can specify the default pretty format in the repository configuration (see linkgit:git-config[1]).
+
+`--abbrev-commit`::
+	Instead of showing the full 40-byte hexadecimal commit object name, show a prefix that names the object uniquely. `--abbrev=<n>` (which also modifies diff output, if it is displayed) option can be used to specify the minimum length of the prefix.
++
+This should make `--pretty=oneline` a whole lot more readable for people using 80-column terminals.
+
+`--no-abbrev-commit`::
+	Show the full 40-byte hexadecimal commit object name. This negates `--abbrev-commit`, either explicit or implied by other options such as `--oneline`. It also overrides the `log.abbrevCommit` variable.
+
+`--oneline`::
+	This is a shorthand for `--pretty=oneline --abbrev-commit` used together.
+
+`--encoding=<encoding>`::
+	コミットオブジェクトは、ログメッセージに使用される文字エンコードをエンコードヘッダーに記録します。このオプションを使用して、ユーザーが好むエンコーディングでコミットログメッセージを再コーディングするようにコマンドに指示できます。配管以外のコマンドの場合、これはデフォルトでUTF-8になります。オブジェクトが `X` でエンコードされていると主張し、 `X` で出力している場合、オブジェクトをそのまま出力することに注意してください。これは、元のコミットの無効なシーケンスが出力にコピーされる可能性があることを意味します。 同様に、 iconv(3) がコミットの変換に失敗した場合、 元のオブジェクトをそのまま黙って出力します。
+
+`--expand-tabs=<n>`::
+`--expand-tabs`::
+`--no-expand-tabs`::
+	Perform a tab expansion (replace each tab with enough spaces to fill to the next display column that is a multiple of _<n>_) in the log message before showing it in the output. `--expand-tabs` is a short-hand for `--expand-tabs=8`, and `--no-expand-tabs` is a short-hand for `--expand-tabs=0`, which disables tab expansion.
++
+By default, tabs are expanded in pretty formats that indent the log message by 4 spaces (i.e. `medium`, which is the default, `full`, and `fuller`).
+
+ifndef::git-rev-list[]
+`--notes[=<ref>]`::
+	Show the notes (see linkgit:git-notes[1]) that annotate the commit, when showing the commit log message.
+ifndef::with-breaking-changes[]
+This is the default for `git log`, `git show` and `git whatchanged` commands when there is no `--pretty`, `--format`, or `--oneline` option given on the command line.
+endif::with-breaking-changes[]
+ifdef::with-breaking-changes[]
+This is the default for `git log` and `git show` commands when there is no `--pretty`, `--format`, or `--oneline` option given on the command line.
+endif::with-breaking-changes[]
++
+デフォルトでは、表示されるnotesは、 `core.notesRef` および `notes.displayRef` 変数(または対応する環境変数オーバーライド)にリストされているnote refからのものです。詳細については linkgit:git-config[1] を参照してください。
++
+オプションの <ref> 引数を使用して、refを使用して表示するnotesを検索します。 refは、 `refs/notes/` で始まる完全なrefnameを指定できます。 `notes/` で始まるか、 `refs/` で始まるか、それ以外で始まる場合、 `refs/notes/` が接頭辞として付けられ、refのフルネームを形成します。
++
+Multiple `--notes` options can be combined to control which notes are being displayed. Examples: "`--notes=foo`" will show only notes from `refs/notes/foo`; "`--notes=foo --notes`" will show both notes from "refs/notes/foo" and from the default notes ref(s).
+
+`--no-notes`::
+	Do not show notes. This negates the above `--notes` option, by resetting the list of notes refs from which notes are shown. Options are parsed in the order given on the command line, so e.g. "`--notes --notes=foo --no-notes --notes=bar`" will only show notes from `refs/notes/bar`.
+
+`--show-notes-by-default`::
+	特定のノートを表示するオプションが指定されていない限り、 デフォルトのノートを表示します。
+
+`--show-notes[=<ref>]`::
+`--standard-notes`::
+`--no-standard-notes`::
+	These options are deprecated. Use the above `--notes`/`--no-notes` options instead.
+endif::git-rev-list[]
+
+`--show-signature`::
+	署名を `gpg --verify` に渡して、 署名されたコミット・オブジェクトの有効性を確認し出力します。

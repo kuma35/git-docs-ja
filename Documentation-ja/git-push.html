@@ -762,11 +762,29 @@ git-push(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>ローカルの ref を使用してリモートの ref を更新し、 そして、 指定の ref を完成させるために必要なオブジェクトも送ります。</p></div>
+<div class="paragraph"><p>Updates one or more branches, tags, or other references in a remote repository from your local repository, and sends all necessary data that isn&#8217;t already on the remote.</p></div>
+<div class="paragraph"><p>The simplest way to push is <code>git</code> <code>push</code> <em>&lt;remote&gt;</em> <em>&lt;branch&gt;</em>. <code>git</code> <code>push</code> <code>origin</code> <code>main</code> will push the local <code>main</code> branch to the <code>main</code> branch on the remote named <code>origin</code>.</p></div>
+<div class="paragraph"><p>The <em>&lt;repository&gt;</em> argument defaults to the upstream for the current branch, or <code>origin</code> if there&#8217;s no configured upstream.</p></div>
+<div class="paragraph"><p>To decide which branches, tags, or other refs to push, Git uses (in order of precedence):</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+The <em>&lt;refspec&gt;</em> argument(s) (for example <code>main</code> in <code>git</code> <code>push</code> <code>origin</code> <code>main</code>) or the <code>--all</code>, <code>--mirror</code>, or <code>--tags</code> options
+</p>
+</li>
+<li>
+<p>
+The <code>remote.*.push</code> configuration for the repository being pushed to
+</p>
+</li>
+<li>
+<p>
+The <code>push.default</code> configuration. The default is <code>push.default=simple</code>, which will push to a branch with the same name as the current branch. See the <a href="#CONFIGURATION">CONFIGURATION</a> section below for more on <code>push.default</code>.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p><code>git</code> <code>push</code> may fail if you haven&#8217;t set an upstream for the current branch, depending on what <code>push.default</code> is set to. See the <a href="#UPSTREAM-BRANCHES">UPSTREAM BRANCHES</a> section below for more on how to set and use upstreams.</p></div>
 <div class="paragraph"><p>リポジトリに「フック」を設定することで、あなたがリポジトリにプッシュするたびに興味深いことが起こります。 <a href="git-receive-pack.html">git-receive-pack(1)</a> のドキュメントを参照してください。</p></div>
-<div class="paragraph"><p>コマンドラインで <em>&lt;repository&gt;</em> 引数を使用してプッシュする場所が指定されてい無い場合、現在のブランチの <code>branch.</code>*.remote 構成を参照して、プッシュする場所を決定します。 <code>branch.</code>*.remote 構成が無い場合、デフォルトは <code>origin</code> になります。</p></div>
-<div class="paragraph"><p>コマンドラインで <em>&lt;refspec&gt;</em>... 引数や <code>--all</code>, <code>--mirror</code>, <code>--tags</code> オプションを使って何をプッシュするか指定し無かった場合、コマンドは <code>remote.</code>*.push 構成を参照してデフォルトの <em>&lt;refspec&gt;</em> を探し、それで見つからなかった場合は <code>push.default</code> 構成に準拠して何をプッシュするか決定します(<code>push.default</code> の意味は <a href="git-config.html">git-config(1)</a> を参照ください)。</p></div>
-<div class="paragraph"><p>コマンドラインと構成のどちらもプッシュする対象を指定しない場合、デフォルトの振る舞いが使用されます。それは、 <code>push.default</code> の <code>simple</code> 値に対応します。 現在のブランチは対応する上流ブランチにプッシュされますが、安全対策として、上流ブランチがローカルブランチと同じ名前でない場合はプッシュが中断(abort)されます。</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -786,42 +804,65 @@ git-push(1) Manual Page
 </dt>
 <dd>
 <p>
-        どの宛先refを、 どのソースオブジェクトで更新するかを指定します。 &lt;refspec&gt; パラメータの形式は、 オプションのプラス記号 <code>+</code> に続いて、 ソースオブジェクト &lt;src&gt; 、 <code>:</code> 、宛先ref &lt;dst&gt; の順です。
+        Specify what destination ref to update with what source object.
 </p>
-<div class="paragraph"><p>&lt;src&gt; は、 通常、 あなたがプッシュしたいブランチの名前ですが、 <code>master~4</code> とか <code>HEAD</code> (<a href="gitrevisions.html">gitrevisions(7)</a> 参照)などの任意の「SHA-1表現」にすることもできます。</p></div>
-<div class="paragraph"><p>&lt;dst&gt;は、このプッシュでリモート側のどのrefが更新されるかを指定します。 ここでは任意の式は使用できず、 実際の ref 名を指定する必要があります。 <code>git</code> <code>push</code> [<em>&lt;repository&gt;</em>] に <em>&lt;refspec&gt;</em> 引数を指定せず、 <code>remote.</code><em>&lt;repository&gt;</em><code>.push</code> 構成変数で <em>&lt;src&gt;</em> を指定して宛先 ref を更新する場合、 <code>:</code><em>&lt;dst&gt;</em> の部分を省略することができるようになりました(このようなプッシュは、コマンドラインで <em>&lt;refspec&gt;</em> を指定しなくても、 <em>&lt;src&gt;</em> が通常更新する ref を更新することになります)。 それ以外の場合、 <code>:</code><em>&lt;dst&gt;</em> がないということは、<em>&lt;src&gt;</em> と同一の ref を更新することを意味します。</p></div>
-<div class="paragraph"><p>&lt;dst&gt; が <code>refs/</code>(例: <code>refs/heads/master</code>)で始まらない場合、プッシュされる &lt;src&gt; の種類と、 &lt;dst&gt; が曖昧なのかどうかを元に、 それが 宛先 &lt;repository&gt; の <code>refs/</code>* 内のどこに属するか推測しようと試みます。</p></div>
-<div class="openblock">
-<div class="content">
+<div class="paragraph"><p>The format for a refspec is [+]&lt;src&gt;[:&lt;dst&gt;], for example <code>main</code>, <code>main:other</code>, or <code>HEAD^:refs/heads/main</code>.</p></div>
+<div class="paragraph"><p>The <em>&lt;src&gt;</em> is often the name of the local branch to push, but it can be any arbitrary "SHA-1 expression" (see <a href="gitrevisions.html">gitrevisions(7)</a>).</p></div>
+<div class="paragraph"><p>The <em>&lt;dst&gt;</em> determines what ref to update on the remote side. It must be the name of a branch, tag, or other ref, not an arbitrary expression.</p></div>
+<div class="paragraph"><p>The <code>+</code> is optional and does the same thing as <code>--force</code>.</p></div>
+<div class="paragraph"><p>You can write a refspec using the fully expanded form (for example <code>refs/heads/main:refs/heads/main</code>) which specifies the exact source and destination, or with a shorter form (for example <code>main</code> or <code>main:other</code>). Here are the rules for how refspecs are expanded, as well as various other special refspec forms:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-&lt;dst&gt; が &lt;repository&gt; リモートのrefを明確に参照している場合は、そのrefにプッシュします。
+<em>&lt;src&gt;</em> without a <code>:</code><em>&lt;dst&gt;</em> means to update the same ref as the <em>&lt;src&gt;</em>, unless the <code>remote.</code><em>&lt;repository&gt;</em><code>.push</code> configuration specifies a different &lt;dst&gt;. For example, if <code>main</code> is a branch, then the refspec <code>main</code> expands to <code>main:refs/heads/main</code>.
 </p>
 </li>
 <li>
 <p>
-&lt;src&gt;が <code>refs/heads/</code> または <code>refs/tags/</code> で始まるrefに解決される場合は、その解決されたrefを &lt;dst&gt; の前に追加します。
+If <em>&lt;dst&gt;</em> unambiguously refers to a ref on the &lt;repository&gt; remote, then expand it to that ref. For example, if <code>v1.0</code> is a tag on the remote, then <code>HEAD:v1.0</code> expands to <code>HEAD:refs/tags/v1.0</code>.
 </p>
 </li>
 <li>
 <p>
-将来、他のあいまいさの解決策が追加される可能性がありますが、今のところ、他の場合では、試行した内容を示すエラー出力し、そして <code>advice.pushUnqualifiedRefname</code> 構成に応じて、あなたがプッシュしたい <code>refs/</code> 名前空間を提案します。
+If <em>&lt;src&gt;</em> resolves to a ref starting with <code>refs/heads/</code> or <code>refs/tags/</code>, then prepend that to &lt;dst&gt;. For example, if <code>main</code> is a branch, then <code>main:other</code> expands to <code>main:refs/heads/other</code>
+</p>
+</li>
+<li>
+<p>
+特別なrefspec <code>:</code> (または非早送り更新を許可する場合は <code>+:</code>)は、Gitに、「一致する」ブランチをプッシュするように指示します。 ローカル側に存在するすべてのブランチについて、リモート側同じ名前のブランチが既に存在する場合、 リモート側が更新されます。
+</p>
+</li>
+<li>
+<p>
+&lt;src&gt; may contain a * to indicate a simple pattern match. This works like a glob that matches any ref matching the pattern. There must be only one * in both the <em>&lt;src&gt;</em> and <em>&lt;dst&gt;</em>. It will map refs to the destination by replacing the * with the contents matched from the source. For example, <code>refs/heads/*:refs/heads/*</code> will push all branches.
+</p>
+</li>
+<li>
+<p>
+A refspec starting with <code>^</code> is a negative refspec. This specifies refs to exclude. A ref will be considered to match if it matches at least one positive refspec, and does not match any negative refspec. Negative refspecs can be pattern refspecs. They must only contain a <em>&lt;src&gt;</em>. Fully spelled out hex object names are also not supported. For example, <code>git</code> <code>push</code> <code>origin</code> 'refs/heads/*' '^refs/heads/dev-*' will push all branches except for those starting with <code>dev-</code>
+</p>
+</li>
+<li>
+<p>
+If <em>&lt;src&gt;</em> is empty, it deletes the <em>&lt;dst&gt;</em> ref from the remote repository. For example, <code>git</code> <code>push</code> <code>origin</code> <code>:dev</code> will delete the <code>dev</code> branch.
+</p>
+</li>
+<li>
+<p>
+<code>tag</code> <em>&lt;tag&gt;</em> expands to <code>refs/tags/</code><em>&lt;tag&gt;</em><code>:refs/tags/</code><em>&lt;tag&gt;</em>.
+        This is technically a special syntax for <code>git</code> <code>push</code> and not a refspec, since in <code>git</code> <code>push</code> <code>origin</code> <code>tag</code> <code>v1.0</code> the arguments <code>tag</code> and <code>v1.0</code> are separate.
+</p>
+</li>
+<li>
+<p>
+If the refspec can&#8217;t be expanded unambiguously, error out with an error indicating what was tried, and depending on the <code>advice.pushUnqualifiedRefname</code> configuration (see <a href="git-config.html">git-config(1)</a>) suggest what refs/ namespace you may have wanted to push to.
 </p>
 </li>
 </ul></div>
-</div></div>
-<div class="paragraph"><p>&lt;src&gt;によって参照されるオブジェクトは、リモート側の&lt;dst&gt;参照を更新するために使用されます。 これが許可されるかどうかは、以下で詳細に説明するように、 <code>refs/</code>* のどこに&lt;dst&gt;参照が存在するかによって異なります。 以下のこれらのセクションでは、「更新」(update)とは、削除以外の変更を意味します。</p></div>
-<div class="paragraph"><p><code>refs/heads/</code>* 名前空間はcommitオブジェクトのみを受け入れ、早送り(fast-forward)できる場合にのみ更新します。</p></div>
-<div class="paragraph"><p><code>refs/tags/</code>* 名前空間はあらゆる種類のオブジェクト(コミットやツリーやブロブにタグ付け可能)を受け入れますが、 それらへの更新は全て拒否(reject)されます。</p></div>
-<div class="paragraph"><p><code>refs/</code>{tags,heads}/* 以外の名前空間に任意のタイプのオブジェクトをプッシュすることができます。 タグとコミットの場合、更新が許可されるかどうかの判断においては、これらは <code>refs/heads/</code>* 内のコミットであるかのように扱われます。</p></div>
-<div class="paragraph"><p>つまり、 <code>refs/</code>{tags,heads}/* 以外のコミットやタグの早送り(fast-forward)が許可されています。 これは、 早送りされるものがコミットではなく、 既存のタグが指すコミットを置き換える新しいコミット(そのコミットが最後のタグまたはコミットの早送りである場合)を指すタグ・オブジェクトである場合でも可能です。 また、タグを完全に別のタグに置き換えることも、 同一コミットを指している限り許可されます。 さらに、 剥かれたタグ(peeled tag)のプッシュ(既存のタグ・オブジェクトが指すコミットをプッシュする、 または既存のコミットが指す新しいタグ・オブジェクトをプッシュ)も許可されています。</p></div>
-<div class="paragraph"><p><code>refs/</code>{tags,heads}/* の外側にあるツリーオブジェクトとブロブオブジェクトは、 <code>refs/tags/</code>* の内側にある場合と同一の扱いであり、更新は拒否されます。</p></div>
-<div class="paragraph"><p>更新が許可されていないものに関する上記のすべてのルールは、オプションの先頭の <code>+</code> をrefspecに追加する(または <code>--force</code> コマンドラインオプションを使用する)ことでオーバーライドできます。 これに対する唯一の例外は、 <code>refs/heads/</code>* 名前空間が非コミットオブジェクトを受け入れるように強制することはないということです。 フックと構成は、これらのルールをオーバーライドまたは修正することもできます。たとえば、 <a href="git-config.html">git-config(1)</a> の <code>receive.denyNonFastForwards</code> と、 <a href="githooks.html">githooks(5)</a> の <code>pre-receive</code> や <code>update</code> を参照してください。</p></div>
-<div class="paragraph"><p>空の &lt;src&gt; をプッシュすると、 リモート・リポジトリーから &lt;dst&gt; ref を削除できます。 削除は refspec の先頭に <code>+</code> (または <code>--force</code>)がなくても常に受け入れられます。 ただし、設定やフックによって禁止されている場合は例外です。 詳細は <a href="git-config.html">git-config(1)</a> の <code>receive.denyDeletes</code> と、 <a href="githooks.html">githooks(5)</a> の <code>pre-receive</code> や <code>update</code> を参照してください。</p></div>
-<div class="paragraph"><p>特別なrefspec <code>:</code> (または非早送り更新を許可する場合は <code>+:</code>)は、Gitに、「一致する」ブランチをプッシュするように指示します。 ローカル側に存在するすべてのブランチについて、リモート側同じ名前のブランチが既に存在する場合、 リモート側が更新されます。</p></div>
-<div class="paragraph"><p><code>tag</code> <em>&lt;tag&gt;</em> は、 <code>refs/tags/</code><em>&lt;tag&gt;</em><code>:refs/tags/</code><em>&lt;tag&gt;</em> と同じ意味です。</p></div>
 </dd>
+</dl></div>
+<div class="paragraph"><p>Not all updates are allowed: see PUSH RULES below for the details.</p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <code>--all</code>
 </dt>
@@ -838,7 +879,7 @@ git-push(1) Manual Page
 </dt>
 <dd>
 <p>
-        ローカルに対応するものがないリモートブランチを削除します。 たとえば、同じ名前のローカルブランチがもう存在しない場合、リモートブランチ <code>tmp</code> は削除されます。 これは refspecs も尊重し、 <code>git</code> <code>push</code> <code>--prune</code> <code>remote</code> <code>refs/heads/</code>*:refs/tmp/* は、リモートの <code>refs/tmp/foo</code> が <code>refs/heads/foo</code> が存在しない場合に削除されることを確認するものです。
+        ローカルに対応するものがないリモートブランチを削除します。 たとえば、同じ名前のローカルブランチがもう存在しない場合、リモートブランチ <code>tmp</code> は削除されます。 これは refspecs も尊重し、 <code>git</code> <code>push</code> <code>--prune</code> <code>remote</code> <code>refs/heads/*:refs/tmp/*</code> は、リモートの <code>refs/tmp/foo</code> が <code>refs/heads/foo</code> が存在しない場合に削除されることを確認するものです。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -896,7 +937,10 @@ git-push(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>signed</code>
+<code>--signed</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-signed</code>
 </dt>
 <dt class="hdlist1">
 <code>--signed=</code>(<code>true</code>|<code>false</code>|<code>if-asked</code>)
@@ -907,7 +951,10 @@ git-push(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>atomic</code>
+<code>--atomic</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-atomic</code>
 </dt>
 <dd>
 <p>
@@ -937,7 +984,10 @@ git-push(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>force-with-lease</code>
+<code>--force-with-lease</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-force-with-lease</code>
 </dt>
 <dt class="hdlist1">
 <code>--force-with-lease=</code><em>&lt;refname&gt;</em>
@@ -989,13 +1039,16 @@ git push --force-with-lease=master:base master:master</code></pre>
 </dt>
 <dd>
 <p>
-        通常、コマンドは、上書きに使用されたローカルrefの祖先ではないリモートrefの更新を拒否します。 また、 <code>--force-with-lease</code> オプションを使用すると、コマンドは、現在(current)値が期待(expect)値と一致しないリモートrefの更新を拒否します。
+        Usually, <code>git</code> <code>push</code> will refuse to update a branch that is not an ancestor of the commit being pushed.
 </p>
-<div class="paragraph"><p>このフラグはこれらのチェックを無効にし、リモートリポジトリがコミットを失う原因となる可能性があります。 注意して使用してください。</p></div>
-<div class="paragraph"><p>注意: <code>--force</code> は、プッシュされるすべてのrefに適用されることに注意してください。 したがって、 <code>push.default</code> を <code>matching</code> に設定したり、 <code>remote.</code>*.push で構成された複数のプッシュ先で使用すると、現在のブランチ以外のref(リモートの対応物の背後にあるローカル参照を含む)が上書きされる可能性があります。 1つのブランチのみにプッシュを強制するには、 refspecの前に <code>+</code> を使用してプッシュします(例: <code>git</code> <code>push</code> <code>origin</code> <code>+master</code> を使用して、 <code>master</code> ブランチにプッシュを強制します)。 詳細については、上記「&lt;refspec&gt;&#8230;」セクションを参照してください。</p></div>
+<div class="paragraph"><p>This flag disables that check, the other safety checks in PUSH RULES below, and the checks in --force-with-lease. It can cause the remote repository to lose commits; use it with care.</p></div>
+<div class="paragraph"><p>注意: <code>--force</code> は、プッシュされるすべてのrefに適用されることに注意してください。 したがって、 <code>push.default</code> を <code>matching</code> に設定したり、 <code>remote.*.push</code> で構成された複数のプッシュ先で使用すると、現在のブランチ以外のref(リモートの対応物の背後にあるローカル参照を含む)が上書きされる可能性があります。 1つのブランチのみにプッシュを強制するには、 refspecの前に <code>+</code> を使用してプッシュします(例: <code>git</code> <code>push</code> <code>origin</code> <code>+master</code> を使用して、 <code>master</code> ブランチにプッシュを強制します)。 詳細については、上記「&lt;refspec&gt;&#8230;」セクションを参照してください。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>force-if-includes</code>
+<code>--force-if-includes</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-force-if-includes</code>
 </dt>
 <dd>
 <p>
@@ -1025,7 +1078,10 @@ git push --force-with-lease=master:base master:master</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>thin</code>
+<code>--thin</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-thin</code>
 </dt>
 <dd>
 <p>
@@ -1075,7 +1131,10 @@ git push --force-with-lease=master:base master:master</code></pre>
 <div class="paragraph"><p><code>on-demand</code> または <code>only</code> を使用する場合にサブモジュールに <code>push.recurseSubmodules=</code>{on-demand,only} または `submodule.recurse ` 構成がある場合、さらに再帰が発生します。この場合、 "only" が "on-demand" として扱われます。</p></div>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>verify</code>
+<code>--verify</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-verify</code>
 </dt>
 <dd>
 <p>
@@ -1285,6 +1344,62 @@ Git構成ファイル(configuration file)内のリモート(remote)として、 
 </div>
 </div>
 <div class="sect1">
+<h2 id="UPSTREAM-BRANCHES">UPSTREAM BRANCHES</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Branches in Git can optionally have an upstream remote branch. Git defaults to using the upstream branch for remote operations, for example:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+It&#8217;s the default for <code>git</code> <code>pull</code> or <code>git</code> <code>fetch</code> with no arguments.
+</p>
+</li>
+<li>
+<p>
+It&#8217;s the default for <code>git</code> <code>push</code> with no arguments, with some exceptions. For example, you can use the <code>branch.</code><em>&lt;name&gt;</em><code>.pushRemote</code> option to push to a different remote than you pull from, and by default with <code>push.default=simple</code> the upstream branch you configure must have the same name.
+</p>
+</li>
+<li>
+<p>
+Various commands, including <code>git</code> <code>checkout</code> and <code>git</code> <code>status</code>, will show you how many commits have been added to your current branch and the upstream since you forked from it, for example "Your branch and <em>origin/main</em> have diverged, and have 2 and 3 different commits each respectively".
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>The upstream is stored in <code>.git/config</code>, in the "remote" and "merge" fields. For example, if <code>main</code>'s upstream is <code>origin/main</code>:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[branch "main"]
+   remote = origin
+   merge = refs/heads/main</code></pre>
+</div></div>
+<div class="paragraph"><p>You can set an upstream branch explicitly with <code>git</code> <code>push</code> <code>--set-upstream</code> <em>&lt;remote&gt;</em> <em>&lt;branch&gt;</em> but Git will often automatically set the upstream for you, for example:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+When you clone a repository, Git will automatically set the upstream for the default branch.
+</p>
+</li>
+<li>
+<p>
+If you have the <code>push.autoSetupRemote</code> configuration option set, <code>git</code> <code>push</code> will automatically set the upstream the first time you push a branch.
+</p>
+</li>
+<li>
+<p>
+Checking out a remote-tracking branch with <code>git</code> <code>checkout</code> <em>&lt;branch&gt;</em> will automatically create a local branch with that name and set the upstream to the remote branch.
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Upstream branches are sometimes referred to as "tracking information", as in "set the branch&#8217;s tracking information".</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_output">OUTPUT</h2>
 <div class="sectionbody">
 <div class="paragraph"><p><code>git</code> <code>push</code> の出力は、使用する転送方法によって異なります。 このセクションでは、Gitプロトコルで(ローカルまたはssh経由で)プッシュするときの出力について説明します。</p></div>
@@ -1333,7 +1448,7 @@ refの削除に成功した
 </p>
 </dd>
 <dt class="hdlist1">
-*
+<code>*</code>
 </dt>
 <dd>
 <p>
@@ -1421,6 +1536,44 @@ reason
 </p>
 </dd>
 </dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_push_rules">PUSH RULES</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>As a safety feature, the <code>git</code> <code>push</code> command only allows certain kinds of updates to prevent you from accidentally losing data on the remote.</p></div>
+<div class="paragraph"><p>Because branches and tags are intended to be used differently, the safety rules for pushing to a branch are different from the rules for pushing to a tag. In the following rules "update" means any modifications except deletions and creations. Deletions and creations are always allowed, except when forbidden by configuration or hooks.</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+If the push destination is a <strong>branch</strong> (<code>refs/heads/*</code>): only fast-forward updates are allowed, which means the destination must be an ancestor of the source commit. The source must be a commit.
+</p>
+</li>
+<li>
+<p>
+If the push destination is a <strong>tag</strong> (<code>refs/tags/*</code>): all updates will be rejected. The source can be any object.
+</p>
+</li>
+<li>
+<p>
+If the push destination is not a branch or tag:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+If the source is a tree or blob object, any updates will be rejected
+</p>
+</li>
+<li>
+<p>
+If the source is a tag or commit object, any fast-forward update is allowed, even in cases where what&#8217;s being fast-forwarded is not a commit, but a tag object which happens to point to a new commit which is a fast-forward of the commit the last tag (or commit) it&#8217;s replacing. Replacing a tag with an entirely different tag is also allowed, if it points to the same commit, as well as pushing a peeled tag, i.e. pushing the commit that existing tag object points to, or a new tag object which an existing commit points to.
+</p>
+</li>
+</ul></div>
+</li>
+</ol></div>
+<div class="paragraph"><p>You can override these rules by passing <code>--force</code> or by adding the optional leading <code>+</code> to a refspec. The only exceptions are that no amount of forcing will make a branch accept a non-commit object, and forcing won&#8217;t make the remote repository accept a push that it&#8217;s configured to deny.</p></div>
+<div class="paragraph"><p>Hooks and configuration can also override or amend these rules, see e.g. <code>receive.denyNonFastForwards</code> and <code>receive.denyDeletes</code> in <a href="git-config.html">git-config(1)</a> and <code>pre-receive</code> and <code>update</code> in <a href="githooks.html">githooks(5)</a>.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -1585,7 +1738,7 @@ reason
 </div>
 </div>
 <div class="sect1">
-<h2 id="_configuration">CONFIGURATION</h2>
+<h2 id="CONFIGURATION">CONFIGURATION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>このセクションの以下のすべては、 <a href="git-config.html">git-config(1)</a> ドキュメントの抜粋です。 内容は <a href="git-config.html">git-config(1)</a> ドキュメント にあるものと同一です:</p></div>
 <div class="dlist"><dl>
@@ -1732,7 +1885,7 @@ push.useBitmaps
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-06-14 06:16:40 JST
+ 2025-11-13 13:44:00 JST
 </div>
 </div>
 </body>

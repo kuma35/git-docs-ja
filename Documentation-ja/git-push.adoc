@@ -1,0 +1,415 @@
+git-push(1)
+===========
+
+NAME
+----
+git-push - 関連するオブジェクトとともにリモートrefを更新します
+
+
+SYNOPSIS
+--------
+[synopsis]
+'git push' [--all | --branches | --mirror | --tags] [--follow-tags] [--atomic] [-n | --dry-run] [--receive-pack=<git-receive-pack>]
+	   [--repo=<repository>] [-f | --force] [-d | --delete] [--prune] [-q | --quiet] [-v | --verbose]
+	   [-u | --set-upstream] [-o <string> | --push-option=<string>]
+	   [--[no-]signed|--signed=(true|false|if-asked)]
+	   [--force-with-lease[=<refname>[:<expect>]] [--force-if-includes]]
+	   [--no-verify] [<repository> [<refspec>...]]
+
+DESCRIPTION
+-----------
+
+Updates one or more branches, tags, or other references in a remote repository from your local repository, and sends all necessary data that isn't already on the remote.
+
+The simplest way to push is `git push <remote> <branch>`. `git push origin main` will push the local `main` branch to the `main` branch on the remote named `origin`.
+
+The `<repository>` argument defaults to the upstream for the current branch, or `origin` if there's no configured upstream.
+
+To decide which branches, tags, or other refs to push, Git uses (in order of precedence):
+
+1. The `<refspec>` argument(s) (for example `main` in `git push origin main`) or the `--all`, `--mirror`, or `--tags` options
+2. The `remote.*.push` configuration for the repository being pushed to
+3. The `push.default` configuration. The default is `push.default=simple`, which will push to a branch with the same name as the current branch. See the <<CONFIGURATION,CONFIGURATION>> section below for more on `push.default`.
+
+`git push` may fail if you haven't set an upstream for the current branch, depending on what `push.default` is set to. See the <<UPSTREAM-BRANCHES,UPSTREAM BRANCHES>> section below for more on how to set and use upstreams.
+
+リポジトリに「フック」を設定することで、あなたがリポジトリにプッシュするたびに興味深いことが起こります。 linkgit:git-receive-pack[1] のドキュメントを参照してください。
+
+
+OPTIONS[[OPTIONS]]
+------------------
+<repository>::
+	プッシュ操作の宛先となる「リモートリポジトリ」(The \"remote\" repository)です。 このパラメーターは、URL(下記 <<URLS,GIT URLS>> セクション参照)、 または、リモートの名前(下記<<REMOTES,REMOTES>> セクション 参照)のどちらかです。
+
+<refspec>...::
+	Specify what destination ref to update with what source object.
++
+The format for a refspec is [+]<src>[:<dst>], for example `main`, `main:other`, or `HEAD^:refs/heads/main`.
++
+The `<src>` is often the name of the local branch to push, but it can be any arbitrary "SHA-1 expression" (see linkgit:gitrevisions[7]).
++
+The `<dst>` determines what ref to update on the remote side. It must be the name of a branch, tag, or other ref, not an arbitrary expression.
++
+The `+` is optional and does the same thing as `--force`.
++
+You can write a refspec using the fully expanded form (for example `refs/heads/main:refs/heads/main`) which specifies the exact source and destination, or with a shorter form (for example `main` or `main:other`). Here are the rules for how refspecs are expanded, as well as various other special refspec forms:
++
+ *  `<src>` without a `:<dst>` means to update the same ref as the `<src>`, unless the `remote.<repository>.push` configuration specifies a different <dst>. For example, if `main` is a branch, then the refspec `main` expands to `main:refs/heads/main`.
+ *  If `<dst>` unambiguously refers to a ref on the <repository> remote, then expand it to that ref. For example, if `v1.0` is a tag on the remote, then `HEAD:v1.0` expands to `HEAD:refs/tags/v1.0`.
+ *  If `<src>` resolves to a ref starting with `refs/heads/` or `refs/tags/`, then prepend that to <dst>. For example, if `main` is a branch, then `main:other` expands to `main:refs/heads/other`
+ *  特別なrefspec `:` (または非早送り更新を許可する場合は `+:`)は、Gitに、「一致する」ブランチをプッシュするように指示します。 ローカル側に存在するすべてのブランチについて、リモート側同じ名前のブランチが既に存在する場合、 リモート側が更新されます。
+ *  <src> may contain a * to indicate a simple pattern match. This works like a glob that matches any ref matching the pattern. There must be only one * in both the `<src>` and `<dst>`. It will map refs to the destination by replacing the * with the contents matched from the source. For example, `refs/heads/*:refs/heads/*` will push all branches.
+ *  A refspec starting with `^` is a negative refspec. This specifies refs to exclude. A ref will be considered to match if it matches at least one positive refspec, and does not match any negative refspec. Negative refspecs can be pattern refspecs. They must only contain a `<src>`. Fully spelled out hex object names are also not supported. For example, `git push origin 'refs/heads/*' '^refs/heads/dev-*'` will push all branches except for those starting with `dev-`
+ *  If `<src>` is empty, it deletes the `<dst>` ref from the remote repository. For example, `git push origin :dev` will delete the `dev` branch.
+ *  `tag <tag>` expands to `refs/tags/<tag>:refs/tags/<tag>`.
+	This is technically a special syntax for `git push` and not a refspec, since in `git push origin tag v1.0` the arguments `tag` and `v1.0` are separate.
+ *  If the refspec can't be expanded unambiguously, error out with an error indicating what was tried, and depending on the `advice.pushUnqualifiedRefname` configuration (see linkgit:git-config[1]) suggest what refs/ namespace you may have wanted to push to.
+
+Not all updates are allowed: see PUSH RULES below for the details.
+
+`--all`::
+`--branches`::
+	すべてのブランチ(つまり、 `refs/heads/` の下のrefs)をプッシュします。 他の<refspec>と一緒に使用することはできません。
+
+`--prune`::
+	ローカルに対応するものがないリモートブランチを削除します。 たとえば、同じ名前のローカルブランチがもう存在しない場合、リモートブランチ `tmp` は削除されます。 これは refspecs も尊重し、 `git push --prune remote refs/heads/*:refs/tmp/*` は、リモートの `refs/tmp/foo` が `refs/heads/foo` が存在しない場合に削除されることを確認するものです。
+
+`--mirror`::
+	プッシュする各refに名前を付ける代わりに、 `refs/` の下のすべての参照(`refs/heads/` と `refs/remotes/` と `refs/tags/` を含むがこれらに限定されない)がリモート・リポジトリーへミラーリングされるように指定します。 新しく作成されたローカルrefはリモート側へプッシュされ、 ローカルで更新されたrefはリモート側で強制的に更新され、 削除されたrefはリモート側から削除されます。 これは、構成オプション `remote.<remote>.mirror` が設定されている場合のデフォルトです。
+
+`-n`::
+`--dry-run`::
+	実際に更新を送信する以外はすべて行います。
+
+`--porcelain`::
+	機械可読出力を生成します。 各refの出力ステータス行はタブで区切られ、stderrではなくstdoutに送信されます。 refの完全な記号名が表示されます。
+
+`-d`::
+`--delete`::
+	リストされているすべてのrefがリモート・リポジトリーから削除されます。 これは、すべてのrefの前にコロン(`:`)を付けるのと同一です。
+
+`--tags`::
+	コマンドラインに明示的にリストされているrefspecsに加えて、 `refs/tags` の下にあるすべてのrefがプッシュされます。
+
+`--follow-tags`::
+	このオプションがなければプッシュされるであろうすべてのrefをプッシュし、さらに `refs/tags` にある、リモートからは見つからないがプッシュされるrefから到達可能なコミットっぽい何かを指す注釈付きタグをプッシュします。 これは、設定変数 `push.followTags` で指定することもできます。 詳しくは linkgit:git-config[1] にある `push.followTags` を参照してください。
+
+`--signed`::
+`--no-signed`::
+`--signed=(true|false|if-asked)`::
+	プッシュ要求をGPG署名して、受信側のrefを更新し、フックでチェックしたり、ログに記録したりできるようにします。 `false` または `--no-signed` の場合、署名は試行されません。 `true` または `--signed` の場合、サーバーが署名付きプッシュをサポートしていないと、プッシュは失敗します。 `if-asked` に設定されている場合、サーバーが署名されたプッシュをサポートしている場合にのみ署名します。 `gpg --sign` の実際の呼び出しが失敗した場合も、プッシュは失敗します。 受信側の詳細については、 linkgit:git-receive-pack[1] を参照してください。
+
+`--atomic`::
+`--no-atomic`::
+	可能な場合は、リモート側でアトミック取引(atomic transaction)を使用します。 すべてのrefが更新されるか、エラーが発生した場合、refは更新されません。 サーバーがアトミックプッシュをサポートしていない場合、プッシュは失敗します。
+
+`-o <option>`::
+`--push-option=<option>`::
+	指定の文字列をサーバーに送信します。サーバーは、それらを受信前(pre-receive)フックと受信後(post-receive)フックに渡します。 指定の文字列には、NUL文字またはLF文字を含めることはできません。 複数の `--push-option=<option>` が指定されている場合、それらはすべてコマンドラインにリストされている順序で相手側に送信されます。 コマンドラインで `--push-option=<option>` が指定されていない場合は、代わりに構成変数 `push.pushOption` の値が使用されます。
+
+`--receive-pack=<git-receive-pack>`::
+`--exec=<git-receive-pack>`::
+	リモート側の `git-receive-pack` プログラムへのパス(path)。 sshを介してリモート・リポジトリーにプッシュするときや、デフォルトの $PATH のディレクトリに当該プログラムが無いときに便利です。
+
+`--force-with-lease`::
+`--no-force-with-lease`::
+`--force-with-lease=<refname>`::
+`--force-with-lease=<refname>:<expect>`::
+	通常、「git push」は、上書きに使用されたローカルrefの祖先ではないリモートrefの更新を拒絶(refuse)します。
++
+リモートrefの現在の値(current value)が期待の値(expected value)である場合、このオプションはこの制限をオーバーライドします。 それ以外の場合、「git push」は失敗します。
++
+あなたが、すでに公開しているものをリベースする必要があると想像してください。 最初に公開した履歴をリベースされた履歴に置き換えるには、「早送りしなければならない」ルールをバイパスする必要があります。 あなたのリベース作業中に他の誰かがあなたの元の履歴の上に構築した場合、リモートのブランチの先端は彼らのコミットで前進するかもしれません、そして、あなたが `--force` を伴って盲目的にプッシュすると彼らの作業内容は失われてしまいます。
++
+このオプションを使用すると、 更新しようとしている履歴がリベースしたものであり、あなたがそれの置き換えを期待(expect)しているのだと指定できます。 リモートrefがまだあなたが指定したコミットを指している場合は、他の誰もrefに対して何もしていないと確信できます。 これは、 ref を明示的にロックせずに「リース」(lease;賃借権期間)を取得するようなものであり、リモートrefは「リース」がまだ有効な場合にのみ更新されます。
++
+`--force-with-lease` 単独では、詳細を指定しないため、現在の値がリモート追跡ブランチと同じである必要があり、更新されるすべてのリモートrefを保護します。
++
+`--force-with-lease=<refname>` では、期待する値(expected value)を指定しないので、名前付きrefを(単独で)保護します。更新される場合は、現在の値をリモート追跡ブランチと同じにする必要があります。
++
+`--force-with-lease=<refname>:<expect>` は、現在の値が指定の値 `<expect>` と同じである必要があることで、指定のref(単独)を保護します(これは、refnameに対して持っているリモート追跡ブランチとは異なることが許可されています。または、この形式を使用する場合は、そのようなリモート追跡ブランチを持つ必要はありません)。 `<expect>` が空の文字列である場合、指定のrefはまだ存在していてはなりません。
++
+注意: refの期待される現在の値を明示的に指定する `--force-with-lease=<refname>:<expect>` 以外のすべての形式はまだ実験的であり、この機能の経験を積むにつれてセマンティクスが変わる可能性があることに注意してください。
++
+`--no-force-with-lease` は、コマンドラインでそれ以前に指定した全ての `--force-with-lease` をキャンセルします。
++
+安全性に関する一般的な注意: このオプションを期待値(expected value)なしに指定すると、たとえば cronjob でリポジトリの `git fetch origin` のように、プッシュ先のリモートで暗黙的に `git fetch` を実行するものと非常に悪い相互作用が発生します。
++
+`--force` に対して提供される保護は、作業の基になっていない後続の変更が破壊されないようにすることですが、バックグラウンドプロセスがバックグラウンドでrefを更新している場合、これは簡単に無効になります。 私達は、あなたには既に分かっているはずの参照をやっつけるヒューリスティックとして使用することができるリモートトラッキング情報以外何も持っていません。
++
+あなたのエディターまたは他のシステムがバックグラウンドで `git fetch` を実行している場合、これを軽減する方法は、単に別のリモートをセットアップすることです:
++
+	git remote add origin-push $(git config remote.origin.url)
+	git fetch origin-push
++
+これで、バックグラウンドプロセスが `git fetch origin` を実行するときは、 `origin-push` の参照は更新されないため、以下のようにコマンドを実行します:
++
+	git push --force-with-lease origin-push
++
+これは、あなたが手動で `git fetch origin-push` を実行しない限り、失敗するでしょう。 もちろん、この方法は `git fetch --all` の実行によって完全に破綻します。この場合、あなたはそれを無効にするか、以下のようになもっと退屈なことをする必要があります:
++
+	git fetch              # update 'master' from remote
+	git tag base master    # mark our base point
+	git rebase -i master   # rewrite some commits
+	git push --force-with-lease=master:base master:master
++
+つまり、上流のコードを見て、上書きしても良いと思ったバージョンの `base` タグを作成し、履歴を書き換え、最後にリモートバージョンがまだ `base` にあれば、ローカルの `remotes/origin/master` がバックグラウンドで何を更新したかに関わらず、変更を `master` に強制的にプッシュします。
++
+あるいは、 `--force-with-lease[=<refname>]` と共に補助オプションとして `--force-if-includes` を指定すると(つまり、リモート側の ref が正確にどのコミットを指す必要があるか、あるいはリモート側のどの ref を保護しているのかを明示せずに)、 プッシュ時に、バックグラウンドで暗黙的に更新されていたかもしれないリモート追跡 ref からの更新がローカルで統合されているかを、強制更新ができる前に確認することができるようになります。
+
+`-f`::
+`--force`::
+	Usually, `git push` will refuse to update a branch that is not an ancestor of the commit being pushed.
++
+This flag disables that check, the other safety checks in PUSH RULES below, and the checks in --force-with-lease. It can cause the remote repository to lose commits; use it with care.
++
+注意: `--force` は、プッシュされるすべてのrefに適用されることに注意してください。 したがって、 `push.default` を `matching` に設定したり、 `remote.*.push` で構成された複数のプッシュ先で使用すると、現在のブランチ以外のref(リモートの対応物の背後にあるローカル参照を含む)が上書きされる可能性があります。 1つのブランチのみにプッシュを強制するには、 refspecの前に `+` を使用してプッシュします(例: `git push origin +master` を使用して、 `master` ブランチにプッシュを強制します)。 詳細については、上記「<refspec>...」セクションを参照してください。
+
+`--force-if-includes`::
+`--no-force-if-includes`::
+	リモート追跡refの先端がローカルに統合されている場合にのみ、更新を強制します。
++
+このオプションを使用すると、リモートトラッキング参照の先端が、書き換えのためにそれに基づいているローカルブランチの「ref log」エントリの1つから到達可能かどうかを確認(verify)するチェックが有効になります。 このチェックでは、リモートからの更新がローカルに取り込まれていない場合、強制更新を拒否することで、更新がローカルに取り込まれていることを確認します。
++
+オプションが `--force-with-lease` を指定せずに渡された場合、または `--force-with-lease=<refname>:<expect>` と一緒に指定された場合、それは「何もしません」(no-op)。
++
+`--no-force-if-includes` を指定すると、この振る舞いが無効になります。
+
+`--repo=<repository>`::
+	このオプションは、<repository> 引数と同等です。 両方を指定すると、このオプションではなくコマンドライン引数が優先されます。
+
+`-u`::
+`--set-upstream`::
+	最新の、または正常にプッシュされたすべてのブランチについて、引数のない linkgit:git-pull[1] および その他のコマンドで使用される上流(追跡)参照を追加します。 詳細については linkgit:git-config[1] の `branch.<name>.merge` を参照してください。
+
+`--thin`::
+`--no-thin`::
+	これらのオプションは linkgit:git-send-pack[1] に渡されます。 送信側と受信側が同一オブジェクトを多く共有している場合、thin転送は送信データの量を大幅に削減します。 デフォルトは `--thin` です。
+
+`-q`::
+`--quiet`::
+	エラーが発生しない限り、更新されたrefのリストを含むすべての出力を抑制します。 進行状況を標準エラーストリームに報告しません。
+
+`-v`::
+`--verbose`::
+	おしゃべりな実行を行います。
+
+`--progress`::
+	`-q` が指定されていない限り、進行状況は、端末に接続されている場合、デフォルトで標準エラーストリームに報告されます。 このフラグは、標準エラーストリームが端末に送信されていない場合でも、進行状況を強制します。
+
+`--no-recurse-submodules`::
+`--recurse-submodules=check|on-demand|only|no`::
+	このオプションは、 (プッシュする)リビジョンによって使用される、 すべてのサブモジュールのコミットが、 リモート追跡ブランチで使用可能であることを確認するために使用されます。 `check` を使用した場合、 Gitは、 プッシュされるリビジョンで変更されたすべてのサブモジュールのコミットが、 サブモジュールの少なくとも 1 つのリモートで使用可能であることを検証(verify)します。 コミットが欠落している場合、 プッシュは中止され、 ゼロ以外のステータスで終了(exit)します。 `on-demand` を使用した場合、 プッシュされるリビジョンで変更されたすべてのサブモジュールがプッシュされます。 `on-demand` で、 必要なすべてのリビジョンをプッシュできなかった場合も中止(abort)され、 ゼロ以外のステータスで終了(exit)します。 `only` を使用した場合、 すべてのサブモジュールはプッシュされますが、 スーパー・プロジェクトはプッシュされないままになります。 サブモジュールの再帰が必要ない場合は、 値 `no` または `--no-recurse-submodules` を使用して、 `push.recurseSubmodules` 構成変数をオーバーライドできます。
++
+`on-demand` または `only` を使用する場合にサブモジュールに `push.recurseSubmodules={on-demand,only}` または `submodule.recurse ` 構成がある場合、さらに再帰が発生します。この場合、 "only" が "on-demand" として扱われます。
+
+`--verify`::
+`--no-verify`::
+	pre-push フックをON/OFFします(linkgit:githooks[5] 参照)。 デフォルトは `--verify` で、 pre-push フックがプッシュを妨げる機会を与えます。 `--no-verify` を使用すると、フックは完全にバイパスされます。
+
+`-4`::
+`--ipv4`::
+	IPv6アドレスを無視して、IPv4アドレスのみを使用します。
+
+`-6`::
+`--ipv6`::
+	IPv4アドレスを無視して、IPv6アドレスのみを使用します。
+
+include::urls-remotes.adoc[]
+
+OUTPUT
+------
+
+`git push` の出力は、使用する転送方法によって異なります。 このセクションでは、Gitプロトコルで(ローカルまたはssh経由で)プッシュするときの出力について説明します。
+
+プッシュのステータスは表形式で出力され、各行は単一のrefのステータスを表します。 各行の形式は以下のとおりです:
+
+-------------------------------
+ <flag> <summary> <from> -> <to> (<reason>)
+-------------------------------
+
+`--porcelain` が使用されている場合、出力の各行は以下の形式になります:
+
+-------------------------------
+ <flag> \t <from>:<to> \t <summary> (<reason>)
+-------------------------------
+
+最新のrefのステータスは、 `--porcelain` または `--verbose` オプションが使用されている場合にのみ表示されます。
+
+flag::
+	refのステータスを示す単一の文字:
+(space);; 早送り(fast-forward)プッシュに成功した
+`+`;; 強制更新に成功した
+`-`;; refの削除に成功した
+`*`;; 新しいrefのプッシュに成功した
+`!`;; プッシュが拒否された、またはプッシュに失敗したref
+`=`;; すでに最新でプッシュする必要がなかったref
+
+summary::
+	正常にプッシュされたrefの場合、概要には、refの古い値と新しい値が `git log` の引数として使用するのに適した形式で表示されます(ほとんどの場合は `<old>..<new>` で、強制的な非早送り更新の場合は `<old>...<new>` です)。
++
+失敗した更新については、以下の詳細が示されます:
++
+--
+rejected::
+	Gitはrefをまったく送信しようと試みませんでした。これは通常、それが早送り(fast-forward)では無く、かつ、あなたが更新を強制しなかったためです。
+
+remote rejected::
+	リモート側が更新を拒否しました。 これは通常、リモート側のフックが原因で発生するか、リモート・リポジトリーで次の安全オプションのいずれかが有効になっていることが原因です: `receive.denyCurrentBranch` (チェックアウトされたブランチへのプッシュ用) または `receive.denyNonFastForwards` (強制的な非早送り更新用) または `receive.denyDeletes` または `receive.denyDeleteCurrent` です。 linkgit:git-config[1] を参照してください。
+
+remote failure::
+	リモート側が ref の更新成功を報告しませんでした。 おそらく、 リモート側の一時的なエラー、 またはネットワーク接続の切断、 またはその他の過渡的なエラーが原因です。
+--
+
+from::
+	プッシュされるローカルrefの名前から、その `refs/<type>/` プレフィックスを取り除いたもの。 削除の場合、ローカルrefの名前は省略されます。
+
+to::
+	更新されるリモートrefの名前から、 `refs/<type>/` プレフィックスを取り除いたもの。
+
+reason::
+	人間が読める説明。 正常にプッシュされたrefの場合、説明は必要ありません。 失敗したrefについては、失敗の理由が説明されています。
+
+PUSH RULES
+----------
+
+As a safety feature, the `git push` command only allows certain kinds of updates to prevent you from accidentally losing data on the remote.
+
+Because branches and tags are intended to be used differently, the safety rules for pushing to a branch are different from the rules for pushing to a tag. In the following rules "update" means any modifications except deletions and creations. Deletions and creations are always allowed, except when forbidden by configuration or hooks.
+
+1. If the push destination is a **branch** (`refs/heads/*`): only fast-forward updates are allowed, which means the destination must be an ancestor of the source commit. The source must be a commit.
+2. If the push destination is a **tag** (`refs/tags/*`): all updates will be rejected. The source can be any object.
+3. If the push destination is not a branch or tag:
+   * If the source is a tree or blob object, any updates will be rejected
+   * If the source is a tag or commit object, any fast-forward update is allowed, even in cases where what's being fast-forwarded is not a commit, but a tag object which happens to point to a new commit which is a fast-forward of the commit the last tag (or commit) it's replacing. Replacing a tag with an entirely different tag is also allowed, if it points to the same commit, as well as pushing a peeled tag, i.e. pushing the commit that existing tag object points to, or a new tag object which an existing commit points to.
+
+You can override these rules by passing `--force` or by adding the optional leading `+` to a refspec. The only exceptions are that no amount of forcing will make a branch accept a non-commit object, and forcing won't make the remote repository accept a push that it's configured to deny.
+
+Hooks and configuration can also override or amend these rules, see e.g. `receive.denyNonFastForwards` and `receive.denyDeletes` in linkgit:git-config[1] and `pre-receive` and `update` in linkgit:githooks[5].
+
+NOTE ABOUT FAST-FORWARDS
+------------------------
+
+コミットAを指していたとあるブランチ(またはより一般的には ref)が、 別のコミットBを指すように変更された場合、 BがAの子孫である場合に限り、 早送り(fast-forward)更新と呼ばれます。
+
+AからBへの早送り(fast-forward)更新では、元のコミットA上に構築されたコミットのセットは、新しいコミットB上に構築されたコミットのサブセットです。 したがって、履歴が失われることはありません。
+
+対照的に、非早送り更新は履歴を失います。 たとえば、あなたと他の誰かが同じコミットXで開始し、あなたがコミットBにつながる履歴を作成し、他の人がコミットAにつながる履歴を作成したとします。そうすると履歴は以下のようになります:
+
+----------------
+
+      B
+     /
+ ---X---A
+
+----------------
+
+さらに、もう一人が既に A につながる変更を元のリポジトリにプッシュしており、そこからあなたたち二人が元のコミット X を取得したとします。
+
+他の人が行ったプッシュにより、コミットXをポイントしていたブランチがコミットAをポイントするように更新されました。これは早送りです。
+
+しかし、あなたがプッシュしようとすると、コミットBでブランチ(現在はAを指している)を更新しようとします。これは早送りにはなりません。 そうすると、コミットAによって導入された変更は失われます。なぜなら、全員がB上に構築を開始するためです。
+
+このコマンドは、デフォルトでは、このような履歴の損失を防ぐための早送り(fast-forward)ではない更新を許可していません。
+
+自分の作業(XからBへの履歴)または他の人の作業(XからAへの履歴)を失いたくない場合は、最初にリポジトリから履歴をフェッチし、行われた変更を含む履歴を作成する必要があり、両方の当事者によって行われた変更を含む履歴を作成し、結果をプッシュバックします。
+
+あなたは `git pull` を実行し、潜在的な競合を解決して、結果を `git push` することができます。 `git pull` は、コミットAとBの間にマージコミットCを作成します。
+
+----------------
+
+      B---C
+     /   /
+ ---X---A
+
+----------------
+
+結果のマージコミットでAを更新すると、早送り(fast-forward)され、そして、プッシュが受け入れられます。
+
+または、あなたは `git pull --rebase` を使用して、A上のXとBの間のあなたの変更をリベースし、結果をプッシュバックすることもできます。 リベースは、A上のXとBの間の変更を構築する新しいコミットDを作成します。
+
+----------------
+
+      B   D
+     /   /
+ ---X---A
+
+----------------
+
+繰り返しになりますが、このコミットでAを更新すると早送り(fast-forward)され、プッシュが受け入れられます。
+
+プッシュしようとしたときに非早送拒否(non-fast-forward rejection)が発生するもう一つの一般的な状況があります。 それは、 他の誰もプッシュしていないリポジトリーにプッシュしている場合でも発生する可能性があります。 (このセクションの最初の図のように、)あなたが自分でコミットAをプッシュした後、 `git commit --amend` でコミットAを置き換えてコミットBを作成し、 すでにAをプッシュしていたことを忘れてBをプッシュしようとすると、 その問題が発生します。 その問題かつ、 更に、 その間に誰も以前のコミットAを取得していない(そして、 それをもとに作業を開始していない)ことを確信している場合に限り、 `git push --force` を実行して上書きできます。 つまり、 `git push --force` は、履歴を意図的に失うこと場合にのみ使用される方法です。
+
+
+EXAMPLES
+--------
+
+`git push`::
+	`git push <remote>` のように機能します。ここで、<remote>は現在のブランチのリモート(または、現在のブランチにリモートが構成されていない場合は `origin`)です。
+
+`git push origin`::
+	追加の構成がない場合、現在のブランチが、構成された上流の現在のブランチと同一の名前の場合は、現在のブランチを構成された上流(`branch.<name>.merge` 構成値)にプッシュし、それ以外の場合はプッシュせずにエラーになります。
++
+<refspec>が指定されていない場合のこのコマンドのデフォルトの動作は、リモートの `push` オプション、または `push.default` 構成変数を設定することで構成できます。
++
+たとえば、デフォルトで現在のブランチのみを `origin` にプッシュするには、 `git config remote.origin.push HEAD` を使用します。 有効な <refspec> (以下の例のような)を `git push origin` のデフォルトとして設定できます。
+
+`git push origin :`::
+	「マッチする」ブランチを `origin` にプッシュします。 「マッチする」ブランチの説明については、上記 <<OPTIONS,OPTIONS>> セクションの <refspec> を参照してください。
+
+`git push origin master`::
+	ソースリポジトリで `master` に一致するrefを探し(ほとんどの場合 `refs/heads/master` を探し)、 `origin` リポジトリで同一ref(例: `refs/heads/master`)を更新します。 `master` がリモートに存在しなかった場合は作成されます。
+
+`git push origin HEAD`::
+	現在のブランチをリモートの同一の名前にプッシュする便利な方法。
+
+`git push mothership master:satellite/master dev:satellite/dev`::
+	`master` と一致するソースref(例: `refs/heads/master`)を使用して、 `mothership` リポジトリ内の `satellite/master`(おそらく `refs/remotes/satellite/master`)と一致するrefを更新します。 `dev` と `satellite/dev` についても同様にします。
++
+マッチングのセマンティクスの説明については、 上記「<refspec>…」について説明しているセクションを参照してください。
++
+これは、 `mothership` で実行される `git fetch` を、 `satellite` での作業を統合するために逆方向に実行される `git push` でエミュレートするもので、一方通行でしか接続できないときによく必要になります(つまり、 `satellite` はsshで `mothership` に入ることができますが、 `satellite` がファイアウォールの背後にあるか、sshdを実行していないため、 `mothership` は `satellite`への接続を開始できません)。
++
+この `git push` を `satellite` のマシンで実行した後、 `mothership` に ssh して `git merge` を実行すれば、`satellite` で行われた変更を `git pull` でプルするエミュレーションが完成します。
+
+`git push origin HEAD:master`::
+	現在のブランチを、 `origin` リポジトリ内の `master` に一致するリモートrefにプッシュします。 この形式は、ローカル名を気にせずに現在のブランチをプッシュするのに便利です。
+
+`git push origin master:refs/heads/experimental`::
+	現在の `master` ブランチをコピーして、 `origin` リポジトリにブランチ `experimental` を作成します。 これは、ローカル名とリモート名が異なる場合に、リモートリポジトリに新しいブランチまたはタグを作成する時のみ必要な形式です。 それ以外の場合は、ref名自体で機能します。
+
+`git push origin :experimental`::
+	`origin` リポジトリで `experimental` に一致するref(たとえば `refs/heads/experimental`)を見つけて削除します。
+
+`git push origin +dev:master`::
+	origin リポジトリのmasterブランチをdevブランチで更新し、早送り以外の更新(non-fast-forward updates)を可能にします。「これにより、参照されていないコミットがoriginリポジトリにぶら下がる可能性があります。」 早送りが(fast-forward)不可能な以下の状況を考慮してください:
++
+----
+	    o---o---o---A---B  origin/master
+		     \
+		      X---Y---Z  dev
+----
++
+上記コマンドは、originリポジトリを以下のように変更します
++
+----
+		      A---B  (unnamed branch)
+		     /
+	    o---o---o---X---Y---Z  master
+----
++
+コミットAとBは、もはやシンボリック名のブランチに属さなくなるため、到達不能になります。 そのため、これらのコミットは、originリポジトリの `git gc` コマンドによって削除されます。
+
+include::transfer-data-leaks.adoc[]
+
+[[CONFIGURATION]]
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.adoc[]
+
+include::config/push.adoc[]
+
+GIT
+---
+Part of the linkgit:git[1] suite

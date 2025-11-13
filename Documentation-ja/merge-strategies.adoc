@@ -1,0 +1,73 @@
+MERGE STRATEGIES
+----------------
+
+マージ機構(`git merge` と `git pull` コマンド)では、バックエンドの「マージ戦略」を `-s` オプションで選択することができます。 いくつかの戦略では、独自のオプションを指定することができます。これは、 `git merge` や `git pull` に `-X<option>` 引数として渡すことができます。
+
+`ort`::
+	これは、1つのブランチをプルまたはマージするときのデフォルトのマージ戦略です。この戦略では、3方向マージアルゴリズムを使用して2つのヘッドのみを解決できます。3方向マージに使用できる共通の祖先が複数ある場合は、共通の祖先のマージされたツリーを作成し、それを3方向のマージの参照ツリーとして使用します。これにより、Linux 2.6カーネルの開発履歴から取得した実際のマージコミットで実行されたテストによって、誤ったマージを引き起こすことなく、マージの競合が少なくなることが報告されています。さらに、この戦略では、名前の変更を伴うマージを検出して処理できます。検出されたコピーは使用しません。このアルゴリズムの名前は "Ostensibly Recursive's Twin" (表面上は再帰の双子)の頭文字を取ったものであり、以前のデフォルトのアルゴリズムである「recursive」の代わりとして作成されたという事実に由来しています。
++
+In the case where the path is a submodule, if the submodule commit used on one side of the merge is a descendant of the submodule commit used on the other side of the merge, Git attempts to fast-forward to the descendant. Otherwise, Git will treat this case as a conflict, suggesting as a resolution a submodule commit that is descendant of the conflicting ones, if one exists.
++
+The `ort` strategy can take the following options:
+
+`ours`;;
+	このオプションは、「our」バージョンを優先することにより、競合するハンクをクリーンに自動解決するように強制します。 our側と競合しない他のツリーからの変更は、マージ結果に反映されます。 バイナリファイルの場合、内容全体がour側から取得されます。
++
+This should not be confused with the `ours` merge strategy, which does not even look at what the other tree contains at all. It discards everything the other tree did, declaring 'our' history contains all that happened in it.
+
+`theirs`;;
+	This is the opposite of `ours`; note that, unlike `ours`, there is no `theirs` merge strategy to confuse this merge option with.
+
+`ignore-space-change`;;
+`ignore-all-space`;;
+`ignore-space-at-eol`;;
+`ignore-cr-at-eol`;;
+	指示されたタイプの空白(whitespace)の変更を含む行を、3方向マージのために変更されていないものとして扱います。行に対する、他の変更と空白(whitespace)の変更との混合は、無視されません。 linkgit:git-diff[1] の `-b` と `-w` と `--ignore-space-at-eol` と `--ignore-cr-at-eol` も参照してください。
++
+* 「their」バージョンが行に空白の変更のみを導入する場合、「our」バージョンが使用されます。
+* 「our」バージョンで空白の変更が導入されたが、「their」バージョンに大幅な変更が含まれている場合は、「their」バージョンが使用されます。
+* それ以外の場合、マージは通常の方法で進行します。
+
+`renormalize`;;
+	This runs a virtual check-out and check-in of all three stages of any file which needs a three-way merge. This option is meant to be used when merging branches with different clean filters or end-of-line normalization rules. See "Merging branches with differing checkin/checkout attributes" in linkgit:gitattributes[5] for details.
+
+`no-renormalize`;;
+	`renormalize` オプションを無効にします。 これは、 `merge.renormalize` 構成変数をオーバーライドします。
+
+`find-renames[=<n>]`;;
+	Turn on rename detection, optionally setting the similarity threshold. This is the default. This overrides the `merge.renames` configuration variable. See also linkgit:git-diff[1] `--find-renames`.
+
+`rename-threshold=<n>`;;
+	`find-renames=<n>` の非推奨の同義語。
+
+`no-renames`;;
+	名前変更(rename)の検出をオフにします。 これは、`merge.renames` 構成変数をオーバーライドします。 linkgit:git-diff[1] の `--no-renames` も参照してください。
+
+`histogram`;;
+	Deprecated synonym for `diff-algorithm=histogram`.
+
+`patience`;;
+	`diff-algorithm=patience` の非推奨の同義語。
+
+`diff-algorithm=(histogram|minimal|myers|patience)`;;
+	Use a different diff algorithm while merging, which can help avoid mismerges that occur due to unimportant matching lines (such as braces from distinct functions). See also linkgit:git-diff[1] `--diff-algorithm`. Note that `ort` defaults to `diff-algorithm=histogram`, while regular diffs currently default to the `diff.algorithm` config setting.
+
+`subtree[=<path>]`;;
+	このオプションは「subtree」戦略をさらに発展させたもので、2つの木をマージする際に、どのようにずらせば互いにマッチするかを推測するものである。その代わり、指定されたパスは、2つの木の形が一致するように前置される(または、最初から取り除かれる)。
+
+`recursive`::
+	This is now a synonym for `ort`. It was an alternative implementation until v2.49.0, but was redirected to mean `ort` in v2.50.0. The previous recursive strategy was the default strategy for resolving two heads from Git v0.99.9k until v2.33.0.
+
+`resolve`::
+	これは、3方向マージアルゴリズムを使用して、2つのヘッド（つまり、現在のブランチとプルした別のブランチ）のみを解決できます。 交差マージ(criss-cross merge)のあいまいさを注意深く検出しようとします。 名前の変更は処理しません。
+
+`octopus`::
+	これにより、3つ以上のヘッドを持つケースが解決されますが、手動解決が必要な複雑なマージの実行は拒否されます。これは主に、トピックの分岐ヘッドを纏めるために使用されることを意図しています。これは、複数のブランチをプルまたはマージする場合のデフォルトのマージ戦略です。
+
+`ours`::
+	This resolves any number of heads, but the resulting tree of the merge is always that of the current branch head, effectively ignoring all changes from all other branches. It is meant to be used to supersede old development history of side branches. Note that this is different from the `-Xours` option to the `ort` merge strategy.
+
+`subtree`::
+	これは改造された「ort」戦略です。 ツリーAとBをマージするとき、BがAのサブツリーに対応する場合、同じレベルのツリーを読み取るのではなく、Bは最初にAのツリー構造に一致するように調整されます。 この調整は、共通の祖先ツリーに対しても行われます。
+
+With the strategies that use 3-way merge (including the default, `ort`), if a change is made on both branches, but later reverted on one of the branches, that change will be present in the merged result; some people find this behavior confusing. It occurs because only the heads and the merge base are considered when performing a merge, not the individual commits. The merge algorithm therefore considers the reverted change as no change at all, and substitutes the changed version instead.

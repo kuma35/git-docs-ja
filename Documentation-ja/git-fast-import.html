@@ -799,6 +799,22 @@ git-fast-import(1) Manual Page
 </p>
 <div class="paragraph"><p>fast-import ストリームを生成するプログラムを信頼する場合にのみ、 このオプションを有効にしてください。 このオプションは、 独自のコードを実行することがすでに信頼されているため、 <code>import</code> 機能を使用するリモート・ヘルパーに対して自動的に有効になります。</p></div>
 </dd>
+<dt class="hdlist1">
+<code>--signed-tags=</code>(<code>verbatim</code>|<code>warn-verbatim</code>|<code>warn-strip</code>|<code>strip</code>|<code>abort</code>)
+</dt>
+<dd>
+<p>
+        Specify how to handle signed tags. Behaves in the same way as the same option in <a href="git-fast-export.html">git-fast-export(1)</a>, except that default is <em>verbatim</em> (instead of <em>abort</em>).
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--signed-commits=</code>(<code>verbatim</code>|<code>warn-verbatim</code>|<code>warn-strip</code>|<code>strip</code>|<code>abort</code>)
+</dt>
+<dd>
+<p>
+        Specify how to handle signed commits. Behaves in the same way as the same option in <a href="git-fast-export.html">git-fast-export(1)</a>, except that default is <em>verbatim</em> (instead of <em>abort</em>).
+</p>
+</dd>
 </dl></div>
 <div class="sect2">
 <h3 id="_options_for_frontends">Options for Frontends</h3>
@@ -857,7 +873,10 @@ git-fast-import(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>relative-marks</code>
+<code>--relative-marks</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-relative-marks</code>
 </dt>
 <dd>
 <p>
@@ -943,7 +962,12 @@ fastimport.unpackLimit
 <div class="sect1">
 <h2 id="_performance">PERFORMANCE</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>fast-import の設計により、最小限のメモリ使用量と処理時間で大規模なプロジェクトをインポートできます。 フロントエンドが fast-import に対応し、コンスタントにデータ・ストリームをフィードできると仮定すると、 10年以上の履歴を保持し、 100,000以上の個別のコミットを含むプロジェクトのインポート時間は、 通常、 非常に控えめな(〜$2,000 USD)ハードウェアで、 わずか 1 〜 2 時間で完了します。</p></div>
+<div class="paragraph"><p>The design of fast-import allows it to import large projects in a minimum
+amount of memory usage and processing time.  Assuming the frontend is able
+to keep up with fast-import and feed it a constant stream of data, import
+times for projects holding 10+ years of history and containing 100,000+
+individual commits are generally completed in just 1-2 hours on quite modest
+hardware (~$2,000 USD in 2007).</p></div>
 <div class="paragraph"><p>ほとんどのボトルネックは、 外部ソースデータ・アクセス(ソースがリビジョンを十分に速く抽出できない)、 またはディスク I/O(ディスクがデータを取得するのと同じ速さで fast-import に書き込みできない)にあるように見えます。 ソースデータが宛先 Git リポジトリとは異なるドライブに保存されている場合、 (I/Oの競合が少ないため)、 インポートはより高速に実行されます。</p></div>
 </div>
 </div>
@@ -1147,7 +1171,8 @@ fastimport.unpackLimit
         original-oid?
         ('author' (SP &lt;name&gt;)? SP LT &lt;email&gt; GT SP &lt;when&gt; LF)?
         'committer' (SP &lt;name&gt;)? SP LT &lt;email&gt; GT SP &lt;when&gt; LF
-        ('encoding' SP &lt;encoding&gt;)?
+        ('gpgsig' SP &lt;algo&gt; SP &lt;format&gt; LF data)?
+        ('encoding' SP &lt;encoding&gt; LF)?
         data
         ('from' SP &lt;commit-ish&gt; LF)?
         ('merge' SP &lt;commit-ish&gt; LF)*
@@ -1168,6 +1193,38 @@ fastimport.unpackLimit
 <div class="paragraph"><p><code>committer</code> コマンドは、誰がこのコミットを行ったのか、いつ行ったのかを示します。</p></div>
 <div class="paragraph"><p>ここで、 <em>&lt;name&gt;</em> は個人の表示名(たとえば、 "Com M Itter")であり、 <em>&lt;email&gt;</em> は個人の電子メールアドレス("cm@example.com")です。 <code>LT</code> と <code>GT</code> は、文字通りの小なり記号(&lt;;\x3c)と大なり記号(&gt;;\x3e)です。 これらは、行の他のフィールドから電子メールアドレスを区切るために必要です。 <em>&lt;name&gt;</em> と <em>&lt;email&gt;</em> は自由形式であり、 <code>LT</code> 、<code>GT</code> 、 <code>LF</code> を除く任意のバイトシーケンスを含むことができることに注意してください。 <em>&lt;name&gt;</em> は通常UTF-8でエンコードされています。</p></div>
 <div class="paragraph"><p>変更時刻は、 <code>--date-format=</code><em>&lt;fmt&gt;</em> コマンドラインオプションで選択された日付形式を使用して <em>&lt;when&gt;</em> で指定されます。サポートされている形式のセットとその構文については、上記「Date Formats」を参照してください。</p></div>
+</div>
+<div class="sect3">
+<h4 id="_code_gpgsig_code"><code>gpgsig</code></h4>
+<div class="paragraph"><p>The optional <code>gpgsig</code> command is used to include a PGP/GPG signature or other cryptographic signature that signs the commit data.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>        'gpgsig' SP &lt;git-hash-algo&gt; SP &lt;signature-format&gt; LF data</code></pre>
+</div></div>
+<div class="paragraph"><p>The <code>gpgsig</code> command takes two arguments:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>&lt;git-hash-algo&gt;</em> specifies which Git object format this signature applies to, either <code>sha1</code> or <code>sha256</code>. This allows to know which representation of the commit was signed (the SHA-1 or the SHA-256 version) which helps with both signature verification and interoperability between repos with different hash functions.
+</p>
+</li>
+<li>
+<p>
+<em>&lt;signature-format&gt;</em> specifies the type of signature, such as <code>openpgp</code>, <code>x509</code>, <code>ssh</code>, or <code>unknown</code>. This is a convenience for tools that process the stream, so they don&#8217;t have to parse the ASCII armor to identify the signature type.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>A commit may have at most one signature for the SHA-1 object format (stored in the "gpgsig" header) and one for the SHA-256 object format (stored in the "gpgsig-sha256" header).</p></div>
+<div class="paragraph"><p>See below for a detailed description of the <code>data</code> command which contains the raw signature data.</p></div>
+<div class="paragraph"><p>Signatures are not yet checked in the current implementation though. (Already setting the <code>extensions.compatObjectFormat</code> configuration option might help with verifying both SHA-1 and SHA-256 object format signatures when it will be implemented.)</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This is highly experimental and the format of the <code>gpgsig</code> command may change in the future without compatibility guarantees.</td>
+</tr></table>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_code_encoding_code"><code>encoding</code></h4>
@@ -1235,7 +1292,7 @@ External data format
 <div class="content">
 <pre><code>        'M' SP &lt;mode&gt; SP &lt;dataref&gt; SP &lt;path&gt; LF</code></pre>
 </div></div>
-<div class="paragraph"><p>ここで通常、 <em>&lt;dataref&gt;</em> は、前の <code>blob</code> コマンドによって設定されたマーク参照(<code>:</code><em>&lt;idnum&gt;</em>)か、既存のGitブロブオブジェクトの完全な40バイトのSHA-1である必要があります。 <em>&lt;mode&gt;</em> が <code>040000</code> の場合、 <em>&lt;dataref&gt;</em> は既存のGitツリーオブジェクトの完全な40バイトのSHA-1または <code>--import-marks</code> で設定されたマーク参照である必要があります。</p></div>
+<div class="paragraph"><p>Here usually <em>&lt;dataref&gt;</em> must be either a mark reference (<code>:</code><em>&lt;idnum&gt;</em>) set by a prior <code>blob</code> command, or a full 40-byte SHA-1 of an existing Git blob object. If <em>&lt;mode&gt;</em> is <code>040000</code> then <em>&lt;dataref&gt;</em> must be the full 40-byte SHA-1 of an existing Git tree object or a mark reference set with <code>--import-marks</code>.</p></div>
 </dd>
 <dt class="hdlist1">
 Inline data format
@@ -1283,7 +1340,7 @@ Inline data format
 <div class="paragraph"><p>どちらの形式でも、 <em>&lt;path&gt;</em> は、追加(まだ存在しない場合)または変更(すでに存在する場合)するファイルの完全なパスです。</p></div>
 <div class="paragraph"><p><em>&lt;path&gt;</em> は、 引用符で囲まれていないバイト列、 または C 言語スタイルの引用符で囲まれた文字列として記述することができます。</p></div>
 <div class="paragraph"><p><em>&lt;path&gt;</em> が二重引用符(")で始まらない場合、 それは非クォート文字列となり、 エスケープ・シーケンスなしのリテラル・バイトとしてパースされます。 しかしファイル名に <code>LF</code> が含まれているか、または、二重引用符で始まる場合は、 非クォート文字列にすることはできず、 クォートする必要があります。 さらに、<code>filecopy</code> または <code>filerename</code> 内の ソース <em>&lt;path&gt;</em> に SP が含まれる場合は、 クォートする必要があります。</p></div>
-<div class="paragraph"><p><em>&lt;path&gt;</em> が二重の引用(")で始まる場合、 それは C スタイルのクォート文字列であり、 完全なファイル名が二重引用符のペアに囲まれ、 エスケープシーケンスが使用されます。 特定の文字はバックスラッシュ("\")を先行させることによりエスケープする必要があります: LF は \n 、 バックスラッシュは \\ 、 ダブルクォーテーションは \" と記述します。 一部の文字は、 オプションでエスケープシーケンスで書かれている場合があります： \a はビープ音(bell)、 \b はバックスペース、 \f は フォーム・フィード、\n はラインフィード、 \r はキャリッジリターン、 \t は水平タブ、 \v は垂直タブです。 任意のバイトは 3 桁の8進数コード(例: \033)で記述できます。 すべてのファイル名はクォート文字列として表すことができます</p></div>
+<div class="paragraph"><p><em>&lt;path&gt;</em> が二重の引用(")で始まる場合、 それは C スタイルのクォート文字列であり、 完全なファイル名が二重引用符のペアに囲まれ、 エスケープシーケンスが使用されます。 特定の文字はバックスラッシュ("\")を先行させることによりエスケープする必要があります: LF は <code>\n</code> 、 バックスラッシュは <code>\\</code> 、 ダブルクォーテーションは <code>\</code>" と記述します。 一部の文字は、 オプションでエスケープシーケンスで書かれている場合があります： <code>\a</code> はビープ音(bell)、 <code>\b</code> はバックスペース、 <code>\f</code> は フォーム・フィード、<code>\n</code> はラインフィード、 <code>\r</code> はキャリッジリターン、 <code>\t</code> は水平タブ、 <code>\v</code> は垂直タブです。 任意のバイトは 3 桁の8進数コード(例: <code>\033</code>)で記述できます。 すべてのファイル名はクォート文字列として表すことができます</p></div>
 <div class="paragraph"><p><em>&lt;path&gt;</em> は UNIX スタイルのディレクトリ区切り文字(逆じゃないスラッシュ <code>/</code>)を使用する必要があり、 その値は正規形式(canonical form)である必要があります。つまり以下のことをしてはいけません:</p></div>
 <div class="ulist"><ul>
 <li>
@@ -1308,7 +1365,7 @@ Inline data format
 </li>
 </ul></div>
 <div class="paragraph"><p>ツリーのルートは、 <em>&lt;path&gt;</em> に空の文字列を指定します。</p></div>
-<div class="paragraph"><p><em>&lt;path&gt;</em> には、 その文字通り(literally)または \000 としてエスケープするかを問わず、 NUL を含めることはできません。 <em>&lt;path&gt;</em> は常にUTF-8を使用してエンコードすることをお勧めします。</p></div>
+<div class="paragraph"><p><em>&lt;path&gt;</em> には、 その文字通り(literally)または <code>\000</code> としてエスケープするかを問わず、 NUL を含めることはできません。 <em>&lt;path&gt;</em> は常にUTF-8を使用してエンコードすることをお勧めします。</p></div>
 </div>
 <div class="sect3">
 <h4 id="_code_filedelete_code"><code>filedelete</code></h4>
@@ -1948,7 +2005,7 @@ fastimport.unpackLimit
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-02-05 08:00:48 JST
+ 2025-11-13 23:47:43 JST
 </div>
 </div>
 </body>

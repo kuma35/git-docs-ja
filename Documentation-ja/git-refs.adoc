@@ -1,0 +1,93 @@
+git-refs(1)
+===========
+
+NAME
+----
+git-refs - ref への低レベル・アクセス
+
+
+SYNOPSIS
+--------
+[synopsis]
+git refs migrate --ref-format=<format> [--no-reflog] [--dry-run]
+git refs verify [--strict] [--verbose]
+git refs list [--count=<count>] [--shell|--perl|--python|--tcl]
+		   [(--sort=<key>)...] [--format=<format>]
+		   [--include-root-refs] [--points-at=<object>]
+		   [--merged[=<object>]] [--no-merged[=<object>]]
+		   [--contains[=<object>]] [--no-contains[=<object>]]
+		   [(--exclude=<pattern>)...] [--start-after=<marker>]
+		   [ --stdin | (<pattern>...)]
+git refs exists <ref>
+git refs optimize [--all] [--no-prune] [--auto] [--include <pattern>] [--exclude <pattern>]
+
+DESCRIPTION
+-----------
+
+このコマンドは ref への低レベル・アクセスを提供します。
+
+COMMANDS
+--------
+
+`migrate`::
+	異なる形式間で ref ストアを移行します。
+
+`verify`::
+	リファレンス・データーベースの一貫性を検証する。
+
+list::
+	List references in the repository with support for filtering, formatting, and sorting. This subcommand is an alias for linkgit:git-for-each-ref[1] and offers identical functionality.
+
+exists::
+	Check whether the given reference exists. Returns an exit code of 0 if it does, 2 if it is missing, and 1 in case looking up the reference failed with an error other than the reference being missing. This does not verify whether the reference resolves to an actual object.
+
+optimize::
+	Optimizes references to improve repository performance and reduce disk usage. This subcommand is an alias for linkgit:git-pack-refs[1] and offers identical functionality.
+
+OPTIONS
+-------
+
+The following options are specific to `git refs migrate`:
+
+`--ref-format=<format>`::
+	ref ストアを移行する対象の ref 形式。 以下のいずれかになります:
++
+include::ref-storage-format.adoc[]
+
+`--dry-run`::
+	移行を実行しますが、 リポジトリーは変更しません。 移行された ref は、 別個に検査できるように別のディレクトリに書き込まれます。 ディレクトリの名前は stdout で報告されます。 これを使用して、 実際の移行を実行する前に、 移行が予想どおりに機能することを再確認できます。
+
+`--reflog`::
+`--no-reflog`::
+	Choose between migrating the reflog data to the new backend, and discarding them. The default is "--reflog", to migrate.
+
+The following options are specific to `git refs verify`:
+
+`--strict`::
+	より厳格なエラー・チェックを有効にします。 これにより、 警告がエラーとして報告されます。 inkgit:git-fsck[1] 参照。
+
+`--verbose`::
+	ref データベースの一貫性を確認するときに、 おしゃべりにします。
+
+The following options are specific to 'git refs list':
+
+include::for-each-ref-options.adoc[]
+
+The following options are specific to 'git refs optimize':
+
+include::pack-refs-options.adoc[]
+
+既知の制限
+-----
+
+ref 形式の移行については、 現在の形式ではいくつかの既知の制限があります:
+
+* ワークツリーを持つリポジトリーの移行はできません。
+
+* 移行の進行中、 リポジトリーへの並列書き込みをブロックする方法はありません。 並列書き込みは一貫性のない移行状態につながる可能性があります。 ユーザーは、 より高いレベルで書き込みをブロックすることが期待されています。 あなたのリポジトリーがスケジュールされたメンテナンスのために登録されている場合、 git-maintenance(1) で最初に登録解除することをお勧めします。
+
+これらの制限は将来的には解除される可能性があります。
+
+GIT
+---
+Part of the linkgit:git[1] suite

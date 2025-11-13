@@ -1,0 +1,168 @@
+git-pull(1)
+===========
+
+NAME
+----
+git-pull - 別のリポジトリまたはローカルブランチから取得して統合する
+
+
+SYNOPSIS
+--------
+[synopsis]
+'git pull' [<options>] [<repository> [<refspec>...]]
+
+
+DESCRIPTION
+-----------
+
+Integrate changes from a remote repository into the current branch.
+
+First, `git pull` runs `git fetch` with the same arguments (excluding merge options) to fetch remote branch(es). Then it decides which remote branch to integrate: if you run `git pull` with no arguments this defaults to the <<UPSTREAM-BRANCHES,upstream>> for the current branch. Then it integrates that branch into the current branch.
+
+There are 4 main options for integrating the remote branch:
+
+1. `git pull --ff-only` will only do "fast-forward" updates: it fails if your local branch has diverged from the remote branch. This is the default.
+2. `git pull --rebase` runs `git rebase`
+3. `git pull --no-rebase` runs `git merge`.
+4. `git pull --squash` runs `git merge --squash`
+
+You can also set the configuration options `pull.rebase`, `pull.squash`, or `pull.ff` with your preferred behaviour.
+
+If there's a merge conflict during the merge or rebase that you don't want to handle, you can safely abort it with `git merge --abort` or `git --rebase abort`.
+
+OPTIONS
+-------
+
+<repository>::
+	The "remote" repository to pull from. This can be either a URL (see the section <<URLS,GIT URLS>> below) or the name of a remote (see the section <<REMOTES,REMOTES>> below).
++
+Defaults to the configured upstream for the current branch, or `origin`. See <<UPSTREAM-BRANCHES,UPSTREAM BRANCHES>> below for more on how to configure upstreams.
+
+<refspec>::
+	Which branch or other reference(s) to fetch and integrate into the current branch, for example `main` in `git pull origin main`. Defaults to the configured upstream for the current branch.
++
+This can be a branch, tag, or other collection of reference(s). See <<fetch-refspec,<refspec>>> below under "Options related to fetching" for the full syntax, and <<DEFAULT-BEHAVIOUR,DEFAULT BEHAVIOUR>> below for how `git pull` uses this argument to determine which remote branch to integrate.
+
+`-q`::
+`--quiet`::
+	このオプションは git-fetch では転送中のレポートを黙らせる為に、 そして git-merge ではマージ中の出力を黙らせるために、 git-fetch と git-merge の両方に渡されます。
+
+`-v`::
+`--verbose`::
+	`--verbose` を git-fetch と git-merge に渡します。
+
+`--recurse-submodules[=(yes|on-demand|no)]`::
+`--no-recurse-submodules`::
+	このオプションは、入力されたサブモジュールの新しいコミットを取得する必要があるかどうか、およびアクティブなサブモジュールの作業ツリーも更新する必要があるかどうかを制御します(linkgit:git-fetch[1] 、linkgit:git-config[1] 、linkgit:gitmodules[5] を参照)。
++
+チェックアウトがリベースを介して行われる場合、ローカルサブモジュールのコミットもリベースされます。
++
+更新がマージを介して行われる場合、サブモジュールの競合(conflicts)は解決され、チェックアウトされます。
+
+Options related to merging
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:git-pull: 1
+
+include::merge-options.adoc[]
+
+`-r`::
+`--rebase[=(false|true|merges|interactive)]`::
+	trueの場合、 取得後に現在のブランチを上流ブランチの上にリベースします。 上流ブランチに対応するリモート追跡ブランチがあり、上流ブランチが最後に取得されてからリベースされた場合、リベースはその情報を使用して、非ローカル変更のリベースを回避します。
++
+`merges` に設定すると、 `git rebase --rebase-merges` を使用してリベースし、ローカルマージコミットがリベースに含まれるようにします(詳細については、 linkgit:git-rebase[1] を参照してください)。
++
+falseの場合、上流ブランチを現在のブランチにマージします。
++
+`interactive` の場合、リベースの対話モードを有効にします。
++
+`git pull` がマージする代わりに、常に `--rebase` を使用するようにしたいなら、 linkgit:git-config[1] の `pull.rebase` と `branch.<name>.rebase` と `branch.autoSetupRebase` を参照してください。
++
+[NOTE]
+これは潜在的に「危険」な操作モードです。 それは履歴を塗り替えてしまいます。その履歴はすでに公開されているのですから、良くない兆候です。 linkgit:git-rebase[1] を注意深く読んでいない限り、このオプションを使用しないでください。
+
+`--no-rebase`::
+	これは `--rebase=false` の省略形です。
+
+Options related to fetching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include::fetch-options.adoc[]
+
+include::pull-fetch-param.adoc[]
+
+include::urls-remotes.adoc[]
+
+include::merge-strategies.adoc[]
+
+[[DEFAULT-BEHAVIOUR]]
+DEFAULT BEHAVIOUR
+-----------------
+
+`git pull` は多くの場合パラメータを指定せずに使われます。伝統的にこれは `git pull origin` と言うのと同じです。 ただし、ブランチ `<name>` に設定 `branch.<name>.remote` が存在する場合は、 `origin` の代わりにその値が使用されます。
+
+取得に使用するURLを決定するために、構成 `remote.<origin>.url` の値が参照され、そのような変数がない場合は、 `$GIT_DIR/remotes/<origin>` の `URL:` 行の値が使用されます。
+
+コマンドラインにrefspecパラメーターを指定せずにコマンドを実行したときに取得する(およびオプションでリモート追跡ブランチに格納する)リモートブランチを決定するには、構成変数 `remote.<origin>.fetch` の値を参照します。 構成変数 `remote.<origin>.fetch` が存在しない場合は、 `$GIT_DIR/remotes/<origin>` が参照され、その `Pull:` 行が使用されます。 「OPTIONS」セクションで説明されているrefspec形式に加えて、以下のようなrefspecグロブを作成できます:
+
+------------
+refs/heads/*:refs/remotes/origin/*
+------------
+
+グロブの refspec には空でないRHSが必要であり(つまり、リモート追跡ブランチで取得されたものを格納する必要があります)、そのLHSとRHSは `/*` で終わる必要があります。 上記では、すべてのリモート・ブランチが、同じ名前の `refs/remotes/origin/` 階層のリモート追跡ブランチを使用して追跡されることを指定しています。
+
+下位互換性を損なわないために、 取得後にマージするリモート・ブランチを決定するルールは少し複雑です。
+
+`git pull` のコマンドラインで明示的なrefspecが指定されている場合、それらはすべてマージされます。
+
+コマンドラインでrefspecが指定されていない場合、 `git pull` は 構成 または `$GIT_DIR/remotes/<origin>` からのrefspecを使用します。このような場合、以下のルールが適用されます:
+
+. 現在のブランチ `<name>` の `branch.<name>.merge` 構成が存在する場合、それはマージされるリモートサイトのブランチの名前です。
+
+. refspecがグロブのものである場合、何もマージされません。
+
+. それ以外の場合は、最初のrefspecのリモートブランチがマージされます。
+
+
+EXAMPLES
+--------
+
+* クローンを作成したリポジトリのリモート追跡ブランチを更新し、そのうちの1つを現在のブランチにマージします:
++
+------------------------------------------------
+$ git pull
+$ git pull origin
+------------------------------------------------
++
+通常、マージされるブランチはリモートリポジトリのHEADですが、選択は branch.<name>.remote および branch.<name>.merge オプションによって決定されます。 詳細については、 linkgit:git-config[1] を参照してください。
+
+* 現在のブランチにリモートブランチ `next` をマージします:
++
+------------------------------------------------
+$ git pull origin next
+------------------------------------------------
++
+これにより、 `next` のコピーが一時的に FETCH_HEAD に残され、 リモート追跡ブランチの `origin/next` が更新されます。 fetch と merge を呼び出すことで同じことができます:
++
+------------------------------------------------
+$ git fetch origin
+$ git merge origin/next
+------------------------------------------------
+
+
+あなたがプルを試みた結果、複雑な競合が発生し、最初からやり直したい場合は、 `git reset` で回復できます。
+
+
+include::transfer-data-leaks.adoc[]
+
+BUGS
+----
+現在は `--recurse-submodules` を使用すると、 既にチェックアウトされているサブモジュールでの新しいコミットのみを取得できます。 たとえば、 上流がスーパー・プロジェクトの直前に取得したコミットで新しいサブモジュールを追加した場合、 そのサブモジュール自体を取得できないため、 後でそのサブモジュールをチェックアウトするには再度取得する必要があります。 この問題は、 将来の Git バージョンで修正される予定です。
+
+SEE ALSO
+--------
+linkgit:git-fetch[1], linkgit:git-merge[1], linkgit:git-config[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

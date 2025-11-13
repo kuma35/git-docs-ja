@@ -1,0 +1,303 @@
+git-cat-file(1)
+===============
+
+NAME
+----
+git-cat-file - リポジトリ・オブジェクトの内容または詳細情報を提供
+
+SYNOPSIS
+--------
+[synopsis]
+'git cat-file' <type> <object>
+'git cat-file' (-e | -p | -t | -s) <object>
+'git cat-file' (--textconv | --filters)
+	     [<rev>:<path|tree-ish> | --path=<path|tree-ish> <rev>]
+'git cat-file' (--batch | --batch-check | --batch-command) [--batch-all-objects]
+	     [--buffer] [--follow-symlinks] [--unordered]
+	     [--textconv | --filters] [-Z]
+
+DESCRIPTION
+-----------
+1 つまたはそれ以上のオブジェクトの内容、 またはサイズやタイプやデルタ情報などの他のプロパティを出力します。
+
+このコマンドは、 `--batch` ファミリーのオプションが指定されているかどうかに応じて、 2 つのモードがあります。
+
+非バッチ・モードでは、 コマンド・ラインで指定されたオブジェクトに関する情報を提供します。
+
+バッチ・モードでは、 引数は標準入力から読み取られます。
+
+OPTIONS
+-------
+<object>::
+	表示するオブジェクトの名前。 オブジェクト名を綴る方法のより完全なリストについては、 linkgit:gitrevisions[7] の「SPECIFYING REVISIONS」セクションを参照してください。
+
+`-t`::
+	コンテンツの代わりに、 `<object>` で識別されるオブジェクトタイプを表示します。
+
+`-s`::
+	内容の代わりに、 `<object>` で識別されるオブジェクトのサイズを表示します。 `--use-mailmap` オプションとともに使用すると、 メールマップ・メカニズム(mailmap mechanism)を使用して ID を置き換えた後の更新されたオブジェクトのサイズが表示されます。
+
+`-e`::
+	`<object>` が存在し、有効なオブジェクトである場合、ステータスはゼロで終了(exit)します。 `<object>` が無効な形式の場合、 ゼロ以外のステータスで終了(exit)し、 stderr にエラー出力します。
+
+`-p`::
+	そのタイプに基づいて `<object>` の内容をきれいに印刷(pretty-print)します。
+
+<type>::
+	通常、これは実際のタイプの `<object>` と一致しますが、指定された `<object>` から簡単に逆参照できるタイプを要求することもできます。 例として、`<object>` がそれを含むコミットオブジェクトである `tree` を要求するか、または `<object>` がそれを指すタグオブジェクトである `blob` を要求します。
+
+`--mailmap`::
+`--no-mailmap`::
+`--use-mailmap`::
+`--no-use-mailmap`::
+       mailmap ファイルを使用して、作者(author)やコミッター(commiter)やタグ付けした人(taggr)の名前と電子メール・アドレスを正規の実名と電子メール・アドレスにマップします。 linkgit:git-shortlog[1] を参照してください。
+
+`--textconv`::
+	textconvフィルターによって変換されたコンテンツを表示します。 この場合、 `<object>` は、 `<tree-ish>:<path>` または `:<path>` の形式である必要があり、 `<path>` のインデックスに記録されたコンテンツにフィルターを適用します。
+
+`--filters`::
+	与えられた `<path>` に対して、現在の作業ツリーで構成されているフィルターによって変換された内容を表示します(つまり、スマッジ(smudge)フィルター、行末変換など)。 この場合、`<object>` は `<tree-ish>:<path>` または `:<path>` の形式である必要があります。
+
+`--filter=<filter-spec>`::
+`--no-filter`::
+	Omit objects from the list of printed objects. This can only be used in combination with one of the batched modes. Excluded objects that have been explicitly requested via any of the batch modes that read objects via standard input (`--batch`, `--batch-check`) will be reported as "filtered". Excluded objects in `--batch-all-objects` mode will not be printed at all. The '<filter-spec>' may be one of the following:
++
+The form '--filter=blob:none' omits all blobs.
++
+The form '--filter=blob:limit=<n>[kmg]' omits blobs of size at least n bytes or units. n may be zero. The suffixes k, m, and g can be used to name units in KiB, MiB, or GiB. For example, 'blob:limit=1k' is the same as 'blob:limit=1024'.
++
+The form '--filter=object:type=(tag|commit|tree|blob)' omits all objects which are not of the requested type.
+
+`--path=<path>`::
+	`--textconv` または `--filters` とともに使用して、例えば、ブロブの元となったリビジョンを把握するのが難しいときに、オブジェクト名とパスを別々に指定できるようにします。 
+
+`--batch`::
+`--batch=<format>`::
+	標準入力から提供される各オブジェクトの、 オブジェクト情報とコンテンツを出力します。 `--textconv` または `--filters` または `--use-mailmap` 以外は、 他のオプションや引数と組み合わせることはできません。
++
+--
+	* `--textconv` または `--filters` とともに使用する場合、 入力行では空白(whitespace)で区切ってパスを指定する必要があります。 詳細については、 下記「BATCH OUTPUT」セクションを参照してください。
+
+	* `--use-mailmap` とともに使用すると、 コミット・オブジェクトとタグ・オブジェクトに対して、 出力の内容部分はメールマップ・メカニズムを使用して置き換えられた ID が表示され、 出力の情報部分には実際に置き換えられたIDを記録されたかのようにオブジェクトのサイズが表示されます。
+--
+
+`--batch-check`::
+`--batch-check=<format>`::
+	標準入力から提供される各オブジェクトのオブジェクト情報を出力します。 `--textconv` または `--filters` または `--use-mailmap` を除いて、 他のオプションや引数と組み合わせることはできません。
++
+--
+	* `--textconv` または `--filters` とともに使用する場合、 入力行では空白(whitespace)で区切ってパスを指定する必要があります。 詳細については、 下記「BATCH OUTPUT」セクションを参照してください。
+
+	* コミット・オブジェクトとタグ・オブジェクトに対して `--use-mailmap` とともに使用すると、 出力されるオブジェクト情報には、 オブジェクトに記録された ID がメールマップ・メカニズムによって置き換えられたかのように、 オブジェクトのサイズが表示されます。
+--
+
+`--batch-command`::
+`--batch-command=<format>`::
+	標準入力からコマンドと引数を読み取るコマンド・モードに入ります。 `--buffer` または `--textconv` または `--use-mailmap` または `--filters` のみと組み合わせることができます。
++
+--
+	* `--textconv` または `--filters` とともに使用する場合、 入力行では空白(whitespace)で区切ってパスを指定する必要があります。 詳細については、 下記「BATCH OUTPUT」セクションを参照してください。
+
+	* コミット・オブジェクトとタグ・オブジェクトに対して `--use-mailmap` とともに使用すると、 `contents` コマンドはメールマップ・メカニズムを使用して置換された ID を表示し、 `info` コマンドはあたかも実際に置換したIDを記録したかのようにオブジェクトのサイズを表示します。
+--
++
+`--batch-command` は以下のコマンドを認識します:
++
+--
+contents <object>::
+	オブジェクト参照 `<object>` のオブジェクトの内容を出力します。 これは `--batch` の出力に対応します。
+
+info <object>::
+	オブジェクト参照 `<object>` のオブジェクト情報を出力します。 これは `--batch-check` の出力に対応します。
+
+flush::
+	`--buffer` とともに使用して、最初から、または最後のフラッシュが発行されてから発行された先行するすべてのコマンドを実行します。 `--buffer` を使用すると、 `flush` が発行されるまで何も出力されません。 `--buffer` を使用しない場合は、 `flush` を発行しなくてもコマンドを毎回フラッシュします。
+--
++
+
+`--batch-all-objects`::
+	stdinでオブジェクトのリストを読み取る代わりに、 (到達可能なオブジェクトだけでなく、)リポジトリ内のすべてのオブジェクトと代替オブジェクトストア(alternate object stores)に対して要求されたバッチ操作を実行します。 `--batch` または `--batch-check` を指定する必要があります。 デフォルトでは、オブジェクトはハッシュでソートされた順序でアクセスされます。 下記 `--unordered` も参照してください。 オブジェクトは、linkgit:git-replace[1] の置換メカニズムを考慮せずに、そのまま表示されます。
+
+`--buffer`::
+	通常、バッチ出力は各オブジェクトが出力された後にフラッシュされるため、プロセスは `cat-file` からインタラクティブに読み取りおよび書き込みを行うことができます。 このオプションを使用すると、出力は通常のstdioバッファリングを使用します。 これは、多数のオブジェクトで `--batch-check` または `--batch-command` を呼び出す場合には、はるかに効率的です。
+
+`--unordered`::
+	`--batch-all-objects` が使用されている場合に、このオプションを使用すると、ハッシュの順序よりもオブジェクトのコンテンツにアクセスするのに効率的な順序でオブジェクトにアクセスします。 順序の正確な詳細は指定されていませんが、特定の順序が必要ない場合は、特に `--batch` を使用すると、通常、出力が速くなります。 注意: `cat-file` は、リポジトリに同一オブジェクトが複数回保存されている場合でも、オブジェクトを1回だけ表示することに注意してください。
+
+`--follow-symlinks`::
+	`--batch` または `--batch-check` を使用して、 tree-ish:path-in-tree 形式の拡張SHA-1式を使用してオブジェクトを要求する場合は、リポジトリ内のシンボリックリンクをたどります。 リンク自体に関する出力を提供する代わりに、リンク先オブジェクトに関する出力を提供します。 シンボリックリンクがツリーっぽいものの外側を指している場合(たとえば、 `/foo` へのリンクまたは `../foo` へのルートレベルのリンク)、ツリーの外側にあるリンクの部分が出力されます。
++
+このオプションは、ツリー内のオブジェクトではなく、インデックス内のオブジェクトが指定されている場合(たとえば、 `HEAD:link` ではなく `:link`）、 (現在のところ)正しく機能しません。
++
+`--batch` または `--batch-check` が使用されていない限り、このオプションは(現在のところ)使用できません。
++
+たとえば、以下のものを含むgitリポジトリについて考えてみましょう:
++
+--
+	f はファイルで、内容は "hello\n" です。
+	link は f への symlink です。
+	dir/link は ../f への symlink です。
+	plink は ../f への symlink です。
+	alink は /etc/passwd への symlink です。
+--
++
+通常のファイル `f` の場合、 `echo HEAD:f | git cat-file --batch` とすると、以下を出力します
++
+--
+	ce013625030ba8dba906f756967f9e9ca394464a blob 6
+--
++
+そして `echo HEAD:link | git cat-file --batch --follow-symlinks` は、 `HEAD:dir/link` と同様に、 両方とも `HEAD:f` を指しているため、同一の出力を行います。
++
+`--follow-symlinks` がないと、これらはシンボリックリンク自体に関するデータを出力します。 `HEAD:link` の場合、以下のように表示されます。
++
+--
+	4d1ae35ba2c8ec712fa2a379db44ad639ca277bd blob 1
+--
++
+`plink` と `alink` はどちらもツリーの外側を指しているため、それぞれ以下のように出力されます:
++
+--
+	symlink 4
+	../f
+
+	symlink 11
+	/etc/passwd
+--
+
+`-Z`::
+	`--batch` または `--batch-check` または `--batch-command` でのみ意味があります。 入出力は改行区切りではなく NUL 区切りです。
+
+`-z`::
+	`--batch` または `--batch-check` または `--batch-command` でのみ意味があります。 入力は改行区切りではなく NUL 区切りです。 このオプションは、 出力があいまいになる可能性があるため、 `-Z` を優先して非推奨になりました。
+
+
+OUTPUT
+------
+`-t` が指定されている場合、 `<type>` の1つを出力。
+
+`-s` が指定されている場合、 `<object>` のサイズ(バイト単位)を出力。
+
+`-e` が指定されている場合、 `<object>` の形式が正しくない限り、出力は行われません。
+
+`-p` を指定すると、`<object>` の内容がきれいに印刷(pretty-printed)されます。
+
+`<type>` が指定されている場合、 `<object>` の生の(圧縮されていない)コンテンツが返されます。
+
+BATCH OUTPUT
+------------
+
+`--batch` または `--batch-check` が指定された場合、 `cat-file` は stdin から 1 行に 1 つずつオブジェクトを読み取り、 オブジェクトに関する情報を、 読み取り時と同じ順序で出力します。 デフォルトでは、 linkgit:git-rev-parse[1] で送り出されたかのように、行全体がオブジェクトと見なされます。
+
+`--batch-command` が指定されると、 `cat-file` は標準入力からコマンドを 1 行に 1 つずつ読み取り、指定されたコマンドに基づいて情報を出力します。 `--batch-command` を使用すると、 `info` コマンドの後にオブジェクトが続くと `--batch-check` と同一の方法でオブジェクトに関する情報が出力され、 `contents` コマンドの後にオブジェクトが続くと `--batch` と同一の方法で内容が出力されます。
+
+カスタム `<format>` を使用して、オブジェクトごとに表示される情報を指定できます。 `<format>` は、各オブジェクトのstdoutに文字通りコピーされ、 `%(atom)` 形式のプレースホルダーが展開され、その後に改行が続きます。 使用可能なatomは以下のとおりです:
+
+`objectname`::
+	オブジェクト名の完全な16進表現。
+
+`objecttype`::
+	オブジェクトのタイプ(`cat-file -t` で表示されるものと同じ)。
+
+`objectmode`::
+	If the specified object has mode information (such as a tree or index entry), the mode expressed as an octal integer. Otherwise, empty string.
+
+`objectsize`::
+	オブジェクトのサイズ(バイト単位) (`cat-file -s` で表示されるものと同じ)。
+
+`objectsize:disk`::
+	オブジェクトがディスク上で占めるサイズ(バイト単位)。 下記「CAVEATS」セクションの「note about on-disk sizes」（ディスク上のサイズに関する注記)を参照してください。
+
+`deltabase`::
+	オブジェクトがディスク上にデルタとして保存されている場合、これはデルタベースオブジェクト名の完全な16進表現に展開されます。 それ以外の場合は、null OID ( 全てゼロ)に展開されます。 下記「CAVEATS」を参照してください。
+
+`rest`::
+	このatomが出力文字列で使用されている場合、入力行は最初の空白の境界で分割されます。 その空白の前のすべての文字がオブジェクト名と見なされます。 その最初の空白後の文字(つまり、行の「残り」)は、 `%(rest)` アトムに置き換えられて出力されます。
+
+形式が指定されていない場合、デフォルトの形式は `%(objectname) %(objecttype) %(objectsize)` です。
+
+`--batch` が指定されている場合、 または `--batch-command` が `contents` コマンドで使用されている場合、 オブジェクト情報の後にオブジェクトの内容(`%(objectsize)` バイトのサイズ)が続き、その後に改行(newline)が続きます。
+
+たとえば、カスタム形式のない `--batch` は、以下のように生成されます:
+
+-----------
+<oid> SP <type> SP <size> LF
+<contents> LF
+-----------
+
+一方、 `--batch-check='%(objectname) %(objecttype)'` は、以下のように生成します:
+
+------------
+<oid> SP <type> LF
+------------
+
+リポジトリ内のオブジェクトに解決できない名前がstdinに指定されている場合、 `cat-file` はカスタム形式を無視して以下のように出力します:
+
+------------
+<object> SP missing LF
+------------
+
+If a name is specified on stdin that is filtered out via `--filter=`, then `cat-file` will ignore any custom format and print:
+
+------------
+<object> SP excluded LF
+------------
+
+(あいまいな短い sha など、)複数のオブジェクトを参照する可能性のある名前が指定されている場合、 `cat-file` はカスタム形式を無視して以下のように出力します:
+
+------------
+<object> SP ambiguous LF
+------------
+
+If a name is specified that refers to a submodule entry in a tree and the target object does not exist in the repository, then `cat-file` will ignore any custom format and print (with the object ID of the submodule):
+
+------------
+<oid> SP submodule LF
+------------
+
+`--follow-symlinks` が使用され、リポジトリ内のシンボリックリンクがリポジトリの外部を指している場合、 `cat-file` はカスタム形式を無視して以下のように出力します:
+
+------------
+symlink SP <size> LF
+<symlink> LF
+------------
+
+シンボリックリンク(symlink)はツリーのルートに対して絶対(absolute)(`/` で始まる)か、あるいは相対(relative)です。 たとえば、 dir/link が `../../foo` を指している場合、`<symlink>` は `../foo` になります。 `<size>` は、バイト単位のシンボリックリンクのサイズです。
+
+`--follow-symlinks` を使用すると、以下のエラーメッセージが表示されます:
+
+------------
+<object> SP missing LF
+------------
+これは、要求した最初のシンボリックリンク(initial symlink)が存在しない場合に出力されます。
+
+------------
+dangling SP <size> LF
+<object> LF
+------------
+これは、最初のシンボリックリンク(initial symlink)が存在する場合に出力されますが、それが指すモノは出力されません。
+
+------------
+loop SP <size> LF
+<object> LF
+------------
+これは、シンボリックリンクループ(または解決するために40を超えるリンク段数を必要とするシンボリックリンク)に対して出力されます。
+
+------------
+notdir SP <size> LF
+<object> LF
+------------
+これは、シンボリックリンクの解決中に、ファイルがディレクトリ名として使用された場合に出力されます。
+
+あるいは、 `-Z` を渡すと、 上記の例達の改行(line feeds)が NUL終端 に置き換えられます。 これにより、出力自体に改行が含まれる場合でも出力がパース可能になるため、 スクリプト作成の目的で推奨されます。
+
+CAVEATS(警告)
+-----------
+
+注意: ディスク上のオブジェクトのサイズは正確に報告されますが、どのrefまたはオブジェクトがディスクの使用に関与しているかについて結論を出す際には注意が必要です。 パックされた非デルタオブジェクトのサイズは、それに対してデルタするオブジェクトのサイズよりもはるかに大きい場合がありますが、ベースとデルタのオブジェクトの選択は任意であり、再パック中に変更される可能性があります。
+
+注意: オブジェクトの複数のコピーがオブジェクトデータベースに存在する可能性があることにも注意してください。 この場合、どのコピーのサイズまたはデルタベースが報告されるかは未定義です。
+
+GIT
+---
+Part of the linkgit:git[1] suite

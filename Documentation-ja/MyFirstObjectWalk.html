@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>My First Object Walk</h1>
-<span id="revdate">2024-12-27</span>
+<span id="revdate">2025-11-13</span>
 </div>
 <div id="content">
 <div class="sect1">
@@ -748,7 +748,7 @@ asciidoc.install();
 <div class="ulist"><ul>
 <li>
 <p>
-<code>Documentation/user-manual.txt</code> 「HackingGit」では、リビジョンウォーカーの具現化をいくつか網羅しています。
+<code>Documentation/user-manual.adoc</code> under "Hacking Git" contains some coverage of the revision walker in its various incarnations.
 </p>
 </li>
 <li>
@@ -785,7 +785,7 @@ asciidoc.install();
 #include "builtin.h"
 #include "trace.h"
 
-int cmd_walken(int argc, const char **argv, const char *prefix)
+int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo)
 {
         trace_printf(_("cmd_walken incoming...\n"));
         return 0;
@@ -821,20 +821,44 @@ int cmd_walken(int argc, const char **argv, const char *prefix)
         ...
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>また、 <code>builtin.h</code> の <code>cmd_whatchanged</code>() の近くに関連する行を追加します:</p></div>
+<div class="paragraph"><p>Also add the relevant line in <code>builtin.h</code> near <code>cmd_version</code>():</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>int cmd_walken(int argc, const char **argv, const char *prefix);</code></pre>
+<pre><code>int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo);</code></pre>
 </div></div>
-<div class="paragraph"><p><code>git.c</code> の <code>commands</code>[] にルファベット順を維持しながら、 <code>whatchanged</code> のエントリの近くにコマンドを含めます:</p></div>
+<div class="paragraph"><p>Include the command in <code>git.c</code> in <code>commands</code>[] near the entry for <code>version</code>, maintaining alphabetical ordering:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>{ "walken", cmd_walken, RUN_SETUP },</code></pre>
 </div></div>
-<div class="paragraph"><p><code>Makefile</code> の <code>builtin/worktree.o</code> の近くに行を追加します:</p></div>
+<div class="paragraph"><p>Add an entry for the new command in the both the Make and Meson build system, before the entry for <code>worktree</code>:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+In the <code>Makefile</code>:
+</p>
+</li>
+</ul></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>BUILTIN_OBJS += builtin/walken.o</code></pre>
+<pre><code>...
+BUILTIN_OBJS += builtin/walken.o
+...</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+In the <code>meson.build</code> file:
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>builtin_sources = [
+   ...
+  'builtin/walken.c',
+   ...
+]</code></pre>
 </div></div>
 <div class="paragraph"><p><code>DEVELOPER</code> フラグが設定されていることを確認することを忘れないようにして、コマンドをビルドしてテストし、 <code>GIT_TRACE</code> を有効にして、デバッグ出力を確認します。</p></div>
 <div class="listingblock">
@@ -848,7 +872,7 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken</code></pre>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">新しいコマンドプロセスのより完全な概要については、 <code>Documentation/MyFirstContribution.txt</code> をご覧ください。</td>
+<td class="content">For a more exhaustive overview of the new command process, take a look at <code>Documentation/MyFirstContribution.adoc</code>.</td>
 </tr></table>
 </div>
 <div class="admonitionblock">
@@ -866,14 +890,14 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken</code></pre>
 <div class="paragraph"><p><code>nr</code> は、配列に存在する <code>rev_cmdline_entry</code> の数を表します。</p></div>
 <div class="paragraph"><p><code>alloc</code> は <code>ALLOC_GROW</code> マクロによって使用されます。 <code>alloc.h</code> を確認してください。この変数は、リストの割り当てられたサイズを追跡するために使用されます。</p></div>
 <div class="paragraph"><p>エントリごとに、以下ことがわかります:</p></div>
-<div class="paragraph"><p><code>item</code> は、オブジェクト散歩の基礎となるオブジェクトです。 Gitのアイテムは、ブロブまたはツリーまたはコミットまたはタグです。(<code>Documentation/gittutorial-2.txt</code> を参照してください。)</p></div>
+<div class="paragraph"><p><code>item</code> is the object provided upon which to base the object walk. Items in Git can be blobs, trees, commits, or tags. (See <code>Documentation/gittutorial-2.adoc</code>.)</p></div>
 <div class="paragraph"><p><code>name</code> は、オブジェクトのオブジェクトID(OID)です。これは、Gitを使用してあなたのソースファイルを整理した時におなじみの16進文字列です。OIDの出所については、上記のチュートリアルを上に向かって確認してください。</p></div>
-<div class="paragraph"><p><code>whence</code> は、指定されたオブジェクトの親をどうするかについての情報を示します。このフラグについては、後ほど詳しく説明します。 <code>Documentation/revisions.txt</code> を見て、 何が <code>whence</code> 値を設定できるかを理解してください。</p></div>
+<div class="paragraph"><p><code>whence</code> indicates some information about what to do with the parents of the specified object. We&#8217;ll explore this flag more later on; take a look at <code>Documentation/revisions.adoc</code> to get an idea of what could set the <code>whence</code> value.</p></div>
 <div class="paragraph"><p><code>flags</code> は、リビジョン散歩の開始を示唆するために使用され、 <code>revision.h</code> の #include 群の下の最初のブロックです。 <code>rev_cmdline_info</code> に設定される可能性が最も高いのは <code>UNINTERESTING</code> と <code>BOTTOM</code> ですが、これらと同じフラグを散歩中に使用することもできます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_code_struct_code_code_rev_info_code"><code>struct</code> <code>rev_info</code></h3>
-<div class="paragraph"><p>これはちょっと長くて、多くのフィールドは、構成オプションではなく、 <code>revision.c</code> による散歩中にのみ使用されます。 <code>struct</code> <code>rev_info</code> の構成可能なフラグのほとんどは、 <code>Documentation/rev-list-options.txt</code> にミラーを持っています。じっくり読むことをお勧めします。</p></div>
+<div class="paragraph"><p>This one is quite a bit longer, and many fields are only used during the walk by <code>revision.c</code> - not configuration options. Most of the configurable flags in <code>struct</code> <code>rev_info</code> have a mirror in <code>Documentation/rev-list-options.adoc</code>. It&#8217;s a good idea to take some time and read through that document.</p></div>
 </div>
 </div>
 </div>
@@ -924,7 +948,7 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken</code></pre>
 </div>
 <div class="sect3">
 <h4 id="_configuring_from_code_gitconfig_code">Configuring From <code>.gitconfig</code></h4>
-<div class="paragraph"><p>次に、関連する構成設定(つまり <code>git</code> <code>config</code> から読み取り可能で設定可能な設定)を確認する必要があります。 これは <code>git_config</code>() へのコールバックを提供することによって行われます。そのコールバック内で、これらのオプションをインターセプトする必要がある可能性のある他のコンポーネントからメソッドを呼び出すこともできます。コールバックは、(グローバル、ローカル、ワークツリーなど、)Gitが認識している構成値ごとに1回呼び出されます。</p></div>
+<div class="paragraph"><p>Next, we should have a look at any relevant configuration settings (i.e., settings readable and settable from <code>git</code> <code>config</code>). This is done by providing a callback to <code>repo_config</code>(); within that callback, you can also invoke methods from other components you may need that need to intercept these options. Your callback will be invoked once per each configuration value which Git knows about (global, local, worktree, etc.).</p></div>
 <div class="paragraph"><p>デフォルト値と同様に、私達はここではまだ何もする必要はありません。 ただし、他の既存の構成コールバックを呼び出さない場合は、 <code>git_default_config</code>() を呼び出す必要があります。</p></div>
 <div class="paragraph"><p>新しい関数を <code>builtin/walken.c</code> に追加します。 <code>config.h</code> ヘッダーもインクルードする必要があります:</p></div>
 <div class="listingblock">
@@ -943,14 +967,14 @@ static int git_walken_config(const char *var, const char *value,
         return git_default_config(var, value, ctx, cb);
 }</code></pre>
 </div></div>
-<div class="paragraph"><p>必ずあなたの <code>cmd_walken</code>() で <code>git_config</code>() を呼び出してください:</p></div>
+<div class="paragraph"><p>Make sure to invoke <code>repo_config</code>() with it in your <code>cmd_walken</code>():</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>int cmd_walken(int argc, const char **argv, const char *prefix)
+<pre><code>int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo)
 {
         ...
 
-        git_config(git_walken_config, NULL);
+        repo_config(repo, git_walken_config, NULL);
 
         ...
 }</code></pre>
@@ -966,14 +990,14 @@ static int git_walken_config(const char *var, const char *value,
 
 ...
 
-int cmd_walken(int argc, const char **argv, const char *prefix)
+int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo)
 {
         /* This can go wherever you like in your declarations.*/
         struct rev_info rev;
         ...
 
-        /* This should go after the git_config() call. */
-        repo_init_revisions(the_repository, &amp;rev, prefix);
+        /* This should go after the repo_config() call. */
+        repo_init_revisions(repo, &amp;rev, prefix);
 
         ...
 }</code></pre>
@@ -1019,7 +1043,7 @@ int cmd_walken(int argc, const char **argv, const char *prefix)
 <div class="paragraph"><p>Then let&#8217;s invoke <code>final_rev_info_setup</code>() after the call to <code>repo_init_revisions</code>():</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>int cmd_walken(int argc, const char **argv, const char *prefix)
+<pre><code>int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo)
 {
         ...
 
@@ -1079,7 +1103,7 @@ static void walken_commit_walk(struct rev_info *rev)
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content"><code>puts</code>() は <code>char</code>* を <code>stdout</code> に出力します。これは、マシンでパースされることが期待されるコマンドの一部であるため、私達はそれを stdout に直接送信します。</td>
+<td class="content"><code>puts</code>() は <code>char*</code> を <code>stdout</code> に出力します。これは、マシンでパースされることが期待されるコマンドの一部であるため、私達はそれを stdout に直接送信します。</td>
 </tr></table>
 </div>
 <div class="paragraph"><p>では、試してみましょう。</p></div>
@@ -1212,7 +1236,7 @@ $ ./bin-wrappers/git walken &gt; author-date.txt</code></pre>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>struct</code> <code>rev_info</code> *revs: これは、ウォークに使用される <code>rev_info</code> です。 その <code>filter</code> メンバーが <code>NULL</code> でない場合、<code>filter</code> にはオブジェクト・リストをフィルタリングする方法に関する情報が含まれます。
+<code>struct</code> <code>rev_info</code> <code>*revs</code>: これは、ウォークに使用される <code>rev_info</code> です。 その <code>filter</code> メンバーが <code>NULL</code> でない場合、<code>filter</code> にはオブジェクト・リストをフィルタリングする方法に関する情報が含まれます。
 </p>
 </li>
 <li>
@@ -1227,7 +1251,7 @@ $ ./bin-wrappers/git walken &gt; author-date.txt</code></pre>
 </li>
 <li>
 <p>
-<code>void</code> *show_data: <code>show_commit</code> と`show_object` に順番に渡されるコンテキストバッファ。
+<code>void</code> <code>*show_data</code>: <code>show_commit</code> と`show_object` に順番に渡されるコンテキストバッファ。
 </p>
 </li>
 </ul></div>
@@ -1235,7 +1259,7 @@ $ ./bin-wrappers/git walken &gt; author-date.txt</code></pre>
 <div class="ulist"><ul>
 <li>
 <p>
-<code>struct</code> <code>oidset</code> *omitted: 提供されたフィルターによって省略されたオブジェクトIDのリンクリスト。
+<code>struct</code> <code>oidset</code> <code>*omitted</code>: 提供されたフィルターによって省略されたオブジェクトIDのリンクリスト。
 </p>
 </li>
 </ul></div>
@@ -1358,7 +1382,7 @@ static int tree_count;</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_adding_a_filter_2">Adding a Filter</h3>
-<div class="paragraph"><p><code>Documentation/rev-list-options.txt</code> に配置されたオブジェクト散歩に適用できるフィルターがいくつかあります。これらのフィルターは通常、パックファイルの作成や部分的なクローンの実行などの操作に役立ちます。 それらは <code>list-objects-filter-options.h</code> で定義されています。このチュートリアルでは、 "tree:1" フィルターを使用します。これにより、散歩の開始時に、コミットから到達可能なコミットによって直接参照されないすべてのツリーとブロブが散歩から省略されます。 (<code>pending</code> は、散歩中にトラバースする必要のあるオブジェクトのリストです。あなたが理解するのを助けるため、広さ優先のツリートラバースを想像してください。この場合、「pending」リストの「HEAD」のみで散歩を開始するため、「HEAD」または「HEAD」の履歴によって直接参照されていないツリーとブロブを省略します。)</p></div>
+<div class="paragraph"><p>There are a handful of filters that we can apply to the object walk laid out in <code>Documentation/rev-list-options.adoc</code>. These filters are typically useful for operations such as creating packfiles or performing a partial clone. They are defined in <code>list-objects-filter-options.h</code>. For the purposes of this tutorial we will use the "tree:1" filter, which causes the walk to omit all trees and blobs which are not directly referenced by commits reachable from the commit in <code>pending</code> when the walk begins. (<code>pending</code> is the list of objects which need to be traversed during a walk; you can imagine a breadth-first tree traversal to help understand. In our case, that means we omit trees and blobs not directly referenced by <code>HEAD</code> or <code>HEAD</code>'s history, because we begin the walk with only <code>HEAD</code> in the <code>pending</code> list.)</p></div>
 <div class="paragraph"><p>今のところ、省略されたオブジェクトを追跡するつもりはないので、それらのパラメータを <code>NULL</code> に置き換えます。簡単にするために、フィルターを使用するかどうかに関係なく、単純なビルド時ブランチを追加します。 <code>traverse_commit_list</code>() を呼び出す行の「前に」以下の行を追加します。これにより、実行したばかりの散歩の種類がわかります:</p></div>
 <div class="listingblock">
 <div class="content">
@@ -1525,7 +1549,7 @@ $ GIT_TRACE=1 ./bin-wrappers/git walken 2&gt;&amp;1 | tail -n 10</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-12-25 19:21:52 JST
+ 2025-11-13 13:43:45 JST
 </div>
 </div>
 </body>

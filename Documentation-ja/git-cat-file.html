@@ -750,8 +750,7 @@ git-cat-file(1) Manual Page
 <div class="sectionbody">
 <div class="verseblock">
 <pre class="content"><em>git <code>cat-file</code></em> <em>&lt;type&gt;</em> <em>&lt;object&gt;</em>
-<em>git <code>cat-file</code></em> (<code>-e</code> | <code>-p</code>) <em>&lt;object&gt;</em>
-<em>git <code>cat-file</code></em> (<code>-t</code> | <code>-s</code>) [<code>--allow-unknown-type</code>] <em>&lt;object&gt;</em>
+<em>git <code>cat-file</code></em> (<code>-e</code> | <code>-p</code> | <code>-t</code> | <code>-s</code>) <em>&lt;object&gt;</em>
 <em>git <code>cat-file</code></em> (<code>--textconv</code> | <code>--filters</code>)
              [<em>&lt;rev&gt;</em><code>:</code>&lt;path|<code>tree-ish</code>&gt; | <code>--path=</code>&lt;path|<code>tree-ish</code>&gt; <em>&lt;rev&gt;</em>]
 <em>git <code>cat-file</code></em> (<code>--batch</code> | <code>--batch-check</code> | <code>--batch-command</code>) [<code>--batch-all-objects</code>]
@@ -823,10 +822,16 @@ git-cat-file(1) Manual Page
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>mailmap</code>
+<code>--mailmap</code>
 </dt>
 <dt class="hdlist1">
-<code>--</code>[<code>no-</code>]<code>use-mailmap</code>
+<code>--no-mailmap</code>
+</dt>
+<dt class="hdlist1">
+<code>--use-mailmap</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-use-mailmap</code>
 </dt>
 <dd>
 <p>
@@ -848,6 +853,20 @@ git-cat-file(1) Manual Page
 <p>
         与えられた <em>&lt;path&gt;</em> に対して、現在の作業ツリーで構成されているフィルターによって変換された内容を表示します(つまり、スマッジ(smudge)フィルター、行末変換など)。 この場合、<em>&lt;object&gt;</em> は <em>&lt;tree-ish&gt;</em><code>:</code><em>&lt;path&gt;</em> または <code>:</code><em>&lt;path&gt;</em> の形式である必要があります。
 </p>
+</dd>
+<dt class="hdlist1">
+<code>--filter=</code><em>&lt;filter-spec&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--no-filter</code>
+</dt>
+<dd>
+<p>
+        Omit objects from the list of printed objects. This can only be used in combination with one of the batched modes. Excluded objects that have been explicitly requested via any of the batch modes that read objects via standard input (<code>--batch</code>, <code>--batch-check</code>) will be reported as "filtered". Excluded objects in <code>--batch-all-objects</code> mode will not be printed at all. The <em>&lt;filter-spec&gt;</em> may be one of the following:
+</p>
+<div class="paragraph"><p>The form <em>--filter=blob:none</em> omits all blobs.</p></div>
+<div class="paragraph"><p>The form <em>--filter=blob:limit=&lt;n&gt;[kmg]</em> omits blobs of size at least n bytes or units. n may be zero. The suffixes k, m, and g can be used to name units in KiB, MiB, or GiB. For example, <em>blob:limit=1k</em> is the same as <em>blob:limit=1024</em>.</p></div>
+<div class="paragraph"><p>The form <em>--filter=object:type=(tag|commit|tree|blob)</em> omits all objects which are not of the requested type.</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--path=</code><em>&lt;path&gt;</em>
@@ -990,14 +1009,6 @@ flush
 </p>
 </dd>
 <dt class="hdlist1">
-<code>--allow-unknown-type</code>
-</dt>
-<dd>
-<p>
-        <code>-s</code> または <code>-t</code> が不明なタイプの 壊れた/破損した オブジェクトを照会できるようにします。
-</p>
-</dd>
-<dt class="hdlist1">
 <code>--follow-symlinks</code>
 </dt>
 <dd>
@@ -1103,6 +1114,14 @@ alink は /etc/passwd への symlink です。</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<code>objectmode</code>
+</dt>
+<dd>
+<p>
+        If the specified object has mode information (such as a tree or index entry), the mode expressed as an octal integer. Otherwise, empty string.
+</p>
+</dd>
+<dt class="hdlist1">
 <code>objectsize</code>
 </dt>
 <dd>
@@ -1153,10 +1172,20 @@ alink は /etc/passwd への symlink です。</code></pre>
 <div class="content">
 <pre><code>&lt;object&gt; SP missing LF</code></pre>
 </div></div>
+<div class="paragraph"><p>If a name is specified on stdin that is filtered out via <code>--filter=</code>, then <code>cat-file</code> will ignore any custom format and print:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;object&gt; SP excluded LF</code></pre>
+</div></div>
 <div class="paragraph"><p>(あいまいな短い sha など、)複数のオブジェクトを参照する可能性のある名前が指定されている場合、 <code>cat-file</code> はカスタム形式を無視して以下のように出力します:</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>&lt;object&gt; SP ambiguous LF</code></pre>
+</div></div>
+<div class="paragraph"><p>If a name is specified that refers to a submodule entry in a tree and the target object does not exist in the repository, then <code>cat-file</code> will ignore any custom format and print (with the object ID of the submodule):</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;oid&gt; SP submodule LF</code></pre>
 </div></div>
 <div class="paragraph"><p><code>--follow-symlinks</code> が使用され、リポジトリ内のシンボリックリンクがリポジトリの外部を指している場合、 <code>cat-file</code> はカスタム形式を無視して以下のように出力します:</p></div>
 <div class="listingblock">
@@ -1210,7 +1239,7 @@ alink は /etc/passwd への symlink です。</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-01-21 16:27:01 JST
+ 2025-11-13 13:43:48 JST
 </div>
 </div>
 </body>

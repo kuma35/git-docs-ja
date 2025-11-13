@@ -1,0 +1,34 @@
+uploadpack.hideRefs::
+	この変数は `transfer.hideRefs` と同じですが、 `upload-pack` にのみ適用されます(したがって、プッシュではなくフェッチにのみ影響します)。 `git fetch` で隠しref(hidden ref)をフェッチしようとすると失敗します。 `uploadpack.allowTipSHA1InWant` も参照してください。
+
+uploadpack.allowTipSHA1InWant::
+	`uploadpack.hideRefs` が有効な場合、 `upload-pack` が非表示の参照の先端にあるオブジェクトを要求するフェッチ要求を受け入れることを許可します(デフォルトでは、そのような要求は拒否されます)。 `uploadpack.hideRefs` も参照してください。 これが false であっても、クライアントは、 linkgit:gitnamespaces[7] のマニュアルページの「SECURITY」セクションで説明されている手法を使用してオブジェクトを盗むことができる場合があります。プライベートデータを別のリポジトリに保持することをお勧めします。
+
+uploadpack.allowReachableSHA1InWant::
+	`upload-pack` が、任意の参照先端から到達可能なオブジェクトを要求するフェッチ要求を受け入れることを許可します。 ただし、オブジェクトの到達可能性の計算には計算コストがかかることに注意してください。 デフォルトは `false` です。 これが false であっても、クライアントは、 linkgit:gitnamespaces[7] のマニュアルページの「SECURITY」セクションで説明されている手法を使用してオブジェクトを盗むことができる場合があります。 プライベートデータを別のリポジトリに保持することをお勧めします。
+
+uploadpack.allowAnySHA1InWant::
+	`upload-pack` が任意のオブジェクトを問い合わせる取得要求(fetch request)を受け入れることを許可します。 これは、 `uploadpack.allowTipSHA1InWant` と `uploadpack.allowReachableSHA1InWant` を意味します。 `true` に設定すると両方が有効になり、 `false` に設定すると両方が無効になります。 デフォルトでは設定されていません。
+
+uploadpack.keepAlive::
+	`upload-pack` が `pack-objects` を開始したとき、`pack-objects` がパックを準備している間は黙っている期間があるかもしれません。 通常は進行状況情報を出力しますが、フェッチに `--quiet` を使用した場合、 `pack-objects` はパックデータが開始するまで何も出力しません。 一部のクライアントとネットワークは、サーバーがハングしてあきらめていると見なす場合があります。 このオプションを設定すると、 `upload-pack` は `uploadpack.keepAlive` 秒ごとに空のキープアライブパケットを送信するように指示されます。 このオプションを0に設定すると、キープアライブパケットが完全に無効になります。 デフォルトは5秒です。
+
+uploadpack.packObjectsHook::
+	このオプションが設定されている場合、 `upload-pack` がクライアントのパックファイルを作成するために `git pack-objects` を実行しようとすると、代わりにこのシェルコマンドが実行されます。 `pack-objects` コマンドとそれが実行するであろう引数(最初の `git pack-objects` を含む)がシェルコマンドに追加されます。 フックのstdinとstdoutは、 `pack-objects` 自体が実行されたかのように扱われます。 つまり、 `upload-pack` は、 `pack-objects` を対象とした入力をフックに送り、stdoutで完成したpackfileを期待します。
++
+注意: この構成変数は、保護された構成で指定されている場合にのみ尊重されることに注意してください(<<SCOPES>> 参照)。 これは、信頼されていないリポジトリからのフェッチに対する安全対策です。
+
+uploadpack.allowFilter::
+	このオプションが設定されている場合、 `upload-pack` は部分クローン(partial clone)および部分フェッチオブジェクト(partial fetch object)のフィルタリングをサポートします。
+
+uploadpackfilter.allow::
+	未指定のオブジェクトフィルターのデフォルト値を提供します(下記構成変数参照)。 `true` に設定すると、将来追加されるすべてのフィルターも有効になります。 デフォルトは `true` です。
+
+uploadpackfilter.<filter>.allow::
+	`<filter>` に対応するオブジェクトフィルターを明示的に許可または禁止します。ここで、`<filter>` は次のいずれかになります: `blob:none`, `blob:limit`, `object:type`, `tree`, `sparse:oid`, `combine` 。 組み合わフィルターを使用する場合は、`combine` とすべてのネストされたフィルターの種類の両方を許可する必要があります。 デフォルトは `uploadpackfilter.allow` です。
+
+uploadpackfilter.tree.maxDepth::
+	`<n>` が `uploadpackfilter.tree.maxDepth` の値以下の場合にのみ、 `--filter=tree:<n>` を許可します。 設定されている場合、この構成変数がすでに設定されていない限り、これは `uploadpackfilter.tree.allow=true` も意味します。 設定されていない場合は効果がありません。
+
+uploadpack.allowRefInWant::
+	このオプションが設定されている場合、 `upload-pack` はプロトコルバージョン2の `fetch` コマンドの `ref-in-want` 機能をサポートします。 この機能は、レプリケーションの遅延のために、refが指すOIDについて同じビューを持たない可能性がある負荷分散サーバーの利益を目的としています。

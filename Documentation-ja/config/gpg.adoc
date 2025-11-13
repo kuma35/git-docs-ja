@@ -1,0 +1,38 @@
+gpg.program::
+	Pathname of the program to use instead of "`gpg`" when making or verifying a PGP signature. The program must support the same command-line interface as GPG, namely, to verify a detached signature, "`gpg --verify $signature - <$file`" is run, and the program is expected to signal a good signature by exiting with code 0. To generate an ASCII-armored detached signature, the standard input of "`gpg -bsau $key`" is fed with the contents to be signed, and the program is expected to send the result to its standard output.
+
+gpg.format::
+	`--gpg-sign` で署名するときに使用するキー形式を指定します。 デフォルトは `openpgp` です。 別の可能な値は `x509` と `ssh` です。
++
+署名形式(signature format)については linkgit:gitformat-signature[5] を参照してください。 署名形式は選択した `gpg.format` によって異なります。
+
+gpg.<format>.program::
+	これを使用して、選択した署名形式に使用されるプログラムをカスタマイズします。 ( `gpg.program` と `gpg.format` 参照) `gpg.program` は、 `gpg.openpgp.program` の歴史的同義語として引き続き使用できます。 `gpg.x509.program` のデフォルト値は `gpgsm` で、 `gpg.ssh.program` のデフォルト値は `ssh-keygen` です。
+
+gpg.minTrustLevel::
+	署名検証(signature verification)の最小信頼(trust)レベルを指定します。 このオプションが設定されていない場合、マージ操作の署名検証には、少なくとも `marginal` 信頼(trust)のあるキーが必要です。 署名の検証を実行する他の操作には、少なくとも `undefined` の信頼を持つキーが必要です。 このオプションを設定すると、すべての操作に必要な信頼レベルが上書きされます。 サポートされている値は以下のとおりです(重要度の昇順):
++
+* `undefined`
+* `never`
+* `marginal`
+* `fully`
+* `ultimate`
+
+gpg.ssh.defaultKeyCommand::
+	このコマンドは、 `user.signingkey` が設定されておらず、かつ、 ssh 署名が要求されたときに実行されます。 正常に終了すると、出力の最初の行に `key::` で始まる有効な ssh 公開鍵あるものと期待します。 これにより、 `user.signingKey` を静的に構成することが実際的でない場合に、スクリプトが正しい公開鍵を動的に検索(lookup)できるようになります。 これはたとえば、キーまたは SSH 証明書が頻繁にローテーションされる場合や、適切なキーの選択が git にとって未知の外部要因に依存する場合などです。
+
+gpg.ssh.allowedSignersFile::
+	信頼できる ssh 公開鍵を含むファイル。 このファイルは、1行以上のプリンシパル(principals)とそれに続く ssh 公開鍵で構成されます。 例: `user1@example.com,user2@example.com ssh-rsa AAAAX1...` 詳細については、 ssh-keygen(1) の「ALLOWED SIGNERS」を参照してください。 プリンシパル(principal)は、キーを識別するためにのみ使用され、署名を検証(verify)するときに使用できます。
++
+SSH には、gpg のような信頼レベル(trust levels)の概念がありません。 有効な署名(valid signatures)と信頼できる署名(trusted signatures)を区別できるようにするために、 allowedSignersFile に公開鍵が存在する場合、署名検証の信頼レベルは `fully` に設定されます。 それ以外の場合、信頼レベルは `undefined` であり、git verify-commit/tag は失敗します。
++
+このファイルはリポジトリ外の場所に設定でき、すべての開発者が独自の信頼ストア(trust store)を維持します。 中央リポジトリ・サーバーは、コードを検証するためのプッシュ・アクセスを使用して、ssh キーからこのファイルを自動的に生成できます。 おそらく、企業の設定では、このファイルは、開発者の ssh キーを既に処理している自動化によってグローバルな場所に生成されます。
++
+署名付きコミットのみを許可するリポジトリは、作業ツリーの最上位からの相対パスを使用して、リポジトリ自体にファイルを保存できます。 このようにして、すでに有効なキーを持つコミッターのみが、キーリングのキーを追加または変更できます。
++
+OpensSSH 8.8 以降、このファイルでは、valid-after および valid-before オプションを使用してキーの有効期間を指定できます。 署名の作成時に署名キーが有効であった場合、Git は署名を有効としてマークします。 これにより、ユーザーは以前に作成されたすべての署名を無効にすることなく、署名キーを変更できます。
++
+cert-authority オプション (ssh-keygen(1) の「CERTIFICATES」を参照) を指定した SSH CA 鍵の使用も有効です。
+
+gpg.ssh.revocationFile::
+	SSH KRL または取り消された公開鍵のリスト(プリンシパル(principal)プレフィックスなし)。 詳細については、 ssh-keygen(1) を参照してください。 公開鍵がこのファイルで見つかった場合、その公開鍵は常に信頼レベル `never` として扱われ、署名は無効として表示されます。

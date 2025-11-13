@@ -1,0 +1,282 @@
+git-tag(1)
+==========
+
+NAME
+----
+git-tag - Create, list, delete or verify tags
+
+
+SYNOPSIS
+--------
+[synopsis]
+git tag [-a | -s | -u <key-id>] [-f] [-m <msg> | -F <file>] [-e]
+	[(--trailer <token>[(=|:)<value>])...]
+	<tagname> [<commit> | <object>]
+git tag -d <tagname>...
+git tag [-n[<num>]] -l [--contains <commit>] [--no-contains <commit>]
+	[--points-at <object>] [--column[=<options>] | --no-column]
+	[--create-reflog] [--sort=<key>] [--format=<format>]
+	[--merged <commit>] [--no-merged <commit>] [<pattern>...]
+git tag -v [--format=<format>] <tagname>...
+
+DESCRIPTION
+-----------
+
+Add a tag reference in `refs/tags/`, unless `-d`/`-l`/`-v` is given to delete, list or verify tags.
+
+`-f` が指定されていない限り、名前付きタグはまだ存在してはいけません。
+
+`-a`, `-s`, `-u <key-id>` のいずれかが渡されると、 コマンドは「タグ」オブジェクトを作成し、 タグ・メッセージを要求します。 `-m<msg>` または `-F<file>` が指定されていない限り、 ユーザーがタグ・メッセージを入力するためのエディターを起動します。
+
+`-m<msg>` または `-F<file>` または `--trailer <token>[=<value>]` が指定され、 `-a` と `-s` と `-u <key-id>` がない場合、 `-a` が暗黙に指定されます。
+
+それ以外の場合は、指定されたオブジェクトを直接指すタグ参照(つまり、軽量タグ)が作成されます。
+
+A cryptographically signed tag object will be created when `-s` or `-u <key-id>` is used. The signing backend (GPG, X.509, SSH, etc.) is controlled by the `gpg.format` configuration variable, defaulting to OpenPGP. When `-u <key-id>` is not used, the committer identity for the current user is used to find the key for signing. The configuration variable `gpg.program` is used to specify a custom signing binary.
+
+Tag objects (created with `-a`, `-s`, or `-u`) are called "annotated" tags; they contain a creation date, the tagger name and e-mail, a tagging message, and an optional cryptographic signature. Whereas a "lightweight" tag is simply a name for an object (usually a commit object).
+
+注釈付きタグはリリース用であり、軽量タグはプライベートまたは一時オブジェクトラベル用です。 このため、オブジェクトに名前を付けるための一部のgitコマンド( `git describe` など)は、デフォルトでは軽量タグを無視します。
+
+
+OPTIONS
+-------
+`-a`::
+`--annotate`::
+	署名されていない注釈付きのタグオブジェクトを作成します
+
+`-s`::
+`--sign`::
+	Make a cryptographically signed tag, using the default signing key. The signing backend used depends on the `gpg.format` configuration variable. The default key is determined by the backend. For GPG, it's based on the committer's email address, while for SSH it may be a specific key file or agent identity. See linkgit:git-config[1].
+
+`--no-sign`::
+	すべてのタグに強制的に署名するように設定されている `tag.gpgSign` 構成変数をオーバーライドします。
+
+`-u <key-id>`::
+`--local-user=<key-id>`::
+	Make a cryptographically signed tag using the given key. The format of the <key-id> and the backend used depend on the `gpg.format` configuration variable. See linkgit:git-config[1].
+
+`-f`::
+`--force`::
+	既存のタグを、(失敗して終了するのではなく、)指定された名前に置き換えます
+
+`-d`::
+`--delete`::
+	指定された名前の既存のタグを削除します。
+
+`-v`::
+`--verify`::
+	Verify the cryptographic signature of the given tags.
+
+`-n<num>`::
+	_<num>_ specifies how many lines from the annotation, if any, are printed when using `-l`. Implies `--list`.
++
+デフォルトでは、注釈行は印刷されません。 `-n` に番号が指定されていない場合、最初の行のみが出力されます。 タグに注釈が付けられていない場合は、代わりにコミットメッセージが表示されます。
+
+`-l`::
+`--list`::
+	タグを一覧表示します。オプションで `<pattern>...` を指定すると、例えば `git tag --list 'v-*'` のように、パターンにマッチするタグのみをリストアップします。
++
+Running `git tag` without arguments also lists all tags. The pattern is a shell wildcard (i.e., matched using `fnmatch`(3)). Multiple patterns may be given; if any of them matches, the tag is shown.
++
+このオプションは、 `--contains` などの他のリストっぽいオプション(list-like option)が提供されている場合に暗黙的に提供されます。 詳細については、これらの各オプションのドキュメントを参照してください。
+
+`--sort=<key>`::
+	Sort based on the key given. Prefix `-` to sort in descending order of the value. You may use the `--sort=<key>` option multiple times, in which case the last _<key>_ becomes the primary key. Also supports "`version:refname`" or "`v:refname`" (tag names are treated as versions). The "`version:refname`" sort order can also be affected by the "`versionsort.suffix`" configuration variable. The keys supported are the same as those in `git for-each-ref`. Sort order defaults to the value configured for the `tag.sort` variable if it exists, or lexicographic order otherwise. See linkgit:git-config[1].
+
+`--color[=<when>]`::
+	Respect any colors specified in the `--format` option. The _<when>_ field must be one of `always`, `never`, or `auto` (if _<when>_ is absent, behave as if `always` was given).
+
+`-i`::
+`--ignore-case`::
+	タグの並べ替えとフィルタリングでは英大文字小文字は区別されません(case insensitive)。
+
+`--omit-empty`::
+	書式が空文字列に展開される場合、書式化 ref (formatted refs)の後ろに改行を出力しないでください。
+
+`--column[=<options>]`::
+`--no-column`::
+	Display tag listing in columns. See configuration variable `column.tag` for option syntax. `--column` and `--no-column` without options are equivalent to `always` and `never` respectively.
++
+このオプションは、注釈行(annotation lines)のないタグをリストする場合にのみ適用できます。
+
+`--contains [<commit>]`::
+	Only list tags which contain _<commit>_ (`HEAD` if not specified). Implies `--list`.
+
+`--no-contains [<commit>]`::
+	Only list tags which don't contain _<commit>_ (`HEAD` if not specified). Implies `--list`.
+
+`--merged [<commit>]`::
+	Only list tags whose commits are reachable from _<commit>_ (`HEAD` if not specified).
+
+`--no-merged [<commit>]`::
+	Only list tags whose commits are not reachable from _<commit>_ (`HEAD` if not specified).
+
+`--points-at [<object>]`::
+	Only list tags of _<object>_ (`HEAD` if not specified). Implies `--list`.
+
+`-m <msg>`::
+`--message=<msg>`::
+	Use _<msg>_ (instead of prompting). If multiple `-m` options are given, their values are concatenated as separate paragraphs. Implies `-a` if none of `-a`, `-s`, or `-u <key-id>` is given.
+
+`-F <file>`::
+`--file=<file>`::
+	Take the tag message from _<file>_. Use `-` to read the message from the standard input. Implies `-a` if none of `-a`, `-s`, or `-u <key-id>` is given.
+
+`--trailer <token>[(=|:)<value>]`::
+	Specify a (_<token>_, _<value>_) pair that should be applied as a trailer. (e.g. `git tag --trailer "Custom-Key: value"` will add a "Custom-Key" trailer to the tag message.) The `trailer.*` configuration variables (linkgit:git-interpret-trailers[1]) can be used to define if a duplicated trailer is omitted, where in the run of trailers each trailer would appear, and other details. The trailers can be extracted in `git tag --list`, using `--format="%(trailers)"` placeholder.
+
+`-e`::
+`--edit`::
+	Let further edit the message taken from file with `-F` and command line with `-m`.
+
+`--cleanup=<mode>`::
+	Set how the tag message is cleaned up. The _<mode>_ can be one of `verbatim`, `whitespace` and `strip`. The `strip` mode is default. The `verbatim` mode does not change message at all, `whitespace` removes just leading/trailing whitespace lines and `strip` removes both whitespace and commentary.
+
+`--create-reflog`::
+	タグのreflogを作成します。 タグのreflogをグローバルに有効にするには、 linkgit:git-config[1] の `core.logAllRefUpdates` を参照してください。 否定形式 `--no-create-reflog` は、(コマンドラインで)それ以前に指定された `--create-reflog` をオーバーライドするだけですが、現在のところ、`core.logAllRefUpdates` の設定を否定しません。
+
+`--format=<format>`::
+	表示されているタグrefとそれが指すオブジェクトを `%(fieldname)` によって差し込みする文字列。 形式はlinkgit:git-for-each-ref[1] の形式と同じです。 指定しない場合、デフォルトは `%(refname:strip=2)` です。
+
+_<tagname>_::
+	作成または削除または説明するタグの名前。 新しいタグ名は、linkgit:git-check-ref-format[1] で定義されているすべてのチェックに合格する必要があります。 これらのチェックの一部は、タグ名で許可される文字を制限する場合があります。
+
+_<commit>_::
+_<object>_::
+	The object that the new tag will refer to, usually a commit. Defaults to `HEAD`.
+
+CONFIGURATION
+-------------
+By default, `git tag` in sign-with-default mode (`-s`) will use your committer identity (of the form `Your Name <your@email.address>`) to find a key. If you want to use a different default key, you can specify it in the repository configuration as follows:
+
+-------------------------------------
+[user]
+    signingKey = <key-id>
+-------------------------------------
+
+The signing backend can be chosen via the `gpg.format` configuration variable, which defaults to `openpgp`. See linkgit:git-config[1] for a list of other supported formats.
+
+The path to the program used for each signing backend can be specified with the `gpg.<format>.program` configuration variable. For the `openpgp` backend, `gpg.program` can be used as a synonym for `gpg.openpgp.program`. See linkgit:git-config[1] for details.
+
+`pager.tag` is only respected when listing tags, i.e., when `-l` is used or implied. The default is to use a pager.
+
+See linkgit:git-config[1] for more details and other configuration variables.
+
+DISCUSSION
+----------
+
+On Re-tagging
+~~~~~~~~~~~~~
+
+タグを付けるコミットを間違えてしまいました。 どのようにしてタグを付け直したらいいでしょうか？
+
+If you never pushed anything out, just re-tag it. Use `-f` to replace the old one. And you're done.
+
+しかし、 もしあなたがすでに変更をプッシュしていたり、 他の人が直接あなたのリポジトリーを見ることができる場合、 人はすでに古いタグを見ている可能性があります。 その場合、 以下の2つのいずれかを行うことができます:
+
+. 常識的には、失敗したことを認めて、別の名前を使用してください。 他の人は既にとあるタグ名を見たことがあり、同一の名前を保持している場合、2人が両方とも「バージョンX」を持っているように見える状況にあるかもしれませんが、実際には「異なる」「X」を持っています。 だから、それを「X.1」と呼んで、それで終わりです。
+
+. The insane thing. You really want to call the new version "X" too, 'even though' others have already seen the old one. So just use `git tag -f` again, as if you hadn't already published the old one.
+
+However, Git does *not* (and it should not) change tags behind users back. So if somebody already got the old tag, doing a `git pull` on your tree shouldn't just make them overwrite the old one.
+
+誰かがあなたからリリースタグを取得した場合、あなた自身のタグを更新することで、その人のタグを変更することはできません。これは、人々が自分のタグ名を信頼できなければならないという点で、大きなセキュリティ上の議題です。 もしあなたが本当に非常識なことをしたいのであれば、 素直に白状して自分が失敗したことを人々に伝える必要があります。 そうするには、 以下のように公言すればよいでしょう:
+
+------------
+私はやらかしちまって、間違いのあるバージョンをXとタグ付けしてプッシュしてしまいました。
+それから私は、その何かを修正し、「修正された」ツリーを再度Xとしてタグ付けしました。
+
+あなたが既に間違ったタグを取得してしまっていて、新しいタグが必要な場合は、
+古いタグを削除し、以下の手順を実行して新しいタグをフェッチしてください。お願いします:
+
+	git tag -d X
+	git fetch origin tag X
+
+これで更新されたタグを取得します。
+
+あなたは以下のようにしてあなたの持っているタグをテストできます
+
+	git rev-parse X
+
+これは、あなたが新しいバージョンを持っているなら、 0123456789abcdef.. と返されるはずです。
+
+ご不便おかけしてすみませんでした。
+------------
+
+これは少々複雑に見えますか？ そのとおりです。 自動的に「修正」するだけで正しくなる方法はありません。 人々にタグが変更された可能性があることを知らせる必要があります。
+
+
+On Automatic following
+~~~~~~~~~~~~~~~~~~~~~~
+
+他の誰かのツリーを追っている場合は、リモート追跡ブランチ(例: `refs/remotes/origin/master`)を使用している可能性があります。 通常、相手側からのタグが必要です。
+
+一方、他の誰かからの一回限りの(one-shot)マージが必要なためにフェッチしている場合は、通常、そこからタグを取得する必要はありません。 これは、トップレベルに近い人によく起こりますが、それに限定されません。 神ならぬ人々は、お互いからプルするとき、必ずしも相手からプライベートアンカーポイントタグを自動的に取得したいとは思いません。
+
+Often, "please pull" messages on the mailing list just provide two pieces of information: a repo URL and a branch name; this is designed to be easily cut&pasted at the end of a `git fetch` command line:
+
+------------
+リーナス、更新を取得するために、
+
+	git://git..../proj.git master
+
+上記から取得してください。
+------------
+
+とあれば、以下のようになります:
+
+------------
+$ git pull git://git..../proj.git master
+------------
+
+このような場合、あなたは相手のタグを自動的に追跡したくはないでしょう。
+
+Gitの重要な側面の1つは分散型であり、これは主にシステムに固有の「上流」(upstream)または「下流」(downstream)がないことを意味します。 一見すると、上記の例は、タグの名前空間が上層部の人々によって所有されており、タグが下向きにのみ流れることを示しているように見えるかもしれませんが、そうではありません。 使用パターンによって、誰が誰のタグに関心があるかが決まることだけが示されています。
+
+一回限りのプル(on-shot pull)は、あるコミット履歴が、独自のタグ(例:「これは、2.6.21リリースで一般消費向けに提案されるネットワーク処理関連グループからの3番目のリリース候補です」)を持つあるサークル(例:「カーネルのネットワーク処理部分に主に関心がある人々」)と、別のサークル(例:「さまざまなサブシステムの改善を統合する人々」)の間の境界を越えていることを示すサインです。 後者は通常、前者のグループで内部的に使用される詳細なタグには関心がありません(これが「内部」の意味です)。そのため、この場合、タグを自動的に追跡しないことが望ましいです。
+
+ネットワーク処理関連グループの人々の間では、 グループ内でタグを交換したいと思うかもしれませんが、 その作業フローでは、リモート追跡ブランチを使用して互いの進行状況を追跡している可能性があります。 繰り返しますが、 そのようなタグを自動的に追跡するヒューリスティックは良いことです。
+
+
+On Backdating Tags
+~~~~~~~~~~~~~~~~~~
+
+別のVCSからいくつかの変更をインポートし、作業のメジャーリリースのタグを追加したい場合は、タグオブジェクト内に埋め込む日付を指定できると便利です。 タグオブジェクト内のこのようなデータは、たとえば、gitwebインターフェイスでのタグの順序に影響します。
+
+将来のタグオブジェクトで使用される日付を設定するには、環境変数 GIT_COMMITTER_DATE を設定します(可能な値については後の説明を参照してください。最も一般的な形式は "YYYY-MM-DD HH:MM" です)。
+
+For example:
+
+------------
+$ GIT_COMMITTER_DATE="2006-10-02 10:31" git tag -s v1.0.1
+------------
+
+include::date-formats.adoc[]
+
+FILES
+-----
+
+`$GIT_DIR/TAG_EDITMSG`::
+	このファイルには、 処理中の注釈付きタグのメッセージが含まれています。 注釈付きタグの作成前にエラーにより「git tag」が終了した場合、 エディター・セッションにてユーザーが書き込んだタグ・メッセージがこのファイルに存在します。 ただし、このファイルは次回の「git tag」の呼び出しによって上書きされる可能性があります。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.adoc[]
+
+:git-tag: 1
+include::config/tag.adoc[]
+
+NOTES
+-----
+
+include::ref-reachability-filters.adoc[]
+
+SEE ALSO
+--------
+linkgit:git-check-ref-format[1]. linkgit:git-config[1].
+
+GIT
+---
+Part of the linkgit:git[1] suite

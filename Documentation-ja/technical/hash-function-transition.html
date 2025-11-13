@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Git hash function transition</h1>
-<span id="revdate">2025-09-21</span>
+<span id="revdate">2025-11-13</span>
 </div>
 <div id="content">
 <div class="sect1">
@@ -936,7 +936,7 @@ SHA-256 リポジトリから浅い(shallow)クローンしたりフェッチし
         objectFormat = sha256
         compatObjectFormat = sha1</code></pre>
 </div></div>
-<div class="paragraph"><p><code>core.repositoryFormatVersion=1</code> の設定と <code>extensions.</code>* の設定の組み合わせにより、<code>v0.99.9l</code> より後のバージョンの Git は SHA-256 リポジトリで操作しようとせずに死んでしまい、代わりにエラーメッセージを出すようになります。</p></div>
+<div class="paragraph"><p><code>core.repositoryFormatVersion=1</code> の設定と <code>extensions.*</code> の設定の組み合わせにより、<code>v0.99.9l</code> より後のバージョンの Git は SHA-256 リポジトリで操作しようとせずに死んでしまい、代わりにエラーメッセージを出すようになります。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code># Between v0.99.9l and v2.7.0
@@ -1012,41 +1012,52 @@ fatal: unknown repository extensions found:
 </li>
 <li>
 <p>
-4バイト。短縮オブジェクト名(shortened object names)のバイト単位の長さ。 これは、短縮オブジェクト名表内の名前を明確(unambiguous)にするために必要な最短の長さです(訳注:パックファイル内でそのオブジェクト名ユニークにするのに最低限必要な長さ)
+4-byte length in bytes of shortened object names. This is the
+      shortest possible length needed to make names in the shortened
+      object name table unambiguous.
 </p>
 </li>
 <li>
 <p>
-4バイト。このインデックスファイル内で、この形式に関連する表が格納されている箇所を、先頭からのオフセットとして記録する整数。
-</p>
-</li>
-</ul></div>
-</li>
-<li>
-<p>
-4バイト。このファイルの先頭からトレーラまでのオフセット。
-</p>
-</li>
-<li>
-<p>
-0個以上の追加の キー/値 (key/value) のペア(4バイトのキー(key)、4バイトの値(value))。 サポートされているキーは 1 つだけです: <code>PSRC</code> 。 サポートされている値とその使用方法については、「Loose objects and unreachable objects」(緩いオブジェクトと到達不能オブジェクト)セクションを参照してください。 他のすべてのキーは予約されています。 読み込みプログラム(readers)は、認識されないキーを無視する必要があります。
+8-byte integer, recording where tables relating to this format
+      are stored in this index file, as an offset from the beginning.
 </p>
 </li>
 </ul></div>
 </li>
 <li>
 <p>
-0 個以上の NUL バイト。 これはオプションで、下記の完全なオブジェクト名表(the full object name table)の位置合わせを改善するために使用できます。
+8-byte offset to the trailer from the beginning of this file.
 </p>
 </li>
 <li>
 <p>
-最初のオブジェクト形式の表達(tables):
+Zero or more additional key/value pairs (4-byte key, 4-byte
+    value). Only one key is supported: <em>PSRC</em>. See the "Loose objects
+    and unreachable objects" section for supported values and how this
+    is used.  All other keys are reserved. Readers must ignore
+    unrecognized keys.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Zero or more NUL bytes. This can optionally be used to improve the
+  alignment of the full object name table below.
+</p>
+</li>
+<li>
+<p>
+Tables for the first object format:
 </p>
 <div class="ulist"><ul>
 <li>
 <p>
-短縮オブジェクト名の並べ替えられた表。これらは、このパックファイル内のすべてのオブジェクトの名前のプレフィックスであり、特定のオブジェクト名のバイナリ検索のキャッシュ・フットプリントを減らすために、オフセット値なしで一緒にパックされます。
+A sorted table of shortened object names.  These are prefixes of
+    the names of all objects in this pack file, packed together
+    without offset values to reduce the cache footprint of the binary
+    search for a specific object name.
 </p>
 </li>
 <li>
@@ -1066,7 +1077,7 @@ fatal: unknown repository extensions found:
 </li>
 <li>
 <p>
-4バイトのオフセット値の表。 並べ替えのられた短縮オブジェクト名の表内のオブジェクトの場合、この表内の対応するインデックスの値は、そのオブジェクトがパックファイル内のどこにあるかを示します。 これらは通常 31 ビットのパック ファイル オフセットですが、大きなオフセットは、最上位ビットが設定され、次の表へのインデックスとしてエンコードされます。
+A table of 4-byte offset values. The index of this table in pack order indicates where that object can be found in the pack file. These are usually 31-bit pack file offsets, but large offsets are encoded as an index into the next table with the most significant bit set.
 </p>
 </li>
 <li>
@@ -1098,17 +1109,18 @@ fatal: unknown repository extensions found:
 <div class="ulist"><ul>
 <li>
 <p>
-対応するパックファイルの末尾にある 20 バイトの SHA-256 チェックサムのコピー。
+A copy of the full main hash checksum at the end of the corresponding packfile.
 </p>
 </li>
 <li>
 <p>
-20バイト 上記全てのSHA-256チェックサム
+Full main hash checksum of all of the above.
 </p>
 </li>
 </ul></div>
 </li>
 </ul></div>
+<div class="paragraph"><p>The "full main hash" is a full-length hash of the main (not compatibility) algorithm in the repository. Thus, if the main algorithm is SHA-256, this is a 32-byte SHA-256 hash and for SHA-1, it&#8217;s a 20-byte SHA-1 hash.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_loose_object_index">Loose object index</h3>
@@ -1245,7 +1257,7 @@ SHA-256 に変換(convert): 新しい SHA-256 パックファイルを開きま�
 </ol></div>
 <div class="paragraph"><p>ステップ 3 では、新しいオブジェクトによって参照されるすべてのオブジェクトが変換表(translation table)にある必要があります。 これが、トポロジ的並べ替えステップ(the topological sort step)が必要な理由です。</p></div>
 <div class="paragraph"><p>最適化として、ステップ 1 で、各オブジェクトがパックファイル参照から解凍させた非ブロブオブジェクトを記述したファイルを作成できます。 これにより、パックファイル内のオブジェクトを再度解凍させることなく、ステップ 2 のトポロジ的並べ替えが可能になります。 オブジェクトは、ステップ 3 で再度解凍する必要があり、合計で 2 回膨らませます。</p></div>
-<div class="paragraph"><p>ステップ 4 は、読み取り時のパフォーマンスを向上させるためにたぶん必要です。 サーバー上の <code>git</code> <code>pack-objects</code> は、パックファイルを最適化してデータの局所性を高めます(good data locality)(Documentation/technical/pack-heuristics.txt 参照)。</p></div>
+<div class="paragraph"><p>Step 4 is probably necessary for good read-time performance. "git pack-objects" on the server optimizes the pack file for good data locality (see Documentation/technical/pack-heuristics.adoc).</p></div>
 <div class="paragraph"><p>このプロセスの詳細は変更される可能性があります。 これをうまく機能させるには、ある程度実地で試してみる事が必要です。</p></div>
 </div>
 <div class="sect2">
@@ -1277,25 +1289,9 @@ gpgsig-sha256 フィールドのみを使用して、SHA-256 のみを使用し�
 </div>
 <div class="sect2">
 <h3 id="_signed_tags">Signed Tags</h3>
-<div class="paragraph"><p>新しいフィールド「gpgsig-sha256」をタグオブジェクト形式に追加して、SHA-1 に依存せずにタグに署名できるようにします。 署名されたペイロードは、gpgsig-sha256 フィールドと <code>-----BEGIN</code> <code>PGP</code> <code>SIGNATURE-----</code> で区切られた本文内の署名が削除されたタグの SHA-256 コンテンツです。</p></div>
-<div class="paragraph"><p>これは、タグに署名できることを意味します</p></div>
-<div class="olist arabic"><ol class="arabic">
-<li>
-<p>
-既存の署名付きタグ オブジェクトと同様に、SHA-1 のみを使用する
-</p>
-</li>
-<li>
-<p>
-gpgsig-sha256 と in-body 署名を使用して、SHA-1 と SHA-256 の両方を使用します。
-</p>
-</li>
-<li>
-<p>
-gpgsig-sha256 フィールドのみを使用して、SHA-256 のみを使用します。
-</p>
-</li>
-</ol></div>
+<div class="paragraph"><p>We add new fields "gpgsig" and "gpgsig-sha256" to the tag object format to allow signing tags in both formats. The in-body signature is used for the signature in the current hash algorithm and the header is used for the signature in the other algorithm. Thus, a dual-signature tag will contain both an in-body signature and a gpgsig-sha256 header for the SHA-1 format of an object or both an in-body signature and a gpgsig header for the SHA-256 format of and object.</p></div>
+<div class="paragraph"><p>The signed payload of the tag is the content of the tag in the current algorithm with both its gpgsig and gpgsig-sha256 fields and "-----BEGIN PGP SIGNATURE-----" delimited in-body signature removed.</p></div>
+<div class="paragraph"><p>This means tags can be signed using one or both algorithms.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_mergetag_embedding">Mergetag embedding</h3>
@@ -1440,7 +1436,7 @@ fsck に gpgsig-sha256 フィールドを許容するように教える(teaching
 </li>
 <li>
 <p>
-<code>git</code> <code>commit</code> <code>--amend</code> でコピーされたフィールドから <code>gpgsig-</code>* を除外する
+<code>git</code> <code>commit</code> <code>--amend</code> でコピーされたフィールドから <code>gpgsig-*</code> を除外する
 </p>
 </li>
 <li>
@@ -1450,7 +1446,7 @@ SHA-1 テスト前提条件で SHA-1 値に依存するテストに注釈を付�
 </li>
 <li>
 <p>
-<code>unsigned</code> <code>char</code> * とハードコードされた定数 20 や 40 の代わりに、一貫して <code>struct</code> <code>object_id</code> と GIT_MAX_RAWSZ や GIT_MAX_HEXSZ を使用します。
+<code>unsigned</code> <code>char</code> <code>*</code> とハードコードされた定数 20 や 40 の代わりに、一貫して <code>struct</code> <code>object_id</code> と GIT_MAX_RAWSZ や GIT_MAX_HEXSZ を使用します。
 </p>
 </li>
 <li>
@@ -1712,8 +1708,7 @@ SHA3-256 の代わりにプレースホルダー NewHash を使用する
 </p>
 </li>
 </ul></div>
-<div class="sect2">
-<h3 id="_その後の履歴">その後の履歴</h3>
+<div class="paragraph"><p>Later history:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1721,9 +1716,7 @@ SHA3-256 の代わりにプレースホルダー NewHash を使用する
 </p>
 </li>
 </ul></div>
-</div>
-<div class="sect2">
-<h3 id="_references">References</h3>
+<div class="paragraph"><p>References:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>[1] https://lore.kernel.org/git/CA+55aFzJtejiCjV0e43+9oR3QuJK2PiFiLQemytoLpyJWe6P9w@mail.gmail.com/
@@ -1735,12 +1728,11 @@ SHA3-256 の代わりにプレースホルダー NewHash を使用する
 </div>
 </div>
 </div>
-</div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-10-08 00:16:43 JST
+ 2025-11-13 13:44:18 JST
 </div>
 </div>
 </body>

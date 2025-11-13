@@ -735,7 +735,7 @@ asciidoc.install();
 <body class="article">
 <div id="header">
 <h1>Git Commit-Graph Design Notes</h1>
-<span id="revdate">2025-09-21</span>
+<span id="revdate">2025-11-13</span>
 </div>
 <div id="content">
 <div id="preamble">
@@ -798,24 +798,39 @@ asciidoc.install();
 </li>
 </ol></div>
 <div class="paragraph"><p>値 1 ～ 4 は、 parse_commit_gently() の要件を満たします。</p></div>
-<div class="paragraph"><p>世代番号には以下の2つの定義があります:
-1. 修正コミッター日付(世代番号 v2)
-2. トポロジーレベル(世代番号 v1)</p></div>
+<div class="paragraph"><p>世代番号には以下の2つの定義があります:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+修正コミッター日付(世代番号 v2)
+</p>
+</li>
+<li>
+<p>
+トポロジーレベル(世代番号 v1)
+</p>
+</li>
+</ol></div>
 <div class="paragraph"><p>以下のように、コミットの「修正コミッター日付」を再帰的に定義します:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-親のないコミット(ルート コミット)には、そのコミッター日付に等しい修正コミッター日付があります。
+A commit with no parents (a root commit) has corrected committer date
+    equal to its committer date.
 </p>
 </li>
 <li>
 <p>
-少なくとも1つの親を持つコミットは、そのコミットのコミッター日付の最大値に等しく、かつ、そのコミットの親の間で最大の修正コミッター日付より大きい、修正コミッター日付を持っています。
+A commit with at least one parent has corrected committer date equal to
+    the maximum of its committer date and one more than the largest corrected
+    committer date among its parents.
 </p>
 </li>
 <li>
 <p>
-特殊な場合として、タイムスタンプがゼロのルート コミットは、GENERATION_NUMBER_ZERO (つまり、計算されていない修正コミット日付) と区別できるように、修正コミット日は 1 に設定されています。
+As a special case, a root commit with timestamp zero has corrected commit
+    date of 1, to be able to distinguish it from GENERATION_NUMBER_ZERO
+    (that is, an uncomputed corrected commit date).
 </p>
 </li>
 </ul></div>
@@ -833,38 +848,37 @@ asciidoc.install();
 </li>
 </ul></div>
 <div class="paragraph"><p>同様に、コミット A のトポロジーレベルは、A からルートコミットまでの最長パスの長さよりも 1 つ長くなります。 再帰的な定義は、計算と以下の特徴の観察を利用するのが簡単です:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-A と B がそれぞれ世代番号 N と M のコミットであり、N &#8656; M の場合、A は B に到達できません。 つまり、B は A よりもルートコミットから離れているため、B が A の祖先ではないことが検索せずにわかります。
-</p>
-</li>
-<li>
-<p>
-逆に、A が B の祖先であるかどうかを確認する場合、ウォーク境界上のすべてのコミットの世代番号が最大で N になるまで、コミットをウォークするだけで済みます。 世代番号でシードされた優先キュー(priority queue seeded by generation numbers)を使用してコミットをウォークすると、常に最大の世代番号で境界コミットを展開し、停止条件を簡単に検出できます。
-</p>
-</li>
-</ul></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>If A and B are commits with generation numbers N and M, respectively,
+and N &lt;= M, then A cannot reach B. That is, we know without searching
+that B is not an ancestor of A because it is further from a root commit
+than A.</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Conversely, when checking if A is an ancestor of B, then we only need
+to walk commits until all commits on the walk boundary have generation
+number at most N. If we walk commits using a priority queue seeded by
+generation numbers, then we always expand the boundary commit with highest
+generation number and can easily detect the stopping condition.</code></pre>
+</div></div>
 <div class="paragraph"><p>特徴は世代番号の両方のバージョンに適用されます。つまり、修正されたコミッターの日付とトポロジーレベルの両方です。</p></div>
 <div class="paragraph"><p>この特徴を使用すると、コミットをたどってトポロジー関係を決定するのにかかる時間を大幅に短縮できます。 世代番号がない場合、一般的なヒューリスティックは以下のようになります:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-A と B がそれぞれコミット時間 X と Y でコミットされており、X &lt; Y の場合、A は「おそらく」 B に到達できません。
-</p>
-</li>
-</ul></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>If A and B are commits with commit time X and Y, respectively, and
+X &lt; Y, then A _probably_ cannot reach B.</code></pre>
+</div></div>
 <div class="paragraph"><p>修正コミット日付がない場合(Git の古いバージョンや混合生成グラフチェーン(mixed generation graph chains)など)、 このヒューリスティックは、 計算がクロック・スキューのためにトポロジー関係に違反することが許可されている場合に現在使用されていますが(デフォルトの順序での「git log」など)、 トポロジカルな順序が必要な場合は使用されません (マージベース計算、 <code>git</code> <code>log</code> <code>--graph</code> など)。</p></div>
 <div class="paragraph"><p>実際には、いくつかのコミットが最近作成され、コミットグラフに保存されていないことが予想されます。 これらのコミットを「無限」(infinite)の世代番号を持つものとして扱い、既知の世代番号を持つコミットに到達するまでウォークします。</p></div>
 <div class="paragraph"><p>コミットグラフファイルにないコミットをマークするには、マクロ GENERATION_NUMBER_INFINITY を使用します。 世代番号を計算しないバージョンの Git によってコミットグラフファイルが書き込まれた場合、それらのコミットには、マクロ GENERATION_NUMBER_ZERO = 0 で表される世代番号が含まれます。</p></div>
 <div class="paragraph"><p>コミットグラフファイルは到達可能な状態で閉じられているため、すべてのコミットで以下のより弱い条件を保証できます:</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M の場合、A は B に到達できません。
-</p>
-</li>
-</ul></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>If A and B are commits with generation numbers N and M, respectively,
+and N &lt; M, then A cannot reach B.</code></pre>
+</div></div>
 <div class="paragraph"><p>注意: 完全に計算された世代番号がある場合、厳密な不等式(the strict inequality)が不等式(the inequality)とどのように異なるかに注意してください。 厳密な不等式(the strict inequality)を使用すると、いくつかの余分なコミットが実行される可能性がありますが、世代番号 *_INFINITY または 世代番号 *_ZERO のコミットを扱える単純さは価値があります。</p></div>
 <div class="paragraph"><p>マクロ GENERATION_NUMBER_V1_MAX = 0x3FFFFFFF は、トポロジーレベル (世代番号 v1) が少なくともこの値になるように計算されるコミットに使用します。 この値は、トポロジーレベルで使用できる 30 ビットを使用してコミットグラフファイルに保存できる最大値であるため、この値に制限します。 これは、コミットが親の世代番号と同じ世代番号を持つことができるもう一つのケースを示しています。</p></div>
 </div>
@@ -902,7 +916,7 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 </div>
 </div>
 <div class="sect1">
-<h2 id="_commit_graphs_chains">Commit Graphs Chains</h2>
+<h2 id="_commit_graphs_chains">Commit-Graphs Chains</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>通常、リポジトリはほぼ一定の速度(velocity)(1日あたりnコミット)で成長します。 時間の経過とともに、フェッチ操作によって追加されるコミットの数は、完全な履歴のコミットの数よりもはるかに少なくなります。 コミットグラフの「チェーン」を作成することで、コミット履歴全体を書き換えることなく、新しいコミットデータを高速に書き込むことができます&#8201;&#8212;&#8201;少なくともほとんどの場合はそうです。</p></div>
 <div class="sect2">
@@ -911,41 +925,42 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 <div class="paragraph"><p>例えば、 <code>commit-graph-chain</code> ファイルが以下の行達を含んでいるのならば</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>{hash0}
-{hash1}
-{hash2}</code></pre>
+<pre><code>        {hash0}
+        {hash1}
+        {hash2}</code></pre>
 </div></div>
 <div class="paragraph"><p>コミットグラフ チェイン は以下の図のようになります:</p></div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre><code> +-----------------------+
- |  graph-{hash2}.graph  |
- +-----------------------+
-          |
- +-----------------------+
- |                       |
- |  graph-{hash1}.graph  |
- |                       |
- +-----------------------+
-          |
- +-----------------------+
- |                       |
- |                       |
- |                       |
- |  graph-{hash0}.graph  |
- |                       |
- |                       |
- |                       |
- +-----------------------+</code></pre>
+<pre><code>+-----------------------+
+|  graph-{hash2}.graph  |
++-----------------------+
+         |
++-----------------------+
+|                       |
+|  graph-{hash1}.graph  |
+|                       |
++-----------------------+
+         |
++-----------------------+
+|                       |
+|                       |
+|                       |
+|  graph-{hash0}.graph  |
+|                       |
+|                       |
+|                       |
++-----------------------+</code></pre>
 </div></div>
-<div class="paragraph"><p>X0 を <code>graph-</code>{hash0}.graph のコミット数、 X1 を <code>graph-</code>{hash1}.graph のコミット数、 X2 を <code>graph-</code>{hash2}.graph のコミット数とします。 あるコミットが <code>graph-</code>{hash2}.graph の i 番目の位置にある場合、私達はこれをコミット位置 (X0 + X1 + i) であると解釈し、それを「グラフの位置」(graph position)として使用します。 <code>graph-</code>{hash2}.graph のコミットは、これらの位置を使用して、 <code>graph-</code>{hash1}.graph または <code>graph-</code>{hash0}.graph にある親を参照します。 半開間隔 [<code>0,</code> <code>X0</code>)<code>,</code> [<code>X0,</code> <code>X0</code> <code>+</code> <code>X1</code>)<code>,</code> [<code>X0</code> <code>+</code> <code>X1,</code> <code>X0</code> <code>+</code> <code>X1</code> <code>+</code> <code>X2</code>) の区間に含まれることを確認することにより、位置 j の任意のコミットに移動できます(訳注: 半開区間 [<code>a,</code> <code>b</code>) は <code>a</code> ≦ <code>x</code> &lt; <code>b</code> を表す)。</p></div>
+<div class="paragraph"><p>Let X0 be the number of commits in <code>graph-</code>{hash0}.graph, X1 be the number of commits in <code>graph-</code>{hash1}.graph, and X2 be the number of commits in <code>graph-</code>{hash2}.graph. If a commit appears in position i in <code>graph-</code>{hash2}.graph, then we interpret this as being the commit in position (X0 + X1 + i), and that will be used as its "graph position". The commits in <code>graph-</code>{hash2}.graph use these positions to refer to their parents, which may be in <code>graph-</code>{hash1}.graph or <code>graph-</code>{hash0}.graph. We can navigate to an arbitrary commit in position j by checking its containment in the intervals [0, X0), [X0, X0 + X1), [X0 + X1, X0 + X1<br />
+X2).</p></div>
 <div class="paragraph"><p>各コミットグラフファイル(ベースの <code>graph-</code>{hash0}.graph を除く)には、下位層のすべてのファイルのハッシュを指定するデータが含まれています。 上記の例では、<code>graph-</code>{hash1}.graph には {hash0} が含まれ、 <code>graph-</code>{hash2}.graph には {hash0} と {hash1} が含まれます。</p></div>
 </div>
 <div class="sect2">
 <h3 id="_merging_commit_graph_files">Merging commit-graph files</h3>
 <div class="paragraph"><p>書き込みのたびに新しいコミットグラフファイルを追加しただけでは、多数のコミットグラフファイルを介して線形検索を実行するという問題が発生します。 代わりに、私達はマージ戦略を使用して、スタック(the stack)が何時に幾つのレベルを折りたたむ必要があるかを決定します。</p></div>
 <div class="paragraph"><p>下の図は、そのような折りたたみを示しています。 新しいコミットのセットが追加されると、ファイルが <code>graph-</code>{hash1} に折りたたまれるべきかどうかがマージ戦略によって決定されます。 したがって、新しいコミット、<code>graph-</code>{hash2} のコミット、および <code>graph-</code>{hash1} のコミットは、新しい <code>graph-</code>{hash3} ファイルに結合する必要があります。</p></div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
 <pre><code>                            +---------------------+
                             |                     |
@@ -976,8 +991,8 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 <div class="paragraph"><p>この処理中に、書き込みコミットが結合、ソートされ、内容が一時ファイルに書き込まれますが、すべて <code>commit-graph-chain.lock</code> ロックファイルが保持されます。 ファイルがフラッシュされると、計算された {hash3} に従って名前を <code>graph-</code>{hash3} に変更します。 最後に、新しいチェーンデータを <code>commit-graph-chain.lock</code> に書き込みます:</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>{hash3}
-{hash0}</code></pre>
+<pre><code>        {hash3}
+        {hash0}</code></pre>
 </div></div>
 <div class="paragraph"><p>そして、ロックファイルをクローズします。</p></div>
 </div>
@@ -1021,7 +1036,7 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 <div class="paragraph"><p>レイヤーの書き込みまたはマージ時に、新しいレイヤーが唯一のレイヤーである場合、互換性のあるバージョンの Git によって書き込まれると、修正コミット日付を持ちます。 したがって、分割コミットフラフを単一のファイルとして書き換え(<code>--split=replace</code>)すると、修正コミット日付を持つ単一のレイヤーが作成されます。</p></div>
 </div>
 <div class="sect2">
-<h3 id="_"></h3>
+<h3 id="_deleting_graph_hash_files">Deleting graph-{hash} files</h3>
 <div class="paragraph"><p>新しい先端ファイル(tip file)が書き込まれた後、いくつかの <code>graph-</code>{hash} ファイルがチェーンの一部でなくなる可能性があります。 最終的には、これらのファイルをディスクから削除することが重要です。 削除が遅れる主な理由は、別のプロセスが <code>commit-graph-chain</code> ファイルを書き換える前に読み取り、削除後に <code>graph-</code>{hash} ファイルを探す可能性があるためです。</p></div>
 <div class="paragraph"><p>古い分割コミットグラフが参照されなくなった後もしばらく保持できるようにするために、参照されなくなったときにファイルの変更時刻を更新します。 次に、<code>$OBJDIR/info/commit-graphs/</code> ディレクトリをスキャンして、変更時刻が所定の有効期限よりも古い <code>graph-</code>{hash} ファイルを探します。 この期限のデフォルトはゼロですが、コマンドライン引数または構成設定を使用して変更できます。</p></div>
 </div>
@@ -1054,45 +1069,31 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 <div class="sect1">
 <h2 id="_related_links">Related Links</h2>
 <div class="sectionbody">
-<div class="olist arabic"><ol class="arabic" start="0">
-<li>
-<p>
-<a href="https://bugs.chromium.org/p/git/issues/detail?id=8">https://bugs.chromium.org/p/git/issues/detail?id=8</a>
-</p>
-<div class="paragraph"><p>Chromium work item for: Serialized Commit Graph</p></div>
-</li>
-<li>
-<p>
-<a href="https://lore.kernel.org/git/20110713070517.GC18566@sigill.intra.peff.net/">https://lore.kernel.org/git/20110713070517.GC18566@sigill.intra.peff.net/</a>
-</p>
-<div class="paragraph"><p>An abandoned patch that introduced generation numbers.</p></div>
-</li>
-<li>
-<p>
-<a href="https://lore.kernel.org/git/20170908033403.q7e6dj7benasrjes@sigill.intra.peff.net/">https://lore.kernel.org/git/20170908033403.q7e6dj7benasrjes@sigill.intra.peff.net/</a>
-</p>
-<div class="paragraph"><p>Discussion about generation numbers on commits and how they interact with fsck.</p></div>
-</li>
-<li>
-<p>
-<a href="https://lore.kernel.org/git/20170908034739.4op3w4f2ma5s65ku@sigill.intra.peff.net/">https://lore.kernel.org/git/20170908034739.4op3w4f2ma5s65ku@sigill.intra.peff.net/</a>
-</p>
-<div class="paragraph"><p>More discussion about generation numbers and not storing them inside commit objects. A valuable quote:</p></div>
-<div class="paragraph"><p>「最適化のためにリポジトリローカルキャッシュを保持する方向にもっと進むべきだと思います。到達可能性ビットマップはパフォーマンスの大きな勝利でした。コミットのプロパティでも同じことをすべきだと思います。世代番号だけでなく、コミットオブジェクト全体(つまり、packv4 や、私が数年前に提案した "metapacks" のようなもの)のグラフ構造へアクセスするために、 zlib で解凍せずに済むのは安上がりです。」</p></div>
-</li>
-<li>
-<p>
-<a href="https://lore.kernel.org/git/20180108154822.54829-1-git@jeffhostetler.com/T/#u">https://lore.kernel.org/git/20180108154822.54829-1-git@jeffhostetler.com/T/#u</a>
-</p>
-<div class="paragraph"><p>A patch to remove the ahead-behind calculation from <em>status</em>.</p></div>
-</li>
-<li>
-<p>
-<a href="https://lore.kernel.org/git/f27db281-abad-5043-6d71-cbb083b1c877@gmail.com/">https://lore.kernel.org/git/f27db281-abad-5043-6d71-cbb083b1c877@gmail.com/</a>
-</p>
-<div class="paragraph"><p>A discussion of a "two-dimensional graph position" that can allow reading multiple commit-graph chains at the same time.</p></div>
-</li>
-</ol></div>
+<div class="paragraph"><p>[0] <a href="https://bugs.chromium.org/p/git/issues/detail?id=8">https://bugs.chromium.org/p/git/issues/detail?id=8</a>
+    Chromium work item for: Serialized Commit Graph</p></div>
+<div class="paragraph"><p>[1] <a href="https://lore.kernel.org/git/20110713070517.GC18566@sigill.intra.peff.net/">https://lore.kernel.org/git/20110713070517.GC18566@sigill.intra.peff.net/</a>
+    An abandoned patch that introduced generation numbers.</p></div>
+<div class="paragraph"><p>[2] <a href="https://lore.kernel.org/git/20170908033403.q7e6dj7benasrjes@sigill.intra.peff.net/">https://lore.kernel.org/git/20170908033403.q7e6dj7benasrjes@sigill.intra.peff.net/</a>
+    Discussion about generation numbers on commits and how they interact
+    with fsck.</p></div>
+<div class="paragraph"><p>[3] <a href="https://lore.kernel.org/git/20170908034739.4op3w4f2ma5s65ku@sigill.intra.peff.net/">https://lore.kernel.org/git/20170908034739.4op3w4f2ma5s65ku@sigill.intra.peff.net/</a>
+    More discussion about generation numbers and not storing them inside
+    commit objects. A valuable quote:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>"I think we should be moving more in the direction of keeping
+ repo-local caches for optimizations. Reachability bitmaps have been
+ a big performance win. I think we should be doing the same with our
+ properties of commits. Not just generation numbers, but making it
+ cheap to access the graph structure without zlib-inflating whole
+ commit objects (i.e., packv4 or something like the "metapacks" I
+ proposed a few years ago)."</code></pre>
+</div></div>
+<div class="paragraph"><p>[4] <a href="https://lore.kernel.org/git/20180108154822.54829-1-git@jeffhostetler.com/T/#u">https://lore.kernel.org/git/20180108154822.54829-1-git@jeffhostetler.com/T/#u</a>
+    A patch to remove the ahead-behind calculation from <em>status</em>.</p></div>
+<div class="paragraph"><p>[5] <a href="https://lore.kernel.org/git/f27db281-abad-5043-6d71-cbb083b1c877@gmail.com/">https://lore.kernel.org/git/f27db281-abad-5043-6d71-cbb083b1c877@gmail.com/</a>
+    A discussion of a "two-dimensional graph position" that can allow reading
+    multiple commit-graph chains at the same time.</p></div>
 </div>
 </div>
 </div>
@@ -1100,7 +1101,7 @@ A と B がそれぞれ世代番号 N と M のコミットであり、N &lt; M 
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-09-21 21:26:05 JST
+ 2025-11-13 13:44:18 JST
 </div>
 </div>
 </body>

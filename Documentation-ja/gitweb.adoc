@@ -1,0 +1,547 @@
+gitweb(1)
+=========
+
+NAME
+----
+gitweb - Git Webインターフェイス(GitリポジトリのためのWebフロントエンド)
+
+SYNOPSIS
+--------
+gitweb を始めるには、 Git リポジトリーから linkgit:git-instaweb[1] を実行してください。 これにより、 ウェブサーバーが設定・起動され、 gitweb を指すウェブブラウザが開きます。
+
+
+DESCRIPTION
+-----------
+Gitwebは、GitリポジトリへのWebインターフェイスを提供します。その機能は以下のとおりです:
+
+* 共通のルートを持つ複数のGitリポジトリを表示します。
+* リポジトリのすべてのリビジョンをブラウズします。
+* リポジトリ内の任意のリビジョンのファイルの内容を表示します。
+* ブランチのリビジョン・ログ、 ファイルやディレクトリの履歴を閲覧し、 何が、 いつ、 誰によって変更されたかを表示します。
+* (有効になっている場合)ファイルの blame/annotation の詳細を表示します。
+* 任意のブランチに対して、コミットのRSSおよびAtomフィードを生成します。フィードは、最新のWebブラウザーで自動検出可能です。
+* リビジョンで変更されたすべての内容を閲覧し、 リビジョンを1つずつ進めて、 リポジトリの履歴を確認します。
+* 指定した検索語にマッチするコミット・メッセージのコミットを探します。
+
+gitweb 自身を使ってブラウズできる gitweb のソースコードについては、 https://repo.or.cz/w/git.git/tree/HEAD:/gitweb/[] を参照してください。
+
+
+CONFIGURATION
+-------------
+gitwebの動作のさまざまな側面は、構成ファイル `gitweb_config.perl` または `/etc/gitweb.conf` を介して制御できます。詳細については linkgit:gitweb.conf[5] を参照してください。
+
+Repositories
+~~~~~~~~~~~~
+gitweb は、 1つ以上の Git リポジトリーからの情報を表示できます。 これらのリポジトリーはすべてローカル・ファイルシステム上にあり、 共通のリポジトリー・ルートを共有する必要があります。 つまり、 すべてが単一の親リポジトリーの下にある必要があります(ただし、 「Advanced web server setup」セクションの「Webserver configuration with multiple projects' root」(複数のプロジェクトのルートを使用したWebサーバーの構成)サブセクションもご覧ください)。
+
+-----------------------------------------------------------------------
+our $projectroot = '/path/to/parent/directory';
+-----------------------------------------------------------------------
+
+`$projectroot` のデフォルト値は `/pub/git` です。 gitwebのビルド中に、`GITWEB_PROJECTROOT` ビルド構成変数を介して変更できます。
+
+デフォルトでは、 `$projectroot` の下にあるすべてのGitリポジトリが表示され、gitwebで利用できます。 プロジェクトのリストは、デフォルトで `$projectroot` ディレクトリをスキャンしてGitリポジトリを探します(オブジェクトデータベースをより正確に言うと、gitwebは作業領域に関心がなく、「裸の」(bare)リポジトリを表示するのに最適です)。
+
+gitwebのリポジトリの名前は、`$projectroot` を基準にした `$GIT_DIR` (そのオブジェクトデータベース)へのパスです。 したがって、リポジトリ $repoは `$projectroot/$repo` にあります。
+
+
+Projects list file format
+~~~~~~~~~~~~~~~~~~~~~~~~~
+$projectroot から始まるファイルシステムをスキャンして gitweb にリポジトリーを検索させる代わりに、 (いくつかの追加情報を含む)プロジェクトのリストを含むプレーンテキスト・ファイルを指すように `$projects_list` を設定することにより、 事前生成された表示可能なプロジェクトのリストを提供できます。
+
+このファイルは以下の形式を使用します:
+
+* 1行に1つのレコード(プロジェクト/リポジトリ用)。行の継続(改行のエスケープ)はサポートされていません。
+
+* 先頭と末尾の空白(whitespace)は無視されます。
+
+* 空白(whitespace)で区切られたフィールド。 空白(whitespace)はすべてフィールド区切り文字として使用できます(Perlの "`split(" ", $line)`" ルール)。
+
+* フィールドは、RFC 3986のセクション2.1(Percent-Encoding)で定義されているmodified URI encoding、または「Query string encoding」(https://en.wikipedia.org/wiki/Query_string#URL_encoding[] 参照)を使用します。違いは次のとおりです。 そのSP（` `）は `{plus}` としてエンコードできます(したがって、 `{plus}` もパーセントエンコードする必要があります)。
++
+予約文字は次のとおりです: `%` (エンコードに使用)と、 `{plus}` (スペースのエンコードに使用可能)と SP・TAB・LFを含むPerlで定義されているすべての空白文字(レコード内のフィールドの区切りに使用)。
+
+* 現在認識されているフィールドは以下のとおりです:
+<repository path>::
+	`$projectroot` に相対的なリポジトリ GIT_DIR へのパス
+<repository owner>::
+	リポジトリの所有者、できればフルネームまたは電子メール、またはその両方として表示されます
+
+あなたはgitwebから直接project_indexアクション(プロジェクトリストページの TXT リンク)を使用して、プロジェクトリストインデックスファイルを生成できます。 以下の「Generating projects list using gitweb」(gitwebを使用したプロジェクトリストの生成)セクションも参照してください。
+
+内容例:
+
+-----------------------------------------------------------------------
+foo.git       Joe+R+Hacker+<joe@example.com>
+foo/bar.git   O+W+Ner+<owner@example.org>
+-----------------------------------------------------------------------
+
+
+デフォルトでは、このファイルはプロジェクトリストページに「表示」されるプロジェクトのみを制御します(注意:正しく認識されたGitリポジトリを指していないエントリはgitwebによって表示されないことに注意してください)。あなたはプロジェクトがプロジェクトリストページに表示されていない場合でも、gitwebURLを手動で作成することでプロジェクトを表示できます。 `$strict_export` 構成変数(linkgit:gitweb.conf[5] 参照)をtrueに設定すると、概要ページにも表示されるリポジトリのみを表示許可します(つまり、プロジェクトリストファイルに明示的にリストされているプロジェクトのみのアクセス)。
+
+
+Generating projects list using gitweb
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+私達はGITWEB_CONFIGにはデフォルトのMakefile値、つまり「gitweb_config.perl」があると想定しています。 `gitweb_make_index.perl` ファイルに以下を入れてください:
+
+----------------------------------------------------------------------------
+read_config_file("gitweb_config.perl");
+$projects_list = $projectroot;
+----------------------------------------------------------------------------
+
+次に、以下のスクリプトを作成して、GITWEB_LISTビルド構成変数(またはgitweb構成の `$projects_list` 変数)に適した形式でプロジェクトのリストを取得します。
+
+----------------------------------------------------------------------------
+#!/bin/sh
+
+export GITWEB_CONFIG="gitweb_make_index.perl"
+export GATEWAY_INTERFACE="CGI/1.1"
+export HTTP_ACCEPT="*/*"
+export REQUEST_METHOD="GET"
+export QUERY_STRING="a=project_index"
+
+perl -- /var/www/cgi-bin/gitweb.cgi
+----------------------------------------------------------------------------
+
+このスクリプトを実行し、その出力をファイルに保存します。このファイルは、プロジェクトリストファイルとして使用できます。つまり `$projects_list` にそのファイル名を設定できます。
+
+
+Controlling access to Git repositories
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+デフォルトでは、 `$projectroot` の下にあるすべてのGitリポジトリが表示され、gitwebで利用できます。 ただし、あなたはgitwebがリポジトリへのアクセスを制御する方法を構成できます。
+
+* 「Projects list file format」のセクションで説明したように、プロジェクトリストファイルにリポジトリを選択的に含め、それを指すように `$ projects_list` gitweb構成変数を設定することにより、どのプロジェクトを「表示」するかを制御できます。 `$strict_export` を設定すると、プロジェクトリストファイルを使用して、「利用可能な」リポジトリを制御することもできます。
+
+* あなたはgitweb構成ファイルの `$export_ok` 変数を使用して、明示的にエクスポートされたリポジトリのみを一覧表示して表示できるようにgitwebを構成できます。 linkgit:gitweb.conf[5] のmanpageを参照してください。 trueと評価された場合、gitwebは、 `$export_ok` を評価したファイル名のファイルがオブジェクトデータベースに存在する場合にのみリポジトリを表示します(つまりディレクトリに `$export_ok` を評価した値のファイル名のマジックファイルがある場合)。
++
+たとえば、 linkgit:git-daemon[1]は、デフォルトで(`--export-all` オプションが使用されていない限り)、 `git-daemon-export-ok` ファイルを持つリポジトリに対してのみプルを許可します。以下のように追加します
++
+--------------------------------------------------------------------------
+our $export_ok = "git-daemon-export-ok";
+--------------------------------------------------------------------------
++
+こうすると、gitwebを表示し、 `git://` プロトコルを介してフェッチできるリポジトリへのアクセスのみを許可します。
+
+* 最後に、リポジトリごとに呼び出される任意のperlサブルーチンを指定して、リポジトリをエクスポートできるかどうかを判断することができます。サブルーチンは、プロジェクト(リポジトリ)への絶対パスを唯一のパラメータ(つまり、 `$projectroot/$ project` )として受け取ります。
++
+たとえば、mod_perlを使用してスクリプトを実行し、リポジトリにバカHTTPプロトコル認証(dumb HTTP protocol authentication)を構成している場合、以下のフックを使用して、ユーザーがファイルの読み取りを許可されている場合にのみアクセスを許可できます。
++
+--------------------------------------------------------------------------
+$export_auth_hook = sub {
+	use Apache2::SubRequest ();
+	use Apache2::Const -compile => qw(HTTP_OK);
+	my $path = "$_[0]/HEAD";
+	my $r    = Apache2::RequestUtil->request;
+	my $sub  = $r->lookup_file($path);
+	return $sub->filename eq $path
+	    && $sub->status == Apache2::Const::HTTP_OK;
+};
+--------------------------------------------------------------------------
+
+
+Per-repository gitweb configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gitwebに表示される個々のリポジトリを構成するには、Gitリポジトリの `GIT_DIR` にファイルを作成するか、リポジトリ構成変数を設定します( `GIT_DIR/config` で。 linkgit:git-config[1] 参照)。
+
+あなたはリポジトリ内で以下のファイルを使用できます:
+
+README.html::
+	gitwebプロジェクトの「summary」ページの `<div>` ブロック要素内にインクルードされるhtmlファイル(HTMLブロック)。プロジェクトのより長い説明、リンクの提供(たとえば、プロジェクトのホームページへ)などに使用できます。これは、XSS防止がオフの場合にのみ認識されます(`$prevent_xss` はfalseです。 linkgit:gitweb.conf[5] 参照)。XSS防止がオンになっているときにREADMEを安全に含める方法は、将来的には解決される可能性があります。
+
+description (または `gitweb.description`)::
+	短いプロジェクトの(リポジトリの)1行説明(プロジェクトリスト・ページでは `$projects_list_description_width` に長さをつめます。 デフォルトでは25文字です。 linkgit:gitweb.conf[5] 参照)。 プレーンテキスト・ファイルです。 HTMLはエスケープされます。 デフォルトでは以下のように設定されています
++
+-------------------------------------------------------------------------------
+Unnamed repository; edit this file to name it for gitweb.
+-------------------------------------------------------------------------------
++
+リポジトリ作成中にテンプレートから引用されます。テンプレートは通常は `/usr/share/git-core/templates/` にインストールされます。 `gitweb.description` リポジトリ構成変数を使用できますが、ファイルが優先されます。
+
+category (または `gitweb.category`)::
+	プロジェクトの単一行カテゴリ。 `$projects_list_group_categories` が有効になっている場合にプロジェクトをグループ化するために使用されます。(ファイルと構成変数が設定されていない)デフォルトでは、分類されていないプロジェクトは `$project_list_default_category` カテゴリに入れられます。 `gitweb.category` リポジトリ構成変数を使用できますが、ファイルが優先されます。
++
+構成変数`$projects_list_group_categories` と `$project_list_default_category` は linkgit:gitweb.conf[5] で説明されています。
+
+cloneurl (または 複数値変数の `gitweb.url`)::
+	1行に1つずつ、リポジトリURL(クローンとフェッチに使用)を含むファイル。プロジェクトの概要ページに表示されます。そのために複数値の `gitweb.url` リポジトリ設定変数を使用できますが、ファイルが優先されます。
++
+これは、グローバルプレフィックスベースの `@git_base_url_list` gitweb 設定変数をリポジトリ毎用に拡張/改造したものです(linkgit:gitweb.conf[5] 参照)。
+
+gitweb.owner::
+	`gitweb.owner` リポジトリ設定変数を使用して、リポジトリの所有者を設定できます。 プロジェクトリストと概要ページに表示されます。
++
+これが設定されていない場合、 `$projects_list` が設定されていなければ(unset)、(gitweb は `$projectroot` をスキャンしてリポジトリを探し、)ファイルシステムディレクトリの所有者(GECOSフィールド、つまり「getpwuid(3)」の実名フィールド経由)が使用されます。 `$projects_list` がリポジトリのリストを含むファイルを指している場合、プロジェクト所有者はデフォルトで、指定されたリポジトリのこのファイルの値になります。
+
+various `gitweb.*` config variables (in config)::
+	詳細なリストと説明については、 `%feature` ハッシュ(連想配列)の説明をお読みください。 linkgit:gitweb.conf[5] の「Configuring gitweb features」(gitweb機能の構成)セクションも参照してください。
+
+
+ACTIONS, AND URLS
+-----------------
+gitwebは、path_info (コンポーネント)ベースのURLを使用することも、クエリパラメーターを介して必要なすべての情報を渡すこともできます。一般的なgitweb URLは、次の以下の5つのコンポーネントに分類されます:
+
+-----------------------------------------------------------------------
+.../gitweb.cgi/<repo>/<action>/<revision>:/<path>?<arguments>
+-----------------------------------------------------------------------
+
+repo::
+	アクションが実行されるリポジトリ。
++
+利用可能なすべてのプロジェクトをリストするアクションを除く、すべてのアクションには、どのような形式でも、このパラメーターが必要です。
+
+action::
+	実行されるアクション。 デフォルトは、リポジトリが設定されていない場合は `projects_list` 、それ以外の場合は `summary` です。
+
+revision::
+	表示されるリビジョン。デフォルトはHEADです。
+
+path::
+	それを必要とするアクション用の、アクションが実行される <repository> 内のパス。
+
+arguments::
+	アクションの振る舞いを制御する任意の引数。
+
+一部のアクションでは、2つのリビジョン、場合によっては2つのパス名を指定する必要があります。最も一般的な形式では、このようなpath_info(コンポーネント)ベースの gitweb URL では以下のようになります:
+
+-----------------------------------------------------------------------
+.../gitweb.cgi/<repo>/<action>/<revision-from>:/<path-from>..<revision-to>:/<path-to>?<arguments>
+-----------------------------------------------------------------------
+
+
+各アクションはサブルーチンとして実装され、%actions ハッシュ(連想配列)に存在する必要があります。一部のアクションはデフォルトで無効になっており、機能メカニズムを介してオンにする必要があります。たとえば、 `blame` ビューを有効にするには、gitweb構成ファイルに以下を追加します:
+
+-----------------------------------------------------------------------
+$feature{'blame'}{'default'} = [1];
+-----------------------------------------------------------------------
+
+
+Actions:
+~~~~~~~~
+標準のアクションは以下のとおりです:
+
+project_list::
+	利用可能なGitリポジトリを一覧表示します。 URLにリポジトリが指定されていない場合、これがデフォルトのコマンドです。
+
+summary::
+	指定されたリポジトリに関する要約を表示します。 これは、URLにアクションが指定されておらず、リポジトリのみが指定されている場合のデフォルトのコマンドです。
+
+heads::
+remotes::
+	特定のリポジトリ内の、すべてのローカル、またはすべてのリモート追跡ブランチを一覧表示します。
++
+後者は、構成されていない限り、デフォルトでは使用できません。
+
+tags::
+	指定のリポジトリ内のすべてのタグ(軽量および注釈付き)を一覧表示します。
+
+blob::
+tree::
+	指定のリポジトリパス内のファイルとディレクトリの指定のリビジョンを表示します。これは、URLにアクションが指定されておらず、パスが指定されている場合のデフォルトのコマンドです。
+
+blob_plain::
+	指定されたリポジトリ内の指定されたパスとリビジョンのファイルの生データを返します。このアクションへのリンクは `raw` とマークされています。
+
+blobdiff::
+	同一ファイルの2つのリビジョンの間の違いを示します。
+
+blame::
+blame_incremental::
+	ファイルの blame(annotation(注釈)とも呼ばれる)情報を表示します。 行ごとに、 その行が最後に変更されたリビジョンと変更をコミットしたユーザーを示します。 インクリメンタル・バージョン(JavaScriptが有効な場合に、 設定されていれば自動的に使用される)は、 Ajax を使用して指定されたファイルの内容に blame 情報を段階的に追加します。
++
+このアクションは、パフォーマンス上の理由からデフォルトでは無効になっています。
+
+commit::
+commitdiff::
+	リポジトリ内の特定のコミットに関する情報を表示します。 `commit` ビューにはコミットに関する情報がより詳細に表示され、 `commitdiff` アクションには特定のコミットの変更セットが表示されます。
+
+patch::
+	linkgit:git-am[1] で適用するのに適した、プレーンテキストのメール形式でコミットを返します。
+
+tag::
+	特定の注釈付きタグ(タグオブジェクト)を表示します。
+
+log::
+shortlog::
+	(特定のリビジョンから開始の)特定のブランチのログ情報(コミットメッセージまたはコミット件名)を表示します。
++
+shortlogビューはよりコンパクトです。1行に1つのコミットが表示されます。
+
+history::
+	指定されたリビジョンから開始して、指定されたリポジトリパス内のファイルまたはディレクトリの履歴を表示します(デフォルトはHEAD、つまりデフォルトのブランチ)。
++
+このビューは「shortlog」ビューに似ています。
+
+rss::
+atom::
+	リポジトリへの変更のRSS(またはAtom)フィードを生成します。
+
+
+WEBSERVER CONFIGURATION
+-----------------------
+このセクションでは、gitwebを実行するようにいくつかの一般的なWebサーバーを構成する方法について説明します。いずれの場合も、例の `/path/to/gitweb` は、インストールしたgitwebを実行したディレクトリであり、 `gitweb_config.perl` を含んでいます。
+
+あなたが、以下にリストされていない Web サーバーを gitweb 用に構成した場合は、将来のリリースに含めることができるように、ぜひ手順を送ってください。
+
+Apache as CGI
+~~~~~~~~~~~~~
+Apacheは、gitwebがインストールされているディレクトリでCGIスクリプトをサポートするように設定する必要があります。 それが `/var/www/cgi-bin` ディレクトリであると仮定しましょう。
+
+-----------------------------------------------------------------------
+ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
+
+<Directory "/var/www/cgi-bin">
+    Options Indexes FollowSymlinks ExecCGI
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+-----------------------------------------------------------------------
+
+この構成では、リポジトリをブラウズするためのフルパスは以下のようになります:
+
+  http://server/cgi-bin/gitweb.cgi
+
+Apache with mod_perl, via ModPerl::Registry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+あなたはgitwebでmod_perlを使用できます。このサポートを有効にするには、mod_perl 1.xの場合は Apache::Registry をインストールする必要があり、また、 mod_perl 2.x の場合は ModPerl::Registry をインストールする必要があります。
+
+gitwebが `/var/www/perl` にインストールされていると仮定すると、以下のApache構成(mod_perl 2.xの場合)が適切です。
+
+-----------------------------------------------------------------------
+Alias /perl "/var/www/perl"
+
+<Directory "/var/www/perl">
+    SetHandler perl-script
+    PerlResponseHandler ModPerl::Registry
+    PerlOptions +ParseHeaders
+    Options Indexes FollowSymlinks +ExecCGI
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+-----------------------------------------------------------------------
+
+この構成では、リポジトリをブラウズするためのフルパスは以下のようになります:
+
+  http://server/perl/gitweb.cgi
+
+Apache with FastCGI
+~~~~~~~~~~~~~~~~~~~
+GitwebはApache＋FastCGIで動作します。 まず、 gitweb.cgiの名前を変更するか、コピーするか、シンボリックリンクして gitweb.fcgi にする必要があります。gitwebが `/usr/share/gitweb` ディレクトリにインストールされていると仮定しましょう。以下のApache構成が適しています(スマン。これれはテストされていません！)
+
+-----------------------------------------------------------------------
+FastCgiServer /usr/share/gitweb/gitweb.cgi
+ScriptAlias /gitweb /usr/share/gitweb/gitweb.cgi
+
+Alias /gitweb/static /usr/share/gitweb/static
+<Directory /usr/share/gitweb/static>
+    SetHandler default-handler
+</Directory>
+-----------------------------------------------------------------------
+
+この構成では、リポジトリをブラウズするためのフルパスは以下のようになります:
+
+  http://server/gitweb
+
+
+ADVANCED WEB SERVER SETUP
+-------------------------
+これらの例はすべてリクエストの書き換えを使用しており、 `mod_rewrite` (または同等のもの。以下の例はApache用に記述されています)が必要です。
+
+Single URL for gitweb and for fetching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gitwebと あなたの `http://` リポジトリの両方に1つのURLが必要な場合は、以下のようにApacheを構成できます:
+
+-----------------------------------------------------------------------
+<VirtualHost *:80>
+    ServerName    git.example.org
+    DocumentRoot  /pub/git
+    SetEnv        GITWEB_CONFIG   /etc/gitweb.conf
+
+    # turning on mod rewrite
+    RewriteEngine on
+
+    # make the front page an internal rewrite to the gitweb script
+    RewriteRule ^/$  /cgi-bin/gitweb.cgi
+
+    # make access for "dumb clients" work
+    RewriteRule ^/(.*\.git/(?!/?(HEAD|info|objects|refs)).*)?$ \
+		/cgi-bin/gitweb.cgi%{REQUEST_URI}  [L,PT]
+</VirtualHost>
+-----------------------------------------------------------------------
+
+上記の構成では、あなたのパブリックリポジトリが `/pub/git` 下にあり、クローン可能なGit URLとブラウズ可能なgitwebインターフェイスの両方として `http://git.domain.org/dir-under-pub-git` としてサービス提供することを想定しています。あなたの linkgit:git-daemon[1] を `--base-path=/pub/git --export-all` を伴って開始すると、まったく同じパスで `git://` URLを使用することもできます。
+
+環境変数 `GITWEB_CONFIG` を設定すると、名前付きファイル(つまり、この例では `/etc/gitweb.conf`)をgitwebの構成として使用するようにgitwebに指示します。 上記の例では、実際には必要ありません。構成ファイルが組み込み(gitwebのコンパイル中) や `gitweb_config.perl` や `/etc/gitweb.conf` とは異なる場所にある場合にのみ必要です。 詳細、特に優先順位ルールに関する情報については、 linkgit:gitweb.conf[5] を参照してください。
+
+あなたが例の書き換えルールを使用する場合は、gitweb構成ファイル(以下の例の `/etc/gitweb.conf`)に以下のようなものも必要になる場合があります:
+
+----------------------------------------------------------------------------
+@stylesheets = ("/some/absolute/path/gitweb.css");
+$my_uri    = "/";
+$home_link = "/";
+$per_request_config = 1;
+----------------------------------------------------------------------------
+
+今どきでは、gitwebは必要に応じて、(相対リンクのベースURIを設定するために、)HTMLベースタグを作成する必要があるため、自動的に機能するはずです。
+
+
+Webserver configuration with multiple projects' root
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+あなたが複数のプロジェクトルートでgitwebを使用する場合は、以下の方法でApache仮想ホストとgitweb構成ファイルを編集できます。
+
+(Apache構成ファイル内の)仮想ホスト構成は以下のようになります:
+
+--------------------------------------------------------------------------
+<VirtualHost *:80>
+    ServerName    git.example.org
+    DocumentRoot  /pub/git
+    SetEnv        GITWEB_CONFIG  /etc/gitweb.conf
+
+    # turning on mod rewrite
+    RewriteEngine on
+
+    # make the front page an internal rewrite to the gitweb script
+    RewriteRule ^/$  /cgi-bin/gitweb.cgi  [QSA,L,PT]
+
+    # look for a public_git directory in unix users' home
+    # http://git.example.org/~<user>/
+    RewriteRule ^/\~([^\/]+)(/|/gitweb.cgi)?$	/cgi-bin/gitweb.cgi \
+		[QSA,E=GITWEB_PROJECTROOT:/home/$1/public_git/,L,PT]
+
+    # http://git.example.org/+<user>/
+    #RewriteRule ^/\+([^\/]+)(/|/gitweb.cgi)?$	/cgi-bin/gitweb.cgi \
+		 [QSA,E=GITWEB_PROJECTROOT:/home/$1/public_git/,L,PT]
+
+    # http://git.example.org/user/<user>/
+    #RewriteRule ^/user/([^\/]+)/(gitweb.cgi)?$	/cgi-bin/gitweb.cgi \
+		 [QSA,E=GITWEB_PROJECTROOT:/home/$1/public_git/,L,PT]
+
+    # defined list of project roots
+    RewriteRule ^/scm(/|/gitweb.cgi)?$ /cgi-bin/gitweb.cgi \
+		[QSA,E=GITWEB_PROJECTROOT:/pub/scm/,L,PT]
+    RewriteRule ^/var(/|/gitweb.cgi)?$ /cgi-bin/gitweb.cgi \
+		[QSA,E=GITWEB_PROJECTROOT:/var/git/,L,PT]
+
+    # make access for "dumb clients" work
+    RewriteRule ^/(.*\.git/(?!/?(HEAD|info|objects|refs)).*)?$ \
+		/cgi-bin/gitweb.cgi%{REQUEST_URI}  [L,PT]
+</VirtualHost>
+--------------------------------------------------------------------------
+
+ここで、実際のプロジェクトルートはWebサーバーから `GITWEB_PROJECT_ROOT` 環境変数を介してgitwebに渡されるため、gitweb構成ファイル(上記の例では `/etc/gitweb.conf`)に以下の行を入れる必要があります:
+
+--------------------------------------------------------------------------
+$projectroot = $ENV{'GITWEB_PROJECTROOT'} || "/pub/git";
+--------------------------------------------------------------------------
+
+*Note* これはリクエストごとに設定する必要があるため、
+`$ per_request_config` はfalseであるか、
+上記を `$per_request_config` によって参照されるコードに含める必要があります。
+
+これらの構成により、2つのことが可能になります。 まず、サーバーの各UNIXユーザー(`<user>`)は、 `~/public_git/` にある gitweb Gitリポジトリを以下のURLで参照できます:
+
+  http://git.example.org/~<user>/
+
+あなたがサーバーでこの機能を使用したくない場合は、2番目の書き換えルールを削除してください。
+
+仮想ホストですでに `mod_userdir` を使用している場合、または最初の文字として \`~` を使用したくない場合は、2番目の書き換えルールをコメント化または削除し、必要に応じてそれ以降のいずれかをコメント化解除します。
+
+次に、 `/pub/scm/` と `/var/git/` にあるリポジトリには、 `http://git.example.org/scm/` と `http://git.example.org/var/` からアクセスできます。3番目や4番目のような書き換えルールを追加することで、必要な数のプロジェクトルートを追加できます。
+
+
+PATH_INFO usage
+~~~~~~~~~~~~~~~
+あなたがgitwebでPATH_INFOの使用を有効にするには以下のようにします
+
+----------------------------------------------------------------------------
+$feature{'pathinfo'}{'default'} = [1];
+----------------------------------------------------------------------------
+
+あなたのgitweb構成ファイルで、あなたのサーバーが以下の形式のURLを消費および生成するようにサーバーを設定することができます
+
+  http://git.example.com/project.git/shortlog/sometag
+
+つまり、以下のような構成を使用して、 `gitweb.cgi` 部分を使用しません。この構成では、 `/var/www/gitweb` がWebサーバーのDocumentRootであり、gitweb.cgiスクリプトと補完的な静的ファイル(スタイルシート、favicon、JavaScript)が含まれていることを前提としています:
+
+----------------------------------------------------------------------------
+<VirtualHost *:80>
+	ServerAlias git.example.com
+
+	DocumentRoot /var/www/gitweb
+
+	<Directory /var/www/gitweb>
+		Options ExecCGI
+		AddHandler cgi-script cgi
+
+		DirectoryIndex gitweb.cgi
+
+		RewriteEngine On
+		RewriteCond %{REQUEST_FILENAME} !-f
+		RewriteCond %{REQUEST_FILENAME} !-d
+		RewriteRule ^.* /gitweb.cgi/$0 [L,PT]
+	</Directory>
+</VirtualHost>
+----------------------------------------------------------------------------
+
+書き換えルールは、既存の静的ファイルが適切に提供されることを保証しますが、他のURLはPATH_INFOパラメーターとしてgitwebに渡されます。
+
+*注意* この場合、 `@stylesheets` と `$my_uri` と `$home_link` の特別な設定は必要ありません。
+ただし、あなたのプロジェクトの .git ディレクトリへの「ダムクライアント」(dumb client)アクセスは失われます
+(「Single URL for gitweb and for fetching」セクションで説明されています)。
+後者の可能な回避策は次のとおりです。
+つまり、あなたのプロジェクトのルートディレクトリ(例: `/pub/git`)に、
+.git拡張子なしで名前を付けたプロジェクト(例: `/pub/git/project.git` の代わりに `/pub/git/project`)を作成し、Apacheを以下のように構成します:
+
+----------------------------------------------------------------------------
+<VirtualHost *:80>
+	ServerAlias git.example.com
+
+	DocumentRoot /var/www/gitweb
+
+	AliasMatch ^(/.*?)(\.git)(/.*)?$ /pub/git$1$3
+	<Directory /var/www/gitweb>
+		Options ExecCGI
+		AddHandler cgi-script cgi
+
+		DirectoryIndex gitweb.cgi
+
+		RewriteEngine On
+		RewriteCond %{REQUEST_FILENAME} !-f
+		RewriteCond %{REQUEST_FILENAME} !-d
+		RewriteRule ^.* /gitweb.cgi/$0 [L,PT]
+	</Directory>
+</VirtualHost>
+----------------------------------------------------------------------------
+
+追加のAliasMatchにより、
+
+  http://git.example.com/project.git
+
+これはプロジェクトのGitディレクトリへの生のアクセスを提供します(プロジェクトのクローンを作成できるようにします)。
+
+  http://git.example.com/project
+
+これは人間に優しいgitwebアクセスを提供します。
+
+この解決策100%安全ではありません。つまり、プロジェクトに `git/` で始まる名前付きref(ブランチ、タグ)がある場合、以下のようなパスがあります
+
+  http://git.example.com/project/command/abranch..git/abranch
+
+これは404エラーで失敗します。
+
+
+BUGS
+----
+バグがあった場合は、 お手数ですが、メールの件名に gitweb を入れて、 バグや機能のリクエストを git@vger.kernel.org に報告してください。
+
+SEE ALSO
+--------
+linkgit:gitweb.conf[5], linkgit:git-instaweb[1]
+
+`gitweb/README`, `gitweb/INSTALL`
+
+GIT
+---
+Part of the linkgit:git[1] suite

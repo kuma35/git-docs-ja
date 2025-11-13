@@ -1,0 +1,143 @@
+Multi-Pack-Index (MIDX) Design Notes
+====================================
+
+Gitオブジェクトディレクトリには、 パックファイル(packfiles)(接尾辞 `.pack`)とパックインデックス(pack-indexes)(接尾辞 `.idx`) を含む `pack` ディレクトリが含まれています。 パックインデックスは、オブジェクトを検索し、パック内のオフセットに移動する方法を提供しますが、これらはパックファイルとペアになっている必要があります。 パックインデクスはパックファイルの接尾辞のみが異なるため、このペアリングはファイル名によって異なります。 パックインデックスはパックファイルごとの高速ルックアップを提供しますが、略語はすべてのパックファイルを検査する必要があり、最近使用されたパックファイルを見逃す可能性が高いため、パックファイルの数が増えるとこのパフォーマンスは低下します。 一部の大規模なリポジトリでは、ストレージスペースや過剰な再パック時間のため、単一のパックファイルに再パックすることはできません。
+
+multi-pack-index(略してMIDX)は、オブジェクトとそのオフセットのリストを複数のパックファイルに格納します。 以下を含みます:
+
+* パックファイル名のリスト。
+* オブジェクトIDのソートされたリスト。
+* 以下を含むi番目のオブジェクトIDのメタデータのリスト:
+** j番目のパックファイルを参照する値 j 。
+** オブジェクトのj番目のパックファイル内のオフセット。
+* 巨大なオフセットが必要な場合は、別の、バージョン2のパックインデックスと同様の巨大オフセットリストを使用します。
+- オプションの疑似パック順のオブジェクトのリスト(MIDX ビットマップで使用)。
+
+したがって、我々は任意の数のパックファイルに対して O(log N) 回数でルックアップ可能です。
+
+Design Details
+--------------
+
+- MIDXは、 `.git/objects/pack` ディレクトリの `multi-pack-index` という名前のファイルに保存されます。 これは、代替のパックディレクトリに保存できます。 それは同じディレクトリ内のパックファイルのみを参照します。
+
+- MIDX ファイルを使用するには、core.multiPackIndex 構成設定をオン (デフォルト) にする必要があります。 `false` に設定すると、 Git は MIDX ファイルが存在する場合でも読み取れなくなります。
+
+- ファイル形式にはオブジェクトIDハッシュ関数のパラメーターが含まれているため、ハッシュアルゴリズムを将来変更しても、形式を変更する必要はありません。
+
+- MIDXは、オブジェクトIDごとに1つのレコードのみを保持します。 オブジェクトが複数のパックファイルに表示される場合、MIDXは優先パックファイル内のコピーを選択します。それ以外の場合は、最も最近に変更されたパックファイルから選択します。
+
+- MIDXに登録されていないpackディレクトリにパックファイルが存在する場合、それらのパックファイル は `packed_git` リスト と `packed_git_mru` キャッシュ にロードされます。
+
+- pack-indexes (.idx ファイル) はpackディレクトリに残っているため、MIDXファイルを削除したり、 core.midx を false に設定したり、情報を失うことなくダウングレードしたりできます。
+
+- MIDXファイル形式は、オプションのデータを追加できるチャンクベースのアプローチ(commit-graphファイルと同様)を使用します。
+
+Incremental multi-pack indexes
+------------------------------
+
+リポジトリーのサイズが大きくなると、 全てのパックファイルを包含するマルチパック・インデックス(MIDX)へ書き込みコストが増大します。 これに対応するため、 「インクリメンタル・マルチパック・インデックス」機能により、 マルチパック・インデックスのチェーン(chain;連なり)を結合することが可能になります。
+
+チェーンの各個別のコンポーネントは、 少数のパックファイルのみを含む必要があります。 チェーンに追加しても、 チェーンの以前の部分が無効になることはありません。 そのため、 リポジトリーは、 MIDX チェーンの各レイヤーに含まれるパックファイルの数を決めることで、 MIDXチェーンの更新に費やす時間を制御できます。
+
+=== Design state
+
+現在、 インクリメンタル・マルチパック・インデックス機能には以下の 2 つの重要なコンポーネントが欠けています:
+
+  - MIDX チェーンで初期に作られた部分を書き直す能力(つまり、 隣接する MIDX レイヤーの一部を単一のMIDXに「圧縮」する能力)。 現在のところ、 MIDX チェーンを縮小する唯一のサポートされている方法は、 `--split` フラグなしでチェーン全体をイチから書き直すことです。
++
+この機能を導入する上で根本的な制限は存在しません。 初期の実装では複雑さを軽減するために省略されていますが、 今後追加される予定です。
+
+  - 到達可能性ビットマップ(reachability bitmaps)のサポート。 従来の単一の MIDX 実装では到達可能性ビットマップをサポートしています(詳細は linkgit:gitformat-pack[5] の「multi-pack-index reverse indexes」セクション参照)。
++
+上記と同様に、 インクリメンタルMIDX形式を拡張して到達可能性ビットマップをサポートする上で、 根本的な制限は存在しません。 以下の設計ではこの点を特に考慮しており、 到達可能性ビットマップのサポートは将来のパッチ・シリーズで追加される予定です。 現在の実装では、上記と同じ理由で省略されています。
++
+簡潔に言うと、 インクリメンタルMIDX機能で到達可能性ビットマップをサポートするために、 疑似パック順序の概念をインクリメンタルMIDXチェーンの各レイヤーに拡張し、 連結された疑似パック順序を形成します。 この連結はチェーン自体の順序と同じ順で行われます(言い換えると、 チェーン {$H1, $H2, $H3} の連結された疑似パック順序は、 $H1 の疑似パック順序に続き、 $H2の疑似パック順序、 そして$H3の疑似パック順序、 となります)。
++
+レイアウトは、 インクリメンタルMIDXチェーンの各レイヤーが `*.bitmap` へ書き込みできるように拡張されます。 各レイヤーのビットマップに含まれるオブジェクトは、 そのチェーンの前のレイヤーにあるオブジェクトの数だけオフセットされます。
+
+=== File layout
+
+単一の `multi-pack-index` ファイル(オプションで `.rev` や `.bitmap` 拡張子付き)を `$GIT_DIR/objects/pack` に保存する代わりに、 インクリメンタル MIDX は 以下のレイアウトで保存されます:
+
+----
+$GIT_DIR/objects/pack/multi-pack-index.d/
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-chain
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H1.midx
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H2.midx
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H3.midx
+----
+
+`multi-pack-index-chain` ファイルには、 チェーン内のインクリメンタル MIDX ファイルのリストが順番に記載されています。 上の例では、 `multi-pack-index-chain` ファイルには以下の行が含まれます:
+
+----
+$H1
+$H2
+$H3
+----
+
+`multi-pack-index-$H1.midx` ファイルには、 マルチパック・インデックス・チェーンの最初のレイヤーが含まれています。 `multi-pack-index-$H2.midx` ファイルには、 チェーンの2番目のレイヤーが含まれ、 以降も同様です。
+
+インクリメンタル MIDX と非インクリメンタル MIDX の両方が存在する場合、 常に非インクリメンタルMIDXが最初に読み込まれます。
+
+=== Object positions for incremental MIDXs
+
+オリジナルのマルチパック・インデックスの設計では、 リポジトリーの単一のマルチパック・インデックス内で、 オブジェクトIDによる辞書順(lexicographic)の位置を参照してオブジェクトを指定します。 インクリメンタル・マルチパック・インデックスの設計では、 MIDX チェーンの各コンポーネント間で、 連結された辞書順のインデックスを介してオブジェクトを参照します。
+
+`objects_nr()` が指定された MIDX レイヤーのオブジェクト数を返す関数であるとした場合、 たとえば $H3 内で辞書順の位置 `i` にあるオブジェクトのインデックスは以下のように定義されます:
+
+----
+objects_nr($H2) + objects_nr($H1) + i
+----
+
+(C 言語での実装では、 これは多くの場合 `i + m->num_objects_in_base` として実装されます)。
+
+=== Pseudo-pack order for incremental MIDXs
+
+The original implementation of multi-pack reachability bitmaps defined the pseudo-pack order in linkgit:gitformat-pack[5] (see the section titled "multi-pack-index reverse indexes") roughly as follows:
+
+____
+In short, a MIDX's pseudo-pack is the de-duplicated concatenation of objects in packs stored by the MIDX, laid out in pack order, and the packs arranged in MIDX order (with the preferred pack coming first).
+____
+
+In the incremental MIDX design, we extend this definition to include objects from multiple layers of the MIDX chain. The pseudo-pack order for incremental MIDXs is determined by concatenating the pseudo-pack ordering for each layer of the MIDX chain in order. Formally two objects `o1` and `o2` are compared as follows:
+
+1. If `o1` appears in an earlier layer of the MIDX chain than `o2`, then
+  `o1` sorts ahead of `o2`.
+
+2. Otherwise, if `o1` and `o2` appear in the same MIDX layer, and that MIDX layer has no base, then if one of `pack(o1)` and `pack(o2)` is preferred and the other is not, then the preferred one sorts ahead of the non-preferred one. If there is a base layer (i.e. the MIDX layer is not the first layer in the chain), then if `pack(o1)` appears earlier in that MIDX layer's pack order, then `o1` sorts ahead of `o2`. Likewise if `pack(o2)` appears earlier, then the opposite is true.
+
+3. Otherwise, `o1` and `o2` appear in the same pack, and thus in the same MIDX layer. Sort `o1` and `o2` by their offset within their containing packfile.
+
+Note that the preferred pack is a property of the MIDX chain, not the individual layers themselves. Fundamentally we could introduce a per-layer preferred pack, but this is less relevant now that we can perform multi-pack reuse across the set of packs in a MIDX.
+
+=== Reachability bitmaps and incremental MIDXs
+
+Each layer of an incremental MIDX chain may have its objects (and the objects from any previous layer in the same MIDX chain) represented in its own `*.bitmap` file.
+
+The structure of a `*.bitmap` file belonging to an incremental MIDX chain is identical to that of a non-incremental MIDX bitmap, or a classic single-pack bitmap. Since objects are added to the end of the incremental MIDX's pseudo-pack order (see above), it is possible to extend a bitmap when appending to the end of a MIDX chain.
+
+(Note: it is possible likewise to compress a contiguous sequence of MIDX incremental layers, and their `*.bitmap` files into a single layer and `*.bitmap`, but this is not yet implemented.)
+
+The object positions used are global within the pseudo-pack order, so subsequent layers will have, for example, `m->num_objects_in_base` number of `0` bits in each of their four type bitmaps. This follows from the fact that we only write type bitmap entries for objects present in the layer immediately corresponding to the bitmap).
+
+Note also that only the bitmap pertaining to the most recent layer in an incremental MIDX chain is used to store reachability information about the interesting and uninteresting objects in a reachability query. Earlier bitmap layers are only used to look up commit and pseudo-merge bitmaps from that layer, as well as the type-level bitmaps for objects in that layer.
+
+To simplify the implementation, type-level bitmaps are iterated simultaneously, and their results are OR'd together to avoid recursively calling internal bitmap functions.
+
+Future Work
+-----------
+
+- multi-pack-indexが拡張されて「安定したオブジェクトの順序」(関数 Order(hash）= multi-pack-indexが更新されても、特定のハッシュに対して定数である整数)を格納する場合、MIDXとは独立して更新されるMIDXビットマップは以下のようになります。
+
+- パックファイルは、初期名を共有するが `.pack` を `.keep` または `.promisor` に置き換える空のファイルを使用して「special」としてマークできます。 パックファイルに関する情報のフラグを記録するmulti-pack-indexにオプションのデータチャンクを追加できます。 これにより、「repacked」(再パック)や「redeltified」(再削除)などの新しいステータスが可能になり、マルチパック環境でのパックのメンテナンスに役立ちます。 パックファイルをオブジェクトタイプ(コミット、ツリー、ブロブなど)で整理し、このメタデータを使用してそのメンテナンスを支援することも役立つ場合があります。
+
+Related Links
+-------------
+[0] https://bugs.chromium.org/p/git/issues/detail?id=6
+    Chromium work item for: Multi-Pack Index (MIDX)
+
+[1] https://lore.kernel.org/git/20180107181459.222909-1-dstolee@microsoft.com/
+    multi-pack-index機能の以前のRFC
+
+[2] https://lore.kernel.org/git/alpine.DEB.2.20.1803091557510.23109@alexmv-linux/
+    Git Merge 2018コントリビューターのサミットノート(MIDXの議論を含む)

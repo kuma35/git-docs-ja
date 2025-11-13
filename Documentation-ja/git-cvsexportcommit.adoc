@@ -1,0 +1,100 @@
+git-cvsexportcommit(1)
+======================
+
+NAME
+----
+git-cvsexportcommit - 単一のコミットをCVSチェックアウトにエクスポートします
+
+
+SYNOPSIS
+--------
+[synopsis]
+'git cvsexportcommit' [-h] [-u] [-v] [-c] [-P] [-p] [-a] [-d <cvsroot>]
+	[-w <cvs-workdir>] [-W] [-f] [-m <msgprefix>] [<parent-commit>] <commit-id>
+
+
+DESCRIPTION
+-----------
+コミットをGitからCVSチェックアウトにエクスポートし、GitリポジトリからCVSリポジトリへのパッチのマージを容易にします。
+
+`-w` スイッチを使用してCVSチェックアウトの名前を指定するか、CVS作業コピーのルートから実行します。後者の場合、GIT_DIRを定義する必要があります。以下の例を参照してください。
+
+安全寄りに最大限振って、CVSチェックアウトでファイルが変更されておらず、最新であることを確認したら、デフォルトでは自動コミットしません。
+
+バイナリファイルに影響するファイルの追加、削除、およびコミットをサポートします。
+
+コミットがマージコミットの場合は、あなたは `git cvsexportcommit` にchangesetの対象となる親を指定する必要があります。
+
+OPTIONS
+-------
+
+`-c`::
+	パッチが正常に適用された場合、自動的にコミットします。ハンクが適用されない場合、またはその他の問題が発生した場合、コミットされません。
+
+`-p`::
+	パッチを適用するときは、pedantic(衒学的)(paranoid;病的なほど疑り深い)にする。 `--fuzz=0` でpatchを呼び出します。
+
+`-a`::
+	著者情報を追加します。作者行と(作成者と異なる場合)コミッターをメッセージに追加します。
+
+`-d`::
+	使用する代替CVSROOTを設定します。これは、 `CVS -d` パラメーターに対応します。 非対称的な方法でCVSを使用する場合を除いて、通常、ユーザーはこれを設定することは無いと思います。
+
+`-f`::
+	ファイルが最新でない場合でも、強制的にマージします。
+
+`-P`::
+	直接の親でなくても、親を強制的にコミットします。
+
+`-m`::
+	コミットメッセージの前に、指定のプレフィックスを付けます。パッチシリーズなどに便利です。
+
+`-u`::
+	エクスポートを試みる前に、影響を受けるファイルをCVSリポジトリから更新してください。
+
+`-k`::
+	パッチを適用する前に、CVSチェックアウトの動作でCVSキーワード拡張を逆にします。 (例: $Revision: 1.2.3.4$ は $Revision$ になります)
+
+`-w`::
+	エクスポートに使用するCVSチェックアウトの場所を指定します。現在のディレクトリがGitリポジトリ内にある場合、このオプションでは、実行前にGIT_DIRを設定する必要はありません。 デフォルトは `cvsexportcommit.cvsdir` の値です。
+
+`-W`::
+	現在の作業ディレクトリがGitチェックアウトであるだけでなく、CVSチェックアウトでもあることをcvsexportcommitに伝えます。したがって、Gitは続行する前に作業ディレクトリを親コミットにリセットします。
+
+`-v`::
+	おしゃべりにします。
+
+CONFIGURATION
+-------------
+cvsexportcommit.cvsdir::
+	エクスポートに使用するCVSチェックアウトのデフォルトの場所。
+
+EXAMPLES
+--------
+
+1つのパッチをCVSにマージします::
++
+------------
+$ export GIT_DIR=~/project/.git
+$ cd ~/project_cvs_checkout
+$ git cvsexportcommit -v <commit-sha1>
+$ cvs commit -F .msg <files>
+------------
+
+1つのパッチをCVSにマージします( `-c` および `-w` オプション)。作業ディレクトリはGitリポジトリ内にあります::
++
+------------
+	$ git cvsexportcommit -v -c -w ~/project_cvs_checkout <commit-sha1>
+------------
+
+保留中のパッチをCVSに自動的にマージします -- 自分が何をしているかを本当に知っている場合だけにしましょう。::
++
+------------
+$ export GIT_DIR=~/project/.git
+$ cd ~/project_cvs_checkout
+$ git cherry cvshead myhead | sed -n 's/^+ //p' | xargs -l1 git cvsexportcommit -c -p -v
+------------
+
+GIT
+---
+Part of the linkgit:git[1] suite

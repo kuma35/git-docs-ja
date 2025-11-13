@@ -1,0 +1,183 @@
+git-blame(1)
+============
+
+NAME
+----
+git-blame - ファイルの各行を最後に変更したリビジョンと作者を表示する
+
+SYNOPSIS
+--------
+[synopsis]
+'git blame' [-c] [-b] [-l] [--root] [-t] [-f] [-n] [-s] [-e] [-p] [-w] [--incremental]
+	    [-L <range>] [-S <revs-file>] [-M] [-C] [-C] [-C] [--since=<date>]
+	    [--ignore-rev <rev>] [--ignore-revs-file <file>]
+	    [--color-lines] [--color-by-age] [--progress] [--abbrev=<n>]
+	    [ --contents <file> ] [<rev> | --reverse <rev>..<rev>] [--] <file>
+
+DESCRIPTION
+-----------
+
+指定のファイルの各行で、その行を最後に変更したリビジョンからの情報を注釈します。 オプションで、指定のリビジョンから注釈を開始します。
+
+`-L` は注釈を指定行に制限します。複数回指定できます。
+
+行の原初は、ファイル自体の名前変更にまたがって自動的に追跡されます(現在のところ、名前変更追跡をオフにするオプションはありません)。 あるファイルから別のファイルに移動した行を追跡したり、別のファイルからコピーして貼り付けた行を追跡したりするには、 `-C` および `-M` オプションを参照してください。
+
+レポートには、削除または置換された行については何も表示されません。 以下の段落で簡単に説明する +git diff+ や `pickaxe` インターフェースなどのツールを使用する必要があります。
+
+Gitは、ファイル注釈のサポートとは別に、変更時にコード断片(code snippet)が発生したときの開発履歴の検索もサポートしています。 これにより、コード断片がファイルに追加され、ファイル間で移動またはコピーされ、最終的に削除または置換された時期を追跡できます。 これは、diffでテキスト文字列を検索することで機能します。 `blame_usage` を検索するpickaxeインターフェースの小さな例:
+
+-----------------------------------------------------------------------------
+$ git log --pretty=oneline -S'blame_usage'
+5040f17eba15504bad66b14a645bddd9b015ebb7 blame -S <ancestry-file>
+ea4c7f9bf69e781dd0cd88d2bccb2bf5cc15c9a7 git-blame: Make the output
+-----------------------------------------------------------------------------
+
+OPTIONS
+-------
+include::blame-options.adoc[]
+
+`-c`::
+	linkgit:git-annotate[1] と同じ出力モードを使用します(デフォルト: off)。
+
+`--score-debug`::
+	ファイル間の行の移動(`-C` 参照)およびファイル内で移動された行(`-M` 参照)に関連するデバッグ情報を含めます。 リストされている最初の数字はスコアです。 これは、ファイル間またはファイル内で移動を検出した英数字(alphanumeric characters)の数です。これらのコード行が移動されたと見なすには、 これが +git blame+ の特定のしきい値を超えている必要があります。
+
+`-f`::
+`--show-name`::
+	元のコミットのファイル名を表示します。 デフォルトでは、名前変更の検出により、別の名前のファイルからの行がある場合はファイル名が表示されます。
+
+`-n`::
+`--show-number`::
+	元のコミットの行番号を表示します(デフォルト: off)。
+
+`-s`::
+	作者名とタイムスタンプの出力を抑制します。
+
+`-e`::
+`--show-email`::
+	作者名の代わりに作者の電子メールアドレス(author email)を表示します(デフォルト: off)。 これは、 `blame.showEmail` 構成オプションを介して制御することもできます。
+
+`-w`::
+	親のバージョンと子のバージョンを比較して、その行がどこから来たのかを見つけるときは、空白(whitespace)を無視します。
+
++--abbrev=<n>+::
+	省略されたオブジェクト名としてデフォルトの 7+1 桁の16進数を使う代わりに、 <m>+1桁を使用します。 ここで<m>は少なくとも<n>ですが、 コミットオブジェクト名が一意になるような長さにします。 1桁分はコミットの境界を示すカレット(`^`)に使用されることに注意してください。
+
+
+THE DEFAULT FORMAT
+------------------
+
+`--porcelain` オプションも `--incremental` オプションも指定されていない場合、+git Blame+
+は各行の注釈を以下のとおり出力します:
+
+- 行の元となったコミットのオブジェクトの省略名
+- 作者ID (`-s` または `-e` が指定されていない限り、デフォルトでは作者名と日付)
+- 行番号
+
+上記を行の内容の前に表示します。
+
+THE PORCELAIN FORMAT(磁器形式)
+--------------------------
+
+この形式では、各行はヘッダーの後に出力されます。 少なくともヘッダーには、以下のような最初の行があります:
+
+- その行が属するコミットの40バイトのSHA-1;
+- 元のファイルの行の行番号;
+- 最終ファイルの行の行番号;
+- 前のコミットとは異なるコミットからの行のグループを開始する行においては、そのグループの行数。以降の行では、このフィールドはありません。
+
+このヘッダー行の後には、コミットごとに少なくとも1回は以下の情報が続きます:
+
+- 作者名("author")と、 電子メールアドレス("author-mail")と、 日付("author-time")と、 タイムゾーン("author-tz")。 コミッターも同様です。
+- その行が属するコミット内のファイル名。
+- コミットログメッセージの最初の行("summary")。
+
+実際の行の内容は、上記のヘッダーの後にTABが前に付いて出力されます。 これは、後でヘッダー要素を追加できるようにするためです。
+
+The porcelain format generally suppresses commit information that has already been seen. For example, two lines that are blamed to the same commit will both be shown, but the details for that commit will be shown only once. Information which is specific to individual lines will not be grouped together, like revs to be marked 'ignored' or 'unblamable'. This is more efficient, but may require more state be kept by the reader. The `--line-porcelain` option can be used to output full commit information for each line, allowing simpler (but less efficient) usage like:
+
+	# count the number of lines attributed to each author
+	git blame --line-porcelain file |
+	sed -n 's/^author //p' |
+	sort | uniq -c | sort -rn
+
+
+SPECIFYING RANGES
+-----------------
+
+古いバージョンのgitの +git blame+ や +git annotate+
+と異なり、注釈の範囲は行範囲とリビジョン範囲の両方で制限できます。注釈を行の範囲に制限する `-L` オプションは、複数回指定できます。
+
+あなたがファイル `foo` の40〜60行目の行の原初を見つけることに関心がある場合は、以下のように `-L` オプションを使用できます(2行とも同じ意味です。どちらも40行目から21行を要求します):
+
+	git blame -L 40,60 foo
+	git blame -L 40,+21 foo
+
+また、正規表現を使用して行範囲を指定することもできます:
+
+	git blame -L '/^sub hello {/,/^}$/' foo
+
+これは、注釈を `hello` サブルーチンの本体に制限します。
+
+あなたがバージョンv2.6.18より古い変更、または3週間より古い変更に関心がない場合は、 +git rev-list+
+のようにリビジョン範囲指定子を使用できます:
+
+	git blame v2.6.18.. -- foo
+	git blame --since=3.weeks -- foo
+
+リビジョン範囲指定子を使用して注釈を制限すると、範囲境界以降に変更されていない行(上記の例で、コミットv2.6.18 または 3週間以上経過した最新のコミットのいずれか)は、その範囲境界のコミットのblameになります。
+
+特に便利な方法は、追加されたファイルに、既存のファイルからコピペして作成された行があるかどうかを確認することです。 これは、開発者がだらしなく、コードを適切にリファクタリングしなかったことを示している場合があります。 最初に、ファイルを導入したコミットを以下のように見つけることができます:
+
+	git log --diff-filter=A --pretty=short -- foo
+
+次に、 `commit^!` 表記を使用して、コミットとその親の間の変更に注釈を付けます:
+
+	git blame -C -C -f $commit^! -- foo
+
+
+INCREMENTAL OUTPUT
+------------------
+
+`--incremental` オプションを付けて呼び出すと、ビルドした結果を出力します。 出力は一般に、より新しいコミットによって触れられた行から順に語られます(つまり、行の注釈は順不同になります)。これは、対話的なビューアで使用するためのものです。
+
+出力形式は磁器形式(Porcelain format)に似ていますが、注釈が付けられているファイルの実際の行は含まれていません。
+
+. 各blame項目は必ず以下の行で始まります:
+
+	<40-byte-hex-sha1> <sourceline> <resultline> <num-lines>
++
+行番号は1から数えます。
+
+. コミットがストリームに初めて現れるとき、追加のコミット情報(作成者、電子メール、コミッター、日付、要約など)を説明する1語のタグが各行の先頭に出力されて、コミットに関するその他のさまざまな情報が出力されます。
+
+. 磁器形式(Porcelain format)とは異なり、ファイル名情報が常に与えられ、エントリを終了します:
+
+	"filename" <whitespace-quoted-filename-goes-here>
++
+したがって、一部の行指向および単語指向のパーサーでの解析は非常に簡単です(ほとんどのスクリプト言語では非常に自然なはずです)。
++
+[NOTE]
+構文解析を行う人の場合: より堅牢にするために、拡張情報行(extended information lines)の先頭にあるタグワード(またはその特定のものを気にする)を認識できない最初の行と最後の行の間の行(`<sha1>` 行や `filename` 行)はすべて無視してください。 そうすれば、(コミットエンコーディング(commit encoding)や拡張コミット解説(extended commit commentary)のような)情報が追加されたとしても、blameビュワーは気にしません。
+
+
+MAPPING AUTHORS
+---------------
+
+linkgit:gitmailmap[5] を参照してください。
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.adoc[]
+
+include::config/blame.adoc[]
+
+SEE ALSO
+--------
+linkgit:git-annotate[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite

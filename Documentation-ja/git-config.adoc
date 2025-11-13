@@ -1,0 +1,471 @@
+git-config(1)
+=============
+
+NAME
+----
+git-config - リポジトリー・オプションまたはグローバル・オプションの取得・設定
+
+
+SYNOPSIS
+--------
+[synopsis]
+'git config list' [<file-option>] [<display-option>] [--includes] 'git config get' [<file-option>] [<display-option>] [--includes] [--all] [--regexp] [--value=<pattern>] [--fixed-value] [--default=<default>] [--url=<url>] <name> 'git config set' [<file-option>] [--type=<type>] [--all] [--value=<pattern>] [--fixed-value] <name> <value> 'git config unset' [<file-option>] [--all] [--value=<pattern>] [--fixed-value] <name> 'git config rename-section' [<file-option>] <old-name> <new-name> 'git config remove-section' [<file-option>] <name> 'git config edit' [<file-option>] 'git config' [<file-option>] --get-colorbool <name> [<stdout-is-tty>]
+
+DESCRIPTION
+-----------
+このコマンドを使用して、オプションを照会(query)/設定(set)/置換(replace)/設定解除(unset;削除)できます。名前は実際にはドットで区切られたセクションとキーであり、値はエスケープされます。
+
+Multiple lines can be added to an option by using the `--append` option. If you want to update or unset an option which can occur on multiple lines, `--value=<pattern>` (which is an extended regular expression, unless the `--fixed-value` option is given) needs to be given. Only the existing values that match the pattern are updated or unset. If you want to handle the lines that do *not* match the pattern, just prepend a single exclamation mark in front (see also <<EXAMPLES>>), but note that this only works when the `--fixed-value` option is not in use.
+
+`--type=<type>` オプションは「git config」に指示して、指定の<type>の下で入力値(incoming value)と出力値(outgoing value)が正規化可能であることを確認します。 `--type=<type>` が指定されていない場合、正規化は実行されません。 呼び出し元は、既に指定済の `--type` 指定子を `--no-type` で設定解除できます。
+
+読み取り時、値はデフォルトでシステム、グローバル、リポジトリのローカル構成ファイルから読み取られ、オプション `--system` 、`--global` 、 `--local` 、 `--worktree` 、 `--file <filename>` を使用して、その場所から「のみ」読み取るようにコマンドに指示できます(<<FILES>> 参照)。
+
+書き込み時、新しい値はデフォルトでリポジトリのローカル構成ファイルに書き込まれます。オプション `--system` 、`--global` 、 `--worktree` 、`--file <filename>` を使用すれば、コマンドにその場所に書き込むよう指示できます(あなたは `--local` と言うこともでき、そしてこれはデフォルトです)。
+
+このコマンドは、エラー時にゼロ以外のステータスで失敗します。 いくつかの終了コードは以下のとおりです:
+
+- セクションキーが不正(ret=1)
+- セクションまたは名前が与えられてない(ret=2)
+- configファイルが不正(ret=3)
+- configファイルに書き込みできない(ret=4)
+- 存在しないオプションの設定を削除(unseet)しようとしました(ret=5)
+- あなたは、複数の行が一致するオプションを設定(set)/削除(unset)しようとしています(ret=5)
+- 不正な正規表現を使おうとしています(ret=6)
+
+成功の場合、コマンドは終了コード 0 を返します。
+
+使用可能なすべての構成変数のリストは、 `git help --config` コマンドを使用して取得できます。
+
+COMMANDS
+--------
+
+list::
+	構成ファイルに「設定されている」すべての変数とその値を一覧表示します(訳注:使用可能なすべての構成変数のリストは、 `git help --config`)。
+
+get::
+	指定のキーの値を出力します。 キーが構成内に複数回存在する場合、 最後の値を出力します。 `--all` が指定されている場合、 キーに関連付けられたすべての値を出力します。 キーが存在しない場合は、 エラー・コード 1 を返します。
+
+set::
+	1 つ以上の構成オプションの値を設定します。 デフォルトでは、 このコマンドは複数値の構成オプション(multi-valued config options)の書き込みを拒否します。 `--all` を渡すと、 全ての複数値の設定オプション(multi-valued config options)が新しい値に置き換えられます。 一方、 `--value=` は、 値が指定されたパターンに一致する全ての設定オプションを置き換えます。
+
+unset::
+	1 つ以上の構成オプションの値の設定を設定解除にします。 デフォルトでは、 このコマンドは複数値キー(multi-valued keys)を設定解除するのを拒否します。 `--all` を渡すと、 すべての複数値の設定オプション(multi-valued config options)を設定解除します。 一方、 `--value` を渡すと、 値が指定されたパターンに一致するすべての設定オプションを設定解除します。
+
+rename-section::
+	指定のセクションの名前を新しい名前に変更します。
+
+remove-section::
+	指定のセクションを構成ファイルから削除します。
+
+edit::
+	指定の構成ファイルを変更するためのエディターを開きます。指定できるのは、 `--system` または `--global` または `--local` (デフォルト)または `--worktree` または `--file <config-file>` 、 のいずれかです。
+
+[[OPTIONS]]
+OPTIONS
+-------
+
+`--replace-all`::
+	Default behavior is to replace at most one line. This replaces all lines matching the key (and optionally `--value=<pattern>`).
+
+`--append`::
+	既存の値を変更せずに、当該オプションに新しい「行を追加」します。 これは、 `set` で `--value=^$` を指定するのと同じです。
+
+`--comment <message>`::
+	新しい行または変更された行の末尾にコメントを追加します。
++
+<message> が 1 つ以上の空白で始まり、 その後に `#` が続く場合は、そのまま使用されます。 <message> が `#` で始まる場合は、使用する前に空白が追加されます。 それ以外の場合は、 文字列 " # " (空白、シャープ、空白 )が先頭に追加されます。 そして、 結果の文字列は、 変数に定義された値の直後に配置されます。 <message> には改行文字を含めることはできません(複数行のコメントは許可されません)。
+
+`--all`::
+	`get` と供に使用して、 複数値キー(multi-valued key)のすべての値を返します。
+
+`--regexp`::
+	`get` と供に使用して、 名前を正規表現として解釈します。 正規表現の照合では現在、大文字と小文字が区別され、セクション名と変数名が小文字になっている正規化されたバージョンのキーに対して実行されますが、サブ・セクション名では大文字と小文字は区別されません。
+
+`--url=<URL>`::
+	<section>.<key> なる 2 つの部分からなる <name> を指定すると、 <URL> 部分が指定した URL に最もよく一致する <section>.<URL>.<key> の値が返されます(そのようなキーが存在しない場合は、 <section>.<key> の値にフォールバックします)。 <section> だけを名前として指定した合は、 当該セクション内のすべてのキーに対してこれを行い、リストします。 値が見つからない場合はエラーコード 1 を返します。
+
+`--global`::
+	オプション書き込みの場合: リポジトリの `.git/config` ではなくグローバル `~/.gitconfig` (${HOME}/.gitconfig) ファイルに書き込みます。`~/.gitconfig` ファイルが存在しなくて かつ `$XDG_CONFIG_HOME/git/config` ファイルがある場合は `$XDG_CONFIG_HOME/git/config` ファイルに書き込みます。
++
+オプション読み取りの場合: 使用可能なすべてのファイルからではなく、グローバル `~/.gitconfig` と `$XDG_CONFIG_HOME/git/config` からのみ読み取ります。
++
+<<FILES>> も参照して下さい。
+
+`--system`::
+	オプション書き込みの場合: リポジトリの `.git/config` ではなくシステム全体の `$(prefix)/etc/gitconfig` に書き込みます。
++
+オプション読み取りの場合: 使用可能なすべてのファイルからではなく、システム全体の `$(prefix)/etc/gitconfig` からのみ読み取ります。
++
+<<FILES>> も参照して下さい。
+
+`--local`::
+	オプションを書き込む場合: リポジトリの `.git/config` ファイルに書き込みます。これがデフォルトの動作です。
++
+読み取りオプションの場合: 使用可能なすべてのファイルからではなく、リポジトリ `.git/config` からのみ読み取ります。
++
+<<FILES>> も参照して下さい。
+
+`--worktree`::
+	`extensions.worktreeConfig` が有効な場合に `$GIT_DIR/config.worktree` が読み書きされることを除いて、 `--local` と同様です。 そうでない場合は `--local` と同じです。 `$GIT_DIR` は、メインの作業ツリーでは `$GIT_COMMON_DIR` と同じですが、他の作業ツリーでは `$GIT_DIR/worktrees/<id>/` の形式であることに注意してください。 `extensions.worktreeConfig` を有効にする方法については、 linkgit:git-worktree[1] を参照してください。
+
+`-f <config-file>`::
+`--file <config-file>`::
+	オプション書き込みの場合: リポジトリの `.git/config` ではなく、指定のファイルに書き込みます。
++
+オプション読み取りの場合: 使用可能なすべてのファイルからではなく、指定のファイルからのみ読み取ります。
++
+<<FILES>> も参照して下さい。
+
+`--blob <blob>`::
+	`--file` に似ていますが、ファイルの代わりに指定のブロブを使用します。例えば、 `master:.gitmodules` を使用して、masterブランチのファイル `.gitmodules` から値を読み取ることができます。ブロブ名の綴りのより完全なリストについては、 linkgit:gitrevisions[7] の「SPECIFYING REVISIONS」セクションを参照してください。
+
+`--value=<pattern>`::
+`--no-value`::
+	With `get`, `set`, and `unset`, match only against _<pattern>_. The pattern is an extended regular expression unless `--fixed-value` is given.
++
+Use `--no-value` to unset _<pattern>_.
+
+`--fixed-value`::
+	When used with `--value=<pattern>`, treat _<pattern>_ as an exact string instead of a regular expression. This will restrict the name/value pairs that are matched to only those where the value is exactly equal to _<pattern>_.
+
+`--type <type>`::
+  「git config」は、入力または出力が指定された型(type)の制約の下で有効であることを保証し、その型の正規形式で出力値を正規化します。
++
+有効な型には以下のものがあります:
++
+- 'bool': canonicalize values `true`, `yes`,`on`, and positive numbers as "true", and values `false`, `no`, `off` and `0` as "false".
+- `int`: 値を単純な10進数として正規化します。オプションのサフィックス `k` また `m`または `g` を使用すると、入力時に値にそれぞれ1,024または1,048,576(1024^2)または1,073,741,824(1024^3)が掛け算されます。
+- `bool-or-int`: 上記のように、 `bool` または `int` のいずれかに従って正規化します。
+- `path`: 先頭の `~` を `$HOME` の値に展開し、 `~user` を指定のユーザーのホーム・ディレクトリに展開することで正規化します。 この `~` は値を書き込むときには効果がありません(ただし、あなたはコマンドラインから `git config section.variable ~/` と実行してシェルに展開をさせることができます)。
+- `expiry-date`: 固定または相対の日付文字列からタイムスタンプに変換することで正規化します。この指定は値を書き込むときには効果がありません。
+- `color`: 値を取得するときに、ANSIカラーエスケープシーケンスに変換して正規化します。値を設定するとき、指定された値がANSIカラーとして正規化可能であることを確認するために健全性チェックが実行されますが、正規化自体は行われず、そのまま書き込まれます。
++
+
+`--bool`::
+`--int`::
+`--bool-or-int`::
+`--path`::
+`--expiry-date`::
+  タイプ指定子を選択するための歴史的オプション。 代わりに `--type` を優先します(上記参照)。
+
+`--no-type`::
+  (これ以前に設定されていた場合、)これ以前に設定された型指定子の設定を解除します。このオプションは、「git config」が取得した変数を正規化しないように要求します。 `--no-type` は、`--type=<type>` または `--<type>` が無い場合は何の効果もありません。
+
+`-z`::
+`--null`::
+	値やキーを出力するすべてのオプションで、値を(改行ではなく)常にヌルバイト(\0)で終了します。代わりに、キーと値の間の区切り文字として改行を使用します。これにより、例えば、改行を含む値を混乱することなく、出力を安全にパースできます。
+
+`--name-only`::
+	`list` または `get` の構成変数で名前のみを出力します。
+
+`--show-names`::
+`--no-show-names`::
+	With `get`, show config keys in addition to their values. The default is `--no-show-names` unless `--url` is given and there are no subsections in _<name>_.
+
+`--show-origin`::
+	照会されたすべての構成オプションの出力に、その構成オプションの出処の種類(ファイル、標準入力、blob、コマンドライン)と実際の出処(設定ファイルのパス、参照、または該当する場合はblobのID)を追加します。
+
+`--show-scope`::
+	`--show-origin` と同様に、クエリされたすべての設定オプションの出力をその値のスコープ(worktree, local, global, system, command)で拡張します。
+
+`--get-colorbool <name> [<stdout-is-tty>]`::
+
+	`name` の色設定(たとえば `color.diff`)を見つけて、 `true` または `false` を出力します。 `<stdout-is-tty>` は `true` または `false` のいずれかである必要があり、構成で `auto` と表示されている場合に考慮されます。 `<stdout-is-tty>` がない場合は、コマンド自体の標準出力をチェックし、色を使用する場合はステータス0で終了し、それ以外の場合はステータス1で終了します。 `name` の色設定が未定義の場合、コマンドはフォールバックとして `color.ui` を使用します。
+
+`--includes`::
+`--no-includes`::
+	値を検索するときは、設定ファイルの `include.*` ディレクティブを尊重します。特定のファイルが指定されている場合(たとえば、 `--file` 、`--global` などを使用した場合)はデフォルトで `off` になり、すべての構成ファイルを検索する場合は `on` になります。
+
+`--default <value>`::
+  `get` を使用していて、要求した変数が見つからない場合、 <value> がその変数に割り当てられた値であるかのように動作します。
+
+DEPRECATED MODES
+----------------
+
+以下のモードは非推奨となり、 サブ・コマンドが使用されます。 新しい構文に移行することをお勧めします。
+
+`git config <name>`::
+	これは `git config get <name>` に置き換えられました。
+
+`git config <name> <value> [<value-pattern>]`::
+	これは `git config set [--value=<pattern>] <name> <value>` に置き換えられました。
+
+`-l`::
+`--list`::
+	これは `git config list` に置き換えられました。
+
+`--get <name> [<value-pattern>]`::
+	これは `git config get [--value=<pattern>] <name>` に置き換えられました。
+
+`--get-all <name> [<value-pattern>]`::
+	これは `git config get [--value=<pattern>] --all <name>` に置き換えられました。
+
+`--get-regexp <name-regexp>`::
+	これは `git config get --all --show-names --regexp <name-regexp>` に置き換えられました。
+
+`--get-urlmatch <name> <URL>`::
+	これは `git config get --all --show-names --url=<URL> <name>` に置き換えられました。
+
+`--get-color <name> [<default>]`::
+	これは `git config get --type=color [--default=<default>] <name>` に置き換えられました。
+
+`--add <name> <value>`::
+	これは `git config set --append <name> <value>` に置き換えられました。
+
+`--unset <name> [<value-pattern>]`::
+	これは `git config unset [--value=<pattern>] <name>` に置き換えられました。
+
+`--unset-all <name> [<value-pattern>]`::
+	これは `git config unset [--value=<pattern>] --all <name>` に置き換えられました。
+
+`--rename-section <old-name> <new-name>`::
+	これは `git config rename-section <old-name> <new-name>` に置き換えられました。
+
+`--remove-section <name>`::
+	これは `git config remove-section <name>` に置き換えられました。
+
+`-e`::
+`--edit`::
+	これは `git config edit` に置き換えられました。
+
+CONFIGURATION
+-------------
+`pager.config` は、 構成をリストする場合、 つまり、 複数の結果を返す可能性のある `list` または `get` を使用する場合にのみ尊重されます。 デフォルトでは pager を使用します。
+
+[[FILES]]
+FILES
+-----
+
+デフォルトでは、 「git config」は複数のファイルから構成オプションを読み取ります:
+
+$(prefix)/etc/gitconfig::
+	システム全体(PC毎)の構成ファイル
+
+$XDG_CONFIG_HOME/git/config::
+~/.gitconfig::
+	ユーザー固有の構成ファイル。 XDG_CONFIG_HOME 環境変数が設定されていないか空の場合、 $XDG_CONFIG_HOME として $HOME/.config/ が使用されます。
++
+これらは「グローバル」(global)構成ファイルとも呼ばれます。 両方のファイルが存在する場合、両方のファイルが上記の順序で読み取られます。
+
+$GIT_DIR/config::
+	リポジトリ毎の構成ファイル。
+
+$GIT_DIR/config.worktree::
+	これはオプションであり、 `extensions.worktreeConfig` が $GIT_DIR/config に存在する場合にのみ検索されます。
+
+任意の git コマンドを実行するとき、 `-c` オプションを使用して、 追加の構成パラメーターを指定することもできます。 詳細については、 linkgit:git[1] を参照してください。
+
+オプションは、利用可能なこれらすべてのファイルから読み取られます。 グローバルまたはシステム全体の構成ファイルが見つからないか読み取れない場合、それらは無視されます。 リポジトリ構成ファイルが見つからないか読み取れない場合、 「git config」はゼロ以外のエラー・コードで終了します。 ファイルが読み取れない場合はエラー・メッセージが生成されますが、見つからない場合は生成されません。
+
+ファイルは上記の順序で読み取られ、「最後」に見つかった値が前に読み取った値よりも優先されます。なお、複数値(multiple values)を取得すると、すべてのファイルのキーのすべての値が使用されます。
+
+デフォルトでは、オプションはリポジトリ固有の構成ファイルにのみ書き込まれます。 これは、 `set` や `unset` などのオプションにも影響することに注意してください。 「`git config` は、一度に 1 つのファイルのみを変更します。」
+
+ファイルのパスを `--file` オプションで指定したり、構成スコープ(configuration scope)を `--system` または `--global` または `--local` または `--worktree` で指定することにより、どの構成ソース(configuration sources)を読み書きするかを制限することが可能です。 詳しくは、上記の <<OPTIONS>> を参照してください。
+
+[[SCOPES]]
+SCOPES
+------
+
+各構成ソース(configuration source)は、構成スコープ(configuration scope)内にあります。それらスコープは以下のとおりです:
+
+system::
+	$(prefix)/etc/gitconfig
+
+global::
+	$XDG_CONFIG_HOME/git/config
++
+~/.gitconfig
+
+local::
+	$GIT_DIR/config
+
+worktree::
+	$GIT_DIR/config.worktree
+
+command::
+	GIT_CONFIG_{COUNT,KEY,VALUE} 環境変数 (下記 <<ENVIRONMENT>> 参照)
++
+`-c` オプション
+
+`command` を除いて、各スコープは各コマンド・ライン・オプションに対応します: `--system`, `--global`, `--local`, `--worktree`
+
+オプションを読み取るとき、スコープを指定すると、そのスコープ内のファイル達からオプション達のみが読み取られます。 オプションを記述するときに、スコープを指定すると、(リポジトリ固有の構成ファイルではなく) そのスコープ内のファイルに書き込まれます。 完全な説明については、上記 <<OPTIONS>> を参照してください。
+
+ほとんどの構成オプションは、定義されているスコープに関係なく適用されますが、一部のオプションは特定のスコープでのみ適用されます。 詳細については、それぞれのオプションのドキュメントを参照してください。
+
+Protected configuration
+~~~~~~~~~~~~~~~~~~~~~~~
+
+保護された構成(protected configuration)は、 `system` と `global` と `command` スコープを参照します。 セキュリティ上の理由から、特定のオプションは、保護された構成で指定されている場合にのみ尊重され、それ以外の場合は無視されます。
+
+Gitはこれらのスコープを、あたかもユーザーまたは信頼できる管理者によって制御されているかのように扱います。これは、これらのスコープを制御する攻撃者は、Gitを使用せずに実質的な害を与えることができるのだから、当然、ユーザーの環境は攻撃者からこれらのスコープを保護しているに違いないはずだと想定するのです。(訳注:ユーザ側で攻撃されないようにちゃんと保護しといてください、Git側では責任もてません の意)
+
+[[ENVIRONMENT]]
+ENVIRONMENT
+-----------
+
+GIT_CONFIG_GLOBAL::
+GIT_CONFIG_SYSTEM::
+	グローバルまたはシステムレベルの構成からではなく、指定されたファイルから構成を取得します。詳細については linkgit:git[1] を参照してください。
+
+GIT_CONFIG_NOSYSTEM::
+	システム全体(PC毎)の $(prefix)/etc/gitconfig ファイルからの設定の読み取りをスキップするかどうか。詳細については linkgit:git[1] を参照してください。
+
+<<FILES>> も参照して下さい。
+
+GIT_CONFIG_COUNT::
+GIT_CONFIG_KEY_<n>::
+GIT_CONFIG_VALUE_<n>::
+	GIT_CONFIG_COUNTが正の数に設定されている場合、その数までのすべての環境ペア GIT_CONFIG_KEY_<n> と GIT_CONFIG_VALUE_<n> がプロセスのランタイム構成に追加されます。構成ペアはゼロインデックスです。キーまたは値が欠落している場合は、エラーとして扱われます。空のGIT_CONFIG_COUNTは、GIT_CONFIG_COUNT=0と同じように扱われます。つまり、ペアは処理されません。これらの環境変数は構成ファイルの値をオーバーライドしますが、 `git -c` を介して渡された明示的なオプションによってオーバーライドされます。
++
+これは、共通の構成で複数のgitコマンドを生成したいが、スクリプトを作成する場合など、構成ファイルに依存できない場合に役立ちます。
+
+GIT_CONFIG::
+	`git config` に `--file` オプションが指定されていない場合は、 `--file` を介して提供されているかのように `GIT_CONFIG` によって指定されたファイルを使用します。この変数は他のGitコマンドには影響せず、主に歴史的な互換性のためのものです。 通常、 `--file` オプションの代わりに使用する理由はありません。
+
+[[EXAMPLES]]
+EXAMPLES
+--------
+
+以下の .git/config が与えられているものとします:
+
+------------
+#
+# This is the config file, and
+# a '#' or ';' character indicates
+# a comment
+#
+
+; core variables
+[core]
+	; Don't trust file modes
+	filemode = false
+
+; Our diff algorithm
+[diff]
+	external = /usr/local/bin/diff-wrapper
+	renames = true
+
+; Proxy settings
+[core]
+	gitproxy=proxy-command for kernel.org
+	gitproxy=default-proxy ; for all the rest
+
+; HTTP
+[http]
+	sslVerify
+[http "https://weak.example.com"]
+	sslVerify = false
+	cookieFile = /tmp/cookie.txt
+------------
+
+あなたは以下のようにしてfilemodeをtrueに設定できます
+
+------------
+% git config set core.filemode true
+------------
+
+この架空のプロキシ・コマンド・エントリには、実際には適用先の URL を識別するための接尾辞があります。 kernel.org のエントリを `ssh` に変更する方法は以下のとおりです:
+
+------------
+% git config set --value='for kernel.org$' core.gitproxy '"ssh" for kernel.org'
+------------
+
+これにより、kernel.orgのキーと値のペアのみが置き換えられます。
+
+renamesのエントリを削除するには
+
+------------
+% git config unset diff.renames
+------------
+
+マルチ変数(multivar)(上記のcore.gitproxyなど)のエントリを削除する場合は、正確に1行の値に一致する正規表現を指定する必要があります。
+
+特定のキーの値を照会するには、次のようにします。
+
+------------
+% git config get core.filemode
+------------
+
+また、マルチ変数(multivar)の照会は:
+
+------------
+% git config get --value="for kernel.org$" core.gitproxy
+------------
+
+マルチ変数のすべての値を知りたい場合は、次のようにします:
+
+------------
+% git config get --all --show-names core.gitproxy
+------------
+
+あなたが危険極まりない人生を送りたい場合は、以下のようにして core.gitproxy の「全て」を新しいものに置き換えることができます。
+
+------------
+% git config set --all core.gitproxy ssh
+------------
+
+しかし、あなたが本当にデフォルトプロキシの行、つまり「for ...」の接尾辞のない行だけを置き換えたい場合は、次のようにします:
+
+------------
+% git config set --value='! for ' core.gitproxy ssh
+------------
+
+感嘆符(`!`)と実際に一致させるには、以下のことを行う必要があります。
+
+------------
+% git config set --value='[!]' section.key value
+------------
+
+既存のプロキシを変更せずに新しいプロキシを追加するには、以下を使用します。
+
+------------
+% git config set --append core.gitproxy '"proxy-command" for example.com'
+------------
+
+あなたのスクリプトで構成からカスタマイズされた色を使う例:
+
+------------
+#!/bin/sh
+WS=$(git config get --type=color --default="blue reverse" color.diff.whitespace)
+RESET=$(git config get --type=color --default="reset" "")
+echo "${WS}your whitespace color or blue reverse${RESET}"
+------------
+
+URL が `https://weak.example.com` の場合、 `http.sslVerify` はfalseに設定され、他のすべてのURLでは `true` に設定されます:
+
+------------
+% git config get --type=bool --url=https://good.example.com http.sslverify
+true
+% git config get --type=bool --url=https://weak.example.com http.sslverify
+false
+% git config get --url=https://weak.example.com http
+http.cookieFile /tmp/cookie.txt
+http.sslverify false
+------------
+
+include::config.adoc[]
+
+BUGS
+----
+非推奨の `[section.subsection]` 構文を使用する場合、サブセクションに少なくとも1つの大文字が指定されていると、値を変更すると、変更ではなく複数行のキーが追加されます。たとえば、設定が以下のようになっている場合
+
+--------
+  [section.subsection]
+    key = value1
+--------
+
+`git config section.Subsection.key value2` を実行すると、以下のようになります。
+
+--------
+  [section.subsection]
+    key = value1
+    key = value2
+--------
+
+
+GIT
+---
+Part of the linkgit:git[1] suite

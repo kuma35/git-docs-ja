@@ -749,7 +749,7 @@ git-update-ref(1) Manual Page
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
 <div class="verseblock">
-<pre class="content"><em>git <code>update-ref</code></em> [<code>-m</code> <em>&lt;reason&gt;</em>] [<code>--no-deref</code>] (<code>-d</code> <em>&lt;ref&gt;</em> [<em>&lt;old-oid&gt;</em>] | [<code>--create-reflog</code>] <em>&lt;ref&gt;</em> <em>&lt;new-oid&gt;</em> [<em>&lt;old-oid&gt;</em>] | <code>--stdin</code> [<code>-z</code>])</pre>
+<pre class="content"><code>git</code> <code>update-ref</code> [<code>-m</code> <em>&lt;reason&gt;</em>] [<code>--no-deref</code>] <code>-d</code> <em>&lt;ref&gt;</em> [<em>&lt;old-oid&gt;</em>] <code>git</code> <code>update-ref</code> [<code>-m</code> <em>&lt;reason&gt;</em>] [<code>--no-deref</code>] [<code>--create-reflog</code>] <em>&lt;ref&gt;</em> <em>&lt;new-oid&gt;</em> [<em>&lt;old-oid&gt;</em>] <code>git</code> <code>update-ref</code> [<code>-m</code> <em>&lt;reason&gt;</em>] [<code>--no-deref</code>] <code>--stdin</code> [<code>-z</code>] [<code>--batch-updates</code>]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -759,7 +759,7 @@ git-update-ref(1) Manual Page
 <div class="sectionbody">
 <div class="paragraph"><p>2つの引数が与えられた場合、 &lt;new-oid&gt; を &lt;ref&gt; に保存し、 必要に応じてシンボリック ref を解決します。 たとえば、 <code>git</code> <code>update-ref</code> <code>HEAD</code> <em>&lt;new-oid&gt;</em> は現在のブランチの先頭を新しいオブジェクトに更新します。</p></div>
 <div class="paragraph"><p>3つの引数が与えられた場合、 &lt;ref&gt; の現在の値が &lt;old-oid&gt; と一致することを確認した後、 &lt;new-oid&gt; を &lt;ref&gt; に格納し、 必要に応じてシンボリック rer を解決します。 たとえば、 <code>git</code> <code>update-ref</code> <code>refs/heads/master</code> <em>&lt;new-oid&gt;</em> <em>&lt;old-oid&gt;</em> は、 master ブランチの先頭を &lt;new-oid&gt; に更新しますが、 これは現在の値が &lt;old-oid&gt; と一致する場合に限られます。 あなたは &lt;old-oid&gt; として40個の 0(ゼロ) または空の文字列を指定することで、 作成しようとしている ref がまだ存在しないことを示す事ができます。</p></div>
-<div class="paragraph"><p>最後の引数はオブジェクト名です。 このコマンドは、 オプションなしではシンボリック ref を別の ref に更新することをサポートしていません(<a href="git-symbolic-ref.html">git-symbolic-ref(1)</a> 参照)。 ただし、 <code>git</code> <code>update-ref</code> <code>--stdin</code> には <code>symref-</code>* コマンドがあり、 通常の ref とシンボリック ref を同一の取引内(transaction)でコミットできます。</p></div>
+<div class="paragraph"><p>最後の引数はオブジェクト名です。 このコマンドは、 オプションなしではシンボリック ref を別の ref に更新することをサポートしていません(<a href="git-symbolic-ref.html">git-symbolic-ref(1)</a> 参照)。 ただし、 <code>git</code> <code>update-ref</code> <code>--stdin</code> には <code>symref-*</code> コマンドがあり、 通常の ref とシンボリック ref を同一の取引内(transaction)でコミットできます。</p></div>
 <div class="paragraph"><p><code>--no-deref</code> を指定すると、シンボリックポインターをたどった結果ではなく、&lt;ref&gt;自体が上書きされます。</p></div>
 <div class="paragraph"><p><code>-d</code> オプションを使用すると、 指定の &lt;ref&gt; がまだ &lt;old-oid&gt; を含んでいることを確認(verify)後、 その &lt;ref&gt; を削除します。</p></div>
 <div class="paragraph"><p><code>--stdin</code> を使用すると、update-refは標準入力から命令を読み取り、すべての変更を一緒に実行します。 以下の形式のコマンドを指定します:</p></div>
@@ -780,7 +780,12 @@ commit LF
 abort LF</code></pre>
 </div></div>
 <div class="paragraph"><p><code>--create-reflog</code> を使用すると、update-refは、通常は作成されない場合でも、各refのreflogを作成します。</p></div>
-<div class="paragraph"><p>Cソースコードの文字列であるかのように空白を含むフィールドをクォートします。 つまり、二重引用符で囲まれ、バックスラッシュ(\)でエスケープされます。 ゼロ値(zero value)を指定するには、40個の "0" 文字または空の文字列を使用します。 欠落している値(missing value)を指定するには、値とその前のSPを完全に省略します。</p></div>
+<div class="paragraph"><p>With <code>--batch-updates</code>, update-ref executes the updates in a batch but allows individual updates to fail due to invalid or incorrect user input, applying only the successful updates. However, system-related errors—such as I/O failures or memory issues—will result in a full failure of all batched updates. Any failed updates will be reported in the following format:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>rejected SP (&lt;old-oid&gt; | &lt;old-target&gt;) SP (&lt;new-oid&gt; | &lt;new-target&gt;) SP &lt;rejection-reason&gt; LF</code></pre>
+</div></div>
+<div class="paragraph"><p>Cソースコードの文字列であるかのように空白を含むフィールドをクォートします。 つまり、二重引用符で囲まれ、バックスラッシュ(<code>\</code>)でエスケープされます。 ゼロ値(zero value)を指定するには、40個の "0" 文字または空の文字列を使用します。 欠落している値(missing value)を指定するには、値とその前のSPを完全に省略します。</p></div>
 <div class="paragraph"><p>あるいは、 <code>-z</code> を使用して、クォートせずにNUL終了形式で指定します:</p></div>
 <div class="literalblock">
 <div class="content">
@@ -814,7 +819,7 @@ create
 </dt>
 <dd>
 <p>
-        &lt;ref&gt; が存在しないことを確認した後、 &lt;new-oid&gt; で &lt;ref&gt; を作成します。 指定された &lt;new-oid&gt; はゼロであってはなりません。
+        Create &lt;ref&gt; with &lt;new-oid&gt; after verifying that it does not exist. The given &lt;new-oid&gt; may not be zero.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -822,7 +827,7 @@ delete
 </dt>
 <dd>
 <p>
-        &lt;old-oid&gt; が指定されている場合は、それが存在することを確認した後、 &lt;ref&gt; を削除します。 指定した場合、 &lt;old-oid&gt; はゼロではない可能性があります。
+        Delete &lt;ref&gt; after verifying that it exists with &lt;old-oid&gt;, if given. If given, &lt;old-oid&gt; may not be zero.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -841,20 +846,17 @@ verify
         &lt;ref&gt; を &lt;old-oid&gt; と照合して検証しますが、 変更はしません。 &lt;old-oid&gt; がゼロまたは指定されていない場合、 ref は存在してはなりません。
 </p>
 </dd>
-<dt class="hdlist1">
-symref-create
-</dt>
-<dd>
-<p>
-        &lt;ref&gt; が存在しないことを確認した後、 &lt;new-target&gt; でシンボリック参照 &lt;ref&gt; を作成します。
-</p>
-</dd>
+</dl></div>
+<div class="paragraph"><p>symref-create:
+        Create symbolic ref &lt;ref&gt; with &lt;new-target&gt; after verifying that
+        it does not exist.</p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 symref-delete
 </dt>
 <dd>
 <p>
-        指定されている場合、 &lt;ref&gt; が &lt;old-target&gt; で存在することを確認した後、 &lt;ref&gt; を削除します。
+        Delete &lt;ref&gt; after verifying that it exists with &lt;old-target&gt;, if given.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -951,7 +953,7 @@ abort
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-07-10 01:54:26 JST
+ 2025-11-13 13:44:06 JST
 </div>
 </div>
 </body>

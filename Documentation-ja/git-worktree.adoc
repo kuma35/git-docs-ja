@@ -1,0 +1,323 @@
+git-worktree(1)
+===============
+
+NAME
+----
+git-worktree - 複数の作業ツリー(working tree)を管理します
+
+
+SYNOPSIS
+--------
+[synopsis]
+git worktree add [-f] [--detach] [--checkout] [--lock [--reason <string>]]
+		 [--orphan] [(-b | -B) <new-branch>] <path> [<commit-ish>]
+git worktree list [-v | --porcelain [-z]]
+git worktree lock [--reason <string>] <worktree>
+git worktree move <worktree> <new-path>
+git worktree prune [-n] [-v] [--expire <expire>]
+git worktree remove [-f] <worktree>
+git worktree repair [<path>...]
+git worktree unlock <worktree>
+
+DESCRIPTION
+-----------
+
+同一のリポジトリに接続されている複数の作業ツリーを管理します。
+
+gitリポジトリは複数の作業ツリー(working tree)をサポートできるため、一度に複数のブランチをチェックアウトできます。 `git worktree add` を使用すると、 新しい作業ツリーがリポジトリに関連付けられ、 その作業ツリーを、同一リポジトリの他の作業ツリーと区別する、追加のメタデータを関連付けます。 作業ツリーは、このメタデータとひっくるめてワークツリー(worktree)と呼ばれます。
+
+この新しいワークツリーは、 linkgit:git-init[1] または linkgit:git-clone[1] によって準備された「メイン・ワークツリー」とは対照的に、「リンクされたワークツリー」(linked worktree)と呼ばれます。 リポジトリには、1 つの メイン・ワークツリー(ベア・リポジトリでない場合) と、0 個以上のリンクされたワークツリーがあります。 リンクされたワークツリーを使い終わったら、 `git worktree remove` で削除します。
+
+In its simplest form, `git worktree add <path>` automatically creates a new branch whose name is the final component of _<path>_, which is convenient if you plan to work on a new topic. For instance, `git worktree add ../hotfix` creates new branch `hotfix` and checks it out at path `../hotfix`. To instead work on an existing branch in a new worktree, use `git worktree add <path> <branch>`. On the other hand, if you just plan to make some experimental changes or do testing without disturbing existing development, it is often convenient to create a 'throwaway' worktree not associated with any branch. For instance, `git worktree add -d <path>` creates a new worktree with a detached `HEAD` at the same commit as the current branch.
+
+`git worktree remove` を使用せずに作業ツリー(working tree)を削除すると、リポジトリにある関連する管理ファイル(後述の「DETAILS」参照)が最終的には自動的に削除されます(linkgit:git-config[1] の `gc.worktreePruneExpire` 参照)。 または、メインまたは任意のリンクされたワークツリー(linked worktree)にて、古い管理ファイルをクリーンアップするために `git worktree prune` を実行できます。
+
+リンクされたワークツリー(linked workutree)の作業ツリー(working tree)が、常にマウントされている訳ではないポータブル・デバイスまたはネットワーク共有に保存されている場合、 `git worktree lock` コマンド(オプションで `--reason` を指定してワークツリーがなぜロックされているかの説明を記述します)を発行することで、 管理ファイルが刈り込み(prune)されるのを防ぐことができます。
+
+COMMANDS
+--------
+`add <path> [<commit-ish>]`::
+
+Create a worktree at _<path>_ and checkout _<commit-ish>_ into it. The new worktree is linked to the current repository, sharing everything except per-worktree files such as `HEAD`, `index`, etc. As a convenience, _<commit-ish>_ may be a bare "`-`", which is synonymous with `@{-1}`.
++
+If _<commit-ish>_ is a branch name (call it _<branch>_) and is not found, and neither `-b` nor `-B` nor `--detach` are used, but there does exist a tracking branch in exactly one remote (call it _<remote>_) with a matching name, treat as equivalent to:
++
+------------
+$ git worktree add --track -b <branch> <path> <remote>/<branch>
+------------
++
+If the branch exists in multiple remotes and one of them is named by the `checkout.defaultRemote` configuration variable, we'll use that one for the purposes of disambiguation, even if the _<branch>_ isn't unique across all remotes. Set it to e.g. `checkout.defaultRemote=origin` to always checkout remote branches from there if _<branch>_ is ambiguous but exists on the `origin` remote. See also `checkout.defaultRemote` in linkgit:git-config[1].
++
+If _<commit-ish>_ is omitted and neither `-b` nor `-B` nor `--detach` used, then, as a convenience, the new worktree is associated with a branch (call it _<branch>_) named after `$(basename <path>)`. If _<branch>_ doesn't exist, a new branch based on `HEAD` is automatically created as if `-b <branch>` was given. If _<branch>_ does exist, it will be checked out in the new worktree, if it's not checked out anywhere else, otherwise the command will refuse to create the worktree (unless `--force` is used).
++
+If _<commit-ish>_ is omitted, neither `--detach`, or `--orphan` is used, and there are no valid local branches (or remote branches if `--guess-remote` is specified) then, as a convenience, the new worktree is associated with a new unborn branch named _<branch>_ (after `$(basename <path>)` if neither `-b` or `-B` is used) as if `--orphan` was passed to the command. In the event the repository has a remote and `--guess-remote` is used, but no remote or local branches exist, then the command fails with a warning reminding the user to fetch from their remote first (or override by using `-f/--force`).
+
+`list`::
+
+各ワークツリーの詳細を一覧表示します。 リストの最初はメインのワークツリーであり、その後にリンクされた各ワークツリーが続きます。 出力の詳細として、 ワークツリーが裸(bare)かどうかや、 現在チェックアウトされているリビジョン(または、存在しない場合は「切り離された HEAD」((detached HEAD)))や、 現在チェックアウトされているブランチや、 ワークツリーがロックされているなら `locked` が出力に含まれ、 ワークツリーが `prune` コマンドで刈り込みできる場合は `prunable` が出力に含まれます。
+
+`lock`::
+
+ワークツリーが常にマウントされているとは限らないポータブル・デバイスまたはネットワーク共有上にある場合は、 管理ファイルが自動的に刈り込み(prune)されないようにツリーをロック(lock)します。 これにより、移動や削除も防止されます。 オプションの `--reason` を使用してロック理由を記述します。
+
+`move`::
+
+注意: ワークツリーを新しい場所に移動します。このコマンドでは、 メインのワークツリーまたは、 サブモジュールを含むリンクされたワークツリー(linked worktree)は、移動できないことに注意してください。 (ただし、 あなたがメインのワークツリーを手動で移動した場合、 `git worktree repair` コマンドを使用すれば、 リンクされたワークツリーごとの接続を再確立できます。)
+
+`prune`::
+
+`$GIT_DIR/worktrees` のワークツリー情報を刈り込みます(prune)。
+
+`remove`::
+
+ワークツリーを削除します。削除できるのは、クリーンなワークツリー(非追跡ファイルが無く、かつ、追跡ファイルの変更が無い場合)のみです。 綺麗でない(unclean)ワークツリーまたは、サブモジュールのあるワークツリーは、 `--force` を使用して削除できます。 メインのワークツリーは削除できません。
+
+`repair [<path>...]`::
+
+外部要因によって、破損または古くなったワークツリー管理ファイルを、 可能であれば、 修復します。
++
+たとえば、メインのワークツリー(またはベア・リポジトリ)を移動すると、リンクされたワークツリー(linked worktree)はそれを見つけることができなくなります。 メインのワークツリーで `repair` を実行すると、リンクされたワークツリーからメインのワークツリーへの接続が再確立されます。
++
+Similarly, if the working tree for a linked worktree is moved without using `git worktree move`, the main worktree (or bare repository) will be unable to locate it. Running `repair` within the recently-moved worktree will reestablish the connection. If multiple linked worktrees are moved, running `repair` from any worktree with each tree's new _<path>_ as an argument, will reestablish the connection to all the specified paths.
++
+If both the main worktree and linked worktrees have been moved or copied manually, then running `repair` in the main worktree and specifying the new _<path>_ of each linked worktree will reestablish all connections in both directions.
+
+`unlock`::
+
+ワークツリーのロックを解除(unlock)して、刈り込み(prune)または移動(move)または削除(delete)できるようにします。
+
+OPTIONS
+-------
+
+`-f`::
+`--force`::
+	By default, `add` refuses to create a new worktree when _<commit-ish>_ is a branch name and is already checked out by another worktree, or if _<path>_ is already assigned to some worktree but is missing (for instance, if _<path>_ was deleted manually). This option overrides these safeguards. To add a missing but locked worktree path, specify `--force` twice.
++
+`move` refuses to move a locked worktree unless `--force` is specified twice. If the destination is already assigned to some other worktree but is missing (for instance, if _<new-path>_ was deleted manually), then `--force` allows the move to proceed; use `--force` twice if the destination is locked.
++
+`remove` は、 `--force` が使用されない限り、 クリーンでないワークツリーの削除を拒否します。 ロックされたワークツリーを削除するには、 `--force` を 2 回指定します。
+
+`-b <new-branch>`::
+`-B <new-branch>`::
+	With `add`, create a new branch named _<new-branch>_ starting at _<commit-ish>_, and check out _<new-branch>_ into the new worktree. If _<commit-ish>_ is omitted, it defaults to `HEAD`. By default, `-b` refuses to create a new branch if it already exists. `-B` overrides this safeguard, resetting _<new-branch>_ to _<commit-ish>_.
+
+`-d`::
+`--detach`::
+	`add` を使用して、新しいワークツリーで `HEAD` を切り離します(detach)。 linkgit:git-checkout[1] の「DETACHED HEAD」を参照してください。
+
+`--checkout`::
+`--no-checkout`::
+	By default, `add` checks out _<commit-ish>_, however, `--no-checkout` can be used to suppress checkout in order to make customizations, such as configuring sparse-checkout. See "Sparse checkout" in linkgit:git-read-tree[1].
+
+`--guess-remote`::
+`--no-guess-remote`::
+	With `worktree add <path>`, without _<commit-ish>_, instead of creating a new branch from `HEAD`, if there exists a tracking branch in exactly one remote matching the basename of _<path>_, base the new branch on the remote-tracking branch, and mark the remote-tracking branch as "upstream" from the new branch.
++
+これは、 `worktree.guessRemote` 構成オプションを使用してデフォルトの動作として設定することもできます。
+
+`--relative-paths`::
+`--no-relative-paths`::
+	Link worktrees using relative paths or absolute paths (default). Overrides the `worktree.useRelativePaths` config option, see linkgit:git-config[1].
++
+With `repair`, the linking files will be updated if there's an absolute/relative mismatch, even if the links are correct.
+
+`--track`::
+`--no-track`::
+	When creating a new branch, if _<commit-ish>_ is a branch, mark it as "upstream" from the new branch. This is the default if _<commit-ish>_ is a remote-tracking branch. See `--track` in linkgit:git-branch[1] for details.
+
+`--lock`::
+	作成後は、ワークツリーをロックしたままにします。 これは、 `git worktree add` の後に `git worktree lock` するのと同等ですが、競合状態(race condition)にはなりません。
+
+`-n`::
+`--dry-run`::
+	`prune` では、何も削除しないでください。何が削除されるかを報告するだけです。
+
+`--orphan`::
+	With `add`, make the new worktree and index empty, associating the worktree with a new unborn branch named _<new-branch>_.
+
+`--porcelain`::
+	`list` を使用すると、スクリプトの解析が容易な形式で出力されます。この形式は、Gitのバージョン間で、ユーザー構成に関係なく安定しています。 これは `-z` と組み合わせることをお勧めします。 詳細については、後述します。
+
+`-z`::
+	Terminate each line with a _NUL_ rather than a newline when `--porcelain` is specified with `list`. This makes it possible to parse the output when a worktree path contains a newline character.
+
+`-q`::
+`--quiet`::
+	`add` の際にフィードバック・メッセージを抑制します。
+
+`-v`::
+`--verbose`::
+	`prune` と供に使用すると、すべての削除を報告します。
++
+`list` と供に使用すると、ワークツリーに関する追加情報を出力します(後述)。
+
+`--expire <time>`::
+	With `prune`, only expire unused worktrees older than _<time>_.
++
+With `list`, annotate missing worktrees as prunable if they are older than _<time>_.
+
+`--reason <string>`::
+	`lock` または `add --lock` と共に使用して、そのワークツリーをなぜロックしているのかの説明を記述します。
+
+_<worktree>_::
+	ワークツリーは、相対パスまたは絶対パスのいずれかを識別できます。
++
+ワークツリーのパスの最後のパスコンポーネントがワークツリー間で一意である場合、それを使用してワークツリーを識別できます。 たとえば、 `/abc/def/ghi` と `/abc/def/ggg` の2つのワークツリーしかない場合、 これらのワークツリーを指すには、 `ghi` または `def/ghi` で十分です。
+
+REFS
+----
+複数のワークツリーを使用する場合、一部のrefはすべてのワークツリー間で共有されますが、その他は個々のワークツリーに固有です。 その一例が `HEAD` で、これはワークツリーごとに異なります。 このセクションでは、共有ルールと、あるワークツリーの ref を別のワークツリーからアクセスする方法について説明します。
+
+一般に、すべての疑似ref(pseudo refs)はワークツリーごとにあり、そして、 `refs/` で始まるすべてのrefは共有されます。 疑似refは、 `$GIT_DIR/refs` 内ではなく、 `$GIT_DIR` の直下にある `HEAD` のようなものです。 ただし、例外があります。 `refs/bisect` 内のrefと `refs/worktree` と `refs/rewritten` は共有されません。
+
+ワークツリーごとのrefには、 別のワークツリーから、 `main-worktree` と `worktrees` の2つの特別なパスを介してアクセスできます。 前者はメインのワークツリーの ワークツリーごとのrefを提供し、後者はすべてのリンクされたワークツリー(all linked worktrees)へのアクセスを提供します。
+
+たとえば、 `main-worktree/HEAD` や `main-worktree/refs/bisect/good` は、それぞれメインのワークツリーの `HEAD` や `refs/bisect/good` と同一の値に解決されます。 同様に、 `worktrees/foo/HEAD` や `worktrees/bar/refs/bisect/bad` は、 `$GIT_COMMON_DIR/worktrees/foo/HEAD` や `$GIT_COMMON_DIR/worktrees/bar/refs/bisect/bad` と同一です。 
+
+refにアクセスするのに `$GIT_DIR` の内部を直接調べないことをお勧めします。代わりに、refを正しく処理する linkgit:git-rev-parse[1] や linkgit:git-update-ref[1] などのコマンドを使用してください。
+
+CONFIGURATION FILE
+------------------
+デフォルトでは、リポジトリの `config` ファイルはすべてのワークツリーで共有されます。 構成変数 `core.bare` または `core.worktree` が共通の構成ファイルに存在し、 `extensions.worktreeConfig` が無効になっている場合、それらはメインのワークツリーのみに適用されます。
+
+ワークツリー固有の構成を作成するには、 `worktreeConfig` 拡張機能をオンにします。例:
+
+------------
+$ git config extensions.worktreeConfig true
+------------
+
+このモードでは、指定の構成は `git rev-parse --git-path config.worktree` が指すパスに残ります。 `git config --worktree` を使用して、このファイルの構成を追加または更新できます。古いバージョンのGitは、この拡張機能を備えたリポジトリへのアクセスを拒否します。
+
+注意: このファイルでは、 `core.bare` と `core.worktree` が例外扱いされないことに注意してください。 それらが `$GIT_DIR/config` に存在する場合は、メインのワークツリーの `config.worktree` に移動する必要があります。 また、この機会に、あなたが共有したくない他の構成を確認して、すべてのワークツリーに移動することもできます。
+
+ - `core.worktree` は決して共有しないでください。
+
+ - `core.bare` は、 値が `core.bare=true` である場合には共有されるべきではありません。
+
+ - すべてのワークツリーに対して常にスパース・チェックアウトを使用することが確実でない限り、 `core.sparseCheckout` は共有すべきではありません。
+
+詳細については、 linkgit:git-config[1] の `extensions.worktreeConfig` のドキュメントを参照してください。
+
+DETAILS
+-------
+各々のリンクされたワークツリー(linked worktree)には、 リポジトリの `$ GIT_DIR/worktrees` ディレクトリにプライベート・サブ・ディレクトリがあります。 プライベート・サブ・ディレクトリの名前は通常、リンクされたワークツリーのパスのベース名であり、 一意にするために番号が追加される場合があります。 たとえば、 `$GIT_DIR=/path/main/.git` の場合、 コマンド `git worktree add /path/other/test-next next` はリンクされたワークツリーを `/path/other/test-next` に作成し、 そしてまた `$GIT_DIR/worktrees/test-next` ディレクトリ(または、 `test-next` がすでに存在する場合、 `$GIT_DIR/worktrees/test-next1` ディレクトリ)を作成します。
+
+リンクされたワークツリー(linked worktree)内で、 `$GIT_DIR` は、このプライベート・ディレクトリを指すように設定され(例では `/path/main/.git/worktrees/test-next`)、 `$GIT_COMMON_DIR` はメインワークツリーの `$GIT_DIR` (例では `/path/main/.git` )を指すように設定されます。これらの設定は、リンクされたワークツリーの最上位ディレクトリにある `.git` ファイルで行われます。
+
+`git rev-parse --git-path` によるパス解決では、 パスに応じて `$GIT_DIR` または `$GIT_COMMON_DIR` のいずれかが使用されます。たとえば、リンクされた ワークツリー(linked worktree)では、 `git rev-parse --git-path HEAD` は `/path/main/.git/worktrees/test-next/HEAD` を返します(`/path/other/test-next/.git/HEAD` や `/path/main/.git/HEAD` ではありません)。 一方、 `git rev-parse --git-path refs/heads/master` は `$GIT_COMMON_DIR` を使用し、 すべてのワークツリーで参照が共有されるため `/path/main/.git/refs/heads/master` を返します。 ただし、 `refs/bisect` と `refs/worktree` と `refs/rewritten` は例外です。
+
+詳細については、 linkgit:gitrepository-layout[5] を参照してください。 経験則では、 `$GIT_DIR` 内の何かに直接アクセスする必要がある場合、パスが `$GIT_DIR` または `$GIT_COMMON_DIR` のどちらに属するかについては何も想定していません。 `git rev-parse --git-path` を使用して、最終的なパスを取得してください。
+
+リンクされたワークツリー(linked worktree)を手動で移動する場合は、 エントリのディレクトリにある `gitdir` ファイルを更新する必要があります。 たとえば、リンクされた作業ツリーが `/newpath/test-next` に移動され、 その `.git` ファイルが `/path/main/.git/worktrees/test-next` を指しているならば、 代わりに `/path/main/.git/worktrees/test-next/gitdir` を更新し `/newpath/test-next` を参照するようにします。 もっといいのは、 `git worktree repair` を実行して、接続を自動的に再確立することです。
+
+`$GIT_DIR/worktrees` エントリが刈り込み(prune)されないようにする(これは、 エントリのワークツリーがポータブルデバイスに保存されている場合など、 状況によっては便利です)には、 `git worktree lock` コマンドを使用します。 このコマンドは `locked` という名前のファイルをエントリのディレクトリに追加します。 ファイルには、 理由(reason)がプレーンテキストで含まれています。 たとえば、リンクされたワークツリー(linked worktree)の `.git` ファイルが `/path/main/.git/worktrees/test-next` を指しているならば、 `/path/main/.git/worktrees/test-next/locked` という名前のファイルは `test-next` エントリが刈り込み(pruned)されるのを防ぎます。 詳細については、 linkgit:gitrepository-layout[5] を参照してください。
+
+`extensions.worktreeConfig` が有効になっている場合、設定ファイル `.git/worktrees/<id>/config.worktree` は `.git/config` の後に読み込まれます。
+
+LIST OUTPUT FORMAT
+------------------
+`worktree list` コマンドには2つの出力形式があります。デフォルトの形式では、詳細が1行に複数列で表示されます。例えば:
+
+------------
+$ git worktree list
+/path/to/bare-source            (bare)
+/path/to/linked-worktree        abcd1234 [master]
+/path/to/other-linked-worktree  1234abc  (detached HEAD)
+------------
+
+このコマンドは、状態に応じて、各ワークツリーの注釈(annotations)も表示します。これらの注釈は以下のとおりです:
+
+ * `locked` :ワークツリーがロックされている場合。
+ * `prunable` :ワークツリーが `git worktree prune` を介して刈り込みできる場合。
+
+------------
+$ git worktree list
+/path/to/linked-worktree    abcd1234 [master]
+/path/to/locked-worktree    acbd5678 (brancha) locked
+/path/to/prunable-worktree  5678abc  (detached HEAD) prunable
+------------
+
+これらの注釈(annotations)については、理由(reason)も利用できる可能性があり、これは冗長モード(verbose mode)を使用して確認できます。そして、注釈はインデントされた次の行に移動され、その後に追加情報が続きます。
+
+------------
+$ git worktree list --verbose
+/path/to/linked-worktree              abcd1234 [master]
+/path/to/locked-worktree-no-reason    abcd5678 (detached HEAD) locked
+/path/to/locked-worktree-with-reason  1234abcd (brancha)
+	locked: worktree path is mounted on a portable device
+/path/to/prunable-worktree            5678abc1 (detached HEAD)
+	prunable: gitdir file points to non-existent location
+------------
+
+注意: 追加情報が利用可能な場合、注釈は次の行に移動されることに注意してください。そうでない場合、注釈はワークツリー自体と同じ行にとどまります。
+
+Porcelain Format
+~~~~~~~~~~~~~~~~
+磁器コマンドのフォーマットは、属性ごとに1行あります。 `-z` が指定された場合、 行は改行(newline)ではなく NUL で終了します。 属性は、 単一のスペースで区切られたラベルと値でリストされます。 ブール属性(`bare` や `detached` など)はラベルとしてのみリストされ、 値がtrueの場合にのみ存在します。 一部の属性(`locked` など)は、 ラベルとしてのみリストすることも、 理由が利用可能かどうかに応じて値とともにリストすることもできます。 ワークツリーの最初の属性は常に `worktree` であり、空行はレコードの終わりを示します。 例えば:
+
+------------
+$ git worktree list --porcelain
+worktree /path/to/bare-source
+bare
+
+worktree /path/to/linked-worktree
+HEAD abcd1234abcd1234abcd1234abcd1234abcd1234
+branch refs/heads/master
+
+worktree /path/to/other-linked-worktree
+HEAD 1234abc1234abc1234abc1234abc1234abc1234a
+detached
+
+worktree /path/to/linked-worktree-locked-no-reason
+HEAD 5678abc5678abc5678abc5678abc5678abc5678c
+branch refs/heads/locked-no-reason
+locked
+
+worktree /path/to/linked-worktree-locked-with-reason
+HEAD 3456def3456def3456def3456def3456def3456b
+branch refs/heads/locked-with-reason
+locked reason why is locked
+
+worktree /path/to/linked-worktree-prunable
+HEAD 1233def1234def1234def1234def1234def1234b
+detached
+prunable gitdir file points to non-existent location
+
+------------
+
+`-z` が使用されない限り、ロック理由での改行などの「異常な」文字はエスケープされ、 設定変数 `core.quotePath` で説明されているように理由全体がクォートされます(linkgit:git-config[1] 参照)。 例えば:
+
+------------
+$ git worktree list --porcelain
+...
+locked "reason\nwhy is locked"
+...
+------------
+
+EXAMPLES
+--------
+リファクタリングセッションの真っ最中に、 上司がやって来て、 あなたに、 すぐに何かを修正するように要求します。 通常、 linkgit:git-stash[1] を使用して変更を一時的に保存しますが、 作業ツリー(working tree)は、(新しいファイル、移動されたファイル、削除されたファイル、その他の断片が散らばっていて)混乱状態にあります。 あなたはそれのいずれかを邪魔する危険を冒したくありません。 あなたは代わりに、一時的にリンクされたワークツリーを作成して緊急修正を行い、 完了したらそれを削除してから、以前のリファクタリングセッションを再開することにします。
+
+------------
+$ git worktree add -b emergency-fix ../temp master
+$ pushd ../temp
+# ... hack hack hack ...
+$ git commit -a -m 'emergency fix for boss'
+$ popd
+$ git worktree remove ../temp
+------------
+
+CONFIGURATION
+-------------
+
+include::includes/cmd-config-section-all.adoc[]
+
+include::config/worktree.adoc[]
+
+BUGS
+----
+一般的な複数チェックアウト(multiple checkout)はまだ実験段階であり、サブモジュールのサポートは不完全です。スーパープロジェクトを複数チェックアウトすることはお勧めしません。
+
+GIT
+---
+Part of the linkgit:git[1] suite

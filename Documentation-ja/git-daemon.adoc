@@ -1,0 +1,210 @@
+git-daemon(1)
+=============
+
+NAME
+----
+git-daemon - Gitリポジトリ用のほんまにシンプルなサーバー
+
+SYNOPSIS
+--------
+[synopsis]
+git daemon [--verbose] [--syslog] [--export-all]
+	   [--timeout=<n>] [--init-timeout=<n>] [--max-connections=<n>]
+	   [--strict-paths] [--base-path=<path>] [--base-path-relaxed]
+	   [--user-path | --user-path=<path>]
+	   [--interpolated-path=<pathtemplate>]
+	   [--reuseaddr] [--detach] [--pid-file=<file>]
+	   [--enable=<service>] [--disable=<service>]
+	   [--allow-override=<service>] [--forbid-override=<service>]
+	   [--access-hook=<path>] [--[no-]informative-errors]
+	   [--inetd |
+	     [--listen=<host-or-ipaddr>] [--port=<n>]
+	     [--user=<user> [--group=<group>]]]
+	   [--log-destination=(stderr|syslog|none)]
+	   [<directory>...]
+
+DESCRIPTION
+-----------
+通常はポート「DEFAULT_GIT_PORT」(9418)でリッスンする非常に単純なTCP Gitデーモン。サービスを要求する接続を待機し、有効になっている場合はそのサービスを提供します。
+
+It verifies that the directory has the magic file "git-daemon-export-ok", and it will refuse to export any Git directory that hasn't explicitly been marked for export this way (unless the `--export-all` parameter is specified). If you pass some directory paths as `git daemon` arguments, the offers are limited to repositories within those directories.
+
+By default, only `upload-pack` service is enabled, which serves `git fetch-pack` and `git ls-remote` clients, which are invoked from `git fetch`, `git pull`, and `git clone`.
+
+これは、読み取り専用の更新、つまりGitリポジトリからのプルに最適です。
+
+An `upload-archive` also exists to serve `git archive`.
+
+OPTIONS
+-------
+`--strict-paths`::
+	Match paths exactly (i.e. don't allow "/foo/repo" when the real path is "/foo/repo.git" or "/foo/repo/.git") and don't do user-relative paths. `git daemon` will refuse to start when this option is enabled and no directory arguments are provided.
+
+`--base-path=<path>`::
+	Remap all the path requests as relative to the given path. This is sort of "Git root" - if you run `git daemon` with `--base-path=/srv/git` on `example.com`, then if you later try to pull from `git://example.com/hello.git`, `git daemon` will interpret the path as `/srv/git/hello.git`.
+
+`--base-path-relaxed`::
+	If `--base-path` is enabled and repo lookup fails, with this option `git daemon` will attempt to lookup without prefixing the base path. This is useful for switching to `--base-path` usage, while still allowing the old paths.
+
+`--interpolated-path=<pathtemplate>`::
+	To support virtual hosting, an interpolated path template can be used to dynamically construct alternate paths. The template supports `%H` for the target hostname as supplied by the client but converted to all lowercase, `%CH` for the canonical hostname, `%IP` for the server's IP address, `%P` for the port number, and `%D` for the absolute path of the named repository. After interpolation, the path is validated against the directory list.
+
+`--export-all`::
+	Allow pulling from all directories that look like Git repositories (have the 'objects' and 'refs' subdirectories), even if they do not have the `git-daemon-export-ok` file.
+
+`--inetd`::
+	Have the server run as an inetd service. Implies `--syslog` (may be overridden with `--log-destination=`). Incompatible with `--detach`, `--port`, `--listen`, `--user` and `--group` options.
+
+`--listen=<host-or-ipaddr>`::
+	Listen on a specific IP address or hostname. IP addresses can be either an IPv4 address or an IPv6 address if supported. If IPv6 is not supported, then `--listen=<hostname>` is also not supported and `--listen` must be given an IPv4 address. Can be given more than once. Incompatible with `--inetd` option.
+
+`--port=<n>`::
+	代わりのポートでリッスンします。 `--inetd` オプションと互換性がありません。
+
+`--init-timeout=<n>`::
+	接続が確立されてからクライアント要求が受信されるまでのタイムアウト(秒単位)(基本的には即時である必要があるため、通常はかなり低い値)。
+
+`--timeout=<n>`::
+	特定のクライアントサブリクエスト(client sub-requests)のタイムアウト(秒単位)。これには、サーバーがサブリクエストを処理するのにかかる時間と、次のクライアントのリクエストを待つために費やされる時間が含まれます。
+
+`--max-connections=<n>`::
+	同時クライアントの最大数。デフォルトは32です。制限しない場合はゼロに設定します。
+
+`--syslog`::
+	`--log-destination=syslog` の短縮形。
+
+`--log-destination=<destination>`::
+	Send log messages to the specified destination. Note that this option does not imply `--verbose`, thus by default only error conditions will be logged. The _<destination>_ must be one of:
++
+--
+`stderr`::
+	標準エラーに書き込みます。 `--detach` が指定されている場合、プロセスは実際の標準エラーから切断され、この宛先は実質的に `none` と同等になることに注意してください。
+`syslog`::
+	`git-daemon` 識別子を使用してsyslogに書き込みます。
+`none`::
+	すべてのログを無効にします。
+--
++
+デフォルトの宛先は、 `--inetd` または `--detach` が指定されている場合、は `syslog` であり、それ以外の場合は `stderr` です。
+
+`--user-path`::
+`--user-path=<path>`::
+	{tilde}user 表記をリクエストで使用できるようにします。パラメータなしで指定した場合、 git://host/{tilde}alice/foo へのリクエストは、 ユーザー `alice` のホーム・ディレクトリにある `foo` リポジトリへのアクセス・リクエストと見なされます。 `--user-path=<path>` が指定されている場合、このリクエストは、ユーザー `alice` のホーム・ディレクトリにある `<path>/foo` リポジトリにアクセスするリクエストと見なされます。
+
+`--verbose`::
+	着信接続と要求されたファイルに関する詳細をログに記録します。
+
+`--reuseaddr`::
+	Use `SO_REUSEADDR` when binding the listening socket. This allows the server to restart without waiting for old connections to time out.
+
+`--detach`::
+	Detach from the shell. Implies `--syslog`.
+
+`--pid-file=<file>`::
+	Save the process id in _<file>_. Ignored when the daemon is run under `--inetd`.
+
+`--user=<user>`::
+`--group=<group>`::
+	サービスループに入る前に、デーモンのuidとgidを変更します。 `--group` なしで `--user` のみが指定された場合、ユーザーのプライマリグループIDが使用されます。オプションの値は `getpwnam(3)` と `getgrnam(3)` に与えられ、数値IDはサポートされていません。
++
+Giving these options is an error when used with `--inetd`; use the facility of inet daemon to achieve the same before spawning `git daemon` if needed.
++
+Like many programs that switch user id, the daemon does not reset environment variables such as `HOME` when it runs git programs, e.g. `upload-pack` and `receive-pack`. When using this option, you may also want to set and export `HOME` to point at the home directory of _<user>_ before starting the daemon, and make sure any Git configuration files in that directory are readable by _<user>_.
+
+`--enable=<service>`::
+`--disable=<service>`::
+	デフォルトでサイト全体のサービスを 有効/無効 にします。サイト全体で無効にされたサービスは、オーバーライド可能とマークされていて、リポジトリが構成アイテムでサービスを有効にしている場合でも、リポジトリごとに有効にできることに注意してください。
+
+`--allow-override=<service>`::
+`--forbid-override=<service>`::
+	リポジトリごとの構成でサイト全体のデフォルトをオーバーライドすることを 許可/禁止 します。デフォルトでは、すべてのサービスがオーバーライドされる場合があります。
+
+`--informative-errors`::
+`--no-informative-errors`::
+	When informative errors are turned on, git-daemon will report more verbose errors to the client, differentiating conditions like "no such repository" from "repository not exported". This is more convenient for clients, but may leak information about the existence of unexported repositories. When informative errors are not enabled, all errors report "access denied" to the client. The default is `--no-informative-errors`.
+
+`--access-hook=<path>`::
+	Every time a client connects, first run an external command specified by the <path> with service name (e.g. "upload-pack"), path to the repository, hostname (`%H`), canonical hostname (`%CH`), IP address (`%IP`), and TCP port (`%P`) as its command-line arguments. The external command can decide to decline the service by exiting with a non-zero status (or to allow it by exiting with a zero status). It can also look at the $REMOTE_ADDR and `$REMOTE_PORT` environment variables to learn about the requestor when making this decision.
++
+外部コマンドはオプションで、サービスを拒否したときにエラーメッセージとしてリクエスト側(requestor)に送信される1行を標準出力に書き込むことができます。
+
+_<directory>_::
+	残りの引数は、ディレクトリのリストを提供します。 ディレクトリが指定されている場合、 `git-daemon` プロセスは、 要求されたディレクトリがこれらのディレクトリのいずれかに含まれている場合にのみ、 リクエストされたディレクトリをサーブします。 `--strict-paths` が指定されている場合、リクエストされたディレクトリはこれらのディレクトリのいずれかと正確に一致する必要があります。
+
+SERVICES
+--------
+
+These services can be globally enabled/disabled using the command-line options of this command. If finer-grained control is desired (e.g. to allow `git archive` to be run against only in a few selected repositories the daemon serves), the per-repository configuration file can be used to enable or disable them.
+
+upload-pack::
+	This serves `git fetch-pack` and `git ls-remote` clients. It is enabled by default, but a repository can disable it by setting `daemon.uploadpack` configuration item to `false`.
+
+upload-archive::
+	This serves `git archive --remote`. It is disabled by default, but a repository can enable it by setting `daemon.uploadarch` configuration item to `true`.
+
+receive-pack::
+	This serves `git send-pack` clients, allowing anonymous push. It is disabled by default, as there is _no_ authentication in the protocol (in other words, anybody can push anything into the repository, including removal of refs). This is solely meant for a closed LAN setting where everybody is friendly. This service can be enabled by setting `daemon.receivepack` configuration item to `true`.
+
+EXAMPLES
+--------
+ここでは /etc/services の下に構築するものと仮定します::
++
+------------
+$ grep 9418 /etc/services
+git		9418/tcp		# Git Version Control System
+------------
+
+`git daemon` as inetd server::
+	`/pub/foo` または `/pub/bar` 内の任意のリポジトリを処理する inetd サービスとして「git daemon」を設定するには、 以下のようなエントリを `/etc/inetd` に、すべて 1 行で配置します:
++
+------------------------------------------------
+	git stream tcp nowait nobody  /usr/bin/git
+		git daemon --inetd --verbose --export-all
+		/pub/foo /pub/bar
+------------------------------------------------
+
+
+`git daemon` as inetd server for virtual hosts::
+	異なる仮想ホスト `www.example.com` と `www.example.org` のリポジトリを処理するinetdサービスとして「git daemon」を設定するには、以下のようなエントリをすべて１行で `/etc/inetd` に配置します:
++
+------------------------------------------------
+	git stream tcp nowait nobody /usr/bin/git
+		git daemon --inetd --verbose --export-all
+		--interpolated-path=/pub/%H%D
+		/pub/www.example.org/software
+		/pub/www.example.com/software
+		/software
+------------------------------------------------
++
+この例では、ルートレベルのディレクトリ `/pub` には、サポートされている各仮想ホスト名のサブディレクトリが含まれています。さらに、両方のホストは、リポジトリを単に `git://www.example.com/software/repo.git` として公開します。 1.4.0より前のクライアントの場合、 `/software` から適切なデフォルトリポジトリへのシンボリックリンクも作成できます。
+
+
+`git daemon` as regular daemon for virtual hosts::
+	To set up `git daemon` as a regular, non-inetd service that handles repositories for multiple virtual hosts based on their IP addresses, start the daemon like this:
++
+------------------------------------------------
+	git daemon --verbose --export-all
+		--interpolated-path=/pub/%IP/%D
+		/pub/192.168.1.200/software
+		/pub/10.10.220.23/software
+------------------------------------------------
++
+この例では、 ルート・レベルのディレクトリ `/pub` には、 サポートされている各仮想ホストIPアドレスのサブディレクトリが含まれます。 ただし、 これらのホスト名がIPアドレスに対応しているならば、 ホスト名でリポジトリにアクセスできます。
+
+selectively enable/disable services per repository::
+	To enable `git archive --remote` and disable `git fetch` against a repository, have the following in the configuration file in the repository (that is the file 'config' next to `HEAD`, 'refs' and 'objects').
++
+----------------------------------------------------------------
+	[daemon]
+		uploadpack = false
+		uploadarch = true
+----------------------------------------------------------------
+
+
+ENVIRONMENT
+-----------
+`git daemon` will set `REMOTE_ADDR` to the IP address of the client that connected to it, if the IP address is available. `REMOTE_ADDR` will be available in the environment of hooks called when services are performed.
+
+GIT
+---
+Part of the linkgit:git[1] suite
