@@ -170,10 +170,11 @@ $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
 $(DST_DIR)/technical/api-index.sh : $(SRC_DIR)/technical/api-index.sh
 	cp $< $@
 
-# 2025/11/13 ascidoc.conf.in から 生成されるようになった。様子見
-# Documentation/asciidoc.conf 修正を反映させる 
-# $(DST_DIR)/asciidoc.conf : $(SRC_DIR)/asciidoc.conf
-# 	cp $< $@
+# Documentation/asciidoc.conf 修正を反映させる
+# cd Documantaion
+# make asciidoc.conf
+$(DST_DIR)/asciidoc.conf : $(SRC_DIR)/asciidoc.conf
+	cp $< $@
 
 ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/api-index.sh $(DST_DIR)/asciidoc.conf
 
