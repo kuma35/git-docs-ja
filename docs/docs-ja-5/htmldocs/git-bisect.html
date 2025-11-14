@@ -1,0 +1,1135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>git-bisect(1)</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="manpage">
+<div id="header">
+<h1>
+git-bisect(1) Manual Page
+</h1>
+<h2>NAME</h2>
+<div class="sectionbody">
+<p>git-bisect -
+   二分木検索を使用して、バグを引き起こしたコミットを見つけます
+</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="verseblock">
+<pre class="content"><em>git <code>bisect</code></em> <code>start</code> [<code>--term-</code>(<code>bad</code>|<code>new</code>)<code>=</code><em>&lt;term-new&gt;</em> <code>--term-</code>(<code>good</code>|<code>old</code>)<code>=</code><em>&lt;term-old&gt;</em>]
+                   [<code>--no-checkout</code>] [<code>--first-parent</code>] [<em>&lt;bad&gt;</em> [<em>&lt;good&gt;</em><span>&#8230;]</span>] [<code>--</code>] [<em>&lt;pathspec&gt;</em><span>&#8230;]</span>
+<em>git <code>bisect</code></em> (<code>bad</code>|<code>new</code>|<em>&lt;term-new&gt;</em>) [<em>&lt;rev&gt;</em>]
+<em>git <code>bisect</code></em> (<code>good</code>|<code>old</code>|<em>&lt;term-old&gt;</em>) [<em>&lt;rev&gt;</em><span>&#8230;]</span>
+<em>git <code>bisect</code></em> <code>terms</code> [<code>--term-</code>(<code>good</code>|<code>old</code>) | <code>--term-</code>(<code>bad</code>|<code>new</code>)]
+<em>git <code>bisect</code></em> <code>skip</code> [(<em>&lt;rev&gt;</em>|<em>&lt;range&gt;</em>)<span>&#8230;]</span>
+<em>git <code>bisect</code></em> <code>next</code>
+<em>git <code>bisect</code></em> <code>reset</code> [<em>&lt;commit&gt;</em>]
+<em>git <code>bisect</code></em> (<code>visualize</code>|<code>view</code>)
+<em>git <code>bisect</code></em> <code>replay</code> <em>&lt;logfile&gt;</em>
+<em>git <code>bisect</code></em> <code>log</code>
+<em>git <code>bisect</code></em> <code>run</code> <em>&lt;cmd&gt;</em> [<em>&lt;arg&gt;</em><span>&#8230;]</span>
+<em>git <code>bisect</code></em> <code>help</code></pre>
+<div class="attribution">
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>このコマンドは、二分木検索アルゴリズムを使用して、プロジェクトの履歴のどのコミットでバグが発生したかを検出します。 最初に、バグが含まれていることがわかっている「bad」コミットと、バグが発生する前にあることがわかっている「good」コミットを伝えることで使用します。 次に、 <code>git</code> <code>bisect</code> は、これら2つのエンドポイントの中間のコミットを選択し、選択したコミットが「good」か「bad」かを尋ねます。 変更を導入した正確なコミットが見つかるまで、範囲を絞り込み続けます。</p></div>
+<div class="paragraph"><p>実際、 <code>git</code> <code>bisect</code> を使用して、プロジェクトの <strong>任意の</strong> プロパティを変更したコミットを見つけることができます。 例：バグを修正したコミット、またはベンチマークのパフォーマンスを向上させたコミット。 このより一般的な使用法をサポートするために、「good」と「bad」の代わりに「old」と「new」という用語(terms)を使用することも、独自の用語(terms)を選択することもできます。 詳細については、以下の「Alternate terms」(代替用語)のセクションを参照してください。</p></div>
+<div class="sect2">
+<h3 id="_basic_bisect_commands_start_bad_good">Basic bisect commands: start, bad, good</h3>
+<div class="paragraph"><p>例として、プロジェクトのバージョン <code>v2.6.13-rc2</code> では動作することがわかっている機能を壊したコミットを見つけようとしているとします。以下のようにbisectセッションを開始します:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start
+$ git bisect bad                 # Current version is bad
+$ git bisect good v2.6.13-rc2    # v2.6.13-rc2 is known to be good</code></pre>
+</div></div>
+<div class="paragraph"><p>少なくとも1つのbadコミットと1つのgoodコミットを指定すると、 <code>git</code> <code>bisect</code> はその範囲の履歴の真ん中でコミットを選択し、それをチェックアウトして、以下のようなものを出力します(訳注:テスト対象残り675リビジョン(ざっくり10ステップ)):</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Bisecting: 675 revisions left to test after this (roughly 10 steps)</code></pre>
+</div></div>
+<div class="paragraph"><p>あなたはチェックアウトしたバージョンをコンパイルしてテストする必要があります。 もし、そのバージョンが正しく機能する場合は、次のように入力します</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect good</code></pre>
+</div></div>
+<div class="paragraph"><p>もし、そのバージョンが壊れている場合は、以下のように入力します</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect bad</code></pre>
+</div></div>
+<div class="paragraph"><p>そうすると、 <code>git</code> <code>bisect</code> は以下のように応答します</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Bisecting: 337 revisions left to test after this (roughly 9 steps)</code></pre>
+</div></div>
+<div class="paragraph"><p>このプロセスを繰り返します: ツリーをコンパイルしてテストし、それがgoodかbadかに応じて、 <code>git</code> <code>bisect</code> <code>good</code> または <code>git</code> <code>bisect</code> <code>bad</code> を実行して、テストが必要な次のコミットを要求します。</p></div>
+<div class="paragraph"><p>最終的には、検査するリビジョンがなくなり、コマンドは最初の不正なコミットの説明を出力します。 参照 <code>refs/bisect/bad</code> は、そのコミットを指したままになります。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_reset">Bisect reset</h3>
+<div class="paragraph"><p>bisectセッションの後、bisect状態をクリーンアップして元のHEADに戻すには、以下のコマンドを発行します:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect reset</code></pre>
+</div></div>
+<div class="paragraph"><p>デフォルトでは、これにより、あなたのツリーは <code>git</code> <code>bisect</code> <code>start</code> の前にチェックアウトされたコミットに戻ります。 (新しく行う <code>git</code> <code>bisect</code> <code>start</code> も、古いbisect状態をクリーンアップするため、これを実行します。)</p></div>
+<div class="paragraph"><p>オプションの引数を使用すると、代わりに異なるコミットに戻ることができます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect reset &lt;commit&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>たとえば、 <code>git</code> <code>bisect</code> <code>reset</code> <code>bisect/bad</code> は最初のbadリビジョンをチェックアウトしますが、 <code>git</code> <code>bisect</code> <code>reset</code> <code>HEAD</code> は現在のbisectコミットのままにし、コミットの切り替えを完全に回避します。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_alternate_terms_代替用語">Alternate terms(代替用語)</h3>
+<div class="paragraph"><p>破損を引き起こしたコミットではなく、他の「old」状態と「new」状態の間で変化を引き起こしたコミットを探している場合があります。 たとえば、特定の修正を導入したコミットを探している場合があります。 または、ソースコードのファイル名がすべて最終的に会社の命名基準に変換された最初のコミットを探しているかもしれません。その他何でもありです。</p></div>
+<div class="paragraph"><p>このような場合、「変更前の状態」と「変更後の状態」を指すのに「good」と「bad」という用語(terms)を使用することは非常に混乱する可能性があります。 したがって、「good」と「bad」の代わりに、それぞれ「old」と「new」という用語を使用できます。 (ただし、単一のセッション内で「good」と「bad」を「old」と「new」と混在させることはできないことに注意してください。)</p></div>
+<div class="paragraph"><p>このより一般的な使用法では、 <code>git</code> <code>bisect</code> に、いくつかのプロパティを持つ「new」コミットと、そのプロパティを持たない「old」コミットを提供します。 <code>git</code> <code>bisect</code> がコミットをチェックアウトするたびに、そのコミットにそのプロパティがあるかどうかをテストします。 含まれている場合は、コミットを「new」としてマークします。 それ以外の場合は、「old」とマークします。 bisectが行われると、 <code>git</code> <code>bisect</code> はどのコミットがそのプロパティを導入したかを報告します。</p></div>
+<div class="paragraph"><p>「good」と「bad」の代わりに「old」と「new」を使用するには、 <code>git</code> <code>bisect</code> <code>start</code> を実行する時に、 引数にcommitを指定せずにおいて、 以下のコマンドを実行してコミットを指定する必要があります:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git bisect old [&lt;rev&gt;]</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、このコミットが、 あなたの求める変更時点より前であったことを知らせるためで、あるいは、</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git bisect new [&lt;rev&gt;...]</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、 このコミットが、 あなたの求める変更時点より後であった事を知らせます。</p></div>
+<div class="paragraph"><p>現在使用している用語(terms)を忘れちゃったときは、以下を入力します。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git bisect terms</code></pre>
+</div></div>
+<div class="paragraph"><p><code>git</code> <code>bisect</code> <code>terms</code> <code>--term-old</code> または <code>git</code> <code>bisect</code> <code>terms</code> <code>--term-good</code> は用語の old/good 用だけを出力するために使用できます。 <code>git</code> <code>bisect</code> <code>term</code> <code>--term-new</code> と <code>git</code> <code>bisect</code> <code>term</code> <code>--term-bad</code> は、 求めている変更よりも後のコミットを呼び出す方法を学ぶために使用できます(訳注:用語の new/bad 用だけを出力)</p></div>
+<div class="paragraph"><p>bad/good または new/old の代わりに独自の用語(terms)を使用する場合は、以下を使用してbisectを開始することにより、(<code>reset</code> 、<code>start</code> などの既存のbisectサブコマンドを除く)任意の名前を選択できます</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git bisect start --term-old &lt;term-old&gt; --term-new &lt;term-new&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>たとえば、あなたがパフォーマンスの低下をもたらすコミットを探している場合は、以下のように使用できます</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git bisect start --term-old fast --term-new slow</code></pre>
+</div></div>
+<div class="paragraph"><p>または、あなたがバグを修正したコミットを探している場合は、以下のようにします</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>git bisect start --term-new fixed --term-old broken</code></pre>
+</div></div>
+<div class="paragraph"><p>次に、コミットをマークするために、 <code>git</code> <code>bisect</code> <code>good</code> や <code>git</code> <code>bisect</code> <code>bad</code> の代わりに、 <code>git</code> <code>bisect</code> <em>&lt;term-old&gt;</em> や <code>git</code> <code>bisect</code> <em>&lt;term-new&gt;</em> を使用します。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_visualize_view">Bisect visualize/view</h3>
+<div class="paragraph"><p><code>gitk</code> 内で、 現在残っている容疑者(suspects)を確認するには、bisectプロセス中に以下のコマンドを発行します(サブコマンド <code>view</code> は <code>visualize</code> の代わりに使用できます):</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect visualize</code></pre>
+</div></div>
+<div class="paragraph"><p>Git は、 さまざまな環境変数を見てグラフィカル環境を検出します: <code>DISPLAY</code> は Unix システム上の X Window System 環境で設定されます。 <code>SESSIONNAME</code> は対話型デスクトップ・セッションの Cygwin で設定されます。 <code>MSYSTEM</code> は Msys2 および Windows 用 Git の下で設定されます。 <code>SECURITYSESSIONID</code> は macOS の対話型デスクトップ・セッションで設定されます。</p></div>
+<div class="paragraph"><p>これらの環境変数がいずれも設定されていない場合は、 代わりに <code>git</code> <code>log</code> が使用されます。 <code>-p</code> や <code>--stat</code> などのコマンドライン・オプションを指定することもできます。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect visualize --stat</code></pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_log_and_bisect_replay">Bisect log and bisect replay</h3>
+<div class="paragraph"><p>リビジョンをgoodまたはbadとマークした後、以下のコマンドを発行して、これまでに行われたことを表示します:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect log</code></pre>
+</div></div>
+<div class="paragraph"><p>リビジョンのステータスの指定を間違えたのを見つけた場合は、このコマンドの出力をファイルに保存し、それを編集して誤ったエントリを削除してから、以下のコマンドを発行して修正された状態に戻すことができます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect reset
+$ git bisect replay that-file</code></pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_avoiding_testing_a_commit">Avoiding testing a commit</h3>
+<div class="paragraph"><p>bisectセッションの途中で、提案されたリビジョンがテストに適していないことがわかっている場合(たとえば、ビルドに失敗し、その失敗が追跡しているバグとは何の関係もないことがわかっている場合)、その近くのコミットを手動で選択し、代わりにそれをテストできます。</p></div>
+<div class="paragraph"><p>例えば:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect good/bad                   # previous round was good or bad.
+Bisecting: 337 revisions left to test after this (roughly 9 steps)
+$ git bisect visualize                  # oops, that is uninteresting.
+$ git reset --hard HEAD~3               # try 3 revisions before what
+                                        # was suggested</code></pre>
+</div></div>
+<div class="paragraph"><p>次に、選択したリビジョンをコンパイルしてテストし、その後、通常の方法でリビジョンにgoodまたはbadのマークを付けます。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_skip">Bisect skip</h3>
+<div class="paragraph"><p>自分で近くのコミットを選択する代わりに、コマンドを発行してGitにそれを実行するように依頼できます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect skip                 # Current version cannot be tested</code></pre>
+</div></div>
+<div class="paragraph"><p>しかしながら、探しているコミットに隣接するコミットをスキップすると、Gitはそれらのコミットのどれが最初のbadコミットであったかを正確に知ることができなくなります。</p></div>
+<div class="paragraph"><p>範囲表記を使用して、1つのコミットだけでなく、範囲のコミットをスキップすることもできます。 例えば以下のようにします:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect skip v2.5..v2.6</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、<code>v2.5</code> 以降の <code>v2.6</code> までのコミットをテストしてはならないことをbisectプロセスに伝えます。</p></div>
+<div class="paragraph"><p>注意: 範囲の最初のコミットもスキップする場合は、以下のコマンドを発行することに注意してください:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect skip v2.5 v2.5..v2.6</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、<code>v2.5</code> と <code>v2.6</code> (の両端を含む) の間のコミットをスキップする必要があることをbisectプロセスに通知します。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_next">Bisect next</h3>
+<div class="paragraph"><p>Normally, after marking a revision as good or bad, Git automatically computes and checks out the next revision to test. However, if you need to explicitly request the next bisection step, you can use:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect next</code></pre>
+</div></div>
+<div class="paragraph"><p>You might use this to resume the bisection process after interrupting it by checking out a different revision.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_startでより多くのパラメータを与えて探索量削減">bisect startでより多くのパラメータを与えて探索量削減</h3>
+<div class="paragraph"><p>あなたが追跡している問題でツリーのどの部分が関係しているかがわかっている場合は、 <code>bisect</code> <code>start</code> コマンドを発行するときに pathspec パラメータを指定することで、試行回数をさらに減らすことができます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start -- arch/i386 include/asm-i386</code></pre>
+</div></div>
+<div class="paragraph"><p>複数の適切なコミットが事前にわかっている場合は、 <code>bisect</code> <code>start</code> コマンドを発行するときに、badコミットの直後にすべてのgoodコミットを指定することで、bisect量を絞り込むことができます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start v2.6.20-rc6 v2.6.20-rc4 v2.6.20-rc1 --
+                   # v2.6.20-rc6 is bad
+                   # v2.6.20-rc4 and v2.6.20-rc1 are good</code></pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_bisect_run">Bisect run</h3>
+<div class="paragraph"><p>現在のソースコードがgoodかbadかを判断できるスクリプトがある場合は、以下のコマンドを発行してbisectすることができます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect run my_script arguments</code></pre>
+</div></div>
+<div class="paragraph"><p>注意: スクリプト(上記例では <code>my_script</code>)は、現在のソースコードが good/old ならばコード0で終了し、現在のソースコードが bad/new の場合はコードは125を除く1〜127で終了します。</p></div>
+<div class="paragraph"><p>その他の終了コードは、bisectプロセスを中止します。 <code>exit</code>(<code>-1</code>) を介して終了するプログラムは $?= 255 を残すことに注意してください。 (exit(3)のマニュアルページ参照)。 値は &amp; <code>0377</code> でマスクされます。</p></div>
+<div class="paragraph"><p>現在のソースコードをテストできない場合は、特別な終了コード125を使用する必要があります。 スクリプトがこのコードで終了する場合、現在のリビジョンはスキップされます(上記「git bisect skip」参照)。 126と127はPOSIXシェルによって特定のエラーステータスを通知するために使用されるため、125がこの目的で使用する最も適切な値として選択されました(127は、コマンドが見つかりません で、 126は コマンドが見つかりましたが実行可能ではありません です。&#8201;&#8212;&#8201;これらの詳細は、 <code>bisect</code> <code>run</code> に関する限り、スクリプトの通常のエラーであるため、重要ではありません)。</p></div>
+<div class="paragraph"><p>bisectセッション中に、テスト対象のリビジョンに一時的な変更を加えたい場合がよくあります(例: ヘッダーファイルで <code>s/</code>#define <code>DEBUG</code> <code>0/</code>#define <code>DEBUG</code> <code>1/</code> 、または「このコミットがないリビジョンでは、このbisectが関心を持たない別の問題を解決するために、このパッチを適用する必要があります」)。</p></div>
+<div class="paragraph"><p>このような状況に対処するために、「git bisect」内部でテストする次のリビジョンを見つけた後、スクリプトはコンパイル前にパッチを適用し、実際のテストを実行し、その後、リビジョン(おそらく必要なパッチを含む)が合格したかどうかを判断できます。 テストしてから、ツリーを元の状態に巻き戻します。 最後に、スクリプトは実際のテストのステータスで終了し、 <code>git</code> <code>bisect</code> <code>run</code> コマンドループがbisectセッションの最終的な結果を決定できるようにする必要があります。</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--no-checkout</code>
+</dt>
+<dd>
+<div class="paragraph"><p>bisect 処理の各反復で新しい作業ツリーをチェックアウトしないでください。 代わりに、 <code>BISECT_HEAD</code> という名前の参照を更新して、 テストする必要のあるコミットを指すようにします。</p></div>
+<div class="paragraph"><p>このオプションは、各ステップで実行するテストで、チェックアウトされたツリーが必要ない場合に役立つことがあります。</p></div>
+<div class="paragraph"><p>ベアリポジトリの場合、 <code>--no-checkout</code> が想定されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--first-parent</code>
+</dt>
+<dd>
+<div class="paragraph"><p>マージコミットを確認したら、最初の親コミットのみを実行します。</p></div>
+<div class="paragraph"><p>ブランチのマージによって導入されたデグレを検出する際に、マージコミットはバグの導入として識別され、その祖先は無視されます。</p></div>
+<div class="paragraph"><p>このオプションは、マージされたブランチに壊れたコミットまたはビルドできないコミットが含まれているが、マージ自体はOKな場合に誤検知を回避するのに特に役立ちます。</p></div>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+v1.2とHEADの間で壊れたビルドを自動的にbisectします:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start HEAD v1.2 --      # HEAD is bad, v1.2 is good
+$ git bisect run make                # "make" builds the app
+$ git bisect reset                   # quit the bisect session</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+originとHEADの間のテスト失敗を自動的にbisectします:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start HEAD origin --    # HEAD is bad, origin is good
+$ git bisect run make test           # "make test" builds and tests
+$ git bisect reset                   # quit the bisect session</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+壊れたテストケースを自動的にbisectします:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ cat ~/test.sh
+#!/bin/sh
+make || exit 125                     # this skips broken builds
+~/check_test_case.sh                 # does the test case pass?
+$ git bisect start HEAD HEAD~10 --   # culprit is among the last 10
+$ git bisect run ~/test.sh
+$ git bisect reset                   # quit the bisect session</code></pre>
+</div></div>
+<div class="paragraph"><p>ここでは、 <code>test.sh</code> カスタムスクリプトを使用します。 このスクリプトでは、 <code>make</code> が失敗した場合、現在のコミットをスキップします。 <code>check_test_case.sh</code> は、テストケースが合格した場合は <code>exit</code> <code>0</code> であり、そうでない場合は <code>exit</code> <code>1</code> である必要があります。</p></div>
+<div class="paragraph"><p><code>test.sh</code> と <code>check_test_case.sh</code> の両方がリポジトリの外にある場合は、bisectプロセスとmakeプロセスとtestプロセスとスクリプトの間の相互作用を防ぐ方が安全です。</p></div>
+</li>
+<li>
+<p>
+一時的な変更(ホットフィックス)で自動的にbisectします:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ cat ~/test.sh
+#!/bin/sh
+
+# tweak the working tree by merging the hot-fix branch
+# and then attempt a build
+if      git merge --no-commit --no-ff hot-fix &amp;&amp;
+        make
+then
+        # run project specific test and report its status
+        ~/check_test_case.sh
+        status=$?
+else
+        # tell the caller this is untestable
+        status=125
+fi
+
+# undo the tweak to allow clean flipping to the next commit
+git reset --hard
+
+# return control
+exit $status</code></pre>
+</div></div>
+<div class="paragraph"><p>これにより、各テスト実行の前にホットフィックスブランチからの変更が適用されます。 例えば、ビルドやテスト環境が変わり、古いリビジョンではすでに修正されているものが、新しいリビジョンでは修正が必要になる可能性があるからです。（ホットフィックスブランチが、bisectしているすべてのリビジョンに含まれているコミットに基づいていることを確認して、マージがあまり引き込まれないようにするか、 <code>git</code> <code>merge</code> の代わりに <code>git</code> <code>cherry-pick</code> を使用します。)</p></div>
+</li>
+<li>
+<p>
+壊れたテストケースを自動的にbisectします:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start HEAD HEAD~10 --   # culprit is among the last 10
+$ git bisect run sh -c "make || exit 125; ~/check_test_case.sh"
+$ git bisect reset                   # quit the bisect session</code></pre>
+</div></div>
+<div class="paragraph"><p>これは、テストを1行で記述した場合、実行スクリプトなしで実行できることを示しています。</p></div>
+</li>
+<li>
+<p>
+破損したリポジトリでオブジェクトグラフの適切な領域を見つけます
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start HEAD &lt;known-good-commit&gt; [ &lt;boundary-commit&gt; ... ] --no-checkout
+$ git bisect run sh -c '
+        GOOD=$(git for-each-ref "--format=%(objectname)" refs/bisect/good-*) &amp;&amp;
+        git rev-list --objects BISECT_HEAD --not $GOOD &gt;tmp.$$ &amp;&amp;
+        git pack-objects --stdout &gt;/dev/null &lt;tmp.$$
+        rc=$?
+        rm -f tmp.$$
+        test $rc = 0'
+
+$ git bisect reset                   # quit the bisect session</code></pre>
+</div></div>
+<div class="paragraph"><p>この場合、「git bisect run」が終了すると、 bisect/bad は、到達可能なグラフが「git pack objects」で必要な意味で完全にトラバース可能な親が少なくとも1つあるコミットを参照します。</p></div>
+</li>
+<li>
+<p>
+コードでデグレの代わりに修正を探します
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start
+$ git bisect new HEAD    # current commit is marked as new
+$ git bisect old HEAD~10 # the tenth commit from now is marked as old</code></pre>
+</div></div>
+<div class="paragraph"><p>または:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git bisect start --term-old broken --term-new fixed
+$ git bisect fixed
+$ git bisect broken HEAD~10</code></pre>
+</div></div>
+</li>
+</ul></div>
+<div class="sect2">
+<h3 id="_getting_help">Getting help</h3>
+<div class="paragraph"><p><code>git</code> <code>bisect</code> を使用して短い使用法の説明を取得し、 <code>gitbisect</code> <code>help</code> または <code>git</code> <code>bisect</code> <code>-h</code> を使用して長い使用法の説明を取得します。</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><a href="git-bisect-lk2009.html">Fighting regressions with git bisect</a>, <a href="git-blame.html">git-blame(1)</a>.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_git">GIT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-11-13 13:43:47 JST
+</div>
+</div>
+</body>
+</html>

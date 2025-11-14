@@ -1,0 +1,1015 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>git-receive-pack(1)</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="manpage">
+<div id="header">
+<h1>
+git-receive-pack(1) Manual Page
+</h1>
+<h2>NAME</h2>
+<div class="sectionbody">
+<p>git-receive-pack -
+   リポジトリにプッシュされたものを受信します
+</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="verseblock">
+<pre class="content"><em>git <code>receive-pack</code></em> <em>&lt;git-dir&gt;</em></pre>
+<div class="attribution">
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>git</code> <code>send-pack</code> によって呼び出され、リモート側からもたらされた情報でリポジトリを更新します。</p></div>
+<div class="paragraph"><p>このコマンドは通常、エンド・ユーザーによって直接呼び出されることはありません。 プロトコルのUIは <code>git</code> <code>send-pack</code> 側にあり、プログラム・ペアは更新をリモート・リポジトリーにプッシュするために使用されることを目的としています。 プル操作については、 <a href="git-fetch-pack.html">git-fetch-pack(1)</a> を参照してください。</p></div>
+<div class="paragraph"><p>このコマンドを使用すると、リモート側で sha1 ref (ヘッド/タグ)の作成と早送り(fast-forwarding)がきます(厳密に言えば、ローカル側では <code>git-receive-pack</code> が実行されますが、send-pack側に居るユーザにとってはリモートの更新をしている事になります。混乱しないでね？)</p></div>
+<div class="paragraph"><p>Documentation/howto ディレクトリには、更新フック(update hook)と更新後フック(post-update hook)を使用した実例が他にもあります。</p></div>
+<div class="paragraph"><p><code>git-receive-pack</code> は、 receive.denyNonFastForwards 構成オプションを尊重します。 このオプションは、 refの更新が早送り(fast-forwards)で無い場合に拒否する必要があるかどうかを通知します。</p></div>
+<div class="paragraph"><p>他の多くの <code>receive.*</code> 構成オプションを使用して、その動作を微調整できます。 <a href="git-config.html">git-config(1)</a> を参照してください。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+&lt;git-dir&gt;
+</dt>
+<dd>
+<p>
+        同期するリポジトリ。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--http-backend-info-refs</code>
+</dt>
+<dd>
+<p>
+        <a href="git-http-backend.html">git-http-backend(1)</a> が、 <code>$GIT_URL/info/refs</code>?service=git-receive-pack リクエストを処理するために使用します。 <a href="git-upload-pack.html">git-upload-pack(1)</a> の <code>--http-backend-info-refs</code> を参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--skip-connectivity-check</code>
+</dt>
+<dd>
+<p>
+        Bypasses the connectivity checks that validate the existence of all objects in the transitive closure of reachable objects. This option is intended for server operators that want to implement their own object connectivity validation outside of Git. This is useful in such cases where the server-side knows additional information about how Git is being used and thus can rely on certain guarantees to more efficiently compute object connectivity that Git itself cannot make. Usage of this option without a reliable external mechanism to ensure full reachable object connectivity risks corrupting the repository and should not be used in the general case.
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pre_receive_hook">PRE-RECEIVE HOOK</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>refが更新される前に、 $GIT_DIR/hooks/pre-receive ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、更新される ref ごとに1行になります:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>sha1-old SP sha1-new SP refname LF</code></pre>
+</div></div>
+<div class="paragraph"><p>refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッドの場合、これは <code>refs/heads/master</code> です。 各refnameの前の2つのsha1値は、更新前後のrefnameのオブジェクト名です。 作成されるrefのsha1-oldは 0{40} に等しく、削除されるrefのsha1-newは 0{40} になります。それ以外の場合、sha1-oldとsha1-newはリポジトリ内の有効なオブジェクトである必要があります。</p></div>
+<div class="paragraph"><p>署名されたプッシュを受け入れる場合(<a href="git-push.html">git-push(1)</a> 参照)、署名されたプッシュ証明書はブロブに格納され、環境変数 <code>GIT_PUSH_CERT</code> でオブジェクト名を調べることができます。 例については、 <code>post-receive</code> フックの説明を参照してください。 さらに、証明書はGPGを使用して検証され、結果は以下の環境変数とともにエクスポートされます:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>GIT_PUSH_CERT_SIGNER</code>
+</dt>
+<dd>
+<p>
+        プッシュ証明書に署名したキーの所有者の、名前(name)と電子メールアドレス(e-mail address)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_PUSH_CERT_KEY</code>
+</dt>
+<dd>
+<p>
+        プッシュ証明書に署名したキーのGPGキーID。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_PUSH_CERT_STATUS</code>
+</dt>
+<dd>
+<p>
+        コマンドの <code>git</code> <code>log</code> ファミリーの %G? 形式で使用されるのと同一のニーモニックを使用した、プッシュ証明書のGPG検証のステータス(<a href="git-log.html">git-log(1)</a> を参照)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_PUSH_CERT_NONCE</code>
+</dt>
+<dd>
+<p>
+        プロセスが署名者にプッシュ証明書に含めるように要求したノンス(nonce;その場限りの)文字列。これがプッシュ証明書の「nonce」ヘッダーに記録されている値と一致しない場合は、証明書が別の <code>git</code> <code>push</code> セッションから再実行されている有効な証明書であることを示している可能性があります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>GIT_PUSH_CERT_NONCE_STATUS</code>
+</dt>
+<dd>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>UNSOLICITED</code>
+</dt>
+<dd>
+<p>
+        <code>git</code> <code>push</code> <code>--signed</code> は、私達が送信を問い合わせなかったときにノンス(nonce)を送信しました。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>MISSING</code>
+</dt>
+<dd>
+<p>
+        <code>git</code> <code>push</code> <code>--signed</code> はノンスヘッダーを送信しませんでした。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>BAD</code>
+</dt>
+<dd>
+<p>
+        <code>git</code> <code>push</code> <code>--signed</code> は偽のノンスを送信しました。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>OK</code>
+</dt>
+<dd>
+<p>
+        <code>git</code> <code>push</code> <code>--signed</code> は、私達が送信を要求したノンスを送信しました。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>SLOP</code>
+</dt>
+<dd>
+<p>
+        <code>git</code> <code>push</code> <code>--signed</code> は、前回のセッションで送信するように要求したものとは異なるノンスを送信しました。 <code>GIT_PUSH_CERT_NONCE_SLOP</code> 環境変数を参照してください。
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+<code>GIT_PUSH_CERT_NONCE_SLOP</code>
+</dt>
+<dd>
+<p>
+        <code>git</code> <code>push</code> <code>--signed</code> は、現在送信するように要求したものとは異なるノンスを送信しました。開始時刻が現在のセッションとは何秒も違う別のセッションで送信されました。 <code>GIT_PUSH_CERT_NONCE_STATUS</code> が <code>SLOP</code> と言った場合にのみ意味があります。 <a href="git-config.html">git-config(1)</a> の <code>receive.certNonceSlop</code> 変数についてもお読みください。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>このフックは、refnameが更新される前、および早送りチェックが実行される前に呼び出されます。</p></div>
+<div class="paragraph"><p>受信前(pre-receive)フックがゼロ以外の終了ステータスで終了した場合、更新は実行されず、更新(update)フックや受信後フック(post-receive)や更新後(post-update)フックも呼び出されません。 これは、更新がサポートされない場合に迅速に救済するのに役立ちます。</p></div>
+<div class="paragraph"><p>下記にある検疫隔離環境(quarantine environment)に関する注記を参照してください。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_update_hook">UPDATE HOOK</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>各refが更新される前に、 $GIT_DIR/hooks/update ファイルが存在し、実行可能である場合、3つのパラメーターを使用してrefごとに1回呼び出されます:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$GIT_DIR/hooks/update refname sha1-old sha1-new</code></pre>
+</div></div>
+<div class="paragraph"><p>refnameパラメーターは$GIT_DIRに関連しています。 例えば masterヘッドの場合、これは <code>refs/heads/master</code> です。 2つのsha1引数は、更新前後のrefnameのオブジェクト名です。 refnameが更新される前にフックが呼び出されるため、sha1-oldが 0{40} (そのようなrefがまだないことを意味します)であるか、refnameに記録されているものと一致する必要があることに注意してください。</p></div>
+<div class="paragraph"><p>名前付きrefの更新を禁止する場合、フックはゼロ以外のステータスで終了する必要があります。 それ以外の場合は、ゼロで終了する必要があります。</p></div>
+<div class="paragraph"><p>このフックの正常な実行(ゼロ終了ステータス)は、refが実際に更新されることを保証するものではなく、前提条件にすぎません。 そのため、このフックから通知(電子メールなど)を送信することはお勧めできません。 代わりに、受信後(post-receive)フックの使用を検討してください。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_post_receive_hook">POST-RECEIVE HOOK</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>すべてのrefが更新された後(または更新が試みられた後)、refの更新が成功した場合、および $GIT_DIR/hooks/post-receive ファイルが存在し、実行可能である場合、パラメーターなしで1回呼び出されます。 フックの標準入力は、正常に更新された参照ごとに1行になります。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>sha1-old SP sha1-new SP refname LF</code></pre>
+</div></div>
+<div class="paragraph"><p>refnameの値は$GIT_DIRを基準にしています。 例えば masterヘッドの場合、これは <code>refs/heads/master</code> です。 各refnameの前の2つのsha1値は、更新前後のrefnameのオブジェクト名です。 作成された参照はsha1-oldが 0{40} に等しくなり、削除された参照はsha1-newが 0{40} に等しくなります。それ以外の場合、sha1-oldとsha1-newはリポジトリ内の有効なオブジェクトである必要があります。</p></div>
+<div class="paragraph"><p>署名されたプッシュを受け入れた後、 <code>pre-receive</code> フックの場合と同様に、 <code>GIT_PUSH_CERT*</code> 環境変数を検査できます。</p></div>
+<div class="paragraph"><p>このフックを使用すると、リポジトリの更新を説明するメールを簡単に生成できます。 以下のサンプル・スクリプトは、 リポジトリーにプッシュされたコミットを一覧表示するrefごとに1つのメール・メッセージを送信し、適切な署名を持つ署名付きプッシュのプッシュ証明書をログ取りサービス(logger service)に記録します:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>#!/bin/sh
+# mail out commit update information.
+while read oval nval ref
+do
+        if expr "$oval" : '0*$' &gt;/dev/null
+        then
+                echo "Created a new ref, with the following commits:"
+                git rev-list --pretty "$nval"
+        else
+                echo "New commits:"
+                git rev-list --pretty "$nval" "^$oval"
+        fi |
+        mail -s "Changes to ref $ref" commit-list@mydomain
+done
+# log signed push certificate, if any
+if test -n "${GIT_PUSH_CERT-}" &amp;&amp; test ${GIT_PUSH_CERT_STATUS} = G
+then
+        (
+                echo expected nonce is ${GIT_PUSH_NONCE}
+                git cat-file blob ${GIT_PUSH_CERT}
+        ) | mail -s "push certificate from $GIT_PUSH_CERT_SIGNER" push-log@mydomain
+fi
+exit 0</code></pre>
+</div></div>
+<div class="paragraph"><p>このフック呼び出しからの終了コードは無視されますが、ゼロ以外の終了コードはエラーメッセージを生成します。</p></div>
+<div class="paragraph"><p>このフックが実行されると、refnameにsha1-newがない可能性があることに注意してください。 これは、 <code>git-receive-pack</code> によって更新された後、フックがそれを評価できるようになる前に、別のユーザーが参照を変更した場合に簡単に発生する可能性があります。 フックは、refnameの現在の値ではなく、sha1-newに依存することをお勧めします。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_post_update_hook">POST-UPDATE HOOK</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>他のすべての処理の後、少なくとも1つのrefが更新され、 $GIT_DIR/hooks/post-update ファイルが存在し、実行可能である場合、更新されたrefのリストを使用してpost-updateが呼び出されます。 これは、リポジトリ全体のクリーンアップタスクを実装するために使用できます。</p></div>
+<div class="paragraph"><p>このフック呼び出しからの終了コードは無視されます。 その時点で <code>git-receive-pack</code> に残されているのは、とにかく自分自身を終了することだけです。</p></div>
+<div class="paragraph"><p>このフックは、たとえば、リポジトリがパックされてバカ転送(dumb transport)を介して提供される場合に <code>git</code> <code>update-server-info</code> を実行するために使用できます。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>#!/bin/sh
+exec git update-server-info</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_quarantine_environment_検疫隔離環境">QUARANTINE ENVIRONMENT(検疫隔離環境)</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>receive-pack</code> がオブジェクトを取り込むと、それらは <code>$GIT_DIR/objects</code> ディレクトリ内の一時的な「検疫隔離」(quarantine)ディレクトリに配置され、 <code>pre-receive</code> フックが完了した後にのみメインオブジェクトストアに移行されます。 それ以前にプッシュが失敗した場合、一時ディレクトリは完全に削除されます。</p></div>
+<div class="paragraph"><p>これには、ユーザーからも見えるいくつかの影響と注意事項があります:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+着信パックの問題、またはオブジェクトの欠落、または <code>pre-receive</code> フックが原因で失敗したプッシュは、ディスク上のデータを残しません。 これは通常、繰り返し失敗したプッシュがディスクをいっぱいにするのを防ぐのに役立ちますが、デバッグがより困難になる可能性があります。
+</p>
+</li>
+<li>
+<p>
+<code>pre-receive</code> フックによって作成されたオブジェクトはすべて、隔離(quarantine)ディレクトリに作成されます(成功した場合にのみ移行されます)。
+</p>
+</li>
+<li>
+<p>
+<code>pre-receive</code> フックは、隔離(quarantined)されたオブジェクトを指すように参照を更新してはなりません。 リポジトリにアクセスする他のプログラムはオブジェクトを見ることができません(そして、受信前(pre-receive)フックが失敗した場合、それらのrefは破損します)。 安全のため、 <code>pre-receive</code> 内からのrefの更新は自動的に拒否されます。
+</p>
+</li>
+</ol></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><a href="git-send-pack.html">git-send-pack(1)</a>, <a href="gitnamespaces.html">gitnamespaces(7)</a></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_git">GIT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-11-13 13:44:00 JST
+</div>
+</div>
+</body>
+</html>

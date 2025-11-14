@@ -1,0 +1,965 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>Multi-Pack-Index (MIDX) Design Notes</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Multi-Pack-Index (MIDX) Design Notes</h1>
+<span id="revdate">2025-11-13</span>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Gitオブジェクトディレクトリには、 パックファイル(packfiles)(接尾辞 <code>.pack</code>)とパックインデックス(pack-indexes)(接尾辞 <code>.idx</code>) を含む <code>pack</code> ディレクトリが含まれています。 パックインデックスは、オブジェクトを検索し、パック内のオフセットに移動する方法を提供しますが、これらはパックファイルとペアになっている必要があります。 パックインデクスはパックファイルの接尾辞のみが異なるため、このペアリングはファイル名によって異なります。 パックインデックスはパックファイルごとの高速ルックアップを提供しますが、略語はすべてのパックファイルを検査する必要があり、最近使用されたパックファイルを見逃す可能性が高いため、パックファイルの数が増えるとこのパフォーマンスは低下します。 一部の大規模なリポジトリでは、ストレージスペースや過剰な再パック時間のため、単一のパックファイルに再パックすることはできません。</p></div>
+<div class="paragraph"><p>multi-pack-index(略してMIDX)は、オブジェクトとそのオフセットのリストを複数のパックファイルに格納します。 以下を含みます:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+パックファイル名のリスト。
+</p>
+</li>
+<li>
+<p>
+オブジェクトIDのソートされたリスト。
+</p>
+</li>
+<li>
+<p>
+以下を含むi番目のオブジェクトIDのメタデータのリスト:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+j番目のパックファイルを参照する値 j 。
+</p>
+</li>
+<li>
+<p>
+オブジェクトのj番目のパックファイル内のオフセット。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+巨大なオフセットが必要な場合は、別の、バージョン2のパックインデックスと同様の巨大オフセットリストを使用します。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+オプションの疑似パック順のオブジェクトのリスト(MIDX ビットマップで使用)。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>したがって、我々は任意の数のパックファイルに対して O(log N) 回数でルックアップ可能です。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_design_details">Design Details</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+MIDXは、 <code>.git/objects/pack</code> ディレクトリの <code>multi-pack-index</code> という名前のファイルに保存されます。 これは、代替のパックディレクトリに保存できます。 それは同じディレクトリ内のパックファイルのみを参照します。
+</p>
+</li>
+<li>
+<p>
+MIDX ファイルを使用するには、core.multiPackIndex 構成設定をオン (デフォルト) にする必要があります。 <code>false</code> に設定すると、 Git は MIDX ファイルが存在する場合でも読み取れなくなります。
+</p>
+</li>
+<li>
+<p>
+ファイル形式にはオブジェクトIDハッシュ関数のパラメーターが含まれているため、ハッシュアルゴリズムを将来変更しても、形式を変更する必要はありません。
+</p>
+</li>
+<li>
+<p>
+MIDXは、オブジェクトIDごとに1つのレコードのみを保持します。 オブジェクトが複数のパックファイルに表示される場合、MIDXは優先パックファイル内のコピーを選択します。それ以外の場合は、最も最近に変更されたパックファイルから選択します。
+</p>
+</li>
+<li>
+<p>
+MIDXに登録されていないpackディレクトリにパックファイルが存在する場合、それらのパックファイル は <code>packed_git</code> リスト と <code>packed_git_mru</code> キャッシュ にロードされます。
+</p>
+</li>
+<li>
+<p>
+pack-indexes (.idx ファイル) はpackディレクトリに残っているため、MIDXファイルを削除したり、 core.midx を false に設定したり、情報を失うことなくダウングレードしたりできます。
+</p>
+</li>
+<li>
+<p>
+MIDXファイル形式は、オプションのデータを追加できるチャンクベースのアプローチ(commit-graphファイルと同様)を使用します。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_incremental_multi_pack_indexes">Incremental multi-pack indexes</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>リポジトリーのサイズが大きくなると、 全てのパックファイルを包含するマルチパック・インデックス(MIDX)へ書き込みコストが増大します。 これに対応するため、 「インクリメンタル・マルチパック・インデックス」機能により、 マルチパック・インデックスのチェーン(chain;連なり)を結合することが可能になります。</p></div>
+<div class="paragraph"><p>チェーンの各個別のコンポーネントは、 少数のパックファイルのみを含む必要があります。 チェーンに追加しても、 チェーンの以前の部分が無効になることはありません。 そのため、 リポジトリーは、 MIDX チェーンの各レイヤーに含まれるパックファイルの数を決めることで、 MIDXチェーンの更新に費やす時間を制御できます。</p></div>
+<div class="sect2">
+<h3 id="_design_state">Design state</h3>
+<div class="paragraph"><p>現在、 インクリメンタル・マルチパック・インデックス機能には以下の 2 つの重要なコンポーネントが欠けています:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+MIDX チェーンで初期に作られた部分を書き直す能力(つまり、 隣接する MIDX レイヤーの一部を単一のMIDXに「圧縮」する能力)。 現在のところ、 MIDX チェーンを縮小する唯一のサポートされている方法は、 <code>--split</code> フラグなしでチェーン全体をイチから書き直すことです。
+</p>
+<div class="paragraph"><p>この機能を導入する上で根本的な制限は存在しません。 初期の実装では複雑さを軽減するために省略されていますが、 今後追加される予定です。</p></div>
+</li>
+<li>
+<p>
+到達可能性ビットマップ(reachability bitmaps)のサポート。 従来の単一の MIDX 実装では到達可能性ビットマップをサポートしています(詳細は <a href="../gitformat-pack.html">gitformat-pack(5)</a> の「multi-pack-index reverse indexes」セクション参照)。
+</p>
+<div class="paragraph"><p>上記と同様に、 インクリメンタルMIDX形式を拡張して到達可能性ビットマップをサポートする上で、 根本的な制限は存在しません。 以下の設計ではこの点を特に考慮しており、 到達可能性ビットマップのサポートは将来のパッチ・シリーズで追加される予定です。 現在の実装では、上記と同じ理由で省略されています。</p></div>
+<div class="paragraph"><p>簡潔に言うと、 インクリメンタルMIDX機能で到達可能性ビットマップをサポートするために、 疑似パック順序の概念をインクリメンタルMIDXチェーンの各レイヤーに拡張し、 連結された疑似パック順序を形成します。 この連結はチェーン自体の順序と同じ順で行われます(言い換えると、 チェーン {$H1, $H2, $H3} の連結された疑似パック順序は、 $H1 の疑似パック順序に続き、 $H2の疑似パック順序、 そして$H3の疑似パック順序、 となります)。</p></div>
+<div class="paragraph"><p>レイアウトは、 インクリメンタルMIDXチェーンの各レイヤーが <code>*.bitmap</code> へ書き込みできるように拡張されます。 各レイヤーのビットマップに含まれるオブジェクトは、 そのチェーンの前のレイヤーにあるオブジェクトの数だけオフセットされます。</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_file_layout">File layout</h3>
+<div class="paragraph"><p>単一の <code>multi-pack-index</code> ファイル(オプションで <code>.rev</code> や <code>.bitmap</code> 拡張子付き)を <code>$GIT_DIR/objects/pack</code> に保存する代わりに、 インクリメンタル MIDX は 以下のレイアウトで保存されます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$GIT_DIR/objects/pack/multi-pack-index.d/
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-chain
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H1.midx
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H2.midx
+$GIT_DIR/objects/pack/multi-pack-index.d/multi-pack-index-$H3.midx</code></pre>
+</div></div>
+<div class="paragraph"><p><code>multi-pack-index-chain</code> ファイルには、 チェーン内のインクリメンタル MIDX ファイルのリストが順番に記載されています。 上の例では、 <code>multi-pack-index-chain</code> ファイルには以下の行が含まれます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$H1
+$H2
+$H3</code></pre>
+</div></div>
+<div class="paragraph"><p><code>multi-pack-index-$H1.midx</code> ファイルには、 マルチパック・インデックス・チェーンの最初のレイヤーが含まれています。 <code>multi-pack-index-$H2.midx</code> ファイルには、 チェーンの2番目のレイヤーが含まれ、 以降も同様です。</p></div>
+<div class="paragraph"><p>インクリメンタル MIDX と非インクリメンタル MIDX の両方が存在する場合、 常に非インクリメンタルMIDXが最初に読み込まれます。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_object_positions_for_incremental_midxs">Object positions for incremental MIDXs</h3>
+<div class="paragraph"><p>オリジナルのマルチパック・インデックスの設計では、 リポジトリーの単一のマルチパック・インデックス内で、 オブジェクトIDによる辞書順(lexicographic)の位置を参照してオブジェクトを指定します。 インクリメンタル・マルチパック・インデックスの設計では、 MIDX チェーンの各コンポーネント間で、 連結された辞書順のインデックスを介してオブジェクトを参照します。</p></div>
+<div class="paragraph"><p><code>objects_nr</code>() が指定された MIDX レイヤーのオブジェクト数を返す関数であるとした場合、 たとえば $H3 内で辞書順の位置 <code>i</code> にあるオブジェクトのインデックスは以下のように定義されます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>objects_nr($H2) + objects_nr($H1) + i</code></pre>
+</div></div>
+<div class="paragraph"><p>(C 言語での実装では、 これは多くの場合 <code>i</code> <code>+</code> <code>m-</code>&gt;<code>num_objects_in_base</code> として実装されます)。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_pseudo_pack_order_for_incremental_midxs">Pseudo-pack order for incremental MIDXs</h3>
+<div class="paragraph"><p>The original implementation of multi-pack reachability bitmaps defined the pseudo-pack order in <a href="../gitformat-pack.html">gitformat-pack(5)</a> (see the section titled "multi-pack-index reverse indexes") roughly as follows:</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>In short, a MIDX&#8217;s pseudo-pack is the de-duplicated concatenation of objects in packs stored by the MIDX, laid out in pack order, and the packs arranged in MIDX order (with the preferred pack coming first).</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>In the incremental MIDX design, we extend this definition to include objects from multiple layers of the MIDX chain. The pseudo-pack order for incremental MIDXs is determined by concatenating the pseudo-pack ordering for each layer of the MIDX chain in order. Formally two objects <code>o1</code> and <code>o2</code> are compared as follows:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+If <code>o1</code> appears in an earlier layer of the MIDX chain than <code>o2</code>, then
+  <code>o1</code> sorts ahead of <code>o2</code>.
+</p>
+</li>
+<li>
+<p>
+Otherwise, if <code>o1</code> and <code>o2</code> appear in the same MIDX layer, and that MIDX layer has no base, then if one of <code>pack</code>(<code>o1</code>) and <code>pack</code>(<code>o2</code>) is preferred and the other is not, then the preferred one sorts ahead of the non-preferred one. If there is a base layer (i.e. the MIDX layer is not the first layer in the chain), then if <code>pack</code>(<code>o1</code>) appears earlier in that MIDX layer&#8217;s pack order, then <code>o1</code> sorts ahead of <code>o2</code>. Likewise if <code>pack</code>(<code>o2</code>) appears earlier, then the opposite is true.
+</p>
+</li>
+<li>
+<p>
+Otherwise, <code>o1</code> and <code>o2</code> appear in the same pack, and thus in the same MIDX layer. Sort <code>o1</code> and <code>o2</code> by their offset within their containing packfile.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Note that the preferred pack is a property of the MIDX chain, not the individual layers themselves. Fundamentally we could introduce a per-layer preferred pack, but this is less relevant now that we can perform multi-pack reuse across the set of packs in a MIDX.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_reachability_bitmaps_and_incremental_midxs">Reachability bitmaps and incremental MIDXs</h3>
+<div class="paragraph"><p>Each layer of an incremental MIDX chain may have its objects (and the objects from any previous layer in the same MIDX chain) represented in its own <code>*.bitmap</code> file.</p></div>
+<div class="paragraph"><p>The structure of a <code>*.bitmap</code> file belonging to an incremental MIDX chain is identical to that of a non-incremental MIDX bitmap, or a classic single-pack bitmap. Since objects are added to the end of the incremental MIDX&#8217;s pseudo-pack order (see above), it is possible to extend a bitmap when appending to the end of a MIDX chain.</p></div>
+<div class="paragraph"><p>(Note: it is possible likewise to compress a contiguous sequence of MIDX incremental layers, and their <code>*.bitmap</code> files into a single layer and <code>*.bitmap</code>, but this is not yet implemented.)</p></div>
+<div class="paragraph"><p>The object positions used are global within the pseudo-pack order, so subsequent layers will have, for example, <code>m-</code>&gt;<code>num_objects_in_base</code> number of <code>0</code> bits in each of their four type bitmaps. This follows from the fact that we only write type bitmap entries for objects present in the layer immediately corresponding to the bitmap).</p></div>
+<div class="paragraph"><p>Note also that only the bitmap pertaining to the most recent layer in an incremental MIDX chain is used to store reachability information about the interesting and uninteresting objects in a reachability query. Earlier bitmap layers are only used to look up commit and pseudo-merge bitmaps from that layer, as well as the type-level bitmaps for objects in that layer.</p></div>
+<div class="paragraph"><p>To simplify the implementation, type-level bitmaps are iterated simultaneously, and their results are OR&#8217;d together to avoid recursively calling internal bitmap functions.</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_future_work">Future Work</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+multi-pack-indexが拡張されて「安定したオブジェクトの順序」(関数 Order(hash）= multi-pack-indexが更新されても、特定のハッシュに対して定数である整数)を格納する場合、MIDXとは独立して更新されるMIDXビットマップは以下のようになります。
+</p>
+</li>
+<li>
+<p>
+パックファイルは、初期名を共有するが <code>.pack</code> を <code>.keep</code> または <code>.promisor</code> に置き換える空のファイルを使用して「special」としてマークできます。 パックファイルに関する情報のフラグを記録するmulti-pack-indexにオプションのデータチャンクを追加できます。 これにより、「repacked」(再パック)や「redeltified」(再削除)などの新しいステータスが可能になり、マルチパック環境でのパックのメンテナンスに役立ちます。 パックファイルをオブジェクトタイプ(コミット、ツリー、ブロブなど)で整理し、このメタデータを使用してそのメンテナンスを支援することも役立つ場合があります。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_related_links">Related Links</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>[0] <a href="https://bugs.chromium.org/p/git/issues/detail?id=6">https://bugs.chromium.org/p/git/issues/detail?id=6</a>
+    Chromium work item for: Multi-Pack Index (MIDX)</p></div>
+<div class="paragraph"><p>[1] <a href="https://lore.kernel.org/git/20180107181459.222909-1-dstolee@microsoft.com/">https://lore.kernel.org/git/20180107181459.222909-1-dstolee@microsoft.com/</a>
+    multi-pack-index機能の以前のRFC</p></div>
+<div class="paragraph"><p>[2] <a href="https://lore.kernel.org/git/alpine.DEB.2.20.1803091557510.23109@alexmv-linux/">https://lore.kernel.org/git/alpine.DEB.2.20.1803091557510.23109@alexmv-linux/</a>
+    Git Merge 2018コントリビューターのサミットノート(MIDXの議論を含む)</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-11-13 13:44:18 JST
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,2216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 10.2.1" />
+<title>git-format-patch(1)</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overridden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="manpage">
+<div id="header">
+<h1>
+git-format-patch(1) Manual Page
+</h1>
+<h2>NAME</h2>
+<div class="sectionbody">
+<p>git-format-patch -
+   電子メール送信用のパッチを準備します
+</p>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_synopsis">SYNOPSIS</h2>
+<div class="sectionbody">
+<div class="verseblock">
+<pre class="content"><em>git <code>format-patch</code></em> [<code>-k</code>] [(<code>-o</code>|<code>--output-directory</code>) <em>&lt;dir&gt;</em> | <code>--stdout</code>]
+                   [<code>--no-thread</code> | <code>--thread</code>[<code>=</code><em>&lt;style&gt;</em>]]
+                   [(<code>--attach</code>|<code>--inline</code>)[<code>=</code><em>&lt;boundary&gt;</em>] | <code>--no-attach</code>]
+                   [<code>-s</code> | <code>--signoff</code>]
+                   [<code>--signature=</code><em>&lt;signature&gt;</em> | <code>--no-signature</code>]
+                   [<code>--signature-file=</code><em>&lt;file&gt;</em>]
+                   [<code>-n</code> | <code>--numbered</code> | <code>-N</code> | <code>--no-numbered</code>]
+                   [<code>--start-number</code> <em>&lt;n&gt;</em>] [<code>--numbered-files</code>]
+                   [<code>--in-reply-to=</code><em>&lt;message-id&gt;</em>] [<code>--suffix=.</code><em>&lt;sfx&gt;</em>]
+                   [<code>--ignore-if-in-upstream</code>] [<code>--always</code>]
+                   [<code>--cover-from-description=</code><em>&lt;mode&gt;</em>]
+                   [<code>--rfc</code>[<code>=</code><em>&lt;rfc&gt;</em>]] [<code>--subject-prefix=</code><em>&lt;subject-prefix&gt;</em>]
+                   [(<code>--reroll-count</code>|<code>-v</code>) <em>&lt;n&gt;</em>]
+                   [<code>--to=</code><em>&lt;email&gt;</em>] [<code>--cc=</code><em>&lt;email&gt;</em>]
+                   [<code>--</code>[<code>no-</code>]<code>cover-letter</code>] [<code>--quiet</code>]
+                   [<code>--</code>[<code>no-</code>]<code>encode-email-headers</code>]
+                   [<code>--no-notes</code> | <code>--notes</code>[<code>=</code><em>&lt;ref&gt;</em>]]
+                   [<code>--interdiff=</code><em>&lt;previous&gt;</em>]
+                   [<code>--range-diff=</code><em>&lt;previous&gt;</em> [<code>--creation-factor=</code><em>&lt;percent&gt;</em>]]
+                   [<code>--filename-max-length=</code><em>&lt;n&gt;</em>]
+                   [<code>--progress</code>]
+                   [<em>&lt;common-diff-options&gt;</em>]
+                   [ <em>&lt;since&gt;</em> | <em>&lt;revision-range&gt;</em> ]</pre>
+<div class="attribution">
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">DESCRIPTION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>UNIXメールボックスに似た形式で、コミットごとに1つの「メッセージ」に「パッチ」を含む各非マージコミットを準備します。このコマンドの出力は、電子メールの送信や「git am」での使用に便利です。</p></div>
+<div class="paragraph"><p>コマンドによって生成される「メッセージ」は、以下の3つの部分で構成されます:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+短いメタデータヘッダー。「file(1)」などのプログラムが、ファイルがこのコマンドからの出力であることを認識できるように「From &lt;commit&gt;」と、固定の日付スタンプ「Mon Sep 17 00:00:00 2001」で始まり、 作者ID(author identity)や作者の日付(author date)や変更のタイトル(title of the change)(コミットログメッセージの最初の段落から取得)が記入されたフィールドがあります。
+</p>
+</li>
+<li>
+<p>
+コミットログメッセージの2番目以降の段落。
+</p>
+</li>
+<li>
+<p>
+コミットとその親の間の <code>diff</code> <code>-p</code> <code>--stat</code> 出力(<a href="git-diff.html">git-diff(1)</a> 参照)である「パッチ」。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>ログメッセージとパッチは、3本のダッシュ(<code>---</code>)で区切られています。</p></div>
+<div class="paragraph"><p>操作するコミットを指定する方法は2つあります。</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+単一のコミット&lt;since&gt;は、現在のブランチの先端につながるコミットで、&lt;since&gt;が出力される履歴にないことを指定します。
+</p>
+</li>
+<li>
+<p>
+一般的な &lt;revision-range&gt; 評価式(<a href="gitrevisions.html">gitrevisions(7)</a> の「SPECIFYING REVISIONS」セクション参照)は、 指定された範囲でのコミットを意味します。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>単一の &lt;commit&gt; の場合、最初のルールが優先されます。2番目のルールを適用する、つまり、履歴の開始から &lt;commit&gt; までのすべてをフォーマットするには、 <code>--root</code> オプションを使用します: <code>git</code> <code>format-patch</code> <code>--root</code> <em>&lt;commit&gt;</em> とします。あなたが &lt;commit&gt; 自体のみをフォーマットしたい場合は、 <code>git</code> <code>format-patch</code> <code>-1</code> <em>&lt;commit&gt;</em> を使用して行うことができます。</p></div>
+<div class="paragraph"><p>デフォルトでは、各出力ファイルには1から順番に番号が付けられ、ファイル名としてコミットメッセージの最初の行(パス名の安全のためにもみもみ(massage)れます)が使用されます。 <code>--numbered-files</code> オプションを使用すると、出力ファイル名は数字のみになり、コミットの最初の行は追加されません。 `--stdout`オプションが指定されていない限り、出力ファイル名が標準出力に出力されます。</p></div>
+<div class="paragraph"><p><code>-o</code> を指定すると、出力ファイルは &lt;dir&gt; に作成されます。それ以外の場合は、現在の作業ディレクトリに作成されます。デフォルトのパスは、<code>format.outputDirectory</code> 構成オプションで設定できます。 <code>-o</code> オプションは <code>format.outputDirectory</code> よりも優先されます。 <code>format.outputDirectory</code> が他の場所を指している場合でも、パッチを現在の作業ディレクトリに保存したいときは、<code>-o.</code> を使用します。すべてのディレクトリコンポーネントが作成されます。</p></div>
+<div class="paragraph"><p>デフォルトでは、単一のパッチの件名は "[PATCH] " で、その後に、コミットメッセージから最初の空白行までの行が連結されます (<a href="git-commit.html">git-commit(1)</a>の DISCUSSION セクション参照)。</p></div>
+<div class="paragraph"><p>複数のパッチが出力される場合、件名のプレフィックスは "[PATCH n/m] " になります。 1つのパッチに 1/1 を強制的に追加するには <code>-n</code> を使用します。件名からパッチ番号を省略するには <code>-N</code> を使用します。</p></div>
+<div class="paragraph"><p><code>--thread</code> を指定すると、 <code>git-format-patch</code> は <code>In-Reply-To</code> ヘッダーと <code>References</code> ヘッダーを生成し、2番目以降のパッチメールを最初のメールへの返信として表示します。 これにより、参照する <code>Message-ID</code> ヘッダーも生成されます。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">OPTIONS</h2>
+<div class="sectionbody">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-p</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-stat</code>
+</dt>
+<dd>
+<p>
+        diffstatsなしでプレーン・パッチを生成します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-U</code><em>&lt;n&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--unified=</code><em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        Generate diffs with <em>&lt;n&gt;</em> lines of context instead of the usual three.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--output=</code><em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        stdout ではなく指定のファイルに出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--output-indicator-new=</code><em>&lt;char&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--output-indicator-old=</code><em>&lt;char&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--output-indicator-context=</code><em>&lt;char&gt;</em>
+</dt>
+<dd>
+<p>
+        生成されたパッチの新しい行、古い行、またはコンテキスト行を示すために使用される文字を指定します。 通常、それらはそれぞれ "+", "-", " " です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--indent-heuristic</code>
+</dt>
+<dd>
+<p>
+        diffハンクの境界をずらす(shift)ヒューリスティックを有効にして、パッチを読みやすくします。 これがデフォルトです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-indent-heuristic</code>
+</dt>
+<dd>
+<p>
+        インデントヒューリスティック(indent heuristic)を無効にします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--minimal</code>
+</dt>
+<dd>
+<p>
+        より多くの時間を費やして、可能な限り最小のdiffが生成されるようにします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--patience</code>
+</dt>
+<dd>
+<p>
+        "patience diff" アルゴリズムを使用してdiffを生成します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--histogram</code>
+</dt>
+<dd>
+<p>
+        "histogram diff" アルゴリズムを使用してdiffを生成します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--anchored=</code><em>&lt;text&gt;</em>
+</dt>
+<dd>
+<p>
+        "anchored diff" アルゴリズムを使用してdiffを生成します。
+</p>
+<div class="paragraph"><p>このオプションは複数回指定できます。</p></div>
+<div class="paragraph"><p>行が比較元(source)と比較先(destination)の両方に存在し、かつ、1回だけ存在し、かつ、 &lt;text&gt; で始まる場合、このアルゴリズムは、その行が出力に削除または追加として表示されないようにします。内部で「patience diff」アルゴリズムを使用します。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--diff-algorithm=</code>(<code>patience</code>|<code>minimal</code>|<code>histogram</code>|<code>myers</code>)
+</dt>
+<dd>
+<p>
+        diffアルゴリズムを選択します。そのバリエーションは以下のとおりです:
+</p>
+<div class="openblock">
+<div class="content">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>default</code>
+</dt>
+<dt class="hdlist1">
+<code>myers</code>
+</dt>
+<dd>
+<p>
+        基本的な貪欲な差分アルゴリズム(greedy diff algorithm)。現在、これがデフォルトです。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>minimal</code>
+</dt>
+<dd>
+<p>
+        より多くの時間を費やして、可能な限り最小のdiffが生成されるようにします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>patience</code>
+</dt>
+<dd>
+<p>
+        パッチを生成する時に "patience diff" アルゴリズムを使います。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>histogram</code>
+</dt>
+<dd>
+<p>
+        このアルゴリズムは、忍耐アルゴリズム(patience algorithm)を拡張して、「発生率の低い共通要素をサポート」(support low-occurrence common elements)します。
+</p>
+</dd>
+</dl></div>
+</div></div>
+<div class="paragraph"><p>たとえば、 あなたが <code>diff.algorithm</code> 変数をデフォルト以外の値に設定した上で、それでもデフォルト値を使用する場合は、<code>--diff-algorithm=default</code> オプションを使用する必要があります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--stat</code>[<code>=</code><em>&lt;width&gt;</em>[<code>,</code><em>&lt;name-width&gt;</em>[<code>,</code><em>&lt;count&gt;</em>]]]
+</dt>
+<dd>
+<p>
+        diffstat を生成します。 デフォルトでは、 必要なだけのスペースがファイル名部分に使用され、 残りはグラフ部分に使用されます。 最大幅はデフォルトで端末幅、 または端末に接続されていない場合は 80 桁であり、 &lt;width&gt; で上書きできます。 ファイル名部分の幅は、 カンマの後に別の幅 &lt;name-width&gt; を指定するか、または <code>diff.statNameWidth=</code><em>&lt;name-width&gt;</em> を設定することによって制限できます。 グラフ部分の幅は、 <code>--stat-graph-width=</code><em>&lt;graph-width&gt;</em> を使用するか、 または <code>diff.statGraphWidth=</code><em>&lt;graph-width&gt;</em> を設定することによって制限できます。 <code>--stat</code> または <code>--stat-graph-width</code> の使用は統計グラフを生成するすべてのコマンドに影響しますが、 <code>diff.statNameWidth</code> または <code>diff.statGraphWidth</code> の設定は <code>git</code> <code>format-patch</code> には影響しません。 3番目のパラメータ <em>&lt;count&gt;</em> を指定することにより、出力を最初の <em>&lt;count&gt;</em> 行に制限し、それに ... が続く形にできます。
+</p>
+<div class="paragraph"><p>これらのパラメータは、 <code>--stat-width=</code><em>&lt;width&gt;</em> と <code>--stat-name-width=</code><em>&lt;name-width&gt;</em> と <code>--stat-count=</code><em>&lt;count&gt;</em> を使用して個別に設定することもできます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--compact-summary</code>
+</dt>
+<dd>
+<p>
+        ファイルの作成や削除( "new" または "gone" 。オプションでシンボリックリンクの場合は <code>+l</code> )、 diffstat のモード変更(実行可能ビットを追加または削除する場合は、それぞれ <code>+x</code> または <code>-x</code> )など、 拡張ヘッダー情報の要約を出力します。 情報はファイル名部分とグラフ部分の間に置かれます。 本機能は <code>--stat</code> の機能を含んでいます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--numstat</code>
+</dt>
+<dd>
+<p>
+        <code>--stat</code> に似ていますが、プログラムで処理しやすい(machine friendly)ように、追加および削除された行数を10進表記とパス名で省略形なしで表示します。バイナリファイルの場合、 <code>0</code> <code>0</code> の代わりに2つの <code>-</code> を出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--shortstat</code>
+</dt>
+<dd>
+<p>
+        変更されたファイルの総数と、追加および削除された行の数を含む <code>--stat</code> 形式の最後の行のみを出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-X</code> [<em>&lt;param&gt;</em><code>,.</code>..]
+</dt>
+<dt class="hdlist1">
+<code>--dirstat</code>[<code>=</code><em>&lt;param&gt;</em><code>,.</code>..]
+</dt>
+<dd>
+<p>
+        各サブディレクトリの相対的な変更量の分布を出力します。 <code>--dirstat</code> の動作は、パラメータのコンマ区切りリストを渡すことでカスタマイズできます。デフォルトは、 <code>diff.dirstat</code> 構成変数によって制御されます(<a href="git-config.html">git-config(1)</a> 参照)。以下のパラメータを使用できます:
+</p>
+<div class="openblock">
+<div class="content">
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>changes</code>
+</dt>
+<dd>
+<p>
+        比較元(source)から削除された、または比較先(destination)に追加された行をカウントして、dirstat数を計算します。これは、ファイル内の純粋なコード移動の量を無視します。つまり、ファイル内の行の再配置は、他の変更ほどカウントされません。これは、パラメーターが指定されていない場合のデフォルトの動作です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>lines</code>
+</dt>
+<dd>
+<p>
+        通常の行ベースのdiff分析を実行し、削除/追加された行数を合計して、dirstat数を計算します。 (バイナリファイルの場合、バイナリファイルには行の概念がないため、代わりに64バイトのチャンクをカウントします)。 これは <code>changes</code> 動作よりも高価な <code>--dirstat</code> 動作ですが、他の変更と同じようにファイル内の再配置された行をカウントします。結果の出力は、他の <code>--*stat</code> オプションから得られるものと一致しています。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>files</code>
+</dt>
+<dd>
+<p>
+        変更されたファイルの数を数えて、dirstat数を計算します。変更された各ファイルは、dirstat分析で等しくカウントされます。これは、ファイルの内容をまったく調べる必要がないため、計算コストが最もかからない <code>--dirstat</code> の動作です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>cumulative</code>
+</dt>
+<dd>
+<p>
+        親ディレクトリの子ディレクトリの変更も同様にカウントします。 <code>cumulative</code>(累積的) を使用する場合、報告されるパーセンテージの合計が100%を超える場合があることに注意してください。デフォルトの(非累積的な)動作は、<code>noncumulative</code> パラメーターで指定できます。
+</p>
+</dd>
+<dt class="hdlist1">
+&lt;limit&gt;
+</dt>
+<dd>
+<p>
+        整数パラメーターは、カットオフパーセント(デフォルトでは3%)を指定します。指定の割合より少ないディレクトリは、出力に表示されません。
+</p>
+</dd>
+</dl></div>
+</div></div>
+<div class="paragraph"><p>例: 変更されたファイルの総数の10%未満のディレクトリを無視し、親ディレクトリに子ディレクトリの数を累積しながら、変更されたファイルをカウント: <code>--dirstat=files,10,cumulative</code></p></div>
+</dd>
+<dt class="hdlist1">
+<code>--cumulative</code>
+</dt>
+<dd>
+<p>
+        <code>--dirstat=cumulative</code> と同義語。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--dirstat-by-file</code>[<code>=</code><em>&lt;param&gt;</em><code>,.</code>..]
+</dt>
+<dd>
+<p>
+        <code>--dirstat=files,</code><em>&lt;param&gt;</em><code>,.</code>.. と同義語。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--summary</code>
+</dt>
+<dd>
+<p>
+        作成、名前変更、モード変更などの拡張ヘッダー情報の短い要約(condensed summary)を出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-renames</code>
+</dt>
+<dd>
+<p>
+        構成ファイルにデフォルトで指定されている場合でも、名前変更の検出をオフにします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--rename-empty</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-rename-empty</code>
+</dt>
+<dd>
+<p>
+        名前変更ソースとして空のブロブを使用するかどうか。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--full-index</code>
+</dt>
+<dd>
+<p>
+        パッチ形式の出力を生成するときは、最初の一握りの文字(first handful of characters)の代わりに、「インデックス」行にイメージ前およびイメージ後の完全ブロブオブジェクト名を表示します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--binary</code>
+</dt>
+<dd>
+<p>
+        <code>--full-index</code> に加えて、 <code>git-apply</code> で適用できるバイナリ差分を出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--abbrev</code>[<code>=</code><em>&lt;n&gt;</em>]
+</dt>
+<dd>
+<p>
+        完全な40バイトの16進オブジェクト名をdiff-raw形式の出力とdiff-treeヘッダー行に表示する代わりに、オブジェクトを一意に参照する、少なくとも &lt;n&gt; 桁の16進数の長さの最短のプレフィックスを表示します。diffパッチ出力形式では、 <code>--full-index</code> が優先されます。つまり、 <code>--full-index</code> が指定されている場合、 <code>--abbrev</code> に関係なく、完全なブロブ名が表示されます。デフォルト以外の桁数は、 <code>--abbrev=</code><em>&lt;n&gt;</em> で指定できます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-B</code>[<em>&lt;n&gt;</em>][<code>/</code><em>&lt;m&gt;</em>]
+</dt>
+<dt class="hdlist1">
+<code>--break-rewrites</code>[<code>=</code>[<em>&lt;n&gt;</em>][<code>/</code><em>&lt;m&gt;</em>]]
+</dt>
+<dd>
+<p>
+        完全な書き換えの変更を削除と作成のペアに分割します。これには以下の2つの目的があります:
+</p>
+<div class="paragraph"><p>これは、ファイルの完全な書き換えに相当する変更が、コンテキストとしてテキストで一致する非常に少数の行と混合された一連の削除と挿入としてではなく、古いものすべての単一の削除とそれに続く すべての新しいものを1回挿入し、数値 <code>m</code> が -B オプションのこの側面を制御します(デフォルトは60%)。 <code>-B/70</code>% は、Gitがそれを完全な書き換えと見なすために、元の30%未満が結果に残る必要があることを指定します(つまり、結果のパッチは、コンテキスト行と混合された一連の削除と挿入になります)。</p></div>
+<div class="paragraph"><p>-M と一緒に使用すると、完全に書き換えられたファイルも名前変更のソースと見なされ(通常、 -M は、消えたファイルのみを名前変更のソースと見なします)、数 <code>n</code> が -Bオプションのこの側面を制御します(デフォルトは50%)。 <code>-B20</code>% は、ファイルのサイズの20%以上と比較して、追加および削除を伴う変更が、別のファイルへの名前変更の可能なソースとして取得される資格があることを指定します。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>-M</code>[<em>&lt;n&gt;</em>]
+</dt>
+<dt class="hdlist1">
+<code>--find-renames</code>[<code>=</code><em>&lt;n&gt;</em>]
+</dt>
+<dd>
+<p>
+        名前の変更(renames)を検知する。
+        <code>n</code> が指定されている場合、それは類似性インデックスのしきい値です
+        (つまり、ファイルのサイズと比較した追加/削除の量)。
+        たとえば、 <code>-M90</code>% は、ファイルの90%以上が変更されていない場合、
+        Gitが削除/追加のペアを名前変更と見なす必要があることを意味します。
+        % 記号がない場合、数値は小数として読み取られ、その前に小数点が付きます。
+        つまり、 <code>-M5</code> は0.5になるため、<code>-M50</code>% と同じになります。
+        同様に、 <code>-M05</code> は <code>-M5</code>% と同じです。
+        検出を正確な名前変更に制限するには、 <code>-M100</code>% を使用します。
+        デフォルトの類似性インデックスは50%です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-C</code>[<em>&lt;n&gt;</em>]
+</dt>
+<dt class="hdlist1">
+<code>--find-copies</code>[<code>=</code><em>&lt;n&gt;</em>]
+</dt>
+<dd>
+<p>
+        名前変更と同様にコピーを検出します。 <code>--find-copies-harder</code> も参照してください。 <code>n</code> を指定すると、 <code>-M</code><em>&lt;n&gt;</em> と同じ意味になります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--find-copies-harder</code>
+</dt>
+<dd>
+<p>
+        パフォーマンス上の理由から、デフォルトでは、 <code>-C</code> オプションは、コピーの元のファイルが同じ変更組(changeset)で変更された場合にのみコピーを検索します。このフラグにより、コマンドは変更されていないファイルをコピー元の候補として検査します。これは大規模なプロジェクトでは非常にコストのかかる操作であるため、注意して使用してください。 複数の <code>-C</code> オプションを指定しても同じ効果があります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-D</code>
+</dt>
+<dt class="hdlist1">
+<code>--irreversible-delete</code>
+</dt>
+<dd>
+<p>
+        削除するプレイメージ(preimage)を省略します。つまり、ヘッダーのみを出力し、プレイメージと <code>/dev/null</code> の差分は出力しません。結果のパッチは、 <code>patch</code> または <code>git</code> <code>apply</code> で適用されることを意図していません。これは、変更後にテキストを確認することに集中したい人のためだけのものです。さらに、出力には明らかに、そのようなパッチを手動でも逆に適用するのに十分な情報が不足しているため、このようなオプション名になっています。
+</p>
+<div class="paragraph"><p><code>-B</code> と併用する場合は、削除/作成ペアの削除部分のプリイメージ(preimage)も省略します。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>-l</code><em>&lt;num&gt;</em>
+</dt>
+<dd>
+<p>
+        <code>-M</code> および <code>-C</code> オプションには、名前変更/コピーのサブセットを安価に検出できるいくつかの準備手順が含まれ、その後に、残りのすべてのペアになっていない比較先(destinations)をすべての関連ソースと比較する徹底的なフォールバック部分が続きます。(名前の変更の場合、残りのペアになっていないソースのみが関係します。コピーの場合、すべての元のソースが関係します)。N個の、ソースと比較先の場合、この徹底的なチェックのコストは O(N^2) です。このオプションは、関係するソース/比較先ファイルの数が指定された数を超えた場合に、名前変更/コピー検出の完全な部分が実行されないようにします。デフォルトは diff.renameLimit です。 値0は無制限として扱われることに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-O</code><em>&lt;orderfile&gt;</em>
+</dt>
+<dd>
+<p>
+        ファイルが出力に表示される順序を制御します。これは <code>diff.orderFile</code> 構成変数をオーバーライドします(<a href="git-config.html">git-config(1)</a> 参照)。 <code>diff.orderFile</code> をキャンセルするには、 <code>-O/dev/null</code> を使用します。
+</p>
+<div class="paragraph"><p>出力順序は、 &lt;orderfile&gt; 内のglobパターンの順序によって決定されます。最初のパターンに一致するパス名を持つすべてのファイルが最初に出力され、2番目のパターンに一致する(ただし最初のパターンには一致しない)パス名を持つすべてのファイルが次に出力されます。パス名がどのパターンとも一致しないすべてのファイルは、ファイルの最後に暗黙のすべて一致パターンがあるかのように、最後に出力されます。複数のパス名のランクが同じである場合(同じパターンに一致するが、以前のパターンには一致しない)、相互の出力順序は通常の順序です。</p></div>
+<div class="paragraph"><p>&lt;orderfile&gt; は以下のとおりパースされます:</p></div>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+空白行は無視されるため、読みやすくするための区切りとして使用できます。
+</p>
+</li>
+<li>
+<p>
+ハッシュ ("#") で始まる行は無視されるため、コメントに使用できます。 パターンがハッシュで始まる場合は、パターンの先頭にバックスラッシュ(訳注:日本では環境により円記号)("\") を追加します。
+</p>
+</li>
+<li>
+<p>
+他の各行には、単一のパターンが含まれています。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="paragraph"><p>パターンは、 <code>FNM_PATHNAME</code> フラグなしで fnmatch(3) に使用されるパターンと同じ構文とセマンティクスを持ちますが、最終的なパス名コンポーネントをいくつも削除するとパターンと一致する場合、パス名もパターンと一致する点が異なります。 たとえば、パターン <code>foo*bar</code> は、 <code>fooasdfbar</code> および <code>foo/bar/baz/asdf</code> と一致しますが、 <code>foobarx</code> とは一致しません。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--skip-to=</code><em>&lt;file&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--rotate-to=</code><em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        Discard the files before the named <em>&lt;file&gt;</em> from the output (i.e. <em>skip to</em>), or move them to the end of the output (i.e. <em>rotate to</em>). These options were invented primarily for the use of the <code>git</code> <code>difftool</code> command, and may not be very useful otherwise.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--relative</code>[<code>=</code><em>&lt;path&gt;</em>]
+</dt>
+<dt class="hdlist1">
+<code>--no-relative</code>
+</dt>
+<dd>
+<p>
+        プロジェクトのサブディレクトリから実行する場合、このオプションを使用して、ディレクトリ外の変更を除外し、それに関連するパス名を表示するように指示できます。サブディレクトリ(ベアリポジトリなど)にいない場合は、引数として &lt;path&gt; を指定することで、出力を作成するサブディレクトリに名前を付けることができます。 <code>--no-relative</code> は、 <code>diff.relative</code> 設定オプションと以前の <code>--relative</code> の両方を打ち消すために使用できます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-a</code>
+</dt>
+<dt class="hdlist1">
+<code>--text</code>
+</dt>
+<dd>
+<p>
+        すべてのファイルをテキストとして扱います。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ignore-cr-at-eol</code>
+</dt>
+<dd>
+<p>
+        比較を行うときは、行末のキャリッジリターン(carriage-return)を無視します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ignore-space-at-eol</code>
+</dt>
+<dd>
+<p>
+        行末(EOL)での空白(whitespace)の変更を無視します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-b</code>
+</dt>
+<dt class="hdlist1">
+<code>--ignore-space-change</code>
+</dt>
+<dd>
+<p>
+        空白(whitespace)の数の変更は無視してください。これは、行末の空白(whitespace)を無視し、1つ以上の空白文字(whitespace characters)の他のすべてのシーケンスを同等と見なします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-w</code>
+</dt>
+<dt class="hdlist1">
+<code>--ignore-all-space</code>
+</dt>
+<dd>
+<p>
+        行を比較するときは空白を無視します。 これにより、一方の行に空白があり、もう一方の行に空白がない場合でも、違いは無視されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ignore-blank-lines</code>
+</dt>
+<dd>
+<p>
+        全て空白の行の変更は無視します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-I</code><em>&lt;regex&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--ignore-matching-lines=</code><em>&lt;regex&gt;</em>
+</dt>
+<dd>
+<p>
+        Ignore changes whose all lines match <em>&lt;regex&gt;</em>. This option may be specified more than once.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--inter-hunk-context=</code><em>&lt;number&gt;</em>
+</dt>
+<dd>
+<p>
+        Show the context between diff hunks, up to the specified <em>&lt;number&gt;</em> of lines, thereby fusing hunks that are close to each other. Defaults to <code>diff.interHunkContext</code> or 0 if the config option is unset.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-W</code>
+</dt>
+<dt class="hdlist1">
+<code>--function-context</code>
+</dt>
+<dd>
+<p>
+        関数全体を各変更のコンテキスト行として表示します。関数名は、 <code>git</code> <code>diff</code> がパッチハンクヘッダーを処理するのと同じ方法で決定されます(<a href="gitattributes.html">gitattributes(5)</a> の「Defining a custom hunk-header」参照)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ext-diff</code>
+</dt>
+<dd>
+<p>
+        外部diffヘルパーの実行を許可します。 <a href="gitattributes.html">gitattributes(5)</a> を使用して外部diffドライバーを設定する場合は、 <a href="git-log.html">git-log(1)</a> およびその仲間と一緒にこのオプションを使用する必要があります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-ext-diff</code>
+</dt>
+<dd>
+<p>
+        外部diffドライバーを禁止します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--textconv</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-textconv</code>
+</dt>
+<dd>
+<p>
+        バイナリファイルを比較するときに、外部テキスト変換フィルターの実行を許可(または禁止)します。 詳細については、 <a href="gitattributes.html">gitattributes(5)</a> を参照してください。textconvフィルターは通常、一方向の変換であるため、結果のdiffは人間の消費に適していますが、適用(apply)することはできません。このため、textconvフィルターは、 <a href="git-diff.html">git-diff(1)</a> および <a href="git-log.html">git-log(1)</a> に対してのみデフォルトで有効になりますが、 <a href="git-format-patch.html">git-format-patch(1)</a> またはdiff配管コマンドに対しては有効になりません。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ignore-submodules</code>[<code>=</code>(<code>none</code>|<code>untracked</code>|<code>dirty</code>|<code>all</code>)]
+</dt>
+<dd>
+<p>
+        diff 生成時にサブモジュールへの変更を無視します。 <code>all</code> がデフォルトです。 <code>none</code> を使用すると、追跡されていないファイルまたは変更されたファイルが含まれている場合、またはそのHEADがスーパープロジェクトに記録されているコミットと異なる場合にサブモジュールが変更されたと見なされ、 <a href="git-config.html">git-config(1)</a> または <a href="gitmodules.html">gitmodules(5)</a> の <code>ignore</code> オプションの設定をオーバーライドするために使用できます。 <code>untracked</code> が使用されている場合、サブモジュールには追跡されていないコンテンツのみが含まれている場合、サブモジュールはダーティとは見なされません(ただし、変更されたコンテンツはスキャンされます)。 <code>dirty</code> を使用すると、サブモジュールの作業ツリーへのすべての変更が無視され、スーパープロジェクトに格納されているコミットへの変更のみが表示されます(これは1.7.0までの動作でした)。 <code>all</code> を使用すると、サブモジュールへのすべての変更が非表示になります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--src-prefix=</code><em>&lt;prefix&gt;</em>
+</dt>
+<dd>
+<p>
+        Show the given source <em>&lt;prefix&gt;</em> instead of "a/".
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--dst-prefix=</code><em>&lt;prefix&gt;</em>
+</dt>
+<dd>
+<p>
+        Show the given destination <em>&lt;prefix&gt;</em> instead of "b/".
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-prefix</code>
+</dt>
+<dd>
+<p>
+        比較元(source)または比較先(destination)のプレフィックスを表示しません。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--default-prefix</code>
+</dt>
+<dd>
+<p>
+        デフォルトの比較元(source)および比較先(destination)のプレフィックスを使用します("a/" と "b/")。 これは、 <code>diff.noprefix</code> や <code>diff.srcPrefix</code> や <code>diff.dstPrefix</code> や <code>diff.mnemonicPrefix</code> などの設定をオーバーライドします(<a href="git-config.html">git-config(1)</a> 参照)。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--line-prefix=</code><em>&lt;prefix&gt;</em>
+</dt>
+<dd>
+<p>
+        Prepend an additional <em>&lt;prefix&gt;</em> to every line of output.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ita-invisible-in-index</code>
+</dt>
+<dd>
+<p>
+        デフォルトでは、 <code>git</code> <code>add</code> <code>-N</code> によって追加されたエントリは、 <code>git</code> <code>diff</code> に既存の空のファイルとして表示され、 <code>git</code> <code>diff</code> <code>--cached</code> に新しいファイルとして表示されます。このオプションを使用すると、エントリは <code>git</code> <code>diff</code> では新しいファイルとして表示され、 <code>git</code> <code>diff</code> <code>--cached</code> では存在しません。このオプションは、 <code>--ita-visible-in-index</code> で元に戻すことができます。どちらのオプションも実験的なものであり、将来削除される可能性があります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--max-depth=</code><em>&lt;depth&gt;</em>
+</dt>
+<dd>
+<p>
+        For each pathspec given on command line, descend at most <em>&lt;depth&gt;</em> levels of directories. A value of <code>-1</code> means no limit. Cannot be combined with wildcards in the pathspec. Given a tree containing <code>foo/bar/baz</code>, the following list shows the matches generated by each set of options:
+</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>--max-depth=0</code> <code>--</code> <code>foo</code>: <code>foo</code>
+</p>
+</li>
+<li>
+<p>
+<code>--max-depth=1</code> <code>--</code> <code>foo</code>: <code>foo/bar</code>
+</p>
+</li>
+<li>
+<p>
+<code>--max-depth=1</code> <code>--</code> <code>foo/bar</code>: <code>foo/bar/baz</code>
+</p>
+</li>
+<li>
+<p>
+<code>--max-depth=1</code> <code>--</code> <code>foo</code> <code>foo/bar</code>: <code>foo/bar/baz</code>
+</p>
+</li>
+<li>
+<p>
+<code>--max-depth=2</code> <code>--</code> <code>foo</code>: <code>foo/bar/baz</code>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="paragraph"><p>If no pathspec is given, the depth is measured as if all top-level entries were specified. Note that this is different than measuring from the root, in that <code>--max-depth=0</code> would still return <code>foo</code>. This allows you to still limit depth while asking for a subset of the top-level entries.</p></div>
+<div class="paragraph"><p>Note that this option is only supported for diffs between tree objects, not against the index or working tree.</p></div>
+</dd>
+</dl></div>
+<div class="paragraph"><p>これらの一般的なオプションの詳細については、 <a href="gitdiffcore.html">gitdiffcore(7)</a> も参照してください。</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-</code><em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        最上位から見て &lt;n&gt; 個目のコミットからパッチを準備します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-o</code> <em>&lt;dir&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--output-directory</code> <em>&lt;dir&gt;</em>
+</dt>
+<dd>
+<p>
+        現在の作業ディレクトリの代わりに、 &lt;dir&gt; を使用して結果のファイルを保存します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-n</code>
+</dt>
+<dt class="hdlist1">
+<code>--numbered</code>
+</dt>
+<dd>
+<p>
+        単一のパッチでも、 [<code>PATCH</code> <code>n/m</code>] 形式で名前を出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-N</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-numbered</code>
+</dt>
+<dd>
+<p>
+        [<code>PATCH</code>] 形式 で名前を出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--start-number</code> <em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        パッチの番号付けを1ではなく&lt;n&gt;から開始します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--numbered-files</code>
+</dt>
+<dd>
+<p>
+        出力ファイル名群は、コミットのデフォルトの最初の行が追加されていない単純な一連番号になります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-k</code>
+</dt>
+<dt class="hdlist1">
+<code>--keep-subject</code>
+</dt>
+<dd>
+<p>
+        コミットログメッセージの最初の行から [<code>PATCH</code>] を削除/追加 しないでください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-s</code>
+</dt>
+<dt class="hdlist1">
+<code>--signoff</code>
+</dt>
+<dd>
+<p>
+        あなた自身ののコミッターIDを使用して、コミットメッセージに <code>Signed-off-by</code> トレーラーを追加します。詳細については、 <a href="git-commit.html">git-commit(1)</a>の signoff オフオプションを参照してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--stdout</code>
+</dt>
+<dd>
+<p>
+        コミットごとにファイルを作成するのではなく、すべてのコミットをmbox形式で標準出力に出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--attach</code>[<code>=</code><em>&lt;boundary&gt;</em>]
+</dt>
+<dd>
+<p>
+        マルチパート/混合の添付(multipart/mixed attachment)を作成します。最初の部分はコミットメッセージで、2番目の部分はパッチ自体です。 <code>Content-Disposition:</code> <code>attachment</code> を使用します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-attach</code>
+</dt>
+<dd>
+<p>
+        添付ファイルの作成を無効にして、構成設定を上書きします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--inline</code>[<code>=</code><em>&lt;boundary&gt;</em>]
+</dt>
+<dd>
+<p>
+        マルチパート/混合の添付(multipart/mixed attachment)を作成します。最初の部分はコミットメッセージで、2番目の部分はパッチ自体です。 <code>Content-Disposition:</code> <code>inline</code> を使用します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--thread</code>[<code>=</code><em>&lt;style&gt;</em>]
+</dt>
+<dt class="hdlist1">
+<code>--no-thread</code>
+</dt>
+<dd>
+<p>
+        <code>In-Reply-To</code> ヘッダーと <code>References</code> ヘッダーの追加を制御して、 2番目以降のメールを最初のメールへの返信として表示します。 また、参照する <code>Message-ID</code> ヘッダーの生成を制御します。
+</p>
+<div class="paragraph"><p>オプションの &lt;style&gt; 引数は、 <code>shallow</code> または <code>deep</code> のいずれかです。 「shallow」スレッドは、すべてのメールをシリーズの先頭に返信します。先頭は、送付状と <code>--in-reply-to</code> と最初のパッチメールからこの順序で選択されます。「deep」スレッドは、すべてのメールを前のメールへの返信にします。</p></div>
+<div class="paragraph"><p><code>format.thread</code> 構成が設定されていない限り、 デフォルトは <code>--no-thread</code> です。 引数のない <code>--thread</code> は <code>--thread=shallow</code> と同等です。</p></div>
+<div class="paragraph"><p><code>git</code> <code>send-email</code> のデフォルトが、電子メール自体をスレッド化することであることに注意してください。 <code>git</code> <code>format-patch</code> でスレッド化を処理する場合は、 <code>git</code> <code>send-email</code> でスレッド化が無効になっていることを確認する必要があります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--in-reply-to=</code><em>&lt;message-id&gt;</em>
+</dt>
+<dd>
+<p>
+        最初のメール(または <code>--no-thread</code> を含むすべてのメール)を、 指定の &lt;message-id&gt; への応答として表示します。 これにより、 スレッドが壊れて新しいパッチ・シリーズが提供されるのを防ぎます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--ignore-if-in-upstream</code>
+</dt>
+<dd>
+<p>
+        <em>&lt;until&gt;</em><code>..</code><em>&lt;since&gt;</em> のコミットに一致するパッチを含めないでください。 これにより、&lt;since&gt;から到達可能で、&lt;until&gt;からは到達できないすべてのパッチが調べられ、生成されているパッチと比較されます。一致するパッチはすべて無視されます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--always</code>
+</dt>
+<dd>
+<p>
+        デフォルトでは省略されている、変更を導入しないコミットのパッチを含めます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--cover-from-description=</code><em>&lt;mode&gt;</em>
+</dt>
+<dd>
+<p>
+        ブランチの説明を使用して、送付状のどの部分に自動的に入力されるかを制御します。
+</p>
+<div class="paragraph"><p><em>&lt;mode&gt;</em> が <code>message</code> または <code>default</code> の場合、送付状の件名にプレースホルダーテキストが入力されます。送付状の本文には、ブランチの説明が入力されます。 これは、構成またはコマンドラインオプションが指定されていない場合のデフォルトモードです。</p></div>
+<div class="paragraph"><p><em>&lt;mode&gt;</em> が <code>subject</code> の場合、ブランチの説明の最初の段落を送付状の件名に入力します。ブランチの説明の残りの部分は、送付状の本文に入力されます。</p></div>
+<div class="paragraph"><p><em>&lt;mode&gt;</em> が <code>auto</code> の場合、 ブランチの説明の最初の段落 &gt; 100バイト なら、モードは <code>message</code> になり、そうでない場合は <code>subject</code> が使用されます。</p></div>
+<div class="paragraph"><p><em>&lt;mode&gt;</em> が <code>none</code> の場合、送付状の件名と本文の両方にプレースホルダーテキストが入力されます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--description-file=</code><em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        カバーレターを生成するために、 ブランチの説明の代わりに &lt;file&gt; の内容を使用します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--subject-prefix=</code><em>&lt;subject-prefix&gt;</em>
+</dt>
+<dd>
+<p>
+        件名の標準の [<code>PATCH</code>] プレフィックスの代わりに、 [<em>&lt;subject-prefix&gt;</em>] を使用してください。 これは、 パッチ・シリーズの名前を付けるために使用でき、 <code>--numbered</code> オプションと組み合わせることができます。
+</p>
+<div class="paragraph"><p>設定変数 <code>format.subjectPrefix</code> を使用して、 全てのパッチに対して、 特定のリポジトリに適用する件名プレフィックスを設定できます。 これは、 複数のリポジトリからのパッチを受信するメーリングリストで役立つことが多く、 パッチを識別するために使用できます(例:「PATCH my-project」の値)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--filename-max-length=</code><em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        標準の64バイトの代わりに、生成された出力ファイル名を約 <em>&lt;n&gt;</em> バイトに切り捨て(短すぎると、値が適切な長さに黙って引き上げられます)。 デフォルトは <code>format.filenameMaxLength</code> 構成変数の値、または構成されていない場合は64です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--rfc</code>[<code>=</code><em>&lt;rfc&gt;</em>]
+</dt>
+<dd>
+<p>
+        文字列 &lt;rfc&gt; (デフォルトは <code>RFC</code> )を処理します。 件名のプレフィックスのデフォルトが <code>PATCH</code> であるため、 デフォルトで <code>RFC</code> <code>PATCH</code> を取得します。
+</p>
+<div class="paragraph"><p>RFC とは「Request For Comments」(コメント募集)を意味します。 これは、 適用のためではなく、 議論のための実験的なパッチを送信する際に使用します。 <code>--rfc=WIP</code> もパッチがまだ完成していないことを示す有用な方法です(<code>WIP</code> は「Work In Progress」(作業中)の略です)。</p></div>
+<div class="paragraph"><p>受信側のコミュニティにおける特定の追加文字列の慣例が件名プレフィックスの「後」に配置するものであれば、 文字列 &lt;rfc&gt; にダッシュ(<code>-</code>) を先頭に付けることで、 &lt;rfc&gt; 文字列の残りの部分が件名プレフィックスの後ろに追加されることを指示することができます。例えば、<code>--rfc=</code>'-(<code>WIP</code>)' を使用すると、 <code>PATCH</code> (<code>WIP</code>) になります。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>-v</code> <em>&lt;n&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--reroll-count=</code><em>&lt;n&gt;</em>
+</dt>
+<dd>
+<p>
+        そのシリーズをトピックの &lt;n&gt; 番目の反復としてマークします。出力ファイル名には <code>v</code><em>&lt;n&gt;</em> が付加され、件名接頭辞(デフォルトでは <code>PATCH</code> ですが、 <code>--subject-prefix</code> オプションで構成可能)には <code>v</code><em>&lt;n&gt;</em> が付加されます。例えば、 <code>--reroll-count=4</code> は、 <code>Subject:</code> [<code>PATCH</code> <code>v4</code> <code>1/20</code>] <code>Add</code> <code>makefile</code> を含む <code>v4-0001-add-makefile.patch</code> ファイルを生成します。<em>&lt;n&gt;</em> は整数である必要はありませんが（たとえば、 <code>--reroll-count=4.4</code> とか <code>--reroll-count=</code> <code>4rev2</code> とかでもOK)、このようなreroll-countを使用することの欠点は、以前のバージョンとの range-diff/interdiff で、新しい相互作用(new interation)がどのバージョンと比較されるかを正確に表示できなくなります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--to=</code><em>&lt;email&gt;</em>
+</dt>
+<dd>
+<p>
+        メールヘッダーに <code>To:</code> ヘッダーを追加します。 これは、任意の構成済みのヘッダー群に追加されるものであり、複数回使用される場合があります。 否定形式の <code>--no-to</code> は、これまでに追加されたすべての <code>To:</code> ヘッダーを(構成またはコマンドラインから)破棄します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--cc=</code><em>&lt;email&gt;</em>
+</dt>
+<dd>
+<p>
+        メールヘッダーに <code>Cc:</code> ヘッダーを追加します。 これは、任意の構成済みのヘッダー群に追加されるものであり、複数回使用される場合があります。 否定形式の <code>--no-cc</code> は、これまでに追加されたすべての <code>Cc:</code> ヘッダーを(構成またはコマンドラインから)破棄します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--from</code>
+</dt>
+<dt class="hdlist1">
+<code>--from=</code><em>&lt;ident&gt;</em>
+</dt>
+<dd>
+<p>
+        各コミットメールの <code>From:</code> ヘッダーで &lt;ident&gt; を使用します。 コミットの作成者IDが、提供された &lt;ident&gt; とテキストで同一でない場合は、元の作成者とのメッセージの本文に <code>From:</code> ヘッダーを配置します。 &lt;ident&gt; が指定されていない場合は、コミッターIDを使用します。
+</p>
+<div class="paragraph"><p>注意: このオプションは、実際にメールを送信していて、自分を送信者として識別したいが、元の作成者を保持したい場合にのみ役立ちます(そして、 <code>git</code> <code>am</code> は本文のヘッダーを正しく取得します)。 また、 <code>git</code> <code>send-email</code> はすでにこの変換を処理するようになっているため、結果を <code>git</code> <code>send-email</code> にフィードする場合は、このオプションを使用しないでください。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--force-in-body-from</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-force-in-body-from</code>
+</dt>
+<dd>
+<p>
+        <code>--from</code> オプションで電子メールの送信者を指定すると、デフォルトでは、作者と送信者が異なる場合、コミットの実際の作者を識別するための本文内の <code>From:</code> がコミット・ログ・メッセージの先頭に追加されます。 このオプションを使用すると、送信者と作者が同じ名前とアドレスを持っている場合でも、本文内の <code>From:</code> が追加されます。これは、メーリング・リスト・ソフトウェアが送信者の身元を解読する場合に役立ちます。 デフォルトは <code>format.forceInBodyFrom</code> 構成変数の値です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--add-header=</code><em>&lt;header&gt;</em>
+</dt>
+<dd>
+<p>
+        電子メールヘッダーに任意のヘッダーを追加します。これは、構成済みのヘッダーに追加されるものであり、複数回使用される場合があります。 たとえば、 <code>--add-header=</code>"Organization: <code>git-foo</code>" です。 否定形式の <code>--no-add-header</code> は、構成またはコマンドラインからこれまでに追加された「すべての」(<code>To:</code> と <code>Cc:</code> と カスタム)ヘッダーを破棄します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--cover-letter</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-cover-letter</code>
+</dt>
+<dd>
+<p>
+        パッチに加えて、ブランチの説明、ショートログ、および全体的なdiffstatを含むカバーレターファイルを生成します。あなたは、送信する前に、ファイルに説明を入力できます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--encode-email-headers</code>
+</dt>
+<dt class="hdlist1">
+<code>--no-encode-email-headers</code>
+</dt>
+<dd>
+<p>
+        ヘッダーをそのまま(verbatim)出力する代わりに、非ASCII文字を含む電子メールヘッダーを <code>Q-encoding</code> (RFC 2047で説明)でエンコードします。 デフォルトは、 <code>format.encodeEmailHeaders</code> 構成変数の値です。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--interdiff=</code><em>&lt;previous&gt;</em>
+</dt>
+<dd>
+<p>
+        レビュアーの補助として、カバーレターに、あるいは1パッチシリーズの単独パッチの解説として、パッチシリーズの前のバージョンと現在フォーマットされているシリーズとの違いを示す interdiff を挿入してください。 <code>previous</code> は、フォーマット中のシリーズと共通のベースを持つ、前のシリーズの先端を示す単一のリビジョンです(例えば、 <code>git</code> <code>format-patch</code> <code>--cover-letter</code> <code>--interdiff=feature/v1</code> <code>-3</code> <code>feature/v2</code> )。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--range-diff=</code><em>&lt;previous&gt;</em>
+</dt>
+<dd>
+<p>
+        レビューの補助として、カバーレターに range-diff (<a href="git-range-diff.html">git-range-diff(1)</a> 参照) を挿入するか、1パッチシリーズの単独パッチの解説として、そのパッチシリーズの前のバージョンと現在フォーマットされているシリーズとの相違を示します。 前バージョンは、フォーマットされるシリーズと共通のベースがある場合、前のシリーズの先端を示す単一のリビジョン(例えば <code>git</code> <code>format-patch</code> <code>--cover-letter</code> <code>--range-diff=feature/v1</code> <code>-3</code> <code>feature/v2</code> )、またはシリーズの二つのバージョンが分離している場合、リビジョンレンジ(例えば <code>git</code> <code>format-patch</code> <code>--cover-letter</code> <code>--range-diff=feature/v1~3</code><code>..</code><code>feature/v1</code> <code>-3</code> <code>feature/v2</code> )が使用されます。
+</p>
+<div class="paragraph"><p>注意: コマンドに渡される diff オプションは、 <code>format-patch</code> の基本製造物の生成方法に影響し、カバーレターの実体を生成するために使用される基礎となる <code>range-diff</code> 機構には渡されないことに注意してください(これは将来変更される可能性があります)。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--creation-factor=</code><em>&lt;percent&gt;</em>
+</dt>
+<dd>
+<p>
+        <code>--range-diff</code> とともに使用すると、 作成/削除 のコストファッジ係数(cost fudge factor)を調整することにより、以前の一連のパッチと現在の一連のパッチの間でコミットを一致させるヒューリスティックを微調整します。 詳細については、 <a href="git-range-diff.html">git-range-diff(1)</a> を参照してください。
+</p>
+<div class="paragraph"><p>デフォルトは 999 です(<a href="git-range-diff.html">git-range-diff(1)</a> では 60)。 このユースケースは、 同一トピックの以前の反復との比較を表示するためにあり、 ツールは2つのパッチ・セット間でより多くの対応を見つけるべきです。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--notes</code>[<code>=</code><em>&lt;ref&gt;</em>]
+</dt>
+<dt class="hdlist1">
+<code>--no-notes</code>
+</dt>
+<dd>
+<p>
+        3つの破線(<code>---</code>)行の後に、コミットのnotes (<a href="git-notes.html">git-notes(1)</a> を参照)を追加します。
+</p>
+<div class="paragraph"><p>この場合、コミットログメッセージに属さないコミットの説明を書いて、パッチを送信する際に添付することが期待されます。これらの説明は、単に <code>format-patch</code> を実行した後で送信する前に書くこともできますが、Git notes として残しておくと、パッチシリーズのバージョン間でそれらを維持することができます(ただし、この作業フローを使用するには <a href="git-notes.html">git-notes(1)</a> の <code>notes.rewrite</code> 設定オプションに関するdiscussionを参照してください)。</p></div>
+<div class="paragraph"><p><code>format.notes</code> 構成が設定されていない限り、デフォルトは <code>--no-notes</code> です。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>--signature=</code><em>&lt;signature&gt;</em>
+</dt>
+<dt class="hdlist1">
+<code>--no-signature</code>
+</dt>
+<dd>
+<p>
+        生成された各メッセージに署名を追加します。 RFC 3676に従い、署名は `-- ` が付いた行で本文から区切られています。署名オプションを省略した場合、署名はデフォルトでGitバージョン番号になります。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--signature-file=</code><em>&lt;file&gt;</em>
+</dt>
+<dd>
+<p>
+        署名がファイルから読み取られることを除いて、 <code>--signature</code> と同じように機能します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--suffix=.</code><em>&lt;sfx&gt;</em>
+</dt>
+<dd>
+<p>
+        生成されたファイル名のサフィックスとして <code>.patch</code> を使用する代わりに、指定されたサフィックスを使用します。 一般的な代替手段は <code>--suffix=.txt</code> です。 これを空のままにすると、 <code>.patch</code> サフィックスが削除されます。
+</p>
+<div class="paragraph"><p>注意: 先行する文字はドット(.)である必要はないことに注意してください。 たとえば、 <code>--suffix=-patch</code> を使用して <code>0001-description-of-my-change-patch</code> とかすることができます。</p></div>
+</dd>
+<dt class="hdlist1">
+<code>-q</code>
+</dt>
+<dt class="hdlist1">
+<code>--quiet</code>
+</dt>
+<dd>
+<p>
+        生成されたファイルの名前を標準出力に出力しないでください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-binary</code>
+</dt>
+<dd>
+<p>
+        バイナリファイルの変更内容を出力せず、代わりにそれらのファイルが変更されたという通知を表示します。このオプションを使用して生成されたパッチは適切に適用できませんが、コードレビューには役立ちます。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--zero-commit</code>
+</dt>
+<dd>
+<p>
+  コミットのハッシュの代わりに、各パッチのFromヘッダーにすべてゼロのハッシュを出力します。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--no-base</code>
+</dt>
+<dt class="hdlist1">
+<code>--base</code>[<code>=</code><em>&lt;commit&gt;</em>]
+</dt>
+<dd>
+<p>
+        ベースツリー情報を記録して、パッチシリーズが適用される状態を特定します。 詳細については、下記「BASE TREE INFORMATION」セクションを参照してください。 &lt;commit&gt; が <code>auto</code> の場合、ベースコミットが自動的に選択されます。 <code>--no-base</code> オプションは、 <code>format.useAutoBase</code> 構成をオーバーライドします。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--root</code>
+</dt>
+<dd>
+<p>
+        単一のコミットであっても、 リビジョン引数を &lt;revision-range&gt; として扱います(通常は &lt;since&gt; として扱われます)。 指定された範囲に含まれるルート・コミットは、 このフラグとは関係なく、 常に作成パッチとしてフォーマットされることに注意してください。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--progress</code>
+</dt>
+<dd>
+<p>
+        パッチが生成されるときに、stderrへ進捗レポートを表示します。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration">CONFIGURATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>あなたは、各メッセージに追加するメールヘッダー行の指定、件名のプレフィックスとファイルのサフィックスのデフォルト、複数のパッチを出力する場合のパッチ番号の指定、 <code>To:</code> または <code>Cc:</code> ヘッダーの追加、添付ファイルの設定、パッチ出力ディレクトリの変更、設定変数によるパッチのサインオフ、が可能です。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[format]
+        headers = "Organization: git-foo\n"
+        subjectPrefix = CHANGE
+        suffix = .txt
+        numbered = auto
+        to = &lt;email&gt;
+        cc = &lt;email&gt;
+        attach [ = mime-boundary-string ]
+        signOff = true
+        outputDirectory = &lt;directory&gt;
+        coverLetter = auto
+        coverFromDescription = auto</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_discussion">DISCUSSION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>git</code> <code>format-patch</code> によって生成されたパッチはUNIXメールボックス形式であり、ファイルが実際のメールボックスではなくformat-patchから出力されることを示す固定の「魔法の」タイムスタンプ(fixed "magic" time stamp)が付いています。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>From 8f72bad1baf19a53459661343e21d6491c3908d3 Mon Sep 17 00:00:00 2001
+From: Tony Luck &lt;tony.luck@intel.com&gt;
+Date: Tue, 13 Jul 2010 11:42:54 -0700
+Subject: [PATCH] =?UTF-8?q?[IA64]=20Put=20ia64=20config=20files=20on=20the=20?=
+ =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig=20diet?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+arch/arm config files were slimmed down using a python script
+(See commit c2330e286f68f1c408b4aa6515ba49d57f05beae comment)
+
+Do the same for ia64 so we can have sleek &amp; trim looking
+...</code></pre>
+</div></div>
+<div class="paragraph"><p>通常、MUAの下書きフォルダに配置され、タイムリーなコメントを追加するように編集されます。このコメントは、3つのダッシュ(<code>---</code>)の後に変更ログに記録されないように編集され、メッセージとして送信されます。この例では、本文は <code>arch/arm</code> <code>config</code> <code>files</code> <code>were.</code>.. です。受信側では、読者は興味あるパッチをUNIXメールボックスに保存し、 <a href="git-am.html">git-am(1)</a> を使用してそれらを適用できます。</p></div>
+<div class="paragraph"><p>パッチが進行中の議論の一部である場合、 <code>git</code> <code>format-patch</code> によって生成されたパッチは、<code>git</code> <code>am</code> <code>--scissors</code> 機能を利用するように調整できます。議論への応答の後に、<code>--</code> &gt;<code>8</code> <code>--</code> （訳注: &gt;<code>8</code> は、ハサミを横にしたアスキーアート(?))のみで構成される行があり、その後に不要なヘッダーフィールドが削除されたパッチが続きます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>...
+&gt; So we should do such-and-such.
+
+Makes sense to me.  How about this patch?
+
+-- &gt;8 --
+Subject: [IA64] Put ia64 config files on the Uwe Kleine-König diet
+
+arch/arm config files were slimmed down using a python script
+...</code></pre>
+</div></div>
+<div class="paragraph"><p>この方法でパッチを送信する場合、ほとんどの場合、独自のパッチを送信するため、 <code>From</code> <code>$SHA1</code> <code>$magic_timestamp</code> マーカーに加えて、パッチファイルから <code>From:</code> と <code>Date:</code> 行を省略する必要があります。パッチのタイトルは、パッチが、応答するディスカッションの主題とは異なる可能性が高いため、上記の例のように、 <code>Subject:</code> 行を保持する必要がある可能性があります。</p></div>
+<div class="sect2">
+<h3 id="_パッチの破損のチェック">パッチの破損のチェック</h3>
+<div class="paragraph"><p>多くのメーラーは、適切に設定されていないと空白(whitespace)を破損します。破損の一般的な2つのタイプは以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+どの空白(whitespace)もない空のコンテキスト行。
+</p>
+</li>
+<li>
+<p>
+先頭に1つの余分な空白(whitespace)がある空でないコンテキスト行。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>あなたのMUAが正しく設定されているかどうかをテストする方法のひとつは以下のとおりです:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+リストとメンテナのアドレスを含まない To: 行 と Cc: 行 を除き、全く同じ方法で、パッチを自分自身に送信します。
+</p>
+</li>
+<li>
+<p>
+そのパッチをUNIXメールボックス形式のファイルに保存します。それを a.patch と呼ぶことにしましょう。
+</p>
+</li>
+<li>
+<p>
+それをapplyします:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ git fetch &lt;project&gt; master:test-apply
+$ git switch test-apply
+$ git restore --source=HEAD --staged --worktree :/
+$ git am a.patch</code></pre>
+</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>これが正しく適用されない場合、さまざまな理由が考えられます。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+パッチ自体はきれいに適用されません。それは悪いことですが、しかしあなたのMUAとはあまり関係がありません。この場合、パッチを再生成する前に、 <a href="git-rebase.html">git-rebase(1)</a> を使用してパッチをリベースすることをお勧めします。
+</p>
+</li>
+<li>
+<p>
+MUAがあなたのパッチ破損させました。 <code>am</code> は、パッチが適用されないと文句を言います。 .git/rebase-apply/ サブディレクトリを調べて、 <code>patch</code> ファイルに含まれているものを確認し、上記の一般的な破損パターンを確認します。
+</p>
+</li>
+<li>
+<p>
+そのとき、 <code>info</code> ファイルと <code>final-commit</code> ファイルも確認してください。 <code>final-commit</code> にあるものが、コミットログメッセージに表示したいものと正確に一致しない場合、パッチを適用するときに受信者がログメッセージを手作業で編集してしまう可能性が非常に高くなります。 パッチの電子メールの "Hi, this is my first patch.\n" のようなものは、コミットメッセージの終わりを示す3本の破線(<code>---</code>)の後に来るはずです。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mua_specific_hints">MUA-SPECIFIC HINTS</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>さまざまなメーラーを使用してパッチをインラインで正常に送信する方法に関するヒントをいくつか。</p></div>
+<div class="sect2">
+<h3 id="_gmail">GMail</h3>
+<div class="paragraph"><p>Gmailには、Webインターフェイスでの行の折り返しをオフにする方法がないため、送信するすべての電子メールが破損します。 ただし、 <code>git</code> <code>send-email</code> を使用して、GMail SMTPサーバーを介してパッチを送信するか、任意のIMAPメールクライアントを使用してgoogle IMAPサーバーに接続し、それを介してメールを転送することができます。</p></div>
+<div class="paragraph"><p><code>git</code> <code>send-email</code> を使用して GMail SMTP サーバーを介してパッチを送信するためのヒントについては、 <a href="git-send-email.html">git-send-email(1)</a> のEXAMPLEセクションを参照してください。</p></div>
+<div class="paragraph"><p>IMAPインターフェースを使用した送信のヒントについては、 <a href="git-imap-send.html">git-imap-send(1)</a> の EXAMPLE セクションを参照してください。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_thunderbird">Thunderbird</h3>
+<div class="paragraph"><p>デフォルトでは、Thunderbirdはメールの行を折り返す(wrap)だけでなく、 <code>format=flowed</code> としてフラグを立てます。このため、結果のメールはGitで使用できなくなります。</p></div>
+<div class="paragraph"><p>3つの異なるアプローチがあります: アドオンを使用して行の折り返し(line wraps)をオフにする、またはパッチを切り刻まないようにThunderbirdを構成する、または外部エディターを使用してThunderbirdがパッチを切り刻まないようにします。</p></div>
+<div class="sect3">
+<h4 id="_approach_1_add_on">Approach #1 (add-on)</h4>
+<div class="paragraph"><p>Install the Toggle Line Wrap add-on that is available from <a href="https://addons.thunderbird.net/thunderbird/addon/toggle-line-wrap">https://addons.thunderbird.net/thunderbird/addon/toggle-line-wrap</a> It adds a button "Line Wrap" to the composer&#8217;s toolbar that you can tick off. Now you can compose the message as you otherwise do (cut + paste, <em>git format-patch</em> | <em>git imap-send</em>, etc), but you have to insert line breaks manually in any text that you type.</p></div>
+<div class="paragraph"><p>As a bonus feature, the add-on can detect patch text in the composer and warns when line wrapping has not yet been turned off.</p></div>
+<div class="paragraph"><p>The add-on requires a few tweaks of the advanced configuration (about:config). These are listed on the download page.</p></div>
+</div>
+<div class="sect3">
+<h4 id="_approach_2_configuration">Approach #2 (configuration)</h4>
+<div class="paragraph"><p>3ステップ:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+メールサーバーの構成をプレーンテキストとして構成します。 [Edit&#8230;Account Settings&#8230;Composition &amp; Addressing] で、 [Compose Messages in HTML] のチェックを外します(訳注:手元のThunderBird 91.7.0(64ビット)では、メールごとの[アカウント設定&#8230;編集とアドレス入力&#8230;編集][HTML形式でメッセージを編集する&#169;])
+</p>
+</li>
+<li>
+<p>
+行の折返しをしないように、あなたの一般作文ウィンドウ(general composition window)を設定します。
+</p>
+<div class="paragraph"><p>Thunderbird 2: [Edit..Preferences..Composition] で、 [wrap plain text messages] を 0 にセットする。</p></div>
+<div class="paragraph"><p>Thunderbird 3 : [Edit..Preferences..Advanced..ConfigEditor] で "mail.wrap_long_lines" を検索します。 それをトグルして <code>false</code> に設定されていることを確認します。 また、 <code>mailnews.wraplength</code> を検索し、値を0に設定します(訳注: ThunderBird 91.7.0(64ビット) 全体の設定&#8230;一般&#8230;の一番下にある[設定エディター&#8230;&#169;]ボタン押下して「高度な設定」タブを開く。後は上記と一緒です)</p></div>
+</li>
+<li>
+<p>
+format=flowed の使用を無効にします: [Edit..Preferences..Advanced..Config Editor](訳注:上記[設定エディター&#8230;&#169;]参照) "mailnews.send_plaintext_flowed" を検索します。トグルして <code>false</code> に設定されていることを確認します。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>これで今後は、あなたは他の方法(カット＆ペーストや <code>git</code> <code>format-patch</code> | <code>git</code> <code>imap-send</code> など)で電子メールを作成できるようになり、パッチが破損することはありません。</p></div>
+</div>
+<div class="sect3">
+<h4 id="_approach_3_external_editor">Approach #3 (external editor)</h4>
+<div class="paragraph"><p>Thunderbird拡張機能が必要です: AboutConfig( <a href="https://mjg.github.io/AboutConfig/">https://mjg.github.io/AboutConfig/</a> ) と External Editor( <a href="https://globs.org/articles.php?lng=en&amp;pg=8">https://globs.org/articles.php?lng=en&amp;pg=8</a> )です。</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+あなたが選択した方法を使用して、パッチをテキストファイルとして準備します。
+</p>
+</li>
+<li>
+<p>
+作文ウィンドウ(compose window)を開く前に、 [Edit&#8230;Account] を使用して、パッチの送信に使用するアカウントの[Composition &amp; Addressing]パネルの[Compose messages in HTML format]設定のチェックを外します(訳注:手元のThunderBird 91.7.0(64ビット)では、メールごとの[アカウント設定&#8230;編集とアドレス入力&#8230;編集][HTML形式でメッセージを編集する&#169;])。
+</p>
+</li>
+<li>
+<p>
+Thunderbirdのメインウィンドウで、パッチの作成ウィンドウを開く前に、 [Tools]&#8594; [about:config] を使用して、以下を指定された値に設定します(訳注: ThunderBird 91.7.0(64ビット) 設定&#8230;一般&#8230;の一番下にある[設定エディター&#8230;&#169;]ボタン押下して「高度な設定」タブを開く):
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>        mailnews.send_plaintext_flowed  =&gt; false
+        mailnews.wraplength             =&gt; 0</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+作文ウィンドウを開き、外部エディターアイコンをクリックします。
+</p>
+</li>
+<li>
+<p>
+外部エディタウィンドウで、パッチファイルを読み込み、通常どおりエディタを終了します。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>補足: aboutconfig と以下の設定を使用して 手順2 を実行できる場合がありますが、まだ誰も試していません。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>        mail.html_compose                       =&gt; false
+        mail.identity.default.compose_html      =&gt; false
+        mail.identity.id?.compose_html          =&gt; false</code></pre>
+</div></div>
+<div class="paragraph"><p>contrib/thunderbird-patch-inline には、あなたがThunderbirdにパッチを簡単にインクルードするのに役立つスクリプトがあります。これを使用するには、上記の手順を実行してから、スクリプトを外部エディターとして使用します。</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_kmail">KMail</h3>
+<div class="paragraph"><p>これは、KMailを使用してパッチをインラインで送信するのに役立ちます。</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+パッチをテキストファイルとして準備します。
+</p>
+</li>
+<li>
+<p>
+「New Mail」をクリックします。
+</p>
+</li>
+<li>
+<p>
+Composer ウィンドウの [Options] の下に移動し、[Word wrap] が設定されていないことを確認します。
+</p>
+</li>
+<li>
+<p>
+Use Message &#8594; Insert file して、パッチを挿入します。
+</p>
+</li>
+<li>
+<p>
+作文ウィンドウに戻ります。メッセージに他のテキストを追加し、アドレス指定フィールドと件名フィールドに入力して、送信を押します。
+</p>
+</li>
+</ol></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_base_tree_information">BASE TREE INFORMATION</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>ベースツリー情報ブロックは、メンテナやサードパーティテスタが、パッチシリーズが適用される正確な状態を知るために使用されます。ベースツリー情報ブロックは、「ベースコミット」（プロジェクトの安定した歴史の一部であり、他のすべての人がそれを元に作業する）と、ゼロ個以上の「前提条件パッチ」(ベースコミットにまだ含まれない、よく知られたパッチで、パッチを適用する前にベースコミットにトポロジカルに追加する必要があります)で構成されています。</p></div>
+<div class="paragraph"><p>「ベースコミット」は、 <code>base-commit:</code> ` の後にコミットオブジェクト名の40進数が続くものとして表示されます。 `prerequisite <code>patch</code> は <code>prerequisite-patch-id:</code> ` の後に40-hexの `patch <code>id</code> として表示されます。これは、パッチを <code>git</code> <code>patch-id</code> <code>--stable</code> コマンドに渡すことで取得できます。</p></div>
+<div class="paragraph"><p>パブリックコミットPに加えて、他の誰かからのよく知られたパッチ X、Y、Z を適用し、3つのパッチシリーズ A、B、C を作成したと想像してください。その履歴は以下のようになります:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>---P---X---Y---Z---A---B---C</code></pre>
+</div></div>
+<div class="paragraph"><p><code>git</code> <code>format-patch</code> <code>--base=P</code> <code>-3</code> <code>C</code> (またはその変形、たとえば <code>--cover-letter</code> または <code>-3C</code> の代わりに <code>Z</code><code>..</code><code>C</code> を使用して範囲を指定する)、 ベースツリー情報ブロックは、コマンドが出力する最初のメッセージ(最初のパッチまたはカバーレターのいずれか)の最後に、以下のように表示されます:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>base-commit: P
+prerequisite-patch-id: X
+prerequisite-patch-id: Y
+prerequisite-patch-id: Z</code></pre>
+</div></div>
+<div class="paragraph"><p>以下のようなのような非線形トポロジーの場合</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>---P---X---A---M---C
+    \         /
+     Y---Z---B</code></pre>
+</div></div>
+<div class="paragraph"><p><code>git</code> <code>format-patch</code> <code>--base=P</code> <code>-3</code> <code>C</code> を使用して A、B、C のパッチを生成することもできます。そして P、X、Y、Z の識別子が最初のメッセージの最後に追加されます。</p></div>
+<div class="paragraph"><p>cmdline で <code>--base=auto</code> を設定すると、cmdline で指定されたリモート追跡ブランチとリビジョン範囲の先端コミットのマージ・ベースとしてベース・コミットが自動的に計算されます。 ローカルブランチの場合、このオプションを使用する前に、 <code>gitbranch</code> <code>--set-upstream-to</code> でリモートブランチを追跡する必要があります。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+リビジョンR1とR2の間のコミットを抽出します。そして、 それらをチェリーピックするために <code>git</code> <code>am</code> を使用して現在のブランチの先頭にそれらを適用します:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch -k --stdout R1..R2 | git am -3 -k</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+現在のブランチにはあるが、元のブランチにはないすべてのコミットを抽出します:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch origin</code></pre>
+</div></div>
+<div class="paragraph"><p>コミットごとに、現在のディレクトリに個別のファイルが作成されます。</p></div>
+</li>
+<li>
+<p>
+プロジェクトの開始以降で <code>origin</code> につながるすべてのコミットを抽出します。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch --root origin</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+以下は上記と同一です:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch -M -B origin</code></pre>
+</div></div>
+<div class="paragraph"><p>さらに、名前変更を検出して処理し、名前変更パッチを生成するためにインテリジェントに書き換えを完了します。 名前の変更パッチは、テキスト出力の量を減らし、一般的にレビューを容易にします。 Git以外の「パッチ」プログラムはパッチの名前変更を理解しないため、受信者がGitを使用してパッチを適用していることがわかっている場合にのみ使用してください。</p></div>
+</li>
+<li>
+<p>
+現在のブランチの先頭から3つのコミットを抽出し、それらを電子メールで送信可能なパッチとしてフォーマットします:
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ git format-patch -3</code></pre>
+</div></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_caveats">CAVEATS</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>注意: `format-patch`は、要求された範囲の一部であっても、出力からマージコミットを省略します。単純な「パッチ」には、受信側が同じマージコミットを再現するための十分な情報が含まれていません。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><a href="git-am.html">git-am(1)</a>, <a href="git-send-email.html">git-send-email(1)</a></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_git">GIT</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Part of the <a href="git.html">git(1)</a> suite</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2025-11-13 13:43:54 JST
+</div>
+</div>
+</body>
+</html>
