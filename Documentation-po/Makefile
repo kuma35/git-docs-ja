@@ -184,7 +184,7 @@ ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/ap
 clean:
 	find $(DST_DIR) -type f | xargs rm -f
 	find $(DST_DIR) -empty | xargs rmdir
-	# rsync -av --include "cmds-*.txt" --include "mergetools-*.txt" --exclude "*.txt" $(SRC_DIR)/ $(DST_DIR)
-	rsync -av --include "cmds-*.adoc" --include "mergetools-*.adoc" --exclude "*.adoc" $(SRC_DIR)/ $(DST_DIR)
+	rsync -av --include "cmds-*.adoc" --include "mergetools-*.adoc" --include "*.adoco" \
+		--exclude "*.adoc" $(SRC_DIR)/ $(DST_DIR)
 
 .PHONEY: ja clean help
