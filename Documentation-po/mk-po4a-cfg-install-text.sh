@@ -1,9 +1,9 @@
 #!/usr/bin/sh
-# for only ../INSTALL text
-# mk-po4a-cfg.sh <<src-pathfile(relative)>> <<dst-pathfile(relative)>>
+# for only ../INSTALL
+# mk-po4a-cfg.sh <<src-pathfile(relative)>>
 SRC_FILE=$1
 BASE_FILE=${SRC_FILE#../}
-DST_FILE=$2
+DST_FILE=../Documentation-ja/${BASE_FILE}.txt
 BASE_BODY=${BASE_FILE}
 echo "# generate by $0" `date`
 echo "[po4a_langs] ja"

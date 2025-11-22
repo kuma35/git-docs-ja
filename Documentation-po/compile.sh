@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 PROJ=${HOME}/work/git-docs-ja
 BRANCH=docs-ja-5
+INSTALL_TEXT="INSTALL.txt"
 cd ${PROJ}/Documentation-sedout
 for dst_dir in technical RelNotes config howto includes mergetools
 do
@@ -37,6 +38,9 @@ fi
 ${PROJ}/Documentation-po/restore-htmls.sh
 ${PROJ}/Documentation-po/restore-manpages.sh
 # for github pages
+if [ -e $INSTALL_TEXT ]; then
+    cp $INSTALL_TEXT ${PROJ}/docs/${BRANCH}/
+fi
 DIFF=diff ${PROJ}/Documentation-po/install-webdoc-only-html.sh ${PROJ}/docs/${BRANCH}/htmldocs
 gawk -f ${PROJ}/Documentation-po/publish-index.awk TEMPLATE=${PROJ}/Documentation-po/index.html.template OUTPUT=${PROJ}/docs/${BRANCH}/index.html < ${PROJ}/Documentation-po/GIT-VERSION-FILE
 exitcode=$?

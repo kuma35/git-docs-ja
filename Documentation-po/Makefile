@@ -71,7 +71,7 @@ SRC_SUB_DIRS = $(TECHNICAL_DIR) $(RELNOTES_DIR) $(CONFIG_DIR) $(HOWTO_DIR) $(INC
 SRC_INSTALL_TEXT = ../INSTALL
 PO_INSTALL_TEXT = INSTALL.po
 PO4A_CFG_INSTALL_TEXT = INSTALL.po4cfg
-DST_INSTALL_TEXT = ../docs/$(BRANCH)/INSTALL.txt
+DST_INSTALL_TEXT = $(DST_DIR)/INSTALL.txt
 
 
 # $(warning PO_INSTALL_TEXT = $(PO_INSTALL_TEXT))
@@ -136,7 +136,7 @@ $(PO4A_CFG_FILES): %$(PO4A_CFG_EXT) : $(SEDOUT_DIR)/%$(ASCIIDOC_EXT)
 	./mk-po4a-cfg.sh $< > $@;
 
 $(PO4A_CFG_INSTALL_TEXT): $(SRC_INSTALL_TEXT)
-	./mk-po4a-cfg-install-text.sh $< $(DST_INSTALL_TEXT) > $@
+	./mk-po4a-cfg-install-text.sh $< > $@
 
 # $(error "debug stop")
 
