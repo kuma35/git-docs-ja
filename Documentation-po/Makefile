@@ -170,13 +170,13 @@ $(DST_DIR)/Makefile : $(SRC_DIR)/Makefile
 $(DST_DIR)/technical/api-index.sh : $(SRC_DIR)/technical/api-index.sh
 	cp $< $@
 
-# Documentation/asciidoc.conf 修正を反映させる
+# Documentation/asciidoc.conf.in 修正を反映させる
 # cd Documantaion
 # make asciidoc.conf
-$(DST_DIR)/asciidoc.conf : $(SRC_DIR)/asciidoc.conf
+$(DST_DIR)/asciidoc.conf.in : $(SRC_DIR)/asciidoc.conf.in
 	cp $< $@
 
-ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/api-index.sh $(DST_DIR)/asciidoc.conf
+ja: $(DST_FILES) $(DST_INSTALL_TEXT) $(DST_DIR)/Makefile $(DST_DIR)/technical/api-index.sh $(DST_DIR)/asciidoc.conf.in 
 
 # rsyncの $(SRC_DIR)の直後の / 重要。超重要
 # cmds-*.txt are templates. not need translation. copy from $(SRC_DIR) to $(DST_DIR)
