@@ -393,8 +393,8 @@ $(patsubst %,%.html,$(API_DOCS) technical/api-index $(TECH_DOCS)): %.html : %.ad
 	$(ASCIIDOC_DEPS)
 	$(QUIET_ASCIIDOC)$(TXT_TO_HTML) $*.adoc
 
-SubmittingPatches.adoc: SubmittingPatches
-	$(QUIET_GEN) cp $< $@
+# SubmittingPatches.adoc: SubmittingPatches
+#	$(QUIET_GEN) cp $< $@
 
 XSLT = docbook.xsl
 XSLTOPTS =
