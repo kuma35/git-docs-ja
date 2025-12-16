@@ -1416,7 +1416,7 @@ Part of the git(1) suite
 @node git-backfill,,,Top
 @chapheading Name
 
-git-backfill — Download missing objects in a partial clone
+git-backfill — 部分クローン(partial clone)で欠落しているオブジェクトをダウンロード
 
 @noindent
 
@@ -1430,17 +1430,17 @@ git backfill [--min-batch-size=<n>] [--[no-]sparse]
 
 @chapheading DESCRIPTION
 
-Blobless partial clones are created using @samp{git clone --filter=blob:none} and then configure the local repository such that the Git client avoids downloading blob objects unless they are required for a local operation. This initially means that the clone and later fetches download reachable commits and trees but no blobs. Later operations that change the @samp{HEAD} pointer, such as @samp{git checkout} or @samp{git merge}, may need to download missing blobs in order to complete their operation.
+ブロブ無し(blobless)の部分クローン(partial clones)は、 @samp{git clone --filter=blob:none} を使用して作成され、 その後ローカル・リポジトリーを設定することで、 Git クライアントがローカル操作に必要な場合を除いてブロブオブジェクトのダウンロードを回避するようになります。 これにより、最初はクローン操作やその後の fetch 操作で到達可能なコミットとツリーがダウンロードされますが、 ブロブはダウンロードされません。 以降の操作で @samp{HEAD} ポインタを変更するもの、 例えば @samp{git checkout} や @samp{git merge} では、 操作を完了するために欠落しているブロブをダウンロードする必要が生じる場合があります。
 
-In the worst cases, commands that compute blob diffs, such as @samp{git blame}, become very slow as they download the missing blobs in single-blob requests to satisfy the missing object as the Git command needs it. This leads to multiple download requests and no ability for the Git server to provide delta compression across those objects.
+最悪の場合においては、 ブロブの diff を計算するコマンド、 例えば @samp{git blame} は、 Git コマンドが必要とする欠落オブジェクトを満たすために単一のブロブ・リクエストで欠落ブロブをダウンロードするため、 非常に遅くなります。 これにより、 複数のダウンロード・リクエストが発生し、 Git サーバーがこれらのオブジェクト間でデルタ圧縮を提供できなくなります。
 
-The @samp{git backfill} command provides a way for the user to request that Git downloads the missing blobs (with optional filters) such that the missing blobs representing historical versions of files can be downloaded in batches. The @samp{backfill} command attempts to optimize the request by grouping blobs that appear at the same path, hopefully leading to good delta compression in the packfile sent by the server.
+@samp{git backfill} コマンドは、 ユーザーが(オプションのフィルタ付きで)欠落しているブロブのダウンロードを Git に要求する方法を提供します。 これにより、 ファイルの履歴的なバージョンを表す欠落ブロブをバッチでダウンロードできます。 backfill コマンドは、 同じパスに現れるブロブをグループ化することでリクエストを最適化しようと試み、 これによりサーバーから送信されるパックファイルにて良好なデルタ圧縮が得られることを期待します。
 
-In this way, @samp{git backfill} provides a mechanism to break a large clone into smaller chunks. Starting with a blobless partial clone with @samp{git clone --filter=blob:none} and then running @samp{git backfill} in the local repository provides a way to download all reachable objects in several smaller network calls than downloading the entire repository at clone time.
+このように、 @samp{git backfill} は巨大なクローンを小さなチャンクに分割する仕組みを提供します。 @samp{git clone --filter=blob:none} でブロブ無し(blobless)の部分クローンから始め、 その後ローカル・リポジトリーで @samp{git backfill} を実行することで、 クローン時にリポジトリー全体をダウンロードする場合よりも、 いくつかの小さなネットワーク呼び出しで到達可能なすべてのオブジェクトをダウンロードする方法が得られます。
 
-By default, @samp{git backfill} downloads all blobs reachable from the @samp{HEAD} commit. This set can be restricted or expanded using various options.
+デフォルトでは、 @samp{git backfill} は @samp{HEAD} コミットから到達可能なすべてのブロブをダウンロードします。 これは、 さまざまなオプションを使用して制限したり拡張したりできます。
 
-THIS COMMAND IS EXPERIMENTAL. ITS BEHAVIOR MAY CHANGE IN THE FUTURE.
+「このコマンドは実験的です。将来的に行動が変わる可能性があります。」(THIS COMMAND IS EXPERIMENTAL. ITS BEHAVIOR MAY CHANGE IN THE FUTURE.)
 
 @noindent
 
@@ -1449,11 +1449,11 @@ THIS COMMAND IS EXPERIMENTAL. ITS BEHAVIOR MAY CHANGE IN THE FUTURE.
 @table @asis
 
 @item  @samp{--min-batch-size=}@emph{<n>} 
-Specify a minimum size for a batch of missing objects to request from the server. This size may be exceeded by the last set of blobs seen at a given path. The default minimum batch size is 50,000.
+欠落オブジェクトのバッチをサーバーにリクエストする際の最小サイズを指定します。 このサイズは、 指定されたパスで最後に見つかったブロブのセットによって超過する場合があります。 デフォルトの最小バッチサイズは 50,000 です。
 
 @item  @samp{--sparse} 
 @itemx  @samp{--no-sparse} 
-Only download objects if they appear at a path that matches the current sparse-checkout. If the sparse-checkout feature is enabled, then @samp{--sparse} is assumed and can be disabled with @samp{--no-sparse}.
+現在の sparse-checkout に一致するパスにのみオブジェクトが現れる場合に限り、 オブジェクトをダウンロードします。 sparse-checkout 機能が有効な場合、 デフォルトで @samp{--sparse} が仮定され、 @samp{--no-sparse} で無効化できます。
 @end table
 
 @noindent
@@ -7040,7 +7040,7 @@ Git構成ファイルには、Gitコマンドの動作に影響を与えるい�
 @table @asis
 
 @item  @samp{gitdir} 
-The data that follows the keyword @samp{gitdir} and a colon is used as a glob pattern. If the location of the .git directory matches the pattern, the include condition is met.
+キーワード @samp{gitdir} とコロン(@samp{:})に続くデータは、 グロブ・パターンとして使用されます。 @samp{.git} ディレクトリの場所がパターンと一致する場合、 インクルード条件が満たされます。
 
 @samp{.git} の場所は自動検出されるか、 @samp{$GIT_DIR} 環境変数から取得されます。 リポジトリが .git ファイルを介して(つまり、サブモジュールやリンクされたワークツリーなどから)自動検出される場合、最終的に検出される .git の場所とは、 .git ファイルの場所ではなく .git ファイルからたどった
 .gitディレクトリの場所です。
@@ -7066,12 +7066,12 @@ The data that follows the keyword @samp{gitdir} and a colon is used as a glob pa
 これは、照合が大文字と小文字を区別せずに行われることを除いて、 @samp{gitdir} と同じです(大文字と小文字を区別しないファイルシステムなど)。
 
 @item  @samp{onbranch} 
-The data that follows the keyword @samp{onbranch} and a colon is taken to be a pattern with standard globbing wildcards and two additional ones, @samp{**/} and @samp{/**}, that can match multiple path components. If we are in a worktree where the name of the branch that is currently checked out matches the pattern, the include condition is met.
+キーワード @samp{onbranch} とコロン(@samp{:})に続くデータは、 標準のグロブ・ワイルドカードと、 複数のパス部分に一致する可能性のある2つの追加のワイルドカード @strong{*/ と /}* を含むパターンと見なされます。 現在チェックアウトされているブランチの名前がパターンと一致するワークツリーにいる場合、 インクルード条件が満たされます。
 
 パターンが @samp{/} で終わる場合、 @strong{* が自動的に追加されます。 たとえば、パターン @samp{foo/} は foo/}* になります。つまり、 foo/ で始まるすべてのブランチに一致します。これは、ブランチが階層的に編成されていて、その階層内のすべてのブランチに構成を適用する場合に役立ちます。
 
 @item  @samp{hasconfig:remote.*.url} 
-The data that follows this keyword and a colon is taken to be a pattern with standard globbing wildcards and two additional ones, @samp{**/} and @samp{/**}, that can match multiple components. The first time this keyword is seen, the rest of the config files will be scanned for remote URLs (without applying any values). If there exists at least one remote URL that matches this pattern, the include condition is met.
+このキーワードとコロン(@samp{:})に続くデータは、 標準のグロブ・ワイルドカード(globbing wildcards)と、 複数コンポーネントに一致する 2 つの追加ワイルドカード @strong{*/ と /}* を使用したパターンと見なされます。 このキーワードが最初に表れた時、 構成ファイルの残りでremote URL がスキャンされます(値は適用されません)。 このパターンに一致するremote URL が少なくとも 1 つ存在する場合、インクルード条件が満たされます。
 
 このオプションによって (直接的または間接的に) インクルードされるファイルには、remote URL を含めることはできません。
 
@@ -7137,20 +7137,20 @@ The data that follows this keyword and a colon is taken to be a pattern with sta
 [includeIf "gitdir:~/to/group/"]
         path = /path/to/foo.inc
 
-; relative paths are always relative to the including
-; file (if the condition is true); their location is not
-; affected by the condition
+; 相対パスは常に、
+; インクルードするファイルに対して相対的です(条件が true の場合)。
+; それらの位置は条件の影響を受けません
 [includeIf "gitdir:/path/to/group/"]
         path = foo.inc
 
-; include only if we are in a worktree where foo-branch is
-; currently checked out
+; foo-branch が現在チェックアウトされている
+; ワークツリーにいる場合にのみインクルードします。
 [includeIf "onbranch:foo-branch"]
         path = foo.inc
 
-; include only if a remote with the given URL exists (note
-; that such a URL may be provided later in a file or in a
-; file read after this file is read, as seen in this example)
+; 指定されたURLを持つリモートが存在する場合にのみインクルードする
+; (なお、 この例で示されている通り、 このようなURLは、 ファイル内の後半部分や、
+; このファイルの読み込み後に読み込まれるファイルで提供される可能性がある)
 [includeIf "hasconfig:remote.*.url:https://example.com/**"]
         path = foo.inc
 [remote "origin"]
@@ -7207,7 +7207,7 @@ gitで事前定義されたカラースロットの場合、属性は、カラ�
 
 パスが @samp{%}(@samp{prefix})@samp{/} で始まる場合、残りはGitの「ランタイムプレフィックス」に関連するパス、つまりGit自体がインストールされた場所に関連するパスとして解釈されます。 たとえば、 @samp{%}(@samp{prefix})@samp{/bin/} は、Git実行可能ファイル自体が存在するディレクトリを指します。Gitがランタイムプレフィックスのサポートなしでコンパイルされた場合、代わりにコンパイルされたプレフィックスが置き換えられます。万が一、展開してはならないリテラルパスを指定する必要がある場合は、 @samp{./%}(@samp{prefix})@samp{/bin} のように接頭辞 @samp{./} を付ける必要があります。
 
-If prefixed with @samp{:}(@samp{optional}), the configuration variable is treated as if it does not exist, if the named path does not exist.
+:(optional) プレフィックスが付けられている場合、 指定されたパスが存在しないときは、 その構成変数自体が存在しないものとして扱われます。
 @end table
 
 @noindent
@@ -7436,7 +7436,7 @@ Git がエディターから入力を待機しているときに表示されま�
 @end table
 
 @item  alias.* 
-Command aliases for the git(1) command wrapper - e.g. after defining @samp{alias.last = cat-file commit HEAD}, the invocation @samp{git last} is equivalent to @samp{git cat-file commit HEAD}. To avoid confusion and troubles with script usage, aliases that hide existing Git commands are ignored except for deprecated commands. Arguments are split by spaces, the usual shell quoting and escaping are supported. A quote pair or a backslash can be used to quote them.
+git(1) コマンド・ラッパーのためのコマンド・エイリアス — たとえば、 @samp{alias.last = cat-file commit HEAD} と定義した後、 @samp{git last} と呼び出す事は @samp{git cat-file commit HEAD} と等価になります。 スクリプト使用時の混乱やトラブルを避けるため、 既存の Git コマンドを隠ぺいするエイリアスは、 非推奨コマンドの場合を除いて無視されます。 引数は空白(spaces)で分割され、 通常のシェルでのクォートやエスケープがサポートされます。 引用符のペアまたはバックスラッシュ(@samp{\})を使用してそれらをクォートできます。
 
 エイリアスの最初の単語は必ずしもコマンドである必要はないことに注意してください。 これは、@samp{git} の呼び出しに渡されるコマンドラインオプションにすることができます。 特に、これは、 @samp{-c} を使用して1回限りの構成で渡す場合、または @samp{-p} を使用して強制的にページネーションを行う場合に役立ちます。 たとえば、 @samp{loud-rebase = -c commit.verbose=true rebase} は、 @samp{git loud-rebase} の実行が @samp{git -c commit.verbose=true rebase} と同等になるように定義できます。 また、 @samp{ps = -p status} は便利なエイリアスで、 @samp{git ps} は @samp{git status} の出力をページ分割して出力します。
 
@@ -7459,7 +7459,7 @@ Command aliases for the git(1) command wrapper - e.g. after defining @samp{alias
 シェル・エイリアスが、 (例えば パイプラインなど、)複数のコマンドを含む「ワンライナー」スクリプトである場合に、 複数の引数を参照する、 あるいは最後に追加される位置引数を処理できない場合は注意が必要です。 例: @samp{git cmd 1 2} として呼び出された @samp{alias.cmd = }"!echo $1 |@samp{ grep $2}" は、 あなたが望んだモノでは無い @samp{echo $1 }|@samp{ grep $2 1 2} として実行されます。
 
 @item
-A convenient way to deal with this is to write your script operations in an inline function that is then called with any arguments from the command-line. For example @samp{alias.cmd = }"!c()@samp{ }@{ echo $1 |@samp{ grep $2 }; @}; c" will correctly execute the prior example.
+これに対処するよい方法は、 スクリプト操作をインライン関数で記述し、 コマンド・ラインから任意の引数を指定して呼び出すことです。 たとえば、 @samp{alias.cmd = }"!c()@samp{ }@{ echo $1 |@samp{ grep $2 }; @}; c" とすると、 上記の例は正しく実行されます。
 
 @item
 @samp{GIT_TRACE=1} を設定すると、 あなたのエイリアスに対して実行されているコマンドをデバッグするのに役立ちます。
@@ -10649,19 +10649,19 @@ git-show-branch(1) のデフォルトのブランチセット。 git-show-branch
 @table @asis
 
 @item  @samp{stash.index} 
-If this is set to true, @samp{git stash apply} and @samp{git stash pop} will behave as if @samp{--index} was supplied. Defaults to false.
-See the descriptions in git-stash(1).
+これが true に設定されている場合、 @samp{git stash apply} および @samp{git stash Pop} は、 @samp{--index} が指定されたかのように動作します。 デフォルトは false です。
+git-stash(1) の説明を参照してください。
 
-This also affects invocations of git-stash(1) via @samp{--autostash} from commands like git-merge(1), git-rebase(1), and git-pull(1).
+これは、 git-merge(1) や git-rebase(1) や git-pull(1) などのコマンドからの @samp{--autostash} を介した git-stash(1) の呼び出しにも影響します。
 
 @item  @samp{stash.showIncludeUntracked} 
-If this is set to true, the @samp{git stash show} command will show the untracked files of a stash entry. Defaults to false. See the description of the 'show' command in git-stash(1).
+これがtrueに設定されている場合、 @samp{git stash show} コマンドはstashエントリの追跡されていないファイル(untracked files)を表示します。 デフォルトはfalseです。 git-stash(1) の「show」コマンドの説明を参照してください。
 
 @item  @samp{stash.showPatch} 
-If this is set to true, the @samp{git stash show} command without an option will show the stash entry in patch form. Defaults to false. See the description of the 'show' command in git-stash(1).
+これがtrueに設定されている場合、オプションのない @samp{git stash show} コマンドは、パッチ形式でstashエントリを表示します。 デフォルトはfalseです。 git-stash(1) の「show」コマンドの説明を参照してください。
 
 @item  @samp{stash.showStat} 
-If this is set to true, the @samp{git stash show} command without an option will show a diffstat of the stash entry. Defaults to true. See the description of the 'show' command in git-stash(1).
+これが true に設定されている場合、 オプションのない @samp{git stash show} コマンドは、 stash エントリの diffstat を表示します。 デフォルトは true です。 git-stash(1) の「show」コマンドの説明を参照してください。
 
 @item  status.relativePaths 
 デフォルトでは、 git-status(1) は現在のディレクトリからの相対パスを表示します。 この変数を @samp{false} に設定すると、リポジトリルートを基準にしたパスが表示されます(これはv1.5.4より前のGitのデフォルトでした)。
@@ -10828,79 +10828,79 @@ trace2出力に記録する必要がある「重要な」環境変数のコン�
 @item  trace2.maxFiles 
 整数。 トレース・ファイルをターゲット・ディレクトリに書き込むとき、 ファイル数がこの数を超える場合は、 追加のトレースを書き込まないでください。 代わりに、このディレクトリへのそれ以上のトレースをブロックする番兵ファイル(sentinel file)を作成します。 デフォルトは 0 で、 このチェックを無効にします。
 
-@item  trailer.separators 
-This option tells which characters are recognized as trailer separators. By default only @emph{:} is recognized as a trailer separator, except that @emph{=} is always accepted on the command line for compatibility with other git commands.
+@item  @samp{trailer.separators} 
+このオプションは、 どの文字がトレーラー区切り文字として認識されるかを指定します。 デフォルトでは、 @samp{:} のみがトレーラー区切り文字として認識されます。 ただし、 他の Git コマンドとの互換性のため、 コマンドラインでは常に @samp{=} が受け入れられます。
 
-The first character given by this option will be the default character used when another separator is not specified in the config for this trailer.
+このオプションで指定された最初の文字は、 そのトレーラーの設定で別の区切り文字が指定されていない場合に使用されるデフォルトの文字になります。
 
-For example, if the value for this option is "%=$", then only lines using the format @emph{<key><sep><value>} with <sep> containing @emph{%}, @emph{=} or @emph{$} and then spaces will be considered trailers. And @emph{%} will be the default separator used, so by default trailers will appear like: @emph{<key>% <value>} (one percent sign and one space will appear between the key and the value).
+たとえば、 このオプションの値が "%=$" の場合、 @emph{<key>}@emph{<sep>}@emph{<value>} 形式の行で、 <sep> が @samp{%} または @samp{=} または @samp{$} のいずれかで、 その後に空白(spaces)が続くもののみがトレーラーとして扱われます。そして @samp{%} がデフォルトの区切り文字として使用されるため、 デフォルトではトレーラーは次のように表示されます: @emph{<key>}@samp{% }@emph{<value>} (<key> と <value> の間に 1 つのパーセント記号と 1 つの空白が表示されます)。
 
-@item  trailer.where 
-This option tells where a new trailer will be added.
+@item  @samp{trailer.where} 
+このオプションは、 新しいトレーラーを追加する位置を指定します。
 
-This can be @samp{end}, which is the default, @samp{start}, @samp{after} or @samp{before}.
+指定できる値は、 @samp{end} (これがデフォルト)または @samp{start} または @samp{after} または @samp{before} のいずれかです。
 
-If it is @samp{end}, then each new trailer will appear at the end of the existing trailers.
+@samp{end} の場合、 各新しいトレーラーは既存のトレーラーの末尾に追加されます。
 
-If it is @samp{start}, then each new trailer will appear at the start, instead of the end, of the existing trailers.
+@samp{start} の場合、 各新しいトレーラーは既存のトレーラーの末尾のでは無く、 先頭にに追加されます。
 
-If it is @samp{after}, then each new trailer will appear just after the last trailer with the same <key>.
+@samp{after} の場合、 各新しいトレーラーは同一の <key> を持つ最後のトレイラーの直後に追加されます。
 
-If it is @samp{before}, then each new trailer will appear just before the first trailer with the same <key>.
+@samp{before} の場合、 各新しいトレーラーは同一の <key> を持つ最初のトレイラーの直前に追加されます。
 
-@item  trailer.ifexists 
-This option makes it possible to choose what action will be performed when there is already at least one trailer with the same <key> in the input.
+@item  @samp{trailer.ifexists} 
+このオプションは、 入力に既に同一の <key> を持つトレーラーが少なくとも 1 つ存在する場合に、 どのような動作を行うかを選択できるようにします。
 
-The valid values for this option are: @samp{addIfDifferentNeighbor} (this is the default), @samp{addIfDifferent}, @samp{add}, @samp{replace} or @samp{doNothing}.
+このオプションの有効な値は、 @samp{addIfDifferentNeighbor}(これがデフォルト), @samp{addIfDifferent}, @samp{add}, @samp{replace}, @samp{doNothing} です。
 
-With @samp{addIfDifferentNeighbor}, a new trailer will be added only if no trailer with the same (<key>, <value>) pair is above or below the line where the new trailer will be added.
+@samp{addIfDifferentNeighbor} の場合、新しいトレーラーが追加される位置の直上または直下に、 同一の(<key>, <value>)のペアを持つトレーラーが存在しない場合にのみ、 新しいトレーラーが追加されます。
 
-With @samp{addIfDifferent}, a new trailer will be added only if no trailer with the same (<key>, <value>) pair is already in the input.
+@samp{addIfDifferent} の場合、 入力に既に同一の(<key>, <value>)のペアを持つトレーラーが存在し無い場合にのみ、 新しいトレーラーが追加されます。
 
-With @samp{add}, a new trailer will be added, even if some trailers with the same (<key>, <value>) pair are already in the input.
+@samp{add} の場合、 入力に既に同一の(<key>, <value>)のペアを持つトレーラーが存在していても、 新しいトレーラーが追加されます。
 
-With @samp{replace}, an existing trailer with the same <key> will be deleted and the new trailer will be added. The deleted trailer will be the closest one (with the same <key>) to the place where the new one will be added.
+@samp{replace} の場合、 同一の <key> を持つ既存のトレーラーが削除され、 新しいトレーラーが追加されます。 削除されるトレーラーは、 新しいトレーラーが追加される位置に最も近い同一の <key> を持つものです。
 
-With @samp{doNothing}, nothing will be done; that is no new trailer will be added if there is already one with the same <key> in the input.
+@samp{doNothing} の場合、何も行われません。 つまり、 入力に既に同一の <key> を持つトトレーラーが存在する場合、 新しいトレーラーは追加されません。
 
-@item  trailer.ifmissing 
-This option makes it possible to choose what action will be performed when there is not yet any trailer with the same <key> in the input.
+@item  @samp{trailer.ifmissing} 
+このオプションは、 入力にまだ同一の <key> を持つトレーラーが存在し無い場合に、 どのような動作を行うかを選択できるようにします。
 
-The valid values for this option are: @samp{add} (this is the default) and @samp{doNothing}.
+このオプションの有効な値は、 @samp{add} (これがデフォルト)と @samp{doNothing} です。
 
-With @samp{add}, a new trailer will be added.
+@samp{add} の場合、 新しいトレーラーが追加されます。
 
-With @samp{doNothing}, nothing will be done.
+@samp{doNothing} の場合、何も行われません。
 
-@item  trailer.<keyAlias>.key 
-Defines a <keyAlias> for the <key>. The <keyAlias> must be a prefix (case does not matter) of the <key>. For example, in @samp{git config trailer.ack.key }"Acked-by" the "Acked-by" is the <key> and the "ack" is the <keyAlias>. This configuration allows the shorter @samp{--trailer }"ack:@samp{...}" invocation on the command line using the "ack" <keyAlias> instead of the longer @samp{--trailer }"Acked-by:@samp{...}".
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.key} 
+<key> に対する <keyAlias> を定義します。 <keyAlias> は <key> のプレフィックス(英大文字小文字は区別しない)でなければなりません。 たとえば、 @samp{git config trailer.ack.key }"Acked-by" の場合、"Acked-by" が <key> で、 "ack" が <keyAlias> になります。 この設定により、 コマンドラインで長い @samp{--trailer }"Acked-by:@samp{...}" の代わりに、短い @samp{--trailer }"ack:@samp{...}" を使用できるようになります。
 
-At the end of the <key>, a separator can appear and then some space characters. By default the only valid separator is @emph{:}, but this can be changed using the @samp{trailer.separators} config variable.
+<key> の末尾には区切り文字を記述でき、 その後に空白文字(space characters)を続けることができます。 デフォルトでは有効な区切り文字は @samp{:} のみですが、 これは @samp{trailer.separators} 構成変数で変更可能です。
 
-If there is a separator in the key, then it overrides the default separator when adding the trailer.
+キーの中に区切り文字が含まれている場合、 トレーラーを追加するときにデフォルトの区切り文字を上書きします。
 
-@item  trailer.<keyAlias>.where 
-This option takes the same values as the @emph{trailer.where} configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.where} 
+このオプションは @emph{trailer.where} 構成変数と同様の値を取ることができ、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指定された内容を上書きします。
 
-@item  trailer.<keyAlias>.ifexists 
-This option takes the same values as the @emph{trailer.ifexists} configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.ifexists} 
+このオプションは @emph{trailer.ifexists} 構成変数と同様の値を取ることができ、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指定された内容を上書きします。
 
-@item  trailer.<keyAlias>.ifmissing 
-This option takes the same values as the @emph{trailer.ifmissing} configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.ifmissing} 
+このオプションは @emph{trailer.ifmissing} 構成変数と同じ値を取ることができ、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指定された内容を上書きします。
 
-@item  trailer.<keyAlias>.command 
-Deprecated in favor of @emph{trailer.<keyAlias>.cmd}. This option behaves in the same way as @emph{trailer.<keyAlias>.cmd}, except that it doesn’t pass anything as argument to the specified command. Instead the first occurrence of substring $ARG is replaced by the <value> that would be passed as argument.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.command} 
+これは非推奨で @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} に取って代わられました。 このオプションは @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} と同様に振る舞いますが、 指定のコマンドに引数を一切渡さない点が異なります。 代わりに、 部分文字列 $ARG の最初の出現箇所が、 引数として渡されるはずの <value> に置き換えられます。
 
-Note that $ARG in the user’s command is only replaced once and that the original way of replacing $ARG is not safe.
+注意: なお、ユーザーのコマンド中の $ARG は一度だけ置き換えられ、 $ARG を置き換える従来の方法は安全ではありません(not safe)。
 
-When both @emph{trailer.<keyAlias>.cmd} and @emph{trailer.<keyAlias>.command} are given for the same <keyAlias>, @emph{trailer.<keyAlias>.cmd} is used and @emph{trailer.<keyAlias>.command} is ignored.
+同一の <keyAlias> に対して @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} と @samp{trailer.}@emph{<keyAlias>}@samp{.command} の両方が指定された場合、 @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} が使用され、 @samp{trailer.}@emph{<keyAlias>}@samp{.command} は無視されます。
 
-@item  trailer.<keyAlias>.cmd 
-This option can be used to specify a shell command that will be called once to automatically add a trailer with the specified <keyAlias>, and then called each time a @emph{--trailer <keyAlias>=<value>} argument is specified to modify the <value> of the trailer that this option would produce.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} 
+このオプションは、 指定の <keyAlias> を持つトレーラーを自動的に追加するために一度呼び出され、 その後は `--trailer <keyAlias>=<value>｀ 引数が指定されるたびに呼び出されるシェル・コマンドを指定するために使用できます。 これにより、 このオプションが生成するトレーラーの <value> を変更します。
 
-When the specified command is first called to add a trailer with the specified <keyAlias>, the behavior is as if a special @emph{--trailer <keyAlias>=<value>} argument was added at the beginning of the "git interpret-trailers" command, where <value> is taken to be the standard output of the command with any leading and trailing whitespace trimmed off.
+指定のコマンドが <keyAlias> を持つトレーラーを追加するために最初に呼び出されるときは、 @samp{git interpret-trailers} コマンドの先頭に特殊な @samp{--trailer }@emph{<keyAlias>}@samp{=}@emph{<value>} 引数が追加されたかのように動作します。 ここで <value> は、 コマンドの標準出力から先頭と末尾の空白を切り捨てた(trim)ものになります。
 
-If some @emph{--trailer <keyAlias>=<value>} arguments are also passed on the command line, the command is called again once for each of these arguments with the same <keyAlias>. And the <value> part of these arguments, if any, will be passed to the command as its first argument. This way the command can produce a <value> computed from the <value> passed in the @emph{--trailer <keyAlias>=<value>} argument.
+コマンドラインで @samp{--trailer }@emph{<keyAlias>}@samp{=}@emph{<value>} 引数が渡された場合、 同一の <keyAlias> に対してその引数の数だけコマンドが再度呼び出されます。 そして、 これらの引数の <value> 部分(存在する場合)は、 コマンドの最初の引数として渡されます。 この方法により、 コマンドは @samp{--trailer }@emph{<keyAlias>}@samp{=}@emph{<value>} 引数で渡された <value> から処理された <value> を生成できます。
 
 @item  transfer.credentialsInUrl 
 構成された URL には、 @emph{<protocol>}@samp{://}@emph{<user>}@samp{:}@emph{<password>}@samp{@@}@emph{<domain>}@samp{/}@emph{<path>} の形式で平文(plaintext)の資格情報(credentials)を含めることができます。 (git-credential(1) の使用を優先して、)そのような構成の使用を警告または禁止することができます。 これは、 git-clone(1) や git-fetch(1) やgit-push(1) や その他の構成された URL の直接使用で使用されます。
@@ -11044,12 +11044,12 @@ linkgit:git-tag [1]でバージョンの並べ替えが使用されている場�
 一部のコマンドで使用できるWebブラウザを指定します。 現在、 git-instaweb(1) と git-help(1) のみが使用できます。
 
 @item  @samp{worktree.guessRemote} 
-If no branch is specified and neither @samp{-b} nor @samp{-B} nor @samp{--detach} is used, then @samp{git worktree add} defaults to creating a new branch from HEAD. If @samp{worktree.guessRemote} is set to true, @samp{worktree add} tries to find a remote-tracking branch whose name uniquely matches the new branch name. If such a branch exists, it is checked out and set as "upstream" for the new branch. If no such match can be found, it falls back to creating a new branch from the current @samp{HEAD}.
+ブランチが指定されておらず、 @samp{-b} や ` -B` や @samp{--detach} のいずれも使用されていない場合、 @samp{git worktree add} はデフォルトでHEADから新しいブランチを作成します。 @samp{worktree.guessRemote} がtrueに設定されている場合、 @samp{worktree add} は、名前が新しいブランチ名と一意に一致するリモート追跡ブランチを見つけようとします。 そのようなブランチが存在する場合、それはチェックアウトされ、新しいブランチの「アップストリーム」として設定されます。 そのような一致が見つからない場合は、フォールバックして現在の @samp{HEAD} から新しいブランチを作成します。
 
 @item  @samp{worktree.useRelativePaths} 
-Link worktrees using relative paths (when "@samp{true}") or absolute paths (when "@samp{false}"). This is particularly useful for setups where the repository and worktrees may be moved between different locations or environments. Defaults to "@samp{false}".
+ワークツリーのリンクを使用する際に、 相対パスを使用する(@samp{true} の場合)か、 絶対パスを使用する(@samp{false} の場合)かを指定します。 この設定は、 リポジトリーリとワークツリーを異なる場所や環境間で移動させるようなセットアップで特に有用です。 デフォルトは @samp{false} です。
 
-Note that setting @samp{worktree.useRelativePaths} to "@samp{true}" implies enabling the @samp{extensions.relativeWorktrees} config (see git-config(1)), thus making it incompatible with older versions of Git.
+注意: @samp{worktree.useRelativePaths} を @samp{true} に設定すると、 @samp{extensions.relativeWorktrees} 設定が有効になることも意味します(git-config(1) 参照)。 そのため、 古いバージョンの Git と互換性がなくなります。
 @end table
 
 @noindent
@@ -14628,7 +14628,7 @@ Part of the git(1) suite
 @node git-diff-pairs,,,Top
 @chapheading Name
 
-git-diff-pairs — Compare the content and mode of provided blob pairs
+git-diff-pairs — 提供されたブロブ・ペアの内容とモードを比較
 
 @noindent
 
@@ -14643,13 +14643,13 @@ git diff-pairs -z [<diff-options>]
 
 @chapheading DESCRIPTION
 
-Show changes for file pairs provided on stdin. Input for this command must be in the NUL-terminated raw output format as generated by commands such as @samp{git diff-tree -z -r --raw}. By default, the outputted diffs are computed and shown in the patch format when stdin closes.
+stdin から提供されたファイル・ペアの変更を表示します。 このコマンドの入力は、 @samp{git diff-tree -z -r --raw} などのコマンドが生成する NUL 終端の raw 出力形式である必要があります。 デフォルトでは、 stdin が閉じられたときに計算された diff がパッチ形式で出力されます。
 
-A single NUL byte may be written to stdin between raw input lines to compute file pair diffs up to that point instead of waiting for stdin to close. A NUL byte is also written to the output to delimit between these batches of diffs.
+raw 入力行の間に単一の NUL バイトを stdin に書き込むことで、 (stdin のクローズを待たずに、)その時点までのファイル・ペアの diff を計算できます。 これらの diff のバッチを区切るために、 出力にも NUL バイトが書き込まれます。
 
-Usage of this command enables the traditional diff pipeline to be broken up into separate stages where @samp{diff-pairs} acts as the output phase. Other commands, such as @samp{diff-tree}, may serve as a frontend to compute the raw diff format used as input.
+このコマンドを使用することで、 従来の diff パイプラインを別々のステージに分割でき、 diff-pairs が出力段階として機能します。 他のコマンド(例: diff-tree)が、 入力として使用される raw diff 形式を計算するフロントエンドとして機能できます。
 
-Instead of computing diffs via @samp{git diff-tree -p -M} in one step, @samp{diff-tree} can compute the file pairs and rename information without the blob diffs. This output can be fed to @samp{diff-pairs} to generate the underlying blob diffs as done in the following example:
+@samp{git diff-tree -p -M} で一度に diff を計算する代わりに、 diff-tree でファイル・ペアとリネーム情報をブロブの diff なしで計算できます。 この出力を diff-pairs に渡すことで、 基になるブロブの diff を生成できます。 例えば以下のようにします:
 
 @example
 git diff-tree -z -r -M $a $b |
@@ -14657,13 +14657,13 @@ git diff-pairs -z
 @end example
 
 
-Computing the tree diff upfront with rename information allows patch output from @samp{diff-pairs} to be progressively computed over the course of potentially multiple invocations.
+リネーム情報を含めたツリー diff を事前に計算することで、 diff-pairs からのパッチ出力が、 潜在的に複数の呼び出しにわたって逐次計算されるようになります。
 
-Pathspecs are not currently supported by @samp{diff-pairs}. Pathspec limiting should be performed by the upstream command generating the raw diffs used as input.
+@samp{diff-pairs} は現在 pathspec をサポートしていません。 pathspec による制限は、 入力として使用される raw diff を生成する上流のコマンドで行う必要があります。
 
-Tree objects are not currently supported as input and are rejected.
+ツリー・オブジェクトは現在入力としてサポートされておらず、 拒否されます。
 
-Abbreviated object IDs in the @samp{diff-pairs} input are not supported. Outputted object IDs can be abbreviated using the @samp{--abbrev} option.
+diff-pairs 入力での省略されたオブジェクト ID はサポートされていません。 出力されるオブジェクト ID は @samp{--abbrev} オプションを使用して省略できます。
 
 @noindent
 
@@ -25263,79 +25263,79 @@ Specify what action will be performed when there is no other trailer with the sa
 
 @table @asis
 
-@item  trailer.separators 
-This option tells which characters are recognized as trailer separators. By default only @emph{:} is recognized as a trailer separator, except that @emph{=} is always accepted on the command line for compatibility with other git commands.
+@item  @samp{trailer.separators} 
+このオプションは、 どの文字がトレーラー区切り文字として認識されるかを指定します。 デフォルトでは、 @samp{:} のみがトレーラー区切り文字として認識されます。 ただし、 他の Git コマンドとの互換性のため、 コマンドラインでは常に @samp{=} が受け入れられます。
 
-The first character given by this option will be the default character used when another separator is not specified in the config for this trailer.
+このオプションで指定された最初の文字は、 そのトレーラーの設定で別の区切り文字が指定されていない場合に使用されるデフォルトの文字になります。
 
-For example, if the value for this option is "%=$", then only lines using the format @emph{<key><sep><value>} with <sep> containing @emph{%}, @emph{=} or @emph{$} and then spaces will be considered trailers. And @emph{%} will be the default separator used, so by default trailers will appear like: @emph{<key>% <value>} (one percent sign and one space will appear between the key and the value).
+たとえば、 このオプションの値が "%=$" の場合、 @emph{<key>}@emph{<sep>}@emph{<value>} 形式の行で、 <sep> が @samp{%} または @samp{=} または @samp{$} のいずれかで、 その後に空白(spaces)が続くもののみがトレーラーとして扱われます。そして @samp{%} がデフォルトの区切り文字として使用されるため、 デフォルトではトレーラーは次のように表示されます: @emph{<key>}@samp{% }@emph{<value>} (<key> と <value> の間に 1 つのパーセント記号と 1 つの空白が表示されます)。
 
-@item  trailer.where 
-This option tells where a new trailer will be added.
+@item  @samp{trailer.where} 
+このオプションは、 新しいトレーラーを追加する位置を指定します。
 
-This can be @samp{end}, which is the default, @samp{start}, @samp{after} or @samp{before}.
+指定できる値は、 @samp{end} (これがデフォルト)または @samp{start} または @samp{after} または @samp{before} のいずれかです。
 
-If it is @samp{end}, then each new trailer will appear at the end of the existing trailers.
+@samp{end} の場合、 各新しいトレーラーは既存のトレーラーの末尾に追加されます。
 
-If it is @samp{start}, then each new trailer will appear at the start, instead of the end, of the existing trailers.
+@samp{start} の場合、 各新しいトレーラーは既存のトレーラーの末尾のでは無く、 先頭にに追加されます。
 
-If it is @samp{after}, then each new trailer will appear just after the last trailer with the same <key>.
+@samp{after} の場合、 各新しいトレーラーは同一の <key> を持つ最後のトレイラーの直後に追加されます。
 
-If it is @samp{before}, then each new trailer will appear just before the first trailer with the same <key>.
+@samp{before} の場合、 各新しいトレーラーは同一の <key> を持つ最初のトレイラーの直前に追加されます。
 
-@item  trailer.ifexists 
-This option makes it possible to choose what action will be performed when there is already at least one trailer with the same <key> in the input.
+@item  @samp{trailer.ifexists} 
+このオプションは、 入力に既に同一の <key> を持つトレーラーが少なくとも 1 つ存在する場合に、 どのような動作を行うかを選択できるようにします。
 
-The valid values for this option are: @samp{addIfDifferentNeighbor} (this is the default), @samp{addIfDifferent}, @samp{add}, @samp{replace} or @samp{doNothing}.
+このオプションの有効な値は、 @samp{addIfDifferentNeighbor}(これがデフォルト), @samp{addIfDifferent}, @samp{add}, @samp{replace}, @samp{doNothing} です。
 
-With @samp{addIfDifferentNeighbor}, a new trailer will be added only if no trailer with the same (<key>, <value>) pair is above or below the line where the new trailer will be added.
+@samp{addIfDifferentNeighbor} の場合、新しいトレーラーが追加される位置の直上または直下に、 同一の(<key>, <value>)のペアを持つトレーラーが存在しない場合にのみ、 新しいトレーラーが追加されます。
 
-With @samp{addIfDifferent}, a new trailer will be added only if no trailer with the same (<key>, <value>) pair is already in the input.
+@samp{addIfDifferent} の場合、 入力に既に同一の(<key>, <value>)のペアを持つトレーラーが存在し無い場合にのみ、 新しいトレーラーが追加されます。
 
-With @samp{add}, a new trailer will be added, even if some trailers with the same (<key>, <value>) pair are already in the input.
+@samp{add} の場合、 入力に既に同一の(<key>, <value>)のペアを持つトレーラーが存在していても、 新しいトレーラーが追加されます。
 
-With @samp{replace}, an existing trailer with the same <key> will be deleted and the new trailer will be added. The deleted trailer will be the closest one (with the same <key>) to the place where the new one will be added.
+@samp{replace} の場合、 同一の <key> を持つ既存のトレーラーが削除され、 新しいトレーラーが追加されます。 削除されるトレーラーは、 新しいトレーラーが追加される位置に最も近い同一の <key> を持つものです。
 
-With @samp{doNothing}, nothing will be done; that is no new trailer will be added if there is already one with the same <key> in the input.
+@samp{doNothing} の場合、何も行われません。 つまり、 入力に既に同一の <key> を持つトトレーラーが存在する場合、 新しいトレーラーは追加されません。
 
-@item  trailer.ifmissing 
-This option makes it possible to choose what action will be performed when there is not yet any trailer with the same <key> in the input.
+@item  @samp{trailer.ifmissing} 
+このオプションは、 入力にまだ同一の <key> を持つトレーラーが存在し無い場合に、 どのような動作を行うかを選択できるようにします。
 
-The valid values for this option are: @samp{add} (this is the default) and @samp{doNothing}.
+このオプションの有効な値は、 @samp{add} (これがデフォルト)と @samp{doNothing} です。
 
-With @samp{add}, a new trailer will be added.
+@samp{add} の場合、 新しいトレーラーが追加されます。
 
-With @samp{doNothing}, nothing will be done.
+@samp{doNothing} の場合、何も行われません。
 
-@item  trailer.<keyAlias>.key 
-Defines a <keyAlias> for the <key>. The <keyAlias> must be a prefix (case does not matter) of the <key>. For example, in @samp{git config trailer.ack.key }"Acked-by" the "Acked-by" is the <key> and the "ack" is the <keyAlias>. This configuration allows the shorter @samp{--trailer }"ack:@samp{...}" invocation on the command line using the "ack" <keyAlias> instead of the longer @samp{--trailer }"Acked-by:@samp{...}".
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.key} 
+<key> に対する <keyAlias> を定義します。 <keyAlias> は <key> のプレフィックス(英大文字小文字は区別しない)でなければなりません。 たとえば、 @samp{git config trailer.ack.key }"Acked-by" の場合、"Acked-by" が <key> で、 "ack" が <keyAlias> になります。 この設定により、 コマンドラインで長い @samp{--trailer }"Acked-by:@samp{...}" の代わりに、短い @samp{--trailer }"ack:@samp{...}" を使用できるようになります。
 
-At the end of the <key>, a separator can appear and then some space characters. By default the only valid separator is @emph{:}, but this can be changed using the @samp{trailer.separators} config variable.
+<key> の末尾には区切り文字を記述でき、 その後に空白文字(space characters)を続けることができます。 デフォルトでは有効な区切り文字は @samp{:} のみですが、 これは @samp{trailer.separators} 構成変数で変更可能です。
 
-If there is a separator in the key, then it overrides the default separator when adding the trailer.
+キーの中に区切り文字が含まれている場合、 トレーラーを追加するときにデフォルトの区切り文字を上書きします。
 
-@item  trailer.<keyAlias>.where 
-This option takes the same values as the @emph{trailer.where} configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.where} 
+このオプションは @emph{trailer.where} 構成変数と同様の値を取ることができ、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指定された内容を上書きします。
 
-@item  trailer.<keyAlias>.ifexists 
-This option takes the same values as the @emph{trailer.ifexists} configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.ifexists} 
+このオプションは @emph{trailer.ifexists} 構成変数と同様の値を取ることができ、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指定された内容を上書きします。
 
-@item  trailer.<keyAlias>.ifmissing 
-This option takes the same values as the @emph{trailer.ifmissing} configuration variable and it overrides what is specified by that option for trailers with the specified <keyAlias>.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.ifmissing} 
+このオプションは @emph{trailer.ifmissing} 構成変数と同じ値を取ることができ、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指定された内容を上書きします。
 
-@item  trailer.<keyAlias>.command 
-Deprecated in favor of @emph{trailer.<keyAlias>.cmd}. This option behaves in the same way as @emph{trailer.<keyAlias>.cmd}, except that it doesn’t pass anything as argument to the specified command. Instead the first occurrence of substring $ARG is replaced by the <value> that would be passed as argument.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.command} 
+これは非推奨で @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} に取って代わられました。 このオプションは @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} と同様に振る舞いますが、 指定のコマンドに引数を一切渡さない点が異なります。 代わりに、 部分文字列 $ARG の最初の出現箇所が、 引数として渡されるはずの <value> に置き換えられます。
 
-Note that $ARG in the user’s command is only replaced once and that the original way of replacing $ARG is not safe.
+注意: なお、ユーザーのコマンド中の $ARG は一度だけ置き換えられ、 $ARG を置き換える従来の方法は安全ではありません(not safe)。
 
-When both @emph{trailer.<keyAlias>.cmd} and @emph{trailer.<keyAlias>.command} are given for the same <keyAlias>, @emph{trailer.<keyAlias>.cmd} is used and @emph{trailer.<keyAlias>.command} is ignored.
+同一の <keyAlias> に対して @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} と @samp{trailer.}@emph{<keyAlias>}@samp{.command} の両方が指定された場合、 @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} が使用され、 @samp{trailer.}@emph{<keyAlias>}@samp{.command} は無視されます。
 
-@item  trailer.<keyAlias>.cmd 
-This option can be used to specify a shell command that will be called once to automatically add a trailer with the specified <keyAlias>, and then called each time a @emph{--trailer <keyAlias>=<value>} argument is specified to modify the <value> of the trailer that this option would produce.
+@item  @samp{trailer.}@emph{<keyAlias>}@samp{.cmd} 
+このオプションは、 指定の <keyAlias> を持つトレーラーを自動的に追加するために一度呼び出され、 その後は `--trailer <keyAlias>=<value>｀ 引数が指定されるたびに呼び出されるシェル・コマンドを指定するために使用できます。 これにより、 このオプションが生成するトレーラーの <value> を変更します。
 
-When the specified command is first called to add a trailer with the specified <keyAlias>, the behavior is as if a special @emph{--trailer <keyAlias>=<value>} argument was added at the beginning of the "git interpret-trailers" command, where <value> is taken to be the standard output of the command with any leading and trailing whitespace trimmed off.
+指定のコマンドが <keyAlias> を持つトレーラーを追加するために最初に呼び出されるときは、 @samp{git interpret-trailers} コマンドの先頭に特殊な @samp{--trailer }@emph{<keyAlias>}@samp{=}@emph{<value>} 引数が追加されたかのように動作します。 ここで <value> は、 コマンドの標準出力から先頭と末尾の空白を切り捨てた(trim)ものになります。
 
-If some @emph{--trailer <keyAlias>=<value>} arguments are also passed on the command line, the command is called again once for each of these arguments with the same <keyAlias>. And the <value> part of these arguments, if any, will be passed to the command as its first argument. This way the command can produce a <value> computed from the <value> passed in the @emph{--trailer <keyAlias>=<value>} argument.
+コマンドラインで @samp{--trailer }@emph{<keyAlias>}@samp{=}@emph{<value>} 引数が渡された場合、 同一の <keyAlias> に対してその引数の数だけコマンドが再度呼び出されます。 そして、 これらの引数の <value> 部分(存在する場合)は、 コマンドの最初の引数として渡されます。 この方法により、 コマンドは @samp{--trailer }@emph{<keyAlias>}@samp{=}@emph{<value>} 引数で渡された <value> から処理された <value> を生成できます。
 @end table
 
 @noindent
@@ -45910,16 +45910,16 @@ xargs git log --merges --no-walk --grep=WIP
 @table @asis
 
 @item  @samp{stash.index} 
-If this is set to true, @samp{git stash apply} and @samp{git stash pop} will behave as if @samp{--index} was supplied. Defaults to false.
+これが true に設定されている場合、 @samp{git stash apply} および @samp{git stash Pop} は、 @samp{--index} が指定されたかのように動作します。 デフォルトは false です。
 
 @item  @samp{stash.showIncludeUntracked} 
-If this is set to true, the @samp{git stash show} command will show the untracked files of a stash entry. Defaults to false. 
+これがtrueに設定されている場合、 @samp{git stash show} コマンドはstashエントリの追跡されていないファイル(untracked files)を表示します。 デフォルトはfalseです。 git-stash(1) の「show」コマンドの説明を参照してください。
 
 @item  @samp{stash.showPatch} 
-If this is set to true, the @samp{git stash show} command without an option will show the stash entry in patch form. Defaults to false. 
+これがtrueに設定されている場合、オプションのない @samp{git stash show} コマンドは、パッチ形式でstashエントリを表示します。 デフォルトはfalseです。 git-stash(1) の「show」コマンドの説明を参照してください。
 
 @item  @samp{stash.showStat} 
-If this is set to true, the @samp{git stash show} command without an option will show a diffstat of the stash entry. Defaults to true. 
+これが true に設定されている場合、 オプションのない @samp{git stash show} コマンドは、 stash エントリの diffstat を表示します。 デフォルトは true です。 git-stash(1) の「show」コマンドの説明を参照してください。
 @end table
 
 @noindent
@@ -50037,12 +50037,12 @@ $ git worktree remove ../temp
 @table @asis
 
 @item  @samp{worktree.guessRemote} 
-If no branch is specified and neither @samp{-b} nor @samp{-B} nor @samp{--detach} is used, then @samp{git worktree add} defaults to creating a new branch from HEAD. If @samp{worktree.guessRemote} is set to true, @samp{worktree add} tries to find a remote-tracking branch whose name uniquely matches the new branch name. If such a branch exists, it is checked out and set as "upstream" for the new branch. If no such match can be found, it falls back to creating a new branch from the current @samp{HEAD}.
+ブランチが指定されておらず、 @samp{-b} や ` -B` や @samp{--detach} のいずれも使用されていない場合、 @samp{git worktree add} はデフォルトでHEADから新しいブランチを作成します。 @samp{worktree.guessRemote} がtrueに設定されている場合、 @samp{worktree add} は、名前が新しいブランチ名と一意に一致するリモート追跡ブランチを見つけようとします。 そのようなブランチが存在する場合、それはチェックアウトされ、新しいブランチの「アップストリーム」として設定されます。 そのような一致が見つからない場合は、フォールバックして現在の @samp{HEAD} から新しいブランチを作成します。
 
 @item  @samp{worktree.useRelativePaths} 
-Link worktrees using relative paths (when "@samp{true}") or absolute paths (when "@samp{false}"). This is particularly useful for setups where the repository and worktrees may be moved between different locations or environments. Defaults to "@samp{false}".
+ワークツリーのリンクを使用する際に、 相対パスを使用する(@samp{true} の場合)か、 絶対パスを使用する(@samp{false} の場合)かを指定します。 この設定は、 リポジトリーリとワークツリーを異なる場所や環境間で移動させるようなセットアップで特に有用です。 デフォルトは @samp{false} です。
 
-Note that setting @samp{worktree.useRelativePaths} to "@samp{true}" implies enabling the @samp{extensions.relativeWorktrees} config (see git-config(1)), thus making it incompatible with older versions of Git.
+注意: @samp{worktree.useRelativePaths} を @samp{true} に設定すると、 @samp{extensions.relativeWorktrees} 設定が有効になることも意味します(git-config(1) 参照)。 そのため、 古いバージョンの Git と互換性がなくなります。
 @end table
 
 @noindent
@@ -50266,7 +50266,7 @@ worktree ではなく <tree-ish> から gitattributes を読み取ります。 g
 名前付きツリーからファイルのアーカイブを作成します.
 
 @item  git-backfill(1) 
-Download missing objects in a partial clone.
+部分クローン(partial clone)で欠落しているオブジェクトをダウンロード.
 
 @item  git-bisect(1) 
 二分木検索を使用して、バグを引き起こしたコミットを見つけます.
@@ -50648,7 +50648,7 @@ refに保存されているオブジェクト名を安全に更新します.
 ツリーを作業ツリーまたはインデックスと比較します.
 
 @item  git-diff-pairs(1) 
-Compare the content and mode of provided blob pairs.
+提供されたブロブ・ペアの内容とモードを比較.
 
 @item  git-diff-tree(1) 
 2つのツリーオブジェクト間で、ブロブの内容とモードを比較します.

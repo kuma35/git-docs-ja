@@ -31,14 +31,14 @@ Git プロジェクトは、 古いバージョンとの下位互換性を意図
 
 == 手順
 
-Discussing the desire to make breaking changes, declaring that breaking changes are made at a certain version boundary, and recording these decisions in this document, are necessary but not sufficient. Because such changes are expected to be numerous, and the design and implementation of them are expected to span over time, they have to be deployable trivially at such a version boundary, prepared over long time.
+重大な変更を加えたいことについて話し合い、 そして特定のバージョン境界で重大な変更を行うことを宣言し、 そしてこれらの決定をこの文書に記録することは必要ですが、 それで充分ではありません。 このような変更は多数になることが予想され、 その設計と実装は長期間にわたることが予想されるため、 長い時間をかけて準備し、 そのようなバージョン境界で簡単にデプロイできる必要があります。
 
-The breaking changes MUST be guarded with the a compile-time switch, WITH_BREAKING_CHANGES, to help this process. When built with it, the resulting Git binary together with its documentation would behave as if these breaking changes slated for the next big version boundary are already in effect. We also have a CI job to exercise the work-in-progress version of Git with these breaking changes.
+この処理手順を支援するために、 破壊的変更はコンパイル時スイッチ WITH_BREAKING_CHANGES で保護されなければなりません。 これを使用してビルドすると、 結果として得られる Git バイナリとそのドキュメントは、 次の大きなバージョン境界に予定されている重大な変更がすでに有効であるかのように振る舞います。 これらの重大な変更を含む進行中のバージョンの Git を実行するための CI ジョブもあります。
 
 
 == Git 3.0
 
-The following subsections document upcoming breaking changes for Git 3.0. There is no planned release date for this breaking version yet.
+以下のサブセクションでは、 Git 3.0 の破壊的な変更について説明します。 この最新バージョンのリリース予定日は全く決まっていません。
 
 提案されている変更および削除には、 行う「準備ができている(ready)」項目のみが含まれています。 言い換えれば、 これは、 代替機能がすでに実装されている場合に備えて、 変更または置き換えるべき機能の欲しい物リスト(wishlist)であることを想定していません。
 
@@ -59,41 +59,41 @@ The following subsections document upcoming breaking changes for Git 3.0. There 
 +
 参照: <2f5de416-04ba-c23d-1e0b-83bb655829a7@zombino.com>, <20170223155046.e7nxivfwqqoprsqj@LykOS.localdomain>, <CA+EOSBncr=4a4d8n9xS4FNehyebpmX8JiUwCsXD47EQDE+DiUQ@mail.gmail.com>.
 
-* The default storage format for references in newly created repositories will be changed from "files" to "reftable". The "reftable" format provides multiple advantages over the "files" format:
+* 新規作成されたリポジトリーでの参照(references)のデフォルト・ストレージ形式を、 「files」形式から「reftable」形式に変更します。 「reftable」形式は、 「files」形式に比べて以下の複数の利点を提供します:
 +
-  ** It is impossible to store two references that only differ in casing on case-insensitive filesystems with the "files" format. This issue is common on Windows and macOS platforms. As the "reftable" backend does not use filesystem paths to encode reference names this problem goes away.
-  ** Similarly, macOS normalizes path names that contain unicode characters, which has the consequence that you cannot store two names with unicode characters that are encoded differently with the "files" backend. Again, this is not an issue with the "reftable" backend.
-  ** Deleting references with the "files" backend requires Git to rewrite the complete "packed-refs" file. In large repositories with many references this file can easily be dozens of megabytes in size, in extreme cases it may be gigabytes. The "reftable" backend uses tombstone markers for deleted references and thus does not have to rewrite all of its data.
-  ** Repository housekeeping with the "files" backend typically performs all-into-one repacks of references. This can be quite expensive, and consequently housekeeping is a tradeoff between the number of loose references that accumulate and slow down operations that read references, and compressing those loose references into the "packed-refs" file. The "reftable" backend uses geometric compaction after every write, which amortizes costs and ensures that the backend is always in a well-maintained state.
-  ** Operations that write multiple references at once are not atomic with the "files" backend. Consequently, Git may see in-between states when it reads references while a reference transaction is in the process of being committed to disk.
-  ** Writing many references at once is slow with the "files" backend because every reference is created as a separate file. The "reftable" backend significantly outperforms the "files" backend by multiple orders of magnitude.
-  ** The reftable backend uses a binary format with prefix compression for reference names. As a result, the format uses less space compared to the "packed-refs" file.
+  ** 「files」形式では、 大文字小文字のみが異なる2つの参照を、 英大文字小文字を区別しない(case-insensitive)ファイルシステム(Windows や macOS で一般的)で保存することは不可能です。 この問題は、 Windows や macOS プラットフォームでよく発生します。 「reftable」バックエンドは参照名をエンコードするためにファイルシステムのパスを使用しないため、 この問題が解消されます。
+  ** 同様に、 macOS は ユニコード文字を含むパス名を正規化(normalize)します。 これにより、「files」バックエンドでは、 異なるエンコード形式で表現されたユニコード文字を持つ 2 つの名前を保存することができません。 この問題も、「reftable」バックエンドでは発生しません。
+  ** 「files」バックエンドで参照を削除する場合、 Git は「packed-refs」ファイル全体を書き直す必要があります。 大規模なリポジトリーで参照数が非常に多い場合、 このファイルは簡単に数十メガバイトのサイズになり、 極端なケースではギガバイト単位になることがあります。 一方、「reftable」バックエンドは削除された参照に対して墓石マーカー(tombstone markers)を使用するため、 データ全体を書き直す必要がありません。
+  ** 「files」バックエンドでのリポジトリーの維持保守(housekeeping)は、 通常、 参照のすべてを一度に再パックする操作を行います。 これはかなり高コストであり、 その結果、 維持保守は、 参照読み込み操作を遅くする緩い参照(loose references)の蓄積数と、 それらの緩い参照を「packed-refs」ファイルに圧縮する間のトレード・オフとなります。 「reftable」バックエンドは、 書き込みごとに幾何学的コンパクト化(geometric compaction)を使用し、 高コストな作業を分散化(amortizes costs)してバックエンドが常に良好にメンテナンスされた状態を保ちます。
+  ** 複数の参照を一度に書き込む操作は、「files」バックエンドではアトミックではありません。 その結果、 参照トランザクションがディスクにコミットされている最中に参照を読み込むと、 Gitは中間状態を認識してしまう可能性があります。
+  ** 多くの参照を一度に書き込むのは、「files」バックエンドでは各参照が別々のファイルとして作成されるため遅くなります。「reftable」バックエンドは、「files」バックエンドに比べて桁違いに優れたパフォーマンスを発揮します。
+  ** 「reftable」バックエンドは、 参照名に対してプレフィックス圧縮を適用したバイナリ形式を使用します。 その結果、「packed-refs」ファイルに比べてストレージ使用量が少なくなります。
 +
-Users that get immediate benefit from the "reftable" backend could continue to opt-in to the "reftable" format manually by setting the "init.defaultRefFormat" config. But defaults matter, and we think that overall users will have a better experience with less platform-specific quirks when they use the new backend by default.
+「reftable」バックエンドから即時にな恩恵を受けたいユーザーは、 引き続き「init.defaultRefFormat」設定を手動で設定して「reftable」形式を選択できます。 しかし、 デフォルトは重要であり、 我々は全体のユーザーが新しいバックエンドをデフォルトで使用することで、 プラットフォーム固有の癖が少なく、 より良い体験を得られると考えています。
 +
-A prerequisite for this change is that the ecosystem is ready to support the "reftable" format. Most importantly, alternative implementations of Git like JGit, libgit2 and Gitoxide need to support it.
+この変更の前提条件は、 エコシステムが reftable 形式をサポートする準備ができていることです。 特に重要なのは、JGit や libgit2 やGitoxide などの Git の代替実装がこれをサポートする必要があるということです。
 
-* In new repositories, the default branch name will be `main`. We have been warning that the default name will change since 675704c74dd (init: provide useful advice about init.defaultBranch, 2020-12-11). The new name matches the default branch name used in new repositories by many of the big Git forges.
+* 新規作成されたリポジトリーでは、 デフォルトのブランチ名が main になります。 我々は、 デフォルト名が変更されることを、 675704c74dd (init: provide useful advice about init.defaultBranch, 2020-12-11) 以来警告してきました。 この新しい名前は、 多くの大手 Git ホスティング・サービス(Git forges)で新規リポジトリに使用されるデフォルト・ブランチ名と一致します。
 
-* Git will require Rust as a mandatory part of the build process. While Git already started to adopt Rust in Git 2.49, all parts written in Rust are optional for the time being. This includes:
+* Git はビルド・プロセスで Rust が必須の要件になります。 Git はすでに Git 2.49 から Rust を採用し始めていますが、 現時点では Rust で書かれたすべての部分はオプションです。 これには以下が含まれます:
 +
-  ** The Rust wrapper around libgit.a that is part of "contrib/" and which has been introduced in Git 2.49.
-  ** Subsystems that have an alternative implementation in Rust to test interoperability between our C and Rust codebase.
-  ** Newly written features that are not mission critical for a fully functional Git client.
+  ** `contrib/` の一部である libgit.a をラップした Rust ラッパーで、 Git 2.49 で導入されました。
+  ** C と Rust のコードベース間の相互運用性をテストするための、 Rust による代替実装を持つサブシステム。
+  ** 完全に機能する Git クライアントにとってミッション・クリティカルではない、 新しく書かれた機能。
 +
-These changes are meant as test balloons to allow distributors of Git to prepare for Rust becoming a mandatory part of the build process. There will be multiple milestones for the introduction of Rust:
+これらの変更は、 Git のディストリビューターがビルド・プロセスで Rust が必須になる準備をするための観測気球を意図しています。 Rust の導入には以下の複数のマイルストーンがあります:
 +
 --
-1. Initially, with Git 2.52, support for Rust will be auto-detected by Meson and disabled in our Makefile so that the project can sort out the initial infrastructure.
-2. In Git 2.53, both build systems will default-enable support for Rust. Consequently, builds will break by default if Rust is not available on the build host. The use of Rust can still be explicitly disabled via build flags.
-3. In Git 3.0, the build options will be removed and support for Rust is mandatory.
+1. 最初に、 Git 2.52 では Meson によって Rust のサポートが自動検出され、 Makefile では無効化されるため、 プロジェクトが初期のインフラを整理できます。
+2. Git 2.53 では、 両方のビルド・システムで Rust のサポートがデフォルトで有効になります。 その結果、 ビルド・ホストで Rust が利用可能でない場合、 デフォルトでビルドが失敗します。 Rust の使用はビルド・フラグで明示的に無効化可能です。
+3. Git 3.0 では、 ビルド・オプションが削除され、 Rust のサポートが必須になります。
 --
 +
-You can explicitly ask both Meson and our Makefile-based system to enable Rust by saying `meson configure -Drust=enabled` and `make WITH_RUST=YesPlease`, respectively.
+Meson と Makefile ベースのシステムの両方で、 Rust を明示的に有効化するには、 それぞれ `meson configure -Drust=enabled` と `make WITH_RUST=YesPlease` を使用できます。
 +
-The Git project will declare the last version before Git 3.0 to be a long-term support release. This long-term release will receive important bug fixes for at least four release cycles and security fixes for six release cycles. The Git project will hand over maintainership of the long-term release to distributors in case they need to extend the life of that long-term release even further. Details of how this long-term release will be handed over to the community will be discussed once the Git project decides to stop officially supporting it.
+Git プロジェクトは、 Git 3.0 の直前のバージョンを長期サポート・リリースとして宣言します。 この長期リリースは、 少なくとも 4 リリース・サイクル分の重要なバグ修正と、 6 リリースサイクル分のセキュリティ修正を受け取ります。 ディストリビューターがその長期リリースの寿命をさらに延長する必要がある場合、 Git プロジェクトはメンテナー・シップをディストリビューターに引き継ぎます。 この長期リリースがコミュニティにどのように引き継がれるかについての詳細は、 Git プロジェクトが正式なサポートを終了することを決定した後に議論される予定です。
 +
-We will evaluate the impact on downstream distributions before making Rust mandatory in Git 3.0. If we see that the impact on downstream distributions would be significant, we may decide to defer this change to a subsequent minor release. This evaluation will also take into account our own experience with how painful it is to keep Rust an optional component.
+Git 3.0 で Rust を必須にする前に、 下流のディストリビューションへの影響を評価します。下流ディストリビューションへの影響が大きいと判断した場合、 この変更を後続のマイナー・リリースに延期する可能性があります。 この評価では、 Rust をオプションのコンポーネントにしておくことがどの程度苦痛であるかという我々自身の経験も考慮されます。
 
 === 削除されるもの
 
@@ -116,31 +116,31 @@ e650d0643b (文書: mark info/grafts as outdated, 2014-03-05)以降、 grafts �
       <CAKvOHKAFXQwt4D8yUCCkf_TQL79mYaJ=KAKhtpDNTvHJFuX1NA@mail.gmail.com>,
       <20230323204047.GA9290@coredump.intra.peff.net>,
 
-* Support for storing shorthands for remote URLs in "$GIT_COMMON_DIR/branches/" and "$GIT_COMMON_DIR/remotes/" has been long superseded by storing remotes in the repository configuration.
+* リモートURLの短縮形を `$GIT_COMMON_DIR/branches/` と `$GIT_COMMON_DIR/remotes/` に保存するサポートは、 リモート(remotes)をリポジトリー構成(configuration)に保存する方式によって長らく置き換えられてきました。
 +
-The mechanism has originally been introduced in f170e4b39d ([PATCH] fetch/pull: short-hand notation for remote repositories., 2005-07-16) and was superseded by 6687f8fea2 ([PATCH] Use .git/remote/origin, not .git/branches/origin., 2005-08-20), where we switched from ".git/branches/" to ".git/remotes/". That commit already mentions an upcoming deprecation of the ".git/branches/" directory, and starting with a1d4aa7424 (Add repository-layout document., 2005-09-01) we have also marked this layout as deprecated. Eventually we also started to migrate away from ".git/remotes/" in favor of config-based remotes, and we have marked the directory as legacy in 3d3d282146 (Documentation: Grammar correction, wording fixes and cleanup, 2011-08-23)
+この仕組みは元々 f170e4b39d ([PATCH] fetch/pull: short-hand notation for remote repositories., 2005-07-16) で導入され、 6687f8fea2 ([PATCH] Use .git/remote/origin, not .git/branches/origin., 2005-08-20) で `.git/branches/` から `.git/remotes/` へ切り替えられました。 このコミットではすでに `.git/branches/` ディレクトリの将来的な廃止が言及されており、 a1d4aa7424 (Add repository-layout document., 2005-09-01) 以降でこのレイアウトが非推奨とマークされています。 最終的に `.git/remotes/` からも構成ベース(config-based)のリモート(remotes)へ移行し始め、 3d3d282146 (Documentation: Grammar correction, wording fixes and cleanup, 2011-08-23) でこのディレクトリをレガシーとしてマークしました。
 +
-As our documentation mentions, these directories are unlikely to be used in modern repositories and most users aren't even aware of these mechanisms. They have been deprecated for almost 20 years and 14 years respectively, and we are not aware of any active users that have complained about this deprecation. Furthermore, the ".git/branches/" directory is nowadays misleadingly named and may cause confusion as "branches" are almost exclusively used in the context of references.
+ドキュメントでも述べられているように、 これらのディレクトリは現代のリポジトリーではほとんど使用されておらず、 ほとんどのユーザーはこの仕組みの存在すら知りません。 それぞれほぼ20年と14年にわたって非推奨となっており、 この廃止に対して積極的に不満を訴えるユーザーも認識されていません。 さらに、 `.git/branches/` ディレクトリは現在では誤解を招く名前となっており、 `branches` が参照(references)の文脈でほぼ独占的に使用されるため混乱の原因になる可能性があります。
 +
-These features will be removed.
+よって、 これらの機能は削除されます。
 
-* Support for "--stdin" option in the "name-rev" command was deprecated (and hidden from the documentation) in the Git 2.40 timeframe, in preference to its synonym "--annotate-stdin". Git 3.0 removes the support for "--stdin" altogether.
+* name-rev コマンドの `--stdin` オプションのサポートは、Git 2.40 時代に同義の `--annotate-stdin` を優先して非推奨(ドキュメントからも非表示)となりました。 Git 3.0 では `--stdin` のサポートが完全に削除されます。
 
-* The git-whatchanged(1) command has outlived its usefulness more than 10 years ago, and takes more keystrokes to type than its rough equivalent `git log --raw`. We have nominated the command for removal, have changed the command to refuse to work unless the `--i-still-use-this` option is given, and asked the users to report when they do so.
+* git-whatchanged(1) コマンドは10年以上前に有用性を失っており、 タイピングするキー・ストローク数も大まかな同等物である `git log --raw` より多くなっています。 私たちはこのコマンドの削除を提案し、 コマンドを `--i-still-use-this` オプションが指定されない限り動作を拒否するように変更し、 このオプションを使用するユーザーに報告を求めました。
 +
-The command will be removed.
+よって、 このコマンドは削除されます。
 
-* Support for `core.commentString=auto` has been deprecated and will be removed in Git 3.0.
+* `core.commentString=auto` のサポートは非​​推奨となり、 Git 3.0 で削除される予定です。
 +
 cf. <xmqqa59i45wc.fsf@gitster.g>
 
-* Support for `core.preferSymlinkRefs=true` has been deprecated and will be removed in Git 3.0. Writing symbolic refs as symbolic links will be phased out in favor of using plain files using the textual representation of symbolic refs.
+* `core.preferSymlinkRefs=true` のサポートは非推奨となっており、 Git 3.0 で削除されます。 シンボリック参照をシンボリック・リンクとして書き込む方式は、 シンボリック参照のテキスト表現を使用したプレーン・ファイルへ段階的に移行されます。
 +
-Symbolic references were initially always stored as a symbolic link. This was changed in 9b143c6e15 (Teach update-ref about a symbolic ref stored in a textfile., 2005-09-25), where a new textual symref format was introduced to store those symbolic refs in a plain file. In 9f0bb90d16 (core.prefersymlinkrefs: use symlinks for .git/HEAD, 2006-05-02), the Git project switched the default to use the textual symrefs in favor of symbolic links.
+シンボリック参照は当初、常にシンボリック・リンクとして保存されていました。 これが 9b143c6e15 (Teach update-ref about a symbolic ref stored in a textfile., 2005-09-25) で変更され、 シンボリック参照をプレーン・ファイルに保存するための新しいテキスト形式の symref が導入されました。 9f0bb90d16 (core.prefersymlinkrefs: use symlinks for .git/HEAD, 2006-05-02) で、 Git プロジェクトはデフォルトをシンボリック・リンクからテキスト形式の symref へ切り替えました。
 +
-The migration away from symbolic links has happened almost 20 years ago by now, and there is no known reason why one should prefer them nowadays. Furthermore, symbolic links are not supported on some platforms.
+シンボリック・リンクからの移行は既に、 ほぼ20年前に行われており、 現在これらを好むべき理由は知られていません。 さらに、 シンボリック・リンクは一部のプラットフォームでサポートされていません。
 +
-Note that only the writing side for such symbolic links is deprecated. Reading such symbolic links is still supported for now.
+注意: なお、 このようなシンボリック・リンクの書き込み側のみが非推奨です。 読み込み側のサポートは現時点では維持されます。
 
 == 廃止されずに新機能に取って代わられたもの
 

@@ -8,7 +8,7 @@
 
 === Related Reading
 
-- `Documentation/user-manual.adoc` under "Hacking Git" contains some coverage of the revision walker in its various incarnations.
+- `Documentation/user-manual.adoc` の 「HackingGit」では、 リビジョン・ウォーカーの具現化をいくつか網羅しています。
 - `revision.h`
 - https://eagain.net/articles/git-for-computer-scientists/[Git for Computer Scientists] Git内のオブジェクトの種類と、オブジェクト散歩が実際に何を記述しているのかについての概要を説明します。
 
@@ -64,28 +64,28 @@ int cmd_walken(int argc, const char **argv, const char *prefix)
 }
 ----
 
-Also add the relevant line in `builtin.h` near `cmd_version()`:
+また、 `builtin.h` の `cmd_version()` の近くに関連する行を追加します:
 
 ----
 int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo);
 ----
 
-Include the command in `git.c` in `commands[]` near the entry for `version`, maintaining alphabetical ordering:
+`git.c` の `commands[]` にルファベット順を維持しながら、 `version` のエントリの近くにコマンドを含めます:
 
 ----
 { "walken", cmd_walken, RUN_SETUP },
 ----
 
-Add an entry for the new command in the both the Make and Meson build system, before the entry for `worktree`:
+Make ビルド・システムと Meson ビルド・システムの両方で、 `worktree` のエントリの前に、 新しいコマンドのエントリを追加します:
 
-- In the `Makefile`:
+- `Makefile` に…:
 ----
 ...
 BUILTIN_OBJS += builtin/walken.o
 ...
 ----
 
-- In the `meson.build` file:
+- `meson.build` ファイルに…:
 ----
 builtin_sources = [
    ...
@@ -102,7 +102,7 @@ $ make
 $ GIT_TRACE=1 ./bin-wrappers/git walken
 ----
 
-NOTE: For a more exhaustive overview of the new command process, take a look at `Documentation/MyFirstContribution.adoc`.
+NOTE: 新しいコマンドプロセスのより完全な概要については、 `Documentation/MyFirstContribution.adoc` をご覧ください。
 
 NOTE: リファレンス実装は https://github.com/nasamuffin/git/tree/revwalk にあります。
 
@@ -118,17 +118,17 @@ NOTE: リファレンス実装は https://github.com/nasamuffin/git/tree/revwalk
 
 エントリごとに、以下ことがわかります:
 
-`item` is the object provided upon which to base the object walk. Items in Git can be blobs, trees, commits, or tags. (See `Documentation/gittutorial-2.adoc`.)
+`item` は、オブジェクト散歩の基礎となるオブジェクトです。 Gitのアイテムは、ブロブまたはツリーまたはコミットまたはタグです。(`Documentation/gittutorial-2.adoc` を参照してください。)
 
 `name` は、オブジェクトのオブジェクトID(OID)です。これは、Gitを使用してあなたのソースファイルを整理した時におなじみの16進文字列です。OIDの出所については、上記のチュートリアルを上に向かって確認してください。
 
-`whence` indicates some information about what to do with the parents of the specified object. We'll explore this flag more later on; take a look at `Documentation/revisions.adoc` to get an idea of what could set the `whence` value.
+`whence` は、指定されたオブジェクトの親をどうするかについての情報を示します。このフラグについては、後ほど詳しく説明します。 `Documentation/revisions.adoc` を見て、 何が `whence` 値を設定できるかを理解してください。
 
 `flags` は、リビジョン散歩の開始を示唆するために使用され、 `revision.h` の `#include` 群の下の最初のブロックです。 `rev_cmdline_info` に設定される可能性が最も高いのは `UNINTERESTING` と `BOTTOM` ですが、これらと同じフラグを散歩中に使用することもできます。
 
 === `struct rev_info`
 
-This one is quite a bit longer, and many fields are only used during the walk by `revision.c` - not configuration options. Most of the configurable flags in `struct rev_info` have a mirror in `Documentation/rev-list-options.adoc`. It's a good idea to take some time and read through that document.
+これはちょっと長くて、多くのフィールドは、構成オプションではなく、 `revision.c` による散歩中にのみ使用されます。 `struct rev_info` の構成可能なフラグのほとんどは、 `Documentation/rev-list-options.adoc` にミラーを持っています。じっくり読むことをお勧めします。
 
 == Basic Commit Walk
 
@@ -155,7 +155,7 @@ This one is quite a bit longer, and many fields are only used during the walk by
 
 ==== Configuring From `.gitconfig`
 
-Next, we should have a look at any relevant configuration settings (i.e., settings readable and settable from `git config`). This is done by providing a callback to `repo_config()`; within that callback, you can also invoke methods from other components you may need that need to intercept these options. Your callback will be invoked once per each configuration value which Git knows about (global, local, worktree, etc.).
+次に、関連する構成設定(つまり `git config` から読み取り可能で設定可能な設定)を確認する必要があります。 これは `repo_config()` へのコールバックを提供することによって行われます。そのコールバック内で、これらのオプションをインターセプトする必要がある可能性のある他のコンポーネントからメソッドを呼び出すこともできます。コールバックは、(グローバル、ローカル、ワークツリーなど、)Gitが認識している構成値ごとに1回呼び出されます。
 
 デフォルト値と同様に、私達はここではまだ何もする必要はありません。 ただし、他の既存の構成コールバックを呼び出さない場合は、 `git_default_config()` を呼び出す必要があります。
 
@@ -177,7 +177,7 @@ static int git_walken_config(const char *var, const char *value,
 }
 ----
 
-Make sure to invoke `repo_config()` with it in your `cmd_walken()`:
+必ずあなたの `cmd_walken()` で `repo_config()` を呼び出してください:
 
 ----
 int cmd_walken(int argc, const char **argv, const char *prefix, struct repository *repo)
@@ -554,7 +554,7 @@ NOTE: これをあなた自身が実行すると、カウントは異なりま�
 
 === Adding a Filter
 
-There are a handful of filters that we can apply to the object walk laid out in `Documentation/rev-list-options.adoc`. These filters are typically useful for operations such as creating packfiles or performing a partial clone. They are defined in `list-objects-filter-options.h`. For the purposes of this tutorial we will use the "tree:1" filter, which causes the walk to omit all trees and blobs which are not directly referenced by commits reachable from the commit in `pending` when the walk begins. (`pending` is the list of objects which need to be traversed during a walk; you can imagine a breadth-first tree traversal to help understand. In our case, that means we omit trees and blobs not directly referenced by `HEAD` or `HEAD`'s history, because we begin the walk with only `HEAD` in the `pending` list.)
+`Documentation/rev-list-options.adoc` に配置されたオブジェクト散歩に適用できるフィルターがいくつかあります。これらのフィルターは通常、パックファイルの作成や部分的なクローンの実行などの操作に役立ちます。 それらは `list-objects-filter-options.h` で定義されています。このチュートリアルでは、 "tree:1" フィルターを使用します。これにより、散歩の開始時に、コミットから到達可能なコミットによって直接参照されないすべてのツリーとブロブが散歩から省略されます。 (`pending` は、散歩中にトラバースする必要のあるオブジェクトのリストです。あなたが理解するのを助けるため、広さ優先のツリートラバースを想像してください。この場合、「pending」リストの「HEAD」のみで散歩を開始するため、「HEAD」または「HEAD」の履歴によって直接参照されていないツリーとブロブを省略します。)
 
 今のところ、省略されたオブジェクトを追跡するつもりはないので、それらのパラメータを `NULL` に置き換えます。簡単にするために、フィルターを使用するかどうかに関係なく、単純なビルド時ブランチを追加します。 `traverse_commit_list()` を呼び出す行の「前に」以下の行を追加します。これにより、実行したばかりの散歩の種類がわかります:
 

@@ -1859,7 +1859,8 @@ File: gitman.info,  Node: git-backfill,  Up: Top
 Name
 ****
 
-git-backfill — Download missing objects in a partial clone
+git-backfill — 部分クローン(partial clone)で欠落しているオブジェクトをダ
+ウンロード
 
 Synopsis
 ********
@@ -1869,55 +1870,58 @@ Synopsis
 DESCRIPTION
 ***********
 
-Blobless partial clones are created using ‘git clone --filter=blob:none’
-and then configure the local repository such that the Git client avoids
-downloading blob objects unless they are required for a local operation.
-This initially means that the clone and later fetches download reachable
-commits and trees but no blobs.  Later operations that change the ‘HEAD’
-pointer, such as ‘git checkout’ or ‘git merge’, may need to download
-missing blobs in order to complete their operation.
+ブロブ無し(blobless)の部分クローン(partial clones)は、 ‘git clone
+--filter=blob:none’ を使用して作成され、 その後ローカル・リポジトリーを
+設定することで、 Git クライアントがローカル操作に必要な場合を除いてブロ
+ブオブジェクトのダウンロードを回避するようになります。 これにより、最初
+はクローン操作やその後の fetch 操作で到達可能なコミットとツリーがダウン
+ロードされますが、 ブロブはダウンロードされません。 以降の操作で ‘HEAD’
+ポインタを変更するもの、 例えば ‘git checkout’ や ‘git merge’ では、 操
+作を完了するために欠落しているブロブをダウンロードする必要が生じる場合が
+あります。
 
-   In the worst cases, commands that compute blob diffs, such as ‘git
-blame’, become very slow as they download the missing blobs in
-single-blob requests to satisfy the missing object as the Git command
-needs it.  This leads to multiple download requests and no ability for
-the Git server to provide delta compression across those objects.
+   最悪の場合においては、 ブロブの diff を計算するコマンド、 例えば ‘git
+blame’ は、 Git コマンドが必要とする欠落オブジェクトを満たすために単一の
+ブロブ・リクエストで欠落ブロブをダウンロードするため、 非常に遅くなりま
+す。 これにより、 複数のダウンロード・リクエストが発生し、 Git サーバー
+がこれらのオブジェクト間でデルタ圧縮を提供できなくなります。
 
-   The ‘git backfill’ command provides a way for the user to request
-that Git downloads the missing blobs (with optional filters) such that
-the missing blobs representing historical versions of files can be
-downloaded in batches.  The ‘backfill’ command attempts to optimize the
-request by grouping blobs that appear at the same path, hopefully
-leading to good delta compression in the packfile sent by the server.
+   ‘git backfill’ コマンドは、 ユーザーが(オプションのフィルタ付きで)欠
+落しているブロブのダウンロードを Git に要求する方法を提供します。 これに
+より、 ファイルの履歴的なバージョンを表す欠落ブロブをバッチでダウンロー
+ドできます。 backfill コマンドは、 同じパスに現れるブロブをグループ化す
+ることでリクエストを最適化しようと試み、 これによりサーバーから送信され
+るパックファイルにて良好なデルタ圧縮が得られることを期待します。
 
-   In this way, ‘git backfill’ provides a mechanism to break a large
-clone into smaller chunks.  Starting with a blobless partial clone with
-‘git clone --filter=blob:none’ and then running ‘git backfill’ in the
-local repository provides a way to download all reachable objects in
-several smaller network calls than downloading the entire repository at
-clone time.
+   このように、 ‘git backfill’ は巨大なクローンを小さなチャンクに分割す
+る仕組みを提供します。 ‘git clone --filter=blob:none’ でブロブ無し
+(blobless)の部分クローンから始め、 その後ローカル・リポジトリーで ‘git
+backfill’ を実行することで、 クローン時にリポジトリー全体をダウンロード
+する場合よりも、 いくつかの小さなネットワーク呼び出しで到達可能なすべて
+のオブジェクトをダウンロードする方法が得られます。
 
-   By default, ‘git backfill’ downloads all blobs reachable from the
-‘HEAD’ commit.  This set can be restricted or expanded using various
-options.
+   デフォルトでは、 ‘git backfill’ は ‘HEAD’ コミットから到達可能なすべ
+てのブロブをダウンロードします。 これは、 さまざまなオプションを使用して
+制限したり拡張したりできます。
 
-   THIS COMMAND IS EXPERIMENTAL. ITS BEHAVIOR MAY CHANGE IN THE FUTURE.
+   「このコマンドは実験的です。将来的に行動が変わる可能性があります。」
+(THIS COMMAND IS EXPERIMENTAL. ITS BEHAVIOR MAY CHANGE IN THE FUTURE.)
 
 OPTIONS
 *******
 
 ‘--min-batch-size=’_<n>_
-     Specify a minimum size for a batch of missing objects to request
-     from the server.  This size may be exceeded by the last set of
-     blobs seen at a given path.  The default minimum batch size is
-     50,000.
+     欠落オブジェクトのバッチをサーバーにリクエストする際の最小サイズを
+     指定します。 このサイズは、 指定されたパスで最後に見つかったブロブ
+     のセットによって超過する場合があります。 デフォルトの最小バッチサイ
+     ズは 50,000 です。
 
 ‘--sparse’
 ‘--no-sparse’
-     Only download objects if they appear at a path that matches the
-     current sparse-checkout.  If the sparse-checkout feature is
-     enabled, then ‘--sparse’ is assumed and can be disabled with
-     ‘--no-sparse’.
+     現在の sparse-checkout に一致するパスにのみオブジェクトが現れる場合
+     に限り、 オブジェクトをダウンロードします。 sparse-checkout 機能が
+     有効な場合、 デフォルトで ‘--sparse’ が仮定され、 ‘--no-sparse’ で
+     無効化できます。
 
 SEE ALSO
 ********
@@ -8762,9 +8766,9 @@ Conditional includes
 以下のとおりです:
 
 ‘gitdir’
-     The data that follows the keyword ‘gitdir’ and a colon is used as a
-     glob pattern.  If the location of the .git directory matches the
-     pattern, the include condition is met.
+     キーワード ‘gitdir’ とコロン(‘:’)に続くデータは、 グロブ・パターン
+     として使用されます。 ‘.git’ ディレクトリの場所がパターンと一致する
+     場合、 インクルード条件が満たされます。
 
      ‘.git’ の場所は自動検出されるか、 ‘$GIT_DIR’ 環境変数から取得されま
      す。 リポジトリが .git ファイルを介して(つまり、サブモジュールやリ
@@ -8797,11 +8801,11 @@ Conditional includes
      )。
 
 ‘onbranch’
-     The data that follows the keyword ‘onbranch’ and a colon is taken
-     to be a pattern with standard globbing wildcards and two additional
-     ones, ‘**/’ and ‘/**’, that can match multiple path components.  If
-     we are in a worktree where the name of the branch that is currently
-     checked out matches the pattern, the include condition is met.
+     キーワード ‘onbranch’ とコロン(‘:’)に続くデータは、 標準のグロブ・
+     ワイルドカードと、 複数のパス部分に一致する可能性のある2つの追加の
+     ワイルドカード **/ と /** を含むパターンと見なされます。 現在チェッ
+     クアウトされているブランチの名前がパターンと一致するワークツリーに
+     いる場合、 インクルード条件が満たされます。
 
      パターンが ‘/’ で終わる場合、 ** が自動的に追加されます。 たとえば
      、パターン ‘foo/’ は foo/** になります。つまり、 foo/ で始まるすべ
@@ -8809,13 +8813,12 @@ Conditional includes
      、その階層内のすべてのブランチに構成を適用する場合に役立ちます。
 
 ‘hasconfig:remote.*.url’
-     The data that follows this keyword and a colon is taken to be a
-     pattern with standard globbing wildcards and two additional ones,
-     ‘**/’ and ‘/**’, that can match multiple components.  The first
-     time this keyword is seen, the rest of the config files will be
-     scanned for remote URLs (without applying any values).  If there
-     exists at least one remote URL that matches this pattern, the
-     include condition is met.
+     このキーワードとコロン(‘:’)に続くデータは、 標準のグロブ・ワイルド
+     カード(globbing wildcards)と、 複数コンポーネントに一致する 2 つの
+     追加ワイルドカード **/ と /** を使用したパターンと見なされます。 こ
+     のキーワードが最初に表れた時、 構成ファイルの残りでremote URL がス
+     キャンされます(値は適用されません)。 このパターンに一致するremote
+     URL が少なくとも 1 つ存在する場合、インクルード条件が満たされます。
 
      このオプションによって (直接的または間接的に) インクルードされるフ
      ァイルには、remote URL を含めることはできません。
@@ -8892,20 +8895,20 @@ Example
      [includeIf "gitdir:~/to/group/"]
              path = /path/to/foo.inc
 
-     ; relative paths are always relative to the including
-     ; file (if the condition is true); their location is not
-     ; affected by the condition
+     ; 相対パスは常に、
+     ; インクルードするファイルに対して相対的です(条件が true の場合)。
+     ; それらの位置は条件の影響を受けません
      [includeIf "gitdir:/path/to/group/"]
              path = foo.inc
 
-     ; include only if we are in a worktree where foo-branch is
-     ; currently checked out
+     ; foo-branch が現在チェックアウトされている
+     ; ワークツリーにいる場合にのみインクルードします。
      [includeIf "onbranch:foo-branch"]
              path = foo.inc
 
-     ; include only if a remote with the given URL exists (note
-     ; that such a URL may be provided later in a file or in a
-     ; file read after this file is read, as seen in this example)
+     ; 指定されたURLを持つリモートが存在する場合にのみインクルードする
+     ; (なお、 この例で示されている通り、 このようなURLは、 ファイル内の後半部分や、
+     ; このファイルの読み込み後に読み込まれるファイルで提供される可能性がある)
      [includeIf "hasconfig:remote.*.url:https://example.com/**"]
              path = foo.inc
      [remote "origin"]
@@ -9004,8 +9007,8 @@ pathname
      はならないリテラルパスを指定する必要がある場合は、
      ‘./%’(‘prefix’)‘/bin’ のように接頭辞 ‘./’ を付ける必要があります。
 
-     If prefixed with ‘:’(‘optional’), the configuration variable is
-     treated as if it does not exist, if the named path does not exist.
+     :(optional) プレフィックスが付けられている場合、 指定されたパスが存
+     在しないときは、 その構成変数自体が存在しないものとして扱われます。
 
 Variables
 =========
@@ -9233,14 +9236,14 @@ advice.*
           ます。
 
 alias.*
-     Command aliases for the git(1) command wrapper - e.g.  after
-     defining ‘alias.last = cat-file commit HEAD’, the invocation ‘git
-     last’ is equivalent to ‘git cat-file commit HEAD’.  To avoid
-     confusion and troubles with script usage, aliases that hide
-     existing Git commands are ignored except for deprecated commands.
-     Arguments are split by spaces, the usual shell quoting and escaping
-     are supported.  A quote pair or a backslash can be used to quote
-     them.
+     git(1) コマンド・ラッパーのためのコマンド・エイリアス — たとえば、
+     ‘alias.last = cat-file commit HEAD’ と定義した後、 ‘git last’ と呼
+     び出す事は ‘git cat-file commit HEAD’ と等価になります。 スクリプト
+     使用時の混乱やトラブルを避けるため、 既存の Git コマンドを隠ぺいす
+     るエイリアスは、 非推奨コマンドの場合を除いて無視されます。 引数は
+     空白(spaces)で分割され、 通常のシェルでのクォートやエスケープがサポ
+     ートされます。 引用符のペアまたはバックスラッシュ(‘\’)を使用してそ
+     れらをクォートできます。
 
      エイリアスの最初の単語は必ずしもコマンドである必要はないことに注意
      してください。 これは、‘git’ の呼び出しに渡されるコマンドラインオプ
@@ -9276,11 +9279,11 @@ alias.*
                なたが望んだモノでは無い ‘echo $1 ’|‘ grep $2 1 2’ として
                実行されます。
 
-             • A convenient way to deal with this is to write your
-               script operations in an inline function that is then
-               called with any arguments from the command-line.  For
-               example ‘alias.cmd = ’"!c()‘ ’{ echo $1 |‘ grep $2 ’; };
-               c" will correctly execute the prior example.
+             • これに対処するよい方法は、 スクリプト操作をインライン関数
+               で記述し、 コマンド・ラインから任意の引数を指定して呼び出
+               すことです。 たとえば、 ‘alias.cmd = ’"!c()‘ ’{ echo $1
+               |‘ grep $2 ’; }; c" とすると、 上記の例は正しく実行されま
+               す。
 
              • ‘GIT_TRACE=1’ を設定すると、 あなたのエイリアスに対して実
                行されているコマンドをデバッグするのに役立ちます。
@@ -14991,27 +14994,31 @@ ssh.variant
      得するにつれて変更される可能性があります。
 
 ‘stash.index’
-     If this is set to true, ‘git stash apply’ and ‘git stash pop’ will
-     behave as if ‘--index’ was supplied.  Defaults to false.  See the
-     descriptions in git-stash(1).
+     これが true に設定されている場合、 ‘git stash apply’ および ‘git
+     stash Pop’ は、 ‘--index’ が指定されたかのように動作します。 デフォ
+     ルトは false です。 git-stash(1) の説明を参照してください。
 
-     This also affects invocations of git-stash(1) via ‘--autostash’
-     from commands like git-merge(1), git-rebase(1), and git-pull(1).
+     これは、 git-merge(1) や git-rebase(1) や git-pull(1) などのコマン
+     ドからの ‘--autostash’ を介した git-stash(1) の呼び出しにも影響しま
+     す。
 
 ‘stash.showIncludeUntracked’
-     If this is set to true, the ‘git stash show’ command will show the
-     untracked files of a stash entry.  Defaults to false.  See the
-     description of the 'show' command in git-stash(1).
+     これがtrueに設定されている場合、 ‘git stash show’ コマンドはstashエ
+     ントリの追跡されていないファイル(untracked files)を表示します。 デ
+     フォルトはfalseです。 git-stash(1) の「show」コマンドの説明を参照し
+     てください。
 
 ‘stash.showPatch’
-     If this is set to true, the ‘git stash show’ command without an
-     option will show the stash entry in patch form.  Defaults to false.
-     See the description of the 'show' command in git-stash(1).
+     これがtrueに設定されている場合、オプションのない ‘git stash show’ コ
+     マンドは、パッチ形式でstashエントリを表示します。 デフォルトは
+     falseです。 git-stash(1) の「show」コマンドの説明を参照してください
+     。
 
 ‘stash.showStat’
-     If this is set to true, the ‘git stash show’ command without an
-     option will show a diffstat of the stash entry.  Defaults to true.
-     See the description of the 'show' command in git-stash(1).
+     これが true に設定されている場合、 オプションのない ‘git stash
+     show’ コマンドは、 stash エントリの diffstat を表示します。 デフォ
+     ルトは true です。 git-stash(1) の「show」コマンドの説明を参照して
+     ください。
 
 status.relativePaths
      デフォルトでは、 git-status(1) は現在のディレクトリからの相対パスを
@@ -15314,146 +15321,145 @@ trace2.maxFiles
      する番兵ファイル(sentinel file)を作成します。 デフォルトは 0 で、 こ
      のチェックを無効にします。
 
-trailer.separators
-     This option tells which characters are recognized as trailer
-     separators.  By default only _:_ is recognized as a trailer
-     separator, except that _=_ is always accepted on the command line
-     for compatibility with other git commands.
+‘trailer.separators’
+     このオプションは、 どの文字がトレーラー区切り文字として認識されるか
+     を指定します。 デフォルトでは、 ‘:’ のみがトレーラー区切り文字とし
+     て認識されます。 ただし、 他の Git コマンドとの互換性のため、 コマ
+     ンドラインでは常に ‘=’ が受け入れられます。
 
-     The first character given by this option will be the default
-     character used when another separator is not specified in the
-     config for this trailer.
+     このオプションで指定された最初の文字は、 そのトレーラーの設定で別の
+     区切り文字が指定されていない場合に使用されるデフォルトの文字になり
+     ます。
 
-     For example, if the value for this option is "%=$", then only lines
-     using the format _<key><sep><value>_ with <sep> containing _%_, _=_
-     or _$_ and then spaces will be considered trailers.  And _%_ will
-     be the default separator used, so by default trailers will appear
-     like: _<key>% <value>_ (one percent sign and one space will appear
-     between the key and the value).
+     たとえば、 このオプションの値が "%=$" の場合、
+     _<key>__<sep>__<value>_ 形式の行で、 <sep> が ‘%’ または ‘=’ または
+     ‘$’ のいずれかで、 その後に空白(spaces)が続くもののみがトレーラーと
+     して扱われます。そして ‘%’ がデフォルトの区切り文字として使用される
+     ため、 デフォルトではトレーラーは次のように表示されます: _<key>_‘%
+     ’_<value>_ (<key> と <value> の間に 1 つのパーセント記号と 1 つの空
+     白が表示されます)。
 
-trailer.where
-     This option tells where a new trailer will be added.
+‘trailer.where’
+     このオプションは、 新しいトレーラーを追加する位置を指定します。
 
-     This can be ‘end’, which is the default, ‘start’, ‘after’ or
-     ‘before’.
+     指定できる値は、 ‘end’ (これがデフォルト)または ‘start’ または
+     ‘after’ または ‘before’ のいずれかです。
 
-     If it is ‘end’, then each new trailer will appear at the end of the
-     existing trailers.
+     ‘end’ の場合、 各新しいトレーラーは既存のトレーラーの末尾に追加され
+     ます。
 
-     If it is ‘start’, then each new trailer will appear at the start,
-     instead of the end, of the existing trailers.
+     ‘start’ の場合、 各新しいトレーラーは既存のトレーラーの末尾のでは無
+     く、 先頭にに追加されます。
 
-     If it is ‘after’, then each new trailer will appear just after the
-     last trailer with the same <key>.
+     ‘after’ の場合、 各新しいトレーラーは同一の <key> を持つ最後のトレ
+     イラーの直後に追加されます。
 
-     If it is ‘before’, then each new trailer will appear just before
-     the first trailer with the same <key>.
+     ‘before’ の場合、 各新しいトレーラーは同一の <key> を持つ最初のトレ
+     イラーの直前に追加されます。
 
-trailer.ifexists
-     This option makes it possible to choose what action will be
-     performed when there is already at least one trailer with the same
-     <key> in the input.
+‘trailer.ifexists’
+     このオプションは、 入力に既に同一の <key> を持つトレーラーが少なく
+     とも 1 つ存在する場合に、 どのような動作を行うかを選択できるように
+     します。
 
-     The valid values for this option are: ‘addIfDifferentNeighbor’
-     (this is the default), ‘addIfDifferent’, ‘add’, ‘replace’ or
-     ‘doNothing’.
+     このオプションの有効な値は、 ‘addIfDifferentNeighbor’(これがデフォ
+     ルト), ‘addIfDifferent’, ‘add’, ‘replace’, ‘doNothing’ です。
 
-     With ‘addIfDifferentNeighbor’, a new trailer will be added only if
-     no trailer with the same (<key>, <value>) pair is above or below
-     the line where the new trailer will be added.
+     ‘addIfDifferentNeighbor’ の場合、新しいトレーラーが追加される位置の
+     直上または直下に、 同一の(<key>, <value>)のペアを持つトレーラーが存
+     在しない場合にのみ、 新しいトレーラーが追加されます。
 
-     With ‘addIfDifferent’, a new trailer will be added only if no
-     trailer with the same (<key>, <value>) pair is already in the
-     input.
+     ‘addIfDifferent’ の場合、 入力に既に同一の(<key>, <value>)のペアを
+     持つトレーラーが存在し無い場合にのみ、 新しいトレーラーが追加されま
+     す。
 
-     With ‘add’, a new trailer will be added, even if some trailers with
-     the same (<key>, <value>) pair are already in the input.
+     ‘add’ の場合、 入力に既に同一の(<key>, <value>)のペアを持つトレーラ
+     ーが存在していても、 新しいトレーラーが追加されます。
 
-     With ‘replace’, an existing trailer with the same <key> will be
-     deleted and the new trailer will be added.  The deleted trailer
-     will be the closest one (with the same <key>) to the place where
-     the new one will be added.
+     ‘replace’ の場合、 同一の <key> を持つ既存のトレーラーが削除され、
+     新しいトレーラーが追加されます。 削除されるトレーラーは、 新しいト
+     レーラーが追加される位置に最も近い同一の <key> を持つものです。
 
-     With ‘doNothing’, nothing will be done; that is no new trailer will
-     be added if there is already one with the same <key> in the input.
+     ‘doNothing’ の場合、何も行われません。 つまり、 入力に既に同一の
+     <key> を持つトトレーラーが存在する場合、 新しいトレーラーは追加され
+     ません。
 
-trailer.ifmissing
-     This option makes it possible to choose what action will be
-     performed when there is not yet any trailer with the same <key> in
-     the input.
+‘trailer.ifmissing’
+     このオプションは、 入力にまだ同一の <key> を持つトレーラーが存在し
+     無い場合に、 どのような動作を行うかを選択できるようにします。
 
-     The valid values for this option are: ‘add’ (this is the default)
-     and ‘doNothing’.
+     このオプションの有効な値は、 ‘add’ (これがデフォルト)と ‘doNothing’
+     です。
 
-     With ‘add’, a new trailer will be added.
+     ‘add’ の場合、 新しいトレーラーが追加されます。
 
-     With ‘doNothing’, nothing will be done.
+     ‘doNothing’ の場合、何も行われません。
 
-trailer.<keyAlias>.key
-     Defines a <keyAlias> for the <key>.  The <keyAlias> must be a
-     prefix (case does not matter) of the <key>.  For example, in ‘git
-     config trailer.ack.key ’"Acked-by" the "Acked-by" is the <key> and
-     the "ack" is the <keyAlias>.  This configuration allows the shorter
-     ‘--trailer ’"ack:‘...’" invocation on the command line using the
-     "ack" <keyAlias> instead of the longer ‘--trailer
-     ’"Acked-by:‘...’".
+‘trailer.’_<keyAlias>_‘.key’
+     <key> に対する <keyAlias> を定義します。 <keyAlias> は <key> のプレ
+     フィックス(英大文字小文字は区別しない)でなければなりません。 たとえ
+     ば、 ‘git config trailer.ack.key ’"Acked-by" の場合、"Acked-by" が
+     <key> で、 "ack" が <keyAlias> になります。 この設定により、 コマン
+     ドラインで長い ‘--trailer ’"Acked-by:‘...’" の代わりに、短い
+     ‘--trailer ’"ack:‘...’" を使用できるようになります。
 
-     At the end of the <key>, a separator can appear and then some space
-     characters.  By default the only valid separator is _:_, but this
-     can be changed using the ‘trailer.separators’ config variable.
+     <key> の末尾には区切り文字を記述でき、 その後に空白文字(space
+     characters)を続けることができます。 デフォルトでは有効な区切り文字
+     は ‘:’ のみですが、 これは ‘trailer.separators’ 構成変数で変更可能
+     です。
 
-     If there is a separator in the key, then it overrides the default
-     separator when adding the trailer.
+     キーの中に区切り文字が含まれている場合、 トレーラーを追加するときに
+     デフォルトの区切り文字を上書きします。
 
-trailer.<keyAlias>.where
-     This option takes the same values as the _trailer.where_
-     configuration variable and it overrides what is specified by that
-     option for trailers with the specified <keyAlias>.
+‘trailer.’_<keyAlias>_‘.where’
+     このオプションは _trailer.where_ 構成変数と同様の値を取ることができ
+     、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指
+     定された内容を上書きします。
 
-trailer.<keyAlias>.ifexists
-     This option takes the same values as the _trailer.ifexists_
-     configuration variable and it overrides what is specified by that
-     option for trailers with the specified <keyAlias>.
+‘trailer.’_<keyAlias>_‘.ifexists’
+     このオプションは _trailer.ifexists_ 構成変数と同様の値を取ることが
+     でき、 指定の <keyAlias> を持つトレーラーに対して、 そのオプション
+     で指定された内容を上書きします。
 
-trailer.<keyAlias>.ifmissing
-     This option takes the same values as the _trailer.ifmissing_
-     configuration variable and it overrides what is specified by that
-     option for trailers with the specified <keyAlias>.
+‘trailer.’_<keyAlias>_‘.ifmissing’
+     このオプションは _trailer.ifmissing_ 構成変数と同じ値を取ることがで
+     き、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで
+     指定された内容を上書きします。
 
-trailer.<keyAlias>.command
-     Deprecated in favor of _trailer.<keyAlias>.cmd_.  This option
-     behaves in the same way as _trailer.<keyAlias>.cmd_, except that it
-     doesn’t pass anything as argument to the specified command.
-     Instead the first occurrence of substring $ARG is replaced by the
-     <value> that would be passed as argument.
+‘trailer.’_<keyAlias>_‘.command’
+     これは非推奨で ‘trailer.’_<keyAlias>_‘.cmd’ に取って代わられました
+     。 このオプションは ‘trailer.’_<keyAlias>_‘.cmd’ と同様に振る舞いま
+     すが、 指定のコマンドに引数を一切渡さない点が異なります。 代わりに
+     、 部分文字列 $ARG の最初の出現箇所が、 引数として渡されるはずの
+     <value> に置き換えられます。
 
-     Note that $ARG in the user’s command is only replaced once and that
-     the original way of replacing $ARG is not safe.
+     注意: なお、ユーザーのコマンド中の $ARG は一度だけ置き換えられ、
+     $ARG を置き換える従来の方法は安全ではありません(not safe)。
 
-     When both _trailer.<keyAlias>.cmd_ and _trailer.<keyAlias>.command_
-     are given for the same <keyAlias>, _trailer.<keyAlias>.cmd_ is used
-     and _trailer.<keyAlias>.command_ is ignored.
+     同一の <keyAlias> に対して ‘trailer.’_<keyAlias>_‘.cmd’ と
+     ‘trailer.’_<keyAlias>_‘.command’ の両方が指定された場合、
+     ‘trailer.’_<keyAlias>_‘.cmd’ が使用され、
+     ‘trailer.’_<keyAlias>_‘.command’ は無視されます。
 
-trailer.<keyAlias>.cmd
-     This option can be used to specify a shell command that will be
-     called once to automatically add a trailer with the specified
-     <keyAlias>, and then called each time a _-trailer
-     <keyAlias>=<value>_ argument is specified to modify the <value> of
-     the trailer that this option would produce.
+‘trailer.’_<keyAlias>_‘.cmd’
+     このオプションは、 指定の <keyAlias> を持つトレーラーを自動的に追加
+     するために一度呼び出され、 その後は '-trailer <keyAlias>=<value>｀
+     引数が指定されるたびに呼び出されるシェル・コマンドを指定するために
+     使用できます。 これにより、 このオプションが生成するトレーラーの
+     <value> を変更します。
 
-     When the specified command is first called to add a trailer with
-     the specified <keyAlias>, the behavior is as if a special _-trailer
-     <keyAlias>=<value>_ argument was added at the beginning of the "git
-     interpret-trailers" command, where <value> is taken to be the
-     standard output of the command with any leading and trailing
-     whitespace trimmed off.
+     指定のコマンドが <keyAlias> を持つトレーラーを追加するために最初に
+     呼び出されるときは、 ‘git interpret-trailers’ コマンドの先頭に特殊
+     な ‘--trailer ’_<keyAlias>_‘=’_<value>_ 引数が追加されたかのように
+     動作します。 ここで <value> は、 コマンドの標準出力から先頭と末尾の
+     空白を切り捨てた(trim)ものになります。
 
-     If some _-trailer <keyAlias>=<value>_ arguments are also passed on
-     the command line, the command is called again once for each of
-     these arguments with the same <keyAlias>.  And the <value> part of
-     these arguments, if any, will be passed to the command as its first
-     argument.  This way the command can produce a <value> computed from
-     the <value> passed in the _-trailer <keyAlias>=<value>_ argument.
+     コマンドラインで ‘--trailer ’_<keyAlias>_‘=’_<value>_ 引数が渡され
+     た場合、 同一の <keyAlias> に対してその引数の数だけコマンドが再度呼
+     び出されます。 そして、 これらの引数の <value> 部分(存在する場合)は
+     、 コマンドの最初の引数として渡されます。 この方法により、 コマンド
+     は ‘--trailer ’_<keyAlias>_‘=’_<value>_ 引数で渡された <value> から
+     処理された <value> を生成できます。
 
 transfer.credentialsInUrl
      構成された URL には、
@@ -15803,25 +15809,25 @@ web.browser
      git-instaweb(1) と git-help(1) のみが使用できます。
 
 ‘worktree.guessRemote’
-     If no branch is specified and neither ‘-b’ nor ‘-B’ nor ‘--detach’
-     is used, then ‘git worktree add’ defaults to creating a new branch
-     from HEAD. If ‘worktree.guessRemote’ is set to true, ‘worktree add’
-     tries to find a remote-tracking branch whose name uniquely matches
-     the new branch name.  If such a branch exists, it is checked out
-     and set as "upstream" for the new branch.  If no such match can be
-     found, it falls back to creating a new branch from the current
-     ‘HEAD’.
+     ブランチが指定されておらず、 ‘-b’ や ' -B' や ‘--detach’ のいずれも
+     使用されていない場合、 ‘git worktree add’ はデフォルトでHEADから新
+     しいブランチを作成します。 ‘worktree.guessRemote’ がtrueに設定され
+     ている場合、 ‘worktree add’ は、名前が新しいブランチ名と一意に一致
+     するリモート追跡ブランチを見つけようとします。 そのようなブランチが
+     存在する場合、それはチェックアウトされ、新しいブランチの「アップス
+     トリーム」として設定されます。 そのような一致が見つからない場合は、
+     フォールバックして現在の ‘HEAD’ から新しいブランチを作成します。
 
 ‘worktree.useRelativePaths’
-     Link worktrees using relative paths (when "‘true’") or absolute
-     paths (when "‘false’").  This is particularly useful for setups
-     where the repository and worktrees may be moved between different
-     locations or environments.  Defaults to "‘false’".
+     ワークツリーのリンクを使用する際に、 相対パスを使用する(‘true’ の場
+     合)か、 絶対パスを使用する(‘false’ の場合)かを指定します。 この設定
+     は、 リポジトリーリとワークツリーを異なる場所や環境間で移動させるよ
+     うなセットアップで特に有用です。 デフォルトは ‘false’ です。
 
-     Note that setting ‘worktree.useRelativePaths’ to "‘true’" implies
-     enabling the ‘extensions.relativeWorktrees’ config (see
-     git-config(1)), thus making it incompatible with older versions of
-     Git.
+     注意: ‘worktree.useRelativePaths’ を ‘true’ に設定すると、
+     ‘extensions.relativeWorktrees’ 設定が有効になることも意味します
+     (git-config(1) 参照)。 そのため、 古いバージョンの Git と互換性がな
+     くなります。
 
 BUGS
 ****
@@ -20320,7 +20326,7 @@ File: gitman.info,  Node: git-diff-pairs,  Up: Top
 Name
 ****
 
-git-diff-pairs — Compare the content and mode of provided blob pairs
+git-diff-pairs — 提供されたブロブ・ペアの内容とモードを比較
 
 Synopsis
 ********
@@ -20330,41 +20336,43 @@ Synopsis
 DESCRIPTION
 ***********
 
-Show changes for file pairs provided on stdin.  Input for this command
-must be in the NUL-terminated raw output format as generated by commands
-such as ‘git diff-tree -z -r --raw’.  By default, the outputted diffs
-are computed and shown in the patch format when stdin closes.
+stdin から提供されたファイル・ペアの変更を表示します。 このコマンドの入
+力は、 ‘git diff-tree -z -r --raw’ などのコマンドが生成する NUL 終端の
+raw 出力形式である必要があります。 デフォルトでは、 stdin が閉じられたと
+きに計算された diff がパッチ形式で出力されます。
 
-   A single NUL byte may be written to stdin between raw input lines to
-compute file pair diffs up to that point instead of waiting for stdin to
-close.  A NUL byte is also written to the output to delimit between
-these batches of diffs.
+   raw 入力行の間に単一の NUL バイトを stdin に書き込むことで、 (stdin の
+クローズを待たずに、)その時点までのファイル・ペアの diff を計算できます
+。 これらの diff のバッチを区切るために、 出力にも NUL バイトが書き込ま
+れます。
 
-   Usage of this command enables the traditional diff pipeline to be
-broken up into separate stages where ‘diff-pairs’ acts as the output
-phase.  Other commands, such as ‘diff-tree’, may serve as a frontend to
-compute the raw diff format used as input.
+   このコマンドを使用することで、 従来の diff パイプラインを別々のステー
+ジに分割でき、 diff-pairs が出力段階として機能します。 他のコマンド(例:
+diff-tree)が、 入力として使用される raw diff 形式を計算するフロントエン
+ドとして機能できます。
 
-   Instead of computing diffs via ‘git diff-tree -p -M’ in one step,
-‘diff-tree’ can compute the file pairs and rename information without
-the blob diffs.  This output can be fed to ‘diff-pairs’ to generate the
-underlying blob diffs as done in the following example:
+   ‘git diff-tree -p -M’ で一度に diff を計算する代わりに、 diff-tree で
+ファイル・ペアとリネーム情報をブロブの diff なしで計算できます。 この出
+力を diff-pairs に渡すことで、 基になるブロブの diff を生成できます。 例
+えば以下のようにします:
 
      git diff-tree -z -r -M $a $b |
      git diff-pairs -z
 
-   Computing the tree diff upfront with rename information allows patch
-output from ‘diff-pairs’ to be progressively computed over the course of
-potentially multiple invocations.
+   リネーム情報を含めたツリー diff を事前に計算することで、 diff-pairs か
+らのパッチ出力が、 潜在的に複数の呼び出しにわたって逐次計算されるように
+なります。
 
-   Pathspecs are not currently supported by ‘diff-pairs’.  Pathspec
-limiting should be performed by the upstream command generating the raw
-diffs used as input.
+   ‘diff-pairs’ は現在 pathspec をサポートしていません。 pathspec による
+制限は、 入力として使用される raw diff を生成する上流のコマンドで行う必
+要があります。
 
-   Tree objects are not currently supported as input and are rejected.
+   ツリー・オブジェクトは現在入力としてサポートされておらず、 拒否されま
+す。
 
-   Abbreviated object IDs in the ‘diff-pairs’ input are not supported.
-Outputted object IDs can be abbreviated using the ‘--abbrev’ option.
+   diff-pairs 入力での省略されたオブジェクト ID はサポートされていません
+。 出力されるオブジェクト ID は ‘--abbrev’ オプションを使用して省略でき
+ます。
 
 OPTIONS
 *******
@@ -34388,146 +34396,145 @@ CONFIGURATION VARIABLES
 このセクションの以下のすべては、 git-config(1) ドキュメントの抜粋です。
 内容は git-config(1) ドキュメント にあるものと同一です:
 
-trailer.separators
-     This option tells which characters are recognized as trailer
-     separators.  By default only _:_ is recognized as a trailer
-     separator, except that _=_ is always accepted on the command line
-     for compatibility with other git commands.
+‘trailer.separators’
+     このオプションは、 どの文字がトレーラー区切り文字として認識されるか
+     を指定します。 デフォルトでは、 ‘:’ のみがトレーラー区切り文字とし
+     て認識されます。 ただし、 他の Git コマンドとの互換性のため、 コマ
+     ンドラインでは常に ‘=’ が受け入れられます。
 
-     The first character given by this option will be the default
-     character used when another separator is not specified in the
-     config for this trailer.
+     このオプションで指定された最初の文字は、 そのトレーラーの設定で別の
+     区切り文字が指定されていない場合に使用されるデフォルトの文字になり
+     ます。
 
-     For example, if the value for this option is "%=$", then only lines
-     using the format _<key><sep><value>_ with <sep> containing _%_, _=_
-     or _$_ and then spaces will be considered trailers.  And _%_ will
-     be the default separator used, so by default trailers will appear
-     like: _<key>% <value>_ (one percent sign and one space will appear
-     between the key and the value).
+     たとえば、 このオプションの値が "%=$" の場合、
+     _<key>__<sep>__<value>_ 形式の行で、 <sep> が ‘%’ または ‘=’ または
+     ‘$’ のいずれかで、 その後に空白(spaces)が続くもののみがトレーラーと
+     して扱われます。そして ‘%’ がデフォルトの区切り文字として使用される
+     ため、 デフォルトではトレーラーは次のように表示されます: _<key>_‘%
+     ’_<value>_ (<key> と <value> の間に 1 つのパーセント記号と 1 つの空
+     白が表示されます)。
 
-trailer.where
-     This option tells where a new trailer will be added.
+‘trailer.where’
+     このオプションは、 新しいトレーラーを追加する位置を指定します。
 
-     This can be ‘end’, which is the default, ‘start’, ‘after’ or
-     ‘before’.
+     指定できる値は、 ‘end’ (これがデフォルト)または ‘start’ または
+     ‘after’ または ‘before’ のいずれかです。
 
-     If it is ‘end’, then each new trailer will appear at the end of the
-     existing trailers.
+     ‘end’ の場合、 各新しいトレーラーは既存のトレーラーの末尾に追加され
+     ます。
 
-     If it is ‘start’, then each new trailer will appear at the start,
-     instead of the end, of the existing trailers.
+     ‘start’ の場合、 各新しいトレーラーは既存のトレーラーの末尾のでは無
+     く、 先頭にに追加されます。
 
-     If it is ‘after’, then each new trailer will appear just after the
-     last trailer with the same <key>.
+     ‘after’ の場合、 各新しいトレーラーは同一の <key> を持つ最後のトレ
+     イラーの直後に追加されます。
 
-     If it is ‘before’, then each new trailer will appear just before
-     the first trailer with the same <key>.
+     ‘before’ の場合、 各新しいトレーラーは同一の <key> を持つ最初のトレ
+     イラーの直前に追加されます。
 
-trailer.ifexists
-     This option makes it possible to choose what action will be
-     performed when there is already at least one trailer with the same
-     <key> in the input.
+‘trailer.ifexists’
+     このオプションは、 入力に既に同一の <key> を持つトレーラーが少なく
+     とも 1 つ存在する場合に、 どのような動作を行うかを選択できるように
+     します。
 
-     The valid values for this option are: ‘addIfDifferentNeighbor’
-     (this is the default), ‘addIfDifferent’, ‘add’, ‘replace’ or
-     ‘doNothing’.
+     このオプションの有効な値は、 ‘addIfDifferentNeighbor’(これがデフォ
+     ルト), ‘addIfDifferent’, ‘add’, ‘replace’, ‘doNothing’ です。
 
-     With ‘addIfDifferentNeighbor’, a new trailer will be added only if
-     no trailer with the same (<key>, <value>) pair is above or below
-     the line where the new trailer will be added.
+     ‘addIfDifferentNeighbor’ の場合、新しいトレーラーが追加される位置の
+     直上または直下に、 同一の(<key>, <value>)のペアを持つトレーラーが存
+     在しない場合にのみ、 新しいトレーラーが追加されます。
 
-     With ‘addIfDifferent’, a new trailer will be added only if no
-     trailer with the same (<key>, <value>) pair is already in the
-     input.
+     ‘addIfDifferent’ の場合、 入力に既に同一の(<key>, <value>)のペアを
+     持つトレーラーが存在し無い場合にのみ、 新しいトレーラーが追加されま
+     す。
 
-     With ‘add’, a new trailer will be added, even if some trailers with
-     the same (<key>, <value>) pair are already in the input.
+     ‘add’ の場合、 入力に既に同一の(<key>, <value>)のペアを持つトレーラ
+     ーが存在していても、 新しいトレーラーが追加されます。
 
-     With ‘replace’, an existing trailer with the same <key> will be
-     deleted and the new trailer will be added.  The deleted trailer
-     will be the closest one (with the same <key>) to the place where
-     the new one will be added.
+     ‘replace’ の場合、 同一の <key> を持つ既存のトレーラーが削除され、
+     新しいトレーラーが追加されます。 削除されるトレーラーは、 新しいト
+     レーラーが追加される位置に最も近い同一の <key> を持つものです。
 
-     With ‘doNothing’, nothing will be done; that is no new trailer will
-     be added if there is already one with the same <key> in the input.
+     ‘doNothing’ の場合、何も行われません。 つまり、 入力に既に同一の
+     <key> を持つトトレーラーが存在する場合、 新しいトレーラーは追加され
+     ません。
 
-trailer.ifmissing
-     This option makes it possible to choose what action will be
-     performed when there is not yet any trailer with the same <key> in
-     the input.
+‘trailer.ifmissing’
+     このオプションは、 入力にまだ同一の <key> を持つトレーラーが存在し
+     無い場合に、 どのような動作を行うかを選択できるようにします。
 
-     The valid values for this option are: ‘add’ (this is the default)
-     and ‘doNothing’.
+     このオプションの有効な値は、 ‘add’ (これがデフォルト)と ‘doNothing’
+     です。
 
-     With ‘add’, a new trailer will be added.
+     ‘add’ の場合、 新しいトレーラーが追加されます。
 
-     With ‘doNothing’, nothing will be done.
+     ‘doNothing’ の場合、何も行われません。
 
-trailer.<keyAlias>.key
-     Defines a <keyAlias> for the <key>.  The <keyAlias> must be a
-     prefix (case does not matter) of the <key>.  For example, in ‘git
-     config trailer.ack.key ’"Acked-by" the "Acked-by" is the <key> and
-     the "ack" is the <keyAlias>.  This configuration allows the shorter
-     ‘--trailer ’"ack:‘...’" invocation on the command line using the
-     "ack" <keyAlias> instead of the longer ‘--trailer
-     ’"Acked-by:‘...’".
+‘trailer.’_<keyAlias>_‘.key’
+     <key> に対する <keyAlias> を定義します。 <keyAlias> は <key> のプレ
+     フィックス(英大文字小文字は区別しない)でなければなりません。 たとえ
+     ば、 ‘git config trailer.ack.key ’"Acked-by" の場合、"Acked-by" が
+     <key> で、 "ack" が <keyAlias> になります。 この設定により、 コマン
+     ドラインで長い ‘--trailer ’"Acked-by:‘...’" の代わりに、短い
+     ‘--trailer ’"ack:‘...’" を使用できるようになります。
 
-     At the end of the <key>, a separator can appear and then some space
-     characters.  By default the only valid separator is _:_, but this
-     can be changed using the ‘trailer.separators’ config variable.
+     <key> の末尾には区切り文字を記述でき、 その後に空白文字(space
+     characters)を続けることができます。 デフォルトでは有効な区切り文字
+     は ‘:’ のみですが、 これは ‘trailer.separators’ 構成変数で変更可能
+     です。
 
-     If there is a separator in the key, then it overrides the default
-     separator when adding the trailer.
+     キーの中に区切り文字が含まれている場合、 トレーラーを追加するときに
+     デフォルトの区切り文字を上書きします。
 
-trailer.<keyAlias>.where
-     This option takes the same values as the _trailer.where_
-     configuration variable and it overrides what is specified by that
-     option for trailers with the specified <keyAlias>.
+‘trailer.’_<keyAlias>_‘.where’
+     このオプションは _trailer.where_ 構成変数と同様の値を取ることができ
+     、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで指
+     定された内容を上書きします。
 
-trailer.<keyAlias>.ifexists
-     This option takes the same values as the _trailer.ifexists_
-     configuration variable and it overrides what is specified by that
-     option for trailers with the specified <keyAlias>.
+‘trailer.’_<keyAlias>_‘.ifexists’
+     このオプションは _trailer.ifexists_ 構成変数と同様の値を取ることが
+     でき、 指定の <keyAlias> を持つトレーラーに対して、 そのオプション
+     で指定された内容を上書きします。
 
-trailer.<keyAlias>.ifmissing
-     This option takes the same values as the _trailer.ifmissing_
-     configuration variable and it overrides what is specified by that
-     option for trailers with the specified <keyAlias>.
+‘trailer.’_<keyAlias>_‘.ifmissing’
+     このオプションは _trailer.ifmissing_ 構成変数と同じ値を取ることがで
+     き、 指定の <keyAlias> を持つトレーラーに対して、 そのオプションで
+     指定された内容を上書きします。
 
-trailer.<keyAlias>.command
-     Deprecated in favor of _trailer.<keyAlias>.cmd_.  This option
-     behaves in the same way as _trailer.<keyAlias>.cmd_, except that it
-     doesn’t pass anything as argument to the specified command.
-     Instead the first occurrence of substring $ARG is replaced by the
-     <value> that would be passed as argument.
+‘trailer.’_<keyAlias>_‘.command’
+     これは非推奨で ‘trailer.’_<keyAlias>_‘.cmd’ に取って代わられました
+     。 このオプションは ‘trailer.’_<keyAlias>_‘.cmd’ と同様に振る舞いま
+     すが、 指定のコマンドに引数を一切渡さない点が異なります。 代わりに
+     、 部分文字列 $ARG の最初の出現箇所が、 引数として渡されるはずの
+     <value> に置き換えられます。
 
-     Note that $ARG in the user’s command is only replaced once and that
-     the original way of replacing $ARG is not safe.
+     注意: なお、ユーザーのコマンド中の $ARG は一度だけ置き換えられ、
+     $ARG を置き換える従来の方法は安全ではありません(not safe)。
 
-     When both _trailer.<keyAlias>.cmd_ and _trailer.<keyAlias>.command_
-     are given for the same <keyAlias>, _trailer.<keyAlias>.cmd_ is used
-     and _trailer.<keyAlias>.command_ is ignored.
+     同一の <keyAlias> に対して ‘trailer.’_<keyAlias>_‘.cmd’ と
+     ‘trailer.’_<keyAlias>_‘.command’ の両方が指定された場合、
+     ‘trailer.’_<keyAlias>_‘.cmd’ が使用され、
+     ‘trailer.’_<keyAlias>_‘.command’ は無視されます。
 
-trailer.<keyAlias>.cmd
-     This option can be used to specify a shell command that will be
-     called once to automatically add a trailer with the specified
-     <keyAlias>, and then called each time a _-trailer
-     <keyAlias>=<value>_ argument is specified to modify the <value> of
-     the trailer that this option would produce.
+‘trailer.’_<keyAlias>_‘.cmd’
+     このオプションは、 指定の <keyAlias> を持つトレーラーを自動的に追加
+     するために一度呼び出され、 その後は '-trailer <keyAlias>=<value>｀
+     引数が指定されるたびに呼び出されるシェル・コマンドを指定するために
+     使用できます。 これにより、 このオプションが生成するトレーラーの
+     <value> を変更します。
 
-     When the specified command is first called to add a trailer with
-     the specified <keyAlias>, the behavior is as if a special _-trailer
-     <keyAlias>=<value>_ argument was added at the beginning of the "git
-     interpret-trailers" command, where <value> is taken to be the
-     standard output of the command with any leading and trailing
-     whitespace trimmed off.
+     指定のコマンドが <keyAlias> を持つトレーラーを追加するために最初に
+     呼び出されるときは、 ‘git interpret-trailers’ コマンドの先頭に特殊
+     な ‘--trailer ’_<keyAlias>_‘=’_<value>_ 引数が追加されたかのように
+     動作します。 ここで <value> は、 コマンドの標準出力から先頭と末尾の
+     空白を切り捨てた(trim)ものになります。
 
-     If some _-trailer <keyAlias>=<value>_ arguments are also passed on
-     the command line, the command is called again once for each of
-     these arguments with the same <keyAlias>.  And the <value> part of
-     these arguments, if any, will be passed to the command as its first
-     argument.  This way the command can produce a <value> computed from
-     the <value> passed in the _-trailer <keyAlias>=<value>_ argument.
+     コマンドラインで ‘--trailer ’_<keyAlias>_‘=’_<value>_ 引数が渡され
+     た場合、 同一の <keyAlias> に対してその引数の数だけコマンドが再度呼
+     び出されます。 そして、 これらの引数の <value> 部分(存在する場合)は
+     、 コマンドの最初の引数として渡されます。 この方法により、 コマンド
+     は ‘--trailer ’_<keyAlias>_‘=’_<value>_ 引数で渡された <value> から
+     処理された <value> を生成できます。
 
 EXAMPLES
 ********
@@ -61404,20 +61411,27 @@ CONFIGURATION
 内容は git-config(1) ドキュメント にあるものと同一です:
 
 ‘stash.index’
-     If this is set to true, ‘git stash apply’ and ‘git stash pop’ will
-     behave as if ‘--index’ was supplied.  Defaults to false.
+     これが true に設定されている場合、 ‘git stash apply’ および ‘git
+     stash Pop’ は、 ‘--index’ が指定されたかのように動作します。 デフォ
+     ルトは false です。
 
 ‘stash.showIncludeUntracked’
-     If this is set to true, the ‘git stash show’ command will show the
-     untracked files of a stash entry.  Defaults to false.
+     これがtrueに設定されている場合、 ‘git stash show’ コマンドはstashエ
+     ントリの追跡されていないファイル(untracked files)を表示します。 デ
+     フォルトはfalseです。 git-stash(1) の「show」コマンドの説明を参照し
+     てください。
 
 ‘stash.showPatch’
-     If this is set to true, the ‘git stash show’ command without an
-     option will show the stash entry in patch form.  Defaults to false.
+     これがtrueに設定されている場合、オプションのない ‘git stash show’ コ
+     マンドは、パッチ形式でstashエントリを表示します。 デフォルトは
+     falseです。 git-stash(1) の「show」コマンドの説明を参照してください
+     。
 
 ‘stash.showStat’
-     If this is set to true, the ‘git stash show’ command without an
-     option will show a diffstat of the stash entry.  Defaults to true.
+     これが true に設定されている場合、 オプションのない ‘git stash
+     show’ コマンドは、 stash エントリの diffstat を表示します。 デフォ
+     ルトは true です。 git-stash(1) の「show」コマンドの説明を参照して
+     ください。
 
 SEE ALSO
 ********
@@ -66732,25 +66746,25 @@ CONFIGURATION
 内容は git-config(1) ドキュメント にあるものと同一です:
 
 ‘worktree.guessRemote’
-     If no branch is specified and neither ‘-b’ nor ‘-B’ nor ‘--detach’
-     is used, then ‘git worktree add’ defaults to creating a new branch
-     from HEAD. If ‘worktree.guessRemote’ is set to true, ‘worktree add’
-     tries to find a remote-tracking branch whose name uniquely matches
-     the new branch name.  If such a branch exists, it is checked out
-     and set as "upstream" for the new branch.  If no such match can be
-     found, it falls back to creating a new branch from the current
-     ‘HEAD’.
+     ブランチが指定されておらず、 ‘-b’ や ' -B' や ‘--detach’ のいずれも
+     使用されていない場合、 ‘git worktree add’ はデフォルトでHEADから新
+     しいブランチを作成します。 ‘worktree.guessRemote’ がtrueに設定され
+     ている場合、 ‘worktree add’ は、名前が新しいブランチ名と一意に一致
+     するリモート追跡ブランチを見つけようとします。 そのようなブランチが
+     存在する場合、それはチェックアウトされ、新しいブランチの「アップス
+     トリーム」として設定されます。 そのような一致が見つからない場合は、
+     フォールバックして現在の ‘HEAD’ から新しいブランチを作成します。
 
 ‘worktree.useRelativePaths’
-     Link worktrees using relative paths (when "‘true’") or absolute
-     paths (when "‘false’").  This is particularly useful for setups
-     where the repository and worktrees may be moved between different
-     locations or environments.  Defaults to "‘false’".
+     ワークツリーのリンクを使用する際に、 相対パスを使用する(‘true’ の場
+     合)か、 絶対パスを使用する(‘false’ の場合)かを指定します。 この設定
+     は、 リポジトリーリとワークツリーを異なる場所や環境間で移動させるよ
+     うなセットアップで特に有用です。 デフォルトは ‘false’ です。
 
-     Note that setting ‘worktree.useRelativePaths’ to "‘true’" implies
-     enabling the ‘extensions.relativeWorktrees’ config (see
-     git-config(1)), thus making it incompatible with older versions of
-     Git.
+     注意: ‘worktree.useRelativePaths’ を ‘true’ に設定すると、
+     ‘extensions.relativeWorktrees’ 設定が有効になることも意味します
+     (git-config(1) 参照)。 そのため、 古いバージョンの Git と互換性がな
+     くなります。
 
 BUGS
 ****
@@ -67055,7 +67069,8 @@ git-archive(1)
      名前付きツリーからファイルのアーカイブを作成します.
 
 git-backfill(1)
-     Download missing objects in a partial clone.
+     部分クローン(partial clone)で欠落しているオブジェクトをダウンロード
+     .
 
 git-bisect(1)
      二分木検索を使用して、バグを引き起こしたコミットを見つけます.
@@ -67439,7 +67454,7 @@ git-diff-index(1)
      ツリーを作業ツリーまたはインデックスと比較します.
 
 git-diff-pairs(1)
-     Compare the content and mode of provided blob pairs.
+     提供されたブロブ・ペアの内容とモードを比較.
 
 git-diff-tree(1)
      2つのツリーオブジェクト間で、ブロブの内容とモードを比較します.
@@ -85788,212 +85803,212 @@ Node: git-apply54600
 Node: git-archimport71908
 Node: git-archive77547
 Node: git-backfill89993
-Node: git-bisect92694
-Node: git-blame115488
-Node: git-branch139495
-Node: git-bugreport166204
-Node: git-bundle169682
-Node: git-cat-file187379
-Node: git-check-attr209527
-Node: git-check-ignore213817
-Node: git-check-mailmap219511
-Node: git-check-ref-format221770
-Node: git-checkout-index229360
-Node: git-checkout238014
-Node: git-cherry-pick269812
-Node: git-cherry284055
-Node: git-citool288489
-Node: git-clean289275
-Node: git-clone296430
-Node: git-column326872
-Node: git-commit-graph332073
-Node: git-commit-tree344126
-Node: git-commit353453
-Node: git-config388775
-Node: git-count-objects851360
-Node: git-credential-cache--daemon853629
-Node: git-credential-cache854800
-Node: git-credential-store858703
-Node: git-credential863609
-Node: git-cvsexportcommit880940
-Node: git-cvsimport885472
-Node: git-cvsserver897334
-Node: git-daemon919995
-Node: git-describe935714
-Node: git-diagnose947383
-Node: git-diff-files950390
-Node: git-diff-index1013839
-Node: git-diff-pairs1082337
-Node: git-diff-tree1137328
-Node: git-diff1237575
-Node: git-difftool1327273
-Node: git-fast-export1338501
-Node: git-fast-import1355568
-Node: git-fetch-pack1447293
-Node: git-fetch1453901
-Node: git-filter-branch1516917
-Node: git-fmt-merge-msg1560100
-Node: git-for-each-ref1563640
-Node: git-for-each-repo1593304
-Node: git-format-patch1595974
-Node: git-fsck-objects1664518
-Node: git-fsck1664928
-Node: git-fsmonitor--daemon1689725
-Node: git-gc1696048
-Node: git-get-tar-commit-id1717711
-Node: git-grep1719058
-Node: git-gui1738509
-Node: git-hash-object1743427
-Node: git-help1746523
-Node: git-hook1756753
-Node: git-http-backend1758176
-Node: git-http-fetch1772501
-Node: git-http-push1774967
-Node: git-imap-send1779385
-Node: git-index-pack1790052
-Node: git-init-db1800367
-Node: git-init1800805
-Node: git-instaweb1812046
-Node: git-interpret-trailers1815033
-Node: git-last-modified1838024
-Node: git-log1839551
-Node: git-ls-files2007742
-Node: git-ls-remote2026665
-Node: git-ls-tree2033908
-Node: git-mailinfo2042702
-Node: git-mailsplit2049117
-Node: git-maintenance2050990
-Node: git-merge-base2087535
-Node: git-merge-file2098555
-Node: git-merge-index2104065
-Node: git-merge-one-file2107430
-Node: git-merge-tree2107925
-Node: git-merge2125532
-Node: git-mergetool--lib2175715
-Node: git-mergetool2177818
-Node: git-mktag2199320
-Node: git-mktree2201889
-Node: git-multi-pack-index2203516
-Node: git-mv2210834
-Node: git-name-rev2213590
-Node: git-notes2218281
-Ref: git-notes-Footnote-12239516
-Node: git-p42239767
-Node: git-pack-objects2280881
-Node: git-pack-redundant2312679
-Node: git-pack-refs2315440
-Node: git-patch-id2321454
-Node: git-prune-packed2324574
-Node: git-prune2325898
-Node: git-pull2328905
-Node: git-push2390523
-Node: git-quiltimport2452273
-Node: git-range-diff2454443
-Node: git-read-tree2469151
-Node: git-rebase2493133
-Node: git-receive-pack2575162
-Node: git-reflog2589183
-Node: git-refs2596928
-Node: git-remote-ext2609821
-Node: git-remote-fd2615395
-Node: git-remote2617702
-Node: git-repack2630634
-Node: git-replace2648294
-Node: git-replay2655407
-Node: git-repo2720177
-Node: git-request-pull2724470
-Node: git-rerere2727121
-Node: git-reset2737663
-Node: git-restore2765103
-Node: git-rev-list2774770
-Node: git-rev-parse2881936
-Node: git-revert2930681
-Node: git-rm2940015
-Node: git-send-email2949889
-Node: git-send-pack2988410
-Node: git-sh-i18n--envsubst2996068
-Node: git-sh-i18n2997440
-Node: git-sh-setup2999102
-Node: git-shell3003409
-Node: git-shortlog3007260
-Node: git-show-branch3056950
-Node: git-show-index3066260
-Node: git-show-ref3069089
-Node: git-show3076997
-Node: git-sparse-checkout3173538
-Node: git-stage3207145
-Node: git-stash3207477
-Node: git-status3229280
-Node: git-stripspace3259543
-Node: git-submodule3262042
-Node: git-svn3295102
-Node: git-switch3361880
-Node: git-symbolic-ref3375824
-Node: git-tag3379194
-Node: git-unpack-file3401262
-Node: git-unpack-objects3401783
-Node: git-update-index3403633
-Node: git-update-ref3439919
-Node: git-update-server-info3450516
-Node: git-upload-archive3451688
-Node: git-upload-pack3454575
-Node: git-var3459020
-Node: git-verify-commit3462489
-Node: git-verify-pack3463159
-Node: git-verify-tag3464538
-Node: git-version3465190
-Node: git-web--browse3466452
-Node: git-whatchanged3471026
-Node: git-worktree3472570
-Node: git-write-tree3502979
-Node: git3504223
-Node: gitattributes3587198
-Node: gitcli3654600
-Node: gitcore-tutorial3670840
-Node: gitcredentials3755522
-Node: gitcvs-migration3771487
-Node: gitdiffcore3781480
-Node: giteveryday3799505
-Node: gitfaq3821158
-Node: gitformat-bundle3859250
-Node: gitformat-chunk3863702
-Node: gitformat-commit-graph3872038
-Ref: OID Fanout [ID; {O; I; D; F}] [256 * 4 bytes]3875180
-Ref: OID Lookup [ID; {O; I; D; L}] [N * H bytes]3875472
-Ref: Commit Data [ID; {C; D; A; T }] [N * [H + 16] bytes]3875642
-Ref: Generation Data [ID; {G; D; A; 2 }] [N * 4 bytes] [Optional]3876661
-Ref: Generation Data Overflow [ID; {G; D; O; 2 }] [Optional]3877711
-Ref: Extra Edge List [ID; {E; D; G; E}] [Optional]3878381
-Ref: Bloom Filter Index [ID; {B; I; D; X}] [N * 4 bytes] [Optional]3878994
-Ref: Bloom Filter Data [ID; {B; D; A; T}] [Optional]3879588
-Ref: Base Graphs List [ID; {B; A; S; E}] [Optional]3881911
-Node: gitformat-index3883176
-Node: gitformat-loose3906303
-Node: gitformat-pack3908262
-Node: gitformat-signature3951821
-Node: gitglossary3961455
-Node: githooks4009507
-Node: gitignore4051074
-Node: gitk4064063
-Node: gitmailmap4074051
-Node: gitmodules4078846
-Node: gitnamespaces4085867
-Node: gitpacking4091756
-Node: gitprotocol-capabilities4108827
-Node: gitprotocol-common4131288
-Node: gitprotocol-http4135579
-Node: gitprotocol-pack4161866
-Node: gitprotocol-v24199623
-Node: gitremote-helpers4248378
-Node: gitrepository-layout4280396
-Node: gitrevisions4302988
-Node: gitsubmodules4327984
-Node: gittutorial-24343493
-Node: gittutorial4360892
-Node: gitweb.conf4387113
-Node: gitweb4444063
-Node: gitworkflows4478400
-Node: scalar4501543
+Node: git-bisect94063
+Node: git-blame116857
+Node: git-branch140864
+Node: git-bugreport167573
+Node: git-bundle171051
+Node: git-cat-file188748
+Node: git-check-attr210896
+Node: git-check-ignore215186
+Node: git-check-mailmap220880
+Node: git-check-ref-format223139
+Node: git-checkout-index230729
+Node: git-checkout239383
+Node: git-cherry-pick271181
+Node: git-cherry285424
+Node: git-citool289858
+Node: git-clean290644
+Node: git-clone297799
+Node: git-column328241
+Node: git-commit-graph333442
+Node: git-commit-tree345495
+Node: git-commit354822
+Node: git-config390144
+Node: git-count-objects856764
+Node: git-credential-cache--daemon859033
+Node: git-credential-cache860204
+Node: git-credential-store864107
+Node: git-credential869013
+Node: git-cvsexportcommit886344
+Node: git-cvsimport890876
+Node: git-cvsserver902738
+Node: git-daemon925399
+Node: git-describe941118
+Node: git-diagnose952787
+Node: git-diff-files955794
+Node: git-diff-index1019243
+Node: git-diff-pairs1087741
+Node: git-diff-tree1143239
+Node: git-diff1243486
+Node: git-difftool1333184
+Node: git-fast-export1344412
+Node: git-fast-import1361479
+Node: git-fetch-pack1453204
+Node: git-fetch1459812
+Node: git-filter-branch1522828
+Node: git-fmt-merge-msg1566011
+Node: git-for-each-ref1569551
+Node: git-for-each-repo1599215
+Node: git-format-patch1601885
+Node: git-fsck-objects1670429
+Node: git-fsck1670839
+Node: git-fsmonitor--daemon1695636
+Node: git-gc1701959
+Node: git-get-tar-commit-id1723622
+Node: git-grep1724969
+Node: git-gui1744420
+Node: git-hash-object1749338
+Node: git-help1752434
+Node: git-hook1762664
+Node: git-http-backend1764087
+Node: git-http-fetch1778412
+Node: git-http-push1780878
+Node: git-imap-send1785296
+Node: git-index-pack1795963
+Node: git-init-db1806278
+Node: git-init1806716
+Node: git-instaweb1817957
+Node: git-interpret-trailers1820944
+Node: git-last-modified1846134
+Node: git-log1847661
+Node: git-ls-files2015852
+Node: git-ls-remote2034775
+Node: git-ls-tree2042018
+Node: git-mailinfo2050812
+Node: git-mailsplit2057227
+Node: git-maintenance2059100
+Node: git-merge-base2095645
+Node: git-merge-file2106665
+Node: git-merge-index2112175
+Node: git-merge-one-file2115540
+Node: git-merge-tree2116035
+Node: git-merge2133642
+Node: git-mergetool--lib2183825
+Node: git-mergetool2185928
+Node: git-mktag2207430
+Node: git-mktree2209999
+Node: git-multi-pack-index2211626
+Node: git-mv2218944
+Node: git-name-rev2221700
+Node: git-notes2226391
+Ref: git-notes-Footnote-12247626
+Node: git-p42247877
+Node: git-pack-objects2288991
+Node: git-pack-redundant2320789
+Node: git-pack-refs2323550
+Node: git-patch-id2329564
+Node: git-prune-packed2332684
+Node: git-prune2334008
+Node: git-pull2337015
+Node: git-push2398633
+Node: git-quiltimport2460383
+Node: git-range-diff2462553
+Node: git-read-tree2477261
+Node: git-rebase2501243
+Node: git-receive-pack2583272
+Node: git-reflog2597293
+Node: git-refs2605038
+Node: git-remote-ext2617931
+Node: git-remote-fd2623505
+Node: git-remote2625812
+Node: git-repack2638744
+Node: git-replace2656404
+Node: git-replay2663517
+Node: git-repo2728287
+Node: git-request-pull2732580
+Node: git-rerere2735231
+Node: git-reset2745773
+Node: git-restore2773213
+Node: git-rev-list2782880
+Node: git-rev-parse2890046
+Node: git-revert2938791
+Node: git-rm2948125
+Node: git-send-email2957999
+Node: git-send-pack2996520
+Node: git-sh-i18n--envsubst3004178
+Node: git-sh-i18n3005550
+Node: git-sh-setup3007212
+Node: git-shell3011519
+Node: git-shortlog3015370
+Node: git-show-branch3065060
+Node: git-show-index3074370
+Node: git-show-ref3077199
+Node: git-show3085107
+Node: git-sparse-checkout3181648
+Node: git-stage3215255
+Node: git-stash3215587
+Node: git-status3237957
+Node: git-stripspace3268220
+Node: git-submodule3270719
+Node: git-svn3303779
+Node: git-switch3370557
+Node: git-symbolic-ref3384501
+Node: git-tag3387871
+Node: git-unpack-file3409939
+Node: git-unpack-objects3410460
+Node: git-update-index3412310
+Node: git-update-ref3448596
+Node: git-update-server-info3459193
+Node: git-upload-archive3460365
+Node: git-upload-pack3463252
+Node: git-var3467697
+Node: git-verify-commit3471166
+Node: git-verify-pack3471836
+Node: git-verify-tag3473215
+Node: git-version3473867
+Node: git-web--browse3475129
+Node: git-whatchanged3479703
+Node: git-worktree3481247
+Node: git-write-tree3512128
+Node: git3513372
+Node: gitattributes3596415
+Node: gitcli3663817
+Node: gitcore-tutorial3680057
+Node: gitcredentials3764739
+Node: gitcvs-migration3780704
+Node: gitdiffcore3790697
+Node: giteveryday3808722
+Node: gitfaq3830375
+Node: gitformat-bundle3868467
+Node: gitformat-chunk3872919
+Node: gitformat-commit-graph3881255
+Ref: OID Fanout [ID; {O; I; D; F}] [256 * 4 bytes]3884397
+Ref: OID Lookup [ID; {O; I; D; L}] [N * H bytes]3884689
+Ref: Commit Data [ID; {C; D; A; T }] [N * [H + 16] bytes]3884859
+Ref: Generation Data [ID; {G; D; A; 2 }] [N * 4 bytes] [Optional]3885878
+Ref: Generation Data Overflow [ID; {G; D; O; 2 }] [Optional]3886928
+Ref: Extra Edge List [ID; {E; D; G; E}] [Optional]3887598
+Ref: Bloom Filter Index [ID; {B; I; D; X}] [N * 4 bytes] [Optional]3888211
+Ref: Bloom Filter Data [ID; {B; D; A; T}] [Optional]3888805
+Ref: Base Graphs List [ID; {B; A; S; E}] [Optional]3891128
+Node: gitformat-index3892393
+Node: gitformat-loose3915520
+Node: gitformat-pack3917479
+Node: gitformat-signature3961038
+Node: gitglossary3970672
+Node: githooks4018724
+Node: gitignore4060291
+Node: gitk4073280
+Node: gitmailmap4083268
+Node: gitmodules4088063
+Node: gitnamespaces4095084
+Node: gitpacking4100973
+Node: gitprotocol-capabilities4118044
+Node: gitprotocol-common4140505
+Node: gitprotocol-http4144796
+Node: gitprotocol-pack4171083
+Node: gitprotocol-v24208840
+Node: gitremote-helpers4257595
+Node: gitrepository-layout4289613
+Node: gitrevisions4312205
+Node: gitsubmodules4337201
+Node: gittutorial-24352710
+Node: gittutorial4370109
+Node: gitweb.conf4396330
+Node: gitweb4453280
+Node: gitworkflows4487617
+Node: scalar4510760
 
 End Tag Table
 
