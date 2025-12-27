@@ -2,23 +2,23 @@ maintenance.auto::
 	このブール構成オプションは、一部のコマンドが通常の作業を行った後に `git maintenance run --auto` を実行するかどうかを制御します。 デフォルトはtrueです。
 
 maintenance.autoDetach::
-	多くの Git コマンドは、 データをリポジトリに書き込んだ後に自動メンテナンスをトリガーします。 このブール型構成オプションは、 この自動メンテナンスをフォアグラウンドで実行するか、 またはメンテナンス・プロセスを切り離し(detach)してバックグラウンドで実行し続けるかを制御します。
+	多くの Git コマンドは、 データをリポジトリーに書き込んだ後に自動メンテナンスをトリガーします。 このブール型構成オプションは、 この自動メンテナンスをフォア・グラウンドで実行するか、 またはメンテナンス・プロセスを切り離し(detach)してバック・グラウンドで実行し続けるかを制御します。
 +
 設定されていない場合、 `gc.autoDetach` の値がフォールバックとして使用されます。 両方とも設定されていない場合、 デフォルトは `true` です。 つまり、 メンテナンス・プロセスが切り離し(detach)されます。
 
 maintenance.strategy::
-	This string config option provides a way to specify one of a few recommended strategies for repository maintenance. This affects which tasks are run during `git maintenance run`, provided no `--task=<task>` arguments are provided. This setting impacts manual maintenance, auto-maintenance as well as scheduled maintenance. The tasks that run may be different depending on the maintenance type.
+	この文字列型の構成オプションは、 リポジトリーのメンテナンスで推奨されるいくつかの戦略のいずれかを指定する方法を提供します。 これは `git maintenance run` で `--task=<task>` 引数が指定されていない場合に実行されるタスクに影響します。 この設定は、 手動メンテナンスや、自動メンテナンスや、スケジュールされたメンテナンス、 のすべてに影響します。 実行されるタスクは、 メンテナンスの種類によって異なる場合があります。
 +
-The maintenance strategy can be further tweaked by setting `maintenance.<task>.enabled` and `maintenance.<task>.schedule`. If set, these values are used instead of the defaults provided by `maintenance.strategy`.
+メンテナンス戦略は、 `maintenance.<task>.enabled` や `maintenance.<task>.schedule` を設定することでさらにチューニングできます。 これらが設定されている場合、 `maintenance.strategy` が提供するデフォルト値の代わりにこれらの値が使用されます。
 +
-The possible strategies are:
+利用可能な戦略は以下の通りです:
 +
-* `none`: This strategy implies no tasks are run at all. This is the default strategy for scheduled maintenance.
-* `gc`: This strategy runs the `gc` task. This is the default strategy for manual maintenance.
-* `geometric`: This strategy performs geometric repacking of packfiles and keeps auxiliary data structures up-to-date. The strategy expires data in the reflog and removes worktrees that cannot be located anymore. When the geometric repacking strategy would decide to do an all-into-one repack, then the strategy generates a cruft pack for all unreachable objects. Objects that are already part of a cruft pack will be expired.
+* `none`: この戦略では、 タスクは一切実行されません。 スケジュールされたメンテナンスのデフォルトの戦略です。
+* `gc`: この戦略では、 `gc` タスクを実行します。 手動メンテナンスのデフォルト戦略です。
+* `geometric`: この戦略では、 パック・ファイルの幾何学的再パック(geometric repacking)を行い、 補助的なデータ構造(auxiliary data structures)を最新の状態に保ちます。 この戦略は reflog のデータを期限切れ(expire)にし、 所在不明のワークツリーを削除します。 幾何学的再パック戦略が「すべてを1つのパックにまとめる」再パック(all-into-one repack)を行うと決断した場合、 到達不能なすべてのオブジェクトに対して cruft パックを生成します。 すでに cruft パックに含まれているオブジェクトは期限切れになります。
 +
-This repacking strategy is a full replacement for the `gc` strategy and is recommended for large repositories.
-* `incremental`: This setting optimizes for performing small maintenance activities that do not delete any data. This does not schedule the `gc` task, but runs the `prefetch` and `commit-graph` tasks hourly, the `loose-objects` and `incremental-repack` tasks daily, and the `pack-refs` task weekly. Manual repository maintenance uses the `gc` task.
+この再パック戦略は `gc` 戦略の完全な置き換えであり、 大規模リポジトリーで推奨されます。
+* `incremental`: この構成は、 データを削除しない小さなメンテナンス活動に最適化されています。 `gc` タスクはスケジュールされませんが、 `prefetch` タスクと `commit-graph` タスクを1時間ごと、 `loose-objects` タスクと `incremental-repack` タスクを1日ごと、 `pack-refs` タスクを1週間ごとに実行します。 手動リポジトリー・メンテナンスでは `gc` タスクを使用します。
 
 maintenance.<task>.enabled::
 	このブール構成オプションは、 `git maintenance run` に `--task` オプションが指定されていない場合に、 `<task>` という名前のメンテナンスタスクを実行するかどうかを制御します。 `--task` オプションが存在する場合、これらの構成値は無視されます。 デフォルトでは、 `maintenance.gc.enabled` のみがtrueです。
@@ -33,22 +33,22 @@ maintenance.loose-objects.auto::
 	この整数値構成オプションは、 `git maintenance run --auto` の一部として `loose-objects` タスクを実行する頻度を制御します。 ゼロの場合、 `loose-objects` タスクは `--auto` オプションでは実行されません。 負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、緩いオブジェクト(loose objects)の数が `maintenance.loose-objects.auto` の値以上であるときにコマンドを実行する必要があることを意味します。 デフォルト値は100です。
 
 maintenance.loose-objects.batchSize::
-	This integer config option controls the maximum number of loose objects written into a packfile during the `loose-objects` task. The default is fifty thousand. Use value `0` to indicate no limit.
+	この整数値型構成オプションは、 loose-objects タスクの実行中にパック・ファイルに書き込まれる緩いオブジェクトの最大数を制御します。 デフォルトは 50,000 です。 値に 0 を指定すると制限なしになります。
 
 maintenance.incremental-repack.auto::
 	この整数値構成オプションは、 `git maintenance run --auto` の一部として `incremental-repack` タスクを実行する頻度を制御します。 ゼロの場合、 `incremental-repack` タスクは `--auto` オプションでは実行されません。 負の値を指定すると、タスクは毎回実行されます。 それ以外の場合、正の値は、multi-pack-indexにないpack-fileの数が `maintenance.incremental-repack.auto` の値以上であるときにコマンドを実行する必要があることを意味します。 デフォルト値は10です。
 
 maintenance.geometric-repack.auto::
-	This integer config option controls how often the `geometric-repack` task should be run as part of `git maintenance run --auto`. If zero, then the `geometric-repack` task will not run with the `--auto` option. A negative value will force the task to run every time. Otherwise, a positive value implies the command should run either when there are packfiles that need to be merged together to retain the geometric progression, or when there are at least this many loose objects that would be written into a new packfile. The default value is 100.
+	この整数値型構成オプションは、 `git maintenance run --auto` の一部として geometric-repack タスクをどのくらいの頻度で実行するかを制御します。 値が 0 の場合、 `--auto` オプションでは geometric-repack タスクは実行されません。 負の値の場合、 タスクは毎回強制的に実行されます。 それ以外の正の値の場合、 幾何学的進行(geometric progression)を維持するために、 マージが必要なパック・ファイルが存在する場合、 または新しいパック・ファイルに書き込まれる緩いオブジェクトが少なくともこの数に達した場合にコマンドが実行されます。 デフォルト値は 100 です。
 
 maintenance.geometric-repack.splitFactor::
-	This integer config option controls the factor used for the geometric sequence. See the `--geometric=` option in linkgit:git-repack[1] for more details. Defaults to `2`.
+	この整数値型構成オプションは、 幾何学的シーケンス(geometric sequence)に使用する係数を制御します。 詳細は linkgit:git-repack[1] の `--geometric=` オプションを参照してください。 デフォルトは 2 です。
 
 maintenance.reflog-expire.auto::
-	This integer config option controls how often the `reflog-expire` task should be run as part of `git maintenance run --auto`. If zero, then the `reflog-expire` task will not run with the `--auto` option. A negative value will force the task to run every time. Otherwise, a positive value implies the command should run when the number of expired reflog entries in the "HEAD" reflog is at least the value of `maintenance.loose-objects.auto`. The default value is 100.
+	この整数値型構成オプションは、 `git maintenance run --auto` の一部として reflog-expire タスクをどのくらいの頻度で実行するかを制御します。 値が 0 の場合、 `--auto` オプションでは reflog-expire タスクは実行されません。 負の値の場合、 タスクは毎回強制的に実行されます。 それ以外の正の値の場合、 `HEAD` の reflog 内の期限切れエントリの数が `maintenance.loose-objects.auto` の値以上になったときにコマンドが実行されます。 デフォルト値は 100 です。
 
 maintenance.rerere-gc.auto::
-	This integer config option controls how often the `rerere-gc` task should be run as part of `git maintenance run --auto`. If zero, then the `rerere-gc` task will not run with the `--auto` option. A negative value will force the task to run every time. Otherwise, any positive value implies the command will run when the "rr-cache" directory exists and has at least one entry, regardless of whether it is stale or not. This heuristic may be refined in the future. The default value is 1.
+	この整数値型構成オプションは、 `git maintenance run --auto` の一部として rerere-gc タスクをどのくらいの頻度で実行するかを制御します。 値が 0 の場合、 `--auto` オプションでは rerere-gc タスクは実行されません。 負の値の場合、 タスクは毎回強制的に実行されます。 それ以外の任意の正の値の場合、 `rr-cache` ディレクトリが存在し、 (エントリが古いかどうかに関係なく、)少なくとも 1 つのエントリがあるときにコマンドが実行されます。 このヒューリスティックは将来的に改良される可能性があります。 デフォルト値は 1 です。
 
 maintenance.worktree-prune.auto::
-	This integer config option controls how often the `worktree-prune` task should be run as part of `git maintenance run --auto`. If zero, then the `worktree-prune` task will not run with the `--auto` option. A negative value will force the task to run every time. Otherwise, a positive value implies the command should run when the number of prunable worktrees exceeds the value. The default value is 1.
+	この整数値型構成オプションは、 `git maintenance run --auto` の一部として worktree-prune タスクをどのくらいの頻度で実行するかを制御します。 値が 0 の場合、 `--auto` オプションでは worktree-prune タスクは実行されません。 負の値の場合、 タスクは毎回強制的に実行されます。 それ以外の正の値の場合、 刈り込み可能なワークツリーの数がこの値を超えたときにコマンドが実行されます。 デフォルト値は 1 です。
