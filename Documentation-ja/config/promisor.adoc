@@ -2,37 +2,40 @@ promisor.quiet::
 	true に設定すると、 部分クローン(partial clone)の追加オブジェクトを取得(fetch)するときに `--quiet` とみなします。
 
 promisor.advertise::
-	If set to "true", a server will use the "promisor-remote" capability, see linkgit:gitprotocol-v2[5], to advertise the promisor remotes it is using, if it uses some. Default is "false", which means the "promisor-remote" capability is not advertised.
+	"true" に設定すると、 サーバーは使用しているプロミサー・リモートがある場合、プロミサー・リモート機能(promisor-remote capability)(linkgit:gitprotocol-v2[5] 参照)を使用してそれらを広告(advertise)します。 デフォルトは "false" で、 プロミサー・リモート機能は広告されません。
 
 promisor.sendFields::
-	A comma or space separated list of additional remote related field names. A server sends these field names and the associated field values from its configuration when advertising its promisor remotes using the "promisor-remote" capability, see linkgit:gitprotocol-v2[5]. Currently, only the "partialCloneFilter" and "token" field names are supported.
+	追加のリモート関連フィールド名の、 カンマまたは空白で区切られたリストです。 サーバーは、 プロミサー・リモート機能を使用してプロミサー・リモート広告する際に、 このリストに含まれるフィールド名とそれに関連する設定値を送信します(linkgit:gitprotocol-v2[5] 参照)。 現在サポートされているフィールド名は "partialCloneFilter" と "token" のみです。
 +
-`partialCloneFilter`:: contains the partial clone filter used for the remote.
+--
+`partialCloneFilter`::: そのリモートの部分クローン・フィルタ(partial clone filter)を含みます。
+`token`::: そのリモートの認証トークン(authentication token)を含みます。
+--
 +
-`token`:: contains an authentication token for the remote.
+フィールド名がこのリストに含まれ、 サーバー上で対応する `remote.foo.<field-name>` 構成変数が空で無い値に設定されている場合、 プロミサー・リモートの "foo" を広告する際にそのフィールド名と値が送信されます。
 +
-When a field name is part of this list and a corresponding "remote.foo.<field-name>" config variable is set on the server to a non-empty value, then the field name and value are sent when advertising the promisor remote "foo".
-+
-This list has no effect unless the "promisor.advertise" config variable is set to "true", and the "name" and "url" fields are always advertised regardless of this setting.
+このリストは、 `promisor.advertise` 構成変数が "true" に設定されていない限り効果がありません。 また、 "name" と "url" フィールドはこの設定に関係なく常に広告されます。
 
 promisor.acceptFromServer::
-	If set to "all", a client will accept all the promisor remotes a server might advertise using the "promisor-remote" capability. If set to "knownName" the client will accept promisor remotes which are already configured on the client and have the same name as those advertised by the client. This is not very secure, but could be used in a corporate setup where servers and clients are trusted to not switch name and URLs. If set to "knownUrl", the client will accept promisor remotes which have both the same name and the same URL configured on the client as the name and URL advertised by the server. This is more secure than "all" or "knownName", so it should be used if possible instead of those options. Default is "none", which means no promisor remote advertised by a server will be accepted. By accepting a promisor remote, the client agrees that the server might omit objects that are lazily fetchable from this promisor remote from its responses to "fetch" and "clone" requests from the client. Name and URL comparisons are case sensitive. See linkgit:gitprotocol-v2[5].
+	"all" に設定すると、 クライアントはサーバーがプロミサー・リモート機能を使用して広告する、 全てのプロミサー・リモートを受け入れます。 "knownName" に設定すると、 クライアントはすでにクライアント側で設定されており、 サーバーが広告するものと同じ名前を持つプロミサー・リモートのみを受け入れます。 これはあまり安全ではなく、 サーバーとクライアントが名前と URL を切り替えない、 信頼できる企業環境などで使用可能です。 "knownUrl" に設定すると、 クライアントは名前と URL の両方がクライアント側で設定されているものと完全に一致するプロミサー・リモートのみを受け入れます。 これは "all" や "knownName" よりも安全なので、 可能であればこちらを使用すべきです。 デフォルトは "none" で、サーバーが広告するプロミサー・リモートは一切受け入れられません。 プロミサー・リモートを受け入れることで、 クライアントはサーバーが "fetch" や "clone" リクエストに対する応答から、 このプロミサー・リモートより遅延取得可能なオブジェクトを省略する可能性があることに同意します。 名前と URL の比較は英大文字小文字を区別します(case sensitive)。 linkgit:gitprotocol-v2[5] を参照してください。
 
 promisor.checkFields::
-	A comma or space separated list of additional remote related field names. A client checks if the values of these fields transmitted by a server correspond to the values of these fields in its own configuration before accepting a promisor remote. Currently, "partialCloneFilter" and "token" are the only supported field names.
+	追加のリモート関連フィールド名の、 カンマまたは空白で区切られたリストです。 クライアントは、サーバーから送信されたこれらのフィールドの値が、 クライアント自身の設定の値と一致するかを、 プロミサー・リモートを受け入れる前にチェックします。 現在サポートされているフィールド名は "partialCloneFilter" と "token" のみです。
 +
-If one of these field names (e.g., "token") is being checked for an advertised promisor remote (e.g., "foo"), three conditions must be met for the check of this specific field to pass:
+広告されたプロミサー・リモート(例: "foo")に対してこれらのフィールド名(例: "token")のチェックを行う場合、 特定のフィールドのチェックがパスするには以下の 3 つの条件をすべて満たす必要があります:
 +
-1. The corresponding local configuration (e.g., `remote.foo.token`) must be set.
-2. The server must advertise the "token" field for remote "foo".
-3. The value of the locally configured `remote.foo.token` must exactly match the value advertised by the server for the "token" field.
+--
+1. 対応するローカル設定(例: `remote.foo.token`)が設定されていること。
+2. サーバーが、 リモート "foo" に対して "token" フィールドを広告していること。
+3. ローカルで設定された `remote.foo.token` の値が、サーバーが "token" フィールドで広告した値と完全に一致すること。
+--   
 +
-If any of these conditions is not met for any field name listed in `promisor.checkFields`, the advertised remote "foo" is rejected.
+`promisor.checkFields` にリストされた任意のフィールド名についてこれらの条件のいずれかが満たされない場合、 広告された、 リモート "foo" は拒否されます。
 +
-For the "partialCloneFilter" field, this allows the client to ensure that the server's filter matches what it expects locally, preventing inconsistencies in filtering behavior. For the "token" field, this can be used to verify that authentication credentials match expected values.
+"partialCloneFilter" フィールドについては、 これによりクライアントはサーバーのフィルタがローカルで期待されるものと一致することを保証でき、 フィルタリング動作の不整合を防げます。 "token" フィールドについては、 認証クレデンシャルが期待される値と一致することを検証するために使用できます。
 +
-Field values are compared case-sensitively.
+フィールド値の比較は英大文字小文字を区別します(case-sensitively)。
 +
-The "name" and "url" fields are always checked according to the `promisor.acceptFromServer` policy, independently of this setting.
+"name" と "url" フィールドは、 この設定とは独立に `promisor.acceptFromServer` のポリシーに従って常にチェックされます。
 +
-The field names and values should be passed by the server through the "promisor-remote" capability by using the `promisor.sendFields` config variable. The fields are checked only if the `promisor.acceptFromServer` config variable is not set to "None". If set to "None", this config variable has no effect. See linkgit:gitprotocol-v2[5].
+フィールド名と値は、 `promisor.sendFields` 構成変数を使用してサーバー側でプロミサー・リモート機能経由で渡されるべきです。 これらのフィールドは、 `promisor.acceptFromServer` 設定変数が "none" に設定されてい無い場合にのみチェックされます。 "none" に設定されている場合、 この構成変数は効果がありません。 linkgit:gitprotocol-v2[5] を参照してください。
