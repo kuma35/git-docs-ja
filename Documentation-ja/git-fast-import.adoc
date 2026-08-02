@@ -38,10 +38,10 @@ OPTIONS
 fast-import ストリームを生成するプログラムを信頼する場合にのみ、 このオプションを有効にしてください。 このオプションは、 独自のコードを実行することがすでに信頼されているため、 `import` 機能を使用するリモート・ヘルパーに対して自動的に有効になります。
 
 `--signed-tags=(verbatim|warn-verbatim|warn-strip|strip|abort)`::
-	Specify how to handle signed tags. Behaves in the same way as the same option in linkgit:git-fast-export[1], except that default is 'verbatim' (instead of 'abort').
+	署名付きタグの扱い方を指定します。linkgit:git-fast-export[1] の同オプションと同じ動作をしますが、デフォルトが `verbatim` である点（`abort` ではなく）が異なります。
 
 `--signed-commits=(verbatim|warn-verbatim|warn-strip|strip|abort)`::
-	Specify how to handle signed commits. Behaves in the same way as the same option in linkgit:git-fast-export[1], except that default is 'verbatim' (instead of 'abort').
+	署名付きコミットの扱い方を指定します。linkgit:git-fast-export[1] の同オプションと同じ動作をしますが、デフォルトが `verbatim` である点（`abort` ではなく）が異なります。
 
 Options for Frontends
 ~~~~~~~~~~~~~~~~~~~~~
@@ -107,12 +107,7 @@ fastimport.unpackLimit::
 
 PERFORMANCE
 -----------
-The design of fast-import allows it to import large projects in a minimum
-amount of memory usage and processing time.  Assuming the frontend is able
-to keep up with fast-import and feed it a constant stream of data, import
-times for projects holding 10+ years of history and containing 100,000+
-individual commits are generally completed in just 1-2 hours on quite modest
-hardware (~$2,000 USD in 2007).
+fast-import の設計により、最小限のメモリ使用量と処理時間で大規模なプロジェクトをインポートできます。 フロントエンドが fast-import に対応し、コンスタントにデータ・ストリームをフィードできると仮定すると、 10年以上の履歴を保持し、 100,000以上の個別のコミットを含むプロジェクトのインポート時間は、 通常、 非常に控えめな(~$2,000 USD in 2007)ハードウェアで、 わずか 1 〜 2 時間で完了します。
 
 ほとんどのボトルネックは、 外部ソースデータ・アクセス(ソースがリビジョンを十分に速く抽出できない)、 またはディスク I/O(ディスクがデータを取得するのと同じ速さで fast-import に書き込みできない)にあるように見えます。 ソースデータが宛先 Git リポジトリとは異なるドライブに保存されている場合、 (I/Oの競合が少ないため)、 インポートはより高速に実行されます。
 
@@ -282,25 +277,25 @@ one).
 `gpgsig`
 ^^^^^^^^
 
-The optional `gpgsig` command is used to include a PGP/GPG signature or other cryptographic signature that signs the commit data.
+オプションの gpgsig コマンドは、コミット・データに署名する PGP/GPG 署名またはその他の暗号署名を含めるために使用します。
 
 ....
 	'gpgsig' SP <git-hash-algo> SP <signature-format> LF data
 ....
 
-The `gpgsig` command takes two arguments:
+gpgsig コマンドは2つの引数を取ります:
 
-* `<git-hash-algo>` specifies which Git object format this signature applies to, either `sha1` or `sha256`. This allows to know which representation of the commit was signed (the SHA-1 or the SHA-256 version) which helps with both signature verification and interoperability between repos with different hash functions.
+* `<git-hash-algo>` は、この署名が適用される Git オブジェクト形式を `sha1` または `sha256` のいずれかで指定します。これにより、どのコミットの表現（SHA-1 版か SHA-256 版か）が署名されたかを知ることができ、署名検証と異なるハッシュ関数を持つリポジトリ間の相互運用性の両方に役立ちます。
 
-* `<signature-format>` specifies the type of signature, such as `openpgp`, `x509`, `ssh`, or `unknown`. This is a convenience for tools that process the stream, so they don't have to parse the ASCII armor to identify the signature type.
+* `<signature-format>` は、署名の種類（`openpgp`, `x509`, `ssh`, `unknown` など）を指定します。これはストリームを処理するツールのための利便性機能であり、ASCII armor を解析して署名タイプを特定する必要がなくなります。
 
-A commit may have at most one signature for the SHA-1 object format (stored in the "gpgsig" header) and one for the SHA-256 object format (stored in the "gpgsig-sha256" header).
+コミットは、SHA-1 オブジェクト形式に対して最大1つの署名（"gpgsig" ヘッダに格納）と、SHA-256 オブジェクト形式に対して1つの署名（"gpgsig-sha256" ヘッダに格納）を持つことができます。
 
-See below for a detailed description of the `data` command which contains the raw signature data.
+生の署名データを含む data コマンドの詳細については下記参照。
 
-Signatures are not yet checked in the current implementation though. (Already setting the `extensions.compatObjectFormat` configuration option might help with verifying both SHA-1 and SHA-256 object format signatures when it will be implemented.)
+現在の実装では署名はまだ検証されません。（将来的に実装された際に `extensions.compatObjectFormat` 設定オプションを有効にすると、SHA-1 と SHA-256 の両方のオブジェクト形式の署名を検証するのに役立つ可能性があります。）
 
-NOTE: This is highly experimental and the format of the `gpgsig` command may change in the future without compatibility guarantees.
+NOTE: これは非常に実験的な機能であり、gpgsig コマンドの形式は将来、互換性保証なしに変更される可能性があります。
 
 `encoding`
 ^^^^^^^^^^
@@ -355,7 +350,7 @@ External data format::
 	'M' SP <mode> SP <dataref> SP <path> LF
 ....
 +
-Here usually `<dataref>` must be either a mark reference (`:<idnum>`) set by a prior `blob` command, or a full 40-byte SHA-1 of an existing Git blob object. If `<mode>` is `040000` then `<dataref>` must be the full 40-byte SHA-1 of an existing Git tree object or a mark reference set with `--import-marks`.
+ここで通常、 `<dataref>` は、 前の blob コマンドによって設定されたマーク参照(`:<idnum>`)か、 既存のGitブロブオブジェクトの完全な40バイトのSHA-1である必要があります。 `<mode>` が `040000` の場合、 `<dataref>` は既存のGitツリーオブジェクトの完全な40バイトのSHA-1または `--import-marks` で設定されたマーク参照である必要があります。
 
 Inline data format::
 	ファイルのデータコンテンツはまだ提供されていません。 フロントエンドは、この変更コマンドの一部としてそれを提供したいと考えています。

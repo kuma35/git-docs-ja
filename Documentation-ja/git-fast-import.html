@@ -804,7 +804,7 @@ git-fast-import(1) Manual Page
 </dt>
 <dd>
 <p>
-        Specify how to handle signed tags. Behaves in the same way as the same option in <a href="git-fast-export.html">git-fast-export(1)</a>, except that default is <em>verbatim</em> (instead of <em>abort</em>).
+        署名付きタグの扱い方を指定します。<a href="git-fast-export.html">git-fast-export(1)</a> の同オプションと同じ動作をしますが、デフォルトが <code>verbatim</code> である点（<code>abort</code> ではなく）が異なります。
 </p>
 </dd>
 <dt class="hdlist1">
@@ -812,7 +812,7 @@ git-fast-import(1) Manual Page
 </dt>
 <dd>
 <p>
-        Specify how to handle signed commits. Behaves in the same way as the same option in <a href="git-fast-export.html">git-fast-export(1)</a>, except that default is <em>verbatim</em> (instead of <em>abort</em>).
+        署名付きコミットの扱い方を指定します。<a href="git-fast-export.html">git-fast-export(1)</a> の同オプションと同じ動作をしますが、デフォルトが <code>verbatim</code> である点（<code>abort</code> ではなく）が異なります。
 </p>
 </dd>
 </dl></div>
@@ -962,12 +962,7 @@ fastimport.unpackLimit
 <div class="sect1">
 <h2 id="_performance">PERFORMANCE</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The design of fast-import allows it to import large projects in a minimum
-amount of memory usage and processing time.  Assuming the frontend is able
-to keep up with fast-import and feed it a constant stream of data, import
-times for projects holding 10+ years of history and containing 100,000+
-individual commits are generally completed in just 1-2 hours on quite modest
-hardware (~$2,000 USD in 2007).</p></div>
+<div class="paragraph"><p>fast-import の設計により、最小限のメモリ使用量と処理時間で大規模なプロジェクトをインポートできます。 フロントエンドが fast-import に対応し、コンスタントにデータ・ストリームをフィードできると仮定すると、 10年以上の履歴を保持し、 100,000以上の個別のコミットを含むプロジェクトのインポート時間は、 通常、 非常に控えめな(~$2,000 USD in 2007)ハードウェアで、 わずか 1 〜 2 時間で完了します。</p></div>
 <div class="paragraph"><p>ほとんどのボトルネックは、 外部ソースデータ・アクセス(ソースがリビジョンを十分に速く抽出できない)、 またはディスク I/O(ディスクがデータを取得するのと同じ速さで fast-import に書き込みできない)にあるように見えます。 ソースデータが宛先 Git リポジトリとは異なるドライブに保存されている場合、 (I/Oの競合が少ないため)、 インポートはより高速に実行されます。</p></div>
 </div>
 </div>
@@ -1196,33 +1191,33 @@ hardware (~$2,000 USD in 2007).</p></div>
 </div>
 <div class="sect3">
 <h4 id="_code_gpgsig_code"><code>gpgsig</code></h4>
-<div class="paragraph"><p>The optional <code>gpgsig</code> command is used to include a PGP/GPG signature or other cryptographic signature that signs the commit data.</p></div>
+<div class="paragraph"><p>オプションの gpgsig コマンドは、コミット・データに署名する PGP/GPG 署名またはその他の暗号署名を含めるために使用します。</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>        'gpgsig' SP &lt;git-hash-algo&gt; SP &lt;signature-format&gt; LF data</code></pre>
 </div></div>
-<div class="paragraph"><p>The <code>gpgsig</code> command takes two arguments:</p></div>
+<div class="paragraph"><p>gpgsig コマンドは2つの引数を取ります:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<em>&lt;git-hash-algo&gt;</em> specifies which Git object format this signature applies to, either <code>sha1</code> or <code>sha256</code>. This allows to know which representation of the commit was signed (the SHA-1 or the SHA-256 version) which helps with both signature verification and interoperability between repos with different hash functions.
+<em>&lt;git-hash-algo&gt;</em> は、この署名が適用される Git オブジェクト形式を <code>sha1</code> または <code>sha256</code> のいずれかで指定します。これにより、どのコミットの表現（SHA-1 版か SHA-256 版か）が署名されたかを知ることができ、署名検証と異なるハッシュ関数を持つリポジトリ間の相互運用性の両方に役立ちます。
 </p>
 </li>
 <li>
 <p>
-<em>&lt;signature-format&gt;</em> specifies the type of signature, such as <code>openpgp</code>, <code>x509</code>, <code>ssh</code>, or <code>unknown</code>. This is a convenience for tools that process the stream, so they don&#8217;t have to parse the ASCII armor to identify the signature type.
+<em>&lt;signature-format&gt;</em> は、署名の種類（<code>openpgp</code>, <code>x509</code>, <code>ssh</code>, <code>unknown</code> など）を指定します。これはストリームを処理するツールのための利便性機能であり、ASCII armor を解析して署名タイプを特定する必要がなくなります。
 </p>
 </li>
 </ul></div>
-<div class="paragraph"><p>A commit may have at most one signature for the SHA-1 object format (stored in the "gpgsig" header) and one for the SHA-256 object format (stored in the "gpgsig-sha256" header).</p></div>
-<div class="paragraph"><p>See below for a detailed description of the <code>data</code> command which contains the raw signature data.</p></div>
-<div class="paragraph"><p>Signatures are not yet checked in the current implementation though. (Already setting the <code>extensions.compatObjectFormat</code> configuration option might help with verifying both SHA-1 and SHA-256 object format signatures when it will be implemented.)</p></div>
+<div class="paragraph"><p>コミットは、SHA-1 オブジェクト形式に対して最大1つの署名（"gpgsig" ヘッダに格納）と、SHA-256 オブジェクト形式に対して1つの署名（"gpgsig-sha256" ヘッダに格納）を持つことができます。</p></div>
+<div class="paragraph"><p>生の署名データを含む data コマンドの詳細については下記参照。</p></div>
+<div class="paragraph"><p>現在の実装では署名はまだ検証されません。（将来的に実装された際に <code>extensions.compatObjectFormat</code> 設定オプションを有効にすると、SHA-1 と SHA-256 の両方のオブジェクト形式の署名を検証するのに役立つ可能性があります。）</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
 <div class="title">Note</div>
 </td>
-<td class="content">This is highly experimental and the format of the <code>gpgsig</code> command may change in the future without compatibility guarantees.</td>
+<td class="content">これは非常に実験的な機能であり、gpgsig コマンドの形式は将来、互換性保証なしに変更される可能性があります。</td>
 </tr></table>
 </div>
 </div>
@@ -1292,7 +1287,7 @@ External data format
 <div class="content">
 <pre><code>        'M' SP &lt;mode&gt; SP &lt;dataref&gt; SP &lt;path&gt; LF</code></pre>
 </div></div>
-<div class="paragraph"><p>Here usually <em>&lt;dataref&gt;</em> must be either a mark reference (<code>:</code><em>&lt;idnum&gt;</em>) set by a prior <code>blob</code> command, or a full 40-byte SHA-1 of an existing Git blob object. If <em>&lt;mode&gt;</em> is <code>040000</code> then <em>&lt;dataref&gt;</em> must be the full 40-byte SHA-1 of an existing Git tree object or a mark reference set with <code>--import-marks</code>.</p></div>
+<div class="paragraph"><p>ここで通常、 <em>&lt;dataref&gt;</em> は、 前の blob コマンドによって設定されたマーク参照(<code>:</code><em>&lt;idnum&gt;</em>)か、 既存のGitブロブオブジェクトの完全な40バイトのSHA-1である必要があります。 <em>&lt;mode&gt;</em> が <code>040000</code> の場合、 <em>&lt;dataref&gt;</em> は既存のGitツリーオブジェクトの完全な40バイトのSHA-1または <code>--import-marks</code> で設定されたマーク参照である必要があります。</p></div>
 </dd>
 <dt class="hdlist1">
 Inline data format
@@ -2005,7 +2000,7 @@ fastimport.unpackLimit
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-11-13 23:47:43 JST
+ 2026-08-03 03:34:52 JST
 </div>
 </div>
 </body>
