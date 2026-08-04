@@ -71,11 +71,11 @@ gc::
 	不要なファイルをクリーンアップし、ローカルリポジトリを最適化します。 「GC」は「ガベージコレクション」の略で、このタスクは多くの小さなタスクを実行します。 このタスクは、すべてのGitオブジェクトを単一のパックファイルに再パックするため、大規模なリポジトリではコストがかかる可能性があります。 また、古いデータを削除するため、状況によっては混乱を招く可能性があります。 Gitでのガベージコレクションの詳細については、 linkgit:git-gc[1] を参照してください。
 
 loose-objects::
-	The `loose-objects` job cleans up loose objects and places them into pack-files. In order to prevent race conditions with concurrent Git commands, it follows a two-step process. First, it deletes any loose objects that already exist in a pack-file; concurrent Git processes will examine the pack-file for the object data instead of the loose object. Second, it creates a new pack-file (starting with "loose-") containing a batch of loose objects.
+	`loose-objects` ジョブは、緩いオブジェクト(loose objects)をクリーンアップし、パックファイルに配置します。 並行Gitコマンドによる競合状態を防ぐために、2段階で処理を行います。 まず、パックファイルにすでに存在する緩いオブジェクトを削除します。 並行Gitプロセスは、緩いオブジェクトではなく、オブジェクトデータのパックファイルを調べます。 次に、緩いオブジェクトのバッチを含む新しいパックファイル(`loose-` で始まる)を作成します。
 +
-The batch size defaults to fifty thousand objects to prevent the job from taking too long on a repository with many loose objects. Use the `maintenance.loose-objects.batchSize` config option to adjust this size, including a value of `0` to remove the limit.
+バッチサイズは、ルーズオブジェクトが多数あるリポジトリでジョブが長時間かかるのを防ぐため、デフォルトで 5 万オブジェクトです。このサイズは、 `maintenance.loose-objects.batchSize` 構成オプションで調整できます。制限を取り除くには `0` を指定します。
 +
-The `gc` task writes unreachable objects as loose objects to be cleaned up by a later step only if they are not re-added to a pack-file; for this reason it is not advisable to enable both the `loose-objects` and `gc` tasks at the same time.
+`gc` タスクは、パックファイルに再追加されなかった場合にのみ、到達不能なオブジェクトを後続のステップでクリーンアップされるルーズオブジェクトとして書き出します。このため、`loose-objects` と `gc` の両タスクを同時に有効にすることは推奨されません。
 
 incremental-repack::
 	`incremental-repack` ジョブは、 `multi-pack-index` 機能を使用してオブジェクト・ディレクトリを再パックします。 並行Gitコマンドによる競合状態を防ぐために、2段階の処理を行います。 まず、 `gitmulti-pack-index expire` を呼び出して `multi-pack-index` ファイルによって参照されていないパック・ファイルを削除します。 次に、 `git multi-pack-index repack` を呼び出して、いくつかの小さなパック・ファイルを選択し、それらをより大きなファイルに再パックし、次に、小さなパック・ファイルを参照する `multi-pack-index` エントリを更新して、新しいパック・ファイルを参照します。 これにより、これらの小さなパック・ファイルは、次回の `gitmulti-pack-index expire` の実行時に削除できるようになります。 小さいパック・ファイルの選択は、大きいパック・ファイルの予想サイズが少なくともバッチ・サイズになるように行われます。 linkgit:git-multi-pack-index[1] の `repack` サブコマンドの `--batch-size` オプションを参照してください。 デフォルトのバッチ・サイズはゼロです。これは、すべてのパック・ファイルを単一のパック・ファイルに再パックしようとする特殊なケースです。
@@ -84,13 +84,13 @@ pack-refs::
 	`pack-refs` タスクは、緩い参照ファイル(loose reference files)を収集し、それらを1つのファイルに纏めます。 これにより、多くの参照間で反復する必要のある操作が高速化されます。 詳細については、 linkgit:git-pack-refs[1] を参照してください。
 
 reflog-expire::
-	The `reflog-expire` task deletes any entries in the reflog older than the expiry threshold. See linkgit:git-reflog[1] for more information.
+	`reflog-expire` タスクは、期限しきい値より古い reflog のエントリをすべて削除します。詳細は linkgit:git-reflog[1] を参照してください。
 
 rerere-gc::
-	The `rerere-gc` task invokes garbage collection for stale entries in the rerere cache. See linkgit:git-rerere[1] for more information.
+	`rerere-gc` タスクは、rerere キャッシュ内の古いエントリに対してガベージコレクションを実行します。詳細は linkgit:git-rerere[1] を参照してください。
 
 worktree-prune::
-	The `worktree-prune` task deletes stale or broken worktrees. See linkgit:git-worktree[1] for more information.
+	`worktree-prune` タスクは、古くなった、または壊れたワークツリーを削除します。詳細は linkgit:git-worktree[1] を参照してください。
 
 OPTIONS
 -------
