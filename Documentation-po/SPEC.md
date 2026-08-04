@@ -60,5 +60,7 @@ git 自体の開発プロジェクトである clone の、
 - 処理するAIは claude code を現状では最優先とする。できればお財布に優しいよう、消費トークンが少なくなる提案があると良い。
 - 処理するAIは次点で無料版の Grok チャットへの手動貼り付け・手動コピペを考えている(他に無料の gemini)。
 - 今回翻訳した範囲が info (または web) でレビューする時に判るようにする。今までは毎回コマンド全体を読み下すのでとても時間がかかっている。
+  - → 上記は独立リポジトリ `po-ai-assist` (https://github.com/kuma35/po-ai-assist) の
+    `ai-translate.py` / `po-ai-translate.el` として実装済み。使い方は同リポジトリの README.md を参照。
 - po-mode の c コマンドの改善。今は別途Emacsフレームを開いているが、 1. フレームをテンポラリとし、
   コマンド終了後は都度削除、2. そもそもEdiff表示せず、 Emacs po-mode 画面で、 previous と msgid に相違箇所オーバーレイ(ハイライト)するともっとよい。

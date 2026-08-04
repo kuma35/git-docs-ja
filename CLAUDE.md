@@ -90,6 +90,7 @@ docs/docs-ja-5/          (GitHub Pages 公開物: htmldocs/, info/, index.html)
 
 - 翻訳対象をまとめて AI (優先: Claude Code、次点: 無料版 Grok/Gemini への手動コピペ) に処理させ、
   結果を反映する仕組みの構築。トークン消費を抑える工夫が望ましい。
+  → 独立リポジトリ `po-ai-assist` (https://github.com/kuma35/po-ai-assist) として実装済み。
 - 今回翻訳した範囲を info/html レビュー時に一目で分かるようにする(現状は毎回全体を読み下す必要があり非効率)。
 - po-mode の `c` コマンド(ediff 表示)の改善: 一時フレーム化して終了後に破棄する、または ediff を使わず
   po-mode 画面上で previous と msgid の差分をオーバーレイ表示する。
