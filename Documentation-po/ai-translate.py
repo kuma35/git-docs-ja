@@ -26,7 +26,7 @@ raw テキストを別途構造的に走査して行う(PO 構文の行頭プレ
 プロジェクトの背景は Documentation-po/SPEC.md と CLAUDE.md を参照。
 
 翻訳結果は無条件には信頼しない: 翻訳したエントリは fuzzy のまま残す(または新たに
-fuzzy 化する)うえで、「# ai-translated by claude」という翻訳者コメントを付与する。
+fuzzy 化する)うえで、「# ai-translated」という翻訳者コメントを付与する。
 これにより、人間が fuzzy を解除する前に、その範囲を grep で検索して
 po-mode/info/html 上でレビューできる。既にマーク済みのエントリは以降の実行での
 対象選定から除外する(fuzzy であるというだけでは対象から外れないため、これがないと
@@ -53,7 +53,7 @@ except ImportError:
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROMPT_FILE = SCRIPT_DIR / "ai-translate-prompt.txt"
 WRAP_WIDTH = 79
-AI_MARKER = "ai-translated by claude"
+AI_MARKER = "ai-translated"
 MANUAL_SESSION_ROOT = Path(tempfile.gettempdir()) / "git-docs-ja-ai-translate"
 
 # obsolete エントリ ("#~ msgid ...") はコメントアウトされているが polib の通常の
