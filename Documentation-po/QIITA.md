@@ -27,17 +27,41 @@ gitの最新版の翻訳反映はぼちぼちやっていきます。
 
 ## 日々の作業
 
-### AIチャット貼り付けでの翻訳・自動での翻訳
+### AIチャット貼り付けでの翻訳
+
+ツール本体(`ai-translate.py` / `po-ai-translate.el`)は git-docs-ja 固有ではなく
+汎用ツールとして独立リポジトリ [po-ai-assist](https://github.com/kuma35/po-ai-assist) に
+切り出してあります。最新の使い方・設計判断は同リポジトリの README.md が正ですが、
+冗長になりますがここにも使い方を残しておきます。
 
 - `Documentation-po/translation-todo.txt` を Emacs org-mode で開いて進捗を確認します。
   各行は「翻訳済み+fuzzy+未翻訳 ファイル名」の形式で、po ファイル単位に `TODO`/`DONE` を
   トグル(`C-c C-t`)しながら消化していきます。
-- 対象の po ファイルを Emacs `po-mode` で開き、AI に下訳させます。このツール自体は
-  git-docs-ja 固有ではなく汎用ツールとして独立リポジトリ
-  [po-ai-assist](https://github.com/kuma35/po-ai-assist) に切り出しました。
-  無料の手動貼り付けモード(`C-c C-m` / `C-c C-p`)と、`claude` CLI 課金の自動モード
-  (`C-c C-b`)の使い方、レビュー方法(`# ai-translated` マーカーによる再課金防止など)は
-  po-ai-assist リポジトリの README.md を参照してください。
+- 対象の po ファイルを Emacs `po-mode` で開き、po-ai-assist の `ai-translate.py` を使って
+  AI に下訳させます。中心は **手動(manual)モード** です。
+  1. po-mode で `C-c C-m` (`po-ai-translate-buffer-manual-export`) を実行する。
+     内部で `ai-translate.py <file.po> --manual-export` が走り、未訳/fuzzy エントリ
+     1バッチ分のプロンプトが `prompt.txt` に書き出される。 同時にクリップボード(kill-ring)にコピー。
+  2. クリップボード(または `prompt.txt`)の内容を AI チャット(Grok、Gemini など)に貼り付ける。
+  3. 結果のJSONをこれまたクリップボード経由で `response.json` に貼り付け「保存」する。(※保存してください。保存しないと実際に処理する python スクリプトが読み取れません)
+  4. 対象の PO ファイルのバッファに戻り、 `C-c C-p` (`po-ai-translate-buffer-manual-apply`)を実行する。内部で
+     `ai-translate.py <file.po> --manual-apply` が走り、po ファイルへ反映される。 ※対象の PO ファイルのバッファに戻らないとダメです。
+  5. `response.json` のJSONエラーが無ければ(0)、適用完了OKで、 `prompt.txt` バッファと `response.json` バッファは削除されます。 JSON にエラーがあり正しく読み込めない(0以外)の時は適用できていません。 JSON を修正し `response.json` をセーブして再度`C-c C-p` (`po-ai-translate-buffer-manual-apply`)を実行してください。なお、終了コードが0以外の時は`prompt.txt` バッファと `response.json` バッファは削除されずに残ったままなので、必要に応じて手動で削除してください。
+  - 1ファイルあたりの残エントリ数がデフォルトのバッチサイズ(30件)に収まれば、
+    export→貼り付け→apply の1サイクルで1ファイル終わることが多いです。
+
+### 自動で翻訳(claude 課金勢向け)
+
+- **auto モード**(`C-c C-b` / `po-ai-translate-buffer`)もあります。こちらは
+  `ai-translate.py <file.po>` を引数なしで実行し、内部で `claude -p --json-schema` を
+  直接呼び出して翻訳〜po ファイルへの反映までを一括で行います(Claude API 課金が
+  発生するため `--max-budget-usd` で上限を指定できます)。手動モードで手が回らない時や、
+  まとめて流したい時に使います。
+- 反映されたエントリには `# ai-translated` という翻訳者コメントが付き、fuzzy のまま
+  残ります。これは「AI 訳を無条件に信頼しない」ための仕組みで、`grep` すれば今回
+  AI が触った範囲だけを一覧できます(レビューして OK なら fuzzy を手動で解除)。
+  同じマーカーが付いたエントリは以降の実行では対象から外れるので、レビュー前の
+  エントリが再翻訳されて余計に課金される心配はありません。
 
 ### 翻訳の反映
   
@@ -62,10 +86,24 @@ gitの最新版の翻訳反映はぼちぼちやっていきます。
 
 ## ai-translate.py の設計判断(補足)
 
-ツール本体の詳細な設計判断(サージカル置換方式、no-wrap ルール、fuzzy の
-previous_msgid 扱い、`--selftest` によるパーサ検証など)は、切り出し先の
-[po-ai-assist](https://github.com/kuma35/po-ai-assist) リポジトリの README.md に
-まとめてあります。
+コマンドの挙動を理解する上で最低限知っておくと良い点だけ挙げます(詳細・最新版は
+[po-ai-assist](https://github.com/kuma35/po-ai-assist) リポジトリの README.md を参照)。
+
+- po ファイルへの書き戻しは、`msgcat` によるファイル全体の再整形では行いません
+  (既存の翻訳済み行まで再ラップされて壊れるため)。代わりに変更対象のバイト範囲だけを
+  特定して置き換える「サージカル置換」方式を採っています。触っていないエントリは
+  絶対に書き換わりません。
+- `no-wrap` フラグ付きのエントリ(コマンド構文・見出し・オプションラベルなど)は、
+  種類によって「msgid をそのまま返す(翻訳しない)」か「自然な日本語に訳す」かが
+  `ai-translate-prompt.txt` 内のルールで指示されています。またアポストロフィ
+  `'...'` はバッククォート `` `...` `` に変換する、といった info 向けの変換ルールも
+  同ファイルにまとめてあります。
+- fuzzy エントリ(原文が更新されたもの)は `previous_msgid`/`previous_msgstr` も
+  プロンプトに含め、旧訳文の語彙・言い回しをできるだけ維持したまま差分だけを
+  更新するよう指示しています。
+- `--selftest --root <dir>` で、指定ディレクトリ配下の po コーパス全体に対して
+  自前のパーサ(バイトオフセット走査)と `polib` のパース結果が食い違っていないかを
+  チェックできます。
 
 # 新しいリビジョンへの対応(新しい docs-ja- ブランチを切る)
 
