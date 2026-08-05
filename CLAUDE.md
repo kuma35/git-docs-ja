@@ -20,6 +20,8 @@ Makefile 本体など)は対象外で、翻訳作業とそれを支えるツー�
     修正することがある。
   - `Documentation-sedout/` — 原文を po 化する前に機械的な前処理を行う中間フォルダ(翻訳プロジェクトが追加)。
   - `Documentation-po/` — po ファイル、ビルド/進捗管理スクリプト、進捗テキストなど翻訳作業の中枢。
+    `Documentation-po/elisp/` には `~/.emacs.d/init.el`(本プロジェクト外)から読み込む
+    Emacs Lisp 拡張スクリプトを置く(例: `magit-find-info.el`)。
   - `Documentation-ja/` — 翻訳済み成果物(info/html/texi 等)が生成される。
     ただし `Documentation-ja/RelNotes/` は**翻訳しない**。`Documentation/RelNotes/` の内容をそのまま
     コピーする扱い(po ファイルは msgid=msgstr のまま po4a を通すだけで、実質パススルー)。

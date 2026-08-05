@@ -76,6 +76,23 @@ gitの最新版の翻訳反映はぼちぼちやっていきます。
 - 原文を修正した時も `Documentation-po/compile.sh` を走らせてください。 原文から PO ファイル更新を自動で行います。
 - 編集中のPOファイルは開きなおすなどして編集を続行してください。
 
+### 翻訳レビュー補助
+
+`M-x magit-last-gitman`(実装は `Documentation-po/elisp/magit-last-gitman.el`。
+`~/.emacs.d/init.el` から読み込んでいます)で、HEAD 時点の `Documentation-ja/gitman.info` を
+Info バッファとして開きます。ウィンドウ分割はコマンド側では行わないので、手動で分割してから
+実行します。
+
+使い方:
+
+1. 今回翻訳作業中の info(`Documentation-ja/gitman.info` を開いている Info バッファ)を
+   表示しておく。翻訳を反映してから見比べたい時は、そのバッファで `C-c r`
+   (`revert-buffer`)して最新化しておく。
+2. `C-x 3`(`split-window-right`、左右 side by side に分割)でウィンドウを分割し、
+   `C-x o` で右側のウィンドウに移動する。
+3. 右側のウィンドウで `M-x magit-last-gitman` を実行し、HEAD 時点の gitman.info を開く。
+4. `M-x scroll-all-mode` で同期スクロールを有効にし、左右を見比べながら訳文をレビューする。
+
 ### 進捗確認
 
 `./msgcount.sh` 現在の日付時刻と、翻訳の進捗状況をプリント。全体センテンス数、fuzzy数、未訳数、進捗パーセンテージ。
