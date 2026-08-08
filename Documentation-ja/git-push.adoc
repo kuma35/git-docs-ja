@@ -19,19 +19,19 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-Updates one or more branches, tags, or other references in a remote repository from your local repository, and sends all necessary data that isn't already on the remote.
+ローカルリポジトリより、 リモートリポジトリの 1 つ以上のブランチ・タグ・その他の参照を更新し、リモートにまだ存在しない必要なデータをすべて送信します。
 
-The simplest way to push is `git push <remote> <branch>`. `git push origin main` will push the local `main` branch to the `main` branch on the remote named `origin`.
+もっとも単純なプッシュ方法は `git push <remote> <branch>` です。`git push origin main` は、ローカルの `main` ブランチを、`origin` という名前のリモート上の `main` ブランチへプッシュします。
 
-The `<repository>` argument defaults to the upstream for the current branch, or `origin` if there's no configured upstream.
+`<repository>` 引数のデフォルトは現在のブランチの上流(upstream)で、上流が設定されていない場合は `origin` です。
 
-To decide which branches, tags, or other refs to push, Git uses (in order of precedence):
+どのブランチ、タグ、またはその他の ref をプッシュするかを決めるために、Git は(優先順位の高い順に)以下を使用します:
 
-1. The `<refspec>` argument(s) (for example `main` in `git push origin main`) or the `--all`, `--mirror`, or `--tags` options
-2. The `remote.*.push` configuration for the repository being pushed to
-3. The `push.default` configuration. The default is `push.default=simple`, which will push to a branch with the same name as the current branch. See the <<CONFIGURATION,CONFIGURATION>> section below for more on `push.default`.
+1. `<refspec>` 引数(たとえば `git push origin main` の `main`)または `--all`, `--mirror`, `--tags` オプション
+2. プッシュ先のリポジトリの `remote.*.push` 設定
+3. `push.default` 設定。デフォルトは `push.default=simple` で、現在のブランチと同じ名前のブランチへプッシュします。`push.default` の詳細は、後述の <<CONFIGURATION,CONFIGURATION>> セクションを参照してください。
 
-`git push` may fail if you haven't set an upstream for the current branch, depending on what `push.default` is set to. See the <<UPSTREAM-BRANCHES,UPSTREAM BRANCHES>> section below for more on how to set and use upstreams.
+`push.default` の設定内容によっては、現在のブランチに上流(upstream)を設定していないと `git push` が失敗する場合があります。上流の設定方法と使用方法の詳細は、後述の <<UPSTREAM-BRANCHES,UPSTREAM BRANCHES>> セクションを参照してください。
 
 リポジトリに「フック」を設定することで、あなたがリポジトリにプッシュするたびに興味深いことが起こります。 linkgit:git-receive-pack[1] のドキュメントを参照してください。
 
@@ -42,30 +42,30 @@ OPTIONS[[OPTIONS]]
 	プッシュ操作の宛先となる「リモートリポジトリ」(The \"remote\" repository)です。 このパラメーターは、URL(下記 <<URLS,GIT URLS>> セクション参照)、 または、リモートの名前(下記<<REMOTES,REMOTES>> セクション 参照)のどちらかです。
 
 <refspec>...::
-	Specify what destination ref to update with what source object.
+	どの送信元オブジェクトでどの送信先 ref を更新するかを指定します。
 +
-The format for a refspec is [+]<src>[:<dst>], for example `main`, `main:other`, or `HEAD^:refs/heads/main`.
+refspec の形式は [+]<src>[:<dst>] です。たとえば `main`, `main:other`, `HEAD^:refs/heads/main` です。
 +
-The `<src>` is often the name of the local branch to push, but it can be any arbitrary "SHA-1 expression" (see linkgit:gitrevisions[7]).
+`<src>` は通常、プッシュするローカルブランチ名ですが、任意の「SHA-1 式」(linkgit:gitrevisions[7] 参照)にすることもできます。
 +
-The `<dst>` determines what ref to update on the remote side. It must be the name of a branch, tag, or other ref, not an arbitrary expression.
+`<dst>` は、リモート側でどの ref を更新するかを決定します。任意の式ではなく、ブランチ、タグ、またはその他の ref の名前でなければなりません。
 +
-The `+` is optional and does the same thing as `--force`.
+`+` は省略可能で、`--force` と同じことをします。
 +
-You can write a refspec using the fully expanded form (for example `refs/heads/main:refs/heads/main`) which specifies the exact source and destination, or with a shorter form (for example `main` or `main:other`). Here are the rules for how refspecs are expanded, as well as various other special refspec forms:
+完全に展開した形式(たとえば `refs/heads/main:refs/heads/main`)で refspec を書くと、送信元と送信先を正確に指定できます。あるいは、短い形式(たとえば `main` や `main:other`)でも書けます。以下は refspec がどのように展開されるかの規則と、その他のさまざまな特別な refspec 形式です:
 +
- *  `<src>` without a `:<dst>` means to update the same ref as the `<src>`, unless the `remote.<repository>.push` configuration specifies a different <dst>. For example, if `main` is a branch, then the refspec `main` expands to `main:refs/heads/main`.
- *  If `<dst>` unambiguously refers to a ref on the <repository> remote, then expand it to that ref. For example, if `v1.0` is a tag on the remote, then `HEAD:v1.0` expands to `HEAD:refs/tags/v1.0`.
- *  If `<src>` resolves to a ref starting with `refs/heads/` or `refs/tags/`, then prepend that to <dst>. For example, if `main` is a branch, then `main:other` expands to `main:refs/heads/other`
+ *  `:<dst>` を伴わない `<src>` は、`remote.<repository>.push` 設定で別の <dst> が指定されていない限り、`<src>` と同じ ref を更新することを意味します。たとえば `main` がブランチであれば、refspec `main` は `main:refs/heads/main` に展開されます。
+ *  `<dst>` が <repository> リモート上の ref を曖昧さなく参照している場合は、その ref に展開します。たとえば `v1.0` がリモート上のタグであれば、`HEAD:v1.0` は `HEAD:refs/tags/v1.0` に展開されます。
+ *  `<src>` が `refs/heads/` または `refs/tags/` で始まる ref に解決される場合は、それを <dst> の前に付加します。たとえば `main` がブランチであれば、`main:other` は `main:refs/heads/other` に展開されます
  *  特別なrefspec `:` (または非早送り更新を許可する場合は `+:`)は、Gitに、「一致する」ブランチをプッシュするように指示します。 ローカル側に存在するすべてのブランチについて、リモート側同じ名前のブランチが既に存在する場合、 リモート側が更新されます。
- *  <src> may contain a * to indicate a simple pattern match. This works like a glob that matches any ref matching the pattern. There must be only one * in both the `<src>` and `<dst>`. It will map refs to the destination by replacing the * with the contents matched from the source. For example, `refs/heads/*:refs/heads/*` will push all branches.
- *  A refspec starting with `^` is a negative refspec. This specifies refs to exclude. A ref will be considered to match if it matches at least one positive refspec, and does not match any negative refspec. Negative refspecs can be pattern refspecs. They must only contain a `<src>`. Fully spelled out hex object names are also not supported. For example, `git push origin 'refs/heads/*' '^refs/heads/dev-*'` will push all branches except for those starting with `dev-`
- *  If `<src>` is empty, it deletes the `<dst>` ref from the remote repository. For example, `git push origin :dev` will delete the `dev` branch.
- *  `tag <tag>` expands to `refs/tags/<tag>:refs/tags/<tag>`.
-	This is technically a special syntax for `git push` and not a refspec, since in `git push origin tag v1.0` the arguments `tag` and `v1.0` are separate.
- *  If the refspec can't be expanded unambiguously, error out with an error indicating what was tried, and depending on the `advice.pushUnqualifiedRefname` configuration (see linkgit:git-config[1]) suggest what refs/ namespace you may have wanted to push to.
+ *  <src> には単純なパターンマッチを示す * を含められます。これは、パターンに一致する任意の ref にマッチするグロブのように動作します。`<src>` と `<dst>` の両方に含められる * は 1 つだけでなければなりません。送信元でマッチした内容で * を置き換えることで、送信先に ref を対応付けます。たとえば `refs/heads/*:refs/heads/*` はすべてのブランチをプッシュします。
+ *  `^` で始まる refspec は負の refspec です。これは除外する ref を指定します。ref は、少なくとも 1 つの正の refspec にマッチし、かつ負の refspec には 1 つもマッチしない場合にマッチしたと見なされます。負の refspec はパターン refspec にできます。負の refspec は `<src>` のみを含まなければなりません。16 進のオブジェクト名を完全に綴ったものもサポートされません。たとえば `git push origin `refs/heads/*` `^refs/heads/dev-*`` は、`dev-` で始まるものを除くすべてのブランチをプッシュします
+ *  `<src>` が空の場合、リモートリポジトリから `<dst>` ref を削除します。たとえば `git push origin :dev` は `dev` ブランチを削除します。
+ *  `tag <tag>` は `refs/tags/<tag>:refs/tags/<tag>` に展開されます。
+	これは、技術的には refspec ではなく `git push` の特別な構文です。というのも、`git push origin tag v1.0` では引数 `tag` と `v1.0` が別々だからです。
+ *  refspec を曖昧さなく展開できない場合、何を試したかを示すエラーで失敗し、`advice.pushUnqualifiedRefname` 設定(linkgit:git-config[1] 参照)に応じて、あなたがプッシュしたかったであろう refs/ 名前空間を提案します。
 
-Not all updates are allowed: see PUSH RULES below for the details.
+すべての更新が許可されるわけではありません。詳細は後述の PUSH RULES を参照してください。
 
 `--all`::
 `--branches`::
@@ -159,9 +159,9 @@ Not all updates are allowed: see PUSH RULES below for the details.
 
 `-f`::
 `--force`::
-	Usually, `git push` will refuse to update a branch that is not an ancestor of the commit being pushed.
+	通常、`git push` は、プッシュするコミットの祖先ではないブランチの更新を拒否します。
 +
-This flag disables that check, the other safety checks in PUSH RULES below, and the checks in --force-with-lease. It can cause the remote repository to lose commits; use it with care.
+このフラグは、そのチェックと、後述の PUSH RULES にある他の安全チェック、および `--force-with-lease` のチェックを無効にします。これによりリモートリポジトリがコミットを失う可能性があるため、注意して使用してください。
 +
 注意: `--force` は、プッシュされるすべてのrefに適用されることに注意してください。 したがって、 `push.default` を `matching` に設定したり、 `remote.*.push` で構成された複数のプッシュ先で使用すると、現在のブランチ以外のref(リモートの対応物の背後にあるローカル参照を含む)が上書きされる可能性があります。 1つのブランチのみにプッシュを強制するには、 refspecの前に `+` を使用してプッシュします(例: `git push origin +master` を使用して、 `master` ブランチにプッシュを強制します)。 詳細については、上記「<refspec>...」セクションを参照してください。
 
@@ -273,19 +273,19 @@ reason::
 PUSH RULES
 ----------
 
-As a safety feature, the `git push` command only allows certain kinds of updates to prevent you from accidentally losing data on the remote.
+安全機能として、`git push` コマンドは、リモート上のデータを誤って失わないように、特定の種類の更新だけを許可します。
 
-Because branches and tags are intended to be used differently, the safety rules for pushing to a branch are different from the rules for pushing to a tag. In the following rules "update" means any modifications except deletions and creations. Deletions and creations are always allowed, except when forbidden by configuration or hooks.
+ブランチとタグは異なる用途を想定しているため、ブランチへのプッシュに対する安全規則は、タグへのプッシュに対する規則とは異なります。以下の規則において「更新」(update)とは、削除(delete)と作成(create)を除くあらゆる変更を意味します。削除と作成は、設定またはフックで禁止されていない限り、常に許可されます。
 
-1. If the push destination is a **branch** (`refs/heads/*`): only fast-forward updates are allowed, which means the destination must be an ancestor of the source commit. The source must be a commit.
-2. If the push destination is a **tag** (`refs/tags/*`): all updates will be rejected. The source can be any object.
-3. If the push destination is not a branch or tag:
-   * If the source is a tree or blob object, any updates will be rejected
-   * If the source is a tag or commit object, any fast-forward update is allowed, even in cases where what's being fast-forwarded is not a commit, but a tag object which happens to point to a new commit which is a fast-forward of the commit the last tag (or commit) it's replacing. Replacing a tag with an entirely different tag is also allowed, if it points to the same commit, as well as pushing a peeled tag, i.e. pushing the commit that existing tag object points to, or a new tag object which an existing commit points to.
+1. プッシュ先が **ブランチ** (`refs/heads/*`) の場合: fast-forward 更新のみが許可されます。つまり、送信先は送信元コミットの祖先でなければなりません。送信元はコミットでなければなりません。
+2. プッシュ先が **タグ** (`refs/tags/*`) の場合: すべての更新が拒否されます。送信元は任意のオブジェクトにできます。
+3. プッシュ先がブランチでもタグでもない場合:
+   * 送信元がツリーまたは BLOB オブジェクトの場合、更新はすべて拒否されます
+   * 送信元がタグまたはコミット・オブジェクトの場合、任意の fast-forward 更新が許可されます。これは、fast-forward されるものがコミットではなく、置き換え対象の直前のタグ(またはコミット)のコミットに対する fast-forward である新しいコミットをたまたま指しているタグ・オブジェクトである場合でも同様です。また、同一コミットを指している限り、タグを完全に別のタグに置き換えることも許可されます。さらに、剥かれたタグ(peeled tag)のプッシュ、すなわち既存のタグ・オブジェクトが指すコミットをプッシュすること、または既存のコミットが指している新しいタグ・オブジェクトをプッシュすることも許可されます。
 
-You can override these rules by passing `--force` or by adding the optional leading `+` to a refspec. The only exceptions are that no amount of forcing will make a branch accept a non-commit object, and forcing won't make the remote repository accept a push that it's configured to deny.
+`--force` を渡すか、refspec に省略可能な先頭の `+` を付けることで、これらの規則を上書きできます。唯一の例外は、どれだけ強制してもブランチに非コミット・オブジェクトを受け入れさせることはできないことと、強制しても設定で拒否するようになっているプッシュをリモートリポジトリに受け入れさせることはできないことです。
 
-Hooks and configuration can also override or amend these rules, see e.g. `receive.denyNonFastForwards` and `receive.denyDeletes` in linkgit:git-config[1] and `pre-receive` and `update` in linkgit:githooks[5].
+フックや設定も、これらの規則を上書きしたり補足したりできます。たとえば linkgit:git-config[1] の `receive.denyNonFastForwards` や `receive.denyDeletes`、および linkgit:githooks[5] の `pre-receive` や `update` を参照してください。
 
 NOTE ABOUT FAST-FORWARDS
 ------------------------

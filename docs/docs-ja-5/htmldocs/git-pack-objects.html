@@ -830,7 +830,7 @@ base-name
 <p>
         オブジェクト名やリビジョン引数ではなく、標準入力からパックファイル(例: <code>pack-1234abcd.pack</code>)のベース名を読み取ります。 結果のパックには、除外されたパック( <code>^</code> で始まる)にリストされているオブジェクトを除く、含まれているパック(<code>^</code> で始まらないもの)にリストされているすべてのオブジェクトが含まれます。
 </p>
-<div class="paragraph"><p>When <code>mode</code> is "follow", objects from packs not listed on stdin receive special treatment. Objects within unlisted packs will be included if those objects are (1) reachable from the included packs, and (2) not found in any excluded packs. This mode is useful, for example, to resurrect once-unreachable objects found in cruft packs to generate packs which are closed under reachability up to the boundary set by the excluded packs.</p></div>
+<div class="paragraph"><p><code>mode</code> が "follow" の場合、標準入力に列挙されていないパックからのオブジェクトは特別な扱いを受けます。列挙されていないパック内のオブジェクトは、(1) 列挙されたパックから到達可能であり、かつ (2) 除外されたパックのいずれにも見つからない場合に含められます。このモードは、例えば、cruft パック内で見つかった一度到達不能になったオブジェクトを復活させ、除外されたパックによって設定された境界まで到達可能性の下で閉じたパックを生成するのに便利です。</p></div>
 <div class="paragraph"><p>互換性のある <code>--unpacked</code> を除いて、 <code>--revs</code> または、 <code>--revs</code> を含むオプション(<code>--all</code> など)とは互換性がありません。</p></div>
 </dd>
 <dt class="hdlist1">
@@ -1108,19 +1108,19 @@ base-name
 </dt>
 <dd>
 <p>
-        While performing delta compression, Git groups objects that may be similar based on heuristics using the path to that object. While grouping objects by an exact path match is good for paths with many versions, there are benefits for finding delta pairs across different full paths. Git collects objects by type and then by a "name hash" of the path and then by size, hoping to group objects that will compress well together.
+        デルタ圧縮を実行する際、Git はオブジェクトへのパスを用いたヒューリスティックに基づいて、類似している可能性のあるオブジェクトをグループ化します。パスの完全一致でオブジェクトをグループ化することは、多くのバージョンを持つパスにとっては有効ですが、異なる完全パス間でデルタのペアを見つけることにも利点があります。Git は、うまく圧縮できるオブジェクトをグループ化することを期待して、まずは種類ごとに、次にパスの「ネームハッシュ」ごとに、そしてサイズごとにオブジェクトを収集します。
 </p>
-<div class="paragraph"><p>The default name hash version is <code>1</code>, which prioritizes hash locality by considering the final bytes of the path as providing the maximum magnitude to the hash function. This version excels at distinguishing short paths and finding renames across directories. However, the hash function depends primarily on the final 16 bytes of the path. If there are many paths in the repo that have the same final 16 bytes and differ only by parent directory, then this name-hash may lead to too many collisions and cause poor results. At the moment, this version is required when writing reachability bitmap files with <code>--write-bitmap-index</code>.</p></div>
-<div class="paragraph"><p>The name hash version <code>2</code> has similar locality features as version <code>1</code>, except it considers each path component separately and overlays the hashes with a shift. This still prioritizes the final bytes of the path, but also "salts" the lower bits of the hash using the parent directory names. This method allows for some of the locality benefits of version <code>1</code> while breaking most of the collisions from a similarly-named file appearing in many different directories. At the moment, this version is not allowed when writing reachability bitmap files with <code>--write-bitmap-index</code> and it will be automatically changed to version <code>1</code>.</p></div>
+<div class="paragraph"><p>デフォルトのネームハッシュバージョンは <code>1</code> で、パスの末尾のバイトがハッシュ関数に最大の重みを与えると見なすことで、ハッシュの局所性を優先します。このバージョンは、短いパスの区別やディレクトリをまたいだリネームの検出に優れています。しかし、このハッシュ関数は主にパスの末尾16バイトに依存します。リポジトリ内に末尾16バイトが同じで親ディレクトリのみが異なるパスが多数存在する場合、このネームハッシュは衝突が多くなりすぎ、結果が悪化する可能性があります。現時点では、このバージョンは <code>--write-bitmap-index</code> で到達可能性ビットマップファイルを書き込む際に必須です。</p></div>
+<div class="paragraph"><p>ネームハッシュバージョン <code>2</code> はバージョン <code>1</code> と同様の局所性の特徴を持ちますが、各パス構成要素を個別に考慮し、シフトを用いてハッシュを重ね合わせる点が異なります。これはパスの末尾バイトを引き続き優先しますが、親ディレクトリ名を使ってハッシュの下位ビットを「ソルト」します。この方法により、バージョン <code>1</code> の局所性の利点をある程度維持しつつ、同じような名前のファイルが多くの異なるディレクトリに現れることによる衝突の大半を回避できます。現時点では、このバージョンは <code>--write-bitmap-index</code> で到達可能性ビットマップファイルを書き込む際には許可されておらず、自動的にバージョン <code>1</code> に変更されます。</p></div>
 </dd>
 <dt class="hdlist1">
 <code>--path-walk</code>
 </dt>
 <dd>
 <p>
-        Perform compression by first organizing objects by path, then a second pass that compresses across paths as normal. This has the potential to improve delta compression especially in the presence of filenames that cause collisions in Git&#8217;s default name-hash algorithm.
+        まずパスごとにオブジェクトを整理し、その後通常どおりパスをまたいで圧縮する2パス方式で圧縮を実行します。これは特に、Git のデフォルトのネームハッシュアルゴリズムで衝突を引き起こすようなファイル名が存在する場合に、デルタ圧縮を改善する可能性があります。
 </p>
-<div class="paragraph"><p>Incompatible with <code>--delta-islands</code>, <code>--shallow</code>, or <code>--filter</code>. The <code>--use-bitmap-index</code> option will be ignored in the presence of <code>--path-walk.</code></p></div>
+<div class="paragraph"><p><code>--delta-islands</code>, <code>--shallow</code>, <code>--filter</code> とは互換性がありません。 <code>--path-walk</code> が指定されている場合、 <code>--use-bitmap-index</code> オプションは無視されます。</p></div>
 </dd>
 </dl></div>
 </div>
@@ -1181,7 +1181,7 @@ island = refs/virtual/([0-9]+)/(pull)/</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-12-09 10:39:14 JST
+ 2026-08-09 03:27:11 JST
 </div>
 </div>
 </body>

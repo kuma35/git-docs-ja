@@ -16,9 +16,9 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-Transplant a series of commits onto a different starting point. You can also use `git rebase` to reorder or combine commits: see INTERACTIVE MODE below for how to do that.
+一連のコミットを別の開始点へ移植します。`git rebase` はコミットの並べ替えや結合にも使用できます。方法については後述の INTERACTIVE MODE を参照してください。
 
-For example, imagine that you have been working on the `topic` branch in this history, and you want to "catch up" to the work done on the `master` branch.
+たとえば、この履歴の `topic` ブランチで作業していて、`master` ブランチで行われた作業に「追いつき」たいとします。
 
 ------------
           A---B---C topic
@@ -26,7 +26,7 @@ For example, imagine that you have been working on the `topic` branch in this hi
     D---E---F---G master
 ------------
 
-You want to transplant the commits you made on `topic` since it diverged from `master` (i.e. A, B, and C), on top of the current `master`. You can do this by running `git rebase master` while the `topic` branch is checked out. If you want to rebase `topic` while on another branch, `git rebase master topic` is a shortcut for `git checkout topic && git rebase master`.
+`master` から分岐して以降に `topic` で行ったコミット(つまり A、B、C)を、現在の `master` の先端の上に移植したいとします。`topic` ブランチをチェックアウトした状態で `git rebase master` を実行すればできます。別のブランチにいる状態で `topic` をリベースしたい場合、`git rebase master topic` は `git checkout topic && git rebase master` のショートカットです。
 
 ------------
                   A'--B'--C' topic
@@ -35,31 +35,31 @@ You want to transplant the commits you made on `topic` since it diverged from `m
 ------------
 
 
-If there is a merge conflict during this process, `git rebase` will stop at the first problematic commit and leave conflict markers. If this happens, you can do one of these things:
+この処理中にマージ競合が発生した場合、`git rebase` は最初の問題のあるコミットで停止し、競合マーカーを残します。この場合、次のいずれかを行えます:
 
-1. Resolve the conflict. You can use `git diff` to find the markers (<<<<<<) and make edits to resolve the conflict. For each file you edit, you need to tell Git that the conflict has been resolved. You can mark the conflict as resolved with `git add <filename>`. After resolving all of the conflicts, you can continue the rebasing process with
+1. 競合を解決します。`git diff` を使用してマーカー(<<<<<<)を見つけ、編集して競合を解決できます。編集するファイルごとに、競合が解決されたことを Git に通知する必要があります。`git add <filename>` で競合を解決済みとしてマークできます。すべての競合を解決した後、次のコマンドでリベース処理を続行できます
 
    git rebase --continue
 
-2. Stop the `git rebase` and return your branch to its original state with
+2. `git rebase` を停止(stop)し、次のコマンドでブランチを元の状態に戻します
 
    git rebase --abort
 
-3. Skip the commit that caused the merge conflict with
+3. 次のコマンドで、マージ競合を引き起こしたコミットをスキップします
 
    git rebase --skip
 
-If you don't specify an `<upstream>` to rebase onto, the upstream configured in `branch.<name>.remote` and `branch.<name>.merge` options will be used (see linkgit:git-config[1] for details) and the `--fork-point` option is assumed. If you are currently not on any branch or if the current branch does not have a configured upstream, the rebase will abort.
+リベース先の `<upstream>` を指定しない場合、`branch.<name>.remote` および `branch.<name>.merge` オプションで設定された上流(upstream)が使用され(詳細は linkgit:git-config[1] 参照)、`--fork-point` オプションが想定されます。現在どのブランチにもいない場合、または現在のブランチに上流が設定されていない場合、リベースは中止(abort)されます。
 
-Here is a simplified description of what `git rebase <upstream>` does:
+`git rebase <upstream>` の動作を簡略化して説明すると次のとおりです:
 
-1. Make a list of all commits on your current branch since it branched off from `<upstream>` that do not have an equivalent commit in `<upstream>`.
-2. Check out `<upstream>` with the equivalent of `git checkout --detach <upstream>`.
-3. Replay the commits, one by one, in order. This is similar to running `git cherry-pick <commit>` for each commit. See REBASING MERGES for how merges are handled.
-4. Update your branch to point to the final commit with the equivalent of `git checkout -B <branch>`.
+1. `<upstream>` から分岐して以降の現在のブランチ上のコミットのうち、`<upstream>` に等価なコミットが存在しないものをすべて一覧にします。
+2. `git checkout --detach <upstream>` と同等の方法で `<upstream>` をチェックアウトします。
+3. コミットを順に 1 つずつ再生します。これは各コミットに対して `git cherry-pick <commit>` を実行するのに似ています。マージがどのように扱われるかについては REBASING MERGES を参照してください。
+4. `git checkout -B <branch>` と同等の方法で、ブランチが最終コミットを指すように更新します。
 
 [NOTE]
-When starting the rebase, `ORIG_HEAD` is set to point to the commit at the tip of the to-be-rebased branch. However, `ORIG_HEAD` is not guaranteed to still point to that commit at the end of the rebase if other commands that change `ORIG_HEAD` (like `git reset`) are used during the rebase. The previous branch tip, however, is accessible using the reflog of the current branch (i.e. `@{1}`, see linkgit:gitrevisions[7].
+リベース開始時に、`ORIG_HEAD` はリベース対象ブランチの先端のコミットを指すように設定されます。しかし、リベース中に `ORIG_HEAD` を変更する他のコマンド(`git reset` など)を使用した場合、リベース終了時に `ORIG_HEAD` がそのコミットを指したままであることは保証されません。ただし、以前のブランチ先端には、現在のブランチの reflog を使用してアクセスできます(つまり `@{1}` です。linkgit:gitrevisions[7] 参照)。
 
 TRANSPLANTING A TOPIC BRANCH WITH --ONTO
 ----------------------------------------
@@ -165,7 +165,7 @@ OPTIONS
 +
 特別な場合として、マージベースが1つしかない場合は、あなたはAとBのマージベースのショートカットとして "A\...B" を使用できます。最大でAとBのいずれかを省略できます。その場合、デフォルトでHEADになります。
 
-See TRANSPLANTING A TOPIC BRANCH WITH --ONTO above for examples.
+例については、上記の「TRANSPLANTING A TOPIC BRANCH WITH --ONTO」を参照してください。
 
 `--keep-base`::
 	`<upstream>` の `<branch>` のマージベースへの新しいコミットを作成する開始点を設定します。 `git rebase --keep-base <upstream> <branch>` を実行することは `git rebase --reapply-cherry-picks --no-fork-point --onto <upstream>...<branch> <upstream> <branch>` を実行することと同等です。
@@ -375,11 +375,11 @@ merge backend;;
 
 `--autosquash`::
 `--no-autosquash`::
-	Automatically squash commits with specially formatted messages into previous commits being rebased. If a commit message starts with "squash! ", "fixup! " or "amend! ", the remainder of the title is taken as a commit specifier, which matches a previous commit if it matches the title or the hash of that commit. If no commit matches fully, matches of the specifier with the start of commit titles are considered.
+	特別な書式のメッセージを持つコミットを、自動的にリベース中の以前のコミットに squash します。コミットメッセージが "squash! "、"fixup! "、"amend! " で始まる場合、タイトルの残りの部分がコミット指定子として扱われ、以前のコミットのタイトルまたはそのコミットのハッシュと一致するならば、その以前のコミットにマッチします。完全に一致するコミットがない場合、コミットタイトルの先頭と指定子の部分一致が考慮されます。
 +
 リベースの todo リストでは、 squash と fixup と amend コミットのアクションがそれぞれ `pick` から `squash` または `fixup` または `fixup -C` に変更され、 それらが修正するコミットの直後に移動されます。 `--interactive` オプションを使用すると、 処理を進める前に todo リストを確認および編集できます。
 +
-The recommended way to create commits with squash markers is by using the `--squash`, `--fixup`, `--fixup=amend:` or `--fixup=reword:` options of linkgit:git-commit[1], which take the target commit as an argument and automatically fill in the title of the new commit from that.
+squash マーカー付きのコミットを作成する推奨方法は、linkgit:git-commit[1] の `--squash`、`--fixup`、`--fixup=amend:`、`--fixup=reword:` オプションを使用することです。これらは対象コミットを引数として受け取り、新しいコミットのタイトルをその内容から自動的に入力します。
 +
 構成変数 `rebase.autoSquash` を `true` に設定すると、 対話的なリベースでデフォルトで自動スカッシュ(auto-squashing)が有効になります。 この設定は `--no-autosquash` オプションを使用して上書きできます。
 +
