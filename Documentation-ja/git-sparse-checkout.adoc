@@ -42,12 +42,8 @@ set::
 +
 `--[no-]sparse-index` オプションを使用して、 スパース・インデックスを使用します(デフォルトでは使用しません)。 スパース・インデックスは、 インデックスのサイズを縮小して、スパース・チェックアウトの定義により近づけます。 これにより、 `git status` や `git add` などのコマンドのパフォーマンスが大幅に向上します。 この機能はまだ実験段階です。 一部のコマンドは、機能に適切に統合されるまで、 スパース・インデックスを使用すると遅くなる可能性があります。
 +
-**WARNING:** Using a sparse index requires modifying the index in a way
-that is not completely understood by external tools. If you have trouble
-with this compatibility, then run `git sparse-checkout init --no-sparse-index`
-to rewrite your index to not be sparse. Older versions of Git will not
-understand the sparse directory entries index extension and may fail to
-interact with your repository until it is disabled.
+[WARNING]
+スパースインデックスを使用するには、外部ツールでは完全には理解できない方法でインデックスを変更する必要があります。 この互換性に問題がある場合は、 `git sparse-checkout init --no-sparse-index` を実行して、インデックスがまばらにならないように書き換えます。 古いバージョンのGitは、スパースディレクトリエントリのインデックス拡張機能を理解せず、それが無効になるまでリポジトリとのやり取りに失敗する可能性があります。
 
 add::
 	sparse-checkout ファイルを更新して、 追加のディレクトリ(コーン・モードの場合)またはパターン(非コーン・モードの場合)を含めます。 デフォルトでは、これらのディレクトリまたはパターンはコマンドライン引数から読み取られますが、 `--stdin` オプションを使用して stdin から読み取ることができます。
@@ -57,18 +53,18 @@ reapply::
 +
 `reapply` コマンドは `--[no-]cone` や `--[no-]sparse-index` フラグも使用できます。これは、 `set` コマンドのフラグと同一の意味で、 これにより、あなたは全てのスパース・パス(sparsity paths)を再指定すること無く、スパース・モードを変更できます。
 
-'clean'::
-	Opportunistically remove files outside of the sparse-checkout definition. This command requires cone mode to use recursive directory matches to determine which files should be removed. A file is considered for removal if it is contained within a tracked directory that is outside of the sparse-checkout definition.
+clean::
+	スパース・チェックアウト定義の外側にあるファイルを機会主義的(Opportunistically)に削除します。このコマンドは、削除すべきファイルを判断するために再帰的なディレクトリ一致を使用するため、コーン・モードが必要です。ファイルは、スパース・チェックアウト定義の外側にある追跡ディレクトリに含まれている場合に、削除対象と見なされます。
 +
-Some special cases, such as merge conflicts or modified files outside of the sparse-checkout definition could lead to keeping files that would otherwise be removed. Resolve conflicts, stage modifications, and use `git sparse-checkout reapply` in conjunction with `git sparse-checkout clean` to resolve these cases.
+マージ競合や、スパース・チェックアウト定義の外側にある変更済みファイルなどの一部の特殊なケースでは、通常なら削除されるはずのファイルが残る場合があります。競合を解消し、変更をステージし、これらのケースを解決するために `git sparse-checkout clean` と併用して `git sparse-checkout reapply` を使用してください。
 +
-This command can be used to be sure the sparse index works efficiently, though it does not require enabling the sparse index feature via the `index.sparse=true` configuration.
+このコマンドは、`index.sparse=true` 構成によりスパース・インデックス機能を有効にする必要はありませんが、スパース・インデックスが効率的に動作することを確実にするために使用できます。
 +
-To prevent accidental deletion of worktree files, the `clean` subcommand will not delete any files without the `-f` or `--force` option, unless the `clean.requireForce` config option is set to `false`.
+作業ツリーのファイルを誤って削除しないように、`clean` サブコマンドは、`clean.requireForce` 設定オプションが `false` に設定されていない限り、 `-f` または `--force` オプションなしではファイルを一切削除しません。
 +
-The `--dry-run` option will list the directories that would be removed without deleting them. Running in this mode can be helpful to predict the behavior of the clean comand or to determine which kinds of files are left in the sparse directories.
+`--dry-run` オプションは、それらを削除せずに削除されるディレクトリの一覧を表示します。このモードで実行すると、clean コマンドの振る舞いを予測したり、スパース・ディレクトリにどの種類のファイルが残っているかを判断したりするのに役立ちます。
 +
-The `--verbose` option will list every file within the directories that are considered for removal. This option is helpful to determine if those files are actually important or perhaps to explain why the directory is still present despite the current sparse-checkout.
+`--verbose` オプションは、削除対象と見なされるディレクトリ内のすべてのファイルを一覧表示します。このオプションは、それらのファイルが実際に重要かどうかを判断したり、現在のスパース・チェックアウトにもかかわらずディレクトリがまだ存在する理由を説明したりするのに役立ちます。
 
 disable::
 	`core.sparseCheckout` 構成設定を無効にし、すべてのファイルを含めるように作業ディレクトリを復元(restore)します。
@@ -172,13 +168,11 @@ current/subdirectory/relative-dir
 INTERNALS -- CONE MODE HANDLING
 -------------------------------
 
-The "cone mode", which is the default, lets you specify only what
-directories to include.  For any directory specified, all paths below
-that directory will be included, and any paths immediately under
-leading directories (including the toplevel directory) will also be
-included.  Thus, if you specified the directory
-    Documentation/technical/
-then your sparse checkout would contain:
+デフォルトである「コーン・モード」(cone mode)では、含めるディレクトリのみを指定できます。指定されたディレクトリについては、そのディレクトリの下のすべてのパスが含まれ、先頭のディレクトリ(最上位ディレクトリを含む)のすぐ下のパスも含まれます。したがって、以下のディレクトリを指定した場合:
+
+    `Documentation/technical/`
+
+その場合、スパース・チェックアウトには以下が含まれます:
 
   * 最上位ディレクトリ内のすべてのファイル
   * `Documentation/` 直下のすべてのファイル

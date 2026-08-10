@@ -31,16 +31,16 @@ DESCRIPTION
 
 作業ディレクトリとインデックスの現在の状態を記録したいが、 作業ディレクトリをクリーンな状態に戻したい場合は、 `git stash` を使用します。 このコマンドは、ローカルの変更を保存し、 作業ディレクトリを元に戻して(revert)、`HEAD` コミットに一致させます。
 
-The modifications stashed away by this command can be listed with `git stash list`, inspected with `git stash show`, and restored (potentially on top of a different commit) with `git stash apply`. Calling `git stash` without any arguments is equivalent to `git stash push`. A stash is by default listed as "WIP on '<branchname>' ...", but you can give a more descriptive message on the command line when you create one.
+このコマンドによって保存(stash)された変更は、 `git stash list` で一覧表示でき、 `git stash show` で確認でき、 `git stash apply` で(異なるコミットの上に)復元できます。 引数なしで `git stash` を呼び出すことは、 `git stash push` と同等です。 スタッシュはデフォルトで "WIP on '<branchname>' ..." と表示されますが、 作成時にコマンドラインでより詳細なメッセージを指定できます。
 
-The latest stash you created is stored in `refs/stash`; older stashes are found in the reflog of this reference and can be named using the usual reflog syntax (e.g. `stash@{0}` is the most recently created stash, `stash@{1}` is the one before it, `stash@{2.hours.ago}` is also possible). Stashes may also be referenced by specifying just the stash index (e.g. the integer `<n>` is equivalent to `stash@{<n>}`).
+最新のスタッシュ は `refs/stash` に保存されます。 古いスタッシュはこの参照の reflog にあり、 通常の reflog 構文(例: `stash@{0}` は最新のスタッシュで、 `stash@{1}` はその前のもの、 `stash@{2.hours.ago}` なんてのも可能)で名前を付けれます。 スタッシュは、 スタッシュ・インデックス番号(例: 整数 <n> は `stash@{<n>}` と同等)だけで参照することもできます。
 
 COMMANDS
 --------
 
 `push [-p | --patch] [-S | --staged] [-k | --[no-]keep-index] [-u | --include-untracked] [ -a | --all] [-q | --quiet] [(-m|--message) <message>] [--pathspec-from-file=<file> [--pathspec-file-nul]] [--] [<pathspec>...]`::
 
-	Save your local modifications to a new 'stash entry' and roll them back to `HEAD` (in the working tree and in the index). The _<message>_ part is optional and gives the description along with the stashed state.
+	ローカルの変更を新しい「スタッシュエントリ」に保存し、 作業ツリーとインデックスを HEAD に戻します(roll back)。 <message> の部分は任意で、 スタッシュ状態と一緒に説明を付加します。
 +
 スナップショットを素早く作成する場合、「push」を省略できます。 このモードでは、 誤ったサブ・コマンドが意図しないスタッシュ・エントリを作成するのを防ぐため、 オプション以外の引数は許可されません。 これには例外が2つあり、 `stash -p` は `stash push -p` のエイリアスとして機能し、 pathspec 要素は曖昧さを避けるためにダブルハイフン `--` の後ろで許可されます。
 
@@ -61,7 +61,7 @@ stash@{1}: On master: 9cc0589... Add git-stash
 
 `show [-u | --include-untracked | --only-untracked] [<diff-options>] [<stash>]`::
 
-	Show the changes recorded in the stash entry as a diff between the stashed contents and the commit back when the stash entry was first created. By default, the command shows the diffstat, but it will accept any format known to 'git diff' (e.g., `git stash show -p stash@{1}` to view the second most recent entry in patch form). If no _<diff-option>_ is provided, the default behavior will be given by the `stash.showStat`, and `stash.showPatch` config variables. You can also use `stash.showIncludeUntracked` to set whether `--include-untracked` is enabled by default.
+	スタッシュエントリに記録された変更を、スタッシュされたコンテンツとスタッシュエントリが最初に作成されたときのコミットとの差分として表示します。 デフォルトでは、コマンドはdiffstatを表示しますが、 `git diff` として認識される任意の形式を受け入れます(たとえば、パッチ形式で2番目に新しいエントリを表示するには `git stash show -p stash@{1}`)。 `<diff-option>` が指定されていない場合、デフォルトの動作は `stash.showStat` および `stash.showPatch` 構成変数によって与えられます。 `stash.showIncludeUntracked` を使用して、 `--include-untracked` がデフォルトで有効になっているかどうかを設定することもできます。
 
 `pop [--index] [-q | --quiet] [<stash>]`::
 
@@ -75,12 +75,12 @@ stash@{1}: On master: 9cc0589... Add git-stash
 
 `branch <branchname> [<stash>]`::
 
-	Creates and checks out a new branch named _<branchname>_ starting from the commit at which the _<stash>_ was originally created, applies the changes recorded in _<stash>_ to the new working tree and index. If that succeeds, and _<stash>_ is a reference of the form `stash@{<revision>}`, it then drops the _<stash>_.
+	`<branchname>` という名前の新しいブランチを作成し、 チェックアウトします。 このブランチは `<stash>` が最初に作成されたコミットから開始されます。 `<stash>` に記録された変更を新しい作業ツリーとインデックスに適用(apply)します。 成功した場合、 かつ `<stash>` が `stash@{<revision>}` 形式の参照である場合、 その `<stash>` を削除します。
 +
 これは、 `git stash push` を実行したブランチがすごく変更されていて、 `git stash apply` が競合のために失敗した場合に便利です。 スタッシュ・エントリは、 `git stash` が実行された時点での HEAD であったコミットの上に適用されるため、 元のスタッシュ状態を競合なく復元します。
 
 `clear`::
-	Remove all the stash entries. Note that those entries will then be subject to pruning, and may be impossible to recover (see 'EXAMPLES' below for a possible strategy).
+	すべてのスタッシュエントリを削除します。 これらのエントリは刈り込みの対象となり、回復(recover)できない可能性があることに注意してください(可能な戦略については、下記「EXAMPLES」を参照してください)。
 
 `drop [-q | --quiet] [<stash>]`::
 	スタッシュ・エントリー・リストからスタッシュ・エントリを1つ削除します。
@@ -94,10 +94,10 @@ stash@{1}: On master: 9cc0589... Add git-stash
 
 `export ( --print | --to-ref <ref> ) [<stash>...]`::
 
-	Export the specified stashes, or all of them if none are specified, to a chain of commits which can be transferred using the normal fetch and push mechanisms, then imported using the `import` subcommand.
+	指定されたスタッシュ(指定がない場合はすべてのスタッシュ)を、 通常の fetch と push の仕組みを使って転送できる一連のコミットとしてエクスポートし、 その後 `import` サブコマンドでインポートします。
 
 `import <commit>`::
-	Import the specified stashes from the specified commit, which must have been created by `export`, and add them to the list of stashes. To replace the existing stashes, use `clear` first.
+	`export` によって作成されている必要がある指定されたコミットから、指定されたスタッシュをインポートし、スタッシュの一覧に追加します。既存のスタッシュを置き換えるには、まず `clear` を使用してください。
 
 OPTIONS
 -------
@@ -152,7 +152,7 @@ include::diff-context-options.adoc[]
 `--pathspec-from-file=<file>`::
 	このオプションは、 `push` コマンドにのみ有効です。
 +
-Pathspec is passed in _<file>_ instead of commandline args. If _<file>_ is exactly `-` then standard input is used. Pathspec elements are separated by LF or CR/LF. Pathspec elements can be quoted as explained for the configuration variable `core.quotePath` (see linkgit:git-config[1]). See also `--pathspec-file-nul` and global `--literal-pathspecs`.
+pathspecは、コマンドライン引数の代わりに `<file>` で渡されます。 `<file>` が正確に `-` の場合、標準入力が使用されます。 pathspec要素はLFまたはCR/LFで区切られます。 pathspec要素は、構成変数 `core.quotePath` にて説明されているようにクォートできます(linkgit:git-config[1] 参照)。 `--pathspec-file-nul` および グローバルの `--literal-pathspecs` も参照してください。
 
 `--pathspec-file-nul`::
 	このオプションは、 `push` コマンドにのみ有効です。
@@ -166,14 +166,14 @@ Pathspec is passed in _<file>_ instead of commandline args. If _<file>_ is exact
 静かにして、フィードバックメッセージを抑制します。
 
 `--print`::
-	This option is only valid for the `export` command.
+	このオプションは `export` コマンドでのみ有効です。
 +
-Create the chain of commits representing the exported stashes without storing it anywhere in the ref namespace and print the object ID to standard output. This is designed for scripts.
+エクスポートされたスタッシュを表す一連コミットを作成しますが、ref 名前空間のどこにも保存せず、オブジェクト ID を標準出力に表示します。これはスクリプト向けに設計されています。
 
 `--to-ref`::
-	This option is only valid for the `export` command.
+	このオプションは `export` コマンドでのみ有効です。
 +
-Create the chain of commits representing the exported stashes and store it to the specified ref.
+エクスポートされたスタッシュを表す一連のコミットを作成し、指定された ref に保存します。
 
 `--`::
 	このオプションは、 `push` コマンドにのみ有効です。
@@ -187,10 +187,10 @@ Create the chain of commits representing the exported stashes and store it to th
 +
 詳細については、 linkgit:gitglossary[7] の「pathspec」エントリを参照してください。
 
-_<stash>_::
-	This option is only valid for `apply`, `branch`, `drop`, `pop`, `show`, and `export` commands.
+<stash>::
+	このオプションは、 `apply`, `branch`, `drop`, `pop`, `show`, `export` コマンドにのみ有効です。
 +
-A reference of the form `stash@{<revision>}`. When no _<stash>_ is given, the latest stash is assumed (that is, `stash@{0}`).
+`stash@{<revision>}` 形式の参照。 `<stash>` が指定されていない場合、最新のスタッシュ(`stash@{0}`)を想定します。
 
 DISCUSSION
 ----------

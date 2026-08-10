@@ -45279,12 +45279,12 @@ sparse-checkout ファイルに記載されているディレクトリまたは�
 
 @samp{--[no-]sparse-index} オプションを使用して、 スパース・インデックスを使用します(デフォルトでは使用しません)。 スパース・インデックスは、 インデックスのサイズを縮小して、スパース・チェックアウトの定義により近づけます。 これにより、 @samp{git status} や @samp{git add} などのコマンドのパフォーマンスが大幅に向上します。 この機能はまだ実験段階です。 一部のコマンドは、機能に適切に統合されるまで、 スパース・インデックスを使用すると遅くなる可能性があります。
 
-@strong{WARNING:} Using a sparse index requires modifying the index in a way
-that is not completely understood by external tools. If you have trouble
-with this compatibility, then run @samp{git sparse-checkout init --no-sparse-index}
-to rewrite your index to not be sparse. Older versions of Git will not
-understand the sparse directory entries index extension and may fail to
-interact with your repository until it is disabled.
+@quotation
+
+@strong{Warning}
+
+スパースインデックスを使用するには、外部ツールでは完全には理解できない方法でインデックスを変更する必要があります。 この互換性に問題がある場合は、 @samp{git sparse-checkout init --no-sparse-index} を実行して、インデックスがまばらにならないように書き換えます。 古いバージョンのGitは、スパースディレクトリエントリのインデックス拡張機能を理解せず、それが無効になるまでリポジトリとのやり取りに失敗する可能性があります。
+@end quotation
 
 @item  add 
 sparse-checkout ファイルを更新して、 追加のディレクトリ(コーン・モードの場合)またはパターン(非コーン・モードの場合)を含めます。 デフォルトでは、これらのディレクトリまたはパターンはコマンドライン引数から読み取られますが、 @samp{--stdin} オプションを使用して stdin から読み取ることができます。
@@ -45294,18 +45294,18 @@ sparse-checkout ファイルを更新して、 追加のディレクトリ(コ�
 
 @samp{reapply} コマンドは @samp{--[no-]cone} や @samp{--[no-]sparse-index} フラグも使用できます。これは、 @samp{set} コマンドのフラグと同一の意味で、 これにより、あなたは全てのスパース・パス(sparsity paths)を再指定すること無く、スパース・モードを変更できます。
 
-@item  @emph{clean} 
-Opportunistically remove files outside of the sparse-checkout definition. This command requires cone mode to use recursive directory matches to determine which files should be removed. A file is considered for removal if it is contained within a tracked directory that is outside of the sparse-checkout definition.
+@item  clean 
+スパース・チェックアウト定義の外側にあるファイルを機会主義的(Opportunistically)に削除します。このコマンドは、削除すべきファイルを判断するために再帰的なディレクトリ一致を使用するため、コーン・モードが必要です。ファイルは、スパース・チェックアウト定義の外側にある追跡ディレクトリに含まれている場合に、削除対象と見なされます。
 
-Some special cases, such as merge conflicts or modified files outside of the sparse-checkout definition could lead to keeping files that would otherwise be removed. Resolve conflicts, stage modifications, and use @samp{git sparse-checkout reapply} in conjunction with @samp{git sparse-checkout clean} to resolve these cases.
+マージ競合や、スパース・チェックアウト定義の外側にある変更済みファイルなどの一部の特殊なケースでは、通常なら削除されるはずのファイルが残る場合があります。競合を解消し、変更をステージし、これらのケースを解決するために @samp{git sparse-checkout clean} と併用して @samp{git sparse-checkout reapply} を使用してください。
 
-This command can be used to be sure the sparse index works efficiently, though it does not require enabling the sparse index feature via the @samp{index.sparse=true} configuration.
+このコマンドは、@samp{index.sparse=true} 構成によりスパース・インデックス機能を有効にする必要はありませんが、スパース・インデックスが効率的に動作することを確実にするために使用できます。
 
-To prevent accidental deletion of worktree files, the @samp{clean} subcommand will not delete any files without the @samp{-f} or @samp{--force} option, unless the @samp{clean.requireForce} config option is set to @samp{false}.
+作業ツリーのファイルを誤って削除しないように、@samp{clean} サブコマンドは、@samp{clean.requireForce} 設定オプションが @samp{false} に設定されていない限り、 @samp{-f} または @samp{--force} オプションなしではファイルを一切削除しません。
 
-The @samp{--dry-run} option will list the directories that would be removed without deleting them. Running in this mode can be helpful to predict the behavior of the clean comand or to determine which kinds of files are left in the sparse directories.
+@samp{--dry-run} オプションは、それらを削除せずに削除されるディレクトリの一覧を表示します。このモードで実行すると、clean コマンドの振る舞いを予測したり、スパース・ディレクトリにどの種類のファイルが残っているかを判断したりするのに役立ちます。
 
-The @samp{--verbose} option will list every file within the directories that are considered for removal. This option is helpful to determine if those files are actually important or perhaps to explain why the directory is still present despite the current sparse-checkout.
+@samp{--verbose} オプションは、削除対象と見なされるディレクトリ内のすべてのファイルを一覧表示します。このオプションは、それらのファイルが実際に重要かどうかを判断したり、現在のスパース・チェックアウトにもかかわらずディレクトリがまだ存在する理由を説明したりするのに役立ちます。
 
 @item  disable 
 @samp{core.sparseCheckout} 構成設定を無効にし、すべてのファイルを含めるように作業ディレクトリを復元(restore)します。
@@ -45427,13 +45427,13 @@ current/subdirectory/relative-dir
 
 @chapheading INTERNALS — CONE MODE HANDLING
 
-The "cone mode", which is the default, lets you specify only what
-directories to include.  For any directory specified, all paths below
-that directory will be included, and any paths immediately under
-leading directories (including the toplevel directory) will also be
-included.  Thus, if you specified the directory
-Documentation/technical/
-then your sparse checkout would contain:
+デフォルトである「コーン・モード」(cone mode)では、含めるディレクトリのみを指定できます。指定されたディレクトリについては、そのディレクトリの下のすべてのパスが含まれ、先頭のディレクトリ(最上位ディレクトリを含む)のすぐ下のパスも含まれます。したがって、以下のディレクトリを指定した場合:
+
+@example
+`Documentation/technical/`
+@end example
+
+その場合、スパース・チェックアウトには以下が含まれます:
 
 @itemize 
 
@@ -45614,9 +45614,9 @@ git stash import <commit>
 
 作業ディレクトリとインデックスの現在の状態を記録したいが、 作業ディレクトリをクリーンな状態に戻したい場合は、 @samp{git stash} を使用します。 このコマンドは、ローカルの変更を保存し、 作業ディレクトリを元に戻して(revert)、@samp{HEAD} コミットに一致させます。
 
-The modifications stashed away by this command can be listed with @samp{git stash list}, inspected with @samp{git stash show}, and restored (potentially on top of a different commit) with @samp{git stash apply}. Calling @samp{git stash} without any arguments is equivalent to @samp{git stash push}. A stash is by default listed as "WIP on @emph{<branchname>} …", but you can give a more descriptive message on the command line when you create one.
+このコマンドによって保存(stash)された変更は、 @samp{git stash list} で一覧表示でき、 @samp{git stash show} で確認でき、 @samp{git stash apply} で(異なるコミットの上に)復元できます。 引数なしで @samp{git stash} を呼び出すことは、 @samp{git stash push} と同等です。 スタッシュはデフォルトで "WIP on @emph{<branchname>} …" と表示されますが、 作成時にコマンドラインでより詳細なメッセージを指定できます。
 
-The latest stash you created is stored in @samp{refs/stash}; older stashes are found in the reflog of this reference and can be named using the usual reflog syntax (e.g. @samp{stash@@@{0@}} is the most recently created stash, @samp{stash@@@{1@}} is the one before it, @samp{stash@@@{2.hours.ago@}} is also possible). Stashes may also be referenced by specifying just the stash index (e.g. the integer @samp{<n>} is equivalent to @samp{stash@@@{<n>@}}).
+最新のスタッシュ は @samp{refs/stash} に保存されます。 古いスタッシュはこの参照の reflog にあり、 通常の reflog 構文(例: @samp{stash@@@{0@}} は最新のスタッシュで、 @samp{stash@@@{1@}} はその前のもの、 @samp{stash@@@{2.hours.ago@}} なんてのも可能)で名前を付けれます。 スタッシュは、 スタッシュ・インデックス番号(例: 整数 <n> は @samp{stash@@@{<n>@}} と同等)だけで参照することもできます。
 
 @noindent
 
@@ -45625,7 +45625,7 @@ The latest stash you created is stored in @samp{refs/stash}; older stashes are f
 @table @asis
 
 @item  @samp{push [-p | --patch] [-S | --staged] [-k | --[no-]keep-index] [-u | --include-untracked] [ -a | --all] [-q | --quiet] [(-m|--message) <message>] [--pathspec-from-file=<file> [--pathspec-file-nul]] [--] [<pathspec>...]} 
-Save your local modifications to a new @emph{stash entry} and roll them back to @samp{HEAD} (in the working tree and in the index). The @emph{<message>} part is optional and gives the description along with the stashed state.
+ローカルの変更を新しい「スタッシュエントリ」に保存し、 作業ツリーとインデックスを HEAD に戻します(roll back)。 <message> の部分は任意で、 スタッシュ状態と一緒に説明を付加します。
 
 スナップショットを素早く作成する場合、「push」を省略できます。 このモードでは、 誤ったサブ・コマンドが意図しないスタッシュ・エントリを作成するのを防ぐため、 オプション以外の引数は許可されません。 これには例外が2つあり、 @samp{stash -p} は @samp{stash push -p} のエイリアスとして機能し、 pathspec 要素は曖昧さを避けるためにダブルハイフン @samp{--} の後ろで許可されます。
 
@@ -45644,7 +45644,7 @@ stash@@@{1@}: On master: 9cc0589... Add git-stash
 このコマンドは、 @samp{git log} コマンドに適用可能なオプションを使用して、表示内容と方法を制御します。 git-log(1) を参照してください。
 
 @item  @samp{show [-u | --include-untracked | --only-untracked] [<diff-options>] [<stash>]} 
-Show the changes recorded in the stash entry as a diff between the stashed contents and the commit back when the stash entry was first created. By default, the command shows the diffstat, but it will accept any format known to @emph{git diff} (e.g., @samp{git stash show -p stash@@@{1@}} to view the second most recent entry in patch form). If no @emph{<diff-option>} is provided, the default behavior will be given by the @samp{stash.showStat}, and @samp{stash.showPatch} config variables. You can also use @samp{stash.showIncludeUntracked} to set whether @samp{--include-untracked} is enabled by default.
+スタッシュエントリに記録された変更を、スタッシュされたコンテンツとスタッシュエントリが最初に作成されたときのコミットとの差分として表示します。 デフォルトでは、コマンドはdiffstatを表示しますが、 @samp{git diff} として認識される任意の形式を受け入れます(たとえば、パッチ形式で2番目に新しいエントリを表示するには @samp{git stash show -p stash@@@{1@}})。 @samp{<diff-option>} が指定されていない場合、デフォルトの動作は @samp{stash.showStat} および @samp{stash.showPatch} 構成変数によって与えられます。 @samp{stash.showIncludeUntracked} を使用して、 @samp{--include-untracked} がデフォルトで有効になっているかどうかを設定することもできます。
 
 @item  @samp{pop [--index] [-q | --quiet] [<stash>]} 
 スタッシュリストから単一のスタッシュ状態を削除し、現在の作業ツリー状態の上に適用(apply)します。つまり、 @samp{git stash push} の逆の操作を実行します。 作業ディレクトリはインデックスと一致している必要があります。
@@ -45655,12 +45655,12 @@ Show the changes recorded in the stash entry as a diff between the stashed conte
 @samp{pop} と似ていますが、 スタッシュ・リストから状態を削除しません。 @samp{pop} とは異なり、 @samp{<stash>} は、@samp{stash push} または @samp{stash create} によって作成されたコミットのように見える任意のコミットでかまいません。
 
 @item  @samp{branch <branchname> [<stash>]} 
-Creates and checks out a new branch named @emph{<branchname>} starting from the commit at which the @emph{<stash>} was originally created, applies the changes recorded in @emph{<stash>} to the new working tree and index. If that succeeds, and @emph{<stash>} is a reference of the form @samp{stash@@@{<revision>@}}, it then drops the @emph{<stash>}.
+@samp{<branchname>} という名前の新しいブランチを作成し、 チェックアウトします。 このブランチは @samp{<stash>} が最初に作成されたコミットから開始されます。 @samp{<stash>} に記録された変更を新しい作業ツリーとインデックスに適用(apply)します。 成功した場合、 かつ @samp{<stash>} が @samp{stash@@@{<revision>@}} 形式の参照である場合、 その @samp{<stash>} を削除します。
 
 これは、 @samp{git stash push} を実行したブランチがすごく変更されていて、 @samp{git stash apply} が競合のために失敗した場合に便利です。 スタッシュ・エントリは、 @samp{git stash} が実行された時点での HEAD であったコミットの上に適用されるため、 元のスタッシュ状態を競合なく復元します。
 
 @item  @samp{clear} 
-Remove all the stash entries. Note that those entries will then be subject to pruning, and may be impossible to recover (see @emph{EXAMPLES} below for a possible strategy).
+すべてのスタッシュエントリを削除します。 これらのエントリは刈り込みの対象となり、回復(recover)できない可能性があることに注意してください(可能な戦略については、下記「EXAMPLES」を参照してください)。
 
 @item  @samp{drop [-q | --quiet] [<stash>]} 
 スタッシュ・エントリー・リストからスタッシュ・エントリを1つ削除します。
@@ -45672,10 +45672,10 @@ Remove all the stash entries. Note that those entries will then be subject to pr
 @samp{git stash create} で作成された指定のスタッシュ(宙ぶらりんマージコミット(dangling merge commit))をスタッシュ ref に保存し、 スタッシュ reflog を更新します。 これはスクリプトで使用することを目的としています。 おそらくあなたが通常使用したいコマンドではありません。上記の「push」を参照してください。
 
 @item  @samp{export ( --print | --to-ref <ref> ) [<stash>...]} 
-Export the specified stashes, or all of them if none are specified, to a chain of commits which can be transferred using the normal fetch and push mechanisms, then imported using the @samp{import} subcommand.
+指定されたスタッシュ(指定がない場合はすべてのスタッシュ)を、 通常の fetch と push の仕組みを使って転送できる一連のコミットとしてエクスポートし、 その後 @samp{import} サブコマンドでインポートします。
 
 @item  @samp{import <commit>} 
-Import the specified stashes from the specified commit, which must have been created by @samp{export}, and add them to the list of stashes. To replace the existing stashes, use @samp{clear} first.
+@samp{export} によって作成されている必要がある指定されたコミットから、指定されたスタッシュをインポートし、スタッシュの一覧に追加します。既存のスタッシュを置き換えるには、まず @samp{clear} を使用してください。
 @end table
 
 @noindent
@@ -45740,7 +45740,7 @@ HEADと作業ツリー間のdiffから、スタッシュするハンクを対話
 @item  @samp{--pathspec-from-file=<file>} 
 このオプションは、 @samp{push} コマンドにのみ有効です。
 
-Pathspec is passed in @emph{<file>} instead of commandline args. If @emph{<file>} is exactly @samp{-} then standard input is used. Pathspec elements are separated by LF or CR/LF. Pathspec elements can be quoted as explained for the configuration variable @samp{core.quotePath} (see git-config(1)). See also @samp{--pathspec-file-nul} and global @samp{--literal-pathspecs}.
+pathspecは、コマンドライン引数の代わりに @samp{<file>} で渡されます。 @samp{<file>} が正確に @samp{-} の場合、標準入力が使用されます。 pathspec要素はLFまたはCR/LFで区切られます。 pathspec要素は、構成変数 @samp{core.quotePath} にて説明されているようにクォートできます(git-config(1) 参照)。 @samp{--pathspec-file-nul} および グローバルの @samp{--literal-pathspecs} も参照してください。
 
 @item  @samp{--pathspec-file-nul} 
 このオプションは、 @samp{push} コマンドにのみ有効です。
@@ -45754,14 +45754,14 @@ Pathspec is passed in @emph{<file>} instead of commandline args. If @emph{<file>
 静かにして、フィードバックメッセージを抑制します。
 
 @item  @samp{--print} 
-This option is only valid for the @samp{export} command.
+このオプションは @samp{export} コマンドでのみ有効です。
 
-Create the chain of commits representing the exported stashes without storing it anywhere in the ref namespace and print the object ID to standard output. This is designed for scripts.
+エクスポートされたスタッシュを表す一連コミットを作成しますが、ref 名前空間のどこにも保存せず、オブジェクト ID を標準出力に表示します。これはスクリプト向けに設計されています。
 
 @item  @samp{--to-ref} 
-This option is only valid for the @samp{export} command.
+このオプションは @samp{export} コマンドでのみ有効です。
 
-Create the chain of commits representing the exported stashes and store it to the specified ref.
+エクスポートされたスタッシュを表す一連のコミットを作成し、指定された ref に保存します。
 
 @item  @samp{--} 
 このオプションは、 @samp{push} コマンドにのみ有効です。
@@ -45775,10 +45775,10 @@ Create the chain of commits representing the exported stashes and store it to th
 
 詳細については、 gitglossary(7) の「pathspec」エントリを参照してください。
 
-@item  @emph{<stash>} 
-This option is only valid for @samp{apply}, @samp{branch}, @samp{drop}, @samp{pop}, @samp{show}, and @samp{export} commands.
+@item  <stash> 
+このオプションは、 @samp{apply}, @samp{branch}, @samp{drop}, @samp{pop}, @samp{show}, @samp{export} コマンドにのみ有効です。
 
-A reference of the form @samp{stash@@@{<revision>@}}. When no @emph{<stash>} is given, the latest stash is assumed (that is, @samp{stash@@@{0@}}).
+@samp{stash@@@{<revision>@}} 形式の参照。 @samp{<stash>} が指定されていない場合、最新のスタッシュ(@samp{stash@@@{0@}})を想定します。
 @end table
 
 @noindent
@@ -46421,7 +46421,7 @@ git-apply(1) の @samp{--whitespace=fix} モードを優先してください。
 
 @item  @samp{-s} 
 @itemx  @samp{--strip-comments} 
-Skip and remove all lines starting with a comment character (@samp{core.commentChar}, default @samp{#}).
+コメント文字(@samp{core.commentChar} で、 デフォルトは @samp{#} )で始まるすべての行をスキップして削除します。
 
 @item  @samp{-c} 
 @itemx  @samp{--comment-lines} 
@@ -46663,7 +46663,7 @@ git submodule foreach 'echo $sm_path `git rev-parse HEAD`'
 
 @item  @samp{-f} 
 @itemx  @samp{--force} 
-This option is only valid for add, deinit and update commands. When running add, allow adding an otherwise ignored submodule path. This option is also used to bypass a check that the submodule’s name is not already in use. By default, @emph{git submodule add} will fail if the proposed name (which is derived from the path) is already registered for another submodule in the repository. Using @emph{--force} allows the command to proceed by automatically generating a unique name by appending a number to the conflicting name (e.g., if a submodule named @emph{child} exists, it will try @emph{child1}, and so on). When running deinit the submodule working trees will be removed even if they contain local changes. When running update (only effective with the checkout procedure), throw away local changes in submodules when switching to a different commit; and always run a checkout operation in the submodule, even if the commit listed in the index of the containing repository matches the commit checked out in the submodule.
+このオプションは、addとdeinitとupdateコマンドにのみ有効です。addを実行するときは、無視されるはずのサブモジュールパスの追加を許可します。このオプションは、サブモジュール名が未使用であることの確認を回避するためにも使用されます。デフォルトでは、提案された名前(パスから導出されます)がリポジトリ内の別のサブモジュールに対してすでに登録されている場合、@samp{git submodule add} は失敗します。 @samp{--force} を使用すると、競合した名前に番号を付加することで一意な名前を自動生成し(たとえば @samp{child} という名前のサブモジュールが存在する場合、 @samp{child1} を試し、以降も同様です)、コマンドを続行できます。 deinitを実行するときは、ローカルの変更が含まれている場合でも、サブモジュールの作業ツリーが削除されます。 updateを実行するときは(checkout手順でのみ有効)、別のコミットに切り替えるときにサブモジュールのローカル変更を破棄し、そして、含まれているリポジトリのインデックスにリストされているコミットがサブモジュールでチェックアウトされたコミットと一致する場合でも、常にサブモジュールでチェックアウト操作を実行します。
 
 @item  @samp{--cached} 
 このオプションは、statusコマンドとsummaryコマンドにのみ有効です。これらのコマンドは通常、サブモジュールHEADにあるコミットを使用しますが、このオプションを使用すると、代わりにインデックスに格納されているコミットが使用されます。
@@ -47659,22 +47659,22 @@ git switch [<options>] --orphan <new-branch>
 
 @table @asis
 
-@item  @emph{<branch>} 
+@item  <branch> 
 切り替え先のブランチ
 
-@item  @emph{<new-branch>} 
+@item  <new-branch> 
 新ブランチの名前
 
-@item  @emph{<start-point>} 
-The starting point for the new branch. Specifying a @emph{<start-point>} allows you to create a branch based on some other point in history than where @samp{HEAD} currently points. (Or, in the case of @samp{--detach}, allows you to inspect and detach from some other point.)
+@item  <start-point> 
+新ブランチの開始点。 @samp{<start-point>} を指定すると、HEADが現在指し示している場所以外の履歴内の場所に基づいてブランチを作成できます。(または、 @samp{--detach} の場合、他の場所から検査してデタッチすることができます。)
 
-You can use the @samp{@@@{-<N>@}} syntax to refer to the @emph{<N>}-th last branch/commit switched to using @samp{git switch} or @samp{git checkout} operation. You may also specify @samp{-} which is synonymous to @samp{@@@{-1@}}. This is often used to switch quickly between two branches, or to undo a branch switch by mistake.
+@samp{@@@{-N@}} 構文を使用して、「git switch」または「git checkout」操作を使用して切り替えられた最後からN番目のブランチ/コミットを参照できます。 @samp{@@@{-1@}} と同義の @samp{-} を指定することもできます。これは、2つのブランチをすばやく切り替えたり、誤って切り替えたブランチを元に戻したりするためによく使用されます。
 
-As a special case, you may use @samp{<rev-a>...<rev-b>} as a shortcut for the merge base of @emph{<rev-a>} and @emph{<rev-b>} if there is exactly one merge base. You can leave out at most one of @emph{<rev-a>} and @emph{<rev-b>}, in which case it defaults to @samp{HEAD}.
+特別な場合として、マージベースが1つしかない場合は、 <rev-a> と <rev-b> のマージベースのショートカットとして @samp{<rev-a>...<rev-b>} を使用できます。 <rev-a> と <rev-b> のうち最大で片方を省略できます。その場合、省略した方はデフォルトで @samp{HEAD} になります。
 
 @item  @samp{-c <new-branch>} 
 @itemx  @samp{--create <new-branch>} 
-Create a new branch named @emph{<new-branch>} starting at @emph{<start-point>} before switching to the branch. This is the transactional equivalent of
+@samp{<start-point>} を起点として @samp{<new-branch>} という名前の新しいブランチを作成し、 そのブランチに切り替えます。 これは以下の取引(transaction)と同等です(訳注:transactionということで、2行目のswitchが上手くいかなかったら1行目のbranchも実行キャンセル(ロールバック)される事を示している)
 
 @example
 $ git branch <new-branch>
@@ -47682,15 +47682,15 @@ $ git switch <new-branch>
 @end example
 
 
-that is to say, the branch is not reset/created unless @samp{git switch} is successful (e.g., when the branch is in use in another worktree, not just the current branch stays the same, but the branch is not reset to the start-point, either).
+これが何を意味するのかというと、 この「git switch」の実行が成功しなかった場合(たとえば、 ブランチが別のワークツリーで使用中の場合など)、 現在のブランチ(current branch)に留まったままで、 <new-branch> が作成される事もなく、 <new-branch> のスタートポイントにリセットされることもありません。
 
 @item  @samp{-C <new-branch>} 
 @itemx  @samp{--force-create <new-branch>} 
-Similar to @samp{--create} except that if @emph{<new-branch>} already exists, it will be reset to @emph{<start-point>}. This is a convenient shortcut for:
+@samp{--create} と似ていますが、 @samp{<new-branch>} がすでに存在する場合、 @samp{<start-point>} にリセットされる点が異なります。 これは以下に代わる便利なショートカットです:
 
 @example
-$ git branch -f _<new-branch>_
-$ git switch _<new-branch>_
+$ git branch -f <new-branch>
+$ git switch <new-branch>
 @end example
 
 
@@ -47700,14 +47700,14 @@ $ git switch _<new-branch>_
 
 @item  @samp{--guess} 
 @itemx  @samp{--no-guess} 
-If @emph{<branch>} is not found but there does exist a tracking branch in exactly one remote (call it @emph{<remote>}) with a matching name, treat as equivalent to
+@samp{<branch>} が見つからないが、名前が一致するリモートが正確に1つだけあり(@samp{<remote>} と呼びます)、それに追跡ブランチが存在する場合は、以下と同等のものとして扱います。
 
 @example
 $ git switch -c <branch> --track <remote>/<branch>
 @end example
 
 
-If the branch exists in multiple remotes and one of them is named by the @samp{checkout.defaultRemote} configuration variable, we’ll use that one for the purposes of disambiguation, even if the @emph{<branch>} isn’t unique across all remotes. Set it to e.g. @samp{checkout.defaultRemote=origin} to always checkout remote branches from there if @emph{<branch>} is ambiguous but exists on the @emph{origin} remote. See also @samp{checkout.defaultRemote} in git-config(1).
+ブランチが複数のリモートに存在し、そのうちの1つが @samp{checkout.defaultRemote} 構成変数によって名前が付けられている場合、 @samp{<branch>} がすべてのリモートで一意でなくても、曖昧さ回避の目的でそのブランチを使用します。例えば、 @samp{<branch>} があいまいであるが、 @samp{origin} リモートに存在する場合、そこからリモートブランチを常にチェックアウトするには、これを @samp{checkout.defaultRemote=origin} と設定します。 git-config(1) の @samp{checkout.defaultRemote} も参照してください。
 
 @samp{--guess} がデフォルトの動作です。無効にするには、 @samp{--no-guess} を使用します。
 
@@ -47727,7 +47727,7 @@ If the branch exists in multiple remotes and one of them is named by the @samp{c
 マージの競合が発生すると、競合するパスのインデックスエントリはマージされないままになり、競合を解決し、解決されたパスを @samp{git add} (またはマージによってパスが削除される場合は @samp{git rm})でマークする必要があります。
 
 @item  @samp{--conflict=<style>} 
-The same as @samp{--merge} option above, but changes the way the conflicting hunks are presented, overriding the @samp{merge.conflictStyle} configuration variable. Possible values are @samp{merge} (default), @samp{diff3}, and @samp{zdiff3}.
+上記の @samp{--merge} オプションと同じですが、競合するハンクの表示方法を変更し、 @samp{merge.conflictStyle} 構成変数をオーバーライドします。 可能な値は、@samp{merge}(デフォルト)と @samp{diff3} と @samp{zdiff3} です。
 
 @item  @samp{-q} 
 @itemx  @samp{--quiet} 
@@ -47747,7 +47747,7 @@ The same as @samp{--merge} option above, but changes the way the conflicting hun
 @samp{branch.autoSetupMerge} 構成変数がtrueであっても、 "upstream" 構成をセットアップしない。
 
 @item  @samp{--orphan <new-branch>} 
-Create a new unborn branch, named @emph{<new-branch>}. All tracked files are removed.
+@samp{<new-branch>} という名前の新しい 「孤立した」(orphan)ブランチを作成します。追跡中のファイルはすべて削除されます。
 
 @item  @samp{--ignore-other-worktrees} 
 @samp{git switch} は、必要なrefが別のワークツリーによってすでにチェックアウトされている場合に拒否します。このオプションを使用すると、とにかくrefをチェックアウトできます。つまり、refは複数のワークツリーで保持できます。
@@ -47800,7 +47800,7 @@ $ git switch -
 @end example
 
 
-You can grow a new branch from any commit. For example, switch to "@samp{HEAD~3}" and create branch "@samp{fixup}":
+どのコミットからでも新しいブランチを成長させることができます。たとえば、 "HEAD~3" に切り替えて、ブランチ "fixup" を作成します:
 
 @example
 $ git switch -c fixup HEAD~3
@@ -47951,7 +47951,7 @@ Part of the git(1) suite
 @node git-tag,,,Top
 @chapheading Name
 
-git-tag — Create, list, delete or verify tags
+git-tag — タグを作成、一覧表示、削除、検証します
 
 @noindent
 
@@ -47985,7 +47985,7 @@ git tag -v [--format=<format>] <tagname>...
 
 @samp{-s} または @samp{-u <key-id>} を使用すると、暗号署名付きタグオブジェクトが作成されます。 署名バックエンド(GPG、X.509、SSH など)は @samp{gpg.format} 構成変数によって制御され、デフォルトは OpenPGP です。 @samp{-u <key-id>} が使用されていない場合、現在のユーザーのコミッターIDを使用して、署名用のキーが検索されます。 構成変数 @samp{gpg.program} は、カスタム署名用バイナリを指定するために使用されます。
 
-Tag objects (created with @samp{-a}, @samp{-s}, or @samp{-u}) are called "annotated" tags; they contain a creation date, the tagger name and e-mail, a tagging message, and an optional cryptographic signature. Whereas a "lightweight" tag is simply a name for an object (usually a commit object).
+(@samp{-a} または @samp{-s} または @samp{-u} で作成した)タグオブジェクトは「注釈付き」タグ(annotated tags)と呼ばれます。 これらには、作成日や、タグ付けした人(tagger)の名前と電子メールアドレスや、タグ付けメッセージや、オプションの暗号署名が含まれています。 一方、「軽量」タグ(lightweight tag)は単にオブジェクト(通常はコミットオブジェクト)の名前が含まれています。
 
 注釈付きタグはリリース用であり、軽量タグはプライベートまたは一時オブジェクトラベル用です。 このため、オブジェクトに名前を付けるための一部のgitコマンド( @samp{git describe} など)は、デフォルトでは軽量タグを無視します。
 
@@ -48001,14 +48001,14 @@ Tag objects (created with @samp{-a}, @samp{-s}, or @samp{-u}) are called "annota
 
 @item  @samp{-s} 
 @itemx  @samp{--sign} 
-Make a cryptographically signed tag, using the default signing key. The signing backend used depends on the @samp{gpg.format} configuration variable. The default key is determined by the backend. For GPG, it’s based on the committer’s email address, while for SSH it may be a specific key file or agent identity. See git-config(1).
+デフォルトの署名鍵を使用して、暗号署名付きタグを作成します。 使用される署名バックエンドは @samp{gpg.format} 構成変数によって決まります。 デフォルトの鍵はバックエンドによって決定されます。 GPG の場合はコミッターのメールアドレスに基づき、SSH の場合は特定の鍵ファイルまたはエージェントIDになる場合があります。 git-config(1) を参照してください。
 
 @item  @samp{--no-sign} 
 すべてのタグに強制的に署名するように設定されている @samp{tag.gpgSign} 構成変数をオーバーライドします。
 
 @item  @samp{-u <key-id>} 
 @itemx  @samp{--local-user=<key-id>} 
-Make a cryptographically signed tag using the given key. The format of the <key-id> and the backend used depend on the @samp{gpg.format} configuration variable. See git-config(1).
+指定された鍵(key)を使用して、暗号署名付きタグを作成します。 <key-id> の形式と使用されるバックエンドは、@samp{gpg.format} 構成変数によって決まります。 git-config(1) を参照してください。
 
 @item  @samp{-f} 
 @itemx  @samp{--force} 
@@ -48020,10 +48020,10 @@ Make a cryptographically signed tag using the given key. The format of the <key-
 
 @item  @samp{-v} 
 @itemx  @samp{--verify} 
-Verify the cryptographic signature of the given tags.
+指定されたタグの暗号署名を検証(verify)します。
 
 @item  @samp{-n<num>} 
-@emph{<num>} specifies how many lines from the annotation, if any, are printed when using @samp{-l}. Implies @samp{--list}.
+<num> は、@samp{-l} を使用したときに、注釈を何行出力するか指定します。 @samp{--list} の指定を含んでいます。
 
 デフォルトでは、注釈行は印刷されません。 @samp{-n} に番号が指定されていない場合、最初の行のみが出力されます。 タグに注釈が付けられていない場合は、代わりにコミットメッセージが表示されます。
 
@@ -48031,15 +48031,15 @@ Verify the cryptographic signature of the given tags.
 @itemx  @samp{--list} 
 タグを一覧表示します。オプションで @samp{<pattern>...} を指定すると、例えば @samp{git tag --list 'v-*'} のように、パターンにマッチするタグのみをリストアップします。
 
-Running @samp{git tag} without arguments also lists all tags. The pattern is a shell wildcard (i.e., matched using @samp{fnmatch}(3)). Multiple patterns may be given; if any of them matches, the tag is shown.
+引数なしで @samp{git tag} を実行した時も、すべてのタグが一覧表示されます。 パターンはシェルワイルドカードです(つまり、@samp{fnmatch}(3) を使用してマッチします)。 複数のパターンを指定できます。 それらのいずれかがマッチする場合、タグが表示されます。
 
 このオプションは、 @samp{--contains} などの他のリストっぽいオプション(list-like option)が提供されている場合に暗黙的に提供されます。 詳細については、これらの各オプションのドキュメントを参照してください。
 
 @item  @samp{--sort=<key>} 
-Sort based on the key given. Prefix @samp{-} to sort in descending order of the value. You may use the @samp{--sort=<key>} option multiple times, in which case the last @emph{<key>} becomes the primary key. Also supports "@samp{version:refname}" or "@samp{v:refname}" (tag names are treated as versions). The "@samp{version:refname}" sort order can also be affected by the "@samp{versionsort.suffix}" configuration variable. The keys supported are the same as those in @samp{git for-each-ref}. Sort order defaults to the value configured for the @samp{tag.sort} variable if it exists, or lexicographic order otherwise. See git-config(1).
+指定されたキーに基づいて並べ替えます。 接頭辞 @samp{-} を使用して、値の降順で並べ替えます。 @samp{--sort=<key>} オプションは複数回使用できます。その場合、最後のキーが主キーになります。 "@samp{version:refname}" または "@samp{v:refname}" もサポートします(タグ名はバージョンとして扱われます)。 "@samp{version:refname}" のソート順は、 @samp{versionsort.suffix} 構成変数の影響も受ける可能性があります。 サポートされているキーは、 @samp{git for-each-ref} のキーと同じです。 並べ替え順序は、デフォルトで、 @samp{tag.sort} 変数が存在する場合は設定された値になり、存在しない場合は辞書式順序(lexicographic order)になります。 git-config(1) を参照してください。
 
 @item  @samp{--color[=<when>]} 
-Respect any colors specified in the @samp{--format} option. The @emph{<when>} field must be one of @samp{always}, @samp{never}, or @samp{auto} (if @emph{<when>} is absent, behave as if @samp{always} was given).
+@samp{--format} オプションで指定された色を尊重します。 @samp{<when>} フィールドは @samp{always}, @samp{never}, @samp{auto} のいずれかでなければなりません(@samp{<when>} がない場合は、 @samp{always} が指定されたかのように振る舞います)。
 
 @item  @samp{-i} 
 @itemx  @samp{--ignore-case} 
@@ -48050,42 +48050,42 @@ Respect any colors specified in the @samp{--format} option. The @emph{<when>} fi
 
 @item  @samp{--column[=<options>]} 
 @itemx  @samp{--no-column} 
-Display tag listing in columns. See configuration variable @samp{column.tag} for option syntax. @samp{--column} and @samp{--no-column} without options are equivalent to @samp{always} and @samp{never} respectively.
+タグリストを列(columns)表示します。 オプションの構文については、構成変数 @samp{column.tag} を参照してください。 オプションのない @samp{--column} と @samp{--no-column} は、それぞれ @samp{always} と @samp{never} と同等です。
 
 このオプションは、注釈行(annotation lines)のないタグをリストする場合にのみ適用できます。
 
 @item  @samp{--contains [<commit>]} 
-Only list tags which contain @emph{<commit>} (@samp{HEAD} if not specified). Implies @samp{--list}.
+指定された <commit> を含むタグのみをリストします(指定されていない場合は @samp{HEAD})。 @samp{--list} の指定を含んでいます。
 
 @item  @samp{--no-contains [<commit>]} 
-Only list tags which don’t contain @emph{<commit>} (@samp{HEAD} if not specified). Implies @samp{--list}.
+指定された <commit> を含まないタグのみをリストします(指定されていない場合は @samp{HEAD})。 @samp{--list} の指定を含んでいます。
 
 @item  @samp{--merged [<commit>]} 
-Only list tags whose commits are reachable from @emph{<commit>} (@samp{HEAD} if not specified).
+指定された <commit> から、 コミット達に到達できるタグのみをリストします(指定されていない場合は @samp{HEAD})。
 
 @item  @samp{--no-merged [<commit>]} 
-Only list tags whose commits are not reachable from @emph{<commit>} (@samp{HEAD} if not specified).
+指定された <commit> から、コミット達に到達できないタグのみをリストします(指定されていない場合は @samp{HEAD})。
 
 @item  @samp{--points-at [<object>]} 
-Only list tags of @emph{<object>} (@samp{HEAD} if not specified). Implies @samp{--list}.
+指定された <object> のタグのみを一覧表示します(指定されていない場合は @samp{HEAD})。 @samp{--list} の指定を含んでいます。
 
 @item  @samp{-m <msg>} 
 @itemx  @samp{--message=<msg>} 
-Use @emph{<msg>} (instead of prompting). If multiple @samp{-m} options are given, their values are concatenated as separate paragraphs. Implies @samp{-a} if none of @samp{-a}, @samp{-s}, or @samp{-u <key-id>} is given.
+(プロンプトを表示する代わりに)指定されたタグメッセージを使用します。 複数の @samp{-m} オプションが指定されている場合、それらの値はそれぞれ別個の段落として連結されます。 @samp{-a} と @samp{-s} と @samp{-u <key-id>} のいずれも指定されていない場合は、 @samp{-a} を意味します。
 
 @item  @samp{-F <file>} 
 @itemx  @samp{--file=<file>} 
-Take the tag message from @emph{<file>}. Use @samp{-} to read the message from the standard input. Implies @samp{-a} if none of @samp{-a}, @samp{-s}, or @samp{-u <key-id>} is given.
+指定された <file> からタグメッセージを取得します。 @samp{-} を使用して、標準入力からメッセージを読み取ります。 @samp{-a} と @samp{-s} と @samp{-u <key-id>} のいずれも指定されていない場合は、 @samp{-a} を意味します。
 
 @item  @samp{--trailer <token>[(=|:)<value>]} 
-Specify a (@emph{<token>}, @emph{<value>}) pair that should be applied as a trailer. (e.g. @samp{git tag --trailer "Custom-Key: value"} will add a "Custom-Key" trailer to the tag message.) The @samp{trailer.*} configuration variables (git-interpret-trailers(1)) can be used to define if a duplicated trailer is omitted, where in the run of trailers each trailer would appear, and other details. The trailers can be extracted in @samp{git tag --list}, using @samp{--format="%(trailers)"} placeholder.
+トレーラーとして適用する @samp{(<token>, <value>)} のペアを指定します。 (例: @samp{git tag --trailer "Custom-Key: value"} はタグ・メッセージに "Custom-Key" トレーラーを追加します。) @samp{trailer.*} 構成変数(git-interpret-trailers(1))を使用して、 重複したトレーラーの省略や、トレーラーの表示順序や、 その他の詳細を定義できます。 トレーラーは @samp{git tag --list} で @samp{--format="%(trailers)"} プレースホルダーを使用して抽出できます。
 
 @item  @samp{-e} 
 @itemx  @samp{--edit} 
-Let further edit the message taken from file with @samp{-F} and command line with @samp{-m}.
+@samp{-F} でファイルから取得したメッセージや、@samp{-m} でコマンドラインから取得したメッセージを、さらに編集できるようにします。
 
 @item  @samp{--cleanup=<mode>} 
-Set how the tag message is cleaned up. The @emph{<mode>} can be one of @samp{verbatim}, @samp{whitespace} and @samp{strip}. The @samp{strip} mode is default. The @samp{verbatim} mode does not change message at all, @samp{whitespace} removes just leading/trailing whitespace lines and @samp{strip} removes both whitespace and commentary.
+タグメッセージのクリーンアップ方法を設定します。 @samp{<mode>} は、 @samp{verbatim}, @samp{whitespace}, @samp{strip} のいずれかになります。 @samp{strip} モードがデフォルトです。 @samp{verbatim} モードはメッセージをまったく変更せず、@samp{whitespace} は 先頭/末尾 の空白行のみを削除し、 @samp{strip} は空白(whitespace)とコメント(commentary)の両方を削除します。
 
 @item  @samp{--create-reflog} 
 タグのreflogを作成します。 タグのreflogをグローバルに有効にするには、 git-config(1) の @samp{core.logAllRefUpdates} を参照してください。 否定形式 @samp{--no-create-reflog} は、(コマンドラインで)それ以前に指定された @samp{--create-reflog} をオーバーライドするだけですが、現在のところ、@samp{core.logAllRefUpdates} の設定を否定しません。
@@ -48098,14 +48098,14 @@ Set how the tag message is cleaned up. The @emph{<mode>} can be one of @samp{ver
 
 @item  <commit> 
 @itemx  <object> 
-The object that the new tag will refer to, usually a commit. Defaults to @samp{HEAD}.
+新しいタグが参照するオブジェクト、通常はコミット。 デフォルトは @samp{HEAD} です。
 @end table
 
 @noindent
 
 @chapheading CONFIGURATION
 
-By default, @samp{git tag} in sign-with-default mode (@samp{-s}) will use your committer identity (of the form @samp{Your Name <your@@email.address>}) to find a key. If you want to use a different default key, you can specify it in the repository configuration as follows:
+デフォルトでは、 sign-with-default モード(@samp{-s})の @samp{git tag} は、コミッターID(@samp{Your Name <your@@email.address>} 形式)を使用してキーを検索します。 別のデフォルトキーを使用する場合は、リポジトリ構成(repository configuration)で以下のように指定できます:
 
 @example
 [user]
@@ -48113,13 +48113,13 @@ By default, @samp{git tag} in sign-with-default mode (@samp{-s}) will use your c
 @end example
 
 
-The signing backend can be chosen via the @samp{gpg.format} configuration variable, which defaults to @samp{openpgp}. See git-config(1) for a list of other supported formats.
+署名バックエンドは、 @samp{gpg.format} 構成変数で選択でき、デフォルトは @samp{openpgp} です。 他にサポートされている形式の一覧については git-config(1) を参照してください。
 
-The path to the program used for each signing backend can be specified with the @samp{gpg.<format>.program} configuration variable. For the @samp{openpgp} backend, @samp{gpg.program} can be used as a synonym for @samp{gpg.openpgp.program}. See git-config(1) for details.
+各署名バックエンドで使用されるプログラムへのパスは、@samp{gpg.<format>.program} 構成変数で指定できます。 @samp{openpgp} バックエンドの場合、@samp{gpg.program} を @samp{gpg.openpgp.program} の同義語として使用できます。 詳細は git-config(1) を参照してください。
 
-@samp{pager.tag} is only respected when listing tags, i.e., when @samp{-l} is used or implied. The default is to use a pager.
+@samp{pager.tag} は、タグを一覧表示する場合、つまり @samp{-l} が使用または暗示されている場合にのみ尊重されます。 デフォルトではpagerを使用します。
 
-See git-config(1) for more details and other configuration variables.
+詳細やその他の構成変数については git-config(1) を参照してください。
 
 @noindent
 
@@ -48131,7 +48131,7 @@ See git-config(1) for more details and other configuration variables.
 
 タグを付けるコミットを間違えてしまいました。 どのようにしてタグを付け直したらいいでしょうか？
 
-If you never pushed anything out, just re-tag it. Use @samp{-f} to replace the old one. And you’re done.
+あなたがまだ何もプッシュしたことがない場合は、タグを付け直してください。 古いものを置き換えるには @samp{-f} を使用します。 これで完了です。
 
 しかし、 もしあなたがすでに変更をプッシュしていたり、 他の人が直接あなたのリポジトリーを見ることができる場合、 人はすでに古いタグを見ている可能性があります。 その場合、 以下の2つのいずれかを行うことができます:
 
@@ -48141,10 +48141,10 @@ If you never pushed anything out, just re-tag it. Use @samp{-f} to replace the o
 常識的には、失敗したことを認めて、別の名前を使用してください。 他の人は既にとあるタグ名を見たことがあり、同一の名前を保持している場合、2人が両方とも「バージョンX」を持っているように見える状況にあるかもしれませんが、実際には「異なる」「X」を持っています。 だから、それを「X.1」と呼んで、それで終わりです。
 
 @item
-The insane thing. You really want to call the new version "X" too, @emph{even though} others have already seen the old one. So just use @samp{git tag -f} again, as if you hadn’t already published the old one.
+非常識なやり方は、他の人がすでに古いバージョンを見たとしても、あなたは本当に新しいバージョンを「X」と呼びたいのです。 したがって、古いものをまだ公開していないかのように、もう一度 @samp{git tag -f} を使用します。
 @end enumerate
 
-However, Git does @strong{not} (and it should not) change tags behind users back. So if somebody already got the old tag, doing a @samp{git pull} on your tree shouldn’t just make them overwrite the old one.
+しかしながら、Gitは、ユーザーがいない所で勝手にタグを変更することはありません(また変更すべきではありません)。ですから、誰かが既に古いタグを取得している場合、あなたのツリーで @samp{git pull} を実行しても、古いタグの方を上書きすることにはなりません。
 
 誰かがあなたからリリースタグを取得した場合、あなた自身のタグを更新することで、その人のタグを変更することはできません。これは、人々が自分のタグ名を信頼できなければならないという点で、大きなセキュリティ上の議題です。 もしあなたが本当に非常識なことをしたいのであれば、 素直に白状して自分が失敗したことを人々に伝える必要があります。 そうするには、 以下のように公言すればよいでしょう:
 
@@ -48180,7 +48180,7 @@ However, Git does @strong{not} (and it should not) change tags behind users back
 
 一方、他の誰かからの一回限りの(one-shot)マージが必要なためにフェッチしている場合は、通常、そこからタグを取得する必要はありません。 これは、トップレベルに近い人によく起こりますが、それに限定されません。 神ならぬ人々は、お互いからプルするとき、必ずしも相手からプライベートアンカーポイントタグを自動的に取得したいとは思いません。
 
-Often, "please pull" messages on the mailing list just provide two pieces of information: a repo URL and a branch name; this is designed to be easily cut&pasted at the end of a @samp{git fetch} command line:
+多くの場合、メーリングリストの「プルしてください」というメッセージは、リポジトリのURLとブランチ名の2つの情報を提供するだけです。これは、@samp{git fetch} コマンドラインの最後で簡単にカットアンドペーストできるように設計されています:
 
 @example
 リーナス、更新を取得するために、
@@ -48859,7 +48859,7 @@ abort LF
 
 @samp{--create-reflog} を使用すると、update-refは、通常は作成されない場合でも、各refのreflogを作成します。
 
-With @samp{--batch-updates}, update-ref executes the updates in a batch but allows individual updates to fail due to invalid or incorrect user input, applying only the successful updates. However, system-related errors—such as I/O failures or memory issues—will result in a full failure of all batched updates. Any failed updates will be reported in the following format:
+@samp{--batch-updates} を指定すると、update-ref は更新をバッチとして実行しますが、無効または誤ったユーザー入力により個々の更新が失敗することを許容し、成功した更新のみを適用します。ただし、I/O 障害やメモリの問題などのシステム関連エラーが発生した場合は、バッチ化された更新はすべて完全に失敗します。失敗した更新は次の形式で報告されます:
 
 @example
 rejected SP (<old-oid> | <old-target>) SP (<new-oid> | <new-target>) SP <rejection-reason> LF
@@ -48895,26 +48895,22 @@ abort NUL
 <ref> を <new-oid> に設定します。 指定されている場合は <old-oid> を検証した後に行います。 <new-oid> をゼロに指定すると、 更新後に ref が存在しないことを保証します。 または、 <old-oid> をゼロに指定すると、 更新前に ref が存在しないことを指定します。
 
 @item  create 
-Create <ref> with <new-oid> after verifying that it does not exist. The given <new-oid> may not be zero.
+<ref> が存在しないことを確認した後、 <new-oid> で <ref> を作成します。 指定された <new-oid> はゼロであってはなりません。
 
 @item  delete 
-Delete <ref> after verifying that it exists with <old-oid>, if given. If given, <old-oid> may not be zero.
+<old-oid> が指定されている場合は、それが <ref> に存在することを確認した後、 <ref> を削除します。 指定した場合、 <old-oid> はゼロであってはなりません。
 
 @item  symref-update 
 <ref> を <new-target> に設定します。 指定されている場合は <old-target> または <old-oid> を検証した後に行います。 <old-oid> をゼロに指定すると、 更新前に ref が存在しないことを保証します。
 
 @item  verify 
 <ref> を <old-oid> と照合して検証しますが、 変更はしません。 <old-oid> がゼロまたは指定されていない場合、 ref は存在してはなりません。
-@end table
 
-symref-create:
-Create symbolic ref <ref> with <new-target> after verifying that
-it does not exist.
-
-@table @asis
+@item  symref-create 
+<ref> が存在しないことを確認した後、 <new-target> でシンボリック参照 <ref> を作成します。
 
 @item  symref-delete 
-Delete <ref> after verifying that it exists with <old-target>, if given.
+<old-target> が指定されている場合は、それが <ref> に存在することを確認した後、 <ref> を削除します。
 
 @item  symref-verify 
 シンボリック参照 <ref> を <old-target> と照合して検証しますが、 変更はしません。 <old-target> が指定されていない場合、 ref は存在してはなりません。 @samp{no-deref} モードでのみ使用可能です。
@@ -49229,13 +49225,13 @@ Eric W. Biederman <ebiederm@@lnxi.com> 1121223278 -0600
 コードの一部をGitに入れた人。
 
 @item  @samp{GIT_EDITOR} 
-Text editor for use by Git commands. The value is meant to be interpreted by the shell when it is used. Examples: @samp{~/bin/vi}, @samp{$SOME_ENVIRONMENT_VARIABLE}, @samp{"C:\Program Files\Vim\gvim.exe" --nofork}. The order of preference is @samp{$GIT_EDITOR}, then @samp{core.editor} configuration value, then @samp{$VISUAL}, then @samp{$EDITOR}, and then the default chosen at compile time, which is usually @emph{vi}.
+Gitコマンドで使用するためのテキストエディタ。 この値は、使用時にシェルによって解釈されることを意図しています。 例: @samp{~/bin/vi}, @samp{$SOME_ENVIRONMENT_VARIABLE}, @samp{"C:\Program Files\Vim\gvim.exe" --nofork} 。 優先順位は @samp{$GIT_EDITOR} 、その次に @samp{core.editor} 設定値、その次に @samp{$VISUAL} 、その次に @samp{$EDITOR} 、そしてコンパイル時に選択されるデフォルト(通常は @samp{vi})です。
 
 @item  @samp{GIT_SEQUENCE_EDITOR} 
-Text editor used to edit the @emph{todo} file while running @samp{git rebase -i}. Like @samp{GIT_EDITOR}, the value is meant to be interpreted by the shell when it is used. The order of preference is @samp{$GIT_SEQUENCE_EDITOR}, then @samp{sequence.editor} configuration value, and then the value of @samp{git var GIT_EDITOR}.
+@samp{git rebase -i} の実行中に @samp{todo} ファイルを編集するために使用されるテキスト・エディタ。 @samp{GIT_EDITOR} と同様に、値は使用時にシェルによって解釈されることを意図しています。 優先順位は @samp{$GIT_SEQUENCE_EDITOR} 、その次に @samp{sequence.editor} 設定値、そして @samp{git var GIT_EDITOR} の値です。
 
 @item  @samp{GIT_PAGER} 
-Text viewer for use by Git commands (e.g., @emph{less}). The value is meant to be interpreted by the shell. The order of preference is @samp{$GIT_PAGER}, then the value of @samp{core.pager} configuration, then @samp{$PAGER}, and then the default chosen at compile time (usually @samp{less}).
+Gitコマンドで使用するためのテキストビューア(例: @samp{less})。値はシェルによって解釈されることを意図しています。 優先順位は @samp{$GIT_PAGER} 、その次に @samp{core.pager} 設定の値、その次に @samp{$PAGER} 、そしてコンパイル時に選択されるデフォルト(通常は @samp{less})です。
 
 @item  @samp{GIT_DEFAULT_BRANCH} 
 新しく初期化されたリポジトリで作成された最初のブランチの名前。
@@ -50364,7 +50360,7 @@ Gitリポジトリのデータを最適化するためのタスクの実行.
 ブランチを切り替える.
 
 @item  git-tag(1) 
-Create, list, delete or verify tags.
+タグを作成、一覧表示、削除、検証します.
 
 @item  git-worktree(1) 
 複数の作業ツリー(working tree)を管理します.

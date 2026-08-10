@@ -787,12 +787,14 @@ set
 <div class="paragraph"><p>デフォルトでは、入力リストはディレクトリのリストと見なされ、 <code>git</code> <code>ls-tree</code> <code>-d</code> <code>--name-only</code> の出力と一致します。 これには、二重引用符(")で始まるパス名を C スタイルのクォートされた文字列として解釈することが含まれます。 注意: 指定されたディレクトリの(任意の深さの)下にあるすべてのファイル、および指定されたディレクトリまたはその祖先のいずれかの兄弟であるファイルがスパース・チェックアウトに含まれることに注意してください(詳細については、下記「CONE PATTERN SET」を参照してください)。 以前はこれがデフォルトではなく、 <code>--cone</code> を指定するか、<code>core.sparseCheckoutCone</code> を有効にする必要がありました。</p></div>
 <div class="paragraph"><p><code>--no-cone</code> が渡されると、入力リストはパターンのリストと見なされます。 このモードでは、<code>--sparse-index</code> などの一部のオプションが機能し無い等、多くの欠点があります。 下記「Non-cone Problems」セクションで説明されているように、使用はお勧めしません。</p></div>
 <div class="paragraph"><p><code>--</code>[<code>no-</code>]<code>sparse-index</code> オプションを使用して、 スパース・インデックスを使用します(デフォルトでは使用しません)。 スパース・インデックスは、 インデックスのサイズを縮小して、スパース・チェックアウトの定義により近づけます。 これにより、 <code>git</code> <code>status</code> や <code>git</code> <code>add</code> などのコマンドのパフォーマンスが大幅に向上します。 この機能はまだ実験段階です。 一部のコマンドは、機能に適切に統合されるまで、 スパース・インデックスを使用すると遅くなる可能性があります。</p></div>
-<div class="paragraph"><p><strong>WARNING:</strong> Using a sparse index requires modifying the index in a way
-that is not completely understood by external tools. If you have trouble
-with this compatibility, then run <code>git</code> <code>sparse-checkout</code> <code>init</code> <code>--no-sparse-index</code>
-to rewrite your index to not be sparse. Older versions of Git will not
-understand the sparse directory entries index extension and may fail to
-interact with your repository until it is disabled.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">スパースインデックスを使用するには、外部ツールでは完全には理解できない方法でインデックスを変更する必要があります。 この互換性に問題がある場合は、 <code>git</code> <code>sparse-checkout</code> <code>init</code> <code>--no-sparse-index</code> を実行して、インデックスがまばらにならないように書き換えます。 古いバージョンのGitは、スパースディレクトリエントリのインデックス拡張機能を理解せず、それが無効になるまでリポジトリとのやり取りに失敗する可能性があります。</td>
+</tr></table>
+</div>
 </dd>
 <dt class="hdlist1">
 add
@@ -812,17 +814,17 @@ reapply
 <div class="paragraph"><p><code>reapply</code> コマンドは <code>--</code>[<code>no-</code>]<code>cone</code> や <code>--</code>[<code>no-</code>]<code>sparse-index</code> フラグも使用できます。これは、 <code>set</code> コマンドのフラグと同一の意味で、 これにより、あなたは全てのスパース・パス(sparsity paths)を再指定すること無く、スパース・モードを変更できます。</p></div>
 </dd>
 <dt class="hdlist1">
-<em>clean</em>
+clean
 </dt>
 <dd>
 <p>
-        Opportunistically remove files outside of the sparse-checkout definition. This command requires cone mode to use recursive directory matches to determine which files should be removed. A file is considered for removal if it is contained within a tracked directory that is outside of the sparse-checkout definition.
+        スパース・チェックアウト定義の外側にあるファイルを機会主義的(Opportunistically)に削除します。このコマンドは、削除すべきファイルを判断するために再帰的なディレクトリ一致を使用するため、コーン・モードが必要です。ファイルは、スパース・チェックアウト定義の外側にある追跡ディレクトリに含まれている場合に、削除対象と見なされます。
 </p>
-<div class="paragraph"><p>Some special cases, such as merge conflicts or modified files outside of the sparse-checkout definition could lead to keeping files that would otherwise be removed. Resolve conflicts, stage modifications, and use <code>git</code> <code>sparse-checkout</code> <code>reapply</code> in conjunction with <code>git</code> <code>sparse-checkout</code> <code>clean</code> to resolve these cases.</p></div>
-<div class="paragraph"><p>This command can be used to be sure the sparse index works efficiently, though it does not require enabling the sparse index feature via the <code>index.sparse=true</code> configuration.</p></div>
-<div class="paragraph"><p>To prevent accidental deletion of worktree files, the <code>clean</code> subcommand will not delete any files without the <code>-f</code> or <code>--force</code> option, unless the <code>clean.requireForce</code> config option is set to <code>false</code>.</p></div>
-<div class="paragraph"><p>The <code>--dry-run</code> option will list the directories that would be removed without deleting them. Running in this mode can be helpful to predict the behavior of the clean comand or to determine which kinds of files are left in the sparse directories.</p></div>
-<div class="paragraph"><p>The <code>--verbose</code> option will list every file within the directories that are considered for removal. This option is helpful to determine if those files are actually important or perhaps to explain why the directory is still present despite the current sparse-checkout.</p></div>
+<div class="paragraph"><p>マージ競合や、スパース・チェックアウト定義の外側にある変更済みファイルなどの一部の特殊なケースでは、通常なら削除されるはずのファイルが残る場合があります。競合を解消し、変更をステージし、これらのケースを解決するために <code>git</code> <code>sparse-checkout</code> <code>clean</code> と併用して <code>git</code> <code>sparse-checkout</code> <code>reapply</code> を使用してください。</p></div>
+<div class="paragraph"><p>このコマンドは、<code>index.sparse=true</code> 構成によりスパース・インデックス機能を有効にする必要はありませんが、スパース・インデックスが効率的に動作することを確実にするために使用できます。</p></div>
+<div class="paragraph"><p>作業ツリーのファイルを誤って削除しないように、<code>clean</code> サブコマンドは、<code>clean.requireForce</code> 設定オプションが <code>false</code> に設定されていない限り、 <code>-f</code> または <code>--force</code> オプションなしではファイルを一切削除しません。</p></div>
+<div class="paragraph"><p><code>--dry-run</code> オプションは、それらを削除せずに削除されるディレクトリの一覧を表示します。このモードで実行すると、clean コマンドの振る舞いを予測したり、スパース・ディレクトリにどの種類のファイルが残っているかを判断したりするのに役立ちます。</p></div>
+<div class="paragraph"><p><code>--verbose</code> オプションは、削除対象と見なされるディレクトリ内のすべてのファイルを一覧表示します。このオプションは、それらのファイルが実際に重要かどうかを判断したり、現在のスパース・チェックアウトにもかかわらずディレクトリがまだ存在する理由を説明したりするのに役立ちます。</p></div>
 </dd>
 <dt class="hdlist1">
 disable
@@ -977,13 +979,12 @@ check-rules
 <div class="sect1">
 <h2 id="_internals_8201_8212_8201_cone_mode_handling">INTERNALS&#8201;&#8212;&#8201;CONE MODE HANDLING</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The "cone mode", which is the default, lets you specify only what
-directories to include.  For any directory specified, all paths below
-that directory will be included, and any paths immediately under
-leading directories (including the toplevel directory) will also be
-included.  Thus, if you specified the directory
-    Documentation/technical/
-then your sparse checkout would contain:</p></div>
+<div class="paragraph"><p>デフォルトである「コーン・モード」(cone mode)では、含めるディレクトリのみを指定できます。指定されたディレクトリについては、そのディレクトリの下のすべてのパスが含まれ、先頭のディレクトリ(最上位ディレクトリを含む)のすぐ下のパスも含まれます。したがって、以下のディレクトリを指定した場合:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>`Documentation/technical/`</code></pre>
+</div></div>
+<div class="paragraph"><p>その場合、スパース・チェックアウトには以下が含まれます:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
@@ -1095,7 +1096,7 @@ A/B/C</code></pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2025-11-13 13:44:04 JST
+ 2026-08-10 23:29:08 JST
 </div>
 </div>
 </body>
