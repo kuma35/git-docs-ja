@@ -28,7 +28,7 @@ gitリポジトリは複数の作業ツリー(working tree)をサポートでき
 
 この新しいワークツリーは、 linkgit:git-init[1] または linkgit:git-clone[1] によって準備された「メイン・ワークツリー」とは対照的に、「リンクされたワークツリー」(linked worktree)と呼ばれます。 リポジトリには、1 つの メイン・ワークツリー(ベア・リポジトリでない場合) と、0 個以上のリンクされたワークツリーがあります。 リンクされたワークツリーを使い終わったら、 `git worktree remove` で削除します。
 
-In its simplest form, `git worktree add <path>` automatically creates a new branch whose name is the final component of _<path>_, which is convenient if you plan to work on a new topic. For instance, `git worktree add ../hotfix` creates new branch `hotfix` and checks it out at path `../hotfix`. To instead work on an existing branch in a new worktree, use `git worktree add <path> <branch>`. On the other hand, if you just plan to make some experimental changes or do testing without disturbing existing development, it is often convenient to create a 'throwaway' worktree not associated with any branch. For instance, `git worktree add -d <path>` creates a new worktree with a detached `HEAD` at the same commit as the current branch.
+最も単純な形式では、 `git worktree add <path>` は、名前が `<path>` の最後のコンポーネントである新しいブランチを自動的に作成します。これは、あなたが新しいトピックで作業する場合に便利です。たとえば、 `git worktree add ../hotfix` は、新しいブランチ `hotfix` を作成し、パス `../hotfix` でチェックアウトします。代わりに、既存のブランチの新しいワークツリーで作業するには、 `git worktree add <path> <branch>` を使用します。一方、既存の開発を妨げることなく実験的な変更やテストを行う場合は、ブランチに関連付けられていない「使い捨て」のワークツリーを作成すると便利なことがよくあります。たとえば、 `git worktree add -d <path>` は、現在のブランチと同じコミットで、切り離された`HEAD`(detached HEAD)を持つ新しいワークツリーを作成します。
 
 `git worktree remove` を使用せずに作業ツリー(working tree)を削除すると、リポジトリにある関連する管理ファイル(後述の「DETAILS」参照)が最終的には自動的に削除されます(linkgit:git-config[1] の `gc.worktreePruneExpire` 参照)。 または、メインまたは任意のリンクされたワークツリー(linked worktree)にて、古い管理ファイルをクリーンアップするために `git worktree prune` を実行できます。
 
@@ -38,19 +38,19 @@ COMMANDS
 --------
 `add <path> [<commit-ish>]`::
 
-Create a worktree at _<path>_ and checkout _<commit-ish>_ into it. The new worktree is linked to the current repository, sharing everything except per-worktree files such as `HEAD`, `index`, etc. As a convenience, _<commit-ish>_ may be a bare "`-`", which is synonymous with `@{-1}`.
+`<path>` にワークツリー(worktree)を作成し、 そこに `<commit-ish>` をチェックアウトします。 新しいワークツリーは現在のリポジトリにリンクされ、 `HEAD` 、 `index` などのワークツリーごとのファイルを除くすべてを共有します。 便宜上、 `<commit-ish>` は、 `@{-1}` と同義の `-` だけでもかまいません。
 +
-If _<commit-ish>_ is a branch name (call it _<branch>_) and is not found, and neither `-b` nor `-B` nor `--detach` are used, but there does exist a tracking branch in exactly one remote (call it _<remote>_) with a matching name, treat as equivalent to:
+上記 `<commit-ish>` がブランチ名(以下 `<branch>` とします)で見つからず、 `-b` や `-B` や `--detach` のいずれも使用されていないが、名前が一致する1つのリモート(以下 `<remote>` とします)には追跡ブランチが存在する場合、上記は以下と同等です:
 +
 ------------
 $ git worktree add --track -b <branch> <path> <remote>/<branch>
 ------------
 +
-If the branch exists in multiple remotes and one of them is named by the `checkout.defaultRemote` configuration variable, we'll use that one for the purposes of disambiguation, even if the _<branch>_ isn't unique across all remotes. Set it to e.g. `checkout.defaultRemote=origin` to always checkout remote branches from there if _<branch>_ is ambiguous but exists on the `origin` remote. See also `checkout.defaultRemote` in linkgit:git-config[1].
+ブランチが複数のリモートに存在し、そのうちの1つが `checkout.defaultRemote` 設定変数によって名付けられた場合、 `<branch>` がすべてのリモートでユニークでなくても、曖昧さをなくすためにその1つを使用します。例えば、 `checkout.defaultRemote=origin` と設定すると、 `<branch>` があいまいで、かつ `origin` リモートに存在する場合、常にそこからリモートブランチをチェックアウトすることができます。linkgit:git-config[1] にある `checkout.defaultRemote` も参照してください。
 +
-If _<commit-ish>_ is omitted and neither `-b` nor `-B` nor `--detach` used, then, as a convenience, the new worktree is associated with a branch (call it _<branch>_) named after `$(basename <path>)`. If _<branch>_ doesn't exist, a new branch based on `HEAD` is automatically created as if `-b <branch>` was given. If _<branch>_ does exist, it will be checked out in the new worktree, if it's not checked out anywhere else, otherwise the command will refuse to create the worktree (unless `--force` is used).
+`<commit-ish>` が省略され、 `-b` も `-B` も `--detach` も使用されていない場合、便宜上、新しいワークツリーは `$(basename <path>)` にちなんで名付けらたブランチ(`<branch>` とします)に関連付けられます。`<branch>` が存在しない場合、 `-b <branch>` が指定されたかのように、 `HEAD` に基づく新しいブランチが自動的に作成されます。 `<branch>` が存在する場合で、他の場所でチェックアウトされていない場合は、新しいワークツリーでチェックアウトされます。 存在しない場合、(`--force` が使用されている場合を除き、)コマンドはワークツリーの作成を拒否します。
 +
-If _<commit-ish>_ is omitted, neither `--detach`, or `--orphan` is used, and there are no valid local branches (or remote branches if `--guess-remote` is specified) then, as a convenience, the new worktree is associated with a new unborn branch named _<branch>_ (after `$(basename <path>)` if neither `-b` or `-B` is used) as if `--orphan` was passed to the command. In the event the repository has a remote and `--guess-remote` is used, but no remote or local branches exist, then the command fails with a warning reminding the user to fetch from their remote first (or override by using `-f/--force`).
+`<commit-ish>` が省略され、かつ、 `--detach` と `--orphan` のいずれも使われておらず、 かつ有効なローカル・ブランチ(または `--guess-remote` が指定された場合にはリモート・ブランチ)が無い場合、 便宜上、 新しいワークツリーは新しい未誕生(unborn)ブランチ `<branch>` (`-b` も `-B` も使用されていない場合は `$(basename <path>)` の後)と関連付けられ、 まるでコマンドに `--orphan` が渡されたかのように動作します。 リポジトリーにリモートがあり、 かつ `--guess-remote` が使用されているが、 リモートまたはローカル・ブランチが存在しない場合、 コマンドはユーザーに最初にリモートからフェッチするよう警告を発して失敗(fail)します(または `-f/--force` を使用して上書きできます)。
 
 `list`::
 
@@ -78,9 +78,9 @@ If _<commit-ish>_ is omitted, neither `--detach`, or `--orphan` is used, and the
 +
 たとえば、メインのワークツリー(またはベア・リポジトリ)を移動すると、リンクされたワークツリー(linked worktree)はそれを見つけることができなくなります。 メインのワークツリーで `repair` を実行すると、リンクされたワークツリーからメインのワークツリーへの接続が再確立されます。
 +
-Similarly, if the working tree for a linked worktree is moved without using `git worktree move`, the main worktree (or bare repository) will be unable to locate it. Running `repair` within the recently-moved worktree will reestablish the connection. If multiple linked worktrees are moved, running `repair` from any worktree with each tree's new _<path>_ as an argument, will reestablish the connection to all the specified paths.
+同様に、リンクされたワークツリー(linked worktree)が `git worktree move` を使用せずに移動された場合、 メインワークツリー(またはベア・リポジトリ)はそれを見つけることができません。 直近に移動したワークツリー内で `repair` を実行すると、接続が再確立されます。 リンクされたワークツリー が複数移動された場合、 各ワークツリーの新しい `<path>` を引数として任意のワークツリーから `repair` を実行すると、指定されたすべてのパスへの接続が再確立されます。
 +
-If both the main worktree and linked worktrees have been moved or copied manually, then running `repair` in the main worktree and specifying the new _<path>_ of each linked worktree will reestablish all connections in both directions.
+メイン・ワークツリーとリンクされたワークツリー(linked worktree)の両方が手動で移動またはコピーされた場合、 メイン・ワークツリーで `repair` を実行し、 各リンクされたワークツリーの新しい `<path>` を指定すると、 両方向のすべての接続が再確立されます。
 
 `unlock`::
 
@@ -91,15 +91,15 @@ OPTIONS
 
 `-f`::
 `--force`::
-	By default, `add` refuses to create a new worktree when _<commit-ish>_ is a branch name and is already checked out by another worktree, or if _<path>_ is already assigned to some worktree but is missing (for instance, if _<path>_ was deleted manually). This option overrides these safeguards. To add a missing but locked worktree path, specify `--force` twice.
+	デフォルトでは、`<commit-ish>` がブランチ名であり、別のワークツリーによってすでにチェックアウトされている場合、 または `<path>` がすでにワークツリーに割り当てられているが欠落している場合(たとえば `<path>` が手動で削除された場合)、 `add` は新しいワークツリーの作成を拒否します。 このオプションは、これらの安全装置(safeguards)をオーバーライドします。 欠落しているがロックされているワークツリー・パスを追加するには、 `--force` を2回指定します。
 +
-`move` refuses to move a locked worktree unless `--force` is specified twice. If the destination is already assigned to some other worktree but is missing (for instance, if _<new-path>_ was deleted manually), then `--force` allows the move to proceed; use `--force` twice if the destination is locked.
+`--force` が2回指定されていない限り、 `move` はロックされたワークツリーの移動を拒否します。移動先がすでに他のワークツリーに割り当てられているが欠落している場合(たとえば、 `<new-path>` が手動で削除された場合)は、 `--force` で移動を続行できます。移動先がロックされている場合は、 `--force` を2回使用します。
 +
 `remove` は、 `--force` が使用されない限り、 クリーンでないワークツリーの削除を拒否します。 ロックされたワークツリーを削除するには、 `--force` を 2 回指定します。
 
 `-b <new-branch>`::
 `-B <new-branch>`::
-	With `add`, create a new branch named _<new-branch>_ starting at _<commit-ish>_, and check out _<new-branch>_ into the new worktree. If _<commit-ish>_ is omitted, it defaults to `HEAD`. By default, `-b` refuses to create a new branch if it already exists. `-B` overrides this safeguard, resetting _<new-branch>_ to _<commit-ish>_.
+	`add` を使用して、 `<commit-ish>` から開始する `<new-branch>` という名前の新しいブランチを作成し、 `<new-branch>` を新しいワークツリーにチェックアウトします。 `<commit-ish>` を省略すると、 デフォルトで `HEAD` になります。 デフォルトでは、 `-b` は、 `<new-branch>` というブランチがすでに存在する場合、そのブランチを作成することを拒否します。 `-B` はこの安全装置をオーバーライドし、 `<new-branch>` を `<commit-ish>` にリセットします。
 
 `-d`::
 `--detach`::
@@ -107,23 +107,23 @@ OPTIONS
 
 `--checkout`::
 `--no-checkout`::
-	By default, `add` checks out _<commit-ish>_, however, `--no-checkout` can be used to suppress checkout in order to make customizations, such as configuring sparse-checkout. See "Sparse checkout" in linkgit:git-read-tree[1].
+	デフォルトでは、 `add` は `<commit-ish>` をチェックアウトしますが、 `--no-checkout` を使用して、スパースチェックアウト(suppress checkout)の構成などのカスタマイズを行うためにチェックアウトを抑制することができます。 linkgit:git-read-tree[1] の「Sparse checkout」を参照してください。
 
 `--guess-remote`::
 `--no-guess-remote`::
-	With `worktree add <path>`, without _<commit-ish>_, instead of creating a new branch from `HEAD`, if there exists a tracking branch in exactly one remote matching the basename of _<path>_, base the new branch on the remote-tracking branch, and mark the remote-tracking branch as "upstream" from the new branch.
+	`worktree add <path>` を使用し、 `<commit-ish>` が指定されていない場合、 `HEAD` から新しいブランチを作成する代わりに、 `<path>` のベース名と一致する追跡ブランチがちょうど 1 つのリモートにだけ存在する場合、 新しいブランチを、 そのリモート追跡ブランチに基づいて作成し、 リモート追跡ブランチを新しいブランチの「上流」(upstream)としてマークします。
 +
 これは、 `worktree.guessRemote` 構成オプションを使用してデフォルトの動作として設定することもできます。
 
 `--relative-paths`::
 `--no-relative-paths`::
-	Link worktrees using relative paths or absolute paths (default). Overrides the `worktree.useRelativePaths` config option, see linkgit:git-config[1].
+	相対パスまたは絶対パス(デフォルト)を使用して作業ツリーをリンクします。 `worktree.useRelativePaths` 設定オプションを上書きします。 linkgit:git-config[1] を参照してください。
 +
-With `repair`, the linking files will be updated if there's an absolute/relative mismatch, even if the links are correct.
+`repair` を指定すると、リンクが正しい場合でも、絶対/相対の不一致があるとリンク用ファイルが更新されます。
 
 `--track`::
 `--no-track`::
-	When creating a new branch, if _<commit-ish>_ is a branch, mark it as "upstream" from the new branch. This is the default if _<commit-ish>_ is a remote-tracking branch. See `--track` in linkgit:git-branch[1] for details.
+	新しいブランチを作成する際、 `<commit-ish>` がブランチである場合、 それを新しいブランチの「上流」(upstream)としてマークします。 `<commit-ish>` がリモート追跡ブランチの場合、 これがデフォルトの動作です。 詳細は linkgit:git-branch[1] の `--track` を参照してください。
 
 `--lock`::
 	作成後は、ワークツリーをロックしたままにします。 これは、 `git worktree add` の後に `git worktree lock` するのと同等ですが、競合状態(race condition)にはなりません。
@@ -133,13 +133,13 @@ With `repair`, the linking files will be updated if there's an absolute/relative
 	`prune` では、何も削除しないでください。何が削除されるかを報告するだけです。
 
 `--orphan`::
-	With `add`, make the new worktree and index empty, associating the worktree with a new unborn branch named _<new-branch>_.
+	`add` と共に使用して、 新しいワークツリーとインデックスを空で作り、 そのワークツリーを `<new-branch>` という名前の新しい未誕生(unborn)ブランチに関連付けます。
 
 `--porcelain`::
 	`list` を使用すると、スクリプトの解析が容易な形式で出力されます。この形式は、Gitのバージョン間で、ユーザー構成に関係なく安定しています。 これは `-z` と組み合わせることをお勧めします。 詳細については、後述します。
 
 `-z`::
-	Terminate each line with a _NUL_ rather than a newline when `--porcelain` is specified with `list`. This makes it possible to parse the output when a worktree path contains a newline character.
+	`list` で `--porcelain` が指定されている場合、改行(newline)ではなく NUL で各行を終了します。 これにより、ワークツリーパスに改行文字が含まれている場合、出力をパースできます。
 
 `-q`::
 `--quiet`::
@@ -152,14 +152,14 @@ With `repair`, the linking files will be updated if there's an absolute/relative
 `list` と供に使用すると、ワークツリーに関する追加情報を出力します(後述)。
 
 `--expire <time>`::
-	With `prune`, only expire unused worktrees older than _<time>_.
+	`prune` と共に使うと、 `<time>` より古い未使用のワークツリーのみを期限切れにします。
 +
-With `list`, annotate missing worktrees as prunable if they are older than _<time>_.
+`list` と共に使うと、 `<time>` より古い場合は、欠落しているワークツリーに刈り込み可能(prunable)という注釈(annotate)を付けます。
 
 `--reason <string>`::
 	`lock` または `add --lock` と共に使用して、そのワークツリーをなぜロックしているのかの説明を記述します。
 
-_<worktree>_::
+<worktree>::
 	ワークツリーは、相対パスまたは絶対パスのいずれかを識別できます。
 +
 ワークツリーのパスの最後のパスコンポーネントがワークツリー間で一意である場合、それを使用してワークツリーを識別できます。 たとえば、 `/abc/def/ghi` と `/abc/def/ggg` の2つのワークツリーしかない場合、 これらのワークツリーを指すには、 `ghi` または `def/ghi` で十分です。
